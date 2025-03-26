@@ -71,10 +71,35 @@ export type RawRenderer = {
   rightRenderer?: any;
   details?: any;
 };
+
+export type ParsedRecordFormRenderer<T> = {
+  kind: "recordForm";
+  type: ParsedType<T>;
+  fields: Map<string, ParsedRecordFieldRenderer<T>>;
+};
+
+export type ParsedRecordFieldRenderer<T> = {
+  kind: "recordField";
+  type: ParsedType<T>;
+  renderer: ParsedRenderer<T>;
+};
+
+export type ParsedUnionFormRenderer<T> = {
+  kind: "unionForm";
+  type: ParsedType<T>;
+  cases: Map<string, ParsedUnionCaseRenderer<T>>;
+};
+
+export type ParsedUnionCaseRenderer<T> = {
+  kind: "unionCase";
+  name: string;
+  fields: ParsedRenderer<T>;
+};
+
 export type ParsedRenderer<T> = (
   | { kind: "primitive" }
-  | { kind: "record" }
   | { kind: "unit" }
+  | { kind: "lookup"; name: string }
   | { kind: "enum"; options: string }
   | { kind: "stream"; stream: string }
   | { kind: "list"; elementRenderer: ParsedRenderer<T> }
@@ -91,6 +116,16 @@ export type ParsedRenderer<T> = (
       kind: "sum";
       leftRenderer?: ParsedRenderer<T>;
       rightRenderer?: ParsedRenderer<T>;
+    }
+  | {
+      kind: "union";
+      cases: Map<string, ParsedRenderer<T>>;
+    }
+  | {
+      kind: "unionCase";
+      name: string;
+      // What is the type of the fields?
+      // fields: ParsedRenderer<T>; 
     }
 ) & {
   renderer: string;
