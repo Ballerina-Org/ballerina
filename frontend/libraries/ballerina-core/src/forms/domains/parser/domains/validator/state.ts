@@ -22,6 +22,18 @@ import {
   DeltaRecord,
   CollectionReference,
   EnumReference,
+  Option,
+  DeltaPrimitive,
+  ValuePrimitive,
+  unit,
+  replaceWith,
+  ValueTuple,
+  DeltaTuple,
+  ListRepo,
+  DeltaUnion,
+  ValueSum,
+  Sum,
+  DeltaSum,
 } from "../../../../../../main";
 import { ValueOrErrors } from "../../../../../collections/domains/valueOrErrors/state";
 import { ParsedRenderer } from "../renderer/state";
@@ -431,7 +443,11 @@ export const FormsConfig = {
           return ValueOrErrors.Default.throw(errors);
         }
 
-        console.debug({ parsedTypes, fc });
+        console.debug({ parsedTypes: parsedTypes.toJSON(), fc });
+        console.debug(
+          "parsed types",
+          `${JSON.stringify(parsedTypes.toJSON())}`,
+        );
 
         return ValueOrErrors.Default.return({
           types: parsedTypes,
@@ -455,7 +471,7 @@ type FailingCheckApproval = (newApprovalValue: boolean) => {
 
 type FailingCheckOp = {
   FailingCheck: PredicateValue;
-  ToggleApproval: FailingCheckApproval;
+  ToggleApproval: Option<FailingCheckApproval>;
 };
 
 type CollectFailingChecks<T = Unit> = (
@@ -470,7 +486,31 @@ type CollectFailingChecks<T = Unit> = (
 const traverse: CollectFailingChecks = (typesMap, t) => {
   switch (t.kind) {
     case "unionCase":
-      return (_) => ValueOrErrors.Default.return([]);
+      const traverseUnionCase = traverse(typesMap, t.fields);
+      return (v: PredicateValue) =>
+        !PredicateValue.Operations.IsUnionCase(v)
+          ? ValueOrErrors.Default.throwOne(["not a UnionCase", v])
+          : traverseUnionCase(v.fields).Map((valueFailingChecks) =>
+              valueFailingChecks.map<FailingCheckOp>((fOp) => ({
+                FailingCheck: fOp.FailingCheck,
+                ToggleApproval: Option.Updaters.map2<
+                  FailingCheckApproval,
+                  FailingCheckApproval
+                >((toggleApproval) => (a) => {
+                  const innerApproval = toggleApproval(a);
+                  return {
+                    OptimisticUpdate: ValueOption.Updaters.value(
+                      innerApproval.OptimisticUpdate,
+                    ) as Updater<PredicateValue>,
+                    BackendDeltaPATCH: {
+                      kind: "UnionCase",
+                      caseName: [v.caseName, innerApproval.BackendDeltaPATCH],
+                    } as DeltaUnion,
+                  };
+                })(fOp.ToggleApproval),
+              })),
+            );
+
     case "lookup":
       const lookupType = typesMap.get(t.name)!;
       if (!lookupType) {
@@ -485,6 +525,13 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
       return (v) =>
         !PredicateValue.Operations.IsVarLookup(v)
           ? ValueOrErrors.Default.throwOne(["not a ValueLookup", v])
+          : v.varName === "FailingChecks"
+          ? ValueOrErrors.Default.return([
+              {
+                FailingCheck: v,
+                ToggleApproval: Option.Default.none<FailingCheckApproval>(),
+              },
+            ] as FailingCheckOp[])
           : traverseLookupValue(v);
 
     case "primitive":
@@ -500,8 +547,11 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
           : traverseOptionValue(v.value).Map((valueFailingChecks) =>
               valueFailingChecks.map<FailingCheckOp>((fOp) => ({
                 FailingCheck: fOp.FailingCheck,
-                ToggleApproval: (a) => {
-                  const innerApproval = fOp.ToggleApproval(a);
+                ToggleApproval: Option.Updaters.map2<
+                  FailingCheckApproval,
+                  FailingCheckApproval
+                >((toggleApproval) => (a) => {
+                  const innerApproval = toggleApproval(a);
                   return {
                     OptimisticUpdate: ValueOption.Updaters.value(
                       innerApproval.OptimisticUpdate,
@@ -511,7 +561,7 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
                       value: innerApproval.BackendDeltaPATCH,
                     } as DeltaOption,
                   };
-                },
+                })(fOp.ToggleApproval),
               })),
             );
     case "record":
@@ -524,10 +574,12 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
                 traverseRecordFields.entrySeq().map(([k, traverseField]) =>
                   traverseField(v.fields.get(k)!).Map((fieldFailingChecks) =>
                     fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
-                      FailingCheck:
-                        t.value == "FailingCheck" ? v : fOp.FailingCheck,
-                      ToggleApproval: (a) => {
-                        const innerApproval = fOp.ToggleApproval(a);
+                      FailingCheck: fOp.FailingCheck,
+                      ToggleApproval: Option.Updaters.map2<
+                        FailingCheckApproval,
+                        FailingCheckApproval
+                      >((toggleApproval) => (a) => {
+                        const innerApproval = toggleApproval(a);
                         return {
                           OptimisticUpdate: ValueRecord.Updaters.set(
                             k,
@@ -539,7 +591,7 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
                             recordType: t,
                           } as DeltaRecord,
                         };
-                      },
+                      })(fOp.ToggleApproval),
                     })),
                   ),
                 ),
@@ -568,8 +620,11 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
               : traverseSingleSelection(v.value).Map((valueFailingChecks) =>
                   valueFailingChecks.map<FailingCheckOp>((fOp) => ({
                     FailingCheck: fOp.FailingCheck,
-                    ToggleApproval: (a) => {
-                      const innerApproval = fOp.ToggleApproval(a);
+                    ToggleApproval: Option.Updaters.map2<
+                      FailingCheckApproval,
+                      FailingCheckApproval
+                    >((toggleApproval) => (a) => {
+                      const innerApproval = toggleApproval(a);
                       return {
                         OptimisticUpdate: ValueOption.Updaters.value(
                           innerApproval.OptimisticUpdate,
@@ -579,48 +634,340 @@ const traverse: CollectFailingChecks = (typesMap, t) => {
                           value: innerApproval.BackendDeltaPATCH,
                         } as DeltaOption,
                       };
-                    },
+                    })(fOp.ToggleApproval),
                   })),
                 );
 
         case "MultiSelection":
+          // multi selection only has 1 arg type, which is the same for all the selcted elements
+          const traverseMultiSelectionField = traverse(typesMap, t.args[0]);
+          return (v: PredicateValue) =>
+            !PredicateValue.Operations.IsRecord(v)
+              ? ValueOrErrors.Default.throwOne([
+                  "not a ValueRecord (from MultiSelection)",
+                  v,
+                ])
+              : ValueOrErrors.Operations.All(
+                  List(
+                    v.fields.entrySeq().map(([k, field]) =>
+                      traverseMultiSelectionField(field).Map(
+                        (fieldFailingChecks) =>
+                          fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
+                            FailingCheck: fOp.FailingCheck,
+                            ToggleApproval: Option.Updaters.map2<
+                              FailingCheckApproval,
+                              FailingCheckApproval
+                            >((toggleApproval) => (a) => {
+                              const innerApproval = toggleApproval(a);
+                              return {
+                                OptimisticUpdate: ValueRecord.Updaters.set(
+                                  k,
+                                  innerApproval.OptimisticUpdate(
+                                    v.fields.get(k)!,
+                                  ),
+                                ) as Updater<PredicateValue>,
+                                BackendDeltaPATCH: {
+                                  kind: "RecordField",
+                                  field: [k, innerApproval.BackendDeltaPATCH],
+                                  recordType: t,
+                                } as DeltaRecord,
+                              };
+                            })(fOp.ToggleApproval),
+                          })),
+                      ),
+                    ),
+                  ),
+                ).Map(
+                  (listFailingChecks) =>
+                    listFailingChecks
+                      .flatten()
+                      .toArray() as Array<FailingCheckOp>,
+                );
+
         case "Map":
+          const traverseKey = traverse(typesMap, t.args[0]);
+          const traverseValue = traverse(typesMap, t.args[1]);
+          return (v: PredicateValue) =>
+            !PredicateValue.Operations.IsRecord(v)
+              ? ValueOrErrors.Default.throwOne([
+                  "not a ValueRecord (from MultiSelection)",
+                  v,
+                ])
+              : ValueOrErrors.Operations.All(
+                  List(
+                    v.fields.entrySeq().map(([k, field]) =>
+                      ValueOrErrors.Operations.All(
+                        List(
+                          [traverseKey, traverseValue].map((traverseField) =>
+                            traverseField(field).Map((fieldFailingChecks) =>
+                              fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
+                                FailingCheck: fOp.FailingCheck,
+                                ToggleApproval: Option.Updaters.map2<
+                                  FailingCheckApproval,
+                                  FailingCheckApproval
+                                >((toggleApproval) => (a) => {
+                                  const innerApproval = toggleApproval(a);
+                                  return {
+                                    OptimisticUpdate: ValueRecord.Updaters.set(
+                                      k,
+                                      innerApproval.OptimisticUpdate(
+                                        v.fields.get(k)!,
+                                      ),
+                                    ) as Updater<PredicateValue>,
+                                    BackendDeltaPATCH: {
+                                      kind: "RecordField",
+                                      field: [
+                                        k,
+                                        innerApproval.BackendDeltaPATCH,
+                                      ],
+                                      recordType: t,
+                                    } as DeltaRecord,
+                                  };
+                                })(fOp.ToggleApproval),
+                              })),
+                            ),
+                          ),
+                        ),
+                      ).Map(
+                        (listFailingChecks) =>
+                          listFailingChecks
+                            .flatten()
+                            .toArray() as Array<FailingCheckOp>,
+                      ),
+                    ),
+                  ),
+                ).Map(
+                  (listFailingChecks) =>
+                    listFailingChecks
+                      .flatten()
+                      .toArray() as Array<FailingCheckOp>,
+                );
         case "Sum":
+          return (v) =>
+            !PredicateValue.Operations.IsSum(v)
+              ? ValueOrErrors.Default.throwOne(["not a ValueSum", v])
+              : (v.value.kind === "l"
+                  ? traverse(typesMap, t.args[0])
+                  : traverse(typesMap, t.args[1]))(v.value.value).Map(
+                  (valueFailingChecks) =>
+                    valueFailingChecks.map<FailingCheckOp>((fOp) => ({
+                      FailingCheck: fOp.FailingCheck,
+                      ToggleApproval: Option.Updaters.map2<
+                        FailingCheckApproval,
+                        FailingCheckApproval
+                      >((toggleApproval) => (a) => {
+                        const innerApproval = toggleApproval(a);
+                        return {
+                          OptimisticUpdate: ValueSum.Updaters.value(
+                            Sum.Updaters.map2(
+                              innerApproval.OptimisticUpdate,
+                              innerApproval.OptimisticUpdate,
+                            ),
+                          ) as Updater<PredicateValue>,
+                          BackendDeltaPATCH: {
+                            kind: v.value.kind === "l" ? "SumLeft" : "SumRight",
+                            value: innerApproval.BackendDeltaPATCH,
+                          } as DeltaSum,
+                        };
+                      })(fOp.ToggleApproval),
+                    })),
+                );
+
         case "Option":
+          const traverseOptionValue = traverse(typesMap, t.args[0]); // TODO: check this
+          return (v: PredicateValue) =>
+            !PredicateValue.Operations.IsOption(v)
+              ? ValueOrErrors.Default.throwOne(["not a ValueOption", v])
+              : !v.isSome
+              ? ValueOrErrors.Default.return([])
+              : traverseOptionValue(v.value).Map((valueFailingChecks) =>
+                  valueFailingChecks.map<FailingCheckOp>((fOp) => ({
+                    FailingCheck: fOp.FailingCheck,
+                    ToggleApproval: Option.Updaters.map2<
+                      FailingCheckApproval,
+                      FailingCheckApproval
+                    >((toggleApproval) => (a) => {
+                      const innerApproval = toggleApproval(a);
+                      return {
+                        OptimisticUpdate: ValueOption.Updaters.value(
+                          innerApproval.OptimisticUpdate,
+                        ) as Updater<PredicateValue>,
+                        BackendDeltaPATCH: {
+                          kind: "OptionValue",
+                          value: innerApproval.BackendDeltaPATCH,
+                        } as DeltaOption,
+                      };
+                    })(fOp.ToggleApproval),
+                  })),
+                );
         case "Tuple":
+          const traverseTupleFields = t.args.flatMap((f) =>
+            traverse(typesMap, f),
+          );
+          return (v) =>
+            !PredicateValue.Operations.IsTuple(v)
+              ? ValueOrErrors.Default.throwOne(["not a ValueTuple", v])
+              : (() => {
+                  const approvalPredicateValueIndex = v.values.findIndex(
+                    (_) =>
+                      PredicateValue.Operations.IsVarLookup(_) &&
+                      _.varName === "Approval",
+                  );
+
+                  return ValueOrErrors.Operations.All(
+                    List(
+                      traverseTupleFields.flatMap((traverseField, idx) =>
+                        idx === approvalPredicateValueIndex
+                          ? []
+                          : traverseField(v.values.get(idx)!).Map(
+                              (fieldFailingChecks) =>
+                                fieldFailingChecks.map<FailingCheckOp>(
+                                  (fOp) => ({
+                                    FailingCheck: fOp.FailingCheck,
+                                    ToggleApproval: Option.Updaters.map2<
+                                      FailingCheckApproval,
+                                      FailingCheckApproval
+                                    >((toggleApproval) => (a) => {
+                                      const innerApproval = toggleApproval(a);
+                                      return {
+                                        OptimisticUpdate:
+                                          ValueTuple.Updaters.values(
+                                            ListRepo.Updaters.update(
+                                              idx,
+                                              innerApproval.OptimisticUpdate,
+                                            ).thenMany(
+                                              approvalPredicateValueIndex < 0
+                                                ? []
+                                                : // this tuple contains an approval field
+                                                  // -> we need to update it when approving this field
+                                                  [
+                                                    ListRepo.Updaters.update(
+                                                      approvalPredicateValueIndex,
+                                                      Updater<PredicateValue>(
+                                                        (_) => a,
+                                                      ),
+                                                    ),
+                                                  ],
+                                            ),
+                                          ) as Updater<PredicateValue>,
+                                        BackendDeltaPATCH: {
+                                          kind: "TupleCase",
+                                          item: [
+                                            idx,
+                                            innerApproval.BackendDeltaPATCH,
+                                          ],
+                                          tupleType: t,
+                                        } as DeltaTuple,
+                                      };
+                                    })(fOp.ToggleApproval),
+                                  }),
+                                ),
+                            ),
+                      ),
+                    ),
+                  ).Map(
+                    (listFailingChecks) =>
+                      listFailingChecks
+                        .flatten()
+                        .toArray() as Array<FailingCheckOp>,
+                  );
+                })();
         case "Union":
         case "KeyOf":
+          return (_) => ValueOrErrors.Default.return([]);
         case "List":
+          const traverseListField = traverse(typesMap, t.args[0]);
+          return (v) =>
+            !PredicateValue.Operations.IsTuple(v)
+              ? ValueOrErrors.Default.throwOne(["not a ValueTuple", v])
+              : (() => {
+                  const approvalPredicateValueIndex = v.values.findIndex(
+                    (_) =>
+                      PredicateValue.Operations.IsVarLookup(_) &&
+                      _.varName === "Approval",
+                  );
+
+                  return ValueOrErrors.Operations.All(
+                    List(
+                      v.values.map((v, idx) =>
+                        traverseListField(v).Map((fieldFailingChecks) =>
+                          fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
+                            FailingCheck: fOp.FailingCheck,
+                            ToggleApproval: Option.Updaters.map2<
+                              FailingCheckApproval,
+                              FailingCheckApproval
+                            >((toggleApproval) => (a) => {
+                              const innerApproval = toggleApproval(a);
+                              return {
+                                OptimisticUpdate: ValueTuple.Updaters.values(
+                                  ListRepo.Updaters.update(
+                                    idx,
+                                    innerApproval.OptimisticUpdate,
+                                  ),
+                                ) as Updater<PredicateValue>,
+                                BackendDeltaPATCH: {
+                                  kind: "TupleCase",
+                                  item: [idx, innerApproval.BackendDeltaPATCH],
+                                  tupleType: t,
+                                } as DeltaTuple,
+                              };
+                            })(fOp.ToggleApproval),
+                          })),
+                        ),
+                      ),
+                    ),
+                  ).Map(
+                    (listFailingChecks) =>
+                      listFailingChecks
+                        .flatten()
+                        .toArray() as Array<FailingCheckOp>,
+                  );
+                })();
         default:
           return (_) => ValueOrErrors.Default.return([]);
       }
     case "union":
+      // return empty array?
+      // and use the following in the application/union case?
       const traverseUnionFields = t.args.map((f) => traverse(typesMap, f));
       return (v) =>
         !PredicateValue.Operations.IsRecord(v)
-          ? ValueOrErrors.Default.throwOne(["not a ValueRecord", v])
+          ? ValueOrErrors.Default.throwOne([
+              "not a ValueRecord (from union)",
+              v,
+            ])
           : ValueOrErrors.Operations.All(
               List(
-                traverseUnionFields.entrySeq().map(([k, traverseField]) =>
-                  traverseField(v.fields.get(k)!).Map((fieldFailingChecks) =>
-                    fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
-                      FailingCheck: fOp.FailingCheck,
-                      ToggleApproval: (a) => {
-                        const innerApproval = fOp.ToggleApproval(a);
-                        return {
-                          OptimisticUpdate: ValueRecord.Updaters.set(
-                            k,
-                            innerApproval.OptimisticUpdate(v.fields.get(k)!),
-                          ) as Updater<PredicateValue>,
-                          BackendDeltaPATCH: {
-                            kind: "RecordField",
-                            field: [k, innerApproval.BackendDeltaPATCH],
-                            recordType: t,
-                          } as DeltaRecord,
-                        };
-                      },
-                    })),
-                  ),
+                traverseUnionFields.entrySeq().flatMap(([k, traverseField]) =>
+                  !v.fields.has(k)
+                    ? []
+                    : [
+                        traverseField(v.fields.get(k)!).Map(
+                          (fieldFailingChecks) =>
+                            fieldFailingChecks.map<FailingCheckOp>((fOp) => ({
+                              FailingCheck: fOp.FailingCheck,
+                              ToggleApproval: Option.Updaters.map2<
+                                FailingCheckApproval,
+                                FailingCheckApproval
+                              >((toggleApproval) => (a) => {
+                                const innerApproval = toggleApproval(a);
+                                return {
+                                  OptimisticUpdate: ValueRecord.Updaters.set(
+                                    k,
+                                    innerApproval.OptimisticUpdate(
+                                      v.fields.get(k)!,
+                                    ),
+                                  ) as Updater<PredicateValue>,
+                                  BackendDeltaPATCH: {
+                                    kind: "RecordField",
+                                    field: [k, innerApproval.BackendDeltaPATCH],
+                                    recordType: t,
+                                  } as DeltaRecord,
+                                };
+                              })(fOp.ToggleApproval),
+                            })),
+                        ),
+                      ],
                 ),
               ),
             ).Map(

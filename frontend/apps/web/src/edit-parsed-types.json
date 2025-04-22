@@ -1,0 +1,636 @@
+{
+  "DepartmentRef": { "kind": "lookup", "name": "CollectionReference" },
+  "PermissionRef": {
+    "kind": "record",
+    "value": "PermissionRef",
+    "fields": { "Value": { "kind": "lookup", "name": "PermissionsEnum" } }
+  },
+  "AddressesConfig": {
+    "kind": "record",
+    "value": "AddressesConfig",
+    "fields": {
+      "ActiveFields": {
+        "kind": "application",
+        "value": "MultiSelection",
+        "args": [{ "kind": "lookup", "name": "AddressesFieldRef" }]
+      }
+    }
+  },
+  "SAPConfig": {
+    "kind": "union",
+    "args": {
+      "SAP:S2": {
+        "kind": "unionCase",
+        "name": "SAP:S2",
+        "fields": {
+          "kind": "record",
+          "value": "SAP:S2",
+          "fields": {
+            "S2OnlyField": { "kind": "primitive", "value": "boolean" }
+          }
+        }
+      },
+      "SAP:S3": {
+        "kind": "unionCase",
+        "name": "SAP:S3",
+        "fields": {
+          "kind": "record",
+          "value": "SAP:S3",
+          "fields": {
+            "S3OnlyField": { "kind": "primitive", "value": "boolean" }
+          }
+        }
+      },
+      "SAP:S4": {
+        "kind": "unionCase",
+        "name": "SAP:S4",
+        "fields": {
+          "kind": "record",
+          "value": "SAP:S4",
+          "fields": {
+            "S4OnlyField": { "kind": "primitive", "value": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "ERPConfig": {
+    "kind": "union",
+    "args": {
+      "ERP:SAP": {
+        "kind": "unionCase",
+        "name": "ERP:SAP",
+        "fields": {
+          "kind": "record",
+          "value": "ERP:SAP",
+          "fields": { "Value": { "kind": "lookup", "name": "SAPConfig" } }
+        }
+      },
+      "ERP:BC": {
+        "kind": "unionCase",
+        "name": "ERP:BC",
+        "fields": {
+          "kind": "unionCase",
+          "name": "ERP:BC",
+          "fields": { "kind": "record", "value": "ERP:BC", "fields": {} }
+        }
+      },
+      "ERP:FAndO": {
+        "kind": "unionCase",
+        "name": "ERP:FAndO",
+        "fields": {
+          "kind": "unionCase",
+          "name": "ERP:FAndO",
+          "fields": { "kind": "record", "value": "ERP:FAndO", "fields": {} }
+        }
+      }
+    }
+  },
+  "PermissionsEnum": {
+    "kind": "union",
+    "args": {
+      "Create": {
+        "kind": "unionCase",
+        "name": "Create",
+        "fields": { "kind": "record", "value": "Create", "fields": {} }
+      },
+      "Read": {
+        "kind": "unionCase",
+        "name": "Read",
+        "fields": { "kind": "record", "value": "Read", "fields": {} }
+      },
+      "Update": {
+        "kind": "unionCase",
+        "name": "Update",
+        "fields": { "kind": "record", "value": "Update", "fields": {} }
+      },
+      "Delete": {
+        "kind": "unionCase",
+        "name": "Delete",
+        "fields": { "kind": "record", "value": "Delete", "fields": {} }
+      }
+    }
+  },
+  "CityRef": { "kind": "lookup", "name": "CollectionReference" },
+  "InterestRef": {
+    "kind": "record",
+    "value": "InterestRef",
+    "fields": { "Value": { "kind": "lookup", "name": "InterestsEnum" } }
+  },
+  "InterestsEnum": {
+    "kind": "union",
+    "args": {
+      "Soccer": {
+        "kind": "unionCase",
+        "name": "Soccer",
+        "fields": { "kind": "record", "value": "Soccer", "fields": {} }
+      },
+      "Hockey": {
+        "kind": "unionCase",
+        "name": "Hockey",
+        "fields": { "kind": "record", "value": "Hockey", "fields": {} }
+      },
+      "BoardGames": {
+        "kind": "unionCase",
+        "name": "BoardGames",
+        "fields": { "kind": "record", "value": "BoardGames", "fields": {} }
+      },
+      "HegelianPhilosophy": {
+        "kind": "unionCase",
+        "name": "HegelianPhilosophy",
+        "fields": {
+          "kind": "record",
+          "value": "HegelianPhilosophy",
+          "fields": {}
+        }
+      }
+    }
+  },
+  "CollectionReference": {
+    "kind": "record",
+    "value": "CollectionReference",
+    "fields": {
+      "DisplayValue": { "kind": "primitive", "value": "string" },
+      "Id": { "kind": "primitive", "value": "string" }
+    }
+  },
+  "PlotInfo": {
+    "kind": "record",
+    "value": "PlotInfo",
+    "fields": { "landArea": { "kind": "lookup", "name": "LandArea" } }
+  },
+  "ColorRef": {
+    "kind": "record",
+    "value": "ColorRef",
+    "fields": { "Value": { "kind": "lookup", "name": "ColorsEnum" } }
+  },
+  "ColorsEnum": {
+    "kind": "union",
+    "args": {
+      "Red": {
+        "kind": "unionCase",
+        "name": "Red",
+        "fields": { "kind": "record", "value": "Red", "fields": {} }
+      },
+      "Green": {
+        "kind": "unionCase",
+        "name": "Green",
+        "fields": { "kind": "record", "value": "Green", "fields": {} }
+      },
+      "Blue": {
+        "kind": "unionCase",
+        "name": "Blue",
+        "fields": { "kind": "record", "value": "Blue", "fields": {} }
+      }
+    }
+  },
+  "GenderRef": {
+    "kind": "record",
+    "value": "GenderRef",
+    "fields": { "Value": { "kind": "lookup", "name": "GendersEnum" } }
+  },
+  "GendersEnum": {
+    "kind": "union",
+    "args": {
+      "M": {
+        "kind": "unionCase",
+        "name": "M",
+        "fields": {
+          "kind": "unionCase",
+          "name": "M",
+          "fields": { "kind": "record", "value": "M", "fields": {} }
+        }
+      },
+      "F": {
+        "kind": "unionCase",
+        "name": "F",
+        "fields": {
+          "kind": "unionCase",
+          "name": "F",
+          "fields": { "kind": "record", "value": "F", "fields": {} }
+        }
+      },
+      "X": {
+        "kind": "unionCase",
+        "name": "X",
+        "fields": {
+          "kind": "unionCase",
+          "name": "X",
+          "fields": { "kind": "record", "value": "X", "fields": {} }
+        }
+      }
+    }
+  },
+  "GlobalConfiguration": {
+    "kind": "record",
+    "value": "GlobalConfiguration",
+    "fields": {
+      "IsAdmin": { "kind": "primitive", "value": "boolean" },
+      "ERP": { "kind": "lookup", "name": "ERPConfig" },
+      "ActiveFields": {
+        "kind": "application",
+        "value": "MultiSelection",
+        "args": [{ "kind": "lookup", "name": "AddressesFieldRef" }]
+      }
+    }
+  },
+  "Address": {
+    "kind": "record",
+    "value": "Address",
+    "fields": {
+      "streetNumberAndCity": {
+        "kind": "application",
+        "value": "Tuple",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          { "kind": "primitive", "value": "number" },
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "CityRef" }]
+          }
+        ]
+      }
+    }
+  },
+  "Person": {
+    "kind": "record",
+    "value": "Person",
+    "fields": {
+      "schoolAddress": { "kind": "lookup", "name": "Address" },
+      "addressesAndAddressesWithLabel": {
+        "kind": "application",
+        "value": "Tuple",
+        "args": [
+          {
+            "kind": "application",
+            "value": "List",
+            "args": [{ "kind": "lookup", "name": "Address" }]
+          },
+          {
+            "kind": "application",
+            "value": "Map",
+            "args": [
+              { "kind": "primitive", "value": "string" },
+              { "kind": "lookup", "name": "Address" }
+            ]
+          }
+        ]
+      },
+      "gender": {
+        "kind": "application",
+        "value": "Sum",
+        "args": [
+          { "kind": "primitive", "value": "unit" },
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "GenderRef" }]
+          }
+        ]
+      },
+      "departments": {
+        "kind": "application",
+        "value": "MultiSelection",
+        "args": [{ "kind": "lookup", "name": "DepartmentRef" }]
+      },
+      "friendsBirthdays": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          { "kind": "primitive", "value": "Date" }
+        ]
+      },
+      "permissions": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "PermissionRef" }]
+          },
+          { "kind": "primitive", "value": "boolean" }
+        ]
+      },
+      "addressesByCity": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "CityRef" }]
+          },
+          { "kind": "lookup", "name": "Address" }
+        ]
+      },
+      "favoriteColor": {
+        "kind": "application",
+        "value": "SingleSelection",
+        "args": [{ "kind": "lookup", "name": "ColorRef" }]
+      },
+      "relatives": {
+        "kind": "application",
+        "value": "List",
+        "args": [{ "kind": "primitive", "value": "injectedCategory" }]
+      },
+      "interests": {
+        "kind": "application",
+        "value": "MultiSelection",
+        "args": [{ "kind": "lookup", "name": "InterestRef" }]
+      },
+      "friendsByCategory": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          { "kind": "primitive", "value": "injectedCategory" },
+          { "kind": "primitive", "value": "string" }
+        ]
+      },
+      "friendsAddresses": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          {
+            "kind": "application",
+            "value": "List",
+            "args": [{ "kind": "lookup", "name": "Address" }]
+          }
+        ]
+      },
+      "importantDate": {
+        "kind": "application",
+        "value": "Sum",
+        "args": [
+          { "kind": "primitive", "value": "unit" },
+          { "kind": "primitive", "value": "Date" }
+        ]
+      },
+      "cityByDepartment": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "DepartmentRef" }]
+          },
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "CityRef" }]
+          }
+        ]
+      },
+      "emails": {
+        "kind": "application",
+        "value": "List",
+        "args": [{ "kind": "primitive", "value": "string" }]
+      },
+      "cutOffDates": {
+        "kind": "application",
+        "value": "List",
+        "args": [
+          {
+            "kind": "application",
+            "value": "Sum",
+            "args": [
+              { "kind": "primitive", "value": "unit" },
+              { "kind": "primitive", "value": "Date" }
+            ]
+          }
+        ]
+      },
+      "dependants": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          { "kind": "primitive", "value": "injectedCategory" }
+        ]
+      },
+      "addressesWithColorLabel": {
+        "kind": "application",
+        "value": "Map",
+        "args": [
+          {
+            "kind": "application",
+            "value": "SingleSelection",
+            "args": [{ "kind": "lookup", "name": "ColorRef" }]
+          },
+          { "kind": "lookup", "name": "Address" }
+        ]
+      },
+      "addressesBy": {
+        "kind": "application",
+        "value": "Sum",
+        "args": [
+          {
+            "kind": "application",
+            "value": "Map",
+            "args": [
+              {
+                "kind": "application",
+                "value": "SingleSelection",
+                "args": [{ "kind": "lookup", "name": "ColorRef" }]
+              },
+              { "kind": "lookup", "name": "Address" }
+            ]
+          },
+          {
+            "kind": "application",
+            "value": "Map",
+            "args": [
+              { "kind": "primitive", "value": "string" },
+              { "kind": "lookup", "name": "Address" }
+            ]
+          }
+        ]
+      },
+      "fullName": {
+        "kind": "application",
+        "value": "Tuple",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          { "kind": "primitive", "value": "string" }
+        ]
+      },
+      "holidays": {
+        "kind": "application",
+        "value": "List",
+        "args": [{ "kind": "primitive", "value": "Date" }]
+      },
+      "mainAddress": {
+        "kind": "application",
+        "value": "Sum",
+        "args": [
+          { "kind": "primitive", "value": "string" },
+          {
+            "kind": "application",
+            "value": "Tuple",
+            "args": [
+              { "kind": "lookup", "name": "Address" },
+              { "kind": "lookup", "name": "PlotInfo" }
+            ]
+          }
+        ]
+      },
+      "shoeColours": {
+        "kind": "application",
+        "value": "MultiSelection",
+        "args": [{ "kind": "lookup", "name": "ColorRef" }]
+      },
+      "birthday": { "kind": "primitive", "value": "Date" },
+      "category": { "kind": "primitive", "value": "injectedCategory" },
+      "subscribeToNewsletter": { "kind": "primitive", "value": "boolean" }
+    }
+  },
+  "UnusedEnum": {
+    "kind": "union",
+    "args": {
+      "A": {
+        "kind": "unionCase",
+        "name": "A",
+        "fields": {
+          "kind": "record",
+          "value": "A",
+          "fields": {
+            "AOnlyField": { "kind": "primitive", "value": "boolean" }
+          }
+        }
+      },
+      "B": {
+        "kind": "unionCase",
+        "name": "B",
+        "fields": {
+          "kind": "unionCase",
+          "name": "B",
+          "fields": { "kind": "record", "value": "B", "fields": {} }
+        }
+      },
+      "C": {
+        "kind": "unionCase",
+        "name": "C",
+        "fields": {
+          "kind": "unionCase",
+          "name": "C",
+          "fields": { "kind": "lookup", "name": "C" }
+        }
+      }
+    }
+  },
+  "LandArea": {
+    "kind": "record",
+    "value": "LandArea",
+    "fields": {
+      "x": { "kind": "primitive", "value": "number" },
+      "y": { "kind": "primitive", "value": "number" }
+    }
+  },
+  "AddressesFieldRef": {
+    "kind": "record",
+    "value": "AddressesFieldRef",
+    "fields": { "Value": { "kind": "lookup", "name": "AddressesFieldsEnum" } }
+  },
+  "AddressesFieldsEnum": {
+    "kind": "union",
+    "args": {
+      "schoolAddress": {
+        "kind": "unionCase",
+        "name": "schoolAddress",
+        "fields": {
+          "kind": "unionCase",
+          "name": "schoolAddress",
+          "fields": { "kind": "record", "value": "schoolAddress", "fields": {} }
+        }
+      },
+      "addressesAndAddressesWithLabel": {
+        "kind": "unionCase",
+        "name": "addressesAndAddressesWithLabel",
+        "fields": {
+          "kind": "unionCase",
+          "name": "addressesAndAddressesWithLabel",
+          "fields": {
+            "kind": "record",
+            "value": "addressesAndAddressesWithLabel",
+            "fields": {}
+          }
+        }
+      },
+      "departments": {
+        "kind": "unionCase",
+        "name": "departments",
+        "fields": {
+          "kind": "unionCase",
+          "name": "departments",
+          "fields": { "kind": "record", "value": "departments", "fields": {} }
+        }
+      },
+      "permissions": {
+        "kind": "unionCase",
+        "name": "permissions",
+        "fields": {
+          "kind": "unionCase",
+          "name": "permissions",
+          "fields": { "kind": "record", "value": "permissions", "fields": {} }
+        }
+      },
+      "cityByDepartment": {
+        "kind": "unionCase",
+        "name": "cityByDepartment",
+        "fields": {
+          "kind": "unionCase",
+          "name": "cityByDepartment",
+          "fields": {
+            "kind": "record",
+            "value": "cityByDepartment",
+            "fields": {}
+          }
+        }
+      },
+      "addressesWithColorLabel": {
+        "kind": "unionCase",
+        "name": "addressesWithColorLabel",
+        "fields": {
+          "kind": "unionCase",
+          "name": "addressesWithColorLabel",
+          "fields": {
+            "kind": "record",
+            "value": "addressesWithColorLabel",
+            "fields": {}
+          }
+        }
+      },
+      "addressesBy": {
+        "kind": "unionCase",
+        "name": "addressesBy",
+        "fields": {
+          "kind": "unionCase",
+          "name": "addressesBy",
+          "fields": { "kind": "record", "value": "addressesBy", "fields": {} }
+        }
+      },
+      "holidays": {
+        "kind": "unionCase",
+        "name": "holidays",
+        "fields": {
+          "kind": "unionCase",
+          "name": "holidays",
+          "fields": { "kind": "record", "value": "holidays", "fields": {} }
+        }
+      },
+      "mainAddress": {
+        "kind": "unionCase",
+        "name": "mainAddress",
+        "fields": {
+          "kind": "unionCase",
+          "name": "mainAddress",
+          "fields": { "kind": "record", "value": "mainAddress", "fields": {} }
+        }
+      }
+    }
+  }
+}

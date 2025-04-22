@@ -1,0 +1,62 @@
+{
+  "schoolAddress": {
+    "kind": "record",
+    "fields": {
+      "streetNumberAndCity": {
+        "kind": "tuple",
+        "values": [
+          "Laisha Forks",
+          210,
+          { "kind": "option", "isSome": false, "value": { "kind": "unit" } }
+        ]
+      }
+    }
+  },
+  "addressesAndAddressesWithLabel": {
+    "kind": "tuple",
+    "values": [
+      { "kind": "tuple", "values": [] },
+      { "kind": "tuple", "values": [] }
+    ]
+  },
+  "gender": {
+    "kind": "sum",
+    "value": { "value": { "kind": "unit" }, "kind": "l" }
+  },
+  "departments": { "kind": "record", "fields": {} },
+  "friendsBirthdays": { "kind": "tuple", "values": [] },
+  "permissions": { "kind": "tuple", "values": [] },
+  "addressesByCity": { "kind": "tuple", "values": [] },
+  "favoriteColor": {
+    "kind": "option",
+    "isSome": false,
+    "value": { "kind": "unit" }
+  },
+  "relatives": { "kind": "tuple", "values": [] },
+  "interests": { "kind": "record", "fields": {} },
+  "friendsByCategory": { "kind": "tuple", "values": [] },
+  "friendsAddresses": { "kind": "tuple", "values": [] },
+  "importantDate": {
+    "kind": "sum",
+    "value": { "value": { "kind": "unit" }, "kind": "l" }
+  },
+  "cityByDepartment": { "kind": "tuple", "values": [] },
+  "emails": { "kind": "tuple", "values": [] },
+  "cutOffDates": { "kind": "tuple", "values": [] },
+  "dependants": { "kind": "tuple", "values": [] },
+  "addressesWithColorLabel": { "kind": "tuple", "values": [] },
+  "addressesBy": {
+    "kind": "sum",
+    "value": { "value": { "kind": "tuple", "values": [] }, "kind": "l" }
+  },
+  "fullName": { "kind": "tuple", "values": ["", ""] },
+  "holidays": { "kind": "tuple", "values": [] },
+  "mainAddress": { "kind": "sum", "value": { "value": "", "kind": "l" } },
+  "shoeColours": { "kind": "record", "fields": {} },
+  "birthday": "1999-12-31T23:00:00.000Z",
+  "category": {
+    "kind": "custom",
+    "value": { "kind": "adult", "extraSpecial": false }
+  },
+  "subscribeToNewsletter": false
+}

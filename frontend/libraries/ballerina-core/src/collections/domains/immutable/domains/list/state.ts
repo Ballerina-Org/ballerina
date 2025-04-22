@@ -14,6 +14,13 @@ export const ListRepo = {
     push<V>(v: V): Updater<List<V>> {
       return Updater((_) => _.push(v));
     },
+    update<V>(elementIndex: number, upd: Updater<V>): Updater<List<V>> {
+      return Updater((_) => {
+        const element = _.get(elementIndex);
+        if (element == undefined) return _;
+        return _.set(elementIndex, upd(element));
+      });
+    },
     insert<V>(elementIndex: number, v: V): Updater<List<V>> {
       return Updater((_) => _.insert(elementIndex, v));
     },

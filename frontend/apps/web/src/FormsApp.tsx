@@ -52,7 +52,7 @@ export const FormsApp = (props: {}) => {
   const [configFormsParser, setConfigFormsParser] = useState(
     FormsParserState.Default(),
   );
-  const [formToShow, setFormToShow] = useState(2);
+  const [formToShow, setFormToShow] = useState(0);
   const numForms = 3;
   const [personCreateFormState, setPersonCreateFormState] = useState(
     FormRunnerState.Default(),
@@ -78,14 +78,22 @@ export const FormsApp = (props: {}) => {
     personCreateFormState.form.kind == "l" &&
     personCreateFormState.form.value.entity.sync.kind == "loaded"
   ) {
+    console.group(["create", "edit", "passthrough"][formToShow % numForms]);
     console.log(
       "entity",
       personCreateFormState.form.value.entity.sync.value.fields.toJS(),
     );
     console.log(
+      "enity json",
+      JSON.stringify(
+        personCreateFormState.form.value.entity.sync.value.fields.toJSON(),
+      ),
+    );
+    console.log(
       "visibilities",
       personCreateFormState.form.value.customFormState.predicateEvaluations.value.visiblityPredicateEvaluations.fields.toJS(),
     );
+    console.groupEnd();
   }
 
   if (
