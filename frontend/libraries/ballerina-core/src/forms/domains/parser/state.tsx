@@ -505,6 +505,7 @@ export type ParsedLaunchers = {
       parseGlobalConfiguration: (
         raw: any,
       ) => ValueOrErrors<PredicateValue, string>;
+      parsedFormType: ParsedType<any>;
     }
   >;
 };
@@ -663,7 +664,7 @@ export const parseFormsToLaunchers =
                     disabledFields: _.disabledFields,
                     globalConfiguration: parentContext.globalConfiguration.sync,
                   })),
-              }) as any,
+              } as any),
           )
           .withViewFromProps((props) => props.context.submitButtonWrapper)
           .mapForeignMutationsFromProps(
@@ -874,7 +875,7 @@ export const parseFormsToLaunchers =
                             injectedPrimitives,
                           )(value),
                     })),
-                }) as any,
+                } as any),
             )
             .withViewFromProps((props) => props.context.containerWrapper)
             .mapForeignMutationsFromProps(
@@ -884,6 +885,7 @@ export const parseFormsToLaunchers =
             initialState.formFieldStates,
             initialState.commonFormState,
           ),
+          parsedFormType: formType,
           fromApiParser: (value: any): ValueOrErrors<PredicateValue, string> =>
             fromAPIRawValue(
               formType,
