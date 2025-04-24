@@ -664,7 +664,7 @@ export const fromAPIRawValue =
       let errors: List<string> = List();
       t.fields.forEach((fieldType, fieldName) => {
         const fieldValue = raw[fieldName];
-        if (fieldValue == undefined) {
+        if (fieldValue != null && fieldValue == undefined) {
           return;
         }
         const parsedValue = fromAPIRawValue(
@@ -705,7 +705,7 @@ export const fromAPIRawValue =
         let rowResult: Map<string, PredicateValue> = Map();
         tableType.fields.forEach((fieldType, fieldName) => {
           const fieldValue = row[fieldName];
-          if (fieldValue == undefined) {
+          if (fieldValue != null && fieldValue == undefined) {
             return;
           }
           const parsedValue = fromAPIRawValue(
