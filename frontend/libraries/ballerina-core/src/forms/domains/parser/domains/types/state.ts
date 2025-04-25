@@ -214,7 +214,6 @@ export type ParsedTableType = {
 };
 
 export type ParsedType<T> =
-  | ParsedUnionCase<T>
   | ParsedOptionType<T>
   | ParsedRecordType<T>
   | ParsedPrimitiveType<T>
@@ -278,11 +277,8 @@ export const ParsedType = {
                 : fst.kind == "union" && snd.kind == "union"
                   ? fst.args.size == snd.args.size &&
                     fst.args.every((v, i) =>
-                      ParsedType.Operations.Equals(v, snd.args.get(i)!),
-                    )
-                  : fst.kind == "unionCase" && snd.kind == "unionCase"
-                    ? fst.name == snd.name
-                    : false,
+                      v.name == snd.args.get(i)!.name)
+                  : false,
     ParseRawKeyOf: <T>(
       fieldName: TypeName,
       rawFieldType: RawFieldType<T>,
@@ -466,20 +462,6 @@ export const ParsedType = {
               ParsedType.Default.record(fieldName, parsedField),
             ),
           );
-      }
-      if (RawFieldType.isUnionCase(rawFieldType)) {
-        return ParsedType.Operations.ParseRawFieldType(
-          rawFieldType.caseName,
-          typeof rawFieldType.fields == "string"
-            ? rawFieldType.fields
-            : { fields: rawFieldType.fields ?? {} },
-          types,
-          injectedPrimitives,
-        ).Then((parsedFields) =>
-          ValueOrErrors.Default.return(
-            ParsedType.Default.unionCase(rawFieldType.caseName, parsedFields),
-          ),
-        );
       }
       if (RawFieldType.isUnion(rawFieldType)) {
         return ValueOrErrors.Operations.All(
