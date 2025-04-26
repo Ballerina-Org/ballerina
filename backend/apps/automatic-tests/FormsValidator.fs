@@ -105,3 +105,13 @@ let WrongFormStructure () =
 [<Test>]
 let WrongPredicateStructure () =
   iterateTestsOverFiles "./input-forms/with errors/wrong predicate structure " 1 9 false
+
+[<Test>]
+let TestIShouldNotCompile () =
+  let whatIsThis: Sum<string, Errors> =
+    sum {
+      match true with
+      | false -> return "hello"
+    }
+
+  Assert.Fail(whatIsThis.ToString())
