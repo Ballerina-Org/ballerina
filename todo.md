@@ -655,3 +655,15 @@
         then the widenChildren operator checks the kind and decides how to perform the mapping
   ❌ pair
   ❌ standard templates for unions, lists, trees, products, and sums
+
+  AI Integration
+  ❌ Support basic integration with external LLM that allows typed output
+     ✅ Define basic abstractions (separation between grammar building/output parsing and LLM integration)
+     ❌ Specify grammar using JSON Schema
+       ✅ All primitives and data types
+       ❌ Support multiple type definitions
+       ❌ Support recursive types
+     ❌ Add integration to TGI
+       ✅ Basic integration to HTTP API via type provider
+       ❌ Better error handling
+  ❌ Determine how to serve functionality to outside
