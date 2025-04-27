@@ -1000,11 +1000,17 @@
             "nullable": true
           },
           "response_format": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GrammarType"
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["json", "text"]
+              },
+              "schema": {
+                "type": "object",
+                "description": "JSON Schema for the response format"
               }
-            ],
+            },
             "default": "null",
             "nullable": true
           },
@@ -1043,11 +1049,21 @@
             "nullable": true
           },
           "tool_choice": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ToolChoice"
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["function", "auto", "none"]
+              },
+              "function": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                }
               }
-            ],
+            },
             "default": "auto",
             "nullable": true
           },
@@ -1177,7 +1193,8 @@
         ],
         "discriminator": {
           "propertyName": "object"
-        }
+        },
+        "required": ["object"]
       },
       "CompletionComplete": {
         "type": "object",
@@ -1456,7 +1473,7 @@
             "example": 1,
             "nullable": true,
             "minimum": 0,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false
           },
           "decoder_input_details": {
             "type": "boolean",
@@ -1466,7 +1483,7 @@
           "details": {
             "type": "boolean",
             "description": "Whether to return generation details.",
-            "default": "true"
+            "default": true
           },
           "do_sample": {
             "type": "boolean",
@@ -1481,14 +1498,21 @@
             "default": "null",
             "example": 0.1,
             "nullable": true,
-            "exclusiveMinimum": -2
+            "exclusiveMinimum": false,
+            "minimum": -2
           },
           "grammar": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/GrammarType"
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["json"]
+              },
+              "value": {
+                "type": "string",
+                "description": "JSON Schema string"
               }
-            ],
+            },
             "default": "null",
             "nullable": true
           },
@@ -1508,7 +1532,8 @@
             "default": "null",
             "example": 1.03,
             "nullable": true,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false,
+            "minimum": 0
           },
           "return_full_text": {
             "type": "boolean",
@@ -1525,7 +1550,7 @@
             "example": "null",
             "nullable": true,
             "minimum": 0,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false
           },
           "stop": {
             "type": "array",
@@ -1543,7 +1568,8 @@
             "default": "null",
             "example": 0.5,
             "nullable": true,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false,
+            "minimum": 0
           },
           "top_k": {
             "type": "integer",
@@ -1552,7 +1578,8 @@
             "default": "null",
             "example": 10,
             "nullable": true,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false,
+            "minimum": 0
           },
           "top_n_tokens": {
             "type": "integer",
@@ -1562,7 +1589,7 @@
             "example": 5,
             "nullable": true,
             "minimum": 0,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false
           },
           "top_p": {
             "type": "number",
@@ -1572,7 +1599,7 @@
             "example": 0.95,
             "nullable": true,
             "maximum": 1,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false
           },
           "truncate": {
             "type": "integer",
@@ -1590,7 +1617,7 @@
             "example": 0.95,
             "nullable": true,
             "maximum": 1,
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": false
           },
           "watermark": {
             "type": "boolean",
@@ -1662,7 +1689,8 @@
         ],
         "discriminator": {
           "propertyName": "type"
-        }
+        },
+        "required": ["type"]
       },
       "Info": {
         "type": "object",
