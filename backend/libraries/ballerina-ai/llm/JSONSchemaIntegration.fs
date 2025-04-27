@@ -11,6 +11,7 @@ module JSONSchemaIntegration =
   open System
 
   let private discriminatorFieldName = "discriminator"
+
   let private valueFieldName = "value"
 
   let private schemaToPropertySchema (schema: JsonSchema) =
@@ -32,23 +33,19 @@ module JSONSchemaIntegration =
         Item = schema.Item
       )
 
-    // Not supported on the constructor
+    // Copy collections that aren't supported in the constructor
     for property in schema.Properties do
       propertySchema.Properties.Add(property.Key, property.Value)
 
-    // Not supported on the constructor
     for oneOf in schema.OneOf do
       propertySchema.OneOf.Add oneOf
 
-    // Not supported on the constructor
     for allOf in schema.AllOf do
       propertySchema.AllOf.Add allOf
 
-    // Not supported on the constructor
     for anyOf in schema.AnyOf do
       propertySchema.AnyOf.Add anyOf
 
-    // Not supported on the constructor
     for required in schema.RequiredProperties do
       propertySchema.RequiredProperties.Add required
 
@@ -58,7 +55,6 @@ module JSONSchemaIntegration =
     let schema =
       JsonSchema(Type = JsonObjectType.Object, AllowAdditionalProperties = false, AllowAdditionalItems = false)
 
-    // Not supported on the constructor
     for fieldName, fieldSchema in fields do
       schema.Properties.Add(fieldName, schemaToPropertySchema fieldSchema)
 
@@ -79,11 +75,9 @@ module JSONSchemaIntegration =
         discriminatorProperty.Enumeration.Add key.CaseName
 
         oneOfSchema.Properties.Add(discriminatorFieldName, discriminatorProperty)
-
         oneOfSchema.Properties.Add(valueFieldName, schemaToPropertySchema value)
         oneOfSchema)
 
-    // Not supported on the constructor
     for oneOfSchema in oneOfSchemas do
       schema.OneOf.Add oneOfSchema
 
@@ -101,7 +95,6 @@ module JSONSchemaIntegration =
         { CaseName = "none"
           Fields = ExprType.UnitType } ]
 
-
   let private tupleKeys =
     [ "first"
       "second"
@@ -115,12 +108,19 @@ module JSONSchemaIntegration =
       "tenth" ]
 
   let private tupleToRecord (items: ExprType list) =
-
     match items with
     | _ when List.length items > List.length tupleKeys ->
       sum.Throw(Errors.Singleton $"Error: tuple type with more than {List.length tupleKeys} items not implemented")
     | items -> Left(Map.ofList (List.zip tupleKeys[0 .. List.length items - 1] items))
 
+  let private createExpectationError (expected: string) (actual: string) =
+    Errors.Singleton $"Error: {expected} expected, got {actual}"
+
+  let private createTypeError (typeName: string) (actual: string) =
+    createExpectationError $"{typeName} type" actual
+
+  let private createNotImplementedError (typeName: string) =
+    Errors.Singleton $"Error: {typeName} not implemented"
 
   let generateJsonSchema (t: ExprType) =
     let rec eval (t: ExprType) =
@@ -165,7 +165,7 @@ module JSONSchemaIntegration =
         | ExprType.TupleType items ->
           let! asRecord = tupleToRecord items
           return! !ExprType.RecordType(asRecord)
-        | ExprType.LookupType l -> return! sum.Throw(Errors.Singleton $"Error: lookup type {l} not implemented")
+        | ExprType.LookupType l -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.UnionType cs ->
           let! schemaByCase =
             cs
@@ -177,13 +177,12 @@ module JSONSchemaIntegration =
             |> sum.All
 
           return schemaByCase |> makeOneOfJsonSchema
-        | ExprType.CustomType _ -> return! sum.Throw(Errors.Singleton $"Error: custom type not implemented")
-        | ExprType.VarType _ -> return! sum.Throw(Errors.Singleton $"Error: var type not implemented")
-        | ExprType.SchemaLookupType _ ->
-          return! sum.Throw(Errors.Singleton $"Error: schema lookup type not implemented")
-        | ExprType.TableType _ -> return! sum.Throw(Errors.Singleton $"Error: table type not implemented")
-        | ExprType.OneType e -> return! sum.Throw(Errors.Singleton $"Error: one type not implemented {e}")
-        | ExprType.ManyType e -> return! sum.Throw(Errors.Singleton $"Error: many type not implemented {e}")
+        | ExprType.CustomType _ -> return! sum.Throw(createNotImplementedError "custom type")
+        | ExprType.VarType _ -> return! sum.Throw(createNotImplementedError "var type")
+        | ExprType.SchemaLookupType _ -> return! sum.Throw(createNotImplementedError "schema lookup type")
+        | ExprType.TableType _ -> return! sum.Throw(createNotImplementedError "table type")
+        | ExprType.OneType e -> return! sum.Throw(createNotImplementedError "one type")
+        | ExprType.ManyType e -> return! sum.Throw(createNotImplementedError "many type")
       }
 
     eval t
@@ -195,56 +194,51 @@ module JSONSchemaIntegration =
         | ExprType.UnitType ->
           match data with
           | JsonValue.Null -> Value.Unit
-          | unexpected -> return! sum.Throw(Errors.Singleton $"Error: null expected for unit type, got {unexpected}")
+          | unexpected -> return! sum.Throw(createExpectationError "null" $"{unexpected}")
         | ExprType.PrimitiveType p ->
           match p with
           | PrimitiveType.BoolType ->
             match data with
             | JsonValue.Boolean b -> Value.ConstBool b
-            | unexpected ->
-              return! sum.Throw(Errors.Singleton $"Error: boolean expected for bool type, got {unexpected}")
+            | unexpected -> return! sum.Throw(createTypeError "bool" $"{unexpected}")
           | PrimitiveType.IntType ->
             match data with
             | JsonValue.Number n -> Value.ConstInt(int n)
-            | unexpected ->
-              return! sum.Throw(Errors.Singleton $"Error: integer expected for int type, got {unexpected}")
+            | unexpected -> return! sum.Throw(createTypeError "integer" $"{unexpected}")
           | PrimitiveType.FloatType ->
             match data with
             | JsonValue.Number n -> Value.ConstFloat(float n)
-            | unexpected ->
-              return! sum.Throw(Errors.Singleton $"Error: float expected for float type, got {unexpected}")
+            | unexpected -> return! sum.Throw(createTypeError "float" $"{unexpected}")
           | PrimitiveType.GuidType ->
             match data with
             | JsonValue.String s ->
               match Guid.TryParse s with
               | true, guid -> Value.ConstGuid guid
-              | false, _ -> return! sum.Throw(Errors.Singleton $"Error: guid expected for guid type, got {s}")
-            | unexpected -> return! sum.Throw(Errors.Singleton $"Error: guid expected for guid type, got {unexpected}")
+              | false, _ -> return! sum.Throw(createTypeError "guid" s)
+            | unexpected -> return! sum.Throw(createTypeError "guid" $"{unexpected}")
           | PrimitiveType.StringType ->
             match data with
             | JsonValue.String s -> Value.ConstString s
-            | unexpected ->
-              return! sum.Throw(Errors.Singleton $"Error: string expected for string type, got {unexpected}")
+            | unexpected -> return! sum.Throw(createTypeError "string" $"{unexpected}")
           | PrimitiveType.DateOnlyType ->
             match data with
             | JsonValue.String s ->
               match DateOnly.TryParse s with
               | true, date -> Value.ConstString(date.ToString "yyyy-MM-dd")
-              | false, _ -> return! sum.Throw(Errors.Singleton $"Error: date expected for date type, got {s}")
-            | unexpected -> return! sum.Throw(Errors.Singleton $"Error: date expected for date type, got {unexpected}")
+              | false, _ -> return! sum.Throw(createTypeError "date" s)
+            | unexpected -> return! sum.Throw(createTypeError "date" $"{unexpected}")
           | PrimitiveType.DateTimeType ->
             match data with
             | JsonValue.String s ->
               match DateTime.TryParse s with
               | true, date -> Value.ConstString(date.ToString "yyyy-MM-ddTHH:mm:ssZ")
-              | false, _ -> return! sum.Throw(Errors.Singleton $"Error: date time expected for date time type, got {s}")
-            | unexpected ->
-              return! sum.Throw(Errors.Singleton $"Error: date time expected for date time type, got {unexpected}")
-          | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singleton $"Error: ref type not implemented")
+              | false, _ -> return! sum.Throw(createTypeError "date time" s)
+            | unexpected -> return! sum.Throw(createTypeError "date time" $"{unexpected}")
+          | PrimitiveType.RefType _ -> return! sum.Throw(createNotImplementedError "ref type")
         | ExprType.ListType e ->
           match data with
           | JsonValue.Array arr -> return! arr |> Array.map (eval e) |> sum.All |> Sum.map Value.Tuple
-          | unexpected -> return! sum.Throw(Errors.Singleton $"Error: array expected for list type, got {unexpected}")
+          | unexpected -> return! sum.Throw(createTypeError "array" $"{unexpected}")
         | ExprType.MapType(k, v) ->
           match k with
           | ExprType.PrimitiveType PrimitiveType.StringType ->
@@ -256,7 +250,7 @@ module JSONSchemaIntegration =
                 |> sum.All
 
               return fields |> Map.ofList |> Value.Record
-            | unexpected -> return! sum.Throw(Errors.Singleton $"Error: object expected for map type, got {unexpected}")
+            | unexpected -> return! sum.Throw(createTypeError "object" $"{unexpected}")
           | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
         | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(sumToUnion lt rt)) data
         | ExprType.OptionType e -> return! eval (ExprType.UnionType(optionToUnion e)) data
@@ -270,12 +264,12 @@ module JSONSchemaIntegration =
             | Some(JsonValue.String discriminator) ->
               match Map.tryFind { CaseName = discriminator } cs with
               | Some case ->
-                match Map.tryFind "value" asMap with
+                match Map.tryFind valueFieldName asMap with
                 | Some value -> return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
-                | None -> return! sum.Throw(Errors.Singleton $"Error: value expected, got {data}")
+                | None -> return! sum.Throw(createExpectationError "value" $"{data}")
               | None -> return! sum.Throw(Errors.Singleton $"Error: discriminator {discriminator} not found in {cs}")
-            | _ -> return! sum.Throw(Errors.Singleton $"Error: discriminator expected, got {data}")
-          | _ -> return! sum.Throw(Errors.Singleton $"Error: union type expected, got {data}")
+            | _ -> return! sum.Throw(createExpectationError "discriminator" $"{data}")
+          | _ -> return! sum.Throw(createTypeError "union" $"{data}")
         | ExprType.RecordType l ->
           match data with
           | JsonValue.Record obj ->
@@ -283,7 +277,6 @@ module JSONSchemaIntegration =
               l
               |> Map.toList
               |> List.map (fun (attrName, attrType) ->
-
                 let jsonAttributeValue =
                   Array.tryFind (fun (dataAttr, _) -> dataAttr = attrName) obj
 
@@ -293,15 +286,14 @@ module JSONSchemaIntegration =
               |> sum.All
 
             fields |> Map.ofList |> Value.Record
-          | _ -> return! sum.Throw(Errors.Singleton $"Error: object expected for record type, got {data}")
-        | ExprType.CustomType _ -> return! sum.Throw(Errors.Singleton $"Error: custom type not implemented")
-        | ExprType.VarType _ -> return! sum.Throw(Errors.Singleton $"Error: var type not implemented")
-        | ExprType.SchemaLookupType _ ->
-          return! sum.Throw(Errors.Singleton $"Error: schema lookup type not implemented")
-        | ExprType.TableType _ -> return! sum.Throw(Errors.Singleton $"Error: table type not implemented")
-        | ExprType.OneType e -> return! sum.Throw(Errors.Singleton $"Error: one type not implemented {e}")
-        | ExprType.ManyType e -> return! sum.Throw(Errors.Singleton $"Error: many type not implemented {e}")
-        | ExprType.LookupType l -> return! sum.Throw(Errors.Singleton $"Error: lookup type not implemented {l}")
+          | _ -> return! sum.Throw(createTypeError "object" $"{data}")
+        | ExprType.CustomType _ -> return! sum.Throw(createNotImplementedError "custom type")
+        | ExprType.VarType _ -> return! sum.Throw(createNotImplementedError "var type")
+        | ExprType.SchemaLookupType _ -> return! sum.Throw(createNotImplementedError "schema lookup type")
+        | ExprType.TableType _ -> return! sum.Throw(createNotImplementedError "table type")
+        | ExprType.OneType e -> return! sum.Throw(createNotImplementedError "one type")
+        | ExprType.ManyType e -> return! sum.Throw(createNotImplementedError "many type")
+        | ExprType.LookupType l -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.TupleType items ->
           let! asRecord = tupleToRecord items
           let! recordValue = eval (ExprType.RecordType asRecord) data
@@ -316,7 +308,7 @@ module JSONSchemaIntegration =
                 | None -> sum.Throw(Errors.Singleton $"Error: key {key} not found in {r}"))
               |> sum.All
               |> Sum.map Value.Tuple
-          | _ -> return! sum.Throw(Errors.Singleton $"Error: record type expected, got {recordValue}")
+          | _ -> return! sum.Throw(createTypeError "record" $"{recordValue}")
       }
 
     match data |> JsonValue.TryParse with
