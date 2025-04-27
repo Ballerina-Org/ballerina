@@ -7,6 +7,7 @@ module JSONSchemaIntegration =
   open NJsonSchema
   open FSharp.Data
   open Ballerina.DSL.Expr.Model
+  open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr.Types.Model
   open System
 
@@ -37,6 +38,15 @@ module JSONSchemaIntegration =
 
     for oneOf in schema.OneOf do
       propertySchema.OneOf.Add oneOf
+
+    for allOf in schema.AllOf do
+      propertySchema.AllOf.Add allOf
+
+    for anyOf in schema.AnyOf do
+      propertySchema.AnyOf.Add anyOf
+
+    for required in schema.RequiredProperties do
+      propertySchema.RequiredProperties.Add required
 
     propertySchema
 
@@ -171,8 +181,6 @@ module JSONSchemaIntegration =
       }
 
     eval t
-
-
 
   let parseJsonResult (t: ExprType) (LLM.LLMOutput data) =
     let rec eval (t: ExprType) (data: JsonValue) : Sum<Value, Errors> =
