@@ -7,7 +7,6 @@ module JSONSchemaIntegration =
   open NJsonSchema
   open FSharp.Data
   open Ballerina.DSL.Expr.Model
-  open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr.Types.Model
   open System
 
