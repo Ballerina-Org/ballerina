@@ -7,17 +7,18 @@ module LLM =
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Model
-  open System.Drawing
 
   type LLMOutput = LLMOutput of string
 
   type OutputStructureDescriptionForPrompt = OutputStructureDescriptionForPrompt of string
   type TextContext = TextContext of string
+  type TaskExplanation = TaskExplanation of string
+  type Base64PNGImage = Base64PNGImage of string
 
   type Prompt =
-    { TaskExplanation: string
+    { TaskExplanation: TaskExplanation
       Context: TextContext
-      Image: Image option
+      Image: Base64PNGImage option
       OutputStructureDescriptionForPrompt: OutputStructureDescriptionForPrompt }
 
   type LLMIntegration<'schema> = LLMIntegration of (Prompt -> 'schema -> Sum<LLMOutput, Errors>)
@@ -26,9 +27,9 @@ module LLM =
     | StructuredOutputIntegration of
       (ExprType -> (Sum<OutputStructureDescriptionForPrompt * 'schema, Errors> * (LLMOutput -> Sum<Value, Errors>)))
 
-  let callLLM
-    (LLMIntegration llmIntegration)
-    (StructuredOutputIntegration exprTypeToPromptAndOutputParser)
+  let callLLM<'schema>
+    (LLMIntegration llmIntegration: LLMIntegration<'schema>)
+    (StructuredOutputIntegration structuredOutputIntegration: StructuredOutputIntegration<'schema>)
     exprType
     taskExplanation
     context
@@ -36,7 +37,7 @@ module LLM =
     =
 
     let outputStructureDescriptionForPrompt, parseOutput =
-      exprTypeToPromptAndOutputParser exprType
+      structuredOutputIntegration exprType
 
     sum {
       let! outputStructureDescriptionForPrompt, schema = outputStructureDescriptionForPrompt
@@ -47,5 +48,5 @@ module LLM =
           Image = image
           OutputStructureDescriptionForPrompt = outputStructureDescriptionForPrompt }
 
-      return! prompt |> llmIntegration schema |> Sum.bind parseOutput
+      return! schema |> llmIntegration prompt |> Sum.bind parseOutput
     }
