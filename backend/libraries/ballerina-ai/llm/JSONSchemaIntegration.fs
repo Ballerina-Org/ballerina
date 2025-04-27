@@ -33,18 +33,23 @@ module JSONSchemaIntegration =
         Item = schema.Item
       )
 
+    // Not supported on the constructor
     for property in schema.Properties do
       propertySchema.Properties.Add(property.Key, property.Value)
 
+    // Not supported on the constructor
     for oneOf in schema.OneOf do
       propertySchema.OneOf.Add oneOf
 
+    // Not supported on the constructor
     for allOf in schema.AllOf do
       propertySchema.AllOf.Add allOf
 
+    // Not supported on the constructor
     for anyOf in schema.AnyOf do
       propertySchema.AnyOf.Add anyOf
 
+    // Not supported on the constructor
     for required in schema.RequiredProperties do
       propertySchema.RequiredProperties.Add required
 
@@ -54,6 +59,7 @@ module JSONSchemaIntegration =
     let schema =
       JsonSchema(Type = JsonObjectType.Object, AllowAdditionalProperties = false, AllowAdditionalItems = false)
 
+    // Not supported on the constructor
     for fieldName, fieldSchema in fields do
       schema.Properties.Add(fieldName, schemaToPropertySchema fieldSchema)
 
@@ -78,6 +84,7 @@ module JSONSchemaIntegration =
         oneOfSchema.Properties.Add(valueFieldName, schemaToPropertySchema value)
         oneOfSchema)
 
+    // Not supported on the constructor
     for oneOfSchema in oneOfSchemas do
       schema.OneOf.Add oneOfSchema
 
