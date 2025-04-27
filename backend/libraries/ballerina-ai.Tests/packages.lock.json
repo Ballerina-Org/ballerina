@@ -296,11 +296,6 @@
           "Newtonsoft.Json": "13.0.1"
         }
       },
-      "Microsoft.Win32.SystemEvents": {
-        "type": "Transitive",
-        "resolved": "9.0.4",
-        "contentHash": "kHgtAkXhNEP8oGuAVe3Q5admxsdMlSdWE2rXcA9FfeGDZJQawPccmZgnOswgW3ugUPSJt7VH+TMQPz65mnhGSQ=="
-      },
       "Namotion.Reflection": {
         "type": "Transitive",
         "resolved": "3.3.0",
@@ -326,18 +321,19 @@
         "resolved": "11.2.0",
         "contentHash": "YY7oavkCD+lbcFsjvDY0+h1/C+TgX5lYRQaracIq5zqF6FC35ddig+hARrta4Hk5/O3RbjH5I22/Qg25YNqmrA=="
       },
+      "SwaggerProvider": {
+        "type": "Transitive",
+        "resolved": "2.2.3",
+        "contentHash": "QTeUM19H4j1RiIgZBunDGng5CaDm47ufj5XsNEeSoP0lmLOy1N30ZxgbyicvBWNnuJQF7sZXMNW0tt0eZjb+fw==",
+        "dependencies": {
+          "FSharp.Core": "6.0.7",
+          "FSharp.SystemTextJson": "1.3.13"
+        }
+      },
       "System.Diagnostics.DiagnosticSource": {
         "type": "Transitive",
         "resolved": "5.0.0",
         "contentHash": "tCQTzPsGZh/A9LhhA6zrqCRV4hOHsK90/G7q3Khxmn6tnB1PuNU0cRaKANP2AWcF9bn0zsuOoZOSrHuJk6oNBA=="
-      },
-      "System.Drawing.Common": {
-        "type": "Transitive",
-        "resolved": "9.0.4",
-        "contentHash": "SbtusMUT1bCxZ14904ZPo2GZyelze0rwUni9wXrp8KX9Zlsda8idqpxra1RBvOA85WM0wW+fCI4GLrlCTYiE6A==",
-        "dependencies": {
-          "Microsoft.Win32.SystemEvents": "9.0.4"
-        }
       },
       "System.Reflection.Metadata": {
         "type": "Transitive",
@@ -371,7 +367,7 @@
         "dependencies": {
           "FSharp.Core": "[9.0.201, )",
           "NJsonSchema": "[11.2.0, )",
-          "System.Drawing.Common": "[9.0.4, )",
+          "SwaggerProvider": "[2.2.3, )",
           "ballerina-core": "[1.0.0, )"
         }
       },

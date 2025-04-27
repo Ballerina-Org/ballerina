@@ -14,11 +14,6 @@ module Model = Ballerina.DSL.Expr.Types.Model
 
 let private jsonSchemaSchema = "http://json-schema.org/draft-04/schema#"
 
-let private createEnumCase (caseName: string) : Model.CaseName * Model.UnionCase =
-  { CaseName = caseName },
-  { CaseName = caseName
-    Fields = ExprType.UnitType }
-
 let private createUnion (cases: Map<string, ExprType>) =
   cases
   |> Map.toList
@@ -28,6 +23,16 @@ let private createUnion (cases: Map<string, ExprType>) =
       Fields = unionCase })
   |> Map.ofList
   |> ExprType.UnionType
+
+let private assertSuccess<'T> (result: Sum<'T, Errors>) (expected: 'T) =
+  match result with
+  | Left value -> Assert.That(value, Is.EqualTo expected)
+  | Right err -> Assert.Fail($"Expected success but got error: {err}")
+
+let private assertError (result: Sum<'T, Errors>) (expectedError: string) =
+  match result with
+  | Left value -> Assert.Fail($"Expected success but got error: {value}")
+  | Right err -> Assert.That(err.ToString(), Does.Contain expectedError)
 
 let private getJSONSchemaAsJSON exprType =
   exprType
@@ -40,7 +45,7 @@ let private getJSONSchemaAsJSON exprType =
 
 module JSONSchemaConversion =
   [<Test>]
-  let TestUnitType () =
+  let ``UnitType should generate correct JSON schema`` () =
     let result = ExprType.UnitType |> getJSONSchemaAsJSON
 
     let expected =
@@ -48,15 +53,14 @@ module JSONSchemaConversion =
         [| "$schema", JsonValue.String jsonSchemaSchema
            "type", JsonValue.String "null" |]
 
-    match result with
-    | Left jsonSchema -> Assert.That(jsonSchema, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
   [<Test>]
-  let TestUnionType () =
-    let result =
+  let ``UnionType should generate correct JSON schema with discriminator`` () =
+    let typeDefinition =
       createUnion (Map.ofList [ "option1", ExprType.PrimitiveType StringType; "option2", ExprType.UnitType ])
-      |> getJSONSchemaAsJSON
+
+    let result = typeDefinition |> getJSONSchemaAsJSON
 
     let expected =
       JsonValue.Record
@@ -86,15 +90,14 @@ module JSONSchemaConversion =
                                "enum", JsonValue.Array [| JsonValue.String "option2" |] |]
                           "value", JsonValue.Record [| "type", JsonValue.String "null" |] |] |] |] |]
 
-    match result with
-    | Left schema -> Assert.That(schema, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
   [<Test>]
-  let TestTupleType () =
-    let result =
+  let ``TupleType should generate correct JSON schema with named fields`` () =
+    let typeDefinition =
       ExprType.TupleType [ ExprType.PrimitiveType StringType; ExprType.PrimitiveType IntType ]
-      |> getJSONSchemaAsJSON
+
+    let result = typeDefinition |> getJSONSchemaAsJSON
 
     let expected =
       JsonValue.Record
@@ -108,20 +111,18 @@ module JSONSchemaConversion =
              [| "first", JsonValue.Record [| "type", JsonValue.String "string" |]
                 "second", JsonValue.Record [| "type", JsonValue.String "integer"; "format", JsonValue.String "int32" |] |] |]
 
-    match result with
-    | Left schema -> Assert.That(schema, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
   [<Test>]
-
-  let TestRecordType () =
-    let result =
+  let ``RecordType should generate correct JSON schema with required fields`` () =
+    let typeDefinition =
       ExprType.RecordType(
         Map.ofList
           [ "first", ExprType.PrimitiveType StringType
             "second", ExprType.PrimitiveType IntType ]
       )
-      |> getJSONSchemaAsJSON
+
+    let result = typeDefinition |> getJSONSchemaAsJSON
 
     let expected =
       JsonValue.Record
@@ -135,13 +136,12 @@ module JSONSchemaConversion =
              [| "first", JsonValue.Record [| "type", JsonValue.String "string" |]
                 "second", JsonValue.Record [| "type", JsonValue.String "integer"; "format", JsonValue.String "int32" |] |] |]
 
-    match result with
-    | Left schema -> Assert.That(schema, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
-  let TestListType () =
-    let result =
-      ExprType.ListType(ExprType.PrimitiveType StringType) |> getJSONSchemaAsJSON
+  [<Test>]
+  let ``ListType should generate correct JSON schema with item type`` () =
+    let typeDefinition = ExprType.ListType(ExprType.PrimitiveType StringType)
+    let result = typeDefinition |> getJSONSchemaAsJSON
 
     let expected =
       JsonValue.Record
@@ -149,52 +149,66 @@ module JSONSchemaConversion =
            "type", JsonValue.String "array"
            "items", JsonValue.Record [| "type", JsonValue.String "string" |] |]
 
-    match result with
-    | Left schema -> Assert.That(schema, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
 module JSONParsing =
   [<Test>]
-  let TestUnionType () =
+  let ``UnionType should parse JSON with discriminator correctly`` () =
     let typeDefinition =
       createUnion (Map.ofList [ "option1", ExprType.PrimitiveType StringType; "option2", ExprType.UnitType ])
 
     let data = LLM.LLMOutput """{ "discriminator": "option1", "value": "hello" }"""
-
     let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
-
     let expected = Value.CaseCons("option1", Value.ConstString "hello")
-
-    match result with
-    | Left value -> Assert.That(value, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
   [<Test>]
-  let TestListType () =
+  let ``ListType should parse JSON array correctly`` () =
     let typeDefinition = ExprType.ListType(ExprType.PrimitiveType StringType)
-
     let data = LLM.LLMOutput """["hello", "world"]"""
-
     let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
-
     let expected = Value.Tuple [ Value.ConstString "hello"; Value.ConstString "world" ]
-
-    match result with
-    | Left value -> Assert.That(value, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
 
   [<Test>]
-  let TestRecordType () =
+  let ``RecordType should parse JSON object correctly`` () =
     let typeDefinition =
-      ExprType.RecordType(Map.ofList [ "a", ExprType.PrimitiveType StringType; "b", ExprType.PrimitiveType IntType ])
+      ExprType.RecordType(
+        Map.ofList
+          [ "first", ExprType.PrimitiveType StringType
+            "second", ExprType.PrimitiveType IntType ]
+      )
 
-    let data = LLM.LLMOutput """{ "a": "hello", "b": 100 }"""
-
+    let data = LLM.LLMOutput """{ "first": "hello", "second": 100 }"""
     let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
 
     let expected =
-      Value.Record(Map.ofList [ "a", Value.ConstString "hello"; "b", Value.ConstInt 100 ])
+      Value.Record(Map.ofList [ "first", Value.ConstString "hello"; "second", Value.ConstInt 100 ])
 
-    match result with
-    | Left value -> Assert.That(value, Is.EqualTo expected)
-    | Right err -> Assert.Fail(err.ToString())
+    assertSuccess result expected
+
+  [<Test>]
+  let ``Invalid JSON should return error`` () =
+    let typeDefinition =
+      ExprType.RecordType(
+        Map.ofList
+          [ "first", ExprType.PrimitiveType StringType
+            "second", ExprType.PrimitiveType IntType ]
+      )
+
+    let data = LLM.LLMOutput """{ invalid json }"""
+    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    assertError result "invalid json"
+
+  [<Test>]
+  let ``Missing required field should return error`` () =
+    let typeDefinition =
+      ExprType.RecordType(
+        Map.ofList
+          [ "first", ExprType.PrimitiveType StringType
+            "second", ExprType.PrimitiveType IntType ]
+      )
+
+    let data = LLM.LLMOutput """{ "first": "hello" }"""
+    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    assertError result "second"

@@ -11,11 +11,12 @@
   <ItemGroup>
     <Compile Include="llm/LLM.fs" />
     <Compile Include="llm/JSONSchemaIntegration.fs" />
+    <Compile Include="tgi/TGIIntegration.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="9.0.201" />
     <PackageReference Include="NJsonSchema" Version="11.2.0" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.4" />
+    <PackageReference Include="SwaggerProvider" Version="2.2.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ballerina-core\ballerina-core.fsproj" />
