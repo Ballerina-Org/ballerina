@@ -25,6 +25,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "positions", "libraries\posi
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-ai", "libraries\ballerina-ai\ballerina-ai.fsproj", "{F5128074-4170-40FF-BA19-9E97E2B7F445}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-core.Tests", "libraries\ballerina-ai.Tests\ballerina-core.Tests.fsproj", "{1879494C-A67F-4CC8-97CE-FF83433389FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,10 @@ Global
 		{F5128074-4170-40FF-BA19-9E97E2B7F445}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5128074-4170-40FF-BA19-9E97E2B7F445}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5128074-4170-40FF-BA19-9E97E2B7F445}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1879494C-A67F-4CC8-97CE-FF83433389FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1879494C-A67F-4CC8-97CE-FF83433389FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1879494C-A67F-4CC8-97CE-FF83433389FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1879494C-A67F-4CC8-97CE-FF83433389FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F5BDD5D6-F85F-4412-B7B6-305E74023FC0} = {9607120D-0D79-4113-A465-59A80A75CB15}
@@ -81,5 +87,6 @@ Global
 		{FC659DED-9964-40E1-82F8-DFBFC19F9A23} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
 		{25F1F093-B645-4E30-95B3-7C82E5D2C380} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
 		{F5128074-4170-40FF-BA19-9E97E2B7F445} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
+		{1879494C-A67F-4CC8-97CE-FF83433389FB} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
 	EndGlobalSection
 EndGlobal
