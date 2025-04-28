@@ -6,7 +6,7 @@ module private DerivedFormsConversions =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
 
-  let private indexToKey (i: int) = $"{i}"
+  let private indexToKey (i: int) = $"Item{i}"
 
   type ExprType with
     static member SumTypeToUnionType(left: ExprType, right: ExprType) =
