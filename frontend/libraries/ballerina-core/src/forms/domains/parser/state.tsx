@@ -506,6 +506,7 @@ export type ParsedLaunchers = {
         raw: any,
       ) => ValueOrErrors<PredicateValue, string>;
       parsedFormType: ParsedType<any>;
+      parsedForms: Map<string, ParsedType<any>>;
     }
   >;
 };
@@ -886,6 +887,7 @@ export const parseFormsToLaunchers =
             initialState.commonFormState,
           ),
           parsedFormType: formType,
+          parsedForms: formsConfig.types,
           fromApiParser: (value: any): ValueOrErrors<PredicateValue, string> =>
             fromAPIRawValue(
               formType,
