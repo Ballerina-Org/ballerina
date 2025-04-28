@@ -5,7 +5,6 @@ module TGIIntegration =
 
   open System.Net.Http
   open Ballerina.Collections.Sum
-  open System
   open System.Threading.Tasks
   open SwaggerProvider
   open NJsonSchema
@@ -16,10 +15,7 @@ module TGIIntegration =
 
   type TgiApiSchema = OpenApiClientProvider<"tgi/tgi-spec.json">
 
-  let newTGIHttpClient (httpClient: HttpClient) token =
-    httpClient.DefaultRequestHeaders.Authorization <- Headers.AuthenticationHeaderValue("Bearer", token)
-    httpClient.Timeout <- TimeSpan.FromMinutes(5.0)
-    TgiApiSchema.Client httpClient
+  let newTGIHttpClient (httpClient: HttpClient) = TgiApiSchema.Client httpClient
 
 
   let llmIntegration (client: TgiApiSchema.Client) : LLM.LLMIntegration<JsonSchema> =
