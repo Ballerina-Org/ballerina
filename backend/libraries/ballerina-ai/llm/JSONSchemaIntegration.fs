@@ -1,5 +1,39 @@
 namespace Ballerina.AI.LLM
 
+module private DerivedFormsConversions =
+  open Ballerina.Collections.Sum
+  open Ballerina.Errors
+  open Ballerina.DSL.Expr.Model
+  open Ballerina.DSL.Expr.Types.Model
+
+  let private indexToKey (i: int) = $"{i}"
+
+  type ExprType with
+    static member SumTypeToUnionType(left: ExprType, right: ExprType) =
+      Map.ofList
+        [ { CaseName = "left" }, { CaseName = "left"; Fields = left }
+          { CaseName = "right" }, { CaseName = "right"; Fields = right } ]
+
+    static member OptionTypeToUnionType(inner: ExprType) =
+      Map.ofList
+        [ { CaseName = "some" }, { CaseName = "some"; Fields = inner }
+          { CaseName = "none" },
+          { CaseName = "none"
+            Fields = ExprType.UnitType } ]
+
+
+    static member TupleTypeToRecordType(items: ExprType list) =
+      items |> List.mapi (fun i item -> indexToKey i, item) |> Map.ofList
+
+    static member RecordValueToTupleType(record: Map<string, Value>) =
+      [ 0 .. record.Count - 1 ]
+      |> List.map indexToKey
+      |> List.map (fun i ->
+        match Map.tryFind i record with
+        | Some value -> Left value
+        | None -> sum.Throw(Errors.Singleton $"Error: key {i} not found in {record}"))
+      |> sum.All
+
 [<RequireQualifiedAccess>]
 module JSONSchemaIntegration =
   open Ballerina.Collections.Sum
@@ -9,6 +43,7 @@ module JSONSchemaIntegration =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
+  open DerivedFormsConversions
 
   let private discriminatorFieldName = "discriminator"
 
@@ -83,32 +118,6 @@ module JSONSchemaIntegration =
 
     schema
 
-  let private sumTypeToUnion (left: ExprType) (right: ExprType) =
-    Map.ofList
-      [ { CaseName = "left" }, { CaseName = "left"; Fields = left }
-        { CaseName = "right" }, { CaseName = "right"; Fields = right } ]
-
-  let private optionTypeToUnion (inner: ExprType) =
-    Map.ofList
-      [ { CaseName = "some" }, { CaseName = "some"; Fields = inner }
-        { CaseName = "none" },
-        { CaseName = "none"
-          Fields = ExprType.UnitType } ]
-
-  let private indexToKey (i: int) = $"{i}"
-
-  let private tupleTypeToRecord (items: ExprType list) =
-    items |> List.mapi (fun i item -> indexToKey i, item) |> Map.ofList
-
-  let private recordValueToTuple (record: Map<string, Value>) =
-    [ 0 .. record.Count - 1 ]
-    |> List.map indexToKey
-    |> List.map (fun i ->
-      match Map.tryFind i record with
-      | Some value -> Left value
-      | None -> sum.Throw(Errors.Singleton $"Error: key {i} not found in {record}"))
-    |> sum.All
-
   let private createExpectationError (expected: string) (actual: string) =
     Errors.Singleton $"Error: {expected} expected, got {actual}"
 
@@ -144,8 +153,8 @@ module JSONSchemaIntegration =
             let! valueType = !v
             JsonSchema(Type = JsonObjectType.Object, AdditionalPropertiesSchema = valueType)
           | _ -> return! sum.Throw(Errors.Singleton $"Error: not implemented default value for map key type {k}")
-        | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(sumTypeToUnion lt rt)
-        | ExprType.OptionType e -> return! !ExprType.UnionType(optionTypeToUnion e)
+        | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))
+        | ExprType.OptionType e -> return! !ExprType.UnionType(ExprType.OptionTypeToUnionType(e))
         | ExprType.SetType e -> return! !ExprType.ListType(e)
         | ExprType.RecordType fields ->
           let! schemaByField =
@@ -158,7 +167,7 @@ module JSONSchemaIntegration =
             |> sum.All
 
           schemaByField |> makeObjectJsonSchema
-        | ExprType.TupleType items -> return! items |> tupleTypeToRecord |> ExprType.RecordType |> (!)
+        | ExprType.TupleType items -> return! items |> ExprType.TupleTypeToRecordType |> ExprType.RecordType |> (!)
         | ExprType.LookupType _ -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.UnionType cs ->
           let! schemaByCase =
@@ -246,8 +255,8 @@ module JSONSchemaIntegration =
               return fields |> Map.ofList |> Value.Record
             | unexpected -> return! sum.Throw(createTypeError "object" $"{unexpected}")
           | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
-        | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(sumTypeToUnion lt rt)) data
-        | ExprType.OptionType e -> return! eval (ExprType.UnionType(optionTypeToUnion e)) data
+        | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))) data
+        | ExprType.OptionType e -> return! eval (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
         | ExprType.SetType e -> return! eval (ExprType.ListType e) data
         | ExprType.UnionType cs ->
           match data with
@@ -289,10 +298,10 @@ module JSONSchemaIntegration =
         | ExprType.ManyType _ -> return! sum.Throw(createNotImplementedError "many type")
         | ExprType.LookupType _ -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.TupleType items ->
-          let! recordValue = eval (ExprType.RecordType(tupleTypeToRecord items)) data
+          let! recordValue = eval (ExprType.RecordType(ExprType.TupleTypeToRecordType items)) data
 
           match recordValue with
-          | Value.Record r -> return! r |> recordValueToTuple |> Sum.map Value.Tuple
+          | Value.Record r -> return! r |> ExprType.RecordValueToTupleType |> Sum.map Value.Tuple
           | _ -> return! sum.Throw(createTypeError "record" $"{recordValue}")
       }
 
