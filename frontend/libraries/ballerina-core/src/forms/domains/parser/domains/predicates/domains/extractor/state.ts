@@ -289,34 +289,7 @@ export const extractPredicateValue = (
                       .toArray() as Array<PredicateValue>,
                 );
         }
-        // TODO
-        // case "Table": {
-        //   const traverseUnionFields = t.args.map((f) =>
-        //     flattenFailingChecks(lookupName, typesMap, f)
-        //   );
-        //   return (v) =>
-        //     !PredicateValue.Operations.IsTuple(v)
-        //       ? ValueOrErrors.Default.throwOne(
-        //           Errors.Default.singleton([
-        //             "not a ValueRecord (from union)",
-        //             v,
-        //           ])
-        //         )
-        //       : ValueOrErrors.Operations.All(
-        //           List(
-        //             traverseUnionFields.flatMap((traverseField, idx) =>
-        //               !v.values.has(idx)
-        //                 ? []
-        //                 : [traverseField(v.values.get(idx)!)]
-        //             )
-        //           )
-        //         ).Map(
-        //           (listFailingChecks) =>
-        //             listFailingChecks
-        //               .flatten()
-        //               .toArray() as Array<PredicateValue>
-        //         );
-        // }
+        case "Table":
         default:
           return (_) => ValueOrErrors.Default.return([]);
       }
@@ -345,6 +318,7 @@ export const extractPredicateValue = (
                 listFailingChecks.flatten().toArray() as Array<PredicateValue>,
             );
     }
+    case "table":
     default:
       return (_) =>
         ValueOrErrors.Default.throwOne(
