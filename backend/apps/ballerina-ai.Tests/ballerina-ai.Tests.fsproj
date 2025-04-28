@@ -7,7 +7,9 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
     <OutputType>Library</OutputType>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
   </PropertyGroup>
 
   <ItemGroup>

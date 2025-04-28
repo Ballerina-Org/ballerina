@@ -8,6 +8,7 @@
     <RestoreLockedMode>true</RestoreLockedMode>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="llm/LLM.fs" />

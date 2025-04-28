@@ -21,8 +21,10 @@ module LLM =
       Image: Base64PNGImage option
       OutputStructureDescriptionForPrompt: OutputStructureDescriptionForPrompt }
 
+  [<NoComparison; NoEquality>]
   type LLMIntegration<'schema> = LLMIntegration of (Prompt -> 'schema -> Sum<LLMOutput, Errors>)
 
+  [<NoComparison; NoEquality>]
   type StructuredOutputIntegration<'schema> =
     | StructuredOutputIntegration of
       (ExprType -> (Sum<OutputStructureDescriptionForPrompt * 'schema, Errors> * (LLMOutput -> Sum<Value, Errors>)))
