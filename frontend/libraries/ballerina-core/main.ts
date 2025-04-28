@@ -121,6 +121,7 @@ export * from "./src/forms/domains/launcher/state";
 export * from "./src/forms/domains/launcher/template";
 export * from "./src/forms/domains/parser/domains/injectables/state";
 export * from "./src/forms/domains/parser/domains/predicates/state";
+export * from "./src/forms/domains/parser/domains/predicates/domains/extractor/state";
 export * from "./src/forms/domains/launcher/domains/passthrough/state";
 export * from "./src/forms/domains/launcher/domains/passthrough/template";
 export * from "./src/forms/domains/primitives/domains/tuple/state";
