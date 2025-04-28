@@ -1,6 +1,5 @@
 namespace Ballerina.AI.LLM
 
-[<RequireQualifiedAccess>]
 module LLM =
 
   open Ballerina.Collections.Sum
@@ -29,26 +28,29 @@ module LLM =
     | StructuredOutputIntegration of
       (ExprType -> (Sum<OutputStructureDescriptionForPrompt * 'schema, Errors> * (LLMOutput -> Sum<Value, Errors>)))
 
-  let callLLM<'schema>
-    (LLMIntegration llmIntegration: LLMIntegration<'schema>)
-    (StructuredOutputIntegration structuredOutputIntegration: StructuredOutputIntegration<'schema>)
-    exprType
-    taskExplanation
-    context
-    image
-    =
+  [<NoComparison; NoEquality>]
+  type LLM<'schema> =
+    { LLMIntegration: LLMIntegration<'schema>
+      StructuredOutputIntegration: StructuredOutputIntegration<'schema> }
 
-    let outputStructureDescriptionForPrompt, parseOutput =
-      structuredOutputIntegration exprType
 
-    sum {
-      let! outputStructureDescriptionForPrompt, schema = outputStructureDescriptionForPrompt
+    static member Call<'schema> (llm: LLM<'schema>) exprType taskExplanation context image =
+      let (StructuredOutputIntegration structuredOutputIntegration) =
+        llm.StructuredOutputIntegration
 
-      let prompt =
-        { TaskExplanation = taskExplanation
-          Context = context
-          Image = image
-          OutputStructureDescriptionForPrompt = outputStructureDescriptionForPrompt }
+      let (LLMIntegration llmIntegration) = llm.LLMIntegration
 
-      return! schema |> llmIntegration prompt |> Sum.bind parseOutput
-    }
+      let outputStructureDescriptionForPrompt, parseOutput =
+        structuredOutputIntegration exprType
+
+      sum {
+        let! outputStructureDescriptionForPrompt, schema = outputStructureDescriptionForPrompt
+
+        let prompt =
+          { TaskExplanation = taskExplanation
+            Context = context
+            Image = image
+            OutputStructureDescriptionForPrompt = outputStructureDescriptionForPrompt }
+
+        return! schema |> llmIntegration prompt |> Sum.bind parseOutput
+      }

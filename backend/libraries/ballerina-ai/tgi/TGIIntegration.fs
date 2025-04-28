@@ -9,9 +9,7 @@ module TGIIntegration =
   open SwaggerProvider
   open NJsonSchema
   open Ballerina.Errors
-
-  module LLM = Ballerina.AI.LLM.LLM
-  module JSONSchemaIntegration = Ballerina.AI.LLM.JSONSchemaIntegration
+  open Ballerina.AI.LLM
 
   type TgiApiSchema = OpenApiClientProvider<"tgi/tgi-spec.json">
 
