@@ -53,7 +53,7 @@ export const FormsApp = (props: {}) => {
   const [configFormsParser, setConfigFormsParser] = useState(
     FormsParserState.Default(),
   );
-  const [formToShow, setFormToShow] = useState(3);
+  const [formToShow, setFormToShow] = useState(1);
   const numForms = 4;
   const [personCreateFormState, setPersonCreateFormState] = useState(
     FormRunnerState.Default(),
@@ -122,43 +122,30 @@ export const FormsApp = (props: {}) => {
         runner: personCreateFormState,
       })
     : logState && formToShow % numForms == 1
-      ? console.log({
-          parser: configFormsParser,
-          runner: personEditFormState,
-        })
-      : logState && formToShow % numForms == 2
-        ? console.log({
-            parser: configFormsParser,
-            runner: personPassthroughFormState,
-          })
-        : logState && formToShow % numForms == 3
-          ? console.log({
-              parser: configFormsParser,
-              usersSetupFormState: usersSetupFormState,
-              usersSetupConfigFormState: usersSetupConfigFormState,
-              usersSetupEntity:
-                usersSetupEntity.kind == "l"
-                  ? (usersSetupEntity.value as ValueRecord).fields.toJS()
-                  : null,
-              usersSetupConfigEntity:
-                usersSetupConfigEntity.kind == "l"
-                  ? (usersSetupConfigEntity.value as ValueRecord).fields.toJS()
-                  : null,
-            })
-          : undefined;
-
-  if (
-    configFormsParser.formsConfig.sync.kind == "loaded" &&
-    configFormsParser.formsConfig.sync.value.kind == "r"
-  ) {
-    return (
-      <ol>
-        {configFormsParser.formsConfig.sync.value.value.map((_: string) => (
-          <li>{_}</li>
-        ))}
-      </ol>
-    );
-  }
+    ? console.log({
+        parser: configFormsParser,
+        runner: personEditFormState,
+      })
+    : logState && formToShow % numForms == 2
+    ? console.log({
+        parser: configFormsParser,
+        runner: personPassthroughFormState,
+      })
+    : logState && formToShow % numForms == 3
+    ? console.log({
+        parser: configFormsParser,
+        usersSetupFormState: usersSetupFormState,
+        usersSetupConfigFormState: usersSetupConfigFormState,
+        usersSetupEntity:
+          usersSetupEntity.kind == "l"
+            ? (usersSetupEntity.value as ValueRecord).fields.toJS()
+            : null,
+        usersSetupConfigEntity:
+          usersSetupConfigEntity.kind == "l"
+            ? (usersSetupConfigEntity.value as ValueRecord).fields.toJS()
+            : null,
+      })
+    : undefined;
 
   // Passthrough form only -- Person
   const [personEntity, setPersonEntity] = useState<
@@ -357,6 +344,19 @@ export const FormsApp = (props: {}) => {
     usersSetupConfigFormState.form.kind,
     formToShow,
   ]);
+
+  if (
+    configFormsParser.formsConfig.sync.kind == "loaded" &&
+    configFormsParser.formsConfig.sync.value.kind == "r"
+  ) {
+    return (
+      <ol>
+        {configFormsParser.formsConfig.sync.value.value.map((_: string) => (
+          <li>{_}</li>
+        ))}
+      </ol>
+    );
+  }
 
   return (
     <div className="App">

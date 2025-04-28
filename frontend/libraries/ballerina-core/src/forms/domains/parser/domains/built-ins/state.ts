@@ -326,7 +326,6 @@ export const defaultState =
   } => {
     if (
       t.kind == "union" ||
-      t.kind == "unionCase" ||
       (t.kind == "application" &&
         (t.value == "SingleSelection" || t.value == "MultiSelection"))
     ) {

@@ -267,17 +267,14 @@ export const ParsedType = {
             : fst.kind == "application" && snd.kind == "application"
               ? fst.value == snd.value &&
                 fst.args.length == snd.args.length &&
-                fst.args.every((v, i) =>
-                  ParsedType.Operations.Equals(v, snd.args[i]),
-                )
+                fst.args.every((v, i) => ParsedType.Operations.Equals(v, snd.args[i]))
               : fst.kind == "option" && snd.kind == "option"
                 ? fst.value.kind == "option" &&
                   snd.value.kind == "option" &&
                   ParsedType.Operations.Equals(fst.value.value, snd.value.value)
                 : fst.kind == "union" && snd.kind == "union"
                   ? fst.args.size == snd.args.size &&
-                    fst.args.every((v, i) =>
-                      v.name == snd.args.get(i)!.name)
+                    fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
                   : false,
     ParseRawKeyOf: <T>(
       fieldName: TypeName,
@@ -476,7 +473,9 @@ export const ParsedType = {
               }
               return ParsedType.Operations.ParseRawFieldType(
                 unionCase.caseName,
-                unionCase,
+                typeof unionCase.fields == "string"
+                  ? unionCase.fields
+                  : { fields: unionCase.fields ?? {} },
                 types,
                 injectedPrimitives,
               ).Then((parsedFields) =>
