@@ -47,6 +47,7 @@ module private Errors =
 module private JsonSchemaExtensions =
   open NJsonSchema
   open Ballerina.DSL.Expr.Types.Model
+  open Ballerina.Core.Json
 
   let discriminatorFieldName = "discriminator"
 
@@ -133,6 +134,7 @@ module JSONSchemaIntegration =
   open Errors
   open Ballerina.Errors
   open JsonSchemaExtensions
+  open Ballerina.Core.Json
 
 
   type ExprType with
@@ -268,20 +270,18 @@ module JSONSchemaIntegration =
           | ExprType.OptionType e -> return! eval (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
           | ExprType.SetType e -> return! eval (ExprType.ListType e) data
           | ExprType.UnionType cs ->
-            match data with
-            | JsonValue.Record obj ->
-              let asMap = Map.ofArray obj
+            let! asRecord = data |> JsonValue.AsRecord
+            let asMap = Map.ofArray asRecord
 
-              match Map.tryFind discriminatorFieldName asMap with
-              | Some(JsonValue.String discriminator) ->
-                match Map.tryFind { CaseName = discriminator } cs with
-                | Some case ->
-                  match Map.tryFind valueFieldName asMap with
-                  | Some value -> return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
-                  | None -> return! sum.Throw(Errors.Singletons.Expectation "value" $"{data}")
-                | None -> return! sum.Throw(Errors.Singleton $"Error: discriminator {discriminator} not found in {cs}")
-              | _ -> return! sum.Throw(Errors.Singletons.Expectation "discriminator" $"{data}")
-            | _ -> return! sum.Throw(Errors.Singletons.Type "union" $"{data}")
+            let! jsonDiscriminator =
+              asMap
+              |> Map.tryFindWithError discriminatorFieldName discriminatorFieldName discriminatorFieldName
+
+            let! discriminator = jsonDiscriminator |> JsonValue.AsString
+            let! case = cs |> Map.tryFindWithError { CaseName = discriminator } "case" "case"
+            let! value = asMap |> Map.tryFindWithError valueFieldName "value" "value"
+            return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
+
           | ExprType.RecordType l ->
             match data with
             | JsonValue.Record obj ->
