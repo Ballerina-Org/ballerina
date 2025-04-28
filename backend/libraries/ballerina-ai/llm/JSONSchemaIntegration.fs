@@ -49,74 +49,75 @@ module JSONSchemaIntegration =
 
   let private valueFieldName = "value"
 
-  let private schemaToPropertySchema (schema: JsonSchema) =
-    let propertySchema =
-      JsonSchemaProperty(
-        Type = schema.Type,
-        IsRequired = true,
-        Default = schema.Default,
-        Format = schema.Format,
-        AdditionalPropertiesSchema = schema.AdditionalPropertiesSchema,
-        MinLength = schema.MinLength,
-        MaxLength = schema.MaxLength,
-        Minimum = schema.Minimum,
-        Maximum = schema.Maximum,
-        MultipleOf = schema.MultipleOf,
-        Pattern = schema.Pattern,
-        AllowAdditionalItems = schema.AllowAdditionalItems,
-        AllowAdditionalProperties = schema.AllowAdditionalProperties,
-        Item = schema.Item
-      )
+  type JsonSchema with
+    static member private ToPropertySchema(schema: JsonSchema) =
+      let propertySchema =
+        JsonSchemaProperty(
+          Type = schema.Type,
+          IsRequired = true,
+          Default = schema.Default,
+          Format = schema.Format,
+          AdditionalPropertiesSchema = schema.AdditionalPropertiesSchema,
+          MinLength = schema.MinLength,
+          MaxLength = schema.MaxLength,
+          Minimum = schema.Minimum,
+          Maximum = schema.Maximum,
+          MultipleOf = schema.MultipleOf,
+          Pattern = schema.Pattern,
+          AllowAdditionalItems = schema.AllowAdditionalItems,
+          AllowAdditionalProperties = schema.AllowAdditionalProperties,
+          Item = schema.Item
+        )
 
-    // Copy collections that aren't supported in the constructor
-    for property in schema.Properties do
-      propertySchema.Properties.Add(property.Key, property.Value)
+      // Copy collections that aren't supported in the constructor
+      for property in schema.Properties do
+        propertySchema.Properties.Add(property.Key, property.Value)
 
-    for oneOf in schema.OneOf do
-      propertySchema.OneOf.Add oneOf
+      for oneOf in schema.OneOf do
+        propertySchema.OneOf.Add oneOf
 
-    for allOf in schema.AllOf do
-      propertySchema.AllOf.Add allOf
+      for allOf in schema.AllOf do
+        propertySchema.AllOf.Add allOf
 
-    for anyOf in schema.AnyOf do
-      propertySchema.AnyOf.Add anyOf
+      for anyOf in schema.AnyOf do
+        propertySchema.AnyOf.Add anyOf
 
-    for required in schema.RequiredProperties do
-      propertySchema.RequiredProperties.Add required
+      for required in schema.RequiredProperties do
+        propertySchema.RequiredProperties.Add required
 
-    propertySchema
+      propertySchema
 
-  let private makeObjectJsonSchema (fields: (string * JsonSchema) list) =
-    let schema =
-      JsonSchema(Type = JsonObjectType.Object, AllowAdditionalProperties = false, AllowAdditionalItems = false)
+    static member private MakeObjectJsonSchema(fields: (string * JsonSchema) list) =
+      let schema =
+        JsonSchema(Type = JsonObjectType.Object, AllowAdditionalProperties = false, AllowAdditionalItems = false)
 
-    for fieldName, fieldSchema in fields do
-      schema.Properties.Add(fieldName, schemaToPropertySchema fieldSchema)
+      for fieldName, fieldSchema in fields do
+        schema.Properties.Add(fieldName, JsonSchema.ToPropertySchema fieldSchema)
 
-    schema
+      schema
 
-  let private makeOneOfJsonSchema (fields: (CaseName * JsonSchema) list) =
-    let schema =
-      JsonSchema(Type = JsonObjectType.Object, Discriminator = discriminatorFieldName)
+    static member private MakeOneOfJsonSchema(fields: (CaseName * JsonSchema) list) =
+      let schema =
+        JsonSchema(Type = JsonObjectType.Object, Discriminator = discriminatorFieldName)
 
-    let oneOfSchemas =
-      fields
-      |> List.map (fun (key, value) ->
-        let oneOfSchema = JsonSchema(Type = JsonObjectType.Object)
+      let oneOfSchemas =
+        fields
+        |> List.map (fun (key, value) ->
+          let oneOfSchema = JsonSchema(Type = JsonObjectType.Object)
 
-        let discriminatorProperty =
-          JsonSchemaProperty(Type = JsonObjectType.String, IsRequired = true)
+          let discriminatorProperty =
+            JsonSchemaProperty(Type = JsonObjectType.String, IsRequired = true)
 
-        discriminatorProperty.Enumeration.Add key.CaseName
+          discriminatorProperty.Enumeration.Add key.CaseName
 
-        oneOfSchema.Properties.Add(discriminatorFieldName, discriminatorProperty)
-        oneOfSchema.Properties.Add(valueFieldName, schemaToPropertySchema value)
-        oneOfSchema)
+          oneOfSchema.Properties.Add(discriminatorFieldName, discriminatorProperty)
+          oneOfSchema.Properties.Add(valueFieldName, JsonSchema.ToPropertySchema value)
+          oneOfSchema)
 
-    for oneOfSchema in oneOfSchemas do
-      schema.OneOf.Add oneOfSchema
+      for oneOfSchema in oneOfSchemas do
+        schema.OneOf.Add oneOfSchema
 
-    schema
+      schema
 
   let private createExpectationError (expected: string) (actual: string) =
     Errors.Singleton $"Error: {expected} expected, got {actual}"
@@ -166,7 +167,7 @@ module JSONSchemaIntegration =
               | Right e -> Right e)
             |> sum.All
 
-          schemaByField |> makeObjectJsonSchema
+          schemaByField |> JsonSchema.MakeObjectJsonSchema
         | ExprType.TupleType items -> return! items |> ExprType.TupleTypeToRecordType |> ExprType.RecordType |> (!)
         | ExprType.LookupType _ -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.UnionType cs ->
@@ -179,7 +180,7 @@ module JSONSchemaIntegration =
               | Right e -> Right e)
             |> sum.All
 
-          return schemaByCase |> makeOneOfJsonSchema
+          return schemaByCase |> JsonSchema.MakeOneOfJsonSchema
         | ExprType.CustomType _ -> return! sum.Throw(createNotImplementedError "custom type")
         | ExprType.VarType _ -> return! sum.Throw(createNotImplementedError "var type")
         | ExprType.SchemaLookupType _ -> return! sum.Throw(createNotImplementedError "schema lookup type")
