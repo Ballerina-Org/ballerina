@@ -175,15 +175,32 @@ export const extractPredicateValue = (
                 );
         }
         case "Sum": {
+          const traverseLeftValue = extractPredicateValue(
+            lookupName,
+            typesMap,
+            t.args[0],
+          );
+          const traverseRightValue = extractPredicateValue(
+            lookupName,
+            typesMap,
+            t.args[1],
+          );
           return (v) =>
             !PredicateValue.Operations.IsSum(v)
               ? ValueOrErrors.Default.throwOne(
                   Errors.Default.singleton(["not a ValueSum", v]),
                 )
-              : (v.value.kind === "l"
-                  ? extractPredicateValue(lookupName, typesMap, t.args[0])
-                  : extractPredicateValue(lookupName, typesMap, t.args[1]))(
-                  v.value.value,
+              : ValueOrErrors.Operations.All(
+                  List(
+                    [traverseLeftValue, traverseRightValue].map(
+                      (traverseField) => traverseField(v),
+                    ),
+                  ),
+                ).Map(
+                  (listFailingChecks) =>
+                    listFailingChecks
+                      .flatten()
+                      .toArray() as Array<PredicateValue>,
                 );
         }
         case "Option": {
