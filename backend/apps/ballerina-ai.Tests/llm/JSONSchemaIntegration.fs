@@ -6,9 +6,9 @@ open Ballerina.DSL.Expr.Types.Model
 open FSharp.Data
 open Ballerina.DSL.Expr.Model
 open Ballerina.Errors
+open Ballerina.AI.LLM.JSONSchemaIntegration
 
 module LLM = Ballerina.AI.LLM.LLM
-module JSONSchemaIntegration = Ballerina.AI.LLM.JSONSchemaIntegration
 
 module Model = Ballerina.DSL.Expr.Types.Model
 
@@ -36,7 +36,7 @@ let private assertError (result: Sum<'T, Errors>) (expectedError: string) =
 
 let private getJSONSchemaAsJSON exprType =
   exprType
-  |> JSONSchemaIntegration.generateJsonSchema
+  |> ExprType.GenerateJsonSchema
   |> Sum.map (fun schema -> schema.ToJson())
   |> Sum.bind (fun schema ->
     match JsonValue.TryParse schema with
@@ -158,7 +158,7 @@ module JSONParsing =
       createUnion (Map.ofList [ "option1", ExprType.PrimitiveType StringType; "option2", ExprType.UnitType ])
 
     let data = LLM.LLMOutput """{ "discriminator": "option1", "value": "hello" }"""
-    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    let result = data |> ExprType.ParseJsonResult typeDefinition
     let expected = Value.CaseCons("option1", Value.ConstString "hello")
     assertSuccess result expected
 
@@ -166,7 +166,7 @@ module JSONParsing =
   let ``ListType should parse JSON array correctly`` () =
     let typeDefinition = ExprType.ListType(ExprType.PrimitiveType StringType)
     let data = LLM.LLMOutput """["hello", "world"]"""
-    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    let result = data |> ExprType.ParseJsonResult typeDefinition
     let expected = Value.Tuple [ Value.ConstString "hello"; Value.ConstString "world" ]
     assertSuccess result expected
 
@@ -180,7 +180,7 @@ module JSONParsing =
       )
 
     let data = LLM.LLMOutput """{ "first": "hello", "second": 100 }"""
-    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    let result = data |> ExprType.ParseJsonResult typeDefinition
 
     let expected =
       Value.Record(Map.ofList [ "first", Value.ConstString "hello"; "second", Value.ConstInt 100 ])
@@ -197,7 +197,7 @@ module JSONParsing =
       )
 
     let data = LLM.LLMOutput """{ invalid json }"""
-    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    let result = data |> ExprType.ParseJsonResult typeDefinition
     assertError result "invalid json"
 
   [<Test>]
@@ -210,5 +210,5 @@ module JSONParsing =
       )
 
     let data = LLM.LLMOutput """{ "first": "hello" }"""
-    let result = data |> JSONSchemaIntegration.parseJsonResult typeDefinition
+    let result = data |> ExprType.ParseJsonResult typeDefinition
     assertError result "second"

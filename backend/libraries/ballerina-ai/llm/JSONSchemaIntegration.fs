@@ -122,7 +122,6 @@ module private JsonSchemaExtensions =
 
       schema
 
-[<RequireQualifiedAccess>]
 module JSONSchemaIntegration =
   open Ballerina.Collections.Sum
   open NJsonSchema
@@ -135,187 +134,189 @@ module JSONSchemaIntegration =
   open Ballerina.Errors
   open JsonSchemaExtensions
 
-  let generateJsonSchema (t: ExprType) =
-    let rec eval (t: ExprType) =
-      let (!) = eval
 
-      sum {
-        match t with
-        | ExprType.UnitType -> JsonSchema(Type = JsonObjectType.Null)
-        | ExprType.PrimitiveType p ->
-          match p with
-          | PrimitiveType.BoolType -> JsonSchema(Type = JsonObjectType.Boolean)
-          | PrimitiveType.IntType -> JsonSchema(Type = JsonObjectType.Integer, Format = JsonFormatStrings.Integer)
-          | PrimitiveType.FloatType -> JsonSchema(Type = JsonObjectType.Number, Format = JsonFormatStrings.Float)
-          | PrimitiveType.GuidType -> JsonSchema(Type = JsonObjectType.String, Format = "uuid")
-          | PrimitiveType.StringType -> JsonSchema(Type = JsonObjectType.String)
-          | PrimitiveType.DateOnlyType -> JsonSchema(Type = JsonObjectType.String, Format = "date")
-          | PrimitiveType.DateTimeType -> JsonSchema(Type = JsonObjectType.String, Format = "date-time")
-          | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singleton $"Error: ref type not implemented for {p}")
-        | ExprType.ListType e ->
-          let! elementType = !e
-          return JsonSchema(Type = JsonObjectType.Array, Item = elementType)
-        | ExprType.MapType(k, v) ->
-          match k with
-          | ExprType.PrimitiveType PrimitiveType.StringType ->
-            let! valueType = !v
-            JsonSchema(Type = JsonObjectType.Object, AdditionalPropertiesSchema = valueType)
-          | _ -> return! sum.Throw(Errors.Singleton $"Error: not implemented default value for map key type {k}")
-        | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))
-        | ExprType.OptionType e -> return! !ExprType.UnionType(ExprType.OptionTypeToUnionType(e))
-        | ExprType.SetType e -> return! !ExprType.ListType(e)
-        | ExprType.RecordType fields ->
-          let! schemaByField =
-            fields
-            |> Map.toList
-            |> List.map (fun (key, value) ->
-              match !value with
-              | Left schema -> Left(key, schema)
-              | Right e -> Right e)
-            |> sum.All
+  type ExprType with
+    static member GenerateJsonSchema(t: ExprType) =
+      let rec eval (t: ExprType) =
+        let (!) = eval
 
-          schemaByField |> JsonSchema.MakeObjectJsonSchema
-        | ExprType.TupleType items -> return! items |> ExprType.TupleTypeToRecordType |> ExprType.RecordType |> (!)
-        | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
-        | ExprType.UnionType cs ->
-          let! schemaByCase =
-            cs
-            |> Map.toList
-            |> List.map (fun (key, case) ->
-              match !case.Fields with
-              | Left schema -> Left(key, schema)
-              | Right e -> Right e)
-            |> sum.All
+        sum {
+          match t with
+          | ExprType.UnitType -> JsonSchema(Type = JsonObjectType.Null)
+          | ExprType.PrimitiveType p ->
+            match p with
+            | PrimitiveType.BoolType -> JsonSchema(Type = JsonObjectType.Boolean)
+            | PrimitiveType.IntType -> JsonSchema(Type = JsonObjectType.Integer, Format = JsonFormatStrings.Integer)
+            | PrimitiveType.FloatType -> JsonSchema(Type = JsonObjectType.Number, Format = JsonFormatStrings.Float)
+            | PrimitiveType.GuidType -> JsonSchema(Type = JsonObjectType.String, Format = "uuid")
+            | PrimitiveType.StringType -> JsonSchema(Type = JsonObjectType.String)
+            | PrimitiveType.DateOnlyType -> JsonSchema(Type = JsonObjectType.String, Format = "date")
+            | PrimitiveType.DateTimeType -> JsonSchema(Type = JsonObjectType.String, Format = "date-time")
+            | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singleton $"Error: ref type not implemented for {p}")
+          | ExprType.ListType e ->
+            let! elementType = !e
+            return JsonSchema(Type = JsonObjectType.Array, Item = elementType)
+          | ExprType.MapType(k, v) ->
+            match k with
+            | ExprType.PrimitiveType PrimitiveType.StringType ->
+              let! valueType = !v
+              JsonSchema(Type = JsonObjectType.Object, AdditionalPropertiesSchema = valueType)
+            | _ -> return! sum.Throw(Errors.Singleton $"Error: not implemented default value for map key type {k}")
+          | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))
+          | ExprType.OptionType e -> return! !ExprType.UnionType(ExprType.OptionTypeToUnionType(e))
+          | ExprType.SetType e -> return! !ExprType.ListType(e)
+          | ExprType.RecordType fields ->
+            let! schemaByField =
+              fields
+              |> Map.toList
+              |> List.map (fun (key, value) ->
+                match !value with
+                | Left schema -> Left(key, schema)
+                | Right e -> Right e)
+              |> sum.All
 
-          return schemaByCase |> JsonSchema.MakeOneOfJsonSchema
-        | ExprType.CustomType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "custom type")
-        | ExprType.VarType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "var type")
-        | ExprType.SchemaLookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "schema lookup type")
-        | ExprType.TableType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "table type")
-        | ExprType.OneType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "one type")
-        | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
-      }
+            schemaByField |> JsonSchema.MakeObjectJsonSchema
+          | ExprType.TupleType items -> return! items |> ExprType.TupleTypeToRecordType |> ExprType.RecordType |> (!)
+          | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
+          | ExprType.UnionType cs ->
+            let! schemaByCase =
+              cs
+              |> Map.toList
+              |> List.map (fun (key, case) ->
+                match !case.Fields with
+                | Left schema -> Left(key, schema)
+                | Right e -> Right e)
+              |> sum.All
 
-    eval t
+            return schemaByCase |> JsonSchema.MakeOneOfJsonSchema
+          | ExprType.CustomType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "custom type")
+          | ExprType.VarType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "var type")
+          | ExprType.SchemaLookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "schema lookup type")
+          | ExprType.TableType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "table type")
+          | ExprType.OneType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "one type")
+          | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
+        }
 
-  let parseJsonResult (t: ExprType) (LLM.LLMOutput data) =
-    let rec eval (t: ExprType) (data: JsonValue) : Sum<Value, Errors> =
-      sum {
-        match t with
-        | ExprType.UnitType ->
-          match data with
-          | JsonValue.Null -> Value.Unit
-          | unexpected -> return! sum.Throw(Errors.Singletons.Expectation "null" $"{unexpected}")
-        | ExprType.PrimitiveType p ->
-          match p with
-          | PrimitiveType.BoolType ->
+      eval t
+
+    static member ParseJsonResult (t: ExprType) (LLM.LLMOutput data) =
+      let rec eval (t: ExprType) (data: JsonValue) : Sum<Value, Errors> =
+        sum {
+          match t with
+          | ExprType.UnitType ->
             match data with
-            | JsonValue.Boolean b -> Value.ConstBool b
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "bool" $"{unexpected}")
-          | PrimitiveType.IntType ->
+            | JsonValue.Null -> Value.Unit
+            | unexpected -> return! sum.Throw(Errors.Singletons.Expectation "null" $"{unexpected}")
+          | ExprType.PrimitiveType p ->
+            match p with
+            | PrimitiveType.BoolType ->
+              match data with
+              | JsonValue.Boolean b -> Value.ConstBool b
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "bool" $"{unexpected}")
+            | PrimitiveType.IntType ->
+              match data with
+              | JsonValue.Number n -> Value.ConstInt(int n)
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "integer" $"{unexpected}")
+            | PrimitiveType.FloatType ->
+              match data with
+              | JsonValue.Number n -> Value.ConstFloat(float n)
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "float" $"{unexpected}")
+            | PrimitiveType.GuidType ->
+              match data with
+              | JsonValue.String s ->
+                match Guid.TryParse s with
+                | true, guid -> Value.ConstGuid guid
+                | false, _ -> return! sum.Throw(Errors.Singletons.Type "guid" s)
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "guid" $"{unexpected}")
+            | PrimitiveType.StringType ->
+              match data with
+              | JsonValue.String s -> Value.ConstString s
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "string" $"{unexpected}")
+            | PrimitiveType.DateOnlyType ->
+              match data with
+              | JsonValue.String s ->
+                match DateOnly.TryParse s with
+                | true, date -> Value.ConstString(date.ToString "yyyy-MM-dd")
+                | false, _ -> return! sum.Throw(Errors.Singletons.Type "date" s)
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "date" $"{unexpected}")
+            | PrimitiveType.DateTimeType ->
+              match data with
+              | JsonValue.String s ->
+                match DateTime.TryParse s with
+                | true, date -> Value.ConstString(date.ToString "yyyy-MM-ddTHH:mm:ssZ")
+                | false, _ -> return! sum.Throw(Errors.Singletons.Type "date time" s)
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "date time" $"{unexpected}")
+            | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "ref type")
+          | ExprType.ListType e ->
             match data with
-            | JsonValue.Number n -> Value.ConstInt(int n)
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "integer" $"{unexpected}")
-          | PrimitiveType.FloatType ->
+            | JsonValue.Array arr -> return! arr |> Array.map (eval e) |> sum.All |> Sum.map Value.Tuple
+            | unexpected -> return! sum.Throw(Errors.Singletons.Type "array" $"{unexpected}")
+          | ExprType.MapType(k, v) ->
+            match k with
+            | ExprType.PrimitiveType PrimitiveType.StringType ->
+              match data with
+              | JsonValue.Record obj ->
+                let! fields =
+                  obj
+                  |> Array.map (fun (key, value) -> eval v value |> Sum.map (fun v -> key, v))
+                  |> sum.All
+
+                return fields |> Map.ofList |> Value.Record
+              | unexpected -> return! sum.Throw(Errors.Singletons.Type "object" $"{unexpected}")
+            | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
+          | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))) data
+          | ExprType.OptionType e -> return! eval (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
+          | ExprType.SetType e -> return! eval (ExprType.ListType e) data
+          | ExprType.UnionType cs ->
             match data with
-            | JsonValue.Number n -> Value.ConstFloat(float n)
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "float" $"{unexpected}")
-          | PrimitiveType.GuidType ->
-            match data with
-            | JsonValue.String s ->
-              match Guid.TryParse s with
-              | true, guid -> Value.ConstGuid guid
-              | false, _ -> return! sum.Throw(Errors.Singletons.Type "guid" s)
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "guid" $"{unexpected}")
-          | PrimitiveType.StringType ->
-            match data with
-            | JsonValue.String s -> Value.ConstString s
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "string" $"{unexpected}")
-          | PrimitiveType.DateOnlyType ->
-            match data with
-            | JsonValue.String s ->
-              match DateOnly.TryParse s with
-              | true, date -> Value.ConstString(date.ToString "yyyy-MM-dd")
-              | false, _ -> return! sum.Throw(Errors.Singletons.Type "date" s)
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "date" $"{unexpected}")
-          | PrimitiveType.DateTimeType ->
-            match data with
-            | JsonValue.String s ->
-              match DateTime.TryParse s with
-              | true, date -> Value.ConstString(date.ToString "yyyy-MM-ddTHH:mm:ssZ")
-              | false, _ -> return! sum.Throw(Errors.Singletons.Type "date time" s)
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "date time" $"{unexpected}")
-          | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "ref type")
-        | ExprType.ListType e ->
-          match data with
-          | JsonValue.Array arr -> return! arr |> Array.map (eval e) |> sum.All |> Sum.map Value.Tuple
-          | unexpected -> return! sum.Throw(Errors.Singletons.Type "array" $"{unexpected}")
-        | ExprType.MapType(k, v) ->
-          match k with
-          | ExprType.PrimitiveType PrimitiveType.StringType ->
+            | JsonValue.Record obj ->
+              let asMap = Map.ofArray obj
+
+              match Map.tryFind discriminatorFieldName asMap with
+              | Some(JsonValue.String discriminator) ->
+                match Map.tryFind { CaseName = discriminator } cs with
+                | Some case ->
+                  match Map.tryFind valueFieldName asMap with
+                  | Some value -> return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
+                  | None -> return! sum.Throw(Errors.Singletons.Expectation "value" $"{data}")
+                | None -> return! sum.Throw(Errors.Singleton $"Error: discriminator {discriminator} not found in {cs}")
+              | _ -> return! sum.Throw(Errors.Singletons.Expectation "discriminator" $"{data}")
+            | _ -> return! sum.Throw(Errors.Singletons.Type "union" $"{data}")
+          | ExprType.RecordType l ->
             match data with
             | JsonValue.Record obj ->
               let! fields =
-                obj
-                |> Array.map (fun (key, value) -> eval v value |> Sum.map (fun v -> key, v))
+                l
+                |> Map.toList
+                |> List.map (fun (attrName, attrType) ->
+                  let jsonAttributeValue =
+                    Array.tryFind (fun (dataAttr, _) -> dataAttr = attrName) obj
+
+                  match jsonAttributeValue with
+                  | Some(_, value) -> eval attrType value |> Sum.map (fun v -> attrName, v)
+                  | None -> sum.Throw(Errors.Singleton $"Error: attribute {attrName} not found in {data}"))
                 |> sum.All
 
-              return fields |> Map.ofList |> Value.Record
-            | unexpected -> return! sum.Throw(Errors.Singletons.Type "object" $"{unexpected}")
-          | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
-        | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))) data
-        | ExprType.OptionType e -> return! eval (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
-        | ExprType.SetType e -> return! eval (ExprType.ListType e) data
-        | ExprType.UnionType cs ->
-          match data with
-          | JsonValue.Record obj ->
-            let asMap = Map.ofArray obj
+              fields |> Map.ofList |> Value.Record
+            | _ -> return! sum.Throw(Errors.Singletons.Type "object" $"{data}")
+          | ExprType.CustomType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "custom type")
+          | ExprType.VarType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "var type")
+          | ExprType.SchemaLookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "schema lookup type")
+          | ExprType.TableType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "table type")
+          | ExprType.OneType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "one type")
+          | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
+          | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
+          | ExprType.TupleType items ->
+            let! recordValue = eval (ExprType.RecordType(ExprType.TupleTypeToRecordType items)) data
 
-            match Map.tryFind discriminatorFieldName asMap with
-            | Some(JsonValue.String discriminator) ->
-              match Map.tryFind { CaseName = discriminator } cs with
-              | Some case ->
-                match Map.tryFind valueFieldName asMap with
-                | Some value -> return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
-                | None -> return! sum.Throw(Errors.Singletons.Expectation "value" $"{data}")
-              | None -> return! sum.Throw(Errors.Singleton $"Error: discriminator {discriminator} not found in {cs}")
-            | _ -> return! sum.Throw(Errors.Singletons.Expectation "discriminator" $"{data}")
-          | _ -> return! sum.Throw(Errors.Singletons.Type "union" $"{data}")
-        | ExprType.RecordType l ->
-          match data with
-          | JsonValue.Record obj ->
-            let! fields =
-              l
-              |> Map.toList
-              |> List.map (fun (attrName, attrType) ->
-                let jsonAttributeValue =
-                  Array.tryFind (fun (dataAttr, _) -> dataAttr = attrName) obj
+            match recordValue with
+            | Value.Record r -> return! r |> ExprType.RecordValueToTupleType |> Sum.map Value.Tuple
+            | _ -> return! sum.Throw(Errors.Singletons.Type "record" $"{recordValue}")
+        }
 
-                match jsonAttributeValue with
-                | Some(_, value) -> eval attrType value |> Sum.map (fun v -> attrName, v)
-                | None -> sum.Throw(Errors.Singleton $"Error: attribute {attrName} not found in {data}"))
-              |> sum.All
-
-            fields |> Map.ofList |> Value.Record
-          | _ -> return! sum.Throw(Errors.Singletons.Type "object" $"{data}")
-        | ExprType.CustomType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "custom type")
-        | ExprType.VarType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "var type")
-        | ExprType.SchemaLookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "schema lookup type")
-        | ExprType.TableType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "table type")
-        | ExprType.OneType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "one type")
-        | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
-        | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
-        | ExprType.TupleType items ->
-          let! recordValue = eval (ExprType.RecordType(ExprType.TupleTypeToRecordType items)) data
-
-          match recordValue with
-          | Value.Record r -> return! r |> ExprType.RecordValueToTupleType |> Sum.map Value.Tuple
-          | _ -> return! sum.Throw(Errors.Singletons.Type "record" $"{recordValue}")
-      }
-
-    match data |> JsonValue.TryParse with
-    | Some json -> eval t json
-    | None -> sum.Throw(Errors.Singleton $"Error: invalid json {data}")
+      match data |> JsonValue.TryParse with
+      | Some json -> eval t json
+      | None -> sum.Throw(Errors.Singleton $"Error: invalid json {data}")
 
   let private promptForSchema (t: JsonSchema) =
     LLM.OutputStructureDescriptionForPrompt $"Output schema: {t.ToString()}"
@@ -327,6 +328,6 @@ module JSONSchemaIntegration =
         match t with
         | ExprType.RecordType _ -> Left t
         | _ -> sum.Throw(Errors.Singleton $"Top level type expected to be a record type, got {t}"))
-      |> Sum.bind generateJsonSchema
+      |> Sum.bind ExprType.GenerateJsonSchema
       |> Sum.map (fun schema -> promptForSchema schema, schema),
-      parseJsonResult t)
+      ExprType.ParseJsonResult t)
