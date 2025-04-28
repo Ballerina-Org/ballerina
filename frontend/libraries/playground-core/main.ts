@@ -26,3 +26,5 @@ export * from "./debit-note/data-mocks";
 export * from "./integrated-form/data-mocks";
 
 export * from "./user-setup/apis/data-mocks";
+
+export * from "./person/domains/dispatch-renderer/api/data-mocks";

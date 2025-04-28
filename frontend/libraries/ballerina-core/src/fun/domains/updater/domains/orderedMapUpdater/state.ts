@@ -42,7 +42,7 @@ export const orderedMapUpdater =
                     key,
                     value,
                   ),
-                } as Entity),
+                }) as Entity,
             ),
         ),
         remove: Fun(
@@ -54,7 +54,7 @@ export const orderedMapUpdater =
                   [field]: (
                     entity[field] as OrderedMap<unknown, unknown>
                   ).remove(key),
-                } as Entity),
+                }) as Entity,
             ),
         ),
         concat: Fun(
@@ -66,7 +66,7 @@ export const orderedMapUpdater =
                   [field]: (
                     entity[field] as OrderedMap<unknown, unknown>
                   ).concat(other),
-                } as Entity),
+                }) as Entity,
             ),
         ),
         set: Fun((key: unknown) =>
@@ -89,7 +89,7 @@ export const orderedMapUpdater =
                               ).get(key)!,
                             ),
                           ),
-                  } as Entity),
+                  }) as Entity,
               ),
           ),
         ),
@@ -113,8 +113,8 @@ export const orderedMapUpdater =
                         )
                       : fieldUpdater(fallback(unit)),
                   ),
-                } as Entity),
+                }) as Entity,
             ),
         ),
       },
-    } as OrderedMapUpdater<Entity, Field, DisplayName>);
+    }) as OrderedMapUpdater<Entity, Field, DisplayName>;

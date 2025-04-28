@@ -267,7 +267,9 @@ export const ParsedType = {
             : fst.kind == "application" && snd.kind == "application"
               ? fst.value == snd.value &&
                 fst.args.length == snd.args.length &&
-                fst.args.every((v, i) => ParsedType.Operations.Equals(v, snd.args[i]))
+                fst.args.every((v, i) =>
+                  ParsedType.Operations.Equals(v, snd.args[i]),
+                )
               : fst.kind == "option" && snd.kind == "option"
                 ? fst.value.kind == "option" &&
                   snd.value.kind == "option" &&

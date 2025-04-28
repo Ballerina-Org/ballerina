@@ -1,0 +1,287 @@
+import { List, Map } from "immutable";
+
+import {
+  DispatchParsedType,
+  DispatchTypeName,
+} from "./domains/specification/domains/types/state";
+import { unit, Unit } from "../../../../fun/domains/unit/state";
+import {
+  PassthroughFormContext,
+  PassthroughFormState,
+  PredicateValue,
+  EnumReference,
+  ValueOrErrors,
+  InjectedPrimitives,
+  BasicFun,
+  SearchableInfiniteStreamState,
+  Guid,
+  ApiErrors,
+  Specification,
+  Injectables,
+  Synchronized,
+  simpleUpdater,
+} from "../../../../../main";
+import { RecordFormRenderer } from "./domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
+// import { UnionFormRenderer } from "./domains/specification/domains/form/domains/renderers/domains/unionFormRenderer/state";
+import { Form } from "./domains/specification/domains/form/state";
+import {
+  DispatchApiConverters,
+  ConcreteRendererKinds,
+  concreteRendererToKind,
+  dispatchDefaultState,
+  dispatchDefaultValue,
+  dispatchFromAPIRawValue,
+  dispatchToAPIRawValue,
+  tryGetConcreteRenderer,
+} from "../built-ins/state";
+import { NestedRenderer } from "./domains/specification/domains/form/domains/renderers/domains/nestedRenderer/state";
+import { RecordFieldRenderer } from "./domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/state";
+import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
+
+/// TODO - likely this will change
+export type DispatchPassthroughLauncherContext<T, FormState, ExtraContext> =
+  Omit<
+    PassthroughFormContext<T, FormState> &
+      PassthroughFormState<T, FormState> & {
+        extraContext: ExtraContext;
+        containerFormView: any;
+        containerWrapper: any;
+      },
+    "api" | "actualForm"
+  >;
+
+export type DispatchParsedPassthroughLauncher<T> = {
+  kind: "passthrough";
+  renderer: RecordFormRenderer<T>;
+  // | UnionFormRenderer<T>;
+  parseEntityFromApi: (_: any) => ValueOrErrors<PredicateValue, string>;
+  parseGlobalConfigurationFromApi: (
+    _: any,
+  ) => ValueOrErrors<PredicateValue, string>;
+  parseValueToApi: (
+    value: PredicateValue,
+    type: DispatchParsedType<T>,
+    state: any,
+  ) => ValueOrErrors<any, string>;
+  type: DispatchParsedType<T>;
+};
+
+export type DispatchParsedLauncher<T> = DispatchParsedPassthroughLauncher<T>;
+
+export type DispatchParsedLaunchers<T> = {
+  passthrough: Map<string, DispatchParsedPassthroughLauncher<T>>;
+};
+
+export type DispatcherContext<
+  T extends { [key in keyof T]: { type: any; state: any } },
+> = {
+  injectedPrimitives: InjectedPrimitives<T> | undefined;
+  apiConverters: DispatchApiConverters<T>;
+  infiniteStreamSources: DispatchInfiniteStreamSources;
+  enumOptionsSources: DispatchEnumOptionsSources;
+  entityApis: DispatchEntityApis;
+  getConcreteRendererKind: (viewName: string) => ValueOrErrors<string, string>;
+  getConcreteRenderer: (
+    kind: keyof ConcreteRendererKinds,
+    name?: string,
+    isNested?: boolean,
+  ) => ValueOrErrors<any, string>;
+  defaultValue: (
+    t: DispatchParsedType<any>,
+    renderer: NestedRenderer<any> | RecordFieldRenderer<any>,
+  ) => ValueOrErrors<PredicateValue, string>;
+  defaultState: (
+    t: DispatchParsedType<any>,
+    renderer:
+      | NestedRenderer<any>
+      | RecordFieldRenderer<any>
+      | RecordFormRenderer<any>,
+  ) => ValueOrErrors<any, string>;
+  forms: Map<string, Form<T>>;
+  types: Map<DispatchTypeName, DispatchParsedType<T>>;
+};
+
+export type DispatchSpecificationDeserializationResult<
+  T extends { [key in keyof T]: { type: any; state: any } },
+> = ValueOrErrors<
+  {
+    launchers: DispatchParsedLaunchers<T>;
+    dispatcherContext: DispatcherContext<T>;
+  },
+  string
+>;
+export type DispatchEnumName = string;
+export type DispatchEnumOptionsSources = BasicFun<
+  DispatchEnumName,
+  ValueOrErrors<BasicFun<Unit, Promise<Array<EnumReference>>>, string>
+>;
+export type DispatchStreamName = string;
+export type DispatchInfiniteStreamSources = BasicFun<
+  DispatchStreamName,
+  ValueOrErrors<
+    SearchableInfiniteStreamAbstractRendererState["customFormState"]["getChunk"],
+    string
+  >
+>;
+export type DispatchConfigName = string;
+export type DispatchGlobalConfigurationSources = BasicFun<
+  DispatchConfigName,
+  Promise<any>
+>;
+export type DispatchEntityName = string;
+export type DispatchEntityApis = {
+  create: BasicFun<DispatchEntityName, BasicFun<any, Promise<Unit>>>;
+  default: BasicFun<DispatchEntityName, BasicFun<Unit, Promise<any>>>;
+  update: BasicFun<
+    DispatchEntityName,
+    (id: Guid, entity: any) => Promise<ApiErrors>
+  >;
+  get: BasicFun<DispatchEntityName, BasicFun<Guid, Promise<any>>>;
+};
+
+export const parseDispatchFormsToLaunchers =
+  <T extends { [key in keyof T]: { type: any; state: any } }>(
+    injectedPrimitives: InjectedPrimitives<T> | undefined,
+    apiConverters: DispatchApiConverters<T>,
+    defaultRecordRenderer: any,
+    defaultNestedRecordRenderer: any,
+    concreteRenderers: any,
+    infiniteStreamSources: DispatchInfiniteStreamSources,
+    enumOptionsSources: DispatchEnumOptionsSources,
+    entityApis: DispatchEntityApis,
+  ) =>
+  (
+    specification: Specification<T>,
+  ): DispatchSpecificationDeserializationResult<T> =>
+    ValueOrErrors.Operations.All(
+      List<
+        ValueOrErrors<[string, DispatchParsedPassthroughLauncher<T>], string>
+      >(
+        specification.launchers.passthrough
+          .entrySeq()
+          .toArray()
+          .map(([launcherName, launcher]) => {
+            const parsedForm = specification.forms.get(launcher.form);
+            if (parsedForm == undefined) {
+              return ValueOrErrors.Default.throwOne(
+                `cannot find form "${launcher.form}" when parsing launchers`,
+              );
+            }
+
+            const globalConfigType = specification.types.get(
+              launcher.configType,
+            );
+
+            if (globalConfigType == undefined) {
+              return ValueOrErrors.Default.throwOne(
+                `cannot find global config type "${launcher.configType}" when parsing launchers`,
+              );
+            }
+            return ValueOrErrors.Default.return([
+              launcherName,
+              {
+                kind: "passthrough",
+                renderer: parsedForm,
+                type: parsedForm.type,
+                parseEntityFromApi: (raw: any) =>
+                  dispatchFromAPIRawValue(
+                    parsedForm.type,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  )(raw),
+                parseGlobalConfigurationFromApi: (raw: any) =>
+                  dispatchFromAPIRawValue(
+                    globalConfigType,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  )(raw),
+                parseValueToApi: (
+                  value: PredicateValue,
+                  type: DispatchParsedType<T>,
+                  state: any,
+                ) =>
+                  dispatchToAPIRawValue(
+                    type,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  )(value, state),
+              },
+            ]);
+          }),
+      ),
+    )
+      .Then((passthroughLaunchers) =>
+        ValueOrErrors.Default.return({
+          launchers: {
+            passthrough: Map(passthroughLaunchers),
+          },
+          dispatcherContext: {
+            forms: specification.forms,
+            injectedPrimitives,
+            apiConverters,
+            infiniteStreamSources,
+            enumOptionsSources,
+            entityApis,
+            getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
+            getConcreteRenderer: tryGetConcreteRenderer(
+              concreteRenderers,
+              defaultRecordRenderer,
+              defaultNestedRecordRenderer,
+            ),
+            defaultValue: dispatchDefaultValue(
+              injectedPrimitives,
+              specification.types,
+              specification.forms,
+            ),
+            defaultState: dispatchDefaultState(
+              infiniteStreamSources,
+              injectedPrimitives,
+              specification.types,
+              specification.forms,
+            ),
+            types: specification.types,
+          },
+        }),
+      )
+      .MapErrors((errors) =>
+        errors.map((error) => `${error}\n...When parsing launchers`),
+      );
+
+export type DispatchFormsParserContext<
+  T extends { [key in keyof T]: { type: any; state: any } },
+> = {
+  defaultRecordConcreteRenderer: any;
+  defaultNestedRecordConcreteRenderer: any;
+  concreteRenderers: any;
+  fieldTypeConverters: DispatchApiConverters<T>;
+  infiniteStreamSources: DispatchInfiniteStreamSources;
+  enumOptionsSources: DispatchEnumOptionsSources;
+  entityApis: DispatchEntityApis;
+  getFormsConfig: BasicFun<void, Promise<any>>;
+  injectedPrimitives?: Injectables<T>;
+};
+export type DispatchFormsParserState<
+  T extends { [key in keyof T]: { type: any; state: any } },
+> = {
+  deserializedSpecification: Synchronized<
+    Unit,
+    DispatchSpecificationDeserializationResult<T>
+  >;
+};
+export const DispatchFormsParserState = <
+  T extends { [key in keyof T]: { type: any; state: any } },
+>() => {
+  return {
+    Default: (): DispatchFormsParserState<T> => ({
+      deserializedSpecification: Synchronized.Default(unit),
+    }),
+    Updaters: {
+      ...simpleUpdater<DispatchFormsParserState<T>>()(
+        "deserializedSpecification",
+      ),
+    },
+  };
+};

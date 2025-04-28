@@ -5,8 +5,8 @@ export const PromiseRepo = {
     mock: <T>(
       value: BasicFun<void, T>,
       error: BasicFun<void, any> = () => "error",
-      probabilityOfSuccess: number = 0.9,
-      averageDelay: number = 0.2,
+      probabilityOfSuccess: number = 1,
+      averageDelay: number = 0,
     ) => {
       const λ = 1 / averageDelay;
       const delay = Math.log(1 - Math.random()) / -λ; // sample the exponential distribution

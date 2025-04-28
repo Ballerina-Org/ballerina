@@ -122,30 +122,30 @@ export const FormsApp = (props: {}) => {
         runner: personCreateFormState,
       })
     : logState && formToShow % numForms == 1
-    ? console.log({
-        parser: configFormsParser,
-        runner: personEditFormState,
-      })
-    : logState && formToShow % numForms == 2
-    ? console.log({
-        parser: configFormsParser,
-        runner: personPassthroughFormState,
-      })
-    : logState && formToShow % numForms == 3
-    ? console.log({
-        parser: configFormsParser,
-        usersSetupFormState: usersSetupFormState,
-        usersSetupConfigFormState: usersSetupConfigFormState,
-        usersSetupEntity:
-          usersSetupEntity.kind == "l"
-            ? (usersSetupEntity.value as ValueRecord).fields.toJS()
-            : null,
-        usersSetupConfigEntity:
-          usersSetupConfigEntity.kind == "l"
-            ? (usersSetupConfigEntity.value as ValueRecord).fields.toJS()
-            : null,
-      })
-    : undefined;
+      ? console.log({
+          parser: configFormsParser,
+          runner: personEditFormState,
+        })
+      : logState && formToShow % numForms == 2
+        ? console.log({
+            parser: configFormsParser,
+            runner: personPassthroughFormState,
+          })
+        : logState && formToShow % numForms == 3
+          ? console.log({
+              parser: configFormsParser,
+              usersSetupFormState: usersSetupFormState,
+              usersSetupConfigFormState: usersSetupConfigFormState,
+              usersSetupEntity:
+                usersSetupEntity.kind == "l"
+                  ? (usersSetupEntity.value as ValueRecord).fields.toJS()
+                  : null,
+              usersSetupConfigEntity:
+                usersSetupConfigEntity.kind == "l"
+                  ? (usersSetupConfigEntity.value as ValueRecord).fields.toJS()
+                  : null,
+            })
+          : undefined;
 
   // Passthrough form only -- Person
   const [personEntity, setPersonEntity] = useState<

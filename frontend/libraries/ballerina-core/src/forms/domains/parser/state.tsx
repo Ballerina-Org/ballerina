@@ -664,7 +664,7 @@ export const parseFormsToLaunchers =
                     disabledFields: _.disabledFields,
                     globalConfiguration: parentContext.globalConfiguration.sync,
                   })),
-              } as any),
+              }) as any,
           )
           .withViewFromProps((props) => props.context.submitButtonWrapper)
           .mapForeignMutationsFromProps(
@@ -875,7 +875,7 @@ export const parseFormsToLaunchers =
                             injectedPrimitives,
                           )(value),
                     })),
-                } as any),
+                }) as any,
             )
             .withViewFromProps((props) => props.context.containerWrapper)
             .mapForeignMutationsFromProps(

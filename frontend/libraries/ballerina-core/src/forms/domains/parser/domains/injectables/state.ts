@@ -10,7 +10,7 @@ export type InjectablePrimitive<T, U = Unit> = {
 export type InjectedPrimitive<T> = {
   renderers: Set<keyof T>;
   defaultValue: any;
-  fieldView: any;
+  abstractRenderer: any;
   defaultState: any;
 };
 
@@ -40,7 +40,7 @@ export const injectablesFromFieldViews = <
       ({
         renderers: Set([key]),
         defaultValue: injectable.defaultValue,
-        fieldView: injectable.fieldView,
+        abstractRenderer: injectable.fieldView,
         defaultState: injectable.defaultState,
       }) as InjectedPrimitive<T>,
   );

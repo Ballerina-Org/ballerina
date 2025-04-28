@@ -27,7 +27,7 @@
         "CompanyName": "string",
         "Verified": {
           "fun": "Sum",
-          "args": ["unit", "InjectedType"]
+          "args": ["unit", "injectedCategory"]
         }
       }
     },
@@ -143,18 +143,6 @@
     }
   },
   "launchers": {
-    "create-legalEntity": {
-      "kind": "create",
-      "form": "legalEntity",
-      "api": "legalEntity",
-      "configApi": "globalConfiguration"
-    },
-    "edit-legalEntity": {
-      "kind": "edit",
-      "form": "legalEntity",
-      "api": "legalEntity",
-      "configApi": "globalConfiguration"
-    },
     "legalEntity-transparent": {
       "kind": "passthrough",
       "form": "legalEntity",

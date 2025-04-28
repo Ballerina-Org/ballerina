@@ -33,11 +33,11 @@
           }
         },
         {
-          "caseName": "B"
+          "caseName": "B",
+          "fields": "PlotInfo"
         },
         {
-          "caseName": "C",
-          "fields": "C"
+          "caseName": "C"
         }
       ]
     },
@@ -483,6 +483,7 @@
     },
     "address": {
       "type": "Address",
+      "renderer": "address",
       "fields": {
         "streetNumberAndCity": {
           "renderer": "defaultTuple3",
@@ -573,6 +574,7 @@
 
     "person": {
       "type": "Person",
+      "renderer": "person",
       "fields": {
         "category": {
           "label": "category",
@@ -1058,7 +1060,7 @@
     "addresses-config": {
       "kind": "passthrough",
       "form": "addressesConfig",
-      "configApi": "GlobalConfiguration"
+      "configType": "GlobalConfiguration"
     }
   }
 }

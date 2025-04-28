@@ -30,6 +30,7 @@ import {
   TableState,
   StreamPosition,
   Chunk,
+  Unit,
 } from "../../../../../../main";
 import { ValueOrErrors } from "../../../../../collections/domains/valueOrErrors/state";
 
@@ -663,7 +664,7 @@ export const fromAPIRawValue =
       let errors: List<string> = List();
       t.fields.forEach((fieldType, fieldName) => {
         const fieldValue = raw[fieldName];
-        if (fieldValue != null && fieldValue == undefined) {
+        if (fieldValue !== null && fieldValue === undefined) {
           return;
         }
         const parsedValue = fromAPIRawValue(

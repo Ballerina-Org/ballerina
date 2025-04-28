@@ -3,23 +3,11 @@ import {
   CollectionReference,
   CollectionSelection,
   Guid,
-  FormStateFromEntity,
-  DateFormState,
-  EnumFormState,
-  FormLabel,
-  BaseEnumContext,
-  SearchableInfiniteStreamState,
-  CommonFormState,
-  Predicate,
-  ListFieldState,
   Maybe,
-  unit,
 } from "ballerina-core";
-import { List, OrderedMap } from "immutable";
-import { Interest, PersonApi } from "./apis/mocks";
-import { Address, AddressFormState, City } from "./domains/address/state";
-// import { PersonFormPredicateContext } from "./domains/predicates";
-import Immutable from "immutable";
+import { OrderedMap } from "immutable";
+import { Interest } from "./apis/mocks";
+import { Address, City } from "./domains/address/state";
 import { v4 } from "uuid";
 
 export type Gender = CollectionReference;

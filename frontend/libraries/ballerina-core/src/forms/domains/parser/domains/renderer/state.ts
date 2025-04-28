@@ -1,7 +1,6 @@
 import { List, Map, OrderedMap, Set } from "immutable";
 import {
   Base64FileForm,
-  BaseEnumContext,
   BasicFun,
   BooleanForm,
   BoolExpr,
@@ -51,6 +50,7 @@ import {
   TableApiSources,
   ParsedTableFormConfig,
   TableApiSource,
+  BaseEnumContext,
 } from "../../../../../../main";
 import { ValueOrErrors } from "../../../../../collections/domains/valueOrErrors/state";
 
@@ -1180,7 +1180,7 @@ export const ParsedRenderer = {
         const injectedPrimitive = injectedPrimitives.injectedPrimitives.get(
           viewKind as keyof T,
         ); //TODO error handling instead of cast
-        return injectedPrimitive?.fieldView(
+        return injectedPrimitive?.abstractRenderer(
           formViews,
           viewKind,
           viewName,
