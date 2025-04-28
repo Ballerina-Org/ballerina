@@ -16,7 +16,7 @@ export const extractPredicateValue = (
 ) => ValueOrErrors<Array<PredicateValue>, Errors<any>>) => {
   switch (t.kind) {
     case "lookup": {
-      const lookupType = typesMap.get(t.name)!;
+      const lookupType = typesMap.get(t.name);
       if (!lookupType) {
         return (_) =>
           ValueOrErrors.Default.throwOne(
