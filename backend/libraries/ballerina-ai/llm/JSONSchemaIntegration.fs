@@ -44,21 +44,13 @@ module private Errors =
          Type = fun typeName actual -> Errors.Singleton $"Error: {typeName} type, got {actual}" |}
 
 
-[<RequireQualifiedAccess>]
-module JSONSchemaIntegration =
-  open Ballerina.Collections.Sum
+module private JsonSchemaExtensions =
   open NJsonSchema
-  open FSharp.Data
-  open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
-  open System
-  open DerivedFormsConversions
-  open Errors
-  open Ballerina.Errors
 
-  let private discriminatorFieldName = "discriminator"
+  let discriminatorFieldName = "discriminator"
 
-  let private valueFieldName = "value"
+  let valueFieldName = "value"
 
   type JsonSchema with
     static member private ToPropertySchema(schema: JsonSchema) =
@@ -98,7 +90,7 @@ module JSONSchemaIntegration =
 
       propertySchema
 
-    static member private MakeObjectJsonSchema(fields: (string * JsonSchema) list) =
+    static member MakeObjectJsonSchema(fields: (string * JsonSchema) list) =
       let schema =
         JsonSchema(Type = JsonObjectType.Object, AllowAdditionalProperties = false, AllowAdditionalItems = false)
 
@@ -107,7 +99,7 @@ module JSONSchemaIntegration =
 
       schema
 
-    static member private MakeOneOfJsonSchema(fields: (CaseName * JsonSchema) list) =
+    static member MakeOneOfJsonSchema(fields: (CaseName * JsonSchema) list) =
       let schema =
         JsonSchema(Type = JsonObjectType.Object, Discriminator = discriminatorFieldName)
 
@@ -130,6 +122,18 @@ module JSONSchemaIntegration =
 
       schema
 
+[<RequireQualifiedAccess>]
+module JSONSchemaIntegration =
+  open Ballerina.Collections.Sum
+  open NJsonSchema
+  open FSharp.Data
+  open Ballerina.DSL.Expr.Model
+  open Ballerina.DSL.Expr.Types.Model
+  open System
+  open DerivedFormsConversions
+  open Errors
+  open Ballerina.Errors
+  open JsonSchemaExtensions
 
   let generateJsonSchema (t: ExprType) =
     let rec eval (t: ExprType) =
