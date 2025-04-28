@@ -24,8 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ballerina-core\ballerina-core.fsproj" />
-    <ProjectReference Include="..\ballerina-ai\ballerina-ai.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-core\ballerina-core.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-ai\ballerina-ai.fsproj" />
   </ItemGroup>
 
 </Project>

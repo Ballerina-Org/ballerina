@@ -25,7 +25,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "positions", "libraries\posi
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-ai", "libraries\ballerina-ai\ballerina-ai.fsproj", "{F5128074-4170-40FF-BA19-9E97E2B7F445}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-core.Tests", "libraries\ballerina-ai.Tests\ballerina-core.Tests.fsproj", "{1879494C-A67F-4CC8-97CE-FF83433389FB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-core.Tests", "apps\ballerina-ai.Tests\ballerina-ai.Tests.fsproj", "{1879494C-A67F-4CC8-97CE-FF83433389FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
