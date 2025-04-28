@@ -1,5 +1,5 @@
 import { id } from "../../../fun/domains/id/state";
-import { Unit } from "../../../fun/domains/unit/state";
+import { unit, Unit } from "../../../fun/domains/unit/state";
 import { BasicUpdater, Updater } from "../../../fun/domains/updater/state";
 import { BasicFun, Fun } from "../../../fun/state";
 export type LeftValue<a> = { value: a; kind: "l" };
@@ -84,3 +84,17 @@ export const Sum = Object.assign(
   },
 );
 export const Either = Sum;
+
+export const Option = {
+  Default: {
+    none: <a>(): Option<a> => Sum.Default.left<Unit, a>(unit),
+    some: <a>(_: a): Option<a> => Sum.Default.right<Unit, a>(_),
+  },
+  Updaters: {
+    none: <a>(): Updater<Option<a>> => Sum.Updaters.left<Unit, a>((_) => unit),
+    some: <a>(_: BasicUpdater<a>): Updater<Option<a>> =>
+      Sum.Updaters.right<Unit, a>(_),
+    map2: <a, a1>(some: BasicFun<a, a1>): Fun<Option<a>, Option<a1>> =>
+      Sum.Updaters.map2<Unit, a, Unit, a1>(id, some),
+  },
+};

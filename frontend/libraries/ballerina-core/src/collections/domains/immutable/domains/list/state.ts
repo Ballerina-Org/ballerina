@@ -17,6 +17,13 @@ export const ListRepo = {
     insert<V>(elementIndex: number, v: V): Updater<List<V>> {
       return Updater((_) => _.insert(elementIndex, v));
     },
+    update<V>(elementIndex: number, upd: Updater<V>): Updater<List<V>> {
+      return Updater((_) => {
+        const element = _.get(elementIndex);
+        if (element == undefined) return _;
+        return _.set(elementIndex, upd(element));
+      });
+    },
     filter<V>(predicate: BasicFun<V, boolean>): Updater<List<V>> {
       return Updater((_) => _.filter(predicate));
     },

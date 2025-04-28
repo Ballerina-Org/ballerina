@@ -255,6 +255,7 @@ export type ValueOption = {
   isSome: boolean;
   value: PredicateValue;
 };
+
 export const ValueOption = {
   Default: {
     some: (value: PredicateValue): ValueOption => ({
@@ -277,6 +278,26 @@ export type ValueVarLookup = { kind: "varLookup"; varName: string };
 export type ValueSum = {
   kind: "sum";
   value: Sum<PredicateValue, PredicateValue>;
+};
+
+export const ValueSum = {
+  Default: (value: Sum<PredicateValue, PredicateValue>): ValueSum => ({
+    kind: "sum",
+    value,
+  }),
+  Updaters: {
+    ...simpleUpdater<ValueSum>()("value"),
+  },
+};
+
+export const ValueTuple = {
+  Default: (): ValueTuple => ({
+    kind: "tuple",
+    values: List(),
+  }),
+  Updaters: {
+    ...simpleUpdater<ValueTuple>()("values"),
+  },
 };
 
 export type PredicateValue =
