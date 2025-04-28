@@ -466,11 +466,11 @@ const entityApis: EntityApis = {
             ],
           });
         };
-      case "globalConfiguration":
+      case "person-config":
         return (_: Guid) => {
           return Promise.resolve({
             IsAdmin: false,
-            ActiveFields: [
+            ActiveAddressFields: [
               { Value: "departments" },
               { Value: "schoolAddress" },
               { Value: "mainAddress" },

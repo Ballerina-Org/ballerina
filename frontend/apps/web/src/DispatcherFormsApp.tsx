@@ -37,7 +37,7 @@ import {
   PersonFormInjectedTypes,
 } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
-import SPEC from "../../../../backend/apps/ballerina-runtime/input-forms/person-config.json";
+import SPEC from "../../../../backend/apps/ballerina-runtime/input-forms/dispatch-person-config.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,
@@ -73,8 +73,9 @@ export const DispatcherFormsApp = (props: {}) => {
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
     DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
   );
-  const [personAddressConfigFormState, setPersonAddressConfigFormState] =
-    useState(DispatchFormRunnerState<PersonFormInjectedTypes>().Default());
+  const [personConfigState, setPersonConfigState] = useState(
+    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+  );
 
   const [personEntity, setPersonEntity] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
@@ -117,6 +118,39 @@ export const DispatcherFormsApp = (props: {}) => {
         `Unsupported delta kind: ${deltaCustom.value.kind}`,
       );
     };
+
+  const onPersonConfigChange = (
+    updater: Updater<any>,
+    delta: DispatchDelta,
+  ): void => {
+    if (config.kind == "r" || config.value.kind == "errors") {
+      return;
+    }
+
+    const newConfig = updater(config.value.value);
+    console.log("patching config", newConfig);
+    setConfig(
+      replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
+    );
+    if (
+      specificationDeserializer.deserializedSpecification.sync.kind ==
+        "loaded" &&
+      specificationDeserializer.deserializedSpecification.sync.value.kind ==
+        "value"
+    ) {
+      const toApiRawParser =
+        specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
+          "person-config",
+        )!.parseValueToApi;
+      setEntityPath(
+        DispatchDeltaTransfer.Default.FromDelta(
+          toApiRawParser as any, //TODO - fix type issue if worth it
+          parseCustomDelta,
+        )(delta),
+      );
+    }
+  };
+
   const onPersonEntityChange = (
     updater: Updater<any>,
     delta: DispatchDelta,
@@ -200,7 +234,7 @@ export const DispatcherFormsApp = (props: {}) => {
         }
       });
     DispatchPersonFromConfigApis.entityApis
-      .get("globalConfiguration")("")
+      .get("person-config")("")
       .then((raw) => {
         if (
           specificationDeserializer.deserializedSpecification.sync.kind ==
@@ -210,10 +244,10 @@ export const DispatcherFormsApp = (props: {}) => {
         ) {
           const parsed =
             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-              .get("person-transparent")!
-              .parseGlobalConfigurationFromApi(raw);
+              .get("person-config")!
+              .parseEntityFromApi(raw);
           if (parsed.kind == "errors") {
-            console.error("parsed global configuration errors", parsed.errors);
+            console.error("parsed person config errors", parsed.errors);
           } else {
             setConfig(Sum.Default.left(parsed));
           }
@@ -225,6 +259,9 @@ export const DispatcherFormsApp = (props: {}) => {
   // console.debug("personPassthroughFormState", JSON.stringify(personPassthroughFormState, null, 2));
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
   // console.debug("globalConfiguration", JSON.stringify(globalConfiguration, null, 2));
+
+  console.debug("personConfigState", JSON.stringify(personConfigState, null, 2));
+  console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (
     specificationDeserializer.deserializedSpecification.sync.kind == "loaded" &&
@@ -289,6 +326,31 @@ export const DispatcherFormsApp = (props: {}) => {
                 />
                 <h3> Dispatcher Passthrough form</h3>
 
+                <h4>Config</h4>
+                <div style={{ border: "2px dashed lightblue" }}>
+                  <InstantiedPersonDispatchFormRunnerTemplate
+                    context={{
+                      ...specificationDeserializer,
+                      ...personConfigState,
+                      formRef: {
+                        formName: "person-config",
+                        kind: "passthrough",
+                        entity: config,
+                        config: Sum.Default.left(
+                          ValueOrErrors.Default.return(
+                            PredicateValue.Default.record(Map()),
+                          ),
+                        ),
+                        onEntityChange: onPersonConfigChange,
+                      },
+                      showFormParsingErrors: ShowFormsParsingErrors,
+                      extraContext: {},
+                    }}
+                    setState={setPersonConfigState}
+                    view={unit}
+                    foreignMutations={unit}
+                  />
+                </div>
                 <h3>Person</h3>
                 {entityPath && entityPath.kind == "value" && (
                   <pre
