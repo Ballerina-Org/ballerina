@@ -105,11 +105,11 @@ module JSONSchemaConversion =
            "type", JsonValue.String "object"
            "additionalItems", JsonValue.Boolean false
            "additionalProperties", JsonValue.Boolean false
-           "required", JsonValue.Array [| JsonValue.String "first"; JsonValue.String "second" |]
+           "required", JsonValue.Array [| JsonValue.String "0"; JsonValue.String "1" |]
            "properties",
            JsonValue.Record
-             [| "first", JsonValue.Record [| "type", JsonValue.String "string" |]
-                "second", JsonValue.Record [| "type", JsonValue.String "integer"; "format", JsonValue.String "int32" |] |] |]
+             [| "0", JsonValue.Record [| "type", JsonValue.String "string" |]
+                "1", JsonValue.Record [| "type", JsonValue.String "integer"; "format", JsonValue.String "int32" |] |] |]
 
     assertSuccess result expected
 

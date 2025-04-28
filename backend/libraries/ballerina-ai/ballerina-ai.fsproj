@@ -6,6 +6,7 @@
     <RuntimeIdentifiers>linux-x64;osx-x64;linux-arm64;win-x64</RuntimeIdentifiers>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>

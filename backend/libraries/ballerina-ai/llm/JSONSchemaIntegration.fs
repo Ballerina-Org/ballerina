@@ -83,35 +83,31 @@ module JSONSchemaIntegration =
 
     schema
 
-  let private sumToUnion (left: ExprType) (right: ExprType) =
+  let private sumTypeToUnion (left: ExprType) (right: ExprType) =
     Map.ofList
       [ { CaseName = "left" }, { CaseName = "left"; Fields = left }
         { CaseName = "right" }, { CaseName = "right"; Fields = right } ]
 
-  let private optionToUnion (inner: ExprType) =
+  let private optionTypeToUnion (inner: ExprType) =
     Map.ofList
       [ { CaseName = "some" }, { CaseName = "some"; Fields = inner }
         { CaseName = "none" },
         { CaseName = "none"
           Fields = ExprType.UnitType } ]
 
-  let private tupleKeys =
-    [ "first"
-      "second"
-      "third"
-      "fourth"
-      "fifth"
-      "sixth"
-      "seventh"
-      "eighth"
-      "ninth"
-      "tenth" ]
+  let private indexToKey (i: int) = $"{i}"
 
-  let private tupleToRecord (items: ExprType list) =
-    match items with
-    | _ when List.length items > List.length tupleKeys ->
-      sum.Throw(Errors.Singleton $"Error: tuple type with more than {List.length tupleKeys} items not implemented")
-    | items -> Left(Map.ofList (List.zip tupleKeys[0 .. List.length items - 1] items))
+  let private tupleTypeToRecord (items: ExprType list) =
+    items |> List.mapi (fun i item -> indexToKey i, item) |> Map.ofList
+
+  let private recordValueToTuple (record: Map<string, Value>) =
+    [ 0 .. record.Count - 1 ]
+    |> List.map indexToKey
+    |> List.map (fun i ->
+      match Map.tryFind i record with
+      | Some value -> Left value
+      | None -> sum.Throw(Errors.Singleton $"Error: key {i} not found in {record}"))
+    |> sum.All
 
   let private createExpectationError (expected: string) (actual: string) =
     Errors.Singleton $"Error: {expected} expected, got {actual}"
@@ -148,8 +144,8 @@ module JSONSchemaIntegration =
             let! valueType = !v
             JsonSchema(Type = JsonObjectType.Object, AdditionalPropertiesSchema = valueType)
           | _ -> return! sum.Throw(Errors.Singleton $"Error: not implemented default value for map key type {k}")
-        | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(sumToUnion lt rt)
-        | ExprType.OptionType e -> return! !ExprType.UnionType(optionToUnion e)
+        | ExprType.SumType(lt, rt) -> return! !ExprType.UnionType(sumTypeToUnion lt rt)
+        | ExprType.OptionType e -> return! !ExprType.UnionType(optionTypeToUnion e)
         | ExprType.SetType e -> return! !ExprType.ListType(e)
         | ExprType.RecordType fields ->
           let! schemaByField =
@@ -162,10 +158,8 @@ module JSONSchemaIntegration =
             |> sum.All
 
           schemaByField |> makeObjectJsonSchema
-        | ExprType.TupleType items ->
-          let! asRecord = tupleToRecord items
-          return! !ExprType.RecordType(asRecord)
-        | ExprType.LookupType l -> return! sum.Throw(createNotImplementedError "lookup type")
+        | ExprType.TupleType items -> return! items |> tupleTypeToRecord |> ExprType.RecordType |> (!)
+        | ExprType.LookupType _ -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.UnionType cs ->
           let! schemaByCase =
             cs
@@ -181,8 +175,8 @@ module JSONSchemaIntegration =
         | ExprType.VarType _ -> return! sum.Throw(createNotImplementedError "var type")
         | ExprType.SchemaLookupType _ -> return! sum.Throw(createNotImplementedError "schema lookup type")
         | ExprType.TableType _ -> return! sum.Throw(createNotImplementedError "table type")
-        | ExprType.OneType e -> return! sum.Throw(createNotImplementedError "one type")
-        | ExprType.ManyType e -> return! sum.Throw(createNotImplementedError "many type")
+        | ExprType.OneType _ -> return! sum.Throw(createNotImplementedError "one type")
+        | ExprType.ManyType _ -> return! sum.Throw(createNotImplementedError "many type")
       }
 
     eval t
@@ -252,8 +246,8 @@ module JSONSchemaIntegration =
               return fields |> Map.ofList |> Value.Record
             | unexpected -> return! sum.Throw(createTypeError "object" $"{unexpected}")
           | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
-        | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(sumToUnion lt rt)) data
-        | ExprType.OptionType e -> return! eval (ExprType.UnionType(optionToUnion e)) data
+        | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(sumTypeToUnion lt rt)) data
+        | ExprType.OptionType e -> return! eval (ExprType.UnionType(optionTypeToUnion e)) data
         | ExprType.SetType e -> return! eval (ExprType.ListType e) data
         | ExprType.UnionType cs ->
           match data with
@@ -291,23 +285,14 @@ module JSONSchemaIntegration =
         | ExprType.VarType _ -> return! sum.Throw(createNotImplementedError "var type")
         | ExprType.SchemaLookupType _ -> return! sum.Throw(createNotImplementedError "schema lookup type")
         | ExprType.TableType _ -> return! sum.Throw(createNotImplementedError "table type")
-        | ExprType.OneType e -> return! sum.Throw(createNotImplementedError "one type")
-        | ExprType.ManyType e -> return! sum.Throw(createNotImplementedError "many type")
-        | ExprType.LookupType l -> return! sum.Throw(createNotImplementedError "lookup type")
+        | ExprType.OneType _ -> return! sum.Throw(createNotImplementedError "one type")
+        | ExprType.ManyType _ -> return! sum.Throw(createNotImplementedError "many type")
+        | ExprType.LookupType _ -> return! sum.Throw(createNotImplementedError "lookup type")
         | ExprType.TupleType items ->
-          let! asRecord = tupleToRecord items
-          let! recordValue = eval (ExprType.RecordType asRecord) data
+          let! recordValue = eval (ExprType.RecordType(tupleTypeToRecord items)) data
 
           match recordValue with
-          | Value.Record r ->
-            return!
-              tupleKeys
-              |> List.map (fun key ->
-                match Map.tryFind key r with
-                | Some v -> Left v
-                | None -> sum.Throw(Errors.Singleton $"Error: key {key} not found in {r}"))
-              |> sum.All
-              |> Sum.map Value.Tuple
+          | Value.Record r -> return! r |> recordValueToTuple |> Sum.map Value.Tuple
           | _ -> return! sum.Throw(createTypeError "record" $"{recordValue}")
       }
 
