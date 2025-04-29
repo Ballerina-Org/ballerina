@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <Compile Include="llm/JSONSchemaIntegration.fs" />
+    <Compile Include="tgi/TGIIntegration.fs" />
   </ItemGroup>
 
   <ItemGroup>
