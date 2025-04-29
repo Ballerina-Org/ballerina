@@ -319,7 +319,7 @@ module JSONSchemaIntegration =
       | None -> sum.Throw(Errors.Singleton $"Error: invalid json {data}")
 
   let private promptForSchema (t: JsonSchema) =
-    LLM.OutputStructureDescriptionForPrompt $"Output schema: {t.ToString()}"
+    LLM.OutputStructureDescriptionForPrompt $"Output schema: {t.ToJson()}"
 
   let JSONSchemaIntegration: LLM.StructuredOutputIntegration<JsonSchema> =
     LLM.StructuredOutputIntegration(fun t ->

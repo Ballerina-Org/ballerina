@@ -26,7 +26,7 @@ module TGIIntegration =
 
       let imagePrefix =
         match prompt.Image with
-        | Some(LLM.Base64PNGImage image) -> $"data:image/png;base64,{image}"
+        | Some(LLM.Base64PNGImage image) -> $"![](data:image/png;base64,{image})"
         | None -> ""
 
       let request =
