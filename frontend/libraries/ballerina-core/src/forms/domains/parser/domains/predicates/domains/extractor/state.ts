@@ -1,9 +1,5 @@
-import { List } from "immutable";
+import { List, Map } from "immutable";
 import { ValueOrErrors, Errors } from "../../../../../../../../main";
-import {
-  CollectionReference,
-  EnumReference,
-} from "../../../../../collection/domains/reference/state";
 import { ParsedType } from "../../../types/state";
 import { PredicateValue } from "../../state";
 
@@ -30,11 +26,7 @@ export const extractPredicateValue = (
         lookupType,
       );
       return (v) =>
-        !PredicateValue.Operations.IsVarLookup(v)
-          ? ValueOrErrors.Default.throwOne(
-              Errors.Default.singleton(["not a ValueLookup", v]),
-            )
-          : v.varName === lookupName
+        t.name === lookupName
           ? ValueOrErrors.Default.return([v])
           : traverseLookupValue(v);
     }
@@ -70,9 +62,11 @@ export const extractPredicateValue = (
                   .entrySeq()
                   .map(([k, traverseField]) => traverseField(v.fields.get(k)!)),
               ),
-            ).Map(
-              (listFailingChecks) =>
-                listFailingChecks.flatten().toArray() as Array<PredicateValue>,
+            ).Map((listFailingChecks) =>
+              listFailingChecks.reduce(
+                (acc, curr) => [...acc, ...curr],
+                [] as Array<PredicateValue>,
+              ),
             );
     }
     case "application": {
@@ -93,15 +87,6 @@ export const extractPredicateValue = (
                 )
               : !v.isSome
               ? ValueOrErrors.Default.return([])
-              : !CollectionReference.Operations.IsCollectionReference(
-                  v.value,
-                ) && !EnumReference.Operations.IsEnumReference(v.value)
-              ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton([
-                    "not a CollectionReference or EnumReference",
-                    v.value,
-                  ]),
-                )
               : traverseSingleSelection(v.value);
         }
         case "MultiSelection": {
@@ -125,11 +110,11 @@ export const extractPredicateValue = (
                       .entrySeq()
                       .map(([_, field]) => traverseMultiSelectionField(field)),
                   ),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "Map": {
@@ -159,19 +144,19 @@ export const extractPredicateValue = (
                               traverseField(field),
                             ),
                           ),
-                        ).Map(
-                          (listFailingChecks) =>
-                            listFailingChecks
-                              .flatten()
-                              .toArray() as Array<PredicateValue>,
+                        ).Map((listFailingChecks) =>
+                          listFailingChecks.reduce(
+                            (acc, curr) => [...acc, ...curr],
+                            [] as Array<PredicateValue>,
+                          ),
                         ),
                       ),
                   ),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "Sum": {
@@ -196,11 +181,11 @@ export const extractPredicateValue = (
                       (traverseField) => traverseField(v),
                     ),
                   ),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "Option": {
@@ -233,11 +218,11 @@ export const extractPredicateValue = (
                       traverseField(v.values.get(idx)!),
                     ),
                   ),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "Union": {
@@ -260,11 +245,11 @@ export const extractPredicateValue = (
                         : [traverseField(v.values.get(idx)!)],
                     ),
                   ),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "KeyOf":
@@ -282,11 +267,11 @@ export const extractPredicateValue = (
                 )
               : ValueOrErrors.Operations.All(
                   List(v.values.map((v) => traverseListField(v))),
-                ).Map(
-                  (listFailingChecks) =>
-                    listFailingChecks
-                      .flatten()
-                      .toArray() as Array<PredicateValue>,
+                ).Map((listFailingChecks) =>
+                  listFailingChecks.reduce(
+                    (acc, curr) => [...acc, ...curr],
+                    [] as Array<PredicateValue>,
+                  ),
                 );
         }
         case "Table":
@@ -295,28 +280,10 @@ export const extractPredicateValue = (
       }
     }
     case "union": {
-      // return empty array?
-      // and use the following in the application/union case?
-      const traverseUnionFields = t.args.map((f) =>
-        extractPredicateValue(lookupName, typesMap, f.fields),
-      );
-      return (v) =>
-        !PredicateValue.Operations.IsRecord(v)
-          ? ValueOrErrors.Default.throwOne(
-              Errors.Default.singleton(["not a ValueRecord (from union)", v]),
-            )
-          : ValueOrErrors.Operations.All(
-              List(
-                traverseUnionFields
-                  .entrySeq()
-                  .flatMap(([k, traverseField]) =>
-                    !v.fields.has(k) ? [] : [traverseField(v.fields.get(k)!)],
-                  ),
-              ),
-            ).Map(
-              (listFailingChecks) =>
-                listFailingChecks.flatten().toArray() as Array<PredicateValue>,
-            );
+      // const traverseUnionFields = t.args.map((f) =>
+      //   extractPredicateValue(lookupName, typesMap, f.fields),
+      // );
+      return (_) => ValueOrErrors.Default.return([]);
     }
     case "table":
     default:
