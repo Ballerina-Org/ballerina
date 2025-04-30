@@ -55,8 +55,6 @@ export const RecordAbstractRenderer = <
           },
         ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
           ..._,
-          type:
-            _.type.kind == "record" ? _.type.fields.get(fieldName) : undefined,
           value: _.value.fields.get(fieldName)!,
           type:
             _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
