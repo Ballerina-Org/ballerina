@@ -26,7 +26,7 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
   return (
     <>
       <table>
-        <tbody>
+        <tbody style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
           {props.context.layout.valueSeq().map((tab) =>
             tab.columns.valueSeq().map((column) => (

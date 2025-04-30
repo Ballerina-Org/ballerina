@@ -32,39 +32,43 @@ const intialiseTable = Co.GetState().then((current) => {
   const getChunkWithParams = current.tableApiSource(current.fromTableApiParser);
 
   return Co.SetState(
-    AbstractTableRendererState.Updaters.Core.customFormState.children
-      .stream(
-        replaceWith(
-          ValueInfiniteStreamState.Default(
-            DEFAULT_CHUNK_SIZE,
-            getChunkWithParams(Map<string, string>()),
-            initialData.size == 0 && hasMoreValues ? "loadMore" : false,
+    replaceWith(AbstractTableRendererState.Default()).then(
+      AbstractTableRendererState.Updaters.Core.customFormState.children
+        .stream(
+          replaceWith(
+            ValueInfiniteStreamState.Default(
+              DEFAULT_CHUNK_SIZE,
+              getChunkWithParams(Map<string, string>()),
+              initialData.size == 0 && hasMoreValues ? "loadMore" : false,
+            ),
+          )
+            .then(
+              ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
+                data: initialData,
+                hasMoreValues: hasMoreValues,
+                from,
+                to,
+              }),
+            )
+            .then(
+              ValueInfiniteStreamState.Updaters.Core.position(
+                ValueStreamPosition.Updaters.Core.nextStart(
+                  replaceWith(to + 1),
+                ),
+              ),
+            ),
+        )
+        .then(
+          AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
+            replaceWith(getChunkWithParams),
           ),
         )
-          .then(
-            ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
-              data: initialData,
-              hasMoreValues: hasMoreValues,
-              from,
-              to,
-            }),
-          )
-          .then(
-            ValueInfiniteStreamState.Updaters.Core.position(
-              ValueStreamPosition.Updaters.Core.nextStart(replaceWith(to + 1)),
-            ),
+        .then(
+          AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
+            replaceWith(true),
           ),
-      )
-      .then(
-        AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
-          replaceWith(getChunkWithParams),
         ),
-      )
-      .then(
-        AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
-          replaceWith(true),
-        ),
-      ),
+    ),
   );
 });
 

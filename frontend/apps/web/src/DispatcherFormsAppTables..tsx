@@ -223,8 +223,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                   foreignMutations={unit}
                 />
                 <h3> Dispatcher Table Passthrough form</h3>
-                <h3>Person</h3>
-                {delta && delta.kind == "value" && (
+                {/* {delta && delta.kind == "value" && (
                   <pre
                     style={{
                       display: "inline-block",
@@ -234,7 +233,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                   >
                     {JSON.stringify(delta.value, null, 2)}
                   </pre>
-                )}
+                )} */}
                 {delta && delta.kind == "errors" && (
                   <p>DeltaErrors: {JSON.stringify(delta.errors, null, 2)}</p>
                 )}

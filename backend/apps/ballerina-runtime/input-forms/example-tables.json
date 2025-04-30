@@ -73,18 +73,46 @@
         "Surname": {
           "renderer": "defaultString",
           "disabled": true
-        },
-        "Birthday": {
-          "renderer": "defaultDate"
-        },
-        "Email": {
-          "renderer": "defaultString"
-        },
-        "SubscribeToNewsletter": {
-          "renderer": "defaultBoolean"
         }
       },
-      "visibleColumns": ["Name", "Surname", "Email", "SubscribeToNewsletter"]
+      "detailsRenderer": {
+        "type": "User",
+        "fields": {
+          "Name": {
+            "label": "First Name",
+            "renderer": "defaultString"
+          },
+          "Surname": {
+            "label": "Last Name",
+            "renderer": "defaultString",
+            "disabled": true
+          },
+          "Email": {
+            "label": "Email",
+            "renderer": "defaultString"
+          },
+          "Birthday": {
+            "label": "Birthday",
+            "renderer": "defaultDate"
+          },
+          "SubscribeToNewsletter": {
+            "label": "Subscribe to Newsletter",
+            "renderer": "defaultBoolean"
+          }
+        },
+        "tabs": {
+          "main": {
+            "columns": {
+              "main": {
+                "groups": {
+                  "main": ["Name", "Surname", "Email", "Birthday", "SubscribeToNewsletter"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "visibleColumns": ["Name", "Surname"]
     },
     "UsersSetup": {
       "type": "UsersSetup",
