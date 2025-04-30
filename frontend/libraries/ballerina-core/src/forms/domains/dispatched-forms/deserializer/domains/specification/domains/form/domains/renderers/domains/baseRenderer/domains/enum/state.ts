@@ -70,8 +70,8 @@ export const BaseEnumRenderer = {
       !BaseEnumRenderer.Operations.hasRenderer(serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
         : !BaseEnumRenderer.Operations.hasOptions(serialized)
-        ? ValueOrErrors.Default.throwOne(`options are required`)
-        : ValueOrErrors.Default.return(serialized),
+          ? ValueOrErrors.Default.throwOne(`options are required`)
+          : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: SerializedEnumRecordFieldRenderer,

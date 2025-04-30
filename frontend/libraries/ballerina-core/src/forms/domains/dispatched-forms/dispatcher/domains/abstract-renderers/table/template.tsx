@@ -154,7 +154,9 @@ export const TableAbstractRenderer = (
 
               return {
                 value,
-                commonFormState: rowState?.commonFormState ?? DispatchCommonFormState.Default(),
+                commonFormState:
+                  rowState?.commonFormState ??
+                  DispatchCommonFormState.Default(),
                 customFormState: rowState?.customFormState,
                 disabled: false, // to do think about
                 bindings: _.bindings,

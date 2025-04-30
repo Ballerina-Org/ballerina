@@ -134,8 +134,8 @@ export const BaseRenderer = {
       visible == undefined
         ? ValueOrErrors.Default.return(undefined)
         : renderingContext == "recordField"
-        ? Expr.Operations.parseAsVisibilityExpression(visible)
-        : ValueOrErrors.Default.return(undefined),
+          ? Expr.Operations.parseAsVisibilityExpression(visible)
+          : ValueOrErrors.Default.return(undefined),
     ComputeDisabled: (
       disabled: unknown,
       renderingContext: ParentContext,
@@ -143,8 +143,8 @@ export const BaseRenderer = {
       disabled == undefined
         ? ValueOrErrors.Default.return(undefined)
         : renderingContext == "recordField" || renderingContext == "tableColumn"
-        ? Expr.Operations.parseAsDisabledExpression(disabled)
-        : ValueOrErrors.Default.return(undefined),
+          ? Expr.Operations.parseAsDisabledExpression(disabled)
+          : ValueOrErrors.Default.return(undefined),
     DeserializeAsInlineRenderer: <T>(
       serialized: SerializedInlineRenderer,
       fieldViews: any,
@@ -156,44 +156,44 @@ export const BaseRenderer = {
             string
           >(`inlined renderer missing type ${serialized.renderer}`)
         : !isString(serialized.type)
-        ? ValueOrErrors.Default.throwOne<
-            TableFormRenderer<T> | RecordFormRenderer<T>,
-            string
-          >(`inlined renderer type is not a string`)
-        : MapRepo.Operations.tryFindWithError(
-            serialized.type,
-            types,
-            () => `cannot find type ${serialized.type} in types`,
-          )
-            .Then((type) =>
-              BaseRenderer.Operations.IsRecordForm(serialized)
-                ? type.kind == "record"
-                  ? RecordFormRenderer.Operations.Deserialize(
-                      type,
-                      serialized,
-                      fieldViews,
-                      types,
-                    )
-                  : ValueOrErrors.Default.throwOne<
-                      TableFormRenderer<T> | RecordFormRenderer<T>,
-                      string
-                    >(`record form inlined renderer has non record type`)
-                : TableFormRenderer.Operations.Deserialize(
-                    DispatchParsedType.Default.table(
-                      "inlined table",
-                      [type],
-                      "inlined table",
-                    ),
-                    serialized,
-                    types,
-                    fieldViews,
-                  ),
+          ? ValueOrErrors.Default.throwOne<
+              TableFormRenderer<T> | RecordFormRenderer<T>,
+              string
+            >(`inlined renderer type is not a string`)
+          : MapRepo.Operations.tryFindWithError(
+              serialized.type,
+              types,
+              () => `cannot find type ${serialized.type} in types`,
             )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When parsing as inline renderer`,
+              .Then((type) =>
+                BaseRenderer.Operations.IsRecordForm(serialized)
+                  ? type.kind == "record"
+                    ? RecordFormRenderer.Operations.Deserialize(
+                        type,
+                        serialized,
+                        fieldViews,
+                        types,
+                      )
+                    : ValueOrErrors.Default.throwOne<
+                        TableFormRenderer<T> | RecordFormRenderer<T>,
+                        string
+                      >(`record form inlined renderer has non record type`)
+                  : TableFormRenderer.Operations.Deserialize(
+                      DispatchParsedType.Default.table(
+                        "inlined table",
+                        [type],
+                        "inlined table",
+                      ),
+                      serialized,
+                      types,
+                      fieldViews,
+                    ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When parsing as inline renderer`,
+                ),
               ),
-            ),
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: SerializedBaseRenderer,

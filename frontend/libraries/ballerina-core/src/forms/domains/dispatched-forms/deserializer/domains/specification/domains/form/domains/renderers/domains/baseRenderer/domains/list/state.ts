@@ -21,7 +21,10 @@ export type SerializedBaseListRenderer = {
 
 export type BaseListRenderer<T> = BaseBaseRenderer & {
   kind: "baseListRenderer";
-  elementRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
+  elementRenderer:
+    | BaseRenderer<T>
+    | TableFormRenderer<T>
+    | RecordFormRenderer<T>;
   type: ListType<T>;
   concreteRendererName: string;
 };
@@ -30,7 +33,10 @@ export const BaseListRenderer = {
   Default: <T>(
     type: ListType<T>,
     concreteRendererName: string,
-    elementRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+    elementRenderer:
+      | BaseRenderer<T>
+      | TableFormRenderer<T>
+      | RecordFormRenderer<T>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,

@@ -5,7 +5,10 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 import { RecordFormRenderer } from "../../../recordFormRenderer/state";
-import { DispatchParsedType, TupleType } from "../../../../../../../types/state";
+import {
+  DispatchParsedType,
+  TupleType,
+} from "../../../../../../../types/state";
 
 import {
   BaseBaseRenderer,
@@ -22,7 +25,9 @@ export type SerializedBaseTupleRenderer = {
 
 export type BaseTupleRenderer<T> = BaseBaseRenderer & {
   kind: "baseTupleRenderer";
-  itemRenderers: Array<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
+  itemRenderers: Array<
+    BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+  >;
   type: TupleType<T>;
   concreteRendererName: string;
 };
@@ -31,7 +36,9 @@ export const BaseTupleRenderer = {
   Default: <T>(
     type: TupleType<T>,
     concreteRendererName: string,
-    itemRenderers: Array<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
+    itemRenderers: Array<
+      BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+    >,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
@@ -112,7 +119,14 @@ export const BaseTupleRenderer = {
               renderingContext,
             ).Then((disabledExpr) =>
               ValueOrErrors.Operations.All(
-                List<ValueOrErrors<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>, string>>(
+                List<
+                  ValueOrErrors<
+                    | BaseRenderer<T>
+                    | TableFormRenderer<T>
+                    | RecordFormRenderer<T>,
+                    string
+                  >
+                >(
                   renderer.itemRenderers.map((itemRenderer, index) =>
                     BaseRenderer.Operations.DeserializeAs(
                       type.args[index],

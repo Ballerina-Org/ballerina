@@ -23,7 +23,10 @@ export type SerializedRecordFormRenderer = {
 export type RecordFormRenderer<T> = {
   kind: "recordForm";
   type: DispatchParsedType<T>;
-  fields: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
+  fields: Map<
+    string,
+    BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+  >;
   tabs: PredicateFormLayout;
   extendsForms: string[];
   concreteRendererName?: string;
@@ -34,7 +37,10 @@ export type RecordFormRenderer<T> = {
 export const RecordFormRenderer = {
   Default: <T>(
     type: DispatchParsedType<T>,
-    fields: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
+    fields: Map<
+      string,
+      BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+    >,
     tabs: PredicateFormLayout,
     extendsForms: string[],
     concreteRendererName?: string,
@@ -118,7 +124,19 @@ export const RecordFormRenderer = {
       RecordFormRenderer.Operations.tryAsValidRecordForm(serialized)
         .Then((validRecordForm) =>
           ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>], string>>(
+            List<
+              ValueOrErrors<
+                [
+                  string,
+                  (
+                    | BaseRenderer<T>
+                    | TableFormRenderer<T>
+                    | RecordFormRenderer<T>
+                  ),
+                ],
+                string
+              >
+            >(
               validRecordForm.fields
                 .toArray()
                 .map(

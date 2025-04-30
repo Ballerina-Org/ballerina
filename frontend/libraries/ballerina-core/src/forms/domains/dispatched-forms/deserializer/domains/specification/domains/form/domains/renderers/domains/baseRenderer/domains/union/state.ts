@@ -4,7 +4,10 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 import { RecordFormRenderer } from "../../../recordFormRenderer/state";
-import { DispatchParsedType, UnionType } from "../../../../../../../types/state";
+import {
+  DispatchParsedType,
+  UnionType,
+} from "../../../../../../../types/state";
 
 import {
   BaseBaseRenderer,
@@ -21,7 +24,10 @@ export type SerializedBaseUnionRenderer = {
 
 export type BaseUnionRenderer<T> = BaseBaseRenderer & {
   kind: "baseUnionRenderer";
-  cases: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
+  cases: Map<
+    string,
+    BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+  >;
   type: UnionType<T>;
   concreteRendererName: string;
 };
@@ -30,7 +36,10 @@ export const BaseUnionRenderer = {
   Default: <T>(
     type: UnionType<T>,
     concreteRendererName: string,
-    cases: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
+    cases: Map<
+      string,
+      BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+    >,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
@@ -110,7 +119,19 @@ export const BaseUnionRenderer = {
               renderingContext,
             ).Then((disabledExpr) =>
               ValueOrErrors.Operations.All(
-                List<ValueOrErrors<[string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>], string>>(
+                List<
+                  ValueOrErrors<
+                    [
+                      string,
+                      (
+                        | BaseRenderer<T>
+                        | TableFormRenderer<T>
+                        | RecordFormRenderer<T>
+                      ),
+                    ],
+                    string
+                  >
+                >(
                   Object.entries(renderer.cases).map(([caseName, caseProp]) => {
                     const caseType = type.args.get(caseName);
                     if (!caseType) {
@@ -138,7 +159,12 @@ export const BaseUnionRenderer = {
                   BaseUnionRenderer.Default(
                     type,
                     renderer.renderer,
-                    Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>(deserializedCases),
+                    Map<
+                      string,
+                      | BaseRenderer<T>
+                      | TableFormRenderer<T>
+                      | RecordFormRenderer<T>
+                    >(deserializedCases),
                     visibleExpr,
                     disabledExpr,
                     renderer.label,

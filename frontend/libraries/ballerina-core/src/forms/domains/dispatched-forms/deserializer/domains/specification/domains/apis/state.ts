@@ -38,28 +38,30 @@ export const EnumApis = {
       serializedApiEnums === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiEnums)
-        ? ValueOrErrors.Default.throwOne(`serializedApiEnums is not an object`)
-        : ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[EnumApiName, DispatchTypeName], string>>(
-              Object.entries(serializedApiEnums).map(([key, value]) =>
-                !isString(key)
-                  ? ValueOrErrors.Default.throwOne(`key is not a string`)
-                  : !isString(value)
-                  ? ValueOrErrors.Default.throwOne(`value is not a string`)
-                  : ValueOrErrors.Default.return([key, value]),
-              ),
-            ),
-          )
-            .Then((entries) =>
-              ValueOrErrors.Default.return(
-                Map<EnumApiName, DispatchTypeName>(entries),
+          ? ValueOrErrors.Default.throwOne(
+              `serializedApiEnums is not an object`,
+            )
+          : ValueOrErrors.Operations.All(
+              List<ValueOrErrors<[EnumApiName, DispatchTypeName], string>>(
+                Object.entries(serializedApiEnums).map(([key, value]) =>
+                  !isString(key)
+                    ? ValueOrErrors.Default.throwOne(`key is not a string`)
+                    : !isString(value)
+                      ? ValueOrErrors.Default.throwOne(`value is not a string`)
+                      : ValueOrErrors.Default.return([key, value]),
+                ),
               ),
             )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When deserializing enum apis`,
+              .Then((entries) =>
+                ValueOrErrors.Default.return(
+                  Map<EnumApiName, DispatchTypeName>(entries),
+                ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When deserializing enum apis`,
+                ),
               ),
-            ),
   },
 };
 
@@ -73,30 +75,30 @@ export const StreamApis = {
       serializedApiStreams === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiStreams)
-        ? ValueOrErrors.Default.throwOne(
-            `serializedApiStreams is not an object`,
-          )
-        : ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[StreamApiName, DispatchTypeName], string>>(
-              Object.entries(serializedApiStreams).map(([key, value]) =>
-                !isString(key)
-                  ? ValueOrErrors.Default.throwOne(`key is not a string`)
-                  : !isString(value)
-                  ? ValueOrErrors.Default.throwOne(`value is not a string`)
-                  : ValueOrErrors.Default.return([key, value]),
-              ),
-            ),
-          )
-            .Then((entries) =>
-              ValueOrErrors.Default.return(
-                Map<StreamApiName, DispatchTypeName>(entries),
+          ? ValueOrErrors.Default.throwOne(
+              `serializedApiStreams is not an object`,
+            )
+          : ValueOrErrors.Operations.All(
+              List<ValueOrErrors<[StreamApiName, DispatchTypeName], string>>(
+                Object.entries(serializedApiStreams).map(([key, value]) =>
+                  !isString(key)
+                    ? ValueOrErrors.Default.throwOne(`key is not a string`)
+                    : !isString(value)
+                      ? ValueOrErrors.Default.throwOne(`value is not a string`)
+                      : ValueOrErrors.Default.return([key, value]),
+                ),
               ),
             )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When deserializing stream apis`,
+              .Then((entries) =>
+                ValueOrErrors.Default.return(
+                  Map<StreamApiName, DispatchTypeName>(entries),
+                ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When deserializing stream apis`,
+                ),
               ),
-            ),
   },
 };
 
@@ -110,38 +112,47 @@ export const TableApis = {
       serializedApiTables === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiTables)
-        ? ValueOrErrors.Default.throwOne(`serializedApiTables is not an object`)
-        : ValueOrErrors.Operations.All(
-            List<
-              ValueOrErrors<[TableApiName, { type: DispatchTypeName }], string>
-            >(
-              Object.entries(serializedApiTables).map(([key, value]) =>
-                !isString(key)
-                  ? ValueOrErrors.Default.throwOne(`key is not a string`)
-                  : !isObject(value)
-                  ? ValueOrErrors.Default.throwOne(`value is not an object`)
-                  : !("type" in value)
-                  ? ValueOrErrors.Default.throwOne(`type is missing from value`)
-                  : !isString(value.type)
-                  ? ValueOrErrors.Default.throwOne(`type is not a string`)
-                  : // TODO: type assertion is safe but would like typescript to know that
-                    ValueOrErrors.Default.return([
-                      key,
-                      value as { type: DispatchTypeName },
-                    ]),
-              ),
-            ),
-          )
-            .Then((entries) =>
-              ValueOrErrors.Default.return(
-                Map<TableApiName, { type: DispatchTypeName }>(entries),
+          ? ValueOrErrors.Default.throwOne(
+              `serializedApiTables is not an object`,
+            )
+          : ValueOrErrors.Operations.All(
+              List<
+                ValueOrErrors<
+                  [TableApiName, { type: DispatchTypeName }],
+                  string
+                >
+              >(
+                Object.entries(serializedApiTables).map(([key, value]) =>
+                  !isString(key)
+                    ? ValueOrErrors.Default.throwOne(`key is not a string`)
+                    : !isObject(value)
+                      ? ValueOrErrors.Default.throwOne(`value is not an object`)
+                      : !("type" in value)
+                        ? ValueOrErrors.Default.throwOne(
+                            `type is missing from value`,
+                          )
+                        : !isString(value.type)
+                          ? ValueOrErrors.Default.throwOne(
+                              `type is not a string`,
+                            )
+                          : // TODO: type assertion is safe but would like typescript to know that
+                            ValueOrErrors.Default.return([
+                              key,
+                              value as { type: DispatchTypeName },
+                            ]),
+                ),
               ),
             )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When deserializing table apis`,
+              .Then((entries) =>
+                ValueOrErrors.Default.return(
+                  Map<TableApiName, { type: DispatchTypeName }>(entries),
+                ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When deserializing table apis`,
+                ),
               ),
-            ),
   },
 };
 
@@ -228,25 +239,25 @@ export const LookupApis = {
       serializedApiLookups === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiLookups)
-        ? ValueOrErrors.Default.throwOne(
-            `serializedApiLookups is not an object`,
-          )
-        : ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[LookupApiName, LookupApi], string>>(
-              Object.entries(serializedApiLookups).map(([key, value]) =>
-                ValueOrErrors.Default.return([key, value]),
-              ),
-            ),
-          )
-            .Then((entries) =>
-              ValueOrErrors.Default.return(
-                Map<LookupApiName, LookupApi>(entries),
+          ? ValueOrErrors.Default.throwOne(
+              `serializedApiLookups is not an object`,
+            )
+          : ValueOrErrors.Operations.All(
+              List<ValueOrErrors<[LookupApiName, LookupApi], string>>(
+                Object.entries(serializedApiLookups).map(([key, value]) =>
+                  ValueOrErrors.Default.return([key, value]),
+                ),
               ),
             )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When deserializing lookup apis`,
+              .Then((entries) =>
+                ValueOrErrors.Default.return(
+                  Map<LookupApiName, LookupApi>(entries),
+                ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When deserializing lookup apis`,
+                ),
               ),
-            ),
   },
 };

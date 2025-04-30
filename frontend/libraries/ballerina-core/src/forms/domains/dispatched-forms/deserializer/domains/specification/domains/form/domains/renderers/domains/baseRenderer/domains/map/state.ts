@@ -32,7 +32,10 @@ export const BaseMapRenderer = {
     type: MapType<T>,
     concreteRendererName: string,
     keyRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
-    valueRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+    valueRenderer:
+      | BaseRenderer<T>
+      | TableFormRenderer<T>
+      | RecordFormRenderer<T>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,

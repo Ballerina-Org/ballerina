@@ -31,8 +31,14 @@ export const BaseSumRenderer = {
   Default: <T>(
     type: SumType<T>,
     concreteRendererName: string,
-    leftRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
-    rightRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+    leftRenderer:
+      | BaseRenderer<T>
+      | TableFormRenderer<T>
+      | RecordFormRenderer<T>,
+    rightRenderer:
+      | BaseRenderer<T>
+      | TableFormRenderer<T>
+      | RecordFormRenderer<T>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
