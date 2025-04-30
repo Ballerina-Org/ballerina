@@ -43,15 +43,11 @@ import {
   ParsedTableFormConfig,
   TableApiSources,
   PredicateVisibleColumns,
-  TableForm,
-  ParsedTableType,
-  ParsedRecordType,
 } from "../../../../main";
 import { EnumReference } from "../collection/domains/reference/state";
 import { SearchableInfiniteStreamState } from "../primitives/domains/searchable-infinite-stream/state";
 import { RecordForm } from "../singleton/template";
 import { ParsedRenderer } from "./domains/renderer/state";
-import { ValueInfiniteStreamState } from "../../../value-infinite-data-stream/state";
 
 export type ParsedRecordForm<T> = {
   initialFormState: any;
@@ -352,65 +348,6 @@ export const ParseForms =
                   parsedForm.disabledPredicatedExpressions,
                 layout: formConfig.tabs,
                 fromApiParserByType: (_ as any).fromApiParserByType,
-              };
-            });
-
-          parsedForms = parsedForms.set(formName, {
-            ...parsedForm,
-            form,
-          });
-        } else if (formConfig.kind == "tableForm") {
-          if (tableApiSources == undefined) {
-            throw Error(`Table API sources are not defined`);
-          }
-
-          const formColumnRenderers = formConfig.columns
-            .map((column) => column.renderer)
-            .toObject();
-
-          const parsedForm = ParseTableForm(
-            formName,
-            formConfig,
-            nestedContainerFormView,
-            fieldViews,
-            parsedForms,
-            formColumnRenderers,
-            infiniteStreamSources,
-            enumOptionsSources,
-            defaultValue(formsConfig.types, builtIns, injectedPrimitives),
-            defaultState(formsConfig.types, builtIns, injectedPrimitives),
-            injectedPrimitives,
-            tableApiSources,
-          );
-
-          const formBuilder = TableForm.Default();
-          const form = formBuilder
-            .template(
-              {
-                ...parsedForm.formConfig,
-              },
-              parsedForm.columnHeaders,
-              formConfig.type as ParsedRecordType<any>,
-              defaultState(formsConfig.types, builtIns, injectedPrimitives),
-            )
-            .mapContext<Unit>((_) => {
-              return {
-                ...parsedForm,
-                type: parsedForm.formDef.type,
-                visible: (_ as any).visible ?? true,
-                disabled: (_ as any).disabled ?? false,
-                label: (_ as any).label,
-                value: (_ as any).value,
-                commonFormState: (_ as any).commonFormState,
-                customFormState: (_ as any).customFormState,
-                rootValue: (_ as any).rootValue,
-                extraContext: (_ as any).extraContext,
-                visibilities: (_ as any).visibilities,
-                disabledFields: (_ as any).disabledFields,
-                globalConfiguration: (_ as any).globalConfiguration,
-                visibleColumns: parsedForm.visibleColumns,
-                fromApiParserByType: (_ as any).fromApiParserByType,
-                tableApiSource: (_ as any).tableApiSource,
               };
             });
 

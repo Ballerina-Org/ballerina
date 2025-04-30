@@ -18,24 +18,10 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
-  ValueRecord,
 } from "ballerina-core";
-import { Set, Map, OrderedMap } from "immutable";
-import {
-  PersonContainerFormView,
-  PersonNestedContainerFormView,
-} from "./domains/person/domains/from-config/views/wrappers";
-import {
-  DispatchPersonFromConfigApis,
-  PersonFromConfigApis,
-} from "playground-core";
-import { PersonFieldViews } from "./domains/person-from-config/views/field-views";
-import { fieldTypeConverters } from "./domains/person/apis/field-converters";
-import {
-  categoryForm,
-  CategoryState,
-  PersonFormInjectedTypes,
-} from "./domains/person-from-config/injected-forms/category";
+import { Set, Map } from "immutable";
+import { DispatchPersonFromConfigApis } from "playground-core";
+import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
 import SPEC from "../../../../backend/apps/ballerina-runtime/input-forms/dispatch-person-config.json";
 import {
@@ -44,10 +30,9 @@ import {
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   dispatchCategoryForm,
-  DispatchCategoryForm,
   DispatchCategoryState,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/field-views";
+import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
@@ -260,7 +245,10 @@ export const DispatcherFormsApp = (props: {}) => {
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
   // console.debug("globalConfiguration", JSON.stringify(globalConfiguration, null, 2));
 
-  console.debug("personConfigState", JSON.stringify(personConfigState, null, 2));
+  console.debug(
+    "personConfigState",
+    JSON.stringify(personConfigState, null, 2),
+  );
   console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (

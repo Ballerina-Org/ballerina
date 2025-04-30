@@ -14,13 +14,21 @@ import { FormsApp } from "./FormsApp";
 import { parse } from "ballerina-core";
 import { DataDrivenFieldsApp } from "./DataDrivenFieldsApp";
 import { DispatcherFormsApp } from "./DispatcherFormsApp";
+import { DispatcherFormsAppTables } from "./DispatcherFormsAppTables.";
 
 function App(props: {
-  app: "regular" | "forms" | "data-driven-fields" | "dispatcher-forms";
+  app:
+    | "regular"
+    | "forms"
+    | "data-driven-fields"
+    | "dispatcher-forms"
+    | "dispatcher-forms-tables";
 }) {
   if (props.app == "forms") return FormsApp({});
   if (props.app == "data-driven-fields") return DataDrivenFieldsApp({});
   if (props.app == "dispatcher-forms") return DispatcherFormsApp({});
+  if (props.app == "dispatcher-forms-tables")
+    return DispatcherFormsAppTables({});
 
   const [uncle, setUncle] = useState(Uncle.Default());
   const [parent, setParent] = useState(Parent.Default());

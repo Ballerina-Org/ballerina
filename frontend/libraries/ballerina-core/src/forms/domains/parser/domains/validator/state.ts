@@ -421,10 +421,7 @@ export const FormsConfig = {
               },
             );
 
-            const parsedTabs = FormLayout.Operations.ParseLayout(
-              form,
-              formName,
-            );
+            const parsedTabs = FormLayout.Operations.ParseLayout(form);
             if (parsedTabs.kind == "errors") {
               errors = errors.concat(parsedTabs.errors.toArray());
               return ValueOrErrors.Default.throw(errors);

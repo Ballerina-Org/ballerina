@@ -6,13 +6,12 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { NestedMapRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/map/state";
-import { RecordFieldMapRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/map/state";
+import { BaseMapRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/map/state";
 
 export const NestedMapDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
     type: MapType<T>,
-    mapRenderer: RecordFieldMapRenderer<T> | NestedMapRenderer<T>,
+    mapRenderer: BaseMapRenderer<T>,
     dispatcherContext: DispatcherContext<T>,
   ): ValueOrErrors<Template<any, any, any, any>, string> =>
     NestedDispatcher.Operations.DispatchAs(

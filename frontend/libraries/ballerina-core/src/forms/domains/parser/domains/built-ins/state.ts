@@ -27,7 +27,7 @@ import {
   MapFieldState,
   TupleFormState,
   SumFormState,
-  TableState,
+  AbstractTableRendererState,
   StreamPosition,
   Chunk,
   Unit,
@@ -142,7 +142,6 @@ export type BuiltIns = {
     map: Set<string>;
     tuple: Set<string>;
     sum: Set<string>;
-    table: Set<string>;
   };
 };
 
@@ -272,15 +271,6 @@ export const builtInsFromFieldViews = (fieldViews: any): BuiltIns => {
           //   UnionFormState().Default(fields),
         },
       ],
-      [
-        "Table",
-        {
-          defaultValue: PredicateValue.Default.record(OrderedMap()),
-          defaultState: (
-            getChunk: TableState["customFormState"]["getChunkWithParams"],
-          ): TableState => TableState().Default(),
-        },
-      ],
     ]),
     renderers: {
       unit: Set(),
@@ -298,7 +288,6 @@ export const builtInsFromFieldViews = (fieldViews: any): BuiltIns => {
       secret: Set(),
       map: Set(),
       sum: Set(),
-      table: Set(),
     },
   };
   Object.keys(builtins.renderers).forEach((_categoryName) => {
@@ -367,12 +356,6 @@ export const defaultState =
           defaultState(types, builtIns, injectedPrimitives)(t.args[0]),
           defaultState(types, builtIns, injectedPrimitives)(t.args[1]),
         );
-    }
-
-    if (t.kind == "table") {
-      return builtIns.generics
-        .get("Table")!
-        .defaultState((): TableState => TableState().Default());
     }
 
     if (t.kind == "application") {

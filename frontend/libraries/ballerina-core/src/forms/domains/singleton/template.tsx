@@ -298,7 +298,7 @@ export const RecordForm = <
             return <></>;
           }
 
-          const Layout = FormLayout.Operations.CalculateLayout(
+          const Layout = FormLayout.Operations.ComputeLayout(
             OrderedMap([["global", globalConfig.value]]),
             props.context.layout,
           );

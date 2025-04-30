@@ -17,28 +17,6 @@ import {
   Updater,
 } from "../../../../../../../main";
 
-// export const FormRunnerErrorsTemplate = (
-//   parsedFormsConfig: FormParsingResult,
-// ) => ({
-//   renderer: Template.Default<
-//     FormRunnerContext & FormRunnerState,
-//     FormRunnerState,
-//     FormRunnerForeignMutationsExpected
-//   >((props) => (
-//     <>
-//       {JSON.stringify(parsedFormsConfig)}
-//       <br />
-//       {JSON.stringify(props)}
-//     </>
-//   )),
-//   // form: Template.Default<FormRunnerContext & FormRunnerState, FormRunnerState, FormRunnerForeignMutationsExpected>(props =>
-//   //   props.context.showFormParsingErrors(parsedFormsConfig)
-//   // ),
-//   initialState: unit,
-//   entity: unit,
-//   globalConfiguration: unit,
-// });
-
 export const DispatchFormRunnerTemplate = <
   T extends { [key in keyof T]: { type: any; state: any } },
 >() =>
@@ -73,7 +51,7 @@ export const DispatchFormRunnerTemplate = <
       ["root", entity.value.value],
       ["local", entity.value.value],
     ]);
-
+    
     return props.context.status.kind == "loaded" ? (
       <props.context.status.Form
         context={{

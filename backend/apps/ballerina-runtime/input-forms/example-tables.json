@@ -1,0 +1,123 @@
+{
+  "types": {
+    "User": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean"
+      }
+    },
+    "UsersSetupConfig": {
+      "fields": {}
+    },
+    "UsersSetup": {
+      "fields": {
+        "ActiveUsers": {
+          "fun": "Table",
+          "args": ["User"]
+        },
+        "InactiveUsers": {
+          "fun": "Table",
+          "args": ["User"]
+        }
+      }
+    }
+  },
+  "apis": {
+    "enumOptions": {},
+    "searchableStreams": {},
+    "entities": {
+      "UsersSetup": {
+        "type": "UsersSetup",
+        "methods": ["get"]
+      },
+      "UsersSetupConfig": {
+        "type": "UsersSetupConfig",
+        "methods": ["get"]
+      }
+    },
+    "tables": {
+      "ActiveUsersApi": {
+        "type": "User"
+      },
+      "InactiveUsersApi": {
+        "type": "User"
+      }
+    }
+  },
+  "forms": {
+    "InactiveUsers": {
+      "type": "User",
+      "renderer": "table",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString",
+          "disabled": true
+        },
+        "Surname": {
+          "renderer": "defaultString"
+        }
+      },
+      "visibleColumns": ["Name", "Surname"]
+    },
+    "ActiveUsers": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        },
+        "Birthday": {
+          "renderer": "defaultDate"
+        },
+        "Email": {
+          "renderer": "defaultString"
+        },
+        "SubscribeToNewsletter": {
+          "renderer": "defaultBoolean"
+        }
+      },
+      "visibleColumns": ["Name", "Surname", "Email", "SubscribeToNewsletter"]
+    },
+    "UsersSetup": {
+      "type": "UsersSetup",
+      "fields": {
+        "ActiveUsers": {
+          "renderer": "ActiveUsers",
+          "api": "ActiveUsersApi",
+          "label": "Active Users"
+        },
+        "InactiveUsers": {
+          "renderer": "InactiveUsers",
+          "api": "InactiveUsersApi",
+          "label": "Inactive Users"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["ActiveUsers", "InactiveUsers"]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "UsersSetup": {
+      "kind": "passthrough",
+      "form": "UsersSetup",
+      "configType": "UsersSetupConfig"
+    }
+  }
+}

@@ -6,27 +6,17 @@ import {
 
 import { NestedDispatcher } from "../../state";
 import { SumAbstractRenderer } from "../../../abstract-renderers/sum/template";
-import {
-  DispatchParsedType,
-  SumType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
-import { NestedSumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/sum/state";
-import { RecordFieldSumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/sum/state";
-import { RecordFieldSumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/sumUnitDate/state";
-import { NestedSumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/sumUnitDate/state";
+import { SumType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import { BaseSumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/sum/state";
+import { BaseSumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/sumUnitDate/state";
 
 export const NestedSumDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
     type: SumType<T>,
-    sumRenderer:
-      | RecordFieldSumRenderer<T>
-      | NestedSumRenderer<T>
-      | RecordFieldSumUnitDateRenderer<T>
-      | NestedSumUnitDateRenderer<T>,
+    sumRenderer: BaseSumRenderer<T> | BaseSumUnitDateRenderer<T>,
     dispatcherContext: DispatcherContext<T>,
   ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    (sumRenderer.kind == "recordFieldSumRenderer" ||
-    sumRenderer.kind == "nestedSumRenderer"
+    (sumRenderer.kind == "baseSumRenderer"
       ? NestedDispatcher.Operations.DispatchAs(
           type.args[0],
           sumRenderer.leftRenderer,
@@ -36,8 +26,7 @@ export const NestedSumDispatcher = {
       : ValueOrErrors.Default.return<undefined, string>(undefined)
     )
       .Then((leftForm) =>
-        (sumRenderer.kind == "recordFieldSumRenderer" ||
-        sumRenderer.kind == "nestedSumRenderer"
+        (sumRenderer.kind == "baseSumRenderer"
           ? NestedDispatcher.Operations.DispatchAs(
               type.args[1],
               sumRenderer.rightRenderer,
@@ -46,8 +35,7 @@ export const NestedSumDispatcher = {
             )
           : ValueOrErrors.Default.return<undefined, string>(undefined)
         ).Then((rightForm) =>
-          sumRenderer.kind == "nestedSumUnitDateRenderer" ||
-          sumRenderer.kind == "recordFieldSumUnitDateRenderer"
+          sumRenderer.kind == "baseSumUnitDateRenderer"
             ? dispatcherContext
                 .getConcreteRenderer(
                   "sumUnitDate",

@@ -10,7 +10,6 @@ import { ValueOrErrors } from "../../../../collections/domains/valueOrErrors/sta
 import {
   PredicateValue,
   replaceWith,
-  SearchableInfiniteStreamState,
   Sum,
   Unit,
   ValueRecord,
@@ -19,6 +18,9 @@ import {
   DispatchInfiniteStreamSources,
   InjectedPrimitives,
   RecordAbstractRendererState,
+  AbstractTableRendererState,
+  MapRepo,
+  ValueTable,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -34,13 +36,11 @@ import { SecretAbstractRendererState } from "../dispatcher/domains/abstract-rend
 import { MapAbstractRendererState } from "../dispatcher/domains/abstract-renderers/map/state";
 import { TupleAbstractRendererState } from "../dispatcher/domains/abstract-renderers/tuple/state";
 import { SumAbstractRendererState } from "../dispatcher/domains/abstract-renderers/sum/state";
-import { NestedRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/state";
 import { EnumAbstractRendererState } from "../dispatcher/domains/abstract-renderers/enum/state";
-import { RecordFormRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
-import { RecordFieldRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/state";
 import { ListAbstractRendererState } from "../dispatcher/domains/abstract-renderers/list/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Form } from "../deserializer/domains/specification/domains/form/state";
+import { BaseRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
   Object.keys(obj)
@@ -68,6 +68,13 @@ type UnionCase = {
   fields: Record<string, any>;
 };
 
+type Table = {
+  data: Map<string, Record<string, any>>;
+  hasMoreValues: boolean;
+  from: number;
+  to: number;
+};
+
 type BuiltInApiConverters = {
   string: ApiConverter<string>;
   number: ApiConverter<number>;
@@ -87,6 +94,7 @@ type BuiltInApiConverters = {
   Tuple: ApiConverter<List<any>>;
   Sum: ApiConverter<Sum<any, any>>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
+  Table: ApiConverter<Table>;
 };
 
 export type DispatchCommonFormState = {
@@ -116,6 +124,7 @@ export type ConcreteRendererKinds = {
   sum: Set<string>;
   sumUnitDate: Set<string>;
   record: Set<string>;
+  table: Set<string>;
 };
 
 export const concreteRendererToKind =
@@ -143,7 +152,7 @@ export const tryGetConcreteRenderer =
     kind: keyof ConcreteRendererKinds,
     name?: string,
     isNested?: boolean, // valid only for record kind
-  ): ValueOrErrors<any, string> => {
+  ): ValueOrErrors<JSX.Element, string> => {
     if (kind == "record" && name == undefined) {
       if (isNested) {
         return ValueOrErrors.Default.return(defaultNestedRecordRenderer);
@@ -177,15 +186,14 @@ export const dispatchDefaultState =
   ) =>
   (
     t: DispatchParsedType<any>,
-    renderer: NestedRenderer<any> | RecordFieldRenderer<any> | Form<any>,
+    renderer: BaseRenderer<any> | Form<any>,
   ): ValueOrErrors<any, string> => {
     const result: ValueOrErrors<any, string> = (() => {
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(undefined);
       }
       if (t.kind == "primitive")
-        return renderer.kind != "nestedPrimitiveRenderer" &&
-          renderer.kind != "recordFieldPrimitiveRenderer"
+        return renderer.kind != "basePrimitiveRenderer"
           ? ValueOrErrors.Default.throwOne(
               `received non primitive renderer kind "${renderer.kind}" when resolving defaultState for primitive`,
             )
@@ -230,11 +238,9 @@ export const dispatchDefaultState =
                             );
 
       if (t.kind == "singleSelection")
-        return renderer.kind == "nestedEnumRenderer" ||
-          renderer.kind == "recordFieldEnumRenderer"
+        return renderer.kind == "baseEnumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
-          : renderer.kind == "nestedStreamRenderer" ||
-              renderer.kind == "recordFieldStreamRenderer"
+          : renderer.kind == "baseStreamRenderer"
             ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
                 ValueOrErrors.Default.return(
                   SearchableInfiniteStreamAbstractRendererState.Default(
@@ -247,11 +253,9 @@ export const dispatchDefaultState =
               );
 
       if (t.kind == "multiSelection")
-        return renderer.kind == "nestedEnumRenderer" ||
-          renderer.kind == "recordFieldEnumRenderer"
+        return renderer.kind == "baseEnumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
-          : renderer.kind == "nestedStreamRenderer" ||
-              renderer.kind == "recordFieldStreamRenderer"
+          : renderer.kind == "baseStreamRenderer"
             ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
                 ValueOrErrors.Default.return(
                   SearchableInfiniteStreamAbstractRendererState.Default(
@@ -264,8 +268,7 @@ export const dispatchDefaultState =
               );
 
       if (t.kind == "list")
-        return renderer.kind == "nestedListRenderer" ||
-          renderer.kind == "recordFieldListRenderer"
+        return renderer.kind == "baseListRenderer"
           ? ValueOrErrors.Default.return(
               ListAbstractRendererState.Default.zero(),
             )
@@ -274,8 +277,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "map")
-        return renderer.kind == "nestedMapRenderer" ||
-          renderer.kind == "recordFieldMapRenderer"
+        return renderer.kind == "baseMapRenderer"
           ? ValueOrErrors.Default.return(
               MapAbstractRendererState().Default.zero(),
             )
@@ -284,8 +286,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "tuple")
-        return renderer.kind == "nestedTupleRenderer" ||
-          renderer.kind == "recordFieldTupleRenderer"
+        return renderer.kind == "baseTupleRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<[number, any], string>>(
                 t.args.map((_, index) =>
@@ -311,8 +312,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "sum")
-        return renderer.kind == "nestedSumRenderer" ||
-          renderer.kind == "recordFieldSumRenderer"
+        return renderer.kind == "baseSumRenderer"
           ? dispatchDefaultState(
               infiniteStreamSources,
               injectedPrimitives,
@@ -337,8 +337,7 @@ export const dispatchDefaultState =
                     ),
                   ),
             )
-          : renderer.kind == "recordFieldSumUnitDateRenderer" ||
-              renderer.kind == "nestedSumUnitDateRenderer"
+          : renderer.kind == "baseSumUnitDateRenderer"
             ? ValueOrErrors.Default.return(
                 SumAbstractRendererState().Default({
                   left: UnitAbstractRendererState.Default(),
@@ -375,11 +374,17 @@ export const dispatchDefaultState =
               `received non record renderer kind "${renderer.kind}" when resolving defaultValue for record`,
             );
 
+      if (t.kind == "table") {
+        return renderer.kind == "tableForm" ||
+          renderer.kind == "baseTableRenderer"
+          ? ValueOrErrors.Default.return(AbstractTableRendererState.Default())
+          : ValueOrErrors.Default.throwOne(
+              `received non table renderer kind "${renderer.kind}" when resolving defaultState for table`,
+            );
+      }
+
       if (t.kind == "lookup") {
-        if (
-          renderer.kind != "recordFieldLookupRenderer" &&
-          renderer.kind != "nestedLookupRenderer"
-        ) {
+        if (renderer.kind != "baseLookupRenderer") {
           return ValueOrErrors.Default.throwOne(
             `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for lookup`,
           );
@@ -426,18 +431,14 @@ export const dispatchDefaultValue =
   ) =>
   (
     t: DispatchParsedType<any>,
-    renderer:
-      | NestedRenderer<any>
-      | RecordFieldRenderer<any>
-      | RecordFormRenderer<any>,
+    renderer: BaseRenderer<any> | Form<any>,
   ): ValueOrErrors<PredicateValue, string> => {
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(PredicateValue.Default.unit());
       }
       if (t.kind == "primitive")
-        return renderer.kind != "nestedPrimitiveRenderer" &&
-          renderer.kind != "recordFieldPrimitiveRenderer"
+        return renderer.kind != "basePrimitiveRenderer"
           ? ValueOrErrors.Default.throwOne(
               `received non primitive renderer kind "${renderer.kind}" when resolving defaultValue for primitive`,
             )
@@ -478,10 +479,8 @@ export const dispatchDefaultValue =
                             );
 
       if (t.kind == "singleSelection")
-        return renderer.kind == "nestedEnumRenderer" ||
-          renderer.kind == "recordFieldEnumRenderer" ||
-          renderer.kind == "nestedStreamRenderer" ||
-          renderer.kind == "recordFieldStreamRenderer"
+        return renderer.kind == "baseEnumRenderer" ||
+          renderer.kind == "baseStreamRenderer"
           ? ValueOrErrors.Default.return(
               PredicateValue.Default.option(
                 false,
@@ -493,34 +492,29 @@ export const dispatchDefaultValue =
             );
 
       if (t.kind == "multiSelection")
-        return renderer.kind == "nestedEnumRenderer" ||
-          renderer.kind == "recordFieldEnumRenderer" ||
-          renderer.kind == "nestedStreamRenderer" ||
-          renderer.kind == "recordFieldStreamRenderer"
+        return renderer.kind == "baseEnumRenderer" ||
+          renderer.kind == "baseStreamRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.record(Map()))
           : ValueOrErrors.Default.throwOne(
               `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultValue for multiSelection`,
             );
 
       if (t.kind == "list")
-        return renderer.kind == "nestedListRenderer" ||
-          renderer.kind == "recordFieldListRenderer"
+        return renderer.kind == "baseListRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.tuple(List()))
           : ValueOrErrors.Default.throwOne(
               `received non list renderer kind "${renderer.kind}" when resolving defaultValue for list`,
             );
 
       if (t.kind == "map")
-        return renderer.kind == "nestedMapRenderer" ||
-          renderer.kind == "recordFieldMapRenderer"
+        return renderer.kind == "baseMapRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.tuple(List()))
           : ValueOrErrors.Default.throwOne(
               `received non map renderer kind "${renderer.kind}" when resolving defaultValue for map`,
             );
 
       if (t.kind == "tuple")
-        return renderer.kind == "nestedTupleRenderer" ||
-          renderer.kind == "recordFieldTupleRenderer"
+        return renderer.kind == "baseTupleRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<PredicateValue, string>>(
                 t.args.map((_, index) =>
@@ -541,8 +535,7 @@ export const dispatchDefaultValue =
             );
 
       if (t.kind == "sum")
-        return renderer.kind == "nestedSumRenderer" ||
-          renderer.kind == "recordFieldSumRenderer"
+        return renderer.kind == "baseSumRenderer"
           ? dispatchDefaultValue(
               injectedPrimitives,
               types,
@@ -552,8 +545,7 @@ export const dispatchDefaultValue =
                 PredicateValue.Default.sum(Sum.Default.left(left)),
               ),
             )
-          : renderer.kind == "recordFieldSumUnitDateRenderer" ||
-              renderer.kind == "nestedSumUnitDateRenderer"
+          : renderer.kind == "baseSumUnitDateRenderer"
             ? ValueOrErrors.Default.return(
                 PredicateValue.Default.sum(
                   Sum.Default.left(PredicateValue.Default.unit()),
@@ -589,10 +581,7 @@ export const dispatchDefaultValue =
             );
 
       if (t.kind == "lookup") {
-        if (
-          renderer.kind != "recordFieldLookupRenderer" &&
-          renderer.kind != "nestedLookupRenderer"
-        ) {
+        if (renderer.kind != "baseLookupRenderer") {
           return ValueOrErrors.Default.throwOne(
             `received non lookup renderer kind "${renderer.kind}" when resolving defaultValue for lookup`,
           );
@@ -790,13 +779,76 @@ export const dispatchFromAPIRawValue =
       }
 
       if (t.kind == "lookup")
-        return dispatchFromAPIRawValue(
-          types.get(t.name)!,
+        return MapRepo.Operations.tryFindWithError(
+          t.name, // TODO -- double check this is correct instead of typeName, and maybe remove typeName
           types,
-          converters,
-          injectedPrimitives,
-        )(raw);
+          () => `type ${t.name} not found in types`,
+        ).Then((type) =>
+          dispatchFromAPIRawValue(
+            type,
+            types,
+            converters,
+            injectedPrimitives,
+          )(raw),
+        );
 
+      // TODO -- this can be more functional
+      if (t.kind == "table") {
+        // move to the converter
+        if (typeof raw != "object") {
+          return ValueOrErrors.Default.throwOne(
+            `object expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        const converterResult = converters["Table"].fromAPIRawValue(raw);
+        const lookupType = t.args[0];
+        if (lookupType.kind != "lookup") {
+          return ValueOrErrors.Default.throwOne(
+            `expected lookup type for table arg, got ${JSON.stringify(
+              lookupType,
+            )}`,
+          );
+        }
+        return MapRepo.Operations.tryFindWithError(
+          lookupType.name, // TODO check this
+          types,
+          () => `type ${lookupType.name} not found in types`,
+        ).Then((type) =>
+          ValueOrErrors.Operations.All(
+            List<ValueOrErrors<[string, ValueRecord], string>>(
+              converterResult.data
+                .toArray()
+                .map(([key, record]) =>
+                  dispatchFromAPIRawValue(
+                    type,
+                    types,
+                    converters,
+                    injectedPrimitives,
+                  )(record).Then((value) =>
+                    PredicateValue.Operations.IsRecord(value)
+                      ? ValueOrErrors.Default.return([key, value])
+                      : ValueOrErrors.Default.throwOne(
+                          `record expected but got ${PredicateValue.Operations.GetKind(
+                            value,
+                          )}`,
+                        ),
+                  ),
+                ),
+            ),
+          ).Then((values) =>
+            ValueOrErrors.Default.return(
+              ValueTable.Default.fromParsed(
+                converterResult.from,
+                converterResult.to,
+                converterResult.hasMoreValues,
+                OrderedMap(values),
+              ),
+            ),
+          ),
+        );
+      }
+
+      // TODO -- this can be more functional
       if (t.kind == "record") {
         if (typeof raw != "object") {
           return ValueOrErrors.Default.throwOne(

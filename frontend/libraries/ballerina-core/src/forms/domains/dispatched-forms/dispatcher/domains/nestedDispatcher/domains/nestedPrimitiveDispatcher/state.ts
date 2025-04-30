@@ -1,4 +1,3 @@
-import { List } from "immutable";
 import {
   DateAbstractRenderer,
   DispatcherContext,
@@ -13,15 +12,14 @@ import { NumberAbstractRenderer } from "../../../abstract-renderers/number/templ
 import { BoolAbstractRenderer } from "../../../abstract-renderers/boolean/template";
 import { SecretAbstractRenderer } from "../../../abstract-renderers/secret/template";
 import { Base64FileAbstractRenderer } from "../../../abstract-renderers/base-64-file/template";
-import { NestedPrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/primitive/state";
-import { RecordFieldPrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/primitive/state";
+import { BasePrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/primitive/state";
 import { ConcreteRendererKinds } from "../../../../../built-ins/state";
 
 export const NestedPrimitiveDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
     type: DispatchPrimitiveType<T>,
     viewKind: string,
-    renderer: RecordFieldPrimitiveRenderer<T> | NestedPrimitiveRenderer<T>,
+    renderer: BasePrimitiveRenderer<T>,
     dispatcherContext: DispatcherContext<T>,
   ): ValueOrErrors<Template<any, any, any, any>, string> => {
     const result: ValueOrErrors<Template<any, any, any, any>, string> = (() => {

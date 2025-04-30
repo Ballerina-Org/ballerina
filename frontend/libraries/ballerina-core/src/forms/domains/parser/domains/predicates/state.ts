@@ -10,6 +10,7 @@ import {
   Sum,
   ListRepo,
   BasicUpdater,
+  Guid,
 } from "../../../../../../main";
 
 export type TuplePredicateExpression = {
@@ -204,18 +205,18 @@ export type EvaluationPredicateValue = {
 
 export type ValueRecord = {
   kind: "record";
-  fields: Map<string, PredicateValue>;
+  fields: OrderedMap<string, PredicateValue>;
 };
 export const ValueRecord = {
   Default: {
     empty: (): ValueRecord => ({ kind: "record", fields: Map() }),
     fromJSON: (json: object): ValueRecord => ({
       kind: "record",
-      fields: Map(json),
+      fields: OrderedMap({ ...json }), // TODO - check this works ok
     }),
     fromMap: (map: Map<string, PredicateValue>): ValueRecord => ({
       kind: "record",
-      fields: map,
+      fields: OrderedMap(map),
     }),
   },
   Operations: {
@@ -306,6 +307,37 @@ export const ValueTuple = {
   },
 };
 
+export type ValueTable = {
+  kind: "table";
+  from: number;
+  to: number;
+  data: OrderedMap<Guid, ValueRecord>;
+  hasMoreValues: boolean;
+};
+
+export const ValueTable = {
+  Default: {
+    empty: (): ValueTable => ({
+      kind: "table",
+      from: 0,
+      to: 0,
+      data: OrderedMap(),
+      hasMoreValues: false,
+    }),
+    fromParsed: (
+      from: number,
+      to: number,
+      hasMoreValues: boolean,
+      data: OrderedMap<Guid, ValueRecord>,
+    ): ValueTable => ({
+      kind: "table",
+      from,
+      to,
+      data,
+      hasMoreValues,
+    }),
+  },
+};
 export type PredicateValue =
   | ValuePrimitive
   | ValueUnit
@@ -315,7 +347,8 @@ export type PredicateValue =
   | ValueOption
   | ValueVarLookup
   | ValueSum
-  | ValueCustom;
+  | ValueCustom
+  | ValueTable;
 
 export type ExprLambda = { kind: "lambda"; parameter: string; body: Expr };
 export type ExprMatchCase = { kind: "matchCase"; operands: Expr[] };
@@ -381,8 +414,28 @@ export const PredicateValue = {
       kind: "sum",
       value,
     }),
+    table: (
+      from: number,
+      to: number,
+      data: OrderedMap<Guid, ValueRecord>,
+      hasMoreValues: boolean,
+    ): ValueTable => ({
+      kind: "table",
+      from,
+      to,
+      data,
+      hasMoreValues,
+    }),
   },
   Operations: {
+    GetKind: (value: PredicateValue): ValueOrErrors<string, string> =>
+      typeof value == "object"
+        ? "kind" in value
+          ? ValueOrErrors.Default.return(value.kind)
+          : PredicateValue.Operations.IsDate(value)
+            ? ValueOrErrors.Default.return("date")
+            : ValueOrErrors.Default.throwOne("invalid")
+        : ValueOrErrors.Default.return(typeof value),
     IsPrimitive: (
       value: PredicateValue | Expr,
     ): value is boolean | number | string | Date => {
@@ -443,6 +496,13 @@ export const PredicateValue = {
         typeof value == "object" &&
         !PredicateValue.Operations.IsDate(value) &&
         value.kind == "option"
+      );
+    },
+    IsTable: (value: PredicateValue | Expr): value is ValueTable => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "table"
       );
     },
     IsSum: (value: PredicateValue | Expr): value is ValueSum => {
@@ -541,6 +601,7 @@ export const PredicateValue = {
         `Error: tuple has no values property`,
       );
     },
+    // TODO -- do we need to add table here ?
     parse: <T>(
       json: any,
       type: ParsedType<T> | EvaluationPredicateValue,
@@ -813,21 +874,28 @@ export const PredicateValue = {
                       PredicateValue.Operations.recordToTuple(v1),
                       PredicateValue.Operations.recordToTuple(v2),
                     )
-                  : PredicateValue.Operations.IsUnit(v1) &&
-                      PredicateValue.Operations.IsUnit(v2)
-                    ? ValueOrErrors.Default.return(true)
-                    : PredicateValue.Operations.IsUnit(v1) !=
-                        PredicateValue.Operations.IsUnit(v2)
-                      ? ValueOrErrors.Default.throwOne(
-                          `cannot compare expressions of different types ${JSON.stringify(
-                            v1,
-                          )} and ${JSON.stringify(v2)}.`,
+                  : PredicateValue.Operations.IsTable(v1) &&
+                      PredicateValue.Operations.IsTable(v2)
+                    ? v1.data.size == v2.data.size
+                      ? ValueOrErrors.Default.return(
+                          v1.data.keySeq().equals(v2.data.keySeq()),
                         )
-                      : ValueOrErrors.Default.throwOne(
-                          `structural equality is not implemented yet between ${JSON.stringify(
-                            v1,
-                          )} and ${JSON.stringify(v2)}.`,
-                        ),
+                      : ValueOrErrors.Default.return(false)
+                    : PredicateValue.Operations.IsUnit(v1) &&
+                        PredicateValue.Operations.IsUnit(v2)
+                      ? ValueOrErrors.Default.return(true)
+                      : PredicateValue.Operations.IsUnit(v1) !=
+                          PredicateValue.Operations.IsUnit(v2)
+                        ? ValueOrErrors.Default.throwOne(
+                            `cannot compare expressions of different types ${JSON.stringify(
+                              v1,
+                            )} and ${JSON.stringify(v2)}.`,
+                          )
+                        : ValueOrErrors.Default.throwOne(
+                            `structural equality is not implemented yet between ${JSON.stringify(
+                              v1,
+                            )} and ${JSON.stringify(v2)}.`,
+                          ),
   },
 };
 
@@ -1129,10 +1197,7 @@ export const Expr = {
                           MapRepo.Operations.tryFindWithError(
                             e.operands[1],
                             record.fields,
-                            () =>
-                              `Error: cannot find field ${
-                                e.operands[1]
-                              } in record ${JSON.stringify(record)}`,
+                            () => `Error: cannot find field ${e.operands[1]}`,
                           ),
                         ),
                     )

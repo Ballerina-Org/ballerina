@@ -529,6 +529,28 @@
                 ]
               }
             ]
+          },
+          "disabled": {
+            "kind": "equals",
+            "operands": [
+              {
+                "kind": "itemLookup",
+                "operands": [
+                  {
+                    "kind": "fieldLookup",
+                    "operands": [
+                      {
+                        "kind": "varLookup",
+                        "varName": "local"
+                      },
+                      "streetNumberAndCity"
+                    ]
+                  },
+                  2
+                ]
+              },
+              10
+            ]
           }
         }
       },

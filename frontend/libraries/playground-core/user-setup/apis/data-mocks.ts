@@ -8,9 +8,12 @@ import {
   PredicateValue,
   ValueOrErrors,
   BasicFun,
-  TableState,
+  AbstractTableRendererState,
+  DispatchEnumOptionsSources,
+  DispatchTableApiSources,
+  DispatchTableApiSource,
 } from "ballerina-core";
-import { Map, Range } from "immutable";
+import { Map, OrderedMap, Range } from "immutable";
 import { ValueInfiniteStreamState, ValueStreamPosition } from "ballerina-core";
 import { v4 } from "uuid";
 
@@ -30,32 +33,37 @@ const usersSetupTabsEnum = [
   "ActivityFields",
 ];
 
-const getActiveUsers: BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-> =
+const getActiveUsers: DispatchTableApiSource =
   (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
   (streamParams: Map<string, string>) =>
   ([streamPosition]: [ValueStreamPosition]) => {
     return PromiseRepo.Default.mock(() => ({
       Values: {
-        2: {
-          Id: 2,
+        [v4()]: {
+          Id: v4(),
           Name: "Jane",
           Surname: "Doe",
           Birthday: "1990-01-01",
           Email: "jane.doe@example.com",
           SubscribeToNewsletter: true,
         },
+        [v4()]: {
+          Id: v4(),
+          Name: "John",
+          Surname: "Doe",
+          Birthday: "1990-01-01",
+          Email: "john.doe@example.com",
+          SubscribeToNewsletter: true,
+        },
       },
-      HasMore: false,
+      HasMore: true,
       From: 1,
       To: 2,
     })).then((res) => ({
       from: res.From,
       to: res.To,
       hasMoreValues: res.HasMore,
-      data: TableState().Operations.tableValuesToValueRecord(
+      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
         res.Values,
         fromApiRaw,
       ),
@@ -90,7 +98,7 @@ const getInactiveUsers: BasicFun<
       hasMoreValues: res.HasMore,
       to: res.To,
       from: res.From,
-      data: TableState().Operations.tableValuesToValueRecord(
+      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
         res.Values,
         fromApiRaw,
       ),
@@ -119,7 +127,7 @@ const getUserGroups: BasicFun<
       from: res.From,
       to: res.To,
       hasMoreValues: res.HasMore,
-      data: TableState().Operations.tableValuesToValueRecord(
+      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
         res.Values,
         fromApiRaw,
       ),
@@ -147,64 +155,63 @@ const getActivities: BasicFun<
       from: res.From,
       to: res.To,
       hasMoreValues: res.HasMore,
-      data: TableState().Operations.tableValuesToValueRecord(
+      data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
         res.Values,
         fromApiRaw,
       ),
     }));
 
-const tableApiSources: TableApiSources = (streamName: string) =>
+const tableApiSources: DispatchTableApiSources = (streamName: string) =>
   streamName == "ActiveUsersApi"
-    ? getActiveUsers
+    ? ValueOrErrors.Default.return(getActiveUsers)
     : streamName == "InactiveUsersApi"
-      ? getInactiveUsers
+      ? ValueOrErrors.Default.return(getInactiveUsers)
       : streamName == "UserGroupsApi"
-        ? getUserGroups
+        ? ValueOrErrors.Default.return(getUserGroups)
         : streamName == "ActivitiesApi"
-          ? getActivities
-          : () => {
-              console.error(`Cannot find stream API ${streamName}`);
-              throw new Error(`Cannot find stream API ${streamName}`);
-            };
+          ? ValueOrErrors.Default.return(getActivities)
+          : ValueOrErrors.Default.throwOne(
+              `Cannot find table API ${streamName}`,
+            );
 
-const enumApis: EnumOptionsSources = (enumName: string) =>
+const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "UserFieldsApi"
-    ? () =>
+    ? ValueOrErrors.Default.return(() =>
         PromiseRepo.Default.mock(
           () => userFieldsEnum.map((_) => ({ Value: _ })),
           undefined,
           1,
           0,
-        )
+        ),
+      )
     : enumName == "UserGroupFieldsApi"
-      ? () =>
+      ? ValueOrErrors.Default.return(() =>
           PromiseRepo.Default.mock(
             () => userGroupFieldsEnum.map((_) => ({ Value: _ })),
             undefined,
             1,
             0,
-          )
+          ),
+        )
       : enumName == "ActivityFieldsApi"
-        ? () =>
+        ? ValueOrErrors.Default.return(() =>
             PromiseRepo.Default.mock(
               () => activityFieldsEnum.map((_) => ({ Value: _ })),
               undefined,
               1,
               0,
-            )
+            ),
+          )
         : enumName == "UsersSetupTabsApi"
-          ? () =>
+          ? ValueOrErrors.Default.return(() =>
               PromiseRepo.Default.mock(
                 () => usersSetupTabsEnum.map((_) => ({ Value: _ })),
                 undefined,
                 1,
                 0,
-              )
-          : () =>
-              PromiseRepo.Default.mock(() => {
-                alert(`Cannot find enum API ${enumName}`);
-                return [];
-              });
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(`Cannot find enum API ${enumName}`);
 const entityApis: EntityApis = {
   create: (apiName: string) => (e: any) => {
     alert(`Cannot find entity API ${apiName} for 'create'`);
@@ -244,7 +251,7 @@ const entityApis: EntityApis = {
         return (id: Guid) => {
           console.log(`get user setup api`);
           return Promise.resolve({
-            Active: {
+            ActiveUsers: {
               Values: Range(1, 11)
                 .map((_) => ({
                   Id: v4(),

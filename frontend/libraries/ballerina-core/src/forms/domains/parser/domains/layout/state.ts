@@ -79,13 +79,10 @@ export const FormLayout = {
     },
     ParseLayout: (
       rawLayout: unknown,
-      formName: string,
     ): ValueOrErrors<PredicateFormLayout, string> => {
       if (!rawLayout || typeof rawLayout != "object") {
         return ValueOrErrors.Default.throwOne(
-          `Invalid layout for form ${formName}, expected object, got ${JSON.stringify(
-            rawLayout,
-          )}`,
+          `Invalid layout, expected object, got ${JSON.stringify(rawLayout)}`,
         );
       }
       if (
@@ -94,7 +91,7 @@ export const FormLayout = {
         rawLayout.tabs == null
       ) {
         return ValueOrErrors.Default.throwOne(
-          `Invalid layout for form ${formName}, expected object with "tabs" property, got ${JSON.stringify(
+          `Invalid layout, expected object with "tabs" property, got ${JSON.stringify(
             rawLayout,
           )}`,
         );
@@ -110,7 +107,7 @@ export const FormLayout = {
             tab.columns == null
           ) {
             return ValueOrErrors.Default.throwOne(
-              `Invalid layout for form ${formName}, expected object with "columns" property, got ${JSON.stringify(
+              `Invalid layout, expected object with "columns" property, got ${JSON.stringify(
                 tab,
               )}`,
             );
@@ -125,7 +122,7 @@ export const FormLayout = {
                 col.groups == null
               ) {
                 return ValueOrErrors.Default.throwOne(
-                  `Invalid layout for form ${formName}, expected object with "groups" property, got ${JSON.stringify(
+                  `Invalid layout, expected object with "groups" property, got ${JSON.stringify(
                     col,
                   )}`,
                 );
@@ -165,7 +162,7 @@ export const FormLayout = {
         return ValueOrErrors.Default.return(Array.from(result.fields.keys()));
       });
     },
-    CalculateLayout: (
+    ComputeLayout: (
       bindings: Bindings,
       formLayout: PredicateFormLayout,
     ): ValueOrErrors<FormLayout, string> =>
@@ -274,7 +271,7 @@ export const TableLayout = {
         }),
       );
     },
-    CalculateLayout: (
+    ComputeLayout: (
       bindings: Bindings,
       visibleColumns: PredicateVisibleColumns,
     ): ValueOrErrors<CalculatedTableLayout, string> => {

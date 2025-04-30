@@ -5,14 +5,14 @@ import { simpleUpdater } from "../fun/domains/updater/domains/simpleUpdater/stat
 import { AsyncState } from "../async/state";
 import { Unit } from "../fun/domains/unit/state";
 import { BasicFun } from "../fun/state";
-import { PredicateValue, Sum, ValueRecord } from "../../main";
+import { Guid, MapRepo, PredicateValue, Sum, ValueRecord } from "../../main";
 
 export type ValueStreamingStatus = "reload" | "loadMore" | false;
 
 export type ValueStreamPosition = {
   nextStart: number;
   chunkSize: number;
-  chunkIndex: number;
+  chunkIndex: ValueChunkIndex;
   shouldLoad: ValueStreamingStatus;
   lastModifiedTime: number;
 };
@@ -72,14 +72,14 @@ export const ValueStreamPosition = {
 
 export type ValueChunk = {
   hasMoreValues: boolean;
-  data: ValueRecord;
+  data: OrderedMap<Guid, ValueRecord>;
   from: number;
   to: number;
 };
 export const ValueChunk = {
   Default: (
     hasMoreValues: boolean,
-    data: ValueRecord,
+    data: OrderedMap<Guid, ValueRecord>,
     from: number,
     to: number,
   ): ValueChunk => ({
@@ -95,10 +95,31 @@ export const ValueChunk = {
       ...simpleUpdater<ValueChunk>()("from"),
       ...simpleUpdater<ValueChunk>()("to"),
     },
+    Template: {
+      updateValue: (
+        valueId: Guid,
+        itemId: Guid,
+        valueUpdater: BasicUpdater<PredicateValue>,
+      ): Updater<ValueChunk> =>
+        ValueChunk.Updaters.Core.data(
+          MapRepo.Updaters.update(
+            valueId,
+            ValueRecord.Updaters.update(itemId, valueUpdater),
+          ),
+        ),
+    },
   },
 };
 
-export type StateChunk = Map<string, any>;
+export type ValueChunkIndex = number;
+// TODO -- better state typing
+export type StateChunkValue = Map<string, any>;
+
+export const StateChunkItem = {
+  Default: (state: Record<string, any>): StateChunkValue => Map(state),
+};
+
+export type StateChunk = Map<string, StateChunkValue>;
 
 export const StateChunk = {
   Default: (state: Record<string, any>): StateChunk => Map(state),
@@ -106,13 +127,13 @@ export const StateChunk = {
 
 export type ValueInfiniteStreamState = {
   loadingMore: AsyncState<Unit>;
-  loadedElements: OrderedMap<ValueStreamPosition["chunkIndex"], ValueChunk>;
+  loadedElements: OrderedMap<ValueChunkIndex, ValueChunk>;
   position: ValueStreamPosition;
   getChunk: BasicFun<[ValueStreamPosition], Promise<ValueChunk>>;
-  chunkStates: Map<number, StateChunk>;
+  chunkStates: Map<ValueChunkIndex, StateChunk>;
 };
 
-export const ValueInfiniteStreamState = () => ({
+export const ValueInfiniteStreamState = {
   Default: (
     initialChunkSize: number,
     getChunk: ValueInfiniteStreamState["getChunk"],
@@ -125,21 +146,6 @@ export const ValueInfiniteStreamState = () => ({
     chunkStates: Map(),
   }),
   Operations: {
-    flatChunksWithIndexes: (
-      current: ValueInfiniteStreamState,
-    ): Array<[number, string]> => {
-      return current.loadedElements
-        .map((chunk, chunkIndex) => [
-          chunk.data.fields
-            .keySeq()
-            .map((key) => [chunkIndex, key])
-            .toArray(),
-        ])
-        .valueSeq()
-        .toArray()
-        .flat()
-        .flat() as [number, string][];
-    },
     shouldCoroutineRun: (current: ValueInfiniteStreamState): boolean =>
       current.position.shouldLoad != false,
     loadNextPage: (current: ValueInfiniteStreamState): boolean =>
@@ -152,7 +158,7 @@ export const ValueInfiniteStreamState = () => ({
         chunkIndex: number,
         newChunk: ValueChunk,
       ): Updater<ValueInfiniteStreamState> =>
-        ValueInfiniteStreamState().Updaters.Core.loadedElements((_) =>
+        ValueInfiniteStreamState.Updaters.Core.loadedElements((_) =>
           _.set(chunkIndex, newChunk),
         ),
     },
@@ -165,7 +171,7 @@ export const ValueInfiniteStreamState = () => ({
         _: BasicUpdater<ValueInfiniteStreamState>,
       ): Updater<ValueInfiniteStreamState> => {
         return Updater((current) => {
-          if (ValueInfiniteStreamState().Operations.loadNextPage(current)) {
+          if (ValueInfiniteStreamState.Operations.loadNextPage(current)) {
             return current;
           }
           return _(current);
@@ -179,13 +185,13 @@ export const ValueInfiniteStreamState = () => ({
           let newState = current;
           if (newPosition.chunkSize != current.position.chunkSize)
             newState =
-              ValueInfiniteStreamState().Updaters.Core.clearLoadedElements()(
+              ValueInfiniteStreamState.Updaters.Core.clearLoadedElements()(
                 newState,
               );
           return { ...newState, position: newPosition };
         }),
       clearLoadedElements: (): Updater<ValueInfiniteStreamState> =>
-        ValueInfiniteStreamState().Updaters.Core.loadedElements((_) =>
+        ValueInfiniteStreamState.Updaters.Core.loadedElements((_) =>
           OrderedMap(),
         ),
     },
@@ -193,25 +199,62 @@ export const ValueInfiniteStreamState = () => ({
       reload: (
         getChunk: ValueInfiniteStreamState["getChunk"],
       ): Updater<ValueInfiniteStreamState> =>
-        ValueInfiniteStreamState()
-          .Updaters.Core.position(
-            ValueStreamPosition.Updaters.Template.reload(),
-          )
-          .then(ValueInfiniteStreamState().Updaters.Core.clearLoadedElements())
+        ValueInfiniteStreamState.Updaters.Core.position(
+          ValueStreamPosition.Updaters.Template.reload(),
+        )
+          .then(ValueInfiniteStreamState.Updaters.Core.clearLoadedElements())
           .then(
-            ValueInfiniteStreamState().Updaters.Core.getChunk(
+            ValueInfiniteStreamState.Updaters.Core.getChunk(
               replaceWith(getChunk),
             ),
           ),
       loadMore: (): Updater<ValueInfiniteStreamState> =>
-        ValueInfiniteStreamState().Updaters.Core.whenNotAlreadyLoading(
-          ValueInfiniteStreamState().Updaters.Core.position(
+        ValueInfiniteStreamState.Updaters.Core.whenNotAlreadyLoading(
+          ValueInfiniteStreamState.Updaters.Core.position(
             ValueStreamPosition.Updaters.Template.loadMore(),
           ),
         ),
+      updateChunkValueItem:
+        (chunkIndex: number, chunkValueKey: Guid, chunkValueItemKey: Guid) =>
+        (
+          valueUpdater: BasicUpdater<PredicateValue>,
+        ): Updater<ValueInfiniteStreamState> =>
+          ValueInfiniteStreamState.Updaters.Core.loadedElements(
+            MapRepo.Updaters.update(
+              chunkIndex,
+              ValueChunk.Updaters.Template.updateValue(
+                chunkValueKey,
+                chunkValueItemKey,
+                valueUpdater,
+              ),
+            ),
+          ),
+      updateChunkStateValueItem:
+        (
+          chunkIndex: number,
+          chunkStateValueKey: string,
+          chunkStateValueItemKey: string,
+          defaultStateValueItem: () => any,
+        ) =>
+        (stateUpdater: BasicUpdater<any>): Updater<ValueInfiniteStreamState> =>
+          ValueInfiniteStreamState.Updaters.Core.chunkStates(
+            MapRepo.Updaters.upsert(
+              chunkIndex,
+              () => StateChunk.Default(Map()),
+              MapRepo.Updaters.upsert(
+                chunkStateValueKey,
+                () => StateChunk.Default(Map()),
+                MapRepo.Updaters.upsert<string, any>(
+                  chunkStateValueItemKey,
+                  defaultStateValueItem,
+                  stateUpdater,
+                ),
+              ),
+            ),
+          ),
     },
   },
-});
+};
 
 export type ValueInfiniteStreamReadonlyContext = Unit;
 export type ValueInfiniteStreamWritableState = ValueInfiniteStreamState;

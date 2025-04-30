@@ -38,7 +38,6 @@ import {
 } from "./domains/person-from-config/injected-forms/category";
 import PersonConfig from "../../../../backend/apps/ballerina-runtime/input-forms/person-config.json";
 import { PassthroughFormContainerWrapper } from "./domains/passthrough-forms/views/wrappers";
-import TabbedTableWithConfiguration from "../../../../backend/apps/ballerina-runtime/input-forms/tabbed-table-with-configuration.json";
 import { UsersSetupFromConfigApis } from "playground-core";
 const ShowFormsParsingErrors = (parsedFormsConfig: FormParsingResult) => (
   <div style={{ border: "red" }}>
@@ -54,7 +53,7 @@ export const FormsApp = (props: {}) => {
     FormsParserState.Default(),
   );
   const [formToShow, setFormToShow] = useState(1);
-  const numForms = 4;
+  const numForms = 3;
   const [personCreateFormState, setPersonCreateFormState] = useState(
     FormRunnerState.Default(),
   );
@@ -405,78 +404,40 @@ export const FormsApp = (props: {}) => {
                 >
                   Show next form
                 </button>
-                {formToShow % numForms == 3 ? (
-                  <InstantiedPersonFormsParserTemplate
-                    context={{
-                      ...configFormsParser,
-                      containerFormView: PersonContainerFormView,
-                      fieldTypeConverters: fieldTypeConverters,
-                      nestedContainerFormView: PersonNestedContainerFormView,
-                      fieldViews: PersonFieldViews,
-                      infiniteStreamSources: PersonFromConfigApis.streamApis, // TODO: remove
-                      enumOptionsSources: UsersSetupFromConfigApis.enumApis,
-                      entityApis: UsersSetupFromConfigApis.entityApis,
-                      tableApiSources: UsersSetupFromConfigApis.tableApiSources,
-                      getFormsConfig: () =>
-                        PromiseRepo.Default.mock(
-                          () => TabbedTableWithConfiguration,
-                        ),
-                      injectedPrimitives: Map([
-                        [
-                          "injectedCategory",
-                          {
-                            fieldView: categoryForm,
-                            defaultValue: {
-                              kind: "custom",
-                              value: {
-                                kind: "adult",
-                                extraSpecial: false,
-                              },
+
+                <InstantiedPersonFormsParserTemplate
+                  context={{
+                    ...configFormsParser,
+                    containerFormView: PersonContainerFormView,
+                    fieldTypeConverters: fieldTypeConverters,
+                    nestedContainerFormView: PersonNestedContainerFormView,
+                    fieldViews: PersonFieldViews,
+                    infiniteStreamSources: PersonFromConfigApis.streamApis,
+                    enumOptionsSources: PersonFromConfigApis.enumApis,
+                    entityApis: PersonFromConfigApis.entityApis,
+                    getFormsConfig: () =>
+                      PromiseRepo.Default.mock(() => PersonConfig),
+                    injectedPrimitives: Map([
+                      [
+                        "injectedCategory",
+                        {
+                          fieldView: categoryForm,
+                          defaultValue: {
+                            kind: "custom",
+                            value: {
+                              kind: "adult",
+                              extraSpecial: false,
                             },
-                            defaultState: CategoryState.Default(),
                           },
-                        ],
-                      ]),
-                    }}
-                    setState={setConfigFormsParser}
-                    view={unit}
-                    foreignMutations={unit}
-                  />
-                ) : (
-                  <InstantiedPersonFormsParserTemplate
-                    context={{
-                      ...configFormsParser,
-                      containerFormView: PersonContainerFormView,
-                      fieldTypeConverters: fieldTypeConverters,
-                      nestedContainerFormView: PersonNestedContainerFormView,
-                      fieldViews: PersonFieldViews,
-                      infiniteStreamSources: PersonFromConfigApis.streamApis,
-                      enumOptionsSources: PersonFromConfigApis.enumApis,
-                      entityApis: PersonFromConfigApis.entityApis,
-                      getFormsConfig: () =>
-                        PromiseRepo.Default.mock(() => PersonConfig),
-                      injectedPrimitives: Map([
-                        [
-                          "injectedCategory",
-                          {
-                            fieldView: categoryForm,
-                            defaultValue: {
-                              kind: "custom",
-                              value: {
-                                kind: "adult",
-                                extraSpecial: false,
-                              },
-                            },
-                            defaultState: CategoryState.Default(),
-                          },
-                        ],
-                      ]),
-                    }}
-                    setState={setConfigFormsParser}
-                    view={unit}
-                    foreignMutations={unit}
-                  />
-                )}
+                          defaultState: CategoryState.Default(),
+                        },
+                      ],
+                    ]),
+                  }}
+                  setState={setConfigFormsParser}
+                  view={unit}
+                  foreignMutations={unit}
+                />
                 {renderForms && formToShow % numForms == 0 ? (
                   <>
                     <h3>Create person</h3>
@@ -702,85 +663,6 @@ export const FormsApp = (props: {}) => {
                       view={unit}
                       foreignMutations={unit}
                     />
-                  </>
-                ) : renderForms && formToShow % numForms == 3 ? (
-                  <>
-                    <>
-                      <h3>Table form</h3>
-
-                      {entityPath && entityPath.kind == "value" && (
-                        <pre
-                          style={{
-                            display: "inline-block",
-                            verticalAlign: "top",
-                            textAlign: "left",
-                          }}
-                        >
-                          {JSON.stringify(entityPath.value, null, 2)}
-                        </pre>
-                      )}
-                      {entityPath && entityPath.kind == "errors" && (
-                        <p>
-                          DeltaErrors:{" "}
-                          {JSON.stringify(entityPath.errors, null, 2)}
-                        </p>
-                      )}
-
-                      <div
-                        style={{
-                          border: "2px solid lightblue",
-                          display: "inline-block",
-                          verticalAlign: "top",
-                        }}
-                      >
-                        <p>Config</p>
-                        <FormRunnerTemplate
-                          context={{
-                            ...configFormsParser,
-                            ...usersSetupConfigFormState,
-                            formRef: {
-                              formName: "UsersSetupConfig",
-                              kind: "passthrough",
-                              containerWrapper: PassthroughFormContainerWrapper,
-                              entity: usersSetupConfigEntity,
-                              globalConfiguration: Sum.Default.left(
-                                PredicateValue.Default.record(OrderedMap()),
-                              ),
-                              onEntityChange: onUsersSetupConfigEntityChange,
-                            },
-                            showFormParsingErrors: ShowFormsParsingErrors,
-                            extraContext: {
-                              flags: Set(["BC", "X"]),
-                            },
-                          }}
-                          setState={setUsersSetupConfigFormState}
-                          view={unit}
-                          foreignMutations={unit}
-                        />
-                      </div>
-                      <p>User Form</p>
-                      <FormRunnerTemplate
-                        context={{
-                          ...configFormsParser,
-                          ...usersSetupFormState,
-                          formRef: {
-                            formName: "UsersSetup",
-                            kind: "passthrough",
-                            containerWrapper: PassthroughFormContainerWrapper,
-                            entity: usersSetupEntity,
-                            globalConfiguration: usersSetupConfigEntity,
-                            onEntityChange: onPersonEntityChange,
-                          },
-                          showFormParsingErrors: ShowFormsParsingErrors,
-                          extraContext: {
-                            flags: Set(["BC", "X"]),
-                          },
-                        }}
-                        setState={setUsersSetupFormState}
-                        view={unit}
-                        foreignMutations={unit}
-                      />
-                    </>
                   </>
                 ) : undefined}
               </td>

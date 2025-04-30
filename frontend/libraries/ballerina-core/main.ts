@@ -130,9 +130,6 @@ export * from "./src/forms/domains/primitives/domains/unit/state";
 export * from "./src/forms/domains/primitives/domains/unit/template";
 export * from "./src/forms/domains/parser/domains/deltas/state";
 export * from "./src/forms/domains/parser/domains/layout/state";
-export * from "./src/forms/domains/singleton-table/state";
-export * from "./src/forms/domains/singleton-table/template";
-export * from "./src/forms/domains/singleton-table/coroutines/runner";
 export * from "./src/value-infinite-data-stream/state";
 export * from "./src/value-infinite-data-stream/template";
 export * from "./src/value-infinite-data-stream/coroutines/runner";
@@ -213,6 +210,12 @@ export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-
 export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-renderers/record/template";
 export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-renderers/record/state";
 export * from "./src/forms/domains/dispatched-forms/built-ins/state";
+export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/form/domains/renderers/domains/tableFormRenderer/state";
+export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/tableFormDispatcher/state";
+export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-renderers/table/state";
+export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-renderers/table/template";
+export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/form/domains/renderers/domains/tableFormRenderer/state";
+export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/nestedDispatcher/domains/nestedTableDisaptcher/state";
 // import { simpleUpdater, simpleUpdaterWithChildren } from "./src/fun/domains/updater/domains/simpleUpdater/state"
 // import { Updater } from "./src/fun/domains/updater/state"
 

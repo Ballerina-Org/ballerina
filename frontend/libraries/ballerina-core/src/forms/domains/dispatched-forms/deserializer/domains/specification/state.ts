@@ -127,7 +127,6 @@ export const Specification = {
       >;
     } =>
       DispatchIsObject(_) && "launchers" in _ && DispatchIsObject(_.launchers),
-    // TODO, doesn't need to be its own operation
     DeserializeForms: <T>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
@@ -331,8 +330,8 @@ export const Specification = {
                   ),
               )
 
-              .Then((allTypes) => {
-                return Specification.Operations.DeserializeForms<T>(
+              .Then((allTypes) =>
+                Specification.Operations.DeserializeForms<T>(
                   mergedValidatedSpecification.forms,
                   allTypes,
                   fieldViews,
@@ -448,8 +447,8 @@ export const Specification = {
                     },
                     launchers,
                   });
-                });
-              });
+                }),
+              );
           })
           .MapErrors((errors) =>
             errors.map(

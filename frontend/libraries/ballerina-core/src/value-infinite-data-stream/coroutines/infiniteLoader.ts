@@ -1,27 +1,24 @@
 import { AsyncState } from "../../async/state";
-import { Sum } from "../../collections/domains/sum/state";
 import { replaceWith } from "../../fun/domains/updater/domains/replaceWith/state";
 import { ValueInfiniteStreamState, ValueStreamPosition } from "../state";
 import { ValueStreamCo } from "./builder";
 
-export const ValueInfiniteStreamLoader = () => {
-  const Co = ValueStreamCo();
-  const updaters = ValueInfiniteStreamState().Updaters;
-  // const operations = InfiniteStreamState<Element>().Operations;
+const Co = ValueStreamCo();
+const updaters = ValueInfiniteStreamState.Updaters;
 
-  return Co.Seq([
-    Co.SetState(
-      updaters.Core.loadingMore(replaceWith(AsyncState.Default.loading())),
-    ),
-    Co.While(
-      ([current]) => current.loadingMore.kind != "loaded",
-      Co.GetState().then((current) => {
-        return Co.Await(
-          () => current.getChunk([current.position]),
-          () => "error" as const,
-        ).then((apiResult) => {
-          if (apiResult.kind == "l") {
-            return Co.SetState(
+export const ValueInfiniteStreamLoader = Co.Seq([
+  Co.SetState(
+    updaters.Core.loadingMore(replaceWith(AsyncState.Default.loading())),
+  ),
+  Co.While(
+    ([current]) => current.loadingMore.kind != "loaded",
+    Co.GetState().then((current) =>
+      Co.Await(
+        () => current.getChunk([current.position]),
+        () => "error" as const,
+      ).then((apiResult) =>
+        apiResult.kind == "l"
+          ? Co.SetState(
               updaters.Core.loadingMore(
                 replaceWith(AsyncState.Default.loaded({})),
               )
@@ -44,12 +41,9 @@ export const ValueInfiniteStreamLoader = () => {
                     ),
                   ),
                 ),
-            );
-          } else {
-            return Co.Wait(500);
-          }
-        });
-      }),
+            )
+          : Co.Wait(500),
+      ),
     ),
-  ]);
-};
+  ),
+]);

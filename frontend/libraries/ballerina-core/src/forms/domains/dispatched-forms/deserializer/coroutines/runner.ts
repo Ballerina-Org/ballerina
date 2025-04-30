@@ -69,6 +69,7 @@ export const LoadAndDeserializeSpecification = <
             current.infiniteStreamSources,
             current.enumOptionsSources,
             current.entityApis,
+            current.tableApiSources,
           )(deserializationResult.value);
 
           if (result.kind == "errors") {

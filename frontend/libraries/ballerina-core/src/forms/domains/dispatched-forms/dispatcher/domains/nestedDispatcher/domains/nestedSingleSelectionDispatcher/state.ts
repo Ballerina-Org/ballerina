@@ -10,22 +10,15 @@ import {
   PredicateValue,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
-
-import { RecordFieldEnumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/enum/state";
-import { NestedEnumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/enum/state";
-import { NestedStreamRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/domains/stream/state";
-import { RecordFieldStreamRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/domains/stream/state";
+import { BaseStreamRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/stream/state";
 import { OrderedMap } from "immutable";
+import { BaseEnumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/enum/state";
 
 export const NestedSingleSelectionDispatcher = {
   Operations: {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       viewKind: string,
-      renderer:
-        | RecordFieldEnumRenderer<T>
-        | NestedEnumRenderer<T>
-        | RecordFieldStreamRenderer<T>
-        | NestedStreamRenderer<T>,
+      renderer: BaseEnumRenderer<T> | BaseStreamRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       const result: ValueOrErrors<
@@ -34,8 +27,7 @@ export const NestedSingleSelectionDispatcher = {
       > = (() => {
         if (
           viewKind == "enumSingleSelection" &&
-          (renderer.kind == "recordFieldEnumRenderer" ||
-            renderer.kind == "nestedEnumRenderer")
+          renderer.kind == "baseEnumRenderer"
         ) {
           return dispatcherContext
             .getConcreteRenderer(
@@ -73,8 +65,7 @@ export const NestedSingleSelectionDispatcher = {
         }
         if (
           viewKind == "streamSingleSelection" &&
-          (renderer.kind == "recordFieldStreamRenderer" ||
-            renderer.kind == "nestedStreamRenderer")
+          renderer.kind == "baseStreamRenderer"
         ) {
           return dispatcherContext
             .getConcreteRenderer(

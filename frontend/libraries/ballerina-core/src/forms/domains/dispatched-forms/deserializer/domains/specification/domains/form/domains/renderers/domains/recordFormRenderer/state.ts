@@ -9,12 +9,10 @@ import {
   PredicateFormLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
-import {
-  SerializedRecordFieldRenderer,
-  RecordFieldRenderer,
-} from "./domains/recordFieldRenderer/state";
+import { BaseRenderer, SerializedBaseRenderer } from "../baseRenderer/state";
 
 export type SerializedRecordFormRenderer = {
+  type?: unknown;
   renderer?: unknown;
   fields?: unknown;
   tabs?: unknown;
@@ -24,7 +22,7 @@ export type SerializedRecordFormRenderer = {
 export type RecordFormRenderer<T> = {
   kind: "recordForm";
   type: DispatchParsedType<T>;
-  fields: Map<string, RecordFieldRenderer<T>>;
+  fields: Map<string, BaseRenderer<T>>;
   tabs: PredicateFormLayout;
   extendsForms: string[];
   concreteRendererName?: string;
@@ -33,7 +31,7 @@ export type RecordFormRenderer<T> = {
 export const RecordFormRenderer = {
   Default: <T>(
     type: DispatchParsedType<T>,
-    fields: Map<string, RecordFieldRenderer<T>>,
+    fields: Map<string, BaseRenderer<T>>,
     tabs: PredicateFormLayout,
     extendsForms: string[],
     concreteRendererName?: string,
@@ -63,7 +61,7 @@ export const RecordFormRenderer = {
       _: SerializedRecordFormRenderer,
     ): ValueOrErrors<
       Omit<SerializedRecordFormRenderer, "fields" | "tabs" | "extends"> & {
-        fields: Map<string, SerializedRecordFieldRenderer>;
+        fields: Map<string, SerializedBaseRenderer>;
         tabs: object;
         extends: string[];
         renderer?: string;
@@ -100,7 +98,7 @@ export const RecordFormRenderer = {
 
       return ValueOrErrors.Default.return({
         ..._,
-        fields: Map<string, SerializedRecordFieldRenderer>(_.fields),
+        fields: Map<string, SerializedBaseRenderer>(_.fields),
         tabs: _.tabs,
         extends: extendedFields,
         renderer,
@@ -108,32 +106,33 @@ export const RecordFormRenderer = {
     },
     Deserialize: <T>(
       type: RecordType<T>,
-      formName: string,
       serialized: SerializedRecordFormRenderer,
       fieldViews?: any,
     ): ValueOrErrors<RecordFormRenderer<T>, string> =>
       RecordFormRenderer.Operations.tryAsValidRecordForm(serialized)
         .Then((validRecordForm) =>
           ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(
+            List<ValueOrErrors<[string, BaseRenderer<T>], string>>(
               validRecordForm.fields
                 .toArray()
                 .map(
                   ([fieldName, fieldRecordRenderer]: [
                     string,
-                    SerializedRecordFieldRenderer,
+                    SerializedBaseRenderer,
                   ]) => {
+                    // TODO refactor
                     const fieldType = type.fields.get(fieldName);
                     if (!fieldType) {
                       return ValueOrErrors.Default.throwOne(
-                        `Unknown field type ${fieldName}  in ${formName}`,
+                        `Unknown field type ${fieldName}`,
                       );
                     }
-                    return RecordFieldRenderer.Operations.Deserialize(
+                    return BaseRenderer.Operations.DeserializeAs(
                       fieldType,
-                      fieldName,
                       fieldRecordRenderer,
                       fieldViews,
+                      "recordField",
+                      `field: ${fieldName}`,
                     ).Then((renderer) =>
                       ValueOrErrors.Default.return([fieldName, renderer]),
                     );
@@ -141,7 +140,7 @@ export const RecordFormRenderer = {
                 ),
             ),
           ).Then((fieldTuples) =>
-            FormLayout.Operations.ParseLayout(validRecordForm, formName)
+            FormLayout.Operations.ParseLayout(validRecordForm)
               .Then((tabs) =>
                 ValueOrErrors.Default.return(
                   RecordFormRenderer.Default(
@@ -154,9 +153,7 @@ export const RecordFormRenderer = {
                 ),
               )
               .MapErrors((errors) =>
-                errors.map(
-                  (error) => `${error}\n...When parsing tabs for ${formName}`,
-                ),
+                errors.map((error) => `${error}\n...When parsing tabs`),
               ),
           ),
         )

@@ -5,23 +5,26 @@ import { NestedTupleDispatcher } from "./domains/nestedTupleDispatcher/state";
 import { NestedListDispatcher } from "./domains/nestedListDispatcher/state";
 import { NestedMapDispatcher } from "./domains/nestedMapDispatcher/state";
 // import { NestedUnionDispatcher } from "./domains/nestedUnionDispatcher/state";
-import { NestedRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/nestedRenderer/state";
-import { RecordFieldRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/domains/recordFieldRenderer/state";
 import {
   DispatchParsedType,
   DispatchPrimitiveType,
   ListType,
   MapType,
   SumType,
+  TableType,
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../deserializer/state";
 import {
+  MapRepo,
   NestedLookupDispatcher,
   NestedMultiSelectionDispatcher,
   NestedSingleSelectionDispatcher,
+  NestedTableDispatcher,
   ValueOrErrors,
 } from "../../../../../../../main";
+import { BaseRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
+import { BaseTableRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/table/state";
 
 export const NestedDispatcher = {
   Operations: {
@@ -29,13 +32,12 @@ export const NestedDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       type: DispatchPrimitiveType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "recordFieldPrimitiveRenderer" &&
-      renderer.kind != "nestedPrimitiveRenderer"
+      renderer.kind != "basePrimitiveRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind == "recordFieldPrimitiveRenderer" or "nestedPrimitiveRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind == "basePrimitiveRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -50,15 +52,13 @@ export const NestedDispatcher = {
     DispatchAsSingleSelectionRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "nestedEnumRenderer" &&
-      renderer.kind != "nestedStreamRenderer" &&
-      renderer.kind != "recordFieldEnumRenderer" &&
-      renderer.kind != "recordFieldStreamRenderer"
+      renderer.kind != "baseEnumRenderer" &&
+      renderer.kind != "baseStreamRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind == "nestedEnumRenderer" or "nestedStreamRenderer" or "recordFieldEnumRenderer" or "recordFieldStreamRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind == "baseEnumRenderer" or "baseStreamRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -77,15 +77,13 @@ export const NestedDispatcher = {
     DispatchAsMultiSelectionRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "nestedEnumRenderer" &&
-      renderer.kind != "nestedStreamRenderer" &&
-      renderer.kind != "recordFieldEnumRenderer" &&
-      renderer.kind != "recordFieldStreamRenderer"
+      renderer.kind != "baseEnumRenderer" &&
+      renderer.kind != "baseStreamRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind == "nestedEnumRenderer" or "nestedStreamRenderer" or "recordFieldEnumRenderer" or "recordFieldStreamRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind == "baseEnumRenderer" or "baseStreamRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -105,13 +103,11 @@ export const NestedDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       type: SumType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "recordFieldSumRenderer" &&
-      renderer.kind != "nestedSumRenderer" &&
-      renderer.kind != "recordFieldSumUnitDateRenderer" &&
-      renderer.kind != "nestedSumUnitDateRenderer"
+      renderer.kind != "baseSumRenderer" &&
+      renderer.kind != "baseSumUnitDateRenderer"
         ? ValueOrErrors.Default.throwOne(
             `type is kind "sum" but renderer is not compatible, kind "${renderer.kind}"`,
           )
@@ -132,13 +128,12 @@ export const NestedDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       type: TupleType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "recordFieldTupleRenderer" &&
-      renderer.kind != "nestedTupleRenderer"
+      renderer.kind != "baseTupleRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind of "tupleRecordFieldRenderer" or "nestedTupleRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind of "baseTupleRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -157,13 +152,12 @@ export const NestedDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       type: ListType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "recordFieldListRenderer" &&
-      renderer.kind != "nestedListRenderer"
+      renderer.kind != "baseListRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind == "recordFieldListRenderer" or "nestedListRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind == "baseListRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -182,13 +176,12 @@ export const NestedDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       type: MapType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind != "recordFieldMapRenderer" &&
-      renderer.kind != "nestedMapRenderer"
+      renderer.kind != "baseMapRenderer"
         ? ValueOrErrors.Default.throwOne(
-            `expected renderer.kind == "recordFieldMapRenderer" or "nestedMapRenderer" but got ${renderer.kind}`,
+            `expected renderer.kind == "recordFieldMapRenderer" or "baseMapRenderer" but got ${renderer.kind}`,
           )
         : dispatcherContext
             .getConcreteRendererKind(renderer.concreteRendererName)
@@ -203,64 +196,51 @@ export const NestedDispatcher = {
                     dispatcherContext,
                   ),
             ),
-    // DispatchAsUnionRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: UnionType<T>,
-    //   viewKind: string,
-    //   renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
-    //   rendererName: string,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> => {
-    //   if (viewKind != "union") {
-    //     return ValueOrErrors.Default.throwOne(
-    //       `expected viewKind == "union" but got ${viewKind}`,
-    //     );
-    //   }
-    //   if (type.kind != "union") {
-    //     return ValueOrErrors.Default.throwOne(
-    //       `expected type.kind == "union" but got ${type.kind}`,
-    //     );
-    //   }
-    //   return NestedUnionDispatcher.Dispatch(
-    //     type,
-    //     viewKind,
-    //     renderer,
-    //     rendererName,
-    //     dispatcherContext,
-    //   );
-    // },
-
+    DispatchAsTableRenderer: <
+      T extends { [key in keyof T]: { type: any; state: any } },
+    >(
+      renderer: BaseRenderer<T>,
+      dispatcherContext: DispatcherContext<T>,
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      renderer.kind != "baseTableRenderer"
+        ? ValueOrErrors.Default.throwOne(
+            `expected renderer.kind == "baseTableRenderer" but got ${renderer.kind}`,
+          )
+        : MapRepo.Operations.tryFindWithError(
+            renderer.lookupRendererName,
+            dispatcherContext.forms,
+            () => `cannot find form ${renderer.lookupRendererName}`,
+          ).Then((form) =>
+            NestedTableDispatcher.Operations.Dispatch(
+              form,
+              renderer,
+              dispatcherContext,
+            ),
+          ),
     DispatchAsLookupRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      // TODO -- attach views (inc optional override)
-      if (
-        renderer.kind != "recordFieldLookupRenderer" &&
-        renderer.kind != "nestedLookupRenderer"
-      ) {
-        return ValueOrErrors.Default.throwOne(
-          `expected renderer.kind == "recordFieldLookupRenderer" or "nestedLookupRenderer" but got ${renderer.kind}`,
-        );
-      }
-      const form = dispatcherContext.forms.get(renderer.lookupRendererName);
-      if (form == undefined) {
-        return ValueOrErrors.Default.throwOne(
-          `cannot find form ${renderer.lookupRendererName}`,
-        );
-      }
-      return NestedLookupDispatcher.Operations.Dispatch(
-        form,
-        renderer,
-        dispatcherContext,
-      );
-    },
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      renderer.kind != "baseLookupRenderer"
+        ? ValueOrErrors.Default.throwOne(
+            `expected renderer.kind == "baseLookupRenderer" but got ${renderer.kind}`,
+          )
+        : MapRepo.Operations.tryFindWithError(
+            renderer.lookupRendererName,
+            dispatcherContext.forms,
+            () => `cannot find form ${renderer.lookupRendererName}`,
+          ).Then((form) =>
+            NestedLookupDispatcher.Operations.Dispatch(
+              form,
+              renderer,
+              dispatcherContext,
+            ),
+          ),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       as: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -270,12 +250,12 @@ export const NestedDispatcher = {
         dispatcherContext,
       ).MapErrors((errors) =>
         errors.map(
-          (error) => `${error}\n...When dispatching nested renderer as: ${as}`,
+          (error) => `${error}\n...When dispatching base renderer as: ${as}`,
         ),
       ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
-      renderer: RecordFieldRenderer<T> | NestedRenderer<T>,
+      renderer: BaseRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       const result: ValueOrErrors<
@@ -326,16 +306,21 @@ export const NestedDispatcher = {
                           renderer,
                           dispatcherContext,
                         )
-                      : ValueOrErrors.Default.throwOne(
-                          `unknown type kind: ${type.kind}`,
-                        );
+                      : type.kind == "table"
+                        ? NestedDispatcher.Operations.DispatchAsTableRenderer(
+                            renderer,
+                            dispatcherContext,
+                          )
+                        : ValueOrErrors.Default.throwOne(
+                            `unknown type kind "${type.kind}"`,
+                          );
 
       return result.MapErrors((errors) =>
         errors.map(
           (error) =>
-            `${error}\n...When dispatching nested renderer: ${
-              renderer.kind == "recordFieldLookupRenderer" ||
-              renderer.kind == "nestedLookupRenderer"
+            `${error}\n...When dispatching base renderer: ${
+              renderer.kind == "baseLookupRenderer" ||
+              renderer.kind == "baseTableRenderer"
                 ? renderer.lookupRendererName
                 : renderer.concreteRendererName
             }`,

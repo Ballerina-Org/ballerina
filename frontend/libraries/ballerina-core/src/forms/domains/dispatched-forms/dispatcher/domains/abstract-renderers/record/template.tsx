@@ -31,8 +31,8 @@ export const RecordAbstractRenderer = <
     string,
     {
       template: Template<any, any, any, any>;
-      visible: Expr;
-      disabled: Expr;
+      visible?: Expr;
+      disabled?: Expr;
       GetDefaultState: () => any;
     }
   >,
@@ -70,11 +70,9 @@ export const RecordAbstractRenderer = <
             _,
           ),
       )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueRecord>;
-        }
-      >(
+      .mapForeignMutationsFromProps<{
+        onChange: DispatchOnChange<ValueRecord>;
+      }>(
         (
           props,
         ): {
@@ -83,7 +81,7 @@ export const RecordAbstractRenderer = <
           onChange: (elementUpdater: any, nestedDelta: DispatchDelta) => {
             const delta: DispatchDelta = {
               kind: "RecordField",
-              field: [fieldName as string, nestedDelta],
+              field: [fieldName, nestedDelta],
               recordType: props.context.type,
             };
 
@@ -92,7 +90,7 @@ export const RecordAbstractRenderer = <
                 PredicateValue.Operations.IsRecord(current)
                   ? PredicateValue.Default.record(
                       current.fields.update(
-                        fieldName as string,
+                        fieldName,
                         PredicateValue.Default.unit(),
                         elementUpdater,
                       ),
@@ -141,11 +139,12 @@ export const RecordAbstractRenderer = <
       props.context.value,
     );
 
-    const calculatedLayout = FormLayout.Operations.CalculateLayout(
+    const calculatedLayout = FormLayout.Operations.ComputeLayout(
       updatedBindings,
       Layout,
     );
 
+    // TODO -- set error template up top
     if (calculatedLayout.kind == "errors") {
       console.error(calculatedLayout.errors.map((error) => error).join("\n"));
       return <></>;
@@ -154,15 +153,17 @@ export const RecordAbstractRenderer = <
     const visibleFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map(({ visible }, fieldName) =>
-          Expr.Operations.EvaluateAs("visibility predicate")(updatedBindings)(
-            visible,
-          ).Then((value) =>
-            ValueOrErrors.Default.return(
-              PredicateValue.Operations.IsBoolean(value) && value
-                ? fieldName
-                : null,
-            ),
-          ),
+          visible == undefined
+            ? ValueOrErrors.Default.return(fieldName)
+            : Expr.Operations.EvaluateAs("visibility predicate")(
+                updatedBindings,
+              )(visible).Then((value) =>
+                ValueOrErrors.Default.return(
+                  PredicateValue.Operations.IsBoolean(value) && value
+                    ? fieldName
+                    : null,
+                ),
+              ),
         ).valueSeq(),
       ),
     );
@@ -179,15 +180,17 @@ export const RecordAbstractRenderer = <
     const disabledFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map(({ disabled }, fieldName) =>
-          Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
-            disabled,
-          ).Then((value) =>
-            ValueOrErrors.Default.return(
-              PredicateValue.Operations.IsBoolean(value) && value
-                ? fieldName
-                : null,
-            ),
-          ),
+          disabled == undefined
+            ? ValueOrErrors.Default.return(null)
+            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
+                disabled,
+              ).Then((value) =>
+                ValueOrErrors.Default.return(
+                  PredicateValue.Operations.IsBoolean(value) && value
+                    ? fieldName
+                    : null,
+                ),
+              ),
         ).valueSeq(),
       ),
     );
@@ -201,11 +204,7 @@ export const RecordAbstractRenderer = <
     const disabledFieldKeysSet = Set(
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
-    // TODO properly
-    // const visibleFieldKeys = FieldTemplates.keySeq().toSet();
-    // const disabledFieldKeys = FieldTemplates.keySeq().toSet();
-    // todo calculate visibility and disabled predicates and pass them to the view
-    // TODO -- not spread props?
+
     return (
       <>
         <props.view
