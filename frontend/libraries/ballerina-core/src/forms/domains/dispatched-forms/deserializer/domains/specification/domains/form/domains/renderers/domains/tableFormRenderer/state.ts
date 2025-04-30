@@ -1,21 +1,19 @@
 import { List, Map } from "immutable";
 import {
   DispatchIsObject,
-  RecordType,
   DispatchParsedType,
   TableType,
 } from "../../../../../types/state";
 import {
-  FormLayout,
   isString,
   MapRepo,
-  PredicateFormLayout,
   PredicateVisibleColumns,
   TableLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 
 import { BaseRenderer, SerializedBaseRenderer } from "../baseRenderer/state";
+import { RecordFormRenderer } from "../recordFormRenderer/state";
 
 export type SerializedTableFormRenderer = {
   type?: unknown;
@@ -23,28 +21,39 @@ export type SerializedTableFormRenderer = {
   columns?: unknown;
   detailsRenderer?: unknown;
   visibleColumns?: unknown;
+  api?: unknown;
 };
 
 export type TableFormRenderer<T> = {
   kind: "tableForm";
   type: TableType<T>;
-  columns: Map<string, BaseRenderer<T>>;
+  columns: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
   visibleColumns: PredicateVisibleColumns;
   concreteRendererName: string;
+  detailsRenderer?: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
+  inlinedApi?:  string[];
+  visible: undefined; // for parity with base renderers
+  disabled: undefined;
 };
 
 export const TableFormRenderer = {
   Default: <T>(
     type: TableType<T>,
-    columns: Map<string, BaseRenderer<T>>,
+    columns: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
     visibleColumns: PredicateVisibleColumns,
     concreteRendererName: string,
+    detailsRenderer?: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+    inlinedApi?: string[],
   ): TableFormRenderer<T> => ({
     kind: "tableForm",
     type,
     columns,
     visibleColumns,
     concreteRendererName,
+    detailsRenderer,
+    inlinedApi,
+    visible: undefined,
+    disabled: undefined,
   }),
   Operations: {
     hasType: (_: unknown): _ is { type: string } =>
@@ -79,25 +88,46 @@ export const TableFormRenderer = {
       !DispatchIsObject(_)
         ? ValueOrErrors.Default.throwOne("table form renderer not an object")
         : !TableFormRenderer.Operations.hasType(_)
-          ? ValueOrErrors.Default.throwOne(
-              "table form renderer is missing or has invalid type property",
-            )
-          : !TableFormRenderer.Operations.hasRenderer(_)
-            ? ValueOrErrors.Default.throwOne(
-                "table form renderer is missing or has invalid renderer property",
-              )
-            : !TableFormRenderer.Operations.hasColumns(_)
-              ? ValueOrErrors.Default.throwOne(
-                  "table form renderer is missing or has invalid columns property",
-                )
-              : !TableFormRenderer.Operations.hasVisibleColumns(_)
-                ? ValueOrErrors.Default.throwOne(
-                    "table form renderer is missing or has invakid visible columns property",
-                  )
-                : ValueOrErrors.Default.return({
-                    ..._,
-                    columns: Map<string, SerializedBaseRenderer>(_.columns),
-                  }),
+        ? ValueOrErrors.Default.throwOne(
+            "table form renderer is missing or has invalid type property",
+          )
+        : !TableFormRenderer.Operations.hasRenderer(_)
+        ? ValueOrErrors.Default.throwOne(
+            "table form renderer is missing or has invalid renderer property",
+          )
+        : !TableFormRenderer.Operations.hasColumns(_)
+        ? ValueOrErrors.Default.throwOne(
+            "table form renderer is missing or has invalid columns property",
+          )
+        : !TableFormRenderer.Operations.hasVisibleColumns(_)
+        ? ValueOrErrors.Default.throwOne(
+            "table form renderer is missing or has invakid visible columns property",
+          )
+        : ValueOrErrors.Default.return({
+            ..._,
+            columns: Map<string, SerializedBaseRenderer>(_.columns),
+          }),
+    DeserializeDetailsRenderer: <T>(
+      type: TableType<T>,
+      serialized: SerializedTableFormRenderer,
+      fieldViews: any,
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<
+      | BaseRenderer<T>
+      | TableFormRenderer<T>
+      | RecordFormRenderer<T>
+      | undefined,
+      string
+    > =>
+      serialized.detailsRenderer == undefined
+        ? ValueOrErrors.Default.return(undefined)
+        : BaseRenderer.Operations.Deserialize(
+            type,
+            serialized.detailsRenderer,
+            fieldViews,
+            "nested",
+            types,
+          ),
     Deserialize: <T>(
       type: TableType<T>,
       serialized: SerializedTableFormRenderer,
@@ -112,7 +142,19 @@ export const TableFormRenderer = {
             () => `cannot find table type ${type.typeName} in types`,
           ).Then((tableType) =>
             ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[string, BaseRenderer<T>], string>>(
+              List<
+                ValueOrErrors<
+                  [
+                    string,
+                    (
+                      | BaseRenderer<T>
+                      | TableFormRenderer<T>
+                      | RecordFormRenderer<T>
+                    ),
+                  ],
+                  string
+                >
+              >(
                 validTableForm.columns
                   .toArray()
                   .map(([columnName, columnRenderer]) =>
@@ -132,9 +174,17 @@ export const TableFormRenderer = {
                             fieldViews,
                             "tableColumn",
                             `column ${columnName}`,
+                            types,
                           ).Then((renderer) =>
                             ValueOrErrors.Default.return<
-                              [string, BaseRenderer<T>],
+                              [
+                                string,
+                                (
+                                  | BaseRenderer<T>
+                                  | TableFormRenderer<T>
+                                  | RecordFormRenderer<T>
+                                ),
+                              ],
                               string
                             >([columnName, renderer]),
                           ),
@@ -145,12 +195,23 @@ export const TableFormRenderer = {
               TableLayout.Operations.ParseLayout(
                 validTableForm.visibleColumns,
               ).Then((layout) =>
-                ValueOrErrors.Default.return(
-                  TableFormRenderer.Default(
-                    type,
-                    Map<string, BaseRenderer<T>>(columns),
-                    layout,
-                    validTableForm.renderer,
+                TableFormRenderer.Operations.DeserializeDetailsRenderer(
+                  type,
+                  validTableForm,
+                  fieldViews,
+                  types,
+                ).Then((detailsRenderer) =>
+                  ValueOrErrors.Default.return(
+                    TableFormRenderer.Default(
+                      type,
+                      Map<
+                        string,
+                        BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>
+                      >(columns),
+                      layout,
+                      validTableForm.renderer,
+                      detailsRenderer,
+                    ),
                   ),
                 ),
               ),

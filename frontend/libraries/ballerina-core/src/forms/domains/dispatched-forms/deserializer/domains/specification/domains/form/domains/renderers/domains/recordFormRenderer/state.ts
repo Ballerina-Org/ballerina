@@ -7,6 +7,7 @@ import {
 import {
   FormLayout,
   PredicateFormLayout,
+  TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { BaseRenderer, SerializedBaseRenderer } from "../baseRenderer/state";
@@ -22,16 +23,18 @@ export type SerializedRecordFormRenderer = {
 export type RecordFormRenderer<T> = {
   kind: "recordForm";
   type: DispatchParsedType<T>;
-  fields: Map<string, BaseRenderer<T>>;
+  fields: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
   tabs: PredicateFormLayout;
   extendsForms: string[];
   concreteRendererName?: string;
+  visible: undefined; // for parity with base renderers
+  disabled: undefined;
 };
 
 export const RecordFormRenderer = {
   Default: <T>(
     type: DispatchParsedType<T>,
-    fields: Map<string, BaseRenderer<T>>,
+    fields: Map<string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
     tabs: PredicateFormLayout,
     extendsForms: string[],
     concreteRendererName?: string,
@@ -42,6 +45,8 @@ export const RecordFormRenderer = {
     tabs,
     extendsForms,
     concreteRendererName,
+    visible: undefined,
+    disabled: undefined,
   }),
   Operations: {
     hasFields: (_: unknown): _ is { fields: object } =>
@@ -107,12 +112,13 @@ export const RecordFormRenderer = {
     Deserialize: <T>(
       type: RecordType<T>,
       serialized: SerializedRecordFormRenderer,
-      fieldViews?: any,
+      types: Map<string, DispatchParsedType<T>>,
+      fieldViews: any,
     ): ValueOrErrors<RecordFormRenderer<T>, string> =>
       RecordFormRenderer.Operations.tryAsValidRecordForm(serialized)
         .Then((validRecordForm) =>
           ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, BaseRenderer<T>], string>>(
+            List<ValueOrErrors<[string, BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>], string>>(
               validRecordForm.fields
                 .toArray()
                 .map(
@@ -133,6 +139,7 @@ export const RecordFormRenderer = {
                       fieldViews,
                       "recordField",
                       `field: ${fieldName}`,
+                      types,
                     ).Then((renderer) =>
                       ValueOrErrors.Default.return([fieldName, renderer]),
                     );

@@ -1,5 +1,11 @@
+import { Map } from "immutable";
 import {
   Expr,
+  isObject,
+  isString,
+  MapRepo,
+  SerializedTableFormRenderer,
+  TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { DispatchParsedType } from "../../../../../types/state";
@@ -48,6 +54,10 @@ import {
   BaseTableRenderer,
   SerializedBaseTableRenderer,
 } from "./domains/table/state";
+import {
+  RecordFormRenderer,
+  SerializedRecordFormRenderer,
+} from "../recordFormRenderer/state";
 
 export type BaseSerializedBaseRenderer = {
   renderer?: unknown;
@@ -71,6 +81,10 @@ export type SerializedBaseRenderer =
   | SerializedBaseListRenderer
   | SerializedSumUnitDateBaseRenderer
   | SerializedBaseTableRenderer;
+
+export type SerializedInlineRenderer =
+  | SerializedTableFormRenderer
+  | SerializedRecordFormRenderer;
 
 export type BaseBaseRenderer = {
   visible?: Expr;
@@ -97,11 +111,22 @@ export type BaseRenderer<T> =
 
 export const BaseRenderer = {
   Operations: {
+    hasType: (_: unknown): _ is { type: string } => isObject(_) && "type" in _,
     IsSumUnitDate: (
       serialized: SerializedBaseRenderer,
       fieldViews: any,
     ): boolean =>
       fieldViews?.sumUnitDate?.[serialized.renderer as string] != undefined,
+    IsTableForm: (
+      serialized: unknown,
+    ): serialized is SerializedTableFormRenderer =>
+      isObject(serialized) &&
+      "columns" in serialized &&
+      "visibleColumns" in serialized,
+    IsRecordForm: (
+      serialized: unknown,
+    ): serialized is SerializedRecordFormRenderer =>
+      isObject(serialized) && "fields" in serialized && "tabs" in serialized,
     ComputeVisibility: (
       visible: unknown,
       renderingContext: ParentContext,
@@ -109,8 +134,8 @@ export const BaseRenderer = {
       visible == undefined
         ? ValueOrErrors.Default.return(undefined)
         : renderingContext == "recordField"
-          ? Expr.Operations.parseAsVisibilityExpression(visible)
-          : ValueOrErrors.Default.return(undefined),
+        ? Expr.Operations.parseAsVisibilityExpression(visible)
+        : ValueOrErrors.Default.return(undefined),
     ComputeDisabled: (
       disabled: unknown,
       renderingContext: ParentContext,
@@ -118,31 +143,102 @@ export const BaseRenderer = {
       disabled == undefined
         ? ValueOrErrors.Default.return(undefined)
         : renderingContext == "recordField" || renderingContext == "tableColumn"
-          ? Expr.Operations.parseAsDisabledExpression(disabled)
-          : ValueOrErrors.Default.return(undefined),
+        ? Expr.Operations.parseAsDisabledExpression(disabled)
+        : ValueOrErrors.Default.return(undefined),
+    DeserializeAsInlineRenderer: <T>(
+      serialized: SerializedInlineRenderer,
+      fieldViews: any,
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<TableFormRenderer<T> | RecordFormRenderer<T>, string> =>
+      !BaseRenderer.Operations.hasType(serialized)
+        ? ValueOrErrors.Default.throwOne<
+            TableFormRenderer<T> | RecordFormRenderer<T>,
+            string
+          >(`inlined renderer missing type ${serialized.renderer}`)
+        : !isString(serialized.type)
+        ? ValueOrErrors.Default.throwOne<
+            TableFormRenderer<T> | RecordFormRenderer<T>,
+            string
+          >(`inlined renderer type is not a string`)
+        : MapRepo.Operations.tryFindWithError(
+            serialized.type,
+            types,
+            () => `cannot find type ${serialized.type} in types`,
+          )
+            .Then((type) =>
+              BaseRenderer.Operations.IsRecordForm(serialized)
+                ? type.kind == "record"
+                  ? RecordFormRenderer.Operations.Deserialize(
+                      type,
+                      serialized,
+                      fieldViews,
+                      types,
+                    )
+                  : ValueOrErrors.Default.throwOne<
+                      TableFormRenderer<T> | RecordFormRenderer<T>,
+                      string
+                    >(`record form inlined renderer has non record type`)
+                : TableFormRenderer.Operations.Deserialize(
+                    DispatchParsedType.Default.table(
+                      "inlined table",
+                      [type],
+                      "inlined table",
+                    ),
+                    serialized,
+                    types,
+                    fieldViews,
+                  ),
+            )
+            .MapErrors((errors) =>
+              errors.map(
+                (error) => `${error}\n...When parsing as inline renderer`,
+              ),
+            ),
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: SerializedBaseRenderer,
       fieldViews: any,
       renderingContext: ParentContext,
       as: string,
-    ): ValueOrErrors<BaseRenderer<T>, string> => {
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<
+      BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+      string
+    > => {
       return BaseRenderer.Operations.Deserialize(
         type,
         serialized,
         fieldViews,
         renderingContext,
+        types,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       );
     },
     Deserialize: <T>(
       type: DispatchParsedType<T>,
-      serialized: SerializedBaseRenderer,
+      serialized: SerializedBaseRenderer | SerializedInlineRenderer,
       fieldViews: any,
       renderingContext: ParentContext,
-    ): ValueOrErrors<BaseRenderer<T>, string> => {
-      const result: ValueOrErrors<BaseRenderer<T>, string> = (() => {
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<
+      BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+      string
+    > => {
+      const result: ValueOrErrors<
+        BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+        string
+      > = (() => {
+        if (
+          BaseRenderer.Operations.IsTableForm(serialized) ||
+          BaseRenderer.Operations.IsRecordForm(serialized)
+        ) {
+          return BaseRenderer.Operations.DeserializeAsInlineRenderer(
+            serialized,
+            fieldViews,
+            types,
+          );
+        }
         if (
           BaseRenderer.Operations.IsSumUnitDate(serialized, fieldViews) &&
           type.kind == "sum"
@@ -193,6 +289,7 @@ export const BaseRenderer = {
             serialized,
             fieldViews,
             renderingContext,
+            types,
           );
         }
         if (type.kind == "map") {
@@ -201,6 +298,7 @@ export const BaseRenderer = {
             serialized,
             fieldViews,
             renderingContext,
+            types,
           );
         }
         if (type.kind == "sum") {
@@ -209,6 +307,7 @@ export const BaseRenderer = {
             serialized,
             fieldViews,
             renderingContext,
+            types,
           );
         }
         if (type.kind == "union") {
@@ -217,6 +316,7 @@ export const BaseRenderer = {
             serialized,
             fieldViews,
             renderingContext,
+            types,
           );
         }
         if (type.kind == "tuple") {
@@ -225,6 +325,7 @@ export const BaseRenderer = {
             serialized,
             fieldViews,
             renderingContext,
+            types,
           );
         }
         if (type.kind == "table") {

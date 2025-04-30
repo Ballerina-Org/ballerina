@@ -1,8 +1,10 @@
+import { Map } from "immutable";
 import {
   Expr,
+  TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
-import { MapType } from "../../../../../../../types/state";
+import { DispatchParsedType, MapType } from "../../../../../../../types/state";
 import {
   BaseBaseRenderer,
   BaseSerializedBaseRenderer,
@@ -10,6 +12,7 @@ import {
   ParentContext,
   BaseRenderer,
 } from "../../state";
+import { RecordFormRenderer } from "../../../recordFormRenderer/state";
 
 export type SerializedBaseMapRenderer = {
   keyRenderer?: unknown;
@@ -18,8 +21,8 @@ export type SerializedBaseMapRenderer = {
 
 export type BaseMapRenderer<T> = BaseBaseRenderer & {
   kind: "baseMapRenderer";
-  keyRenderer: BaseRenderer<T>;
-  valueRenderer: BaseRenderer<T>;
+  keyRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
+  valueRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
   type: MapType<T>;
   concreteRendererName: string;
 };
@@ -28,8 +31,8 @@ export const BaseMapRenderer = {
   Default: <T>(
     type: MapType<T>,
     concreteRendererName: string,
-    keyRenderer: BaseRenderer<T>,
-    valueRenderer: BaseRenderer<T>,
+    keyRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
+    valueRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
@@ -82,6 +85,7 @@ export const BaseMapRenderer = {
       serialized: SerializedBaseMapRenderer,
       fieldViews: any,
       renderingContext: ParentContext,
+      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseMapRenderer<T>, string> =>
       BaseMapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
         .Then((renderer) =>
@@ -99,6 +103,7 @@ export const BaseMapRenderer = {
                 fieldViews,
                 "nested",
                 "Key",
+                types,
               ).Then((deserializedKeyRenderer) =>
                 BaseRenderer.Operations.DeserializeAs(
                   type.args[1],
@@ -106,6 +111,7 @@ export const BaseMapRenderer = {
                   fieldViews,
                   "nested",
                   "Value",
+                  types,
                 ).Then((deserializedValueRenderer) =>
                   ValueOrErrors.Default.return(
                     BaseMapRenderer.Default(

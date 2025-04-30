@@ -1,8 +1,11 @@
+import { Map } from "immutable";
 import {
   Expr,
+  TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
-import { TupleType } from "../../../../../../../types/state";
+import { RecordFormRenderer } from "../../../recordFormRenderer/state";
+import { DispatchParsedType, TupleType } from "../../../../../../../types/state";
 
 import {
   BaseBaseRenderer,
@@ -19,7 +22,7 @@ export type SerializedBaseTupleRenderer = {
 
 export type BaseTupleRenderer<T> = BaseBaseRenderer & {
   kind: "baseTupleRenderer";
-  itemRenderers: Array<BaseRenderer<T>>;
+  itemRenderers: Array<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>;
   type: TupleType<T>;
   concreteRendererName: string;
 };
@@ -28,7 +31,7 @@ export const BaseTupleRenderer = {
   Default: <T>(
     type: TupleType<T>,
     concreteRendererName: string,
-    itemRenderers: Array<BaseRenderer<T>>,
+    itemRenderers: Array<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
@@ -96,6 +99,7 @@ export const BaseTupleRenderer = {
       serialized: SerializedBaseTupleRenderer,
       fieldViews: any,
       renderingContext: ParentContext,
+      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseTupleRenderer<T>, string> =>
       BaseTupleRenderer.Operations.tryAsValidBaseTupleRenderer(serialized)
         .Then((renderer) =>
@@ -108,7 +112,7 @@ export const BaseTupleRenderer = {
               renderingContext,
             ).Then((disabledExpr) =>
               ValueOrErrors.Operations.All(
-                List<ValueOrErrors<BaseRenderer<T>, string>>(
+                List<ValueOrErrors<BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>, string>>(
                   renderer.itemRenderers.map((itemRenderer, index) =>
                     BaseRenderer.Operations.DeserializeAs(
                       type.args[index],
@@ -116,6 +120,7 @@ export const BaseTupleRenderer = {
                       fieldViews,
                       "nested",
                       `Item ${index + 1}`,
+                      types,
                     ).Then((deserializedItemRenderer) =>
                       ValueOrErrors.Default.return(deserializedItemRenderer),
                     ),

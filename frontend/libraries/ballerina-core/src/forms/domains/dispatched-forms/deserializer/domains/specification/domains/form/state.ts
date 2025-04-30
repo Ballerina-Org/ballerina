@@ -122,6 +122,7 @@ export const Form = <T>() => ({
             ? (RecordFormRenderer.Operations.Deserialize(
                 serializedWithType.type,
                 serializedWithType.form,
+                types,
                 fieldViews,
               ) as ValueOrErrors<Form<T>, string>) /// TODO why??
             : (TableFormRenderer.Operations.Deserialize(

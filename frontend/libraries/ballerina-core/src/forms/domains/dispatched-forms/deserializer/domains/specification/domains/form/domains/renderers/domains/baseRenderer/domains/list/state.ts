@@ -1,14 +1,17 @@
+import { Map } from "immutable";
 import {
   Expr,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
-import { ListType } from "../../../../../../../types/state";
+import { DispatchParsedType, ListType } from "../../../../../../../types/state";
 import {
   BaseBaseRenderer,
   BaseSerializedBaseRenderer,
   ParentContext,
   BaseRenderer,
 } from "../../state";
+import { TableFormRenderer } from "../../../tableFormRenderer/state";
+import { RecordFormRenderer } from "../../../recordFormRenderer/state";
 
 export type SerializedBaseListRenderer = {
   elementRenderer?: unknown;
@@ -18,7 +21,7 @@ export type SerializedBaseListRenderer = {
 
 export type BaseListRenderer<T> = BaseBaseRenderer & {
   kind: "baseListRenderer";
-  elementRenderer: BaseRenderer<T>;
+  elementRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
   type: ListType<T>;
   concreteRendererName: string;
 };
@@ -27,7 +30,7 @@ export const BaseListRenderer = {
   Default: <T>(
     type: ListType<T>,
     concreteRendererName: string,
-    elementRenderer: BaseRenderer<T>,
+    elementRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
     visible?: Expr,
     disabled?: Expr,
     label?: string,
@@ -96,6 +99,7 @@ export const BaseListRenderer = {
       serialized: SerializedBaseListRenderer,
       fieldViews: any,
       renderingContext: ParentContext,
+      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseListRenderer<T>, string> =>
       BaseListRenderer.Operations.tryAsValidBaseListRenderer(serialized)
         .Then((renderer) =>
@@ -113,6 +117,7 @@ export const BaseListRenderer = {
                 fieldViews,
                 "nested",
                 "Element",
+                types,
               ).Then((elementRenderer) =>
                 ValueOrErrors.Default.return(
                   BaseListRenderer.Default(

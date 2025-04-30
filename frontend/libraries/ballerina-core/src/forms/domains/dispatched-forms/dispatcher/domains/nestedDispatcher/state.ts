@@ -21,10 +21,14 @@ import {
   NestedMultiSelectionDispatcher,
   NestedSingleSelectionDispatcher,
   NestedTableDispatcher,
+  TableFormDispatcher,
+  TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../main";
 import { BaseRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
+import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
 import { BaseTableRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/table/state";
+import { FormDispatcher } from "../../state";
 
 export const NestedDispatcher = {
   Operations: {
@@ -240,7 +244,7 @@ export const NestedDispatcher = {
           ),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
-      renderer: BaseRenderer<T>,
+      renderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       as: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -255,65 +259,83 @@ export const NestedDispatcher = {
       ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
-      renderer: BaseRenderer<T>,
+      renderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       const result: ValueOrErrors<
         Template<any, any, any, any>,
         string
-      > = type.kind == "primitive"
+      > = renderer.kind == "recordForm"
+        ? FormDispatcher.Operations.Dispatch(
+            "inline record form",
+            renderer.type,
+            renderer,
+            dispatcherContext,
+            true,
+          )
+        : renderer.kind == "tableForm"
+        ? renderer.inlinedApi == undefined
+          ? ValueOrErrors.Default.throwOne(
+              " inlined table form renderer has no api",
+            )
+          : TableFormDispatcher.Operations.Dispatch(
+              renderer.type,
+              renderer,
+              dispatcherContext,
+              renderer.inlinedApi,
+              true,
+            )
+        : type.kind == "primitive"
         ? NestedDispatcher.Operations.DispatchAsPrimitiveRenderer(
             type,
             renderer,
             dispatcherContext,
           )
         : type.kind == "singleSelection"
-          ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
-              renderer,
-              dispatcherContext,
-            )
-          : type.kind == "multiSelection"
-            ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
-                renderer,
-                dispatcherContext,
-              )
-            : type.kind == "sum"
-              ? NestedDispatcher.Operations.DispatchAsSumRenderer(
-                  type,
-                  renderer,
-                  dispatcherContext,
-                )
-              : type.kind == "tuple"
-                ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
-                    type,
-                    renderer,
-                    dispatcherContext,
-                  )
-                : type.kind == "list"
-                  ? NestedDispatcher.Operations.DispatchAsListRenderer(
-                      type,
-                      renderer,
-                      dispatcherContext,
-                    )
-                  : type.kind == "map"
-                    ? NestedDispatcher.Operations.DispatchAsMapRenderer(
-                        type,
-                        renderer,
-                        dispatcherContext,
-                      )
-                    : type.kind == "lookup"
-                      ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
-                          renderer,
-                          dispatcherContext,
-                        )
-                      : type.kind == "table"
-                        ? NestedDispatcher.Operations.DispatchAsTableRenderer(
-                            renderer,
-                            dispatcherContext,
-                          )
-                        : ValueOrErrors.Default.throwOne(
-                            `unknown type kind "${type.kind}"`,
-                          );
+        ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "multiSelection"
+        ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "sum"
+        ? NestedDispatcher.Operations.DispatchAsSumRenderer(
+            type,
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "tuple"
+        ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
+            type,
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "list"
+        ? NestedDispatcher.Operations.DispatchAsListRenderer(
+            type,
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "map"
+        ? NestedDispatcher.Operations.DispatchAsMapRenderer(
+            type,
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "lookup"
+        ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
+            renderer,
+            dispatcherContext,
+          )
+        : type.kind == "table"
+        ? NestedDispatcher.Operations.DispatchAsTableRenderer(
+            renderer,
+            dispatcherContext,
+          )
+        : ValueOrErrors.Default.throwOne(`unknown type kind "${type.kind}"`);
 
       return result.MapErrors((errors) =>
         errors.map(

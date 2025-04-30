@@ -1,5 +1,6 @@
 import {
   DispatcherContext,
+  DispatchTableApiSource,
   MapRepo,
   NestedDispatcher,
   TableAbstractRenderer,
@@ -13,11 +14,23 @@ import { TableFormRenderer } from "../../../deserializer/domains/specification/d
 
 export const TableFormDispatcher = {
   Operations: {
+    GetApi: (
+      api: string | string[],
+      dispatcherContext: DispatcherContext<any>,
+    ): ValueOrErrors<DispatchTableApiSource, string> =>
+      typeof api == "string"
+        ? dispatcherContext.tableApiSources == undefined
+          ? ValueOrErrors.Default.throwOne("table api sources are not defined")
+          : dispatcherContext.tableApiSources(api)
+        : //TODO
+          ValueOrErrors.Default.throwOne(
+            "look up table api source not yet supported",
+          ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: TableType<T>,
       renderer: TableFormRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      api: string,
+      api: string | string[],
       isNested: boolean = false,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       MapRepo.Operations.tryFindWithError(
@@ -87,33 +100,28 @@ export const TableFormDispatcher = {
                     isNested,
                   )
                   .Then((concreteRenderer) =>
-                    dispatcherContext?.tableApiSources == undefined
-                      ? ValueOrErrors.Default.throwOne<
-                          Template<any, any, any, any>,
-                          string
-                        >(
-                          `tableApiSources is undefined, cannot dispatch table form`,
+                    TableFormDispatcher.Operations.GetApi(
+                      api,
+                      dispatcherContext,
+                    )
+                    .Then((tableApiSource) =>
+                      ValueOrErrors.Default.return(
+                        TableAbstractRenderer(
+                          Map(cellTemplates),
+                          renderer.visibleColumns,
                         )
-                      : dispatcherContext
-                          .tableApiSources(api)
-                          .Then((tableApiSource) =>
-                            ValueOrErrors.Default.return(
-                              TableAbstractRenderer(
-                                Map(cellTemplates),
-                                renderer.visibleColumns,
-                              )
-                                .mapContext((_: any) => ({
-                                  ..._,
-                                  type: renderer.type,
-                                  tableApiSource,
-                                  fromTableApiParser:
-                                    dispatcherContext.parseFromApiByType(
-                                      renderer.type.args[0],
-                                    ),
-                                }))
-                                .withView(concreteRenderer),
-                            ),
-                          ),
+                          .mapContext((_: any) => ({
+                            ..._,
+                            type: renderer.type,
+                            tableApiSource,
+                            fromTableApiParser:
+                              dispatcherContext.parseFromApiByType(
+                                renderer.type.args[0],
+                              ),
+                          }))
+                          .withView(concreteRenderer),
+                      ),
+                    ),
                   ),
               )
             : ValueOrErrors.Default.throwOne<
