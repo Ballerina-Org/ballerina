@@ -70,7 +70,8 @@ module private JsonSchemaExtensions =
           Pattern = schema.Pattern,
           AllowAdditionalItems = schema.AllowAdditionalItems,
           AllowAdditionalProperties = schema.AllowAdditionalProperties,
-          Item = schema.Item
+          Item = schema.Item,
+          Reference = schema.Reference
         )
 
       // Copy collections that aren't supported in the constructor
@@ -123,6 +124,47 @@ module private JsonSchemaExtensions =
 
       schema
 
+    static member WithDefinitions (definitions: Map<TypeId, JsonSchema>) (schema: JsonSchema) =
+      let outputSchema =
+        JsonSchema(
+          Type = schema.Type,
+          Default = schema.Default,
+          Format = schema.Format,
+          AdditionalPropertiesSchema = schema.AdditionalPropertiesSchema,
+          MinLength = schema.MinLength,
+          MaxLength = schema.MaxLength,
+          Minimum = schema.Minimum,
+          Maximum = schema.Maximum,
+          MultipleOf = schema.MultipleOf,
+          Pattern = schema.Pattern,
+          AllowAdditionalItems = schema.AllowAdditionalItems,
+          AllowAdditionalProperties = schema.AllowAdditionalProperties,
+          Item = schema.Item,
+          Reference = schema.Reference,
+          Discriminator = schema.Discriminator
+        )
+
+      for definition in definitions do
+        outputSchema.Definitions.Add(definition.Key.TypeName, definition.Value)
+
+      // Copy collections that aren't supported in the constructor
+      for property in schema.Properties do
+        outputSchema.Properties.Add(property.Key, property.Value)
+
+      for oneOf in schema.OneOf do
+        outputSchema.OneOf.Add oneOf
+
+      for allOf in schema.AllOf do
+        outputSchema.AllOf.Add allOf
+
+      for anyOf in schema.AnyOf do
+        outputSchema.AnyOf.Add anyOf
+
+      for required in schema.RequiredProperties do
+        outputSchema.RequiredProperties.Add required
+
+      outputSchema
+
 module JSONSchemaIntegration =
   open Ballerina.Collections.Sum
   open NJsonSchema
@@ -138,9 +180,9 @@ module JSONSchemaIntegration =
 
 
   type ExprType with
-    static member GenerateJsonSchema(t: ExprType) =
-      let rec eval (t: ExprType) =
-        let (!) = eval
+    static member GenerateJsonSchema (otherTypes: (TypeId * ExprType) list) (t: ExprType) =
+      let rec eval (context: Map<TypeId, JsonSchema>) (t: ExprType) =
+        let (!) = eval context
 
         sum {
           match t with
@@ -179,7 +221,10 @@ module JSONSchemaIntegration =
 
             schemaByField |> JsonSchema.MakeObjectJsonSchema
           | ExprType.TupleType items -> return! items |> ExprType.TupleTypeToRecordType |> ExprType.RecordType |> (!)
-          | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
+          | ExprType.LookupType typeId ->
+            match context |> Map.tryFind typeId with
+            | Some schema -> JsonSchema(Reference = schema)
+            | None -> return! sum.Throw(Errors.Singleton $"Error: lookup type {typeId} not found")
           | ExprType.UnionType cs ->
             let! schemaByCase =
               cs
@@ -199,10 +244,28 @@ module JSONSchemaIntegration =
           | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
         }
 
-      eval t
+      sum {
+        let! otherTypesSchemas =
+          otherTypes
+          |> List.fold
+            (fun acc (typeId, t) ->
+              Sum.bind
+                (fun acc ->
+                  sum {
+                    let! schema = eval acc t
+                    return Map.add typeId schema acc
+                  })
+                acc)
+            (Left Map.empty)
 
-    static member ParseJsonResult (t: ExprType) (LLM.LLMOutput data) =
-      let rec eval (t: ExprType) (data: JsonValue) : Sum<Value, Errors> =
+        let! outputSchema = eval otherTypesSchemas t
+        return outputSchema |> JsonSchema.WithDefinitions otherTypesSchemas
+      }
+
+    static member ParseJsonResult (outputType: LLM.TypeDeclaration) (LLM.LLMOutput data) =
+      let rec eval (otherTypes: Map<TypeId, ExprType>) (t: ExprType) (data: JsonValue) : Sum<Value, Errors> =
+        let (!) = eval otherTypes
+
         sum {
           match t with
           | ExprType.UnitType ->
@@ -251,7 +314,7 @@ module JSONSchemaIntegration =
             | PrimitiveType.RefType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "ref type")
           | ExprType.ListType e ->
             match data with
-            | JsonValue.Array arr -> return! arr |> Array.map (eval e) |> sum.All |> Sum.map Value.Tuple
+            | JsonValue.Array arr -> return! arr |> Array.map (!e) |> sum.All |> Sum.map Value.Tuple
             | unexpected -> return! sum.Throw(Errors.Singletons.Type "array" $"{unexpected}")
           | ExprType.MapType(k, v) ->
             match k with
@@ -260,15 +323,15 @@ module JSONSchemaIntegration =
               | JsonValue.Record obj ->
                 let! fields =
                   obj
-                  |> Array.map (fun (key, value) -> eval v value |> Sum.map (fun v -> key, v))
+                  |> Array.map (fun (key, value) -> ! v value |> Sum.map (fun v -> key, v))
                   |> sum.All
 
                 return fields |> Map.ofList |> Value.Record
               | unexpected -> return! sum.Throw(Errors.Singletons.Type "object" $"{unexpected}")
             | unexpected -> return! sum.Throw(Errors.Singleton $"Error: map keys can only be strings, got {unexpected}")
-          | ExprType.SumType(lt, rt) -> return! eval (ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))) data
-          | ExprType.OptionType e -> return! eval (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
-          | ExprType.SetType e -> return! eval (ExprType.ListType e) data
+          | ExprType.SumType(lt, rt) -> return! ! (ExprType.UnionType(ExprType.SumTypeToUnionType(lt, rt))) data
+          | ExprType.OptionType e -> return! ! (ExprType.UnionType(ExprType.OptionTypeToUnionType(e))) data
+          | ExprType.SetType e -> return! ! (ExprType.ListType e) data
           | ExprType.UnionType cs ->
             let! asRecord = data |> JsonValue.AsRecord
             let asMap = Map.ofArray asRecord
@@ -280,7 +343,8 @@ module JSONSchemaIntegration =
             let! discriminator = jsonDiscriminator |> JsonValue.AsString
             let! case = cs |> Map.tryFindWithError { CaseName = discriminator } "case" "case"
             let! value = asMap |> Map.tryFindWithError valueFieldName "value" "value"
-            return! eval case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
+
+            return! ! case.Fields value |> Sum.map (fun v -> Value.CaseCons(discriminator, v))
 
           | ExprType.RecordType l ->
             match data with
@@ -293,7 +357,7 @@ module JSONSchemaIntegration =
                     Array.tryFind (fun (dataAttr, _) -> dataAttr = attrName) obj
 
                   match jsonAttributeValue with
-                  | Some(_, value) -> eval attrType value |> Sum.map (fun v -> attrName, v)
+                  | Some(_, value) -> ! attrType value |> Sum.map (fun v -> attrName, v)
                   | None -> sum.Throw(Errors.Singleton $"Error: attribute {attrName} not found in {data}"))
                 |> sum.All
 
@@ -305,9 +369,12 @@ module JSONSchemaIntegration =
           | ExprType.TableType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "table type")
           | ExprType.OneType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "one type")
           | ExprType.ManyType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "many type")
-          | ExprType.LookupType _ -> return! sum.Throw(Errors.Singletons.NotImplemented "lookup type")
+          | ExprType.LookupType typeId ->
+            match otherTypes |> Map.tryFind typeId with
+            | Some t -> return! ! t data
+            | None -> return! sum.Throw(Errors.Singleton $"Error: lookup type {typeId} not found")
           | ExprType.TupleType items ->
-            let! recordValue = eval (ExprType.RecordType(ExprType.TupleTypeToRecordType items)) data
+            let! recordValue = ! (ExprType.RecordType(ExprType.TupleTypeToRecordType items)) data
 
             match recordValue with
             | Value.Record r -> return! r |> ExprType.RecordValueToTupleType |> Sum.map Value.Tuple
@@ -315,7 +382,7 @@ module JSONSchemaIntegration =
         }
 
       match data |> JsonValue.TryParse with
-      | Some json -> eval t json
+      | Some json -> eval (outputType.Refs |> Map.ofList) outputType.OutputType json
       | None -> sum.Throw(Errors.Singleton $"Error: invalid json {data}")
 
   let private promptForSchema (t: JsonSchema) =
@@ -325,9 +392,9 @@ module JSONSchemaIntegration =
     LLM.StructuredOutputIntegration(fun t ->
       t
       |> (fun t ->
-        match t with
+        match t.OutputType with
         | ExprType.RecordType _ -> Left t
         | _ -> sum.Throw(Errors.Singleton $"Top level type expected to be a record type, got {t}"))
-      |> Sum.bind ExprType.GenerateJsonSchema
+      |> Sum.bind (fun t -> ExprType.GenerateJsonSchema t.Refs t.OutputType)
       |> Sum.map (fun schema -> promptForSchema schema, schema),
       ExprType.ParseJsonResult t)

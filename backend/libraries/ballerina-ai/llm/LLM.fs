@@ -23,10 +23,15 @@ module LLM =
   [<NoComparison; NoEquality>]
   type LLMIntegration<'schema> = LLMIntegration of (Prompt -> 'schema -> Sum<LLMOutput, Errors>)
 
+  type TypeDeclaration =
+    { OutputType: ExprType
+      Refs: (TypeId * ExprType) list } // TODO: replace with Let bindings
+
   [<NoComparison; NoEquality>]
   type StructuredOutputIntegration<'schema> =
     | StructuredOutputIntegration of
-      (ExprType -> (Sum<OutputStructureDescriptionForPrompt * 'schema, Errors> * (LLMOutput -> Sum<Value, Errors>)))
+      (TypeDeclaration
+        -> (Sum<OutputStructureDescriptionForPrompt * 'schema, Errors> * (LLMOutput -> Sum<Value, Errors>)))
 
   [<NoComparison; NoEquality>]
   type LLM<'schema> =
@@ -34,14 +39,14 @@ module LLM =
       StructuredOutputIntegration: StructuredOutputIntegration<'schema> }
 
 
-    static member Call<'schema> (llm: LLM<'schema>) exprType taskExplanation context image =
+    static member Call<'schema> (llm: LLM<'schema>) outputType taskExplanation context image =
       let (StructuredOutputIntegration structuredOutputIntegration) =
         llm.StructuredOutputIntegration
 
       let (LLMIntegration llmIntegration) = llm.LLMIntegration
 
       let outputStructureDescriptionForPrompt, parseOutput =
-        structuredOutputIntegration exprType
+        structuredOutputIntegration outputType
 
       sum {
         let! outputStructureDescriptionForPrompt, schema = outputStructureDescriptionForPrompt

@@ -160,6 +160,17 @@ let TestInvoiceDetection () =
   let token, endpoint = getTokenAndEndpointFromEnvironment ()
   // ARRANGE
 
+  let taxBlockTypeId = { TypeName = "TaxBlock" }
+
+  let taxBlockType =
+    ExprType.RecordType(
+      Map.ofList
+        [ "rate", ExprType.PrimitiveType FloatType
+          "amount", ExprType.PrimitiveType FloatType
+          "base", ExprType.PrimitiveType FloatType ]
+    )
+
+  let paymentSectionTypeId = { TypeName = "PaymentSection" }
 
   let paymentSectionType =
     ExprType.RecordType(
@@ -167,33 +178,27 @@ let TestInvoiceDetection () =
         [ "total", ExprType.OptionType(ExprType.PrimitiveType FloatType)
           "currency",
           ExprType.OptionType(ExprType.UnionType(List.map createEnumCase [ "USD"; "EUR"; "CHF"; "GBP" ] |> Map.ofList))
-          "taxBlocks",
-          ExprType.ListType(
-            ExprType.RecordType(
-              Map.ofList
-                [ "rate", ExprType.PrimitiveType FloatType
-                  "amount", ExprType.PrimitiveType FloatType
-                  "base", ExprType.PrimitiveType FloatType ]
-            )
-          ) ]
+          "taxBlocks", ExprType.ListType(ExprType.LookupType taxBlockTypeId) ]
     )
 
   let invoiceType =
-    ExprType.RecordType(Map.ofList [ "paymentSection", ExprType.OptionType paymentSectionType ])
-
+    ExprType.RecordType(Map.ofList [ "paymentSection", ExprType.OptionType(ExprType.LookupType paymentSectionTypeId) ])
 
   use httpClient = new HttpClient(BaseAddress = Uri endpoint)
   httpClient.Timeout <- TimeSpan.FromMinutes 5.0
   httpClient.DefaultRequestHeaders.Authorization <- Headers.AuthenticationHeaderValue("Bearer", token)
   let client = TGI.newTGIHttpClient httpClient
 
+  let correction = "I want the payment details in EUR"
+
   // ACT
   let result =
     LLM.LLM.Call
       { LLMIntegration = TGI.llmIntegration client
         StructuredOutputIntegration = JSONSchemaIntegration.JSONSchemaIntegration }
-      invoiceType
-      (LLM.TaskExplanation "Extract the information requested in the schema from this invoice.")
+      { OutputType = invoiceType
+        Refs = [ taxBlockTypeId, taxBlockType; paymentSectionTypeId, paymentSectionType ] }
+      (LLM.TaskExplanation $"Extract the information requested in the schema from this invoice. {correction}")
       context
       None
 
