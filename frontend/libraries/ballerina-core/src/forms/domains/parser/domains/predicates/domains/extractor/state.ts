@@ -42,8 +42,8 @@ export const PredicateValueExtractor = {
                   Errors.Default.singleton(["not a ValueOption", v]),
                 )
               : !v.isSome
-              ? ValueOrErrors.Default.return([])
-              : traverseOptionValue(v.value);
+                ? ValueOrErrors.Default.return([])
+                : traverseOptionValue(v.value);
         }
         case "record": {
           const traverseRecordFields = t.fields.map((f) =>
@@ -86,8 +86,8 @@ export const PredicateValueExtractor = {
                       ]),
                     )
                   : !v.isSome
-                  ? ValueOrErrors.Default.return([])
-                  : traverseSingleSelection(v.value);
+                    ? ValueOrErrors.Default.return([])
+                    : traverseSingleSelection(v.value);
             }
             case "MultiSelection": {
               // multi selection only has 1 arg type, which is the same for all the selcted elements
@@ -185,8 +185,8 @@ export const PredicateValueExtractor = {
                       Errors.Default.singleton(["not a ValueOption", v]),
                     )
                   : !v.isSome
-                  ? ValueOrErrors.Default.return([])
-                  : traverseOptionValue(v.value);
+                    ? ValueOrErrors.Default.return([])
+                    : traverseOptionValue(v.value);
             }
             case "Tuple": {
               const traverseTupleFields = t.args.flatMap((f) =>
