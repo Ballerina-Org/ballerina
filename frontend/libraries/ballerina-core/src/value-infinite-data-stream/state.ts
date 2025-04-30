@@ -5,7 +5,14 @@ import { simpleUpdater } from "../fun/domains/updater/domains/simpleUpdater/stat
 import { AsyncState } from "../async/state";
 import { Unit } from "../fun/domains/unit/state";
 import { BasicFun } from "../fun/state";
-import { Guid, MapRepo, PredicateValue, Sum, ValueRecord } from "../../main";
+import {
+  Guid,
+  MapRepo,
+  PredicateValue,
+  Sum,
+  ValueOrErrors,
+  ValueRecord,
+} from "../../main";
 
 export type ValueStreamingStatus = "reload" | "loadMore" | false;
 
@@ -98,6 +105,13 @@ export const ValueChunk = {
     Template: {
       updateValue: (
         valueId: Guid,
+        valueUpdater: BasicUpdater<ValueRecord>,
+      ): Updater<ValueChunk> =>
+        ValueChunk.Updaters.Core.data(
+          MapRepo.Updaters.update(valueId, valueUpdater),
+        ),
+      updateValueItem: (
+        valueId: Guid,
         itemId: Guid,
         valueUpdater: BasicUpdater<PredicateValue>,
       ): Updater<ValueChunk> =>
@@ -151,6 +165,19 @@ export const ValueInfiniteStreamState = {
     loadNextPage: (current: ValueInfiniteStreamState): boolean =>
       current.position.shouldLoad !== false &&
       current.loadedElements.last()?.hasMoreValues !== false,
+    getChunkIndexForValue: (
+      current: ValueInfiniteStreamState,
+      valueId: Guid,
+    ): ValueOrErrors<number, string> =>
+      ValueOrErrors.Default.return<number | undefined, string>(
+        current.loadedElements.findLastKey((chunk) => chunk.data.has(valueId)),
+      ).Then((chunkIndex) =>
+        chunkIndex == undefined
+          ? ValueOrErrors.Default.throwOne<number, string>(
+              "value not found in any chunks",
+            )
+          : ValueOrErrors.Default.return<number, string>(chunkIndex),
+      ),
   },
   Updaters: {
     Coroutine: {
@@ -214,6 +241,20 @@ export const ValueInfiniteStreamState = {
             ValueStreamPosition.Updaters.Template.loadMore(),
           ),
         ),
+      updateChunkValue:
+        (chunkIndex: number, chunkValueKey: Guid) =>
+        (
+          valueUpdater: BasicUpdater<ValueRecord>,
+        ): Updater<ValueInfiniteStreamState> =>
+          ValueInfiniteStreamState.Updaters.Core.loadedElements(
+            MapRepo.Updaters.update(
+              chunkIndex,
+              ValueChunk.Updaters.Template.updateValue(
+                chunkValueKey,
+                valueUpdater,
+              ),
+            ),
+          ),
       updateChunkValueItem:
         (chunkIndex: number, chunkValueKey: Guid, chunkValueItemKey: Guid) =>
         (
@@ -222,11 +263,23 @@ export const ValueInfiniteStreamState = {
           ValueInfiniteStreamState.Updaters.Core.loadedElements(
             MapRepo.Updaters.update(
               chunkIndex,
-              ValueChunk.Updaters.Template.updateValue(
+              ValueChunk.Updaters.Template.updateValueItem(
                 chunkValueKey,
                 chunkValueItemKey,
                 valueUpdater,
               ),
+            ),
+          ),
+      updateChunkStateValue:
+        (chunkIndex: number, chunkStateValueKey: string) =>
+        (
+          stateUpdater: BasicUpdater<StateChunkValue>,
+        ): Updater<ValueInfiniteStreamState> =>
+          ValueInfiniteStreamState.Updaters.Core.chunkStates(
+            MapRepo.Updaters.upsert(
+              chunkIndex,
+              () => StateChunk.Default(Map()),
+              MapRepo.Updaters.update(chunkStateValueKey, stateUpdater),
             ),
           ),
       updateChunkStateValueItem:

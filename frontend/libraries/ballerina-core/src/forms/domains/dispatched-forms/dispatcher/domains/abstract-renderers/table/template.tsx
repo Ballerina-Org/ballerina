@@ -12,6 +12,8 @@ import {
   ValueOrErrors,
   AbstractTableRendererReadonlyContext,
   replaceWith,
+  TableFormRenderer,
+  ValueRecord,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -35,6 +37,7 @@ export const TableAbstractRenderer = (
       GetDefaultState: () => any;
     }
   >,
+  DetailsRenderer: Template<any, any, any, any> | undefined,
   Layout: PredicateVisibleColumns,
 ): Template<any, any, any, any> => {
   const embedCellTemplate =
@@ -46,13 +49,11 @@ export const TableAbstractRenderer = (
       cellTemplate
         // TODO, more helpful typing
         .mapContext<any>((_: any) => {
-          // can be passed in
           const rowState = (
             _.customFormState.stream.chunkStates.get(chunkIndex)
               ?.state as Record<string, any>
           )?.[rowId];
 
-          // can be passed in
           const cellState =
             rowState?.fields?.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
@@ -126,6 +127,80 @@ export const TableAbstractRenderer = (
             props.foreignMutations.onChange(id, delta);
           },
         }));
+
+  // disabled?? how to pass this correctly for each column
+
+  const embedDetailsRenderer = (
+    rowId: string,
+    stream: ValueInfiniteStreamState,
+  ) =>
+    DetailsRenderer == undefined
+      ? ValueOrErrors.Default.return(undefined)
+      : ValueInfiniteStreamState.Operations.getChunkIndexForValue(
+          stream,
+          rowId,
+        ).Then((chunkIndex) =>
+          ValueOrErrors.Default.return(
+            DetailsRenderer.mapContext<any>((_: any) => {
+              const value = _.customFormState.stream.loadedElements.get(
+                chunkIndex,
+              )?.data.get(rowId);
+
+              const rowState = (
+                _.customFormState.stream.chunkStates.get(chunkIndex)
+                  ?.state as Record<string, any>
+              )?.[rowId];
+
+              return {
+                value,
+                commonFormState: rowState.commonFormState,
+                customFormState: rowState.customFormState,
+                disabled: false, // to do think about
+                bindings: _.bindings,
+                extraContext: _.extraContext,
+              };
+            })
+              .mapState<AbstractTableRendererState>((_) =>
+                AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                  ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
+                    chunkIndex,
+                    rowId,
+                  )(_),
+                ),
+              )
+              .mapForeignMutationsFromProps<{
+                onChange: DispatchOnChange<PredicateValue>;
+              }>((props) => ({
+                onChange: (
+                  _: BasicUpdater<ValueRecord>,
+                  nestedDelta: DispatchDelta,
+                ) => {
+                  props.setState(
+                    AbstractTableRendererState.Updaters.Core.commonFormState.children
+                      .modifiedByUser(replaceWith(true))
+                      .then(
+                        AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                          ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
+                            chunkIndex,
+                            rowId,
+                          )(_),
+                        ),
+                      ),
+                  );
+
+                  // TODO, different delta for details
+                  const delta: DispatchDelta = {
+                    kind: "TableValue",
+                    id: rowId,
+                    nestedDelta: nestedDelta,
+                    tableType: props.context.type,
+                  };
+
+                  props.foreignMutations.onChange(id, delta);
+                },
+              })),
+          ),
+        );
 
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
@@ -201,7 +276,6 @@ export const TableAbstractRenderer = (
           ),
       );
 
-    console.log(props.context);
     return (
       <>
         <props.view
@@ -218,6 +292,7 @@ export const TableAbstractRenderer = (
           }}
           TableHeaders={visibleColumns.value.columns}
           EmbeddedTableData={tableData}
+          DetailsRenderer={embedDetailsRenderer}
         />
       </>
     );
