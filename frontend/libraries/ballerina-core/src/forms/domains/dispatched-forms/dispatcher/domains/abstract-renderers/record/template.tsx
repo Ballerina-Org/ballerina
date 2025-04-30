@@ -52,9 +52,11 @@ export const RecordAbstractRenderer = <
             type: DispatchParsedType<any>;
             extraContext: any;
           },
-        ): Value<PredicateValue> & any => ({
+        ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
           ..._,
           value: _.value.fields.get(fieldName)!,
+          type:
+            _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
           ...(_.fieldStates?.get(fieldName) ||
             FieldTemplates.get(fieldName)!.GetDefaultState()),
           disabled: _.disabled,
