@@ -80,7 +80,7 @@ type CoroutineBuilder() =
     Co(fun _ -> CoroutineResult.Return(result), None, None)
 
   member co.Yield() =
-    Co(fun _ -> CoroutineResult.Wait(TimeSpan.FromMilliseconds(0), co.Return()), None, None)
+    Co(fun _ -> CoroutineResult.Wait(TimeSpan.FromMilliseconds 0., co.Return()), None, None)
 
   member _.Bind(p: Coroutine<'a, 's, 'c, 'e>, k: 'a -> Coroutine<'b, 's, 'c, 'e>) = Coroutine.bind (p, k)
 
@@ -287,7 +287,7 @@ type Coroutine<'a, 's, 'c, 'e> with
       | Choice1Of2(ps', spawned, u_s, u_e) -> Spawned(spawned, u_s, u_e, Some(co.Any ps'))
       | Choice2Of2(res, u_s, u_e) -> Done(res, u_s, u_e)
     | Wait(timeSpan, p': Coroutine<'a, 's, 'c, 'e>) ->
-      if timeSpan.TotalSeconds <= 0 then
+      if timeSpan.TotalSeconds <= 0. then
         Active(p', None, None)
       else
         Waiting(
