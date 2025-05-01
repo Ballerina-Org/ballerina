@@ -8,7 +8,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarnOn>1182,3387,3389,3366</WarnOn>
+    <WarnOn>1182,3387,3389,3366,22</WarnOn>
   </PropertyGroup>
 
   <ItemGroup>
