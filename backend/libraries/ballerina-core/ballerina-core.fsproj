@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -51,7 +51,8 @@
     <Compile Include="business rule engine/form engine/parser/runner.fs" />
     <Compile Include="business rule engine/form engine/validator.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/model.fs" />
-    <Compile Include="business rule engine/form engine/codegen/golang/language constructs/context.fs" />
+    <Compile
+      Include="business rule engine/form engine/codegen/golang/language constructs/context.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/union.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/enum.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/record.fs" />
@@ -81,6 +82,11 @@
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/generatedTypes.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/header.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/generator.fs" />
+    <Compile Include="codegen/python/model.fs" />
+    <Compile Include="codegen/python/language constructs/enum.fs" />
+    <Compile Include="codegen/python/language constructs/record.fs" />
+    <Compile Include="codegen/python/language constructs/union.fs" />
+    <Compile Include="codegen/python/language constructs/ExprTypeToAnnotation.fs" />
     <Compile Include="business rule engine/form engine/runner.fs" />
   </ItemGroup>
 

@@ -23,6 +23,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "oauth2", "libraries\oauth2\
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "positions", "libraries\positions\positions.fsproj", "{25F1F093-B645-4E30-95B3-7C82E5D2C380}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-core.Codegen.Tests", "apps\ballerina-core.Codegen.Tests\ballerina-core.Codegen.Tests.fsproj", "{A79EA7B2-1424-4AD1-9402-ADE965607962}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{25F1F093-B645-4E30-95B3-7C82E5D2C380}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25F1F093-B645-4E30-95B3-7C82E5D2C380}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25F1F093-B645-4E30-95B3-7C82E5D2C380}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A79EA7B2-1424-4AD1-9402-ADE965607962}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A79EA7B2-1424-4AD1-9402-ADE965607962}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A79EA7B2-1424-4AD1-9402-ADE965607962}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A79EA7B2-1424-4AD1-9402-ADE965607962}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F5BDD5D6-F85F-4412-B7B6-305E74023FC0} = {9607120D-0D79-4113-A465-59A80A75CB15}
@@ -74,5 +80,6 @@ Global
 		{5E583296-D93A-4361-97A9-6888A7CC7C98} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
 		{FC659DED-9964-40E1-82F8-DFBFC19F9A23} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
 		{25F1F093-B645-4E30-95B3-7C82E5D2C380} = {7C1AE94A-9271-4C36-93B3-D1BA0D1C9921}
+		{A79EA7B2-1424-4AD1-9402-ADE965607962} = {9607120D-0D79-4113-A465-59A80A75CB15}
 	EndGlobalSection
 EndGlobal
