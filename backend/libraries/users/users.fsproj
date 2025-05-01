@@ -8,7 +8,7 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --warnon:3389</OtherFlags>
+    <WarnOn>1182,3387,3389</WarnOn>
   </PropertyGroup>
 
   <ItemGroup>
