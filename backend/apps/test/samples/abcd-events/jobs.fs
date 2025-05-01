@@ -142,12 +142,12 @@ let abcdEventLoop () =
         ab.A1
         ab.B1
         ab.Total1
-        ((context.CDs()).[ab.CDId].CDId.ToString().Substring(0, 4))
-        (context.CDs()).[ab.CDId].C
-        (context.CDs()).[ab.CDId].D
-        (context.EFs().[((context.CDs()).[ab.CDId].EFId)].EFId.ToString().Substring(0, 4))
-        (context.EFs().[((context.CDs()).[ab.CDId].EFId)].E)
-        (context.EFs().[((context.CDs()).[ab.CDId].EFId)].F)
+        (((context.CDs())[ab.CDId]).CDId.ToString().Substring(0, 4))
+        ((context.CDs())[ab.CDId]).C
+        ((context.CDs())[ab.CDId]).D
+        (((context.EFs())[((context.CDs())[ab.CDId]).EFId]).EFId.ToString().Substring(0, 4))
+        ((context.EFs())[((context.CDs())[ab.CDId]).EFId]).E
+        ((context.EFs())[((context.CDs())[ab.CDId]).EFId]).F
         ab.А2
         ab.Б2
         ab.Весь2
