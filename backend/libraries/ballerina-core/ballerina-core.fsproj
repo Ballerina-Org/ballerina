@@ -83,11 +83,11 @@
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/header.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/generator.fs" />
     <Compile Include="codegen/python/model.fs" />
-    <Compile Include="codegen/python/generator.fs" />
     <Compile Include="codegen/python/language constructs/enum.fs" />
     <Compile Include="codegen/python/language constructs/record.fs" />
     <Compile Include="codegen/python/language constructs/union.fs" />
     <Compile Include="codegen/python/language constructs/ExprTypeToAnnotation.fs" />
+    <Compile Include="codegen/python/generator.fs" />
     <Compile Include="business rule engine/form engine/runner.fs" />
   </ItemGroup>
 
