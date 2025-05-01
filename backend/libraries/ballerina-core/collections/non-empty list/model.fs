@@ -21,7 +21,7 @@ module NonEmptyList =
 
     member l.Tail =
       match l with
-      | One h -> []
+      | One _ -> []
       | Many(_, t) -> t |> NonEmptyList.ToList
 
     static member map (f: 'e -> 'b) (l: NonEmptyList<'e>) =

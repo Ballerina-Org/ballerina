@@ -29,7 +29,7 @@ module Execute =
             // do Console.ReadLine() |> ignore
             for (_, res) in variants do
               match res with
-              | Value.Var(entityDescriptor, One entityId) ->
+              | Value.Var(_, One entityId) ->
                 // do printfn "assigning variant %A" res
                 // do Console.ReadLine() |> ignore
                 match value with

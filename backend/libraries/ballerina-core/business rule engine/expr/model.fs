@@ -107,7 +107,7 @@ module Model =
       | Binary(op, e1, e2) -> $"({e1.ToString()} {op.ToString()} {e2.ToString()})"
       | Unary(op, e) -> $"({op.ToString()}{e.ToString()}"
       | VarLookup v -> v.VarName
-      | FieldLookup(e, f) -> $"{e.ToString()}.f.FieldName"
+      | FieldLookup(e, _) -> $"{e.ToString()}.f.FieldName"
       | Value v -> v.ToString()
       | Apply(f, a) -> $"({f.ToString()})({a.ToString()})"
       | MakeRecord fs ->
@@ -122,9 +122,7 @@ module Model =
       | Exists(v, t, e) -> $"Exists{v.VarName.ToString()} in {t.EntityName} | {e.ToString()}"
       | SumBy(v, t, e) -> $"SumBy{v.VarName.ToString()} in {t.EntityName} | {e.ToString()}"
       | MatchCase(e, cases) ->
-        let eq = "="
         let bar = "|"
-        let sp = " "
         let arr = "->"
 
         let cases =

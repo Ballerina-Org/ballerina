@@ -24,7 +24,7 @@ module Renderers =
 
   type Renderer with
     static member ParseBoolRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -44,7 +44,7 @@ module Renderers =
 
   type Renderer with
     static member ParseDateRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -65,7 +65,7 @@ module Renderers =
 
   type Renderer with
     static member ParseUnitRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -85,7 +85,7 @@ module Renderers =
 
   type Renderer with
     static member ParseGuidRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -105,7 +105,7 @@ module Renderers =
 
   type Renderer with
     static member ParseIntRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -125,7 +125,7 @@ module Renderers =
 
   type Renderer with
     static member ParseStringRenderer
-      (parentJsonFields: (string * JsonValue)[])
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -516,7 +516,7 @@ module Renderers =
 
           return!
             state {
-              let! (formsState: ParsedFormsContext) = state.GetState()
+              let! (_: ParsedFormsContext) = state.GetState()
               let! elementRendererJson = parentJsonFields |> sum.TryFindField "elementRenderer" |> state.OfSum
               let! elementRenderer = parseNestedRenderer elementRendererJson
 
@@ -537,8 +537,8 @@ module Renderers =
 
   type Renderer with
     static member ParseCustomRenderer
-      (parseNestedRenderer)
-      (parentJsonFields: (string * JsonValue)[])
+      (_)
+      (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<Renderer, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -673,7 +673,7 @@ module Renderers =
                                     return FormRenderer(form |> FormConfig.Id, formType)
                                   | FormBody.Record fields ->
                                     return FormRenderer(form |> FormConfig.Id, fields.RecordType)
-                                  | FormBody.Table table ->
+                                  | FormBody.Table _ ->
                                     let! tableApiNameJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum
                                     let! tableApiName = tableApiNameJson |> JsonValue.AsString |> state.OfSum
                                     let! tableApi = formsState.TryFindTableApi tableApiName |> state.OfSum
@@ -701,8 +701,8 @@ module Renderers =
             |> state.MapError(Errors.HighestPriority)
         })
         (state {
-          let! config = state.GetContext()
-          let! (formsState: ParsedFormsContext) = state.GetState()
+          let! _ = state.GetContext()
+          let! (_: ParsedFormsContext) = state.GetState()
 
           let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
@@ -881,7 +881,7 @@ module Renderers =
               |> state.All
 
             let fieldConfigs = fieldConfigs |> Map.ofSeq
-            let fieldConfigs = Map.mergeMany (fun x y -> x) (fieldConfigs :: extendedFields)
+            let fieldConfigs = Map.mergeMany (fun x _ -> x) (fieldConfigs :: extendedFields)
             let! tabs = FormBody.ParseTabs fieldConfigs tabsJson
 
             return
@@ -904,7 +904,7 @@ module Renderers =
               let! renderer = JsonValue.AsString rendererJson |> state.OfSum
               let! ctx = state.GetContext()
 
-              let! containerRendererJson =
+              let! _ =
                 fields
                 |> state.TryFindField "containerRenderer"
                 |> state.Catch

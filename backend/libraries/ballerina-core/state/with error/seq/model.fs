@@ -28,7 +28,7 @@ module Seq =
             |> Seq.fold
               (function
               | Sum.Right e -> fun _ -> Sum.Right e
-              | Sum.Left(res, s1) ->
+              | Sum.Left(_, s1) ->
                 fun (State p') ->
                   match p' (c, s1) with
                   | Sum.Left(res, s2) ->
@@ -69,8 +69,8 @@ module Seq =
     member state.Repeat(p: SeqState<'a, 'c, 's, 'e>) : SeqState<'a, 'c, 's, 'e> =
       state.Bind(p, fun _ -> state.Repeat(p))
 
-    member _.GetContext() = State(fun (c, s) -> Sum.Left(c, None))
-    member _.GetState() = State(fun (c, s) -> Sum.Left(s, None))
+    member _.GetContext() = State(fun (c, _) -> Sum.Left(c, None))
+    member _.GetState() = State(fun (_, s) -> Sum.Left(s, None))
 
     member _.SetState(u: U<'s>) =
       State(fun (_, s) -> Sum.Left([], Some(u s)))

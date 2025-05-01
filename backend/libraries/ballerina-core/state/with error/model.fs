@@ -61,8 +61,8 @@ module WithError =
     member _.Bind(p: State<'a, 'c, 's, 'e>, k: 'a -> State<'b, 'c, 's, 'e>) = State.bind p k
     member _.Combine(p: State<'b, 'c, 's, 'e>, k: State<'a, 'c, 's, 'e>) = State.bind p (fun _ -> k)
     member state.Repeat(p: State<'a, 'c, 's, 'e>) : State<'a, 'c, 's, 'e> = state.Bind(p, fun _ -> state.Repeat(p))
-    member _.GetContext() = State(fun (c, s) -> Sum.Left(c, None))
-    member _.GetState() = State(fun (c, s) -> Sum.Left(s, None))
+    member _.GetContext() = State(fun (c, _) -> Sum.Left(c, None))
+    member _.GetState() = State(fun (_, s) -> Sum.Left(s, None))
 
     member _.SetState(u: U<'s>) =
       State(fun (_, s) -> Sum.Left((), Some(u s)))

@@ -90,7 +90,7 @@ module Runner =
 
   type FormConfig with
     static member PreParse
-      (formName: string)
+      (_: string)
       (json: JsonValue)
       : State<TypeBinding, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
@@ -649,7 +649,7 @@ module Runner =
                 :: l)
             )
 
-        let! s = state.GetState()
+        let! _ = state.GetState()
         do! ParsedFormsContext.ParseApis generatedLanguageSpecificConfig.EnumValueFieldName topLevel
         do! ParsedFormsContext.ParseForms topLevel.Forms
         do! ParsedFormsContext.ParseLaunchers topLevel.Launchers

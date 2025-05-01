@@ -65,7 +65,7 @@ module TypeCheck =
                   )
 
                 return None, fieldDescriptorType, vars'
-              | t ->
+              | _ ->
                 return!
                   sum.Throw(
                     $$"""Error: cannot access field {{field}} on value {{e.ToString()}} because it's not a record"""
@@ -78,7 +78,7 @@ module TypeCheck =
 
               match eType with
               | UnionType cases ->
-                let! unionCase =
+                let! _ =
                   cases
                   |> Map.tryFind { CaseName = caseName }
                   |> Sum.fromOption (fun () ->
@@ -144,7 +144,7 @@ module TypeCheck =
                       |> List.fold
                         (fun unifications expr ->
                           sum {
-                            let! prevExpr, prevUnifications = unifications
+                            let! prevExpr, _ = unifications
 
                             let! newUnifications = ExprType.Unify Map.empty typeBindings prevExpr expr
 
@@ -165,7 +165,7 @@ module TypeCheck =
               let! _, eType, vars' = eval vars e
 
               match eType with
-              | SchemaLookupType entityDescriptor ->
+              | SchemaLookupType _ ->
                 let! fieldDescriptor =
                   schema.tryFindField field
                   |> Sum.fromOption (fun () ->

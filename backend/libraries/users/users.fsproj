@@ -7,6 +7,8 @@
     <!--https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies-->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

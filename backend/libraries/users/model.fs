@@ -79,9 +79,9 @@ and EmailConfirmedEvent(Email: string, TokenId: Guid) =
 type UserCoroutinesState = unit
 
 let User =
-  {| Create = fun (newUser: NewUserEventCase) -> failwith<Task<Guid>> "not implemented"
-     Update = fun (userId: Guid) (updater: U<User>) -> failwith<Task<Unit>> "not implemented"
-     Delete = fun (userId: Guid) -> failwith<Task<Unit>> "not implemented"
+  {| Create = fun (_: NewUserEventCase) -> failwith<Task<Guid>> "not implemented"
+     Update = fun (_: Guid) (_: U<User>) -> failwith<Task<Unit>> "not implemented"
+     Delete = fun (_: Guid) -> failwith<Task<Unit>> "not implemented"
      Updaters =
       {| EmailConfirmed =
           fun (updater: U<bool>) (current: User) ->
@@ -91,7 +91,7 @@ let User =
           fun (updater: U<bool>) (current: User) ->
             { current with
                 Active = updater (current.Active) } |}
-     SendRegistrationConfirmationEmail = fun (userId: Guid) (token: Token) -> failwith<Task<Unit>> "not implemented"
+     SendRegistrationConfirmationEmail = fun (_: Guid) (_: Token) -> failwith<Task<Unit>> "not implemented"
      RegistrationExpiration = TimeSpan.FromDays(3) |}
 
 let register: Coroutine<unit, UserCoroutinesState, unit, UserEventUnion> =

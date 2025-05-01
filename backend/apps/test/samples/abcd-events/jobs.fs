@@ -94,18 +94,18 @@ let abcdEventLoop () =
     |> Map.ofSeq,
     ()
 
-  let updateEvents (dataSource: Unit) events u_e =
+  let updateEvents (_: Unit) events u_e =
     let events' = u_e events
 
     let added =
       events'
-      |> Map.filter (fun e'_id e' -> events |> Map.containsKey e'_id |> not)
+      |> Map.filter (fun e'_id _ -> events |> Map.containsKey e'_id |> not)
       |> Map.values
       |> List.ofSeq
 
     let removed =
       events
-      |> Map.filter (fun e_id e -> events' |> Map.containsKey e_id |> not)
+      |> Map.filter (fun e_id _ -> events' |> Map.containsKey e_id |> not)
       |> Map.toSeq
       |> Seq.map snd
       |> Set.ofSeq
@@ -119,11 +119,11 @@ let abcdEventLoop () =
     ()
 
   let updateState u_s =
-    let newState = u_s { edits = Set.empty }
+    let _ = u_s { edits = Set.empty }
     // run the whole process of business rules based on the edits, with loop avoidance
     ()
 
-  let log (dataSource: Unit) =
+  let log (_: Unit) =
     Console.Clear() |> ignore
 
     for ab in context.ABs() |> Map.values do

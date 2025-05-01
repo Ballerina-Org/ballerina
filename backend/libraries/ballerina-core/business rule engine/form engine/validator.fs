@@ -53,9 +53,9 @@ module Validator =
               | _ -> formType
 
           return! FormBody.Validate codegen ctx formType i.Body
-        | Renderer.FormRenderer(f, body) -> return fr.Type
-        | Renderer.TableFormRenderer(f, body, tableApiId) ->
-          let! f = ctx.TryFindForm f.FormName
+        | Renderer.FormRenderer(_, _) -> return fr.Type
+        | Renderer.TableFormRenderer(f, _, tableApiId) ->
+          let! _ = ctx.TryFindForm f.FormName
           let! api = ctx.TryFindTableApi tableApiId.TableName
           let! apiRowType = ctx.TryFindType api.TypeId.TypeName
 
@@ -142,13 +142,13 @@ module Validator =
           do! !s.Right.Renderer |> Sum.map ignore
 
           return fr.Type
-        | Renderer.PrimitiveRenderer p ->
+        | Renderer.PrimitiveRenderer _ ->
 
           return fr.Type
-        | Renderer.EnumRenderer(enum, enumRenderer) ->
+        | Renderer.EnumRenderer(_, enumRenderer) ->
           do! !enumRenderer |> Sum.map ignore
           return fr.Type
-        | Renderer.StreamRenderer(stream, streamRenderer) ->
+        | Renderer.StreamRenderer(_, streamRenderer) ->
 
           do! !streamRenderer |> Sum.map ignore
 
@@ -177,15 +177,6 @@ module Validator =
       (r: NestedRenderer)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
-        let schema =
-          { tryFindEntity = fun _ -> None
-            tryFindField = fun _ -> None }
-
-        let vars =
-          [ ("global", globalType); ("root", rootType); ("local", localType) ]
-          |> Seq.map (VarName.Create <*> id)
-          |> Map.ofSeq
-
         do! Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType r.Renderer
       }
 
@@ -218,7 +209,7 @@ module Validator =
               | _ -> formType
 
           do! FormBody.ValidatePredicates ctx globalType rootType formType i.Body
-        | Renderer.PrimitiveRenderer p -> return ()
+        | Renderer.PrimitiveRenderer _ -> return ()
         | Renderer.EnumRenderer(_, e) -> return! !e
         | Renderer.TupleRenderer e ->
           do! !e.Tuple
@@ -267,19 +258,19 @@ module Validator =
           do! !!s.Right
 
         | Renderer.StreamRenderer(_, e) -> return! !e
-        | Renderer.FormRenderer(f, e) ->
+        | Renderer.FormRenderer(f, _) ->
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
-          let! s = state.GetState()
+          let! _ = state.GetState()
 
           do! validateFormConfigPredicates ctx globalType rootType f
 
-        | Renderer.TableFormRenderer(f, body, tableApiId) ->
+        | Renderer.TableFormRenderer(f, _, _) ->
           // let! f = ctx.TryFindForm f.FormName |> state.OfSum
           // let! api = ctx.TryFindTableApi tableApiId.TableName |> state.OfSum
           // let! apiRowType = ctx.TryFindType api.TypeId.TypeName |> state.OfSum
 
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
-          let! s = state.GetState()
+          let! _ = state.GetState()
 
           do! validateFormConfigPredicates ctx globalType rootType f
       // | Renderer.UnionRenderer cs ->
@@ -521,7 +512,7 @@ module Validator =
               |> Sum.map ignore
 
             return localType
-        | ExprType.UnionType typeCases, _ ->
+        | ExprType.UnionType _, _ ->
           return!
             sum.Throw(
               Errors.Singleton $"Error: the form type is a union, expected cases in the body but found fields instead."
@@ -892,7 +883,7 @@ module Validator =
 
   type StreamApi with
     static member Validate
-      (generatedLanguageSpecificConfig: GeneratedLanguageSpecificConfig)
+      (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext)
       (streamApi: StreamApi)
       : Sum<Unit, Errors> =
@@ -919,7 +910,7 @@ module Validator =
 
   type TableApi with
     static member Validate
-      (generatedLanguageSpecificConfig: GeneratedLanguageSpecificConfig)
+      (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext)
       (tableApi: TableApi)
       : Sum<Unit, Errors> =

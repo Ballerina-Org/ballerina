@@ -116,7 +116,7 @@ let init_abcdContext () =
                       descriptors.CD.EF().ToFieldDescriptorId
                       descriptors.EF.F.ToFieldDescriptorId ]) } ] }
 
-  let totalsLoop =
+  let _ =
     [ { BusinessRuleId = Guid.CreateVersion7()
         Name = "Total2 = Total1+1+Total3"
         Priority = BusinessRulePriority.System

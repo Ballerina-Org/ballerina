@@ -73,14 +73,14 @@ let abEventLoop (createScope: Unit -> IServiceScope) =
 
     let added =
       events'
-      |> Map.filter (fun e'_id e' -> events |> Map.containsKey e'_id |> not)
+      |> Map.filter (fun e'_id _ -> events |> Map.containsKey e'_id |> not)
       |> Map.toSeq
       |> Seq.map snd
       |> Seq.map (absample.efmodels.ABEvent.FromUnion)
 
     let removed =
       events
-      |> Map.filter (fun e_id e -> events' |> Map.containsKey e_id |> not)
+      |> Map.filter (fun e_id _ -> events' |> Map.containsKey e_id |> not)
       |> Map.toSeq
       |> Seq.map snd
       |> Seq.map (absample.efmodels.ABEvent.FromUnion)
@@ -109,4 +109,4 @@ let abEventLoop (createScope: Unit -> IServiceScope) =
     db.Dispose()
     scope.Dispose()
 
-  Ballerina.Coroutines.Runner.runLoop init getSnapshot (fun u_s -> ()) updateEvents log releaseSnapshot
+  Ballerina.Coroutines.Runner.runLoop init getSnapshot (fun _ -> ()) updateEvents log releaseSnapshot

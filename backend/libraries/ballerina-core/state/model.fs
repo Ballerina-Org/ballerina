@@ -48,8 +48,8 @@ module Simple =
     //   // member _.All(ps:List<Coroutine<'a, 's, 'c, 'e>>) =
     //   //   Co(fun _ -> CoroutineResult.Any(ps), None, None)
     member state.Repeat(p: State<'a, 'c, 's>) : State<'a, 'c, 's> = state.Bind(p, fun _ -> state.Repeat(p))
-    member _.GetContext() = State(fun (c, s) -> (c, None))
-    member _.GetState() = State(fun (c, s) -> (s, None))
+    member _.GetContext() = State(fun (c, _) -> (c, None))
+    member _.GetState() = State(fun (_, s) -> (s, None))
     member _.SetState(u: U<'s>) = State(fun (_, s) -> ((), Some(u s)))
 
     member state.ReturnFrom(p: State<'a, 'c, 's>) =

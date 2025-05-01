@@ -88,7 +88,7 @@ module TransitiveExecution =
       // let mutable modifiedFields':Map<FieldDescriptorId, EntitiesIdentifiers> = Map.empty
       // let mutable executedRules':Map<BusinessRuleId, EntitiesIdentifiers> = Map.empty
       for (businessRule, relevantModifiedFieldIds) in candidateRules do
-        let! s = state.GetState()
+        let! _ = state.GetState()
         let businessRuleId = businessRule.ToBusinessRuleId
 
         let ruleDependencies =
@@ -149,7 +149,7 @@ module TransitiveExecution =
                 // do Console.ReadLine() |> ignore
                 do! state.SetState(BusinessRuleExecutionState.addCurrentExecutedRule businessRuleId allModifiedTargets)
 
-                let! { CurrentExecutedRules = executedRules' } = state.GetState()
+                let! _ = state.GetState()
                 // do printfn "executedRules' after adding = %A" executedRules'
                 // do Console.ReadLine() |> ignore
                 for modifiedField in modifiedFieldsByRule |> List.ofSeq do
@@ -158,7 +158,7 @@ module TransitiveExecution =
                       BusinessRuleExecutionState.addCurrentModifiedFields modifiedField.Key modifiedField.Value
                     )
 
-                  let! { CurrentModifiedFields = modifiedFields' } = state.GetState()
+                  let! _ = state.GetState()
                   return ()
           // do printfn "modifiedFields' = %A" modifiedFields'
           // do Console.ReadLine() |> ignore

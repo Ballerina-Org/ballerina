@@ -40,7 +40,7 @@ let getSnapshot (tenant: Guid) (clientId: Guid) secret =
           requestToken tenant clientId secret
       GetExpiration =
         //NOTE: this is for testing purposes. You can read the actual expiration from the token and refresh with half that frequency.
-        fun accessToken -> TimeSpan.FromSeconds(30.) },
+        fun _ -> TimeSpan.FromSeconds(30.) },
     Map.empty,
     ()
 

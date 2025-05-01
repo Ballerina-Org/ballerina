@@ -50,9 +50,7 @@ module Unification =
           |> Seq.map (fun v -> v, newJoinedEquivalence)
           |> Map.ofSeq
 
-        result <-
-          result
-          |> Map.merge (fun oldConstraint newConstraint -> newConstraint) modifiedConstraints
+        result <- result |> Map.merge (fun _ newConstraint -> newConstraint) modifiedConstraints
 
       result |> Map.values |> Set.ofSeq |> Set.toList
 
@@ -145,8 +143,8 @@ module Unification =
                 sum.All([ first1.Value =?= first2; ExprType.RecordType(m1) =?= ExprType.RecordType(m2) ])
 
               return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
-        | ExprType.VarType v, t
-        | t, ExprType.VarType v -> return UnificationConstraints.Zero()
+        | ExprType.VarType _, _
+        | _, ExprType.VarType _ -> return UnificationConstraints.Zero()
         | _ ->
           if t1 = t2 then
             return UnificationConstraints.Zero()

@@ -35,7 +35,7 @@ module Predicate =
             }
             |> Option.defaultValue true
       }
-      |> Option.defaultValue (fun o -> true)
+      |> Option.defaultValue (fun _ -> true)
 
 
   type RuleDependencies with
@@ -55,4 +55,4 @@ module Predicate =
 
       dependencies
       |> Map.mergeMany (fun l1 l2 -> l1 @ l2)
-      |> Map.map (fun k ps -> ps |> Seq.reduce (||.))
+      |> Map.map (fun _ ps -> ps |> Seq.reduce (||.))

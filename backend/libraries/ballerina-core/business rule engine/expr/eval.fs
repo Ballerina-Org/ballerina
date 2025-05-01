@@ -24,7 +24,7 @@ module Eval =
           let restriction =
             match variableRestriction with
             | Some(restrictedVarName, predicate) when varName = restrictedVarName -> predicate
-            | _ -> fun o -> true
+            | _ -> fun _ -> true
 
           [ for entityDescriptor in schema.tryFindEntity entityDescriptorId |> Option.toList do
               let values = entityDescriptor.GetEntities() |> Seq.filter restriction
@@ -36,7 +36,7 @@ module Eval =
 
                       for res in eval vars' condition do
                         match res with
-                        | vars'', ConstBool true -> yield res
+                        | _, ConstBool true -> yield res
                         | _ -> () ] ]
         | VarLookup v when vars |> Map.containsKey v -> [ vars, (Value.Var(vars.[v])) ]
         | FieldLookup(e, field) ->
@@ -215,6 +215,6 @@ module Eval =
                 dependencies
                 |> Seq.groupBy (fun dep -> dep.ChangedEntityType, dep.ChangedField)
                 |> Map.ofSeq
-                |> Map.map (fun k -> Set.ofSeq) } in
+                |> Map.map (fun _ -> Set.ofSeq) } in
 
           byEntityAndField
