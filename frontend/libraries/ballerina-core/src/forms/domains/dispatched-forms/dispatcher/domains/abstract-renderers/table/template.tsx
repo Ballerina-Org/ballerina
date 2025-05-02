@@ -76,10 +76,10 @@ export const TableAbstractRenderer = <
             extraContext: _.extraContext,
             identifiers: {
               withLauncher: _.identifiers.withLauncher.concat(
-                `[${chunkIndex}][${column}][${rowId}]`,
+                `[${rowId}][${column}]`,
               ),
               withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${chunkIndex}][${column}][${rowId}]`,
+                `[${rowId}][${column}]`,
               ),
             },
           };
@@ -144,8 +144,6 @@ export const TableAbstractRenderer = <
             props.foreignMutations.onChange(id, delta);
           },
         }));
-
-  // disabled?? how to pass this correctly for each column
 
   const embedDetailsRenderer = (
     rowId: string,

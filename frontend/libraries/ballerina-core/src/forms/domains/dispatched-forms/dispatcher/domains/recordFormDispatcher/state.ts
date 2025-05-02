@@ -69,7 +69,7 @@ export const RecordFormDispatcher = {
             ),
         ),
       )
-      // TODO add error case if launcherName is not provided
+        // TODO add error case if launcherName is not provided
         .Then((fieldTemplates) =>
           dispatcherContext
             .getConcreteRenderer(
