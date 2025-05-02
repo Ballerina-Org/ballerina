@@ -24,7 +24,9 @@ export const DateAbstractRenderer = <
     ForeignMutationsExpected & { onChange: DispatchOnChange<Date> },
     DateAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
+    <span
+      className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+    >
       <props.view
         {...props}
         foreignMutations={{

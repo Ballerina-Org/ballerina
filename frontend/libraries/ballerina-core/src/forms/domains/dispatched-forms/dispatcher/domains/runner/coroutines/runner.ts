@@ -112,7 +112,7 @@ export const DispatchFormRunner = <
                 passthroughFormLauncher.renderer,
                 dispatcherContext,
                 false,
-                formRef.name
+                formRef.name,
               );
 
               if (Form.kind == "errors") {

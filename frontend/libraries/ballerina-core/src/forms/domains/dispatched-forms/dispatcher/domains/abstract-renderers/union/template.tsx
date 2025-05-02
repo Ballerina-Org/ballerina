@@ -64,9 +64,7 @@ export const UnionAbstractRenderer = <
               modifiedByUser: true,
             },
             identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${caseName}]`,
-              ),
+              withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
               withoutLauncher: _.identifiers.withoutLauncher.concat(
                 `[${caseName}]`,
               ),
@@ -99,7 +97,9 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
     return (
-      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={props.context}

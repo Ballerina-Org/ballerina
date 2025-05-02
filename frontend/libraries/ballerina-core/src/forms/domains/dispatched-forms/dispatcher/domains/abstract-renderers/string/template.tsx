@@ -31,7 +31,9 @@ export const StringAbstractRenderer = <
     ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
     StringAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
+    <span
+      className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+    >
       <props.view
         {...props}
         foreignMutations={{

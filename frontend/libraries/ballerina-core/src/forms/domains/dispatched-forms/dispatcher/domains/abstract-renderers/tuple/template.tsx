@@ -151,7 +151,9 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
     return (
-      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
