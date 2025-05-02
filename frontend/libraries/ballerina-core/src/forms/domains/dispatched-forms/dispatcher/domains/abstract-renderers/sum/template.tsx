@@ -1,4 +1,6 @@
 import {
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
   CommonFormState,
   DispatchCommonFormState,
   DispatchDelta,
@@ -12,16 +14,15 @@ import { Template } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DispatchOnChange } from "../../../state";
-import { SumAbstractRendererState, SumAbstractRendererView } from "./state";
+import {
+  SumAbstractRendererReadonlyContext,
+  SumAbstractRendererState,
+  SumAbstractRendererView,
+} from "./state";
 
 export const SumAbstractRenderer = <
-  LeftFormState extends { commonFormState: CommonFormState },
-  RightFormState extends { commonFormState: CommonFormState },
-  Context extends FormLabel & {
-    disabled: boolean;
-    type: DispatchParsedType<any>;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
+  LeftFormState extends CommonAbstractRendererState,
+  RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
 >(
   leftTemplate?: Template<
@@ -42,17 +43,24 @@ export const SumAbstractRenderer = <
   >,
 ) => {
   const embeddedLeftTemplate = leftTemplate
-    ?.mapContext((_: any): any => ({
-      ..._.customFormState.left,
-      disabled: _.disabled,
-      value: _.value.value.value,
-      bindings: _.bindings,
-      extraContext: _.extraContext,
-      identifiers: {
-        withLauncher: _.identifiers.withLauncher.concat(`[left]`),
-        withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
-      },
-    }))
+    ?.mapContext(
+      (
+        _: SumAbstractRendererReadonlyContext &
+          SumAbstractRendererState<LeftFormState, RightFormState>,
+      ): Value<PredicateValue> &
+        CommonAbstractRendererReadonlyContext &
+        LeftFormState => ({
+        ..._.customFormState.left,
+        disabled: _.disabled,
+        value: _.value.value.value,
+        bindings: _.bindings,
+        extraContext: _.extraContext,
+        identifiers: {
+          withLauncher: _.identifiers.withLauncher.concat(`[left]`),
+          withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
+        },
+      }),
+    )
     ?.mapState(
       SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
         .customFormState.children.left,
@@ -103,7 +111,8 @@ export const SumAbstractRenderer = <
           );
         },
       }),
-    );
+    )
+    // .mapViewFromProps((props) => props.context.value);
 
   const embeddedRightTemplate = rightTemplate
     ?.mapContext((_: any): any => ({
@@ -171,12 +180,7 @@ export const SumAbstractRenderer = <
     );
 
   return Template.Default<
-    Context &
-      Value<ValueSum> & {
-        disabled: boolean;
-        extraContext: any;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SumAbstractRendererReadonlyContext,
     SumAbstractRendererState<LeftFormState, RightFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueSum>;
@@ -184,7 +188,7 @@ export const SumAbstractRenderer = <
     SumAbstractRendererView<
       LeftFormState,
       RightFormState,
-      Context,
+      SumAbstractRendererReadonlyContext,
       ForeignMutationsExpected
     >
   >((props) => {

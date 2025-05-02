@@ -6,20 +6,23 @@ import {
   ValueSum,
   View,
   Bindings,
-  BasicUpdater,
   simpleUpdaterWithChildren,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  PredicateValue,
 } from "../../../../../../../../main";
-import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { DispatchOnChange } from "../../../state";
 
-export type SumAbstractRendererState<LeftFormState, RightFormState> = {
-  commonFormState: DispatchCommonFormState;
-} & {
-  customFormState: {
-    left: LeftFormState;
-    right: RightFormState;
+export type SumAbstractRendererReadonlyContext = Value<ValueSum> &
+  CommonAbstractRendererReadonlyContext;
+
+export type SumAbstractRendererState<LeftFormState, RightFormState> =
+  CommonAbstractRendererState & {
+    customFormState: {
+      left: LeftFormState;
+      right: RightFormState;
+    };
   };
-};
 
 export const SumAbstractRendererState = <LeftFormState, RightFormState>() => ({
   Default: (
@@ -28,7 +31,7 @@ export const SumAbstractRendererState = <LeftFormState, RightFormState>() => ({
       RightFormState
     >["customFormState"],
   ): SumAbstractRendererState<LeftFormState, RightFormState> => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    ...CommonAbstractRendererState.Default(),
     customFormState,
   }),
   Updaters: {
@@ -59,10 +62,10 @@ export const SumAbstractRendererState = <LeftFormState, RightFormState>() => ({
 export type SumAbstractRendererView<
   LeftFormState,
   RightFormState,
-  Context extends FormLabel,
+  SumAbstractRendererReadonlyContext,
   ForeignMutationsExpected,
 > = View<
-  Context &
+  SumAbstractRendererReadonlyContext &
     Value<ValueSum> &
     SumAbstractRendererState<LeftFormState, RightFormState>,
   SumAbstractRendererState<LeftFormState, RightFormState>,
@@ -71,12 +74,9 @@ export type SumAbstractRendererView<
   },
   {
     embeddedLeftTemplate?: Template<
-      Context &
+      SumAbstractRendererReadonlyContext &
         Value<ValueSum> &
-        SumAbstractRendererState<LeftFormState, RightFormState> & {
-          bindings: Bindings;
-          extraContext: any;
-        },
+        SumAbstractRendererState<LeftFormState, RightFormState>,
       SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected & {
         onChange: DispatchOnChange<ValueSum>;
@@ -84,12 +84,9 @@ export type SumAbstractRendererView<
     >;
 
     embeddedRightTemplate?: Template<
-      Context &
+      SumAbstractRendererReadonlyContext &
         Value<ValueSum> &
-        SumAbstractRendererState<LeftFormState, RightFormState> & {
-          bindings: Bindings;
-          extraContext: any;
-        },
+        SumAbstractRendererState<LeftFormState, RightFormState>,
       SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected & {
         onChange: DispatchOnChange<ValueSum>;

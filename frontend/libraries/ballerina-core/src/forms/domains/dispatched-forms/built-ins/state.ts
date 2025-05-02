@@ -21,7 +21,7 @@ import {
   AbstractTableRendererState,
   MapRepo,
   ValueTable,
-  simpleUpdater,
+  DispatchCommonFormState,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -96,18 +96,6 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
-};
-
-export type DispatchCommonFormState = {
-  modifiedByUser: boolean;
-};
-export const DispatchCommonFormState = {
-  Default: (): DispatchCommonFormState => ({
-    modifiedByUser: false,
-  }),
-  Updaters: {
-    ...simpleUpdater<DispatchCommonFormState>()("modifiedByUser"),
-  },
 };
 
 export type ConcreteRendererKinds = {
@@ -281,7 +269,12 @@ export const dispatchDefaultState =
       if (t.kind == "tuple")
         return renderer.kind == "baseTupleRenderer"
           ? ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[number, { commonFormState: DispatchCommonFormState }], string>>(
+              List<
+                ValueOrErrors<
+                  [number, { commonFormState: DispatchCommonFormState }],
+                  string
+                >
+              >(
                 t.args.map((_, index) =>
                   dispatchDefaultState(
                     infiniteStreamSources,
@@ -295,9 +288,9 @@ export const dispatchDefaultState =
               ),
             ).Then((itemStates) =>
               ValueOrErrors.Default.return(
-                TupleAbstractRendererState<{ commonFormState: DispatchCommonFormState }>().Default(
-                  Map(itemStates),
-                ),
+                TupleAbstractRendererState<{
+                  commonFormState: DispatchCommonFormState;
+                }>().Default(Map(itemStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(

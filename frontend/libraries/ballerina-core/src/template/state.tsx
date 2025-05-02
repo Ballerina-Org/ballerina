@@ -72,6 +72,9 @@ export type Template<context, state, foreignMutations, view = Unit> = {
   mapView: <newView>(
     f: BasicFun<newView, view>,
   ) => Template<context, state, foreignMutations, newView>;
+  mapViewFromProps: <newView>(
+    f: BasicFun<TemplateProps<context, state, foreignMutations, newView>, view>,
+  ) => Template<context, state, foreignMutations, newView>;
 } & TemplateRunner<context, state, foreignMutations, view>;
 
 export const createTemplate = <context, state, foreignMutations, view>(
@@ -149,6 +152,12 @@ export const createTemplate = <context, state, foreignMutations, view>(
     f: BasicFun<newView, view>,
   ): Template<context, state, foreignMutations, newView> {
     return Template.Operations.MapView(this, f);
+  };
+  result.mapViewFromProps = function <newView>(
+    this: Template<context, state, foreignMutations, view>,
+    f: BasicFun<TemplateProps<context, state, foreignMutations, newView>, view>,
+  ): Template<context, state, foreignMutations, newView> {
+    return Template.Operations.MapViewFromProps(this, f);
   };
   result.any = function (
     this: Template<context, state, foreignMutations, view>,
@@ -338,6 +347,26 @@ export const Template = {
     ): Template<context, state, foreignMutations, newView> =>
       createTemplate((props) => {
         const view = f(props.view);
+        return (
+          <>
+            {p({
+              context: props.context,
+              setState: props.setState,
+              foreignMutations: props.foreignMutations,
+              view: view,
+            })}
+          </>
+        );
+      }),
+    MapViewFromProps: <context, state, foreignMutations, newView, view>(
+      p: Template<context, state, foreignMutations, view>,
+      f: BasicFun<
+        TemplateProps<context, state, foreignMutations, newView>,
+        view
+      >,
+    ): Template<context, state, foreignMutations, newView> =>
+      createTemplate((props) => {
+        const view = f(props);
         return (
           <>
             {p({
