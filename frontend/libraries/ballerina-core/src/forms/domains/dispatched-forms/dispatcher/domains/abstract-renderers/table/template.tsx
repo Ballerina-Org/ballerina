@@ -237,7 +237,6 @@ export const TableAbstractRenderer = <
     any,
     any
   >((props) => {
-    console.debug("abstract table template", props);
 
     const updatedBindings = props.context.bindings.set(
       "local",

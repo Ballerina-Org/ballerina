@@ -129,10 +129,12 @@ export const DispatchTupleAbstractRenderer = <
                 ItemFormStates.get(itemIndex)!,
                 (__: any) => ({
                   ...__,
-                  ...__.commonFormState,
-                  modifiedByUser: true,
+                  commonFormState: {
+                    ...__.commonFormState,
+                    modifiedByUser: true,
+                  },
                 }),
-              )(_.itemFormStates) as unknown as ItemFormStates,
+              )(_.itemFormStates),
             }));
           },
         }),

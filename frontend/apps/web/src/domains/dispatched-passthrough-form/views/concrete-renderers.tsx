@@ -68,7 +68,6 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
       (props) => {
-        console.debug("person record", props);
         return (
           <>
             <h1>Record!</h1>
