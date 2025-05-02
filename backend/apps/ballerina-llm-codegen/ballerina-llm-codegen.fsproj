@@ -4,6 +4,13 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ballerina_llm_codegen</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RuntimeIdentifiers>linux-x64;osx-x64;linux-arm64;win-x64</RuntimeIdentifiers>
+    <PublishSingleFile>true</PublishSingleFile>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode>true</RestoreLockedMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarnOn>1182,3387,3389,3366,22</WarnOn>
   </PropertyGroup>
 
   <ItemGroup>
