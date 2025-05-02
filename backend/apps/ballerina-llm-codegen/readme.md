@@ -1,8 +1,0 @@
-```
-dotnet build
-```
-
-```
-dotnet run
-```
-
