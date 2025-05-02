@@ -177,6 +177,14 @@ export const TableAbstractRenderer = <
                 disabled: false, // to do think about
                 bindings: _.bindings,
                 extraContext: _.extraContext,
+                identifiers: {
+                  withLauncher: _.identifiers.withLauncher.concat(
+                    `[${chunkIndex}][${rowId}][details]`,
+                  ),
+                  withoutLauncher: _.identifiers.withoutLauncher.concat(
+                    `[${chunkIndex}][${rowId}][details]`,
+                  ),
+                },
               };
             })
               .mapState<AbstractTableRendererState>((_) =>
