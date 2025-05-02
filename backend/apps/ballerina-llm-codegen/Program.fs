@@ -6,7 +6,7 @@
   open Ballerina.DSL.Expr.Types.Model
 
   [<EntryPoint>]
-  let main argv =
+  let main _ =
     let pythonResult =
       Generator.ToPython()
 
