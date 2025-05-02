@@ -1,10 +1,12 @@
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   ListRepo,
   MapRepo,
   PredicateValue,
+  replaceWith,
   Updater,
   ValueTuple,
 } from "../../../../../../../../main";
@@ -105,24 +107,27 @@ export const ListAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => GetDefaultElementState(),
-                (__) => ({
-                  ...__,
-                  commonFormState: {
-                    ...__.commonFormState,
-                    modifiedByUser: true,
-                  },
-                }),
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              ListAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                ListAbstractRendererState.Updaters.Core.elementFormStates(
+                  MapRepo.Updaters.upsert(
+                    elementIndex,
+                    () => GetDefaultElementState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              ),
+            );
           },
         }),
       );
@@ -166,6 +171,13 @@ export const ListAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             remove: (_) => {
               const delta: DispatchDelta = {
@@ -179,6 +191,13 @@ export const ListAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
             move: (index, to) => {
@@ -198,6 +217,13 @@ export const ListAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             duplicate: (_) => {
               const delta: DispatchDelta = {
@@ -211,6 +237,13 @@ export const ListAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
             insert: (_) => {
@@ -230,6 +263,13 @@ export const ListAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                ListAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
           }}

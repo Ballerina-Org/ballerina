@@ -6,6 +6,8 @@ import {
   ValueSum,
   View,
   Bindings,
+  BasicUpdater,
+  simpleUpdaterWithChildren,
 } from "../../../../../../../../main";
 import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { DispatchOnChange } from "../../../state";
@@ -33,7 +35,23 @@ export const SumAbstractRendererState = <LeftFormState, RightFormState>() => ({
     Core: {
       ...simpleUpdater<
         SumAbstractRendererState<LeftFormState, RightFormState>
-      >()("customFormState"),
+      >()("commonFormState"),
+      ...simpleUpdaterWithChildren<
+        SumAbstractRendererState<LeftFormState, RightFormState>
+      >()({
+        ...simpleUpdater<
+          SumAbstractRendererState<
+            LeftFormState,
+            RightFormState
+          >["customFormState"]
+        >()("left"),
+        ...simpleUpdater<
+          SumAbstractRendererState<
+            LeftFormState,
+            RightFormState
+          >["customFormState"]
+        >()("right"),
+      })("customFormState"),
     },
     Template: {},
   },

@@ -21,6 +21,7 @@ import {
   AbstractTableRendererState,
   MapRepo,
   ValueTable,
+  simpleUpdater,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -104,6 +105,9 @@ export const DispatchCommonFormState = {
   Default: (): DispatchCommonFormState => ({
     modifiedByUser: false,
   }),
+  Updaters: {
+    ...simpleUpdater<DispatchCommonFormState>()("modifiedByUser"),
+  },
 };
 
 export type ConcreteRendererKinds = {
@@ -277,7 +281,7 @@ export const dispatchDefaultState =
       if (t.kind == "tuple")
         return renderer.kind == "baseTupleRenderer"
           ? ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[number, any], string>>(
+              List<ValueOrErrors<[number, { commonFormState: DispatchCommonFormState }], string>>(
                 t.args.map((_, index) =>
                   dispatchDefaultState(
                     infiniteStreamSources,
@@ -291,7 +295,7 @@ export const dispatchDefaultState =
               ),
             ).Then((itemStates) =>
               ValueOrErrors.Default.return(
-                TupleAbstractRendererState<Map<number, any>>().Default(
+                TupleAbstractRendererState<{ commonFormState: DispatchCommonFormState }>().Default(
                   Map(itemStates),
                 ),
               ),

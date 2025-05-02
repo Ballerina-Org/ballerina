@@ -15,6 +15,7 @@ import {
   ListRepo,
   id,
   Bindings,
+  replaceWith,
 } from "../../../../../../../../main";
 import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { FormLabel } from "../../../../../../../../main";
@@ -89,18 +90,11 @@ export const MapAbstractRenderer = <
           MapAbstractRendererState<
             KeyFormState,
             ValueFormState
-          >().Updaters.Core.elementFormStates(
-            MapRepo.Updaters.upsert(
-              elementIndex,
-              () => ({
-                KeyFormState: GetDefaultKeyFormState(),
-                ValueFormState: GetDefaultValueFormState(),
-              }),
-              (current) => ({
-                ...current,
-                KeyFormState: _(current.KeyFormState),
-              }),
-            ),
+          >().Updaters.Template.upsertElementKeyFormState(
+            elementIndex,
+            GetDefaultKeyFormState(),
+            GetDefaultValueFormState(),
+            _,
           ),
       )
       .mapForeignMutationsFromProps<
@@ -128,44 +122,43 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                elementUpdater(_.values.get(0)!),
-                                _.values.get(1)!,
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              elementUpdater(_.values.get(0)!),
+                              _.values.get(1)!,
+                            ]),
+                          ),
                   ),
                 ),
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => ({
-                  KeyFormState: GetDefaultKeyFormState(),
-                  ValueFormState: GetDefaultValueFormState(),
-                }),
-                (__) => {
-                  return {
-                    ValueFormState: __.ValueFormState,
-                    KeyFormState: {
-                      ...__.KeyFormState,
-                      commonFormState: {
-                        ...__.KeyFormState.commonFormState,
-                        modifiedByUser: true,
-                      },
-                    },
-                  };
-                },
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              MapAbstractRendererState<KeyFormState, ValueFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Template.upsertElementKeyFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
@@ -210,18 +203,11 @@ export const MapAbstractRenderer = <
           MapAbstractRendererState<
             KeyFormState,
             ValueFormState
-          >().Updaters.Core.elementFormStates(
-            MapRepo.Updaters.upsert(
-              elementIndex,
-              () => ({
-                KeyFormState: GetDefaultKeyFormState(),
-                ValueFormState: GetDefaultValueFormState(),
-              }),
-              (current) => ({
-                ...current,
-                ValueFormState: _(current.ValueFormState),
-              }),
-            ),
+          >().Updaters.Template.upsertElementValueFormState(
+            elementIndex,
+            GetDefaultKeyFormState(),
+            GetDefaultValueFormState(),
+            _,
           ),
       )
       .mapForeignMutationsFromProps<
@@ -249,42 +235,43 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                _.values.get(0)!,
-                                elementUpdater(_.values.get(1)!),
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              _.values.get(0)!,
+                              elementUpdater(_.values.get(1)!),
+                            ]),
+                          ),
                   ),
                 ),
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              elementFormStates: MapRepo.Updaters.upsert(
-                elementIndex,
-                () => ({
-                  KeyFormState: GetDefaultKeyFormState(),
-                  ValueFormState: GetDefaultValueFormState(),
-                }),
-                (__) => ({
-                  KeyFormState: __.KeyFormState,
-                  ValueFormState: {
-                    ...__.ValueFormState,
-                    commonFormState: {
-                      ...__.ValueFormState.commonFormState,
-                      modifiedByUser: true,
-                    },
-                  },
-                }),
-              )(_.elementFormStates),
-            }));
+            props.setState(
+              MapAbstractRendererState<KeyFormState, ValueFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Template.upsertElementValueFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
@@ -338,6 +325,16 @@ export const MapAbstractRenderer = <
                 ),
                 delta,
               );
+              props.setState(
+                MapAbstractRendererState<
+                  KeyFormState,
+                  ValueFormState
+                >().Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
+              );
             },
             remove: (_) => {
               const delta: DispatchDelta = {
@@ -353,6 +350,16 @@ export const MapAbstractRenderer = <
                   ),
                 ),
                 delta,
+              );
+              props.setState(
+                MapAbstractRendererState<
+                  KeyFormState,
+                  ValueFormState
+                >().Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ),
               );
             },
           }}

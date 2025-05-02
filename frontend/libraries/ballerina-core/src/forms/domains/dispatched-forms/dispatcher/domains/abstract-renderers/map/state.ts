@@ -11,6 +11,8 @@ import {
   Value,
   ValueTuple,
   View,
+  MapRepo,
+  BasicUpdater,
 } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
 
@@ -47,7 +49,52 @@ export const MapAbstractRendererState = <KeyFormState, ValueFormState>() => ({
         MapAbstractRendererState<KeyFormState, ValueFormState>
       >()("elementFormStates"),
     },
-    Template: {},
+    Template: {
+      upsertElementKeyFormState: (
+        elementIndex: number,
+        defaultKeyFormState: KeyFormState,
+        defaultValueFormState: ValueFormState,
+        updater: BasicUpdater<KeyFormState>,
+      ) =>
+        MapAbstractRendererState<
+          KeyFormState,
+          ValueFormState
+        >().Updaters.Core.elementFormStates(
+          MapRepo.Updaters.upsert(
+            elementIndex,
+            () => ({
+              KeyFormState: defaultKeyFormState,
+              ValueFormState: defaultValueFormState,
+            }),
+            (_) => ({
+              ..._,
+              KeyFormState: updater(_.KeyFormState),
+            }),
+          ),
+        ),
+      upsertElementValueFormState: (
+        elementIndex: number,
+        defaultKeyFormState: KeyFormState,
+        defaultValueFormState: ValueFormState,
+        updater: BasicUpdater<ValueFormState>,
+      ) =>
+        MapAbstractRendererState<
+          KeyFormState,
+          ValueFormState
+        >().Updaters.Core.elementFormStates(
+          MapRepo.Updaters.upsert(
+            elementIndex,
+            () => ({
+              KeyFormState: defaultKeyFormState,
+              ValueFormState: defaultValueFormState,
+            }),
+            (_) => ({
+              ..._,
+              ValueFormState: updater(_.ValueFormState),
+            }),
+          ),
+        ),
+    },
   },
 });
 export type MapAbstractRendererView<

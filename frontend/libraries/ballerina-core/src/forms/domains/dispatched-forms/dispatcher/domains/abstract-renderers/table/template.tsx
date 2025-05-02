@@ -111,10 +111,10 @@ export const TableAbstractRenderer = <
                     CellTemplates.get(column)!.GetDefaultState,
                   )((__) => ({
                     ...__,
-                    commonFormState: {
-                      ...__.commonFormState,
-                      modifiedByUser: true,
-                    },
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(__.commonFormState),
                   })),
                 )
                 .then(
@@ -237,7 +237,6 @@ export const TableAbstractRenderer = <
     any,
     any
   >((props) => {
-
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,

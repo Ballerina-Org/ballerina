@@ -1,11 +1,10 @@
-import React from "react";
 import {
-  BasicUpdater,
   CommonFormState,
+  DispatchCommonFormState,
   DispatchDelta,
   PredicateValue,
+  replaceWith,
   Sum,
-  Updater,
   Value,
   ValueSum,
 } from "../../../../../../../../main";
@@ -55,16 +54,8 @@ export const SumAbstractRenderer = <
       },
     }))
     ?.mapState(
-      (
-        upd: BasicUpdater<LeftFormState>,
-      ): Updater<SumAbstractRendererState<LeftFormState, RightFormState>> =>
-        SumAbstractRendererState<
-          LeftFormState,
-          RightFormState
-        >().Updaters.Core.customFormState((_) => ({
-          ..._,
-          left: upd(_.left),
-        })),
+      SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
+        .customFormState.children.left,
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
@@ -90,23 +81,26 @@ export const SumAbstractRenderer = <
             }),
             delta,
           );
-          props.setState((_) => ({
-            ..._,
-            commonFormState: {
-              ..._.commonFormState,
-              modifiedByUser: true,
-            },
-            customFormState: {
-              ..._.customFormState,
-              left: {
-                ..._.customFormState.left,
-                commonFormState: {
-                  ..._.customFormState.left.commonFormState,
-                  modifiedByUser: true,
-                },
-              },
-            },
-          }));
+          props.setState(
+            SumAbstractRendererState<LeftFormState, RightFormState>()
+              .Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              )
+              .then(
+                SumAbstractRendererState<
+                  LeftFormState,
+                  RightFormState
+                >().Updaters.Core.customFormState.children.left((_) => ({
+                  ..._,
+                  commonFormState:
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    )(_.commonFormState),
+                })),
+              ),
+          );
         },
       }),
     );
@@ -124,16 +118,8 @@ export const SumAbstractRenderer = <
       },
     }))
     .mapState(
-      (
-        upd: BasicUpdater<RightFormState>,
-      ): Updater<SumAbstractRendererState<LeftFormState, RightFormState>> =>
-        SumAbstractRendererState<
-          LeftFormState,
-          RightFormState
-        >().Updaters.Core.customFormState((_) => ({
-          ..._,
-          right: upd(_.right),
-        })),
+      SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
+        .customFormState.children.right,
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
@@ -160,23 +146,26 @@ export const SumAbstractRenderer = <
             }),
             delta,
           );
-          props.setState((_) => ({
-            ..._,
-            commonFormState: {
-              ..._.commonFormState,
-              modifiedByUser: true,
-            },
-            customFormState: {
-              ..._.customFormState,
-              right: {
-                ..._.customFormState.right,
-                commonFormState: {
-                  ..._.customFormState.right.commonFormState,
-                  modifiedByUser: true,
-                },
-              },
-            },
-          }));
+          props.setState(
+            SumAbstractRendererState<LeftFormState, RightFormState>()
+              .Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              )
+              .then(
+                SumAbstractRendererState<
+                  LeftFormState,
+                  RightFormState
+                >().Updaters.Core.customFormState.children.right((_) => ({
+                  ..._,
+                  commonFormState:
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    )(_.commonFormState),
+                })),
+              ),
+          );
         },
       }),
     );

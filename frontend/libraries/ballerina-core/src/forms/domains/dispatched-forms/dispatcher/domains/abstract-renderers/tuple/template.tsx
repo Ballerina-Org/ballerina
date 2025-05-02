@@ -4,10 +4,12 @@ import { TupleAbstractRendererState, TupleAbstractRendererView } from "./state";
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   FormLabel,
   MapRepo,
   PredicateValue,
+  replaceWith,
   Template,
   Updater,
   Value,
@@ -17,10 +19,7 @@ import { DispatchOnChange } from "../../../state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
-  ItemFormStates extends Map<
-    number,
-    { commonFormState: { modifiedByUser: boolean } }
-  >,
+  ItemFormState extends { commonFormState: DispatchCommonFormState },
   Context extends FormLabel & {
     disabled: boolean;
     type: DispatchParsedType<any>;
@@ -28,7 +27,7 @@ export const DispatchTupleAbstractRenderer = <
   },
   ForeignMutationsExpected,
 >(
-  ItemFormStates: Map<number, () => any>,
+  ItemFormStates: Map<number, () => ItemFormState>,
   itemTemplates: Map<
     number,
     Template<
@@ -52,7 +51,7 @@ export const DispatchTupleAbstractRenderer = <
         (
           _: Context &
             Value<ValueTuple> &
-            TupleAbstractRendererState & {
+            TupleAbstractRendererState<ItemFormState> & {
               bindings: Bindings;
               extraContext: any;
               identifiers: { withLauncher: string; withoutLauncher: string };
@@ -65,7 +64,7 @@ export const DispatchTupleAbstractRenderer = <
         } => ({
           ...(_.itemFormStates.get(itemIndex) ||
             ItemFormStates.get(itemIndex)!()),
-          value: _.value.values.get(itemIndex),
+          value: _.value.values.get(itemIndex)!,
           disabled: _.disabled,
           type: _.type,
           bindings: _.bindings,
@@ -81,8 +80,10 @@ export const DispatchTupleAbstractRenderer = <
         }),
       )
       .mapState(
-        (_: BasicUpdater<any>): Updater<TupleAbstractRendererState> =>
-          TupleAbstractRendererState().Updaters.Template.upsertItemFormState(
+        (
+          _: BasicUpdater<ItemFormState>,
+        ): Updater<TupleAbstractRendererState<ItemFormState>> =>
+          TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
             itemIndex,
             ItemFormStates.get(itemIndex)!,
             _,
@@ -118,24 +119,28 @@ export const DispatchTupleAbstractRenderer = <
               ),
               delta,
             );
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              itemFormStates: MapRepo.Updaters.upsert(
-                itemIndex,
-                ItemFormStates.get(itemIndex)!,
-                (__: any) => ({
-                  ...__,
-                  commonFormState: {
-                    ...__.commonFormState,
-                    modifiedByUser: true,
-                  },
-                }),
-              )(_.itemFormStates),
-            }));
+
+            props.setState(
+              TupleAbstractRendererState<ItemFormState>()
+                .Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+                .then(
+                  TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
+                    itemIndex,
+                    ItemFormStates.get(itemIndex)!,
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+            );
           },
         }),
       );
@@ -146,11 +151,11 @@ export const DispatchTupleAbstractRenderer = <
         disabled: boolean;
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
-    TupleAbstractRendererState,
+    TupleAbstractRendererState<ItemFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueTuple>;
     },
-    TupleAbstractRendererView<Context, ForeignMutationsExpected>
+    TupleAbstractRendererView<ItemFormState, Context, ForeignMutationsExpected>
   >((props) => {
     return (
       <span

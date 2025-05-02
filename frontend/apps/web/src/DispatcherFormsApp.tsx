@@ -240,12 +240,20 @@ export const DispatcherFormsApp = (props: {}) => {
       });
   }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
-
-
-  // console.debug(
-  //   "personConfigState",
-  //   JSON.stringify(personConfigState, null, 2),
-  // );
+  console.debug(
+    "personPassthroughFormState",
+    JSON.stringify(
+      personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
+      null,
+      2,
+    ),
+  );
+  console.debug(
+    "personPassthroughFormState common",
+    JSON.stringify(personPassthroughFormState?.formState?.commonFormState, null,
+      2,
+    ),
+  );
   // console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (

@@ -2,6 +2,7 @@ import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   Bindings,
+  DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   Expr,
@@ -11,6 +12,7 @@ import {
   PredicateFormLayout,
   PredicateValue,
   RecordType,
+  replaceWith,
   Updater,
   Value,
   ValueOrErrors,
@@ -111,24 +113,25 @@ export const RecordAbstractRenderer = <
               delta,
             );
 
-            props.setState((_) => ({
-              ..._,
-              commonFormState: {
-                ..._.commonFormState,
-                modifiedByUser: true,
-              },
-              fieldStates: MapRepo.Updaters.upsert(
-                fieldName,
-                () => FieldTemplates.get(fieldName)!.GetDefaultState(),
-                (__) => ({
-                  ...__,
-                  commonFormState: {
-                    ...__.commonFormState,
-                    modifiedByUser: true,
-                  },
-                }),
-              )(_.fieldStates),
-            }));
+            props.setState(
+              RecordAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+                  fieldName,
+                  FieldTemplates.get(fieldName)!.GetDefaultState,
+                  (_) => ({
+                    ..._,
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(_.commonFormState),
+                  }),
+                ),
+              ),
+            );
           },
         }),
       );
