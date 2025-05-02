@@ -19,6 +19,7 @@ export const FormDispatcher = {
       renderer: Form<T>,
       dispatcherContext: DispatcherContext<T>,
       isNested: boolean,
+      launcherName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       (renderer.kind == "recordForm"
         ? type.kind != "record"
@@ -31,6 +32,8 @@ export const FormDispatcher = {
               renderer,
               dispatcherContext,
               isNested,
+              formName,
+              launcherName,
             )
         : ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(
             `expected a record form but got a ${renderer.kind} form`,

@@ -7,10 +7,7 @@ import {
 } from "../state";
 import { id } from "../../../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
-import { Sum } from "../../../../../../../collections/domains/sum/state";
 import { replaceWith } from "../../../../../../../fun/domains/updater/domains/replaceWith/state";
-import { DispatcherContext } from "../../../../deserializer/state";
-import { DispatchParsedLauncher } from "../../../../deserializer/state";
 import { List } from "immutable";
 import { FormDispatcher } from "../../../state";
 
@@ -37,8 +34,8 @@ export const DispatchFormRunner = <
                 !AsyncState.Operations.hasValue(
                   current.deserializedSpecification.sync,
                 ) ||
-                current.formRef.entity.kind == "r" ||
-                current.formRef.config.kind == "r"
+                current.launcherRef.entity.kind == "r" ||
+                current.launcherRef.config.kind == "r"
               )
                 return id;
 
@@ -50,11 +47,11 @@ export const DispatchFormRunner = <
                   }),
                 );
 
-              if (current.formRef.entity.value.kind == "errors") {
+              if (current.launcherRef.entity.value.kind == "errors") {
                 console.error(
                   `Error parsing entity for form '${
-                    current.formRef.formName
-                  }': ${current.formRef.entity.value.errors
+                    current.launcherRef.name
+                  }': ${current.launcherRef.entity.value.errors
                     .valueSeq()
                     .toArray()
                     .join("\n")}`,
@@ -62,16 +59,16 @@ export const DispatchFormRunner = <
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
-                    errors: current.formRef.entity.value.errors,
+                    errors: current.launcherRef.entity.value.errors,
                   }),
                 );
               }
 
-              if (current.formRef.config.value.kind == "errors") {
+              if (current.launcherRef.config.value.kind == "errors") {
                 console.error(
                   `Error parsing global configuration for form '${
-                    current.formRef.formName
-                  }': ${current.formRef.config.value.errors
+                    current.launcherRef.name
+                  }': ${current.launcherRef.config.value.errors
                     .valueSeq()
                     .toArray()
                     .join("\n")}`,
@@ -79,42 +76,43 @@ export const DispatchFormRunner = <
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
-                    errors: current.formRef.config.value.errors,
+                    errors: current.launcherRef.config.value.errors,
                   }),
                 );
               }
 
-              const formRef = current.formRef;
+              const formRef = current.launcherRef;
               const dispatcherContext =
                 current.deserializedSpecification.sync.value.value
                   .dispatcherContext;
 
               const passthroughFormLauncher =
                 current.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                  formRef.formName,
+                  formRef.name,
                 );
 
               if (passthroughFormLauncher == undefined) {
                 console.error(
-                  `Cannot find form '${formRef.formName}' in the launchers`,
+                  `Cannot find form '${formRef.name}' in the launchers`,
                 );
 
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
                     errors: List([
-                      `Cannot find form '${formRef.formName}' in the launchers`,
+                      `Cannot find form '${formRef.name}' in the launchers`,
                     ]),
                   }),
                 );
               }
 
               const Form = FormDispatcher.Operations.Dispatch(
-                formRef.formName,
+                passthroughFormLauncher.formName,
                 passthroughFormLauncher.type,
                 passthroughFormLauncher.renderer,
                 dispatcherContext,
                 false,
+                formRef.name
               );
 
               if (Form.kind == "errors") {
@@ -164,8 +162,8 @@ export const DispatchFormRunner = <
           AsyncState.Operations.hasValue(
             props.context.deserializedSpecification.sync,
           ) &&
-          props.context.formRef.entity.kind != "r" &&
-          props.context.formRef.config.kind != "r" &&
+          props.context.launcherRef.entity.kind != "r" &&
+          props.context.launcherRef.config.kind != "r" &&
           (props.context.status.kind == "not initialized" ||
             props.context.status.kind == "loading")
         );

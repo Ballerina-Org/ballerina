@@ -22,6 +22,7 @@ export const ListAbstractRenderer = <
   Context extends FormLabel & {
     type: DispatchParsedType<any>;
     disabled: boolean;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -46,6 +47,7 @@ export const ListAbstractRenderer = <
             ListAbstractRendererState & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<ValueTuple> & any => ({
           disabled: _.disabled,
@@ -54,6 +56,14 @@ export const ListAbstractRenderer = <
             GetDefaultElementState()),
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${elementIndex}]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${elementIndex}]`,
+            ),
+          },
         }),
       )
       .mapState(
@@ -126,7 +136,7 @@ export const ListAbstractRenderer = <
     ListAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
     return (
-      <>
+      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
         <props.view
           {...props}
           context={{
@@ -223,7 +233,7 @@ export const ListAbstractRenderer = <
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

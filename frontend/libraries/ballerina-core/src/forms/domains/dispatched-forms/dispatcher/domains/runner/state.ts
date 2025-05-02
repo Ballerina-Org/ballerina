@@ -16,9 +16,8 @@ import {
   unit,
 } from "../../../../../../../main";
 
-export type DispatchFormRef = {
-  formName: string;
-} & {
+export type LauncherRef = {
+  name: string;
   kind: "passthrough";
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
@@ -45,7 +44,7 @@ export type DispatchFormRunnerContext<
   T extends { [key in keyof T]: { type: any; state: any } },
 > = {
   extraContext: any;
-  formRef: DispatchFormRef;
+  launcherRef: LauncherRef;
   showFormParsingErrors: BasicFun<
     DispatchSpecificationDeserializationResult<T>,
     JSX.Element

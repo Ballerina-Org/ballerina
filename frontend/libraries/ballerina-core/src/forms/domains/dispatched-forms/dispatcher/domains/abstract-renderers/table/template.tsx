@@ -15,6 +15,8 @@ import {
   TableFormRenderer,
   ValueRecord,
   DispatchCommonFormState,
+  FormLabel,
+  Bindings,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -28,7 +30,13 @@ const EmbeddedValueInfiniteStreamTemplate =
     AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
   );
 
-export const TableAbstractRenderer = (
+export const TableAbstractRenderer = <
+  Context extends FormLabel & {
+    bindings: Bindings;
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
+  ForeignMutationsExpected,
+>(
   CellTemplates: Map<
     string,
     {
@@ -66,6 +74,14 @@ export const TableAbstractRenderer = (
             disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${chunkIndex}][${column}][${rowId}]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${chunkIndex}][${column}][${rowId}]`,
+              ),
+            },
           };
         })
         .mapState<AbstractTableRendererState>((_) =>
@@ -265,8 +281,6 @@ export const TableAbstractRenderer = (
       disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    console.debug("EmbeddedCellTemplates 2", EmbeddedCellTemplates);
-
     const tableData =
       props.context.customFormState.stream.loadedElements.flatMap(
         (chunk, chunkIndex) =>
@@ -292,7 +306,9 @@ export const TableAbstractRenderer = (
       );
 
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -339,7 +355,7 @@ export const TableAbstractRenderer = (
           EmbeddedTableData={tableData}
           DetailsRenderer={embedDetailsRenderer}
         />
-      </>
+      </span>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
 };

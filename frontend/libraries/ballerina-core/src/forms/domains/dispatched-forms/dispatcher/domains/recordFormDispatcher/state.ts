@@ -18,6 +18,8 @@ export const RecordFormDispatcher = {
       renderer: RecordFormRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       isNested: boolean = false,
+      formName: string,
+      launcherName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<
@@ -80,6 +82,14 @@ export const RecordFormDispatcher = {
                   .mapContext((_: any) => ({
                     ..._,
                     type: renderer.type,
+                    ...(!isNested && launcherName
+                      ? {
+                          identifiers: {
+                            withLauncher: `[${launcherName}][${formName}]`,
+                            withoutLauncher: `[${formName}]`,
+                          },
+                        }
+                      : {}),
                   }))
                   .withView(concreteRenderer),
               ),

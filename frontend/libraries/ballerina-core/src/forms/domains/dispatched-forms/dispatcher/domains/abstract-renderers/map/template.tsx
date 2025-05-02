@@ -30,6 +30,7 @@ export const MapAbstractRenderer = <
   Context extends FormLabel & {
     type: DispatchParsedType<any>;
     disabled: boolean;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -71,6 +72,14 @@ export const MapAbstractRenderer = <
           disabled: _.disabled,
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${elementIndex}][key]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${elementIndex}][key]`,
+            ),
+          },
         }),
       )
       .mapState(
@@ -170,6 +179,7 @@ export const MapAbstractRenderer = <
             MapAbstractRendererState<KeyFormState, ValueFormState> & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<PredicateValue> & ValueFormState & { bindings: Bindings } => {
           return {
@@ -182,6 +192,14 @@ export const MapAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${elementIndex}][value]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${elementIndex}][value]`,
+              ),
+            },
           };
         },
       )
@@ -283,7 +301,7 @@ export const MapAbstractRenderer = <
     >
   >((props) => {
     return (
-      <>
+      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
         <props.view
           {...props}
           context={{
@@ -339,7 +357,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

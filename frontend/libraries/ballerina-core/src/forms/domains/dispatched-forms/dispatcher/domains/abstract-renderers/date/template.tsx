@@ -18,12 +18,13 @@ export const DateAbstractRenderer = <
       Value<Date> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     DateAbstractRendererState,
     ForeignMutationsExpected & { onChange: DispatchOnChange<Date> },
     DateAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         foreignMutations={{
@@ -53,6 +54,6 @@ export const DateAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([]);
 };

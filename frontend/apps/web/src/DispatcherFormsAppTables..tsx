@@ -121,7 +121,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
     ) {
       const toApiRawParser =
         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-          "UsersSetup",
+          "UsersSetupLauncher",
         )!.parseValueToApi;
       setDelta(
         DispatchDeltaTransfer.Default.FromDelta(
@@ -144,7 +144,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
         ) {
           const parsed =
             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-              .get("UsersSetup")!
+              .get("UsersSetupLauncher")!
               .parseEntityFromApi(raw);
           if (parsed.kind == "errors") {
             console.error("parsed entity errors", parsed.errors);
@@ -241,8 +241,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
                   context={{
                     ...specificationDeserializer,
                     ...tablesRunnerState,
-                    formRef: {
-                      formName: "UsersSetup",
+                    launcherRef: {
+                      name: "UsersSetupLauncher",
                       kind: "passthrough",
                       entity: entity,
                       config: Sum.Default.left(

@@ -16,7 +16,9 @@ import { DispatchOnChange } from "../../../state";
 import React from "react";
 
 export const StringAbstractRenderer = <
-  Context extends FormLabel,
+  Context extends FormLabel & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >() => {
   return Template.Default<
@@ -29,7 +31,7 @@ export const StringAbstractRenderer = <
     ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
     StringAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         foreignMutations={{
@@ -52,6 +54,6 @@ export const StringAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([]);
 };

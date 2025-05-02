@@ -24,6 +24,7 @@ export const DispatchTupleAbstractRenderer = <
   Context extends FormLabel & {
     disabled: boolean;
     type: DispatchParsedType<any>;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -35,6 +36,7 @@ export const DispatchTupleAbstractRenderer = <
         commonFormState: { modifiedByUser: boolean };
         type: DispatchParsedType<any>;
         bindings: Bindings;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
       any,
       {
@@ -53,11 +55,13 @@ export const DispatchTupleAbstractRenderer = <
             TupleAbstractRendererState & {
               bindings: Bindings;
               extraContext: any;
+              identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<PredicateValue> & {
           commonFormState: { modifiedByUser: boolean };
           type: DispatchParsedType<any>;
           bindings: Bindings;
+          identifiers: { withLauncher: string; withoutLauncher: string };
         } => ({
           ...(_.itemFormStates.get(itemIndex) ||
             ItemFormStates.get(itemIndex)!()),
@@ -66,6 +70,14 @@ export const DispatchTupleAbstractRenderer = <
           type: _.type,
           bindings: _.bindings,
           extraContext: _.extraContext,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(
+              `[${itemIndex + 1}]`,
+            ),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${itemIndex + 1}]`,
+            ),
+          },
         }),
       )
       .mapState(
@@ -127,7 +139,11 @@ export const DispatchTupleAbstractRenderer = <
       );
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean },
+    Context &
+      Value<ValueTuple> & {
+        disabled: boolean;
+        identifiers: { withLauncher: string; withoutLauncher: string };
+      },
     TupleAbstractRendererState,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueTuple>;
@@ -135,7 +151,7 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
     return (
-      <>
+      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
         <props.view
           {...props}
           context={{
@@ -146,7 +162,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

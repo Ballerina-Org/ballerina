@@ -16,7 +16,9 @@ import { DispatchOnChange } from "../../../state";
 import { DispatchCommonFormState } from "../../../../built-ins/state";
 
 export const UnionAbstractRenderer = <
-  Context extends FormLabel,
+  Context extends FormLabel & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >(
   //TODO: Use state and values
@@ -61,6 +63,14 @@ export const UnionAbstractRenderer = <
             commonFormState: {
               modifiedByUser: true,
             },
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${caseName}]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${caseName}]`,
+              ),
+            },
           };
           return context;
         },
@@ -78,7 +88,10 @@ export const UnionAbstractRenderer = <
           })),
       );
   return Template.Default<
-    Context & Value<ValueUnionCase>,
+    Context &
+      Value<ValueUnionCase> & {
+        identifiers: { withLauncher: string; withoutLauncher: string };
+      },
     UnionAbstractRendererState,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueUnionCase>;
@@ -86,7 +99,7 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
     return (
-      <>
+      <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
         <props.view
           {...props}
           context={props.context}
@@ -95,7 +108,7 @@ export const UnionAbstractRenderer = <
           }}
           embeddedCaseTemplate={embeddedCaseTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

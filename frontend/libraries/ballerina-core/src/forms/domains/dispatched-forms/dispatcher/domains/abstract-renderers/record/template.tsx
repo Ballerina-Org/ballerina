@@ -25,7 +25,9 @@ import {
 import { DispatchOnChange } from "../../../state";
 
 export const RecordAbstractRenderer = <
-  Context extends FormLabel & { bindings: Bindings },
+  Context extends FormLabel & { bindings: Bindings } & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >(
   FieldTemplates: Map<
@@ -47,6 +49,7 @@ export const RecordAbstractRenderer = <
       .mapContext(
         (
           _: Value<ValueRecord> & {
+            identifiers: { withLauncher: string; withoutLauncher: string };
             fieldStates: Map<string, any>;
             disabled: boolean;
             bindings: Bindings;
@@ -55,6 +58,12 @@ export const RecordAbstractRenderer = <
           },
         ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
           ..._,
+          identifiers: {
+            withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
+            withoutLauncher: _.identifiers.withoutLauncher.concat(
+              `[${fieldName}]`,
+            ),
+          },
           value: _.value.fields.get(fieldName)!,
           type:
             _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
@@ -209,7 +218,9 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           context={{
             ...props.context,
@@ -223,7 +234,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

@@ -320,8 +320,8 @@ export const DispatcherFormsApp = (props: {}) => {
                     context={{
                       ...specificationDeserializer,
                       ...personConfigState,
-                      formRef: {
-                        formName: "person-config",
+                      launcherRef: {
+                        name: "person-config",
                         kind: "passthrough",
                         entity: config,
                         config: Sum.Default.left(
@@ -360,8 +360,8 @@ export const DispatcherFormsApp = (props: {}) => {
                   context={{
                     ...specificationDeserializer,
                     ...personPassthroughFormState,
-                    formRef: {
-                      formName: "person-transparent",
+                    launcherRef: {
+                      name: "person-transparent",
                       kind: "passthrough",
                       entity: personEntity,
                       config,

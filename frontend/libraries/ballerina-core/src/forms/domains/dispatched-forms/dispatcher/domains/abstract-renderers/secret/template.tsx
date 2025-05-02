@@ -14,7 +14,9 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 import { DispatchOnChange } from "../../../state";
 
 export const SecretAbstractRenderer = <
-  Context extends FormLabel,
+  Context extends FormLabel & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >() => {
   return Template.Default<
@@ -27,7 +29,7 @@ export const SecretAbstractRenderer = <
     ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
     SecretAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         foreignMutations={{
@@ -46,6 +48,6 @@ export const SecretAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([]);
 };

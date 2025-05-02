@@ -33,6 +33,7 @@ export type AbstractTableRendererReadonlyContext = {
   type: ParsedType<any>;
   bindings: Bindings;
   value: ValueTable;
+  identifiers: { withLauncher: string; withoutLauncher: string };
 };
 
 export type AbstractTableRendererState = {
@@ -136,6 +137,7 @@ export type AbstractTableRendererView<
     AbstractTableRendererState & {
       hasMoreValues: boolean;
       disabled: boolean;
+      identifiers: { withLauncher: string; withoutLauncher: string };
     },
   AbstractTableRendererState,
   ForeignMutationsExpected & {

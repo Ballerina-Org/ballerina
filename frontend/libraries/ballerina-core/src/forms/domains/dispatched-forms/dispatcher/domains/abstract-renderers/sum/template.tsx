@@ -21,6 +21,7 @@ export const SumAbstractRenderer = <
   Context extends FormLabel & {
     disabled: boolean;
     type: DispatchParsedType<any>;
+    identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
 >(
@@ -48,6 +49,10 @@ export const SumAbstractRenderer = <
       value: _.value.value.value,
       bindings: _.bindings,
       extraContext: _.extraContext,
+      identifiers: {
+        withLauncher: _.identifiers.withLauncher.concat(`[left]`),
+        withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
+      },
     }))
     ?.mapState(
       (
@@ -113,6 +118,10 @@ export const SumAbstractRenderer = <
       value: _.value.value.value,
       bindings: _.bindings,
       extraContext: _.extraContext,
+      identifiers: {
+        withLauncher: _.identifiers.withLauncher.concat(`[right]`),
+        withoutLauncher: _.identifiers.withoutLauncher.concat(`[right]`),
+      },
     }))
     .mapState(
       (
@@ -173,7 +182,12 @@ export const SumAbstractRenderer = <
     );
 
   return Template.Default<
-    Context & Value<ValueSum> & { disabled: boolean; extraContext: any },
+    Context &
+      Value<ValueSum> & {
+        disabled: boolean;
+        extraContext: any;
+        identifiers: { withLauncher: string; withoutLauncher: string };
+      },
     SumAbstractRendererState<LeftFormState, RightFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueSum>;
@@ -186,7 +200,9 @@ export const SumAbstractRenderer = <
     >
   >((props) => {
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{ ...props.context }}
@@ -196,7 +212,7 @@ export const SumAbstractRenderer = <
           embeddedLeftTemplate={embeddedLeftTemplate}
           embeddedRightTemplate={embeddedRightTemplate}
         />
-      </>
+      </span>
     );
   }).any([]);
 };

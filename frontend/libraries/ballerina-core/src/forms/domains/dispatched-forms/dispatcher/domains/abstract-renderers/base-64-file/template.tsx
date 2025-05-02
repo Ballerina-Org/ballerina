@@ -16,12 +16,13 @@ export const Base64FileAbstractRenderer = <
       Value<string> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     Base64FileAbstractRendererState,
     ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
     Base64FileAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         foreignMutations={{
@@ -40,6 +41,6 @@ export const Base64FileAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([]);
 };

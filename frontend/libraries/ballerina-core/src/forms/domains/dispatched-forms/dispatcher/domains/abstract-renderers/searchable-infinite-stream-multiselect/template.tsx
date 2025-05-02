@@ -23,7 +23,9 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 import { DispatchOnChange } from "../../../state";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
-  Context extends FormLabel,
+  Context extends FormLabel & {
+    identifiers: { withLauncher: string; withoutLauncher: string };
+  },
   ForeignMutationsExpected,
 >() => {
   const Co = CoTypedFactory<
@@ -89,6 +91,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       Value<ValueRecord> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     SearchableInfiniteStreamAbstractRendererState,
     ForeignMutationsExpected & {
@@ -99,7 +102,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ForeignMutationsExpected
     >
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         context={{
@@ -196,7 +199,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([
     loaderRunner,
     debouncerRunner.mapContextFromProps((props) => ({

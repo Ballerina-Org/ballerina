@@ -267,7 +267,7 @@ export const NestedDispatcher = {
         string
       > = renderer.kind == "recordForm"
         ? FormDispatcher.Operations.Dispatch(
-            "inline record form",
+            "inline-record-form",
             renderer.type,
             renderer,
             dispatcherContext,
@@ -276,7 +276,7 @@ export const NestedDispatcher = {
         : renderer.kind == "tableForm"
           ? renderer.inlinedApi == undefined
             ? ValueOrErrors.Default.throwOne(
-                " inlined table form renderer has no api",
+                "inlined-table-form-renderer-has-no-api",
               )
             : TableFormDispatcher.Operations.Dispatch(
                 renderer.type,

@@ -33,6 +33,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       Value<ValueOption> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     SearchableInfiniteStreamAbstractRendererState
   >();
@@ -95,6 +96,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       Value<ValueOption> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     SearchableInfiniteStreamAbstractRendererState,
     ForeignMutationsExpected & {
@@ -105,7 +107,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ForeignMutationsExpected
     >
   >((props) => (
-    <>
+    <span className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}>
       <props.view
         {...props}
         context={{
@@ -191,7 +193,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
           },
         }}
       />
-    </>
+    </span>
   )).any([
     loaderRunner,
     debouncerRunner.mapContextFromProps((props) => ({

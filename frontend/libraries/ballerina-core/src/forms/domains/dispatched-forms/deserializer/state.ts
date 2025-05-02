@@ -37,6 +37,7 @@ import { BaseRenderer } from "./domains/specification/domains/form/domains/rende
 
 export type DispatchParsedPassthroughLauncher<T> = {
   kind: "passthrough";
+  formName: string;
   renderer: Form<T>;
   parseEntityFromApi: (_: any) => ValueOrErrors<PredicateValue, string>;
   parseGlobalConfigurationFromApi: (
@@ -200,6 +201,7 @@ export const parseDispatchFormsToLaunchers =
                         apiConverters,
                         injectedPrimitives,
                       )(value, state),
+                    formName: launcher.form,
                   },
                 ]),
               ),

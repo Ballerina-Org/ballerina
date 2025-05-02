@@ -25,8 +25,8 @@ export const DispatchFormRunnerTemplate = <
     DispatchFormRunnerState<T>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
-    const entity = props.context.formRef.entity;
-    const config = props.context.formRef.config;
+    const entity = props.context.launcherRef.entity;
+    const config = props.context.launcherRef.config;
 
     if (entity.kind == "r" || config.kind == "r") {
       return <></>;
@@ -69,8 +69,8 @@ export const DispatchFormRunnerTemplate = <
             updater: Updater<PredicateValue>,
             delta: DispatchDelta,
           ) => {
-            if (props.context.formRef.entity.kind == "r") return;
-            props.context.formRef.onEntityChange(updater, delta);
+            if (props.context.launcherRef.entity.kind == "r") return;
+            props.context.launcherRef.onEntityChange(updater, delta);
           },
         }}
       />
