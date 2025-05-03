@@ -44,6 +44,9 @@ module Record =
           }
         )
 
-      let imports = "from dataclasses import dataclass" |> Import |> Set.singleton
+      let imports =
+        { Source = "dataclasses"
+          Target = "dataclass" }
+        |> Set.singleton
 
       recordCode, imports

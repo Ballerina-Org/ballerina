@@ -92,7 +92,8 @@ module Runner =
           RequiredImport = None }
       Float =
         { GeneratedTypeName = "Decimal"
-          RequiredImport = Some(Import "from decimal import Decimal") }
+          RequiredImport = Some { Source = "decimal"
+                                  Target = "Decimal" } }
       Bool =
         { GeneratedTypeName = "bool"
           RequiredImport = None }
@@ -101,34 +102,42 @@ module Runner =
           RequiredImport = None }
       Date =
         { GeneratedTypeName = "date"
-          RequiredImport = Some(Import "from datetime import date") }
+          RequiredImport = Some { Source = "datetime"
+                                  Target = "date" } }
       DateTime =
         { GeneratedTypeName = "datetime"
-          RequiredImport = Some(Import "from datetime import datetime") }
+          RequiredImport = Some { Source = "datetime"
+                                  Target = "datetime" } }
       Guid =
         { GeneratedTypeName = "UUID"
-          RequiredImport = Some(Import "from uuid import UUID") }
+          RequiredImport = Some { Source = "uuid"
+                                  Target = "UUID" } }
       Unit =
         { GeneratedTypeName = "None"
           RequiredImport = None }
       Option =
         { GeneratedTypeName = "Option"
-          RequiredImport = Some(Import "from ballerina_core.primitives import Option") }
+          RequiredImport = Some { Source = "ballerina_core.primitives"
+                                  Target = "Option" } }
       Set =
         { GeneratedTypeName = "frozenset"
           RequiredImport = None }
       List =
         { GeneratedTypeName = "Sequence"
-          RequiredImport = Some(Import "from collections.abc import Sequence") }
+          RequiredImport = Some { Source = "collections.abc"
+                                  Target = "Sequence" } }
       Tuple =
         { GeneratedTypeName = "tuple"
           RequiredImport = None }
       Map =
         { GeneratedTypeName = "Mapping"
-          RequiredImport = Some(Import "from collections.abc import Mapping") }
+          RequiredImport = Some { Source = "collections.abc"
+                                  Target = "Mapping" } }
       Sum =
         { GeneratedTypeName = "Sum"
-          RequiredImport = Some(Import "from ballerina_core.primitives import Sum") } }
+          RequiredImport = Some { Source = "ballerina_core.primitives"
+                                  Target = "Sum" } }
+    }
 
   let runSingle (outputPath: string) =
     let typeDefinition, otherTypes = testTypes

@@ -6,11 +6,14 @@ open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 
 [<Test>]
 let ``Test should create sorted imports`` () =
-  let imports =
+  let imports: Set<Import> =
     [ 
-      Import "from x import y"
-      Import "from dataclasses import dataclass"
-      Import "from collections.abc import Sequence" ]
+      { Source = "x"
+        Target = "y" }
+      { Source = "dataclasses"
+        Target = "dataclass" }
+      { Source = "collections.abc"
+        Target = "Sequence" } ]
     |> Set.ofList
 
   let actual = Ballerina.DSL.Codegen.Python.LanguageConstructs.Header.Generate imports |> StringBuilder.ToString

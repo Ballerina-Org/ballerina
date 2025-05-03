@@ -13,7 +13,7 @@ module Header =
 from __future__ import annotations
 {{ String.Join("\n",
      imports
-     |> Set.map (fun (Import i) -> i)
+     |> Set.map (fun i -> $"from {i.Source} import {i.Target}")
      |> List.ofSeq
      |> List.sort
    )

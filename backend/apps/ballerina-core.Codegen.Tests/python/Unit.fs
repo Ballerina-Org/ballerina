@@ -15,7 +15,9 @@ let ``Test should create unit`` () =
     """Unit = Literal[None]
 """
 
-  let expectedImports = Set.singleton (Import "from typing import Literal")
+  let expectedImports =
+    Set.singleton { Source = "typing"
+                    Target = "Literal" }
 
   let actualNormalized = code |> StringBuilder.ToString |> normalize
   let expectedNormalized = expected |> normalize

@@ -27,7 +27,9 @@ class TestRecord:
 
 """
 
-  let expectedImports = Set.singleton (Import "from dataclasses import dataclass")
+  let expectedImports =
+    Set.singleton { Source = "dataclasses"
+                    Target = "dataclass" }
 
   let actualNormalized = recordCode |> StringBuilder.ToString |> normalize
   let expectedNormalized = expected |> normalize
@@ -53,7 +55,9 @@ class TestRecord:
     pass
 """
 
-  let expectedImports = Set.singleton (Import "from dataclasses import dataclass")
+  let expectedImports =
+    Set.singleton { Source = "dataclasses"
+                    Target = "dataclass" }
 
   let actualNormalized = recordCode |> StringBuilder.ToString |> normalize
   let expectedNormalized = expected |> normalize
