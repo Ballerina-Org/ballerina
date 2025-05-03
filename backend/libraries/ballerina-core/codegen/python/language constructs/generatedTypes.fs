@@ -14,6 +14,11 @@ open Ballerina.Core.StringBuilder
 
 module GeneratedTypes =
 
+  let private createAlias (typeId: TypeId) (t: ExprType) =
+    state {
+      let! annotation = ExprType.GenerateTypeAnnotation t
+      return StringBuilder.One $"{typeId.TypeName} = {annotation}\n"
+    }
 
   type ExprType with
     static member Find (otherTypes: PythonGeneratedType list) (typeId: TypeId) : Sum<ExprType, Errors> =
@@ -37,6 +42,7 @@ module GeneratedTypes =
       Type: ExprType }
 
     static member Generate (codegenConfig: PythonCodeGenConfig) (typesToGenerate: PythonGeneratedType list) =
+
       state.All(
         typesToGenerate
         |> Seq.map (fun t ->
@@ -114,6 +120,14 @@ module GeneratedTypes =
                 |> state.SetState
 
               recordCode
+            | ExprType.MapType(keyType, valueType) ->
+              return! createAlias { TypeName = t.TypeName } (ExprType.MapType(keyType, valueType))
+            | ExprType.TupleType elements ->
+              return! createAlias { TypeName = t.TypeName } (ExprType.TupleType elements)
+            | ExprType.OptionType element ->
+              return! createAlias { TypeName = t.TypeName } (ExprType.OptionType element)
+            | ExprType.ListType e -> return! createAlias { TypeName = t.TypeName } (ExprType.ListType e)
+            | ExprType.SetType e -> return! createAlias { TypeName = t.TypeName } (ExprType.SetType e)
             | _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
           }
           |> state.WithErrorContext $"...when generating type {t.TypeName}")

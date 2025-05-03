@@ -66,9 +66,20 @@ module Runner =
           "someTuple", ExprType.TupleType([ ExprType.PrimitiveType StringType; ExprType.PrimitiveType IntType ]) ]
     )
 
+  let someMapId = { TypeName = "SomeMap" }
+
+  let someMapType =
+    ExprType.MapType(ExprType.PrimitiveType StringType, ExprType.PrimitiveType IntType)
+
+  let someSetId = { TypeName = "SomeSet" }
+
+  let someSetType = ExprType.SetType(ExprType.PrimitiveType StringType)
+
   let otherTypes =
     [ taxBlockTypeId, taxBlockType
       currencyTypeId, currencyType
+      someMapId, someMapType
+      someSetId, someSetType
       taxedPaymentSectionTypeId, taxedPaymentSectionType
       noTaxPaymentSectionTypeId, noTaxPaymentSectionType
       paymentSectionTypeId, paymentSectionType ]
