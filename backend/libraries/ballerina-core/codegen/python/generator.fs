@@ -30,12 +30,13 @@ module Main =
           let! generatedTypes = PythonGeneratedType.Generate typesToGenerate
           let! s = state.GetState()
 
-          StringBuilder.Many(
-            seq {
-              yield Header.Generate codegenConfig s.UsedImports
-              yield generatedTypes
-            }
-          )
+          return
+            StringBuilder.Many(
+              seq {
+                yield Header.Generate s.UsedImports
+                yield generatedTypes
+              }
+            )
         }
         |> state.WithErrorContext $"...when generating Python code"
 
