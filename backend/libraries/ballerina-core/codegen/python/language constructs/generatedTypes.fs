@@ -14,10 +14,10 @@ open Ballerina.Core.StringBuilder
 
 module GeneratedTypes =
 
-  let private createAlias (typeId: TypeId) (t: ExprType) =
+  let private alias (typeId: TypeId) (t: ExprType) =
     state {
       let! annotation = ExprType.GenerateTypeAnnotation t
-      return StringBuilder.One $"{typeId.TypeName} = {annotation}\n"
+      return StringBuilder.One $"{typeId.TypeName} = {annotation}\n\n"
     }
 
   type ExprType with
@@ -121,13 +121,11 @@ module GeneratedTypes =
 
               recordCode
             | ExprType.MapType(keyType, valueType) ->
-              return! createAlias { TypeName = t.TypeName } (ExprType.MapType(keyType, valueType))
-            | ExprType.TupleType elements ->
-              return! createAlias { TypeName = t.TypeName } (ExprType.TupleType elements)
-            | ExprType.OptionType element ->
-              return! createAlias { TypeName = t.TypeName } (ExprType.OptionType element)
-            | ExprType.ListType e -> return! createAlias { TypeName = t.TypeName } (ExprType.ListType e)
-            | ExprType.SetType e -> return! createAlias { TypeName = t.TypeName } (ExprType.SetType e)
+              return! alias { TypeName = t.TypeName } (ExprType.MapType(keyType, valueType))
+            | ExprType.TupleType elements -> return! alias { TypeName = t.TypeName } (ExprType.TupleType elements)
+            | ExprType.OptionType element -> return! alias { TypeName = t.TypeName } (ExprType.OptionType element)
+            | ExprType.ListType e -> return! alias { TypeName = t.TypeName } (ExprType.ListType e)
+            | ExprType.SetType e -> return! alias { TypeName = t.TypeName } (ExprType.SetType e)
             | _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
           }
           |> state.WithErrorContext $"...when generating type {t.TypeName}")
