@@ -19,17 +19,13 @@ module Model =
       Date: CodegenConfigTypeDef
       DateTime: CodegenConfigTypeDef
       Guid: CodegenConfigTypeDef
-      Unit: CodegenConfigUnitDef
+      Unit: CodegenConfigTypeDef
       Option: CodegenConfigOptionDef
       Set: CodegenConfigSetDef
       List: CodegenConfigListDef
       Map: CodegenConfigMapDef
       Sum: CodegenConfigSumDef
       Tuple: CodegenConfigTupleDef }
-
-  and CodegenConfigUnitDef =
-    { GeneratedTypeName: string
-      RequiredImport: Option<Import> }
 
   and CodegenConfigListDef =
     { GeneratedTypeName: string
