@@ -237,6 +237,26 @@ export const TableAbstractRenderer = <
     any,
     any
   >((props) => {
+    if (!PredicateValue.Operations.IsTable(props.context.value)) {
+      console.error(
+        `Table expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering table field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context?.label && `${props.context?.label}: `}RENDER ERROR:
+          Table value expected for table but got something else
+        </p>
+      );
+    }
+
+    if (!props.context.customFormState.isInitialized) {
+      return <></>;
+    }
+
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,
@@ -250,11 +270,12 @@ export const TableAbstractRenderer = <
     // TODO -- set error template up top
     if (visibleColumns.kind == "errors") {
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
-      return <></>;
-    }
-
-    if (!props.context.customFormState.isInitialized) {
-      return <></>;
+      return (
+        <p>
+          {props.context?.label}: Error while computing visible columns, check
+          console
+        </p>
+      );
     }
 
     const disabledColumnKeys = ValueOrErrors.Operations.All(
@@ -278,7 +299,12 @@ export const TableAbstractRenderer = <
     // TODO -- set the top level state as error
     if (disabledColumnKeys.kind == "errors") {
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
-      return <></>;
+      return (
+        <p>
+          {props.context?.label}: Error while computing disabled column keys,
+          check console
+        </p>
+      );
     }
 
     const disabledColumnKeysSet = Set(

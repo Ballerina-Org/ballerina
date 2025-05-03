@@ -1,10 +1,10 @@
 import {
+  DispatchCommonFormState,
   FormLabel,
   simpleUpdater,
   Unit,
   View,
 } from "../../../../../../../../main";
-import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { DispatchOnChange } from "../../../state";
 
 export type UnitAbstractRendererState = {

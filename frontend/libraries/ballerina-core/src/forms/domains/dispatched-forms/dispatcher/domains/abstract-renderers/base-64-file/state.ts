@@ -1,8 +1,7 @@
 import { Value } from "../../../../../../../value/state";
 import { View } from "../../../../../../../template/state";
-import { FormLabel, SimpleCallback } from "../../../../../../../../main";
+import { DispatchCommonFormState, FormLabel, SimpleCallback } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
-import { DispatchCommonFormState } from "../../../../built-ins/state";
 import { DispatchOnChange } from "../../../state";
 
 export type Base64FileAbstractRendererState = {

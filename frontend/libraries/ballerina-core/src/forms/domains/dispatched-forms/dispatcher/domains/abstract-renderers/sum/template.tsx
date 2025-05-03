@@ -111,8 +111,7 @@ export const SumAbstractRenderer = <
           );
         },
       }),
-    )
-    // .mapViewFromProps((props) => props.context.value);
+    );
 
   const embeddedRightTemplate = rightTemplate
     ?.mapContext((_: any): any => ({
@@ -192,6 +191,22 @@ export const SumAbstractRenderer = <
       ForeignMutationsExpected
     >
   >((props) => {
+    if (!PredicateValue.Operations.IsSum(props.context.value)) {
+      console.error(
+        `Sum expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering sum field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Sum value expected for sum but got something else
+        </p>
+      );
+    }
+
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}

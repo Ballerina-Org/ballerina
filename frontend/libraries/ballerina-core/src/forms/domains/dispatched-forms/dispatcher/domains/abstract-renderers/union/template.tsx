@@ -2,6 +2,7 @@ import React, { Context } from "react";
 import {
   BasicFun,
   BasicUpdater,
+  DispatchCommonFormState,
   FormLabel,
   PredicateValue,
   Updater,
@@ -13,7 +14,6 @@ import { Template } from "../../../../../../../template/state";
 import { UnionAbstractRendererState, UnionAbstractRendererView } from "./state";
 import { Map, Set } from "immutable";
 import { DispatchOnChange } from "../../../state";
-import { DispatchCommonFormState } from "../../../../built-ins/state";
 
 export const UnionAbstractRenderer = <
   Context extends FormLabel & {

@@ -34,6 +34,7 @@ export type AbstractTableRendererReadonlyContext = {
   bindings: Bindings;
   value: ValueTable;
   identifiers: { withLauncher: string; withoutLauncher: string };
+  label?: string;
 };
 
 export type AbstractTableRendererState = {

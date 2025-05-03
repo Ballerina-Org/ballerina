@@ -1050,22 +1050,13 @@ export const PersonConcreteRenderers = {
       ForeignMutationsExpected
     > => {
       return (props) => {
-        if (
-          props.embeddedLeftTemplate == undefined ||
-          props.embeddedRightTemplate == undefined
-        ) {
-          console.error(
-            "embeddedLeftTemplate or embeddedRightTemplate is undefined, but both are expected in defaultSum",
-          );
-          return <></>;
-        }
         return (
           <>
-            {props.embeddedLeftTemplate({
+            {props?.embeddedLeftTemplate?.({
               ...props,
               view: unit,
             })}
-            {props.embeddedRightTemplate({
+            {props?.embeddedRightTemplate?.({
               ...props,
               view: unit,
             })}

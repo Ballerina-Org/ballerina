@@ -140,6 +140,21 @@ export const ListAbstractRenderer = <
     },
     ListAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+      console.error(
+        `Tuple value expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering list field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Tuple value expected for list but got something else
+        </p>
+      );
+    }
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}

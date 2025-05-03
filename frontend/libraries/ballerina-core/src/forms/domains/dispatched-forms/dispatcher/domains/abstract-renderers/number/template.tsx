@@ -1,6 +1,7 @@
 import {
   DispatchDelta,
   FormLabel,
+  PredicateValue,
   replaceWith,
   Template,
   Value,
@@ -21,30 +22,50 @@ export const NumberAbstractRenderer = <
       Value<number> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     NumberAbstractRendererState,
     ForeignMutationsExpected & { onChange: DispatchOnChange<number> },
     NumberAbstractRendererView<Context, ForeignMutationsExpected>
-  >((props) => (
-    <>
-      <props.view
-        {...props}
-        foreignMutations={{
-          ...props.foreignMutations,
-          setNewValue: (_) => {
-            const delta: DispatchDelta = {
-              kind: "NumberReplace",
-              replace: _,
-              state: {
-                commonFormState: props.context.commonFormState,
-                customFormState: props.context.customFormState,
-              },
-              type: props.context.type,
-            };
-            props.foreignMutations.onChange(replaceWith(_), delta);
-          },
-        }}
-      />
-    </>
-  )).any([]);
+  >((props) => {
+    if (!PredicateValue.Operations.IsNumber(props.context.value)) {
+      console.error(
+        `Number expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering number field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Number value expected for number but got something else
+        </p>
+      );
+    }
+    return (
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
+        <props.view
+          {...props}
+          foreignMutations={{
+            ...props.foreignMutations,
+            setNewValue: (_) => {
+              const delta: DispatchDelta = {
+                kind: "NumberReplace",
+                replace: _,
+                state: {
+                  commonFormState: props.context.commonFormState,
+                  customFormState: props.context.customFormState,
+                },
+                type: props.context.type,
+              };
+              props.foreignMutations.onChange(replaceWith(_), delta);
+            },
+          }}
+        />
+      </span>
+    );
+  }).any([]);
 };

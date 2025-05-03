@@ -149,6 +149,22 @@ export const RecordAbstractRenderer = <
     },
     RecordAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+      console.error(
+        `Record expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering record field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Record value expected for record but got something else`
+        </p>
+      );
+    }
+
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,

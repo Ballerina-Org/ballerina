@@ -106,9 +106,26 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       Context,
       ForeignMutationsExpected
     >
-  >((props) => (
-    <span
-      className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+  >((props) => {
+    if (!PredicateValue.Operations.IsOption(props.context.value)) {
+      console.error(
+        `Option expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering searchable infinite stream field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Option value expected for searchable infinite stream but got
+          something else
+        </p>
+      );
+    }
+    return (
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
     >
       <props.view
         {...props}
@@ -195,8 +212,9 @@ export const SearchableInfiniteStreamAbstractRenderer = <
           },
         }}
       />
-    </span>
-  )).any([
+      </span>
+    );
+  }).any([
     loaderRunner,
     debouncerRunner.mapContextFromProps((props) => ({
       ...props.context,

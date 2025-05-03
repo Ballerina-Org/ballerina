@@ -34,6 +34,7 @@ export const EnumMultiselectAbstractRenderer = <
       EnumAbstractRendererState & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     EnumAbstractRendererState
   >();
@@ -42,6 +43,7 @@ export const EnumMultiselectAbstractRenderer = <
       Value<ValueRecord> & {
         disabled: boolean;
         type: DispatchParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
       },
     EnumAbstractRendererState,
     ForeignMutationsExpected & {
@@ -49,8 +51,25 @@ export const EnumMultiselectAbstractRenderer = <
     },
     EnumMultiselectAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+      console.error(
+        `Record expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering enum multiselect field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Record value expected for enum multiselect but got something else
+        </p>
+      );
+    }
     return (
-      <>
+      <span
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
         <props.view
           {...props}
           context={{
@@ -102,7 +121,7 @@ export const EnumMultiselectAbstractRenderer = <
             },
           }}
         />
-      </>
+      </span>
     );
   }).any([
     Co.Template<

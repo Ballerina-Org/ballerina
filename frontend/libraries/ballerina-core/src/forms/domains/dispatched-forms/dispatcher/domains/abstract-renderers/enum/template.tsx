@@ -48,6 +48,21 @@ export const EnumAbstractRenderer = <
     },
     EnumAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsOption(props.context.value)) {
+      console.error(
+        `Option expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering enum field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+      return (
+        <p>
+          {props.context.label && `${props.context.label}: `}RENDER ERROR:
+          Option value expected for enum but got something else
+        </p>
+      );
+    }
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
