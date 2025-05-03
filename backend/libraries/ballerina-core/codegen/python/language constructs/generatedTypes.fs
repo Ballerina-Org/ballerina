@@ -107,19 +107,20 @@ module GeneratedTypes =
             return unitCode
           | ExprType.UnionType cases -> return! PythonGeneratedType.GenerateUnionType t.TypeId cases
           | ExprType.RecordType fields -> return! PythonGeneratedType.GenerateRecordType t.TypeId fields
-          | ExprType.MapType _
-          | ExprType.TupleType _
-          | ExprType.OptionType _
-          | ExprType.PrimitiveType _
-          | ExprType.LookupType _
-          | ExprType.ListType _
-          | ExprType.SumType _
+          | ExprType.MapType _ -> return! alias t.TypeId t.Type
+          | ExprType.TupleType _ -> return! alias t.TypeId t.Type
+          | ExprType.OptionType _ -> return! alias t.TypeId t.Type
+          | ExprType.PrimitiveType _ -> return! alias t.TypeId t.Type
+          | ExprType.LookupType _ -> return! alias t.TypeId t.Type
+          | ExprType.ListType _ -> return! alias t.TypeId t.Type
+          | ExprType.SumType _ -> return! alias t.TypeId t.Type
           | ExprType.SetType _ -> return! alias t.TypeId t.Type
-          | ExprType.OneType _
-          | ExprType.SchemaLookupType _
-          | ExprType.TableType _
-          | ExprType.VarType _
-          | ExprType.CustomType _
+          | ExprType.OneType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
+          | ExprType.SchemaLookupType _ ->
+            return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
+          | ExprType.TableType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
+          | ExprType.VarType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
+          | ExprType.CustomType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
           | ExprType.ManyType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
         }
         |> state.WithErrorContext $"...when generating type {t.TypeId}"
