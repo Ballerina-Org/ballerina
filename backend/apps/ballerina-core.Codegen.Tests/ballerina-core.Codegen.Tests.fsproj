@@ -19,6 +19,7 @@
     <Compile Include="python/Union.fs"/>
     <Compile Include="python/Unit.fs"/>
     <Compile Include="python/Header.fs"/>
+    <Compile Include="python/Annotations.fs"/>
     <Compile Include="Program.fs"/>
   </ItemGroup>
 
