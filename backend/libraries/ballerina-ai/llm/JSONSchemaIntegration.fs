@@ -102,9 +102,6 @@ module private JsonSchemaExtensions =
       schema
 
     static member MakeOneOfJsonSchema(fields: (CaseName * JsonSchema) list) =
-      let schema =
-        JsonSchema(Type = JsonObjectType.Object, Discriminator = discriminatorFieldName)
-
       let oneOfSchemas =
         fields
         |> List.map (fun (key, value) ->
@@ -118,6 +115,14 @@ module private JsonSchemaExtensions =
           oneOfSchema.Properties.Add(discriminatorFieldName, discriminatorProperty)
           oneOfSchema.Properties.Add(valueFieldName, JsonSchema.ToPropertySchema value)
           oneOfSchema)
+
+      let schema =
+        JsonSchema(
+          Type = JsonObjectType.Object,
+          Discriminator = discriminatorFieldName,
+          AllowAdditionalProperties = false,
+          AllowAdditionalItems = false
+        )
 
       for oneOfSchema in oneOfSchemas do
         schema.OneOf.Add oneOfSchema
@@ -339,6 +344,7 @@ module JSONSchemaIntegration =
             let! jsonDiscriminator =
               asMap
               |> Map.tryFindWithError discriminatorFieldName discriminatorFieldName discriminatorFieldName
+              |> Sum.mapRight (fun errors -> errors |> Errors.Map(fun e -> $"Error: {e} in {data}"))
 
             let! discriminator = jsonDiscriminator |> JsonValue.AsString
             let! case = cs |> Map.tryFindWithError { CaseName = discriminator } "case" "case"
