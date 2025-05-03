@@ -250,7 +250,9 @@ export const DispatcherFormsApp = (props: {}) => {
   );
   console.debug(
     "personPassthroughFormState common",
-    JSON.stringify(personPassthroughFormState?.formState?.commonFormState, null,
+    JSON.stringify(
+      personPassthroughFormState?.formState?.commonFormState,
+      null,
       2,
     ),
   );
