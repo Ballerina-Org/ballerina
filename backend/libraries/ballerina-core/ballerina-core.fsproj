@@ -87,7 +87,7 @@
     <Compile Include="codegen/python/language constructs/record.fs" />
     <Compile Include="codegen/python/language constructs/union.fs" />
     <Compile Include="codegen/python/language constructs/unit.fs" />
-    <Compile Include="codegen/python/language constructs/ExprTypeToAnnotation.fs" />
+    <Compile Include="codegen/python/language constructs/annotations.fs" />
     <Compile Include="codegen/python/language constructs/generatedTypes.fs" />
     <Compile Include="codegen/python/language constructs/header.fs" />
     <Compile Include="codegen/python/generator.fs" />
