@@ -23,7 +23,6 @@ module TypeAnnotations =
         state {
           do!
             t.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -52,7 +51,6 @@ module TypeAnnotations =
         | ExprType.TupleType items ->
           do!
             config.Tuple.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -68,7 +66,6 @@ module TypeAnnotations =
 
           do!
             config.List.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -82,7 +79,6 @@ module TypeAnnotations =
 
           do!
             config.Set.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -95,7 +91,6 @@ module TypeAnnotations =
 
           do!
             config.Option.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -110,7 +105,6 @@ module TypeAnnotations =
 
           do!
             config.Map.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -124,7 +118,6 @@ module TypeAnnotations =
 
           do!
             config.Sum.RequiredImport
-            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union

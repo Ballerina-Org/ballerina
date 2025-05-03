@@ -41,94 +41,96 @@ module GeneratedTypes =
     { TypeName: string
       Type: ExprType }
 
-    static member Generate (codegenConfig: PythonCodeGenConfig) (typesToGenerate: PythonGeneratedType list) =
+    static member Generate(typesToGenerate: PythonGeneratedType list) =
 
-      state.All(
-        typesToGenerate
-        |> Seq.map (fun t ->
-          state {
-            match t.Type with
-            | ExprType.UnitType ->
-              let unitCode, imports = PythonUnit.Generate { Name = t.TypeName }
+      typesToGenerate
+      |> List.map (fun t ->
+        state {
+          match t.Type with
+          | ExprType.UnitType ->
+            let unitCode, imports = PythonUnit.Generate { Name = t.TypeName }
 
-              do!
-                imports
-                |> Set.union
-                |> PythonCodeGenState.Updaters.UsedImports
-                |> state.SetState
+            do!
+              imports
+              |> Set.union
+              |> PythonCodeGenState.Updaters.UsedImports
+              |> state.SetState
 
-              unitCode
-            | ExprType.UnionType cases ->
-              let! caseValues =
-                state.All(
-                  cases
-                  |> Map.values
-                  |> Seq.map (fun case ->
-                    state {
-                      let! caseTypeAnnotation = ExprType.GenerateTypeAnnotation case.Fields
+            unitCode
+          | ExprType.UnionType cases ->
+            let! caseValues =
+              cases
+              |> Map.values
+              |> Seq.map (fun case ->
+                state {
+                  let! caseTypeAnnotation = ExprType.GenerateTypeAnnotation case.Fields
 
+                  {| Name = case.CaseName
+                     Type = caseTypeAnnotation |}
+                })
+              |> List.ofSeq
+              |> state.All
 
-                      return
-                        {| Name = case.CaseName
-                           Type = caseTypeAnnotation |}
-                    })
-                  |> List.ofSeq
-                )
+            let! nonEmptyCaseValues =
+              caseValues
+              |> NonEmptyList.TryOfList
+              |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty list of cases.")
+              |> state.OfSum
 
-              let! caseValues =
-                caseValues
-                |> NonEmptyList.TryOfList
-                |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty list of cases.")
-                |> state.OfSum
+            let unionCode, imports =
+              { Name = t.TypeName
+                Cases = nonEmptyCaseValues }
+              |> PythonUnion.Generate
 
-              let unionCode, imports =
-                { Name = t.TypeName
-                  Cases = caseValues }
-                |> PythonUnion.Generate
+            do!
+              imports
+              |> Set.union
+              |> PythonCodeGenState.Updaters.UsedImports
+              |> state.SetState
 
-              do!
-                imports
-                |> Set.union
-                |> PythonCodeGenState.Updaters.UsedImports
-                |> state.SetState
+            unionCode
 
-              unionCode
+          | ExprType.RecordType fields ->
+            let! pythonRecordFields =
+              fields
+              |> Map.toList
+              |> List.map (fun (fieldName, field) ->
+                state {
+                  let! fieldType = field |> ExprType.GenerateTypeAnnotation
 
-            | ExprType.RecordType fields ->
-              let! pythonRecordFields =
-                fields
-                |> Map.toList
-                |> List.map (fun (fieldName, field) ->
-                  state {
-                    let! fieldType = field |> ExprType.GenerateTypeAnnotation
-
-                    {| FieldName = fieldName
-                       FieldType = fieldType |}
-                  })
-                |> state.All
+                  {| FieldName = fieldName
+                     FieldType = fieldType |}
+                })
+              |> state.All
 
 
-              let recordCode, imports =
-                { Name = t.TypeName
-                  Fields = pythonRecordFields }
-                |> PythonRecord.Generate
+            let recordCode, imports =
+              { Name = t.TypeName
+                Fields = pythonRecordFields }
+              |> PythonRecord.Generate
 
-              do!
-                imports
-                |> Set.union
-                |> PythonCodeGenState.Updaters.UsedImports
-                |> state.SetState
+            do!
+              imports
+              |> Set.union
+              |> PythonCodeGenState.Updaters.UsedImports
+              |> state.SetState
 
-              recordCode
-            | ExprType.MapType(keyType, valueType) ->
-              return! alias { TypeName = t.TypeName } (ExprType.MapType(keyType, valueType))
-            | ExprType.TupleType elements -> return! alias { TypeName = t.TypeName } (ExprType.TupleType elements)
-            | ExprType.OptionType element -> return! alias { TypeName = t.TypeName } (ExprType.OptionType element)
-            | ExprType.ListType e -> return! alias { TypeName = t.TypeName } (ExprType.ListType e)
-            | ExprType.SetType e -> return! alias { TypeName = t.TypeName } (ExprType.SetType e)
-            | _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
-          }
-          |> state.WithErrorContext $"...when generating type {t.TypeName}")
-        |> List.ofSeq
-      )
+            recordCode
+          | ExprType.MapType _
+          | ExprType.TupleType _
+          | ExprType.OptionType _
+          | ExprType.PrimitiveType _
+          | ExprType.LookupType _
+          | ExprType.ListType _
+          | ExprType.SumType _
+          | ExprType.SetType _ -> return! alias { TypeName = t.TypeName } t.Type
+          | ExprType.OneType _
+          | ExprType.SchemaLookupType _
+          | ExprType.TableType _
+          | ExprType.VarType _
+          | ExprType.CustomType _
+          | ExprType.ManyType _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
+        }
+        |> state.WithErrorContext $"...when generating type {t.TypeName}")
+      |> state.All
       |> state.Map(Seq.ofList >> StringBuilder.Many)

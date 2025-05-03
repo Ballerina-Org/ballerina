@@ -33,32 +33,32 @@ module Model =
 
   and CodegenConfigListDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigOneDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigMapDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigSumDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigOptionDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
 
   and CodegenConfigTupleDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<Import> }
