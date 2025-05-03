@@ -67,6 +67,14 @@ class Option(Generic[_Option]):
 
     _O = TypeVar("_O")
 
+    @staticmethod
+    def some(value: _Option, /) -> Option[_Option]:
+        return Option(Option.Some(value))
+
+    @staticmethod
+    def nothing() -> Option[_Option]:
+        return Option(Option.Nothing())
+
     def fold(self, on_some: Callable[[_Option], _O], on_nothing: Callable[[], _O], /) -> _O:
         match self.value:
             case Option.Some(value):
