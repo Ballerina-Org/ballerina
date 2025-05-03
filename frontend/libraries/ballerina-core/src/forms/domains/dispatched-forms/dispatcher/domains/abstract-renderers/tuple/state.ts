@@ -32,8 +32,12 @@ export const TupleAbstractRendererState = <
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()("commonFormState"),
-      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()("itemFormStates"),
+      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()(
+        "commonFormState",
+      ),
+      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()(
+        "itemFormStates",
+      ),
     },
     Template: {
       upsertItemFormState: (

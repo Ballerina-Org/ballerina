@@ -30,7 +30,9 @@ export const UnitAbstractRenderer = <Context extends FormLabel>() =>
           props.context?.label,
         )}`,
       );
-      return <p>{props.context.label}: Unit value expected but got something else</p>;
+      return (
+        <p>{props.context.label}: Unit value expected but got something else</p>
+      );
     }
     return (
       <span

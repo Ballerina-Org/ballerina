@@ -167,8 +167,8 @@ export const DispatchTupleAbstractRenderer = <
       );
       return (
         <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Tuple value expected for tuple but got something else
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
+          value expected for tuple but got something else
         </p>
       );
     }

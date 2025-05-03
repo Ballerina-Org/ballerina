@@ -1,6 +1,10 @@
 import { Value } from "../../../../../../../value/state";
 import { View } from "../../../../../../../template/state";
-import { DispatchCommonFormState, FormLabel, SimpleCallback } from "../../../../../../../../main";
+import {
+  DispatchCommonFormState,
+  FormLabel,
+  SimpleCallback,
+} from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
 

@@ -201,8 +201,8 @@ export const SumAbstractRenderer = <
       );
       return (
         <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Sum value expected for sum but got something else
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Sum
+          value expected for sum but got something else
         </p>
       );
     }

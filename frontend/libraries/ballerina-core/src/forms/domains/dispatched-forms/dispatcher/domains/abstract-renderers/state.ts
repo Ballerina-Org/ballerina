@@ -1,4 +1,8 @@
-import { Bindings, PredicateValue, simpleUpdater } from "../../../../../../../main";
+import {
+  Bindings,
+  PredicateValue,
+  simpleUpdater,
+} from "../../../../../../../main";
 
 export type CommonAbstractRendererReadonlyContext = {
   value: PredicateValue;

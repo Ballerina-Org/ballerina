@@ -35,8 +35,8 @@ export const DateAbstractRenderer = <
       );
       return (
         <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Date value expected for date but got something else
+          {props.context.label && `${props.context.label}: `}RENDER ERROR: Date
+          value expected for date but got something else
         </p>
       );
     }
