@@ -28,8 +28,9 @@ class TestRecord:
 """
 
   let expectedImports =
-    Set.singleton { Source = "dataclasses"
-                    Target = "dataclass" }
+    Set.singleton
+      { Source = "dataclasses"
+        Target = "dataclass" }
 
   let actualNormalized = recordCode |> StringBuilder.ToString |> normalize
   let expectedNormalized = expected |> normalize
@@ -56,8 +57,9 @@ class TestRecord:
 """
 
   let expectedImports =
-    Set.singleton { Source = "dataclasses"
-                    Target = "dataclass" }
+    Set.singleton
+      { Source = "dataclasses"
+        Target = "dataclass" }
 
   let actualNormalized = recordCode |> StringBuilder.ToString |> normalize
   let expectedNormalized = expected |> normalize

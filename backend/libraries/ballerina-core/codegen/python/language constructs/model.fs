@@ -9,10 +9,7 @@ module Model =
     static member Updaters =
       {| UsedImports = fun u -> fun s -> { s with UsedImports = u s.UsedImports } |}
 
-  and Import = {
-    Source: string
-    Target: string
-  }
+  and Import = { Source: string; Target: string }
 
   type PythonCodeGenConfig =
     { Int: CodegenConfigTypeDef
