@@ -11,7 +11,7 @@ module Header =
       List.ofSeq
       >> List.groupBy (fun i -> i.Source)
       >> List.map (fun (source, importsOfSource) ->
-         { Source = source; Target = importsOfSource |> List.map (fun i -> i.Target) |> String.concat", " })
+         { Source = source; Target = importsOfSource |> List.map (fun i -> i.Target) |> List.sort |> String.concat", " })
       >> Set.ofList
 
     StringBuilder.One
