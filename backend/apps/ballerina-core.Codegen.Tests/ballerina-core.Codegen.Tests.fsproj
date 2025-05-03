@@ -18,7 +18,6 @@
     <Compile Include="python/Record.fs"/>
     <Compile Include="python/Union.fs"/>
     <Compile Include="python/Unit.fs"/>
-    <Compile Include="python/Main.fs"/>
     <Compile Include="Program.fs"/>
   </ItemGroup>
 
