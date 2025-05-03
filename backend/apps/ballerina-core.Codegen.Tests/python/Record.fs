@@ -19,7 +19,8 @@ let ``Test should create non-empty record`` () =
   let recordCode, imports = recordType |> PythonRecord.Generate
 
   let expected =
-    """@dataclass(frozen=True)
+    """
+@dataclass(frozen=True)
 class TestRecord:
     field1: str
     field2: int
@@ -46,10 +47,10 @@ let ``Test should create empty record`` () =
   let recordCode, imports = recordType |> PythonRecord.Generate
 
   let expected =
-    """@dataclass(frozen=True)
+    """
+@dataclass(frozen=True)
 class TestRecord:
     pass
-
 """
 
   let expectedImports = Set.singleton (Import "from dataclasses import dataclass")

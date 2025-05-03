@@ -59,7 +59,7 @@ module TypeAnnotations =
 
           let! items = items |> Seq.map (!) |> state.All
 
-          $"{config.Tuple.GeneratedTypeName}[{System.String.Join(',', items)}]"
+          $$$"""{{{config.Tuple.GeneratedTypeName}}}[{{{System.String.Join(", ", items)}}}]"""
 
         | ExprType.ListType e ->
           let! e = !e
@@ -111,7 +111,7 @@ module TypeAnnotations =
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          $"{config.Map.GeneratedTypeName}[{k},{v}]"
+          $"{config.Map.GeneratedTypeName}[{k}, {v}]"
         | ExprType.SumType(l, r) ->
           let! l = !l
           let! r = !r
@@ -124,6 +124,6 @@ module TypeAnnotations =
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          $"{config.Sum.GeneratedTypeName}[{l},{r}]"
+          $"{config.Sum.GeneratedTypeName}[{l}, {r}]"
         | _ -> return! error
       }

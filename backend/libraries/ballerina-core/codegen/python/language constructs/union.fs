@@ -42,7 +42,7 @@ module Union =
                   StringBuilder.One
                     $"value: {union.Cases
                               |> NonEmptyList.map (fun c -> c.Name)
-                              |> NonEmptyList.reduce appendCaseName}\n"
+                              |> NonEmptyList.reduce appendCaseName}\n\n"
                   |> StringBuilder.Map indent
               }
               |> StringBuilder.Many
