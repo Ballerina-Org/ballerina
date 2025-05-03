@@ -20,11 +20,8 @@ module GeneratedTypes =
       return StringBuilder.One $"{typeId.TypeName} = {annotation}\n\n"
     }
 
-  let private updateImports imports =
-    imports
-    |> Set.union
-    |> PythonCodeGenState.Updaters.UsedImports
-    |> state.SetState
+  let private updateImports =
+    Set.union >> PythonCodeGenState.Updaters.UsedImports >> state.SetState
 
   type ExprType with
     static member Find (otherTypes: PythonGeneratedType list) (typeId: TypeId) : Sum<ExprType, Errors> =
