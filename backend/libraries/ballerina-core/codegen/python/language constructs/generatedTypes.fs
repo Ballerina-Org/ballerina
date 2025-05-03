@@ -31,7 +31,7 @@ module GeneratedTypes =
       sum {
         return!
           otherTypes
-          |> List.tryFind (fun t -> t.TypeName = typeId.TypeName)
+          |> List.tryFind (fun t -> t.TypeId = typeId)
           |> Sum.fromOption (fun () -> Errors.Singleton $"Error: type {typeId.TypeName} not found")
           |> Sum.map (fun t -> t.Type)
       }
@@ -44,10 +44,10 @@ module GeneratedTypes =
       }
 
   and PythonGeneratedType =
-    { TypeName: string
+    { TypeId: TypeId
       Type: ExprType }
 
-    static member private GenerateUnionType (typeName: string) (cases: Map<CaseName, UnionCase>) =
+    static member private GenerateUnionType (typeId: TypeId) (cases: Map<CaseName, UnionCase>) =
       state {
         let! caseValues =
           cases
@@ -69,7 +69,7 @@ module GeneratedTypes =
           |> state.OfSum
 
         let unionCode, imports =
-          { Name = typeName
+          { Name = typeId.TypeName
             Cases = nonEmptyCaseValues }
           |> PythonUnion.Generate
 
@@ -77,7 +77,7 @@ module GeneratedTypes =
         return unionCode
       }
 
-    static member private GenerateRecordType (typeName: string) (fields: Map<string, ExprType>) =
+    static member private GenerateRecordType (typeId: TypeId) (fields: Map<string, ExprType>) =
       state {
         let! pythonRecordFields =
           fields
@@ -92,7 +92,7 @@ module GeneratedTypes =
           |> state.All
 
         let recordCode, imports =
-          { Name = typeName
+          { Name = typeId.TypeName
             Fields = pythonRecordFields }
           |> PythonRecord.Generate
 
@@ -105,11 +105,11 @@ module GeneratedTypes =
         state {
           match t.Type with
           | ExprType.UnitType ->
-            let unitCode, imports = PythonUnit.Generate { Name = t.TypeName }
+            let unitCode, imports = PythonUnit.Generate { Name = t.TypeId.TypeName }
             do! updateImports imports
             return unitCode
-          | ExprType.UnionType cases -> return! PythonGeneratedType.GenerateUnionType t.TypeName cases
-          | ExprType.RecordType fields -> return! PythonGeneratedType.GenerateRecordType t.TypeName fields
+          | ExprType.UnionType cases -> return! PythonGeneratedType.GenerateUnionType t.TypeId cases
+          | ExprType.RecordType fields -> return! PythonGeneratedType.GenerateRecordType t.TypeId fields
           | ExprType.MapType _
           | ExprType.TupleType _
           | ExprType.OptionType _
@@ -117,15 +117,15 @@ module GeneratedTypes =
           | ExprType.LookupType _
           | ExprType.ListType _
           | ExprType.SumType _
-          | ExprType.SetType _ -> return! alias { TypeName = t.TypeName } t.Type
+          | ExprType.SetType _ -> return! alias t.TypeId t.Type
           | ExprType.OneType _
           | ExprType.SchemaLookupType _
           | ExprType.TableType _
           | ExprType.VarType _
           | ExprType.CustomType _
-          | ExprType.ManyType _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
+          | ExprType.ManyType _ -> return! Errors.Singleton $"Error: type {t.TypeId} is not supported" |> state.Throw
         }
-        |> state.WithErrorContext $"...when generating type {t.TypeName}"
+        |> state.WithErrorContext $"...when generating type {t.TypeId}"
 
       typesToGenerate
       |> List.map generateType

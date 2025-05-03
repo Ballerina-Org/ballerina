@@ -21,7 +21,7 @@ module Main =
         [ typeDefinition ]
         |> List.append otherTypes
         |> Seq.map (fun (typeId, typeDefinition) ->
-          { TypeName = typeId.TypeName
+          { TypeId = typeId
             Type = typeDefinition })
         |> List.ofSeq
 
