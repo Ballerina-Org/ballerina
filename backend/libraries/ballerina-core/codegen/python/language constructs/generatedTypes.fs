@@ -11,6 +11,7 @@ open Ballerina.DSL.Codegen.Python.LanguageConstructs.TypeAnnotations
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Unit
 open Ballerina.Core.StringBuilder
+open Ballerina.Core.String
 
 module GeneratedTypes =
 
@@ -65,8 +66,14 @@ module GeneratedTypes =
           |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty list of cases.")
           |> state.OfSum
 
+        let! name =
+          typeId.TypeName
+          |> NonEmptyString.TryCreate
+          |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty type name.")
+          |> state.OfSum
+
         let unionCode, imports =
-          { Name = typeId.TypeName
+          { Name = name
             Cases = nonEmptyCaseValues }
           |> PythonUnion.Generate
 
@@ -88,8 +95,14 @@ module GeneratedTypes =
             })
           |> state.All
 
+        let! name =
+          typeId.TypeName
+          |> NonEmptyString.TryCreate
+          |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty type name.")
+          |> state.OfSum
+
         let recordCode, imports =
-          { Name = typeId.TypeName
+          { Name = name
             Fields = pythonRecordFields }
           |> PythonRecord.Generate
 

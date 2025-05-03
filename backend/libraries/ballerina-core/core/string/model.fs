@@ -4,7 +4,7 @@ module String =
 
   open System
   open System.Text.RegularExpressions
-
+  open Ballerina.Collections.NonEmptyList
   // let private join (c:string) (s:string seq) = String.Join(c,s)
   let private join' (c: char) (s: string seq) = String.Join(c, s)
 
@@ -30,3 +30,15 @@ module String =
     static member ToFirstUpper(self: String) = self.ToFirstUpper
     // static member Join (separator:string) (self: string seq) = join separator self
     static member JoinSeq (separator: char) (self: string seq) = join' separator self
+
+  type NonEmptyString =
+    | NonEmptyString of NonEmptyList<char>
+
+    static member TryCreate(s: string) =
+      NonEmptyList.TryOfList(s |> Seq.toList) |> Option.map NonEmptyString
+
+    static member Create (head: char) (tail: string) =
+      NonEmptyList.OfList(head, tail |> Seq.toList) |> NonEmptyString
+
+    static member AsString(NonEmptyString s) =
+      s |> NonEmptyList.map string |> NonEmptyList.reduce (+)

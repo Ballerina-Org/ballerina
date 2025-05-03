@@ -5,13 +5,14 @@ module Union =
   open Ballerina.Core.StringBuilder
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
+  open Ballerina.Core.String
 
   let private indent = (+) "    "
 
   let private appendCaseName (allCases: string) (nextCase: string) = $"{allCases} | {nextCase}"
 
   type PythonUnion =
-    { Name: string
+    { Name: NonEmptyString
       Cases: NonEmptyList<{| Name: string; Type: string |}> }
 
     static member Generate(union: PythonUnion) =
@@ -19,7 +20,7 @@ module Union =
         StringBuilder.Many(
           seq {
             yield StringBuilder.One $"@dataclass(frozen=True)\n"
-            yield StringBuilder.One $"class {union.Name}:\n"
+            yield StringBuilder.One $"class {NonEmptyString.AsString union.Name}:\n"
 
 
             yield

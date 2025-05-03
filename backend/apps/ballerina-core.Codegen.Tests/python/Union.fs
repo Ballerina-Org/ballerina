@@ -6,11 +6,12 @@ open Ballerina.Core.StringBuilder
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 open Ballerina.DSL.Codegen.Python.Tests.Common
+open Ballerina.Core.String
 
 [<Test>]
 let ``Test should create union`` () =
   let unionType: PythonUnion =
-    { Name = "TestUnion"
+    { Name = NonEmptyString.Create 'T' "estUnion"
       Cases = NonEmptyList.Many({| Name = "Case1"; Type = "str" |}, NonEmptyList.One {| Name = "Case2"; Type = "int" |}) }
 
   let unionCode, imports = unionType |> PythonUnion.Generate

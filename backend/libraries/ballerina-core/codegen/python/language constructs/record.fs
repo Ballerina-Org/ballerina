@@ -5,11 +5,12 @@ module Record =
 
   open Ballerina.Core.StringBuilder
   open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
+  open Ballerina.Core.String
 
   let private indent = (+) "    "
 
   type PythonRecord =
-    { Name: string
+    { Name: NonEmptyString
       Fields:
         List<
           {| FieldName: string
@@ -21,7 +22,10 @@ module Record =
         StringBuilder.Many(
           seq {
             let typeStart =
-              $$"""@dataclass(frozen=True)""" + "\n" + $$"""class {{record.Name}}:""" + "\n"
+              $$"""@dataclass(frozen=True)"""
+              + "\n"
+              + $$"""class {{NonEmptyString.AsString record.Name}}:"""
+              + "\n"
 
             let fieldDeclarations =
               seq {

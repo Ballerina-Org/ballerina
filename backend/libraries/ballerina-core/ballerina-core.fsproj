@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <Compile Include="core/object/model.fs" />
-    <Compile Include="core/string/model.fs" />
     <Compile Include="core/string-builder/model.fs" />
     <Compile Include="range/model.fs" />
     <Compile Include="updater/model.fs" />
@@ -20,6 +19,7 @@
     <Compile Include="crud/model.fs" />
     <Compile Include="collections/tuple/model.fs" />
     <Compile Include="collections/non-empty list/model.fs" />
+    <Compile Include="core/string/model.fs" />
     <Compile Include="collections/sum/model.fs" />
     <Compile Include="collections/option/model.fs" />
     <Compile Include="collections/map/model.fs" />

@@ -5,11 +5,12 @@ open Ballerina.DSL.Codegen.Python.LanguageConstructs.Record
 open Ballerina.Core.StringBuilder
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 open Ballerina.DSL.Codegen.Python.Tests.Common
+open Ballerina.Core.String
 
 [<Test>]
 let ``Test should create non-empty record`` () =
   let recordType =
-    { Name = "TestRecord"
+    { Name = NonEmptyString.Create 'T' "estRecord"
       Fields =
         [ {| FieldName = "field1"
              FieldType = "str" |}
@@ -45,7 +46,9 @@ class TestRecord:
 
 [<Test>]
 let ``Test should create empty record`` () =
-  let recordType = { Name = "TestRecord"; Fields = [] }
+  let recordType =
+    { Name = NonEmptyString.Create 'T' "estRecord"
+      Fields = [] }
 
   let recordCode, imports = recordType |> PythonRecord.Generate
 
