@@ -4,6 +4,7 @@ namespace Ballerina.DSL.Codegen.Python.LanguageConstructs
 module Record =
 
   open Ballerina.Core.StringBuilder
+  open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 
   let private indent = (+) "    "
 
@@ -28,21 +29,21 @@ module Record =
                   yield StringBuilder.One $"{field.FieldName}: {field.FieldType}\n"
               }
               |> StringBuilder.Many
-              |> StringBuilder.Map indent
 
             yield StringBuilder.One "\n"
             yield StringBuilder.One typeStart
 
             yield
-              if record.Fields.IsEmpty then
-                StringBuilder.One "pass"
-              else
-                fieldDeclarations
+              (if record.Fields.IsEmpty then
+                 StringBuilder.One "pass"
+               else
+                 fieldDeclarations)
+              |> StringBuilder.Map indent
 
             yield StringBuilder.One "\n"
           }
         )
 
-      let imports = "from dataclasses import dataclass" |> Set.singleton
+      let imports = "from dataclasses import dataclass" |> Import |> Set.singleton
 
       recordCode, imports

@@ -6,11 +6,10 @@ module TypeAnnotations =
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.Collections.Sum
-  open Ballerina.DSL.Codegen.Python.Generator.Model
-  open Ballerina.DSL.FormEngine.Model
+  open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 
   type ExprType with
-    static member GenerateTypeAnnotation(t: ExprType) : State<string, CodeGenConfig, PythonCodeGenState, Errors> =
+    static member GenerateTypeAnnotation(t: ExprType) : State<string, PythonCodeGenConfig, PythonCodeGenState, Errors> =
       let (!) = ExprType.GenerateTypeAnnotation
 
       let error =
@@ -24,6 +23,7 @@ module TypeAnnotations =
         state {
           do!
             t.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -43,21 +43,16 @@ module TypeAnnotations =
           match p with
           | PrimitiveType.BoolType -> return! config.Bool |> registerImportAndReturn
           | PrimitiveType.DateOnlyType -> return! config.Date |> registerImportAndReturn
-          | PrimitiveType.DateTimeType -> return! error
-          | PrimitiveType.FloatType -> return! error
+          | PrimitiveType.DateTimeType -> return! config.DateTime |> registerImportAndReturn
+          | PrimitiveType.FloatType -> return! config.Float |> registerImportAndReturn
           | PrimitiveType.GuidType -> return! config.Guid |> registerImportAndReturn
           | PrimitiveType.IntType -> return! config.Int |> registerImportAndReturn
-          | PrimitiveType.RefType r -> return r.EntityName
+          | PrimitiveType.RefType r -> return! error
           | PrimitiveType.StringType -> return! config.String |> registerImportAndReturn
         | ExprType.TupleType items ->
-          let! tupleConfig =
-            config.Tuple
-            |> List.tryFind (fun tc -> tc.Ariety = items.Length)
-            |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple config for ariety {items.Length}")
-            |> state.OfSum
-
           do!
-            tupleConfig.RequiredImport
+            config.Tuple.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
@@ -66,106 +61,76 @@ module TypeAnnotations =
 
           let! items = items |> Seq.map (!) |> state.All
 
-          return $"{tupleConfig.GeneratedTypeName}[{System.String.Join(',', items)}]"
+          $"{config.Tuple.GeneratedTypeName}[{System.String.Join(',', items)}]"
 
         | ExprType.ListType e ->
           let! e = !e
 
           do!
             config.List.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.List.GeneratedTypeName}[{e}]"
+          $"{config.List.GeneratedTypeName}[{e}]"
 
-        | ExprType.TableType e ->
-          let! e = !e
-
-          do!
-            config.Table.RequiredImport
-            |> Option.toList
-            |> Set.ofList
-            |> Set.union
-            |> PythonCodeGenState.Updaters.UsedImports
-            |> state.SetState
-
-          return $"{config.Table.GeneratedTypeName}[{e}]"
         | ExprType.SetType e ->
           let! e = !e
 
           do!
             config.Set.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.Set.GeneratedTypeName}[{e}]"
+          $"{config.Set.GeneratedTypeName}[{e}]"
         | ExprType.OptionType e ->
           let! e = !e
 
           do!
             config.Option.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.Option.GeneratedTypeName}[{e}]"
-        | ExprType.OneType e ->
-          let! e = !e
+          $"{config.Option.GeneratedTypeName}[{e}]"
 
-          do!
-            config.One.RequiredImport
-            |> Option.toList
-            |> Set.ofList
-            |> Set.union
-            |> PythonCodeGenState.Updaters.UsedImports
-            |> state.SetState
-
-          return $"{config.One.GeneratedTypeName}[{e}]"
-        | ExprType.ManyType e ->
-          let! e = !e
-
-          do!
-            config.Many.RequiredImport
-            |> Option.toList
-            |> Set.ofList
-            |> Set.union
-            |> PythonCodeGenState.Updaters.UsedImports
-            |> state.SetState
-
-          return $"{config.Many.GeneratedTypeName}[{e}]"
         | ExprType.MapType(k, v) ->
           let! k = !k
           let! v = !v
 
           do!
             config.Map.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.Map.GeneratedTypeName}[{k},{v}]"
+          $"{config.Map.GeneratedTypeName}[{k},{v}]"
         | ExprType.SumType(l, r) ->
           let! l = !l
           let! r = !r
 
           do!
             config.Sum.RequiredImport
+            |> Option.map Import
             |> Option.toList
             |> Set.ofList
             |> Set.union
             |> PythonCodeGenState.Updaters.UsedImports
             |> state.SetState
 
-          return $"{config.Sum.GeneratedTypeName}[{l},{r}]"
+          $"{config.Sum.GeneratedTypeName}[{l},{r}]"
         | _ -> return! error
       }

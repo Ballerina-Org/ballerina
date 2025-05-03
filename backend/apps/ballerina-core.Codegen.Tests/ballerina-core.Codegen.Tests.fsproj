@@ -14,7 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="python/Tests.fs"/>
+    <Compile Include="python/Common.fs"/>
+    <Compile Include="python/Record.fs"/>
+    <Compile Include="python/Union.fs"/>
+    <Compile Include="python/Unit.fs"/>
+    <Compile Include="python/Main.fs"/>
     <Compile Include="Program.fs"/>
   </ItemGroup>
 

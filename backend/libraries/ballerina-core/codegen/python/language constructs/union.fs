@@ -4,6 +4,7 @@ namespace Ballerina.DSL.Codegen.Python.LanguageConstructs
 module Union =
   open Ballerina.Core.StringBuilder
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 
   let private indent = (+) "    "
 
@@ -11,15 +12,7 @@ module Union =
 
   type PythonUnion =
     { Name: string
-      Cases:
-        NonEmptyList<
-          {| CaseName: string
-             Fields:
-               List<
-                 {| FieldName: string
-                    FieldType: string |}
-                > |}
-         > }
+      Cases: NonEmptyList<{| Name: string; Type: string |}> }
 
     static member Generate(union: PythonUnion) =
       let unionCode =
@@ -36,12 +29,9 @@ module Union =
                     StringBuilder.Many(
                       seq {
                         yield StringBuilder.One $"@dataclass(frozen=True)\n"
-                        yield StringBuilder.One $"class {case.CaseName}:\n"
+                        yield StringBuilder.One $"class {case.Name}:\n"
 
-                        for field in case.Fields do
-                          yield
-                            StringBuilder.One $"{field.FieldName}: {field.FieldType}\n"
-                            |> StringBuilder.Map indent
+                        yield StringBuilder.One $"_value: {case.Type}\n" |> StringBuilder.Map indent
                       }
                     )
                     |> StringBuilder.Map indent
@@ -51,7 +41,7 @@ module Union =
                 yield
                   StringBuilder.One
                     $"value: {union.Cases
-                              |> NonEmptyList.map (fun c -> c.CaseName)
+                              |> NonEmptyList.map (fun c -> c.Name)
                               |> NonEmptyList.reduce appendCaseName}\n"
                   |> StringBuilder.Map indent
               }
@@ -59,6 +49,6 @@ module Union =
           }
         )
 
-      let imports = "from dataclasses import dataclass" |> Set.singleton
+      let imports = "from dataclasses import dataclass" |> Import |> Set.singleton
 
       unionCode, imports
