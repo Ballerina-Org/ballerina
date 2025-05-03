@@ -5,7 +5,7 @@ open Ballerina.Core.StringBuilder
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 
 [<Test>]
-let ``Test should create sorted imports`` () =
+let ``Test should create header with sorted imports`` () =
   let imports: Set<Import> =
     [ 
       { Source = "x"
@@ -31,7 +31,7 @@ from x import y
   Assert.That(actual, Is.EqualTo expected)
 
 [<Test>]
-let ``Test should create grouped imports with sorted targets`` () =
+let ``Test should create header with grouped imports with sorted targets`` () =
   let imports =
     [ 
       { Source = "collections.abc"
