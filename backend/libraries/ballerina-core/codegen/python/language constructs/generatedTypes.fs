@@ -20,6 +20,12 @@ module GeneratedTypes =
       return StringBuilder.One $"{typeId.TypeName} = {annotation}\n\n"
     }
 
+  let private updateImports imports =
+    imports
+    |> Set.union
+    |> PythonCodeGenState.Updaters.UsedImports
+    |> state.SetState
+
   type ExprType with
     static member Find (otherTypes: PythonGeneratedType list) (typeId: TypeId) : Sum<ExprType, Errors> =
       sum {
@@ -41,81 +47,69 @@ module GeneratedTypes =
     { TypeName: string
       Type: ExprType }
 
-    static member Generate(typesToGenerate: PythonGeneratedType list) =
+    static member private GenerateUnionType (typeName: string) (cases: Map<CaseName, UnionCase>) =
+      state {
+        let! caseValues =
+          cases
+          |> Map.values
+          |> Seq.map (fun case ->
+            state {
+              let! caseTypeAnnotation = ExprType.GenerateTypeAnnotation case.Fields
 
-      typesToGenerate
-      |> List.map (fun t ->
+              {| Name = case.CaseName
+                 Type = caseTypeAnnotation |}
+            })
+          |> List.ofSeq
+          |> state.All
+
+        let! nonEmptyCaseValues =
+          caseValues
+          |> NonEmptyList.TryOfList
+          |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty list of cases.")
+          |> state.OfSum
+
+        let unionCode, imports =
+          { Name = typeName
+            Cases = nonEmptyCaseValues }
+          |> PythonUnion.Generate
+
+        do! updateImports imports
+        return unionCode
+      }
+
+    static member private GenerateRecordType (typeName: string) (fields: Map<string, ExprType>) =
+      state {
+        let! pythonRecordFields =
+          fields
+          |> Map.toList
+          |> List.map (fun (fieldName, field) ->
+            state {
+              let! fieldType = field |> ExprType.GenerateTypeAnnotation
+
+              {| FieldName = fieldName
+                 FieldType = fieldType |}
+            })
+          |> state.All
+
+        let recordCode, imports =
+          { Name = typeName
+            Fields = pythonRecordFields }
+          |> PythonRecord.Generate
+
+        do! updateImports imports
+        return recordCode
+      }
+
+    static member Generate(typesToGenerate: PythonGeneratedType list) =
+      let generateType (t: PythonGeneratedType) =
         state {
           match t.Type with
           | ExprType.UnitType ->
             let unitCode, imports = PythonUnit.Generate { Name = t.TypeName }
-
-            do!
-              imports
-              |> Set.union
-              |> PythonCodeGenState.Updaters.UsedImports
-              |> state.SetState
-
-            unitCode
-          | ExprType.UnionType cases ->
-            let! caseValues =
-              cases
-              |> Map.values
-              |> Seq.map (fun case ->
-                state {
-                  let! caseTypeAnnotation = ExprType.GenerateTypeAnnotation case.Fields
-
-                  {| Name = case.CaseName
-                     Type = caseTypeAnnotation |}
-                })
-              |> List.ofSeq
-              |> state.All
-
-            let! nonEmptyCaseValues =
-              caseValues
-              |> NonEmptyList.TryOfList
-              |> Sum.fromOption (fun () -> Errors.Singleton "Error: expected non-empty list of cases.")
-              |> state.OfSum
-
-            let unionCode, imports =
-              { Name = t.TypeName
-                Cases = nonEmptyCaseValues }
-              |> PythonUnion.Generate
-
-            do!
-              imports
-              |> Set.union
-              |> PythonCodeGenState.Updaters.UsedImports
-              |> state.SetState
-
-            unionCode
-
-          | ExprType.RecordType fields ->
-            let! pythonRecordFields =
-              fields
-              |> Map.toList
-              |> List.map (fun (fieldName, field) ->
-                state {
-                  let! fieldType = field |> ExprType.GenerateTypeAnnotation
-
-                  {| FieldName = fieldName
-                     FieldType = fieldType |}
-                })
-              |> state.All
-
-
-            let recordCode, imports =
-              { Name = t.TypeName
-                Fields = pythonRecordFields }
-              |> PythonRecord.Generate
-
-            do!
-              imports
-              |> Set.union
-              |> PythonCodeGenState.Updaters.UsedImports
-              |> state.SetState
-
-            recordCode
+            do! updateImports imports
+            return unitCode
+          | ExprType.UnionType cases -> return! PythonGeneratedType.GenerateUnionType t.TypeName cases
+          | ExprType.RecordType fields -> return! PythonGeneratedType.GenerateRecordType t.TypeName fields
           | ExprType.MapType _
           | ExprType.TupleType _
           | ExprType.OptionType _
@@ -131,6 +125,9 @@ module GeneratedTypes =
           | ExprType.CustomType _
           | ExprType.ManyType _ -> return! Errors.Singleton $"Error: type {t.TypeName} is not supported" |> state.Throw
         }
-        |> state.WithErrorContext $"...when generating type {t.TypeName}")
+        |> state.WithErrorContext $"...when generating type {t.TypeName}"
+
+      typesToGenerate
+      |> List.map generateType
       |> state.All
       |> state.Map(Seq.ofList >> StringBuilder.Many)
