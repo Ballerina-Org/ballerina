@@ -13,6 +13,9 @@ module Unit =
     static member Generate(unit: PythonUnit) =
       let unitCode = StringBuilder.One $"{unit.Name} = Literal[None]\n"
 
-      let imports = "from typing import Literal" |> Import |> Set.singleton
+      let imports =
+        { Source = "typing"
+          Target = "Literal" }
+        |> Set.singleton
 
       unitCode, imports

@@ -30,7 +30,10 @@ class TestUnion:
 
 """
 
-  let expectedImports = Set.singleton (Import "from dataclasses import dataclass")
+  let expectedImports =
+    Set.singleton { Source = "dataclasses"
+                    Target = "dataclass" }
+
   let actualNormalized = unionCode |> StringBuilder.ToString |> normalize
   let expectedNormalized = expectedCode |> normalize
 
