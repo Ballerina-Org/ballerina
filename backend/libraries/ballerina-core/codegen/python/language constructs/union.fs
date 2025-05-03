@@ -6,8 +6,7 @@ module Union =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
   open Ballerina.Core.String
-
-  let private indent = (+) "    "
+  open Ballerina.DSL.Codegen.Python.LanguageConstructs.Common
 
   let private appendCaseName (allCases: string) (nextCase: string) = $"{allCases} | {nextCase}"
 

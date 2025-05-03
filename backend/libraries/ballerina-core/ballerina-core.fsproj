@@ -83,6 +83,7 @@
     <Compile Include="business rule engine/form engine/codegen/golang/language constructs/header.fs" />
     <Compile Include="business rule engine/form engine/codegen/golang/generator.fs" />
     <Compile Include="business rule engine/form engine/runner.fs" />
+    <Compile Include="codegen/python/language constructs/common.fs" />
     <Compile Include="codegen/python/language constructs/model.fs" />
     <Compile Include="codegen/python/language constructs/record.fs" />
     <Compile Include="codegen/python/language constructs/union.fs" />

@@ -6,8 +6,7 @@ module Record =
   open Ballerina.Core.StringBuilder
   open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
   open Ballerina.Core.String
-
-  let private indent = (+) "    "
+  open Ballerina.DSL.Codegen.Python.LanguageConstructs.Common
 
   type PythonRecord =
     { Name: NonEmptyString
