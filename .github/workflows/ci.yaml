@@ -24,15 +24,18 @@ jobs:
       - run: yarn compile-playground-core
   backend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/libraries/ballerina-core/
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions/setup-dotnet@v4.3.0
       - run: |
-          dotnet restore backend
+          dotnet restore
           dotnet tool restore
-      - run: dotnet build backend
-      - run: dotnet fantomas --check backend
-      - run: dotnet test backend
+      - run: dotnet build
+      - run: dotnet fantomas --check .
+      - run: dotnet test
   ballerina-go:
     runs-on: ubuntu-latest
     defaults:
