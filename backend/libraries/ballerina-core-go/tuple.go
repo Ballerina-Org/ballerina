@@ -356,7 +356,6 @@ func MatchDeltaTuple4[a any, b any, c any, d any, deltaA any, deltaB any, deltaC
 	}
 }
 
-
 type DeltaTuple5EffectsEnum string
 
 const (

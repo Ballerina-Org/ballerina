@@ -5,7 +5,7 @@ import (
 )
 
 type LookupStreamNotFoundError struct {
-	EntityName string
+	EntityName       string
 	LookupStreamName string
 }
 
@@ -19,7 +19,7 @@ func NewLookupStreamNotFoundError(EntityName string, LookupStreamName string) er
 
 type OneNotFoundError struct {
 	EntityName string
-	OneName string
+	OneName    string
 }
 
 func (err *OneNotFoundError) Error() string {
@@ -32,7 +32,7 @@ func NewOneNotFoundError(EntityName string, OneName string) error {
 
 type ManyNotFoundError struct {
 	EntityName string
-	ManyName string
+	ManyName   string
 }
 
 func (err *ManyNotFoundError) Error() string {
@@ -105,21 +105,21 @@ func NewInvalidEnumValueCombinationError(enumName string, enumValue string) erro
 }
 
 type EntityNameAndDeltaTypeMismatch struct {
-	EntityName  string
-	Delta DeltaBase
+	EntityName string
+	Delta      DeltaBase
 }
 
 func (err *EntityNameAndDeltaTypeMismatch) Error() string {
 	return fmt.Sprintf("%s/%A is not a valid entity name/delta combination", err.EntityName, err.Delta)
 }
 
-func NewEntityNameAndDeltaTypeMismatch(entityName string, delta DeltaBase)  error {
+func NewEntityNameAndDeltaTypeMismatch(entityName string, delta DeltaBase) error {
 	return &EntityNameAndDeltaTypeMismatch{EntityName: entityName, Delta: delta}
 }
 
 type InvalidDiscriminatorError struct {
-	DiscriminatorValue  string
-	TypeName string
+	DiscriminatorValue string
+	TypeName           string
 }
 
 func (err *InvalidDiscriminatorError) Error() string {
@@ -129,4 +129,3 @@ func (err *InvalidDiscriminatorError) Error() string {
 func NewInvalidDiscriminatorError(discriminatorValue string, typeName string) error {
 	return &InvalidDiscriminatorError{DiscriminatorValue: discriminatorValue, TypeName: typeName}
 }
-

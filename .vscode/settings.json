@@ -3,6 +3,9 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "Ionide.Ionide-fsharp"
   },
+  "[go]": {
+    "editor.formatOnSave": true,
+  },
   "files.associations": {
     "*.fsproj": "xml"
   },
