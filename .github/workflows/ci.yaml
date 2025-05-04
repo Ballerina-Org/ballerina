@@ -14,14 +14,9 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4.2.2
-      # - run: npx prettier . --check
+      - run: npx prettier . --check
       - run: yarn
-      - run: yarn compile-test
-      - run: yarn compile-web
-      - run: yarn compile-mobile
       - run: yarn compile-ballerina-core
-      - run: yarn compile-create-domain
-      - run: yarn compile-playground-core
   backend:
     runs-on: ubuntu-latest
     defaults:
