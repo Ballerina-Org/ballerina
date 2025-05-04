@@ -214,7 +214,7 @@
           "System.Text.Encodings.Web": "6.0.0"
         }
       },
-      "ballerina-core": {
+      "Ballerina.Core": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.201, )",
