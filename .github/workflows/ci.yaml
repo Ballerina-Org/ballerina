@@ -31,7 +31,7 @@ jobs:
           dotnet restore backend
           dotnet tool restore
       - run: dotnet build backend
-      # - run: dotnet fantomas --check backend
+      - run: dotnet fantomas --check backend
       - run: dotnet test backend
   ballerina-go:
     runs-on: ubuntu-latest
@@ -43,12 +43,12 @@ jobs:
       - uses: actions/setup-go@v5.4.0
         with:
           go-version-file: backend/libraries/ballerina-core-go/go.mod
-      # - name: Check formatting
-      #   run: test -z "$(gofmt -l .)"
-      # - run: go test ./...
-      # - run: go build ./...
-      # - name: Check go.mod is up to date
-      #   run: go mod tidy -diff
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+      - run: go test ./...
+      - run: go build ./...
+      - name: Check go.mod is up to date
+        run: go mod tidy -diff
   publish-ballerina-runtime:
     needs:
       - frontend
