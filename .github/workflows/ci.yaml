@@ -49,7 +49,7 @@ jobs:
       - run: go build ./...
       - name: Check go.mod is up to date
         run: go mod tidy -diff
-  publish-ballerina-runtime:
+  publish-ballerina-core:
     needs:
       - frontend
       - backend
@@ -57,23 +57,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write # ✅ Needed to push to GitHub Packages
     defaults:
       run:
-        working-directory: backend/apps/ballerina-runtime
+        working-directory: backend/libraries/ballerina-core
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions/setup-dotnet@v4.3.0
       - run: dotnet restore
-      - name: Build and package for all runtimes
+      - name: Determine Package Version
+        id: versioning
         run: |
-          for RUNTIME in osx-x64 win-x64 linux-x64 linux-arm64; do
-            dotnet publish --runtime $RUNTIME
-            zip -r ballerina-runtime.$RUNTIME.zip ./bin/Release/net9.0/$RUNTIME/publish
-          done
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="0.0.0-dev.${{ github.run_number }}+${SHORT_SHA}"
+          fi
+          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+      - name: Pack NuGet package
         run: |
-          TAG_NAME=${{ github.ref_name }}
-          gh release create "$TAG_NAME" -n "Release $TAG_NAME of the Ballerina 🩰 runtime." ballerina-runtime.*.zip
+          dotnet pack --configuration Release \
+            /p:PackageVersion=${{ steps.versioning.outputs.PACKAGE_VERSION }} \
+            --output ./nupkg
+      - name: Publish NuGet package to GitHub Packages
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg \
+            --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
