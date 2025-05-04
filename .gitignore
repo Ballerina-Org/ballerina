@@ -149,3 +149,7 @@ move-to-ff.sh
 move-to-ballerina.sh
 # todo.md
 .fake
+
+# NuGet packages
+nupkg/
+libraries/ballerina-core/nupkg/

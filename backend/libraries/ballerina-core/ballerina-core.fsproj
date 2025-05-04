@@ -1,13 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>ballerina_core</RootNamespace>
+    <OutputType>Library</OutputType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RuntimeIdentifiers>linux-x64;osx-x64;linux-arm64;win-x64</RuntimeIdentifiers>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- NuGet package metadata -->
+    <PackageId>Ballerina.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Dr. Giuseppe Maggiore</Authors>
+    <Company>Ballerina-Org</Company>
+    <Description>Core library for Ballerina</Description>
+
+    <!-- Repository info -->
+    <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
