@@ -71,6 +71,7 @@ let testConfig: PythonCodeGenConfig =
             { Source = "ballerina_core.primitives"
               Target = "Sum" } } }
 
+
 type AnnotationTestCase =
   { InputType: ExprType
     ExpectedAnnotation: string
@@ -82,16 +83,55 @@ let annotationCases: AnnotationTestCase[] =
        ExpectedImports =
          Set.singleton
            { Source = "typing"
-             Target = "Literal" } } |]
+             Target = "Literal" } }
+     { InputType = PrimitiveType IntType
+       ExpectedAnnotation = "int"
+       ExpectedImports = Set.empty }
+     { InputType = PrimitiveType FloatType
+       ExpectedAnnotation = "Decimal"
+       ExpectedImports =
+         Set.singleton
+           { Source = "decimal"
+             Target = "Decimal" } }
+     { InputType = SetType(PrimitiveType IntType)
+       ExpectedAnnotation = "frozenset[int]"
+       ExpectedImports = Set.empty }
+     { InputType = TupleType [ PrimitiveType IntType; PrimitiveType FloatType ]
+       ExpectedAnnotation = "tuple[int, Decimal]"
+       ExpectedImports =
+         Set.singleton
+           { Source = "decimal"
+             Target = "Decimal" } }
+     { InputType = SetType(PrimitiveType StringType)
+       ExpectedAnnotation = "frozenset[str]"
+       ExpectedImports = Set.empty }
+     { InputType = SumType(UnitType, PrimitiveType FloatType)
+       ExpectedAnnotation = "Sum[Literal[\"Unit\"], Decimal]"
+       ExpectedImports =
+         Set.ofList
+           [ { Source = "typing"
+               Target = "Literal" }
+             { Source = "decimal"
+               Target = "Decimal" }
+             { Source = "ballerina_core.primitives"
+               Target = "Sum" } ] }
+     { InputType = TupleType [ PrimitiveType IntType; SetType(PrimitiveType StringType) ]
+       ExpectedAnnotation = "tuple[int, frozenset[str]]"
+       ExpectedImports = Set.empty } |]
 
 [<Test; TestCaseSource(nameof annotationCases)>]
-let ``Test should create annotation for unit`` (case: AnnotationTestCase) =
+let ``Test should create annotation`` (case: AnnotationTestCase) =
   let annotationResult = ExprType.GenerateTypeAnnotation case.InputType
 
   match annotationResult.run (testConfig, { UsedImports = Set.empty }) with
   | Left(annotation, Some finalState) ->
     Assert.That(annotation, Is.EqualTo case.ExpectedAnnotation)
-    Assert.That(finalState.UsedImports, Is.EqualTo case.ExpectedImports)
+
+    Assert.That(
+      finalState.UsedImports,
+      Is.EqualTo case.ExpectedImports,
+      $"Expected imports to be %A{case.ExpectedImports}, but got %A{finalState.UsedImports}"
+    )
 
   | Left(_, None) -> Assert.Fail "Expected the state to be Some, but it was None"
   | Right(errs, _) -> Assert.Fail $"Expected a Left result, but got Right with errors: %A{errs}"
