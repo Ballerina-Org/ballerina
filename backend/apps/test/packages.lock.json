@@ -1111,11 +1111,11 @@
       "absample": {
         "type": "Project",
         "dependencies": {
-          "FSharp.Core": "[9.0.201, )",
-          "ballerina-core": "[1.0.0, )"
+          "Ballerina.Core": "[1.0.0, )",
+          "FSharp.Core": "[9.0.201, )"
         }
       },
-      "ballerina-core": {
+      "Ballerina.Core": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.201, )",
@@ -1140,23 +1140,23 @@
       "oauth2": {
         "type": "Project",
         "dependencies": {
-          "FSharp.Core": "[9.0.201, )",
-          "ballerina-core": "[1.0.0, )"
+          "Ballerina.Core": "[1.0.0, )",
+          "FSharp.Core": "[9.0.201, )"
         }
       },
       "positions": {
         "type": "Project",
         "dependencies": {
-          "FSharp.Core": "[9.0.201, )",
-          "ballerina-core": "[1.0.0, )"
+          "Ballerina.Core": "[1.0.0, )",
+          "FSharp.Core": "[9.0.201, )"
         }
       },
       "users": {
         "type": "Project",
         "dependencies": {
           "BCrypt.Net-Next": "[4.0.3, )",
-          "FSharp.Core": "[9.0.201, )",
-          "ballerina-core": "[1.0.0, )"
+          "Ballerina.Core": "[1.0.0, )",
+          "FSharp.Core": "[9.0.201, )"
         }
       }
     }
