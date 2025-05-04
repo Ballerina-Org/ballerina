@@ -54,6 +54,8 @@ jobs:
       - backend
       - ballerina-go
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: backend/libraries/ballerina-core
