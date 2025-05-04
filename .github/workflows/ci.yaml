@@ -53,11 +53,11 @@ jobs:
       - name: Check go.mod is up to date
         run: go mod tidy -diff
   publish-ballerina-core:
-    # if: startsWith(github.ref, 'refs/tags/v')
-    # needs:
-    #   - frontend
-    #   - backend
-    #   - ballerina-go
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - frontend
+      - backend
+      - ballerina-go
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -69,13 +69,8 @@ jobs:
       - name: Determine Package Version
         id: version
         run: |
-          VERSION="0.0.0"
+          VERSION="${GITHUB_REF_NAME#v}"  # strip 'v' prefix
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_OUTPUT
-      # - name: Determine Package Version
-      #   id: version
-      #   run: |
-      #     VERSION="${GITHUB_REF_NAME#v}"  # strip 'v' prefix
-      #     echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_OUTPUT
       - name: Pack NuGet package
         run: |
           dotnet pack --configuration Release \
