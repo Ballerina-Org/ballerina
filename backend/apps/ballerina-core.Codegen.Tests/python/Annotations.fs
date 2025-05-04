@@ -2,7 +2,6 @@ module Ballerina.DSL.Codegen.Python.Tests.Annotations
 
 open NUnit.Framework
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.TypeAnnotations
-open Ballerina.State.WithError
 open Ballerina.DSL.Expr.Types.Model
 open Ballerina.DSL.Codegen.Python.LanguageConstructs.Model
 open Ballerina.Collections.Sum
@@ -72,22 +71,27 @@ let testConfig: PythonCodeGenConfig =
             { Source = "ballerina_core.primitives"
               Target = "Sum" } } }
 
+type AnnotationTestCase =
+  { InputType: ExprType
+    ExpectedAnnotation: string
+    ExpectedImports: Set<Import> }
 
-[<Test>]
-let ``Test should create annotation for unit`` () =
-  let annotationResult = ExprType.GenerateTypeAnnotation UnitType
+let annotationCases: AnnotationTestCase[] =
+  [| { InputType = UnitType
+       ExpectedAnnotation = "Literal[\"Unit\"]"
+       ExpectedImports =
+         Set.singleton
+           { Source = "typing"
+             Target = "Literal" } } |]
 
-  let expectedAnnotation = "Literal[\"Unit\"]"
-
-  let expectedImports: Set<Import> =
-    Set.singleton
-      { Source = "typing"
-        Target = "Literal" }
+[<Test; TestCaseSource(nameof annotationCases)>]
+let ``Test should create annotation for unit`` (case: AnnotationTestCase) =
+  let annotationResult = ExprType.GenerateTypeAnnotation case.InputType
 
   match annotationResult.run (testConfig, { UsedImports = Set.empty }) with
   | Left(annotation, Some finalState) ->
-    Assert.That(annotation, Is.EqualTo expectedAnnotation)
-    Assert.That(finalState.UsedImports, Is.EqualTo expectedImports)
+    Assert.That(annotation, Is.EqualTo case.ExpectedAnnotation)
+    Assert.That(finalState.UsedImports, Is.EqualTo case.ExpectedImports)
 
   | Left(_, None) -> Assert.Fail "Expected the state to be Some, but it was None"
   | Right(errs, _) -> Assert.Fail $"Expected a Left result, but got Right with errors: %A{errs}"
