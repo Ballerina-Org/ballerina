@@ -25,8 +25,7 @@ import {
   UsersSetupFromConfigApis,
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
-// import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
-import SPEC from "../../../../backend/apps/ballerina-runtime/input-forms/example-tables.json";
+import SPEC from "../public/SampleSpecs/person-config.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,

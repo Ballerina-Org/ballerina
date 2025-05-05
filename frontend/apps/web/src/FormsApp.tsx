@@ -36,7 +36,7 @@ import {
   CategoryState,
   PersonFormInjectedTypes,
 } from "./domains/person-from-config/injected-forms/category";
-import PersonConfig from "../../../../backend/apps/ballerina-runtime/input-forms/person-config.json";
+import PersonConfig from"../public/SampleSpecs/person-config.json";
 import { PassthroughFormContainerWrapper } from "./domains/passthrough-forms/views/wrappers";
 import { UsersSetupFromConfigApis } from "playground-core";
 const ShowFormsParsingErrors = (parsedFormsConfig: FormParsingResult) => (

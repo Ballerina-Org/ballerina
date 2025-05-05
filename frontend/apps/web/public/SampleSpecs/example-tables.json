@@ -1,0 +1,151 @@
+{
+  "types": {
+    "User": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean"
+      }
+    },
+    "UsersSetupConfig": {
+      "fields": {}
+    },
+    "UsersSetup": {
+      "fields": {
+        "ActiveUsers": {
+          "fun": "Table",
+          "args": ["User"]
+        },
+        "InactiveUsers": {
+          "fun": "Table",
+          "args": ["User"]
+        }
+      }
+    }
+  },
+  "apis": {
+    "enumOptions": {},
+    "searchableStreams": {},
+    "entities": {
+      "UsersSetup": {
+        "type": "UsersSetup",
+        "methods": ["get"]
+      },
+      "UsersSetupConfig": {
+        "type": "UsersSetupConfig",
+        "methods": ["get"]
+      }
+    },
+    "tables": {
+      "ActiveUsersApi": {
+        "type": "User"
+      },
+      "InactiveUsersApi": {
+        "type": "User"
+      }
+    }
+  },
+  "forms": {
+    "InactiveUsers": {
+      "type": "User",
+      "renderer": "table",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString",
+          "disabled": true
+        },
+        "Surname": {
+          "renderer": "defaultString"
+        }
+      },
+      "visibleColumns": ["Name", "Surname"]
+    },
+    "ActiveUsers": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        }
+      },
+      "detailsRenderer": {
+        "type": "User",
+        "fields": {
+          "Name": {
+            "label": "First Name",
+            "renderer": "defaultString"
+          },
+          "Surname": {
+            "label": "Last Name",
+            "renderer": "defaultString",
+            "disabled": true
+          },
+          "Email": {
+            "label": "Email",
+            "renderer": "defaultString"
+          },
+          "Birthday": {
+            "label": "Birthday",
+            "renderer": "defaultDate"
+          },
+          "SubscribeToNewsletter": {
+            "label": "Subscribe to Newsletter",
+            "renderer": "defaultBoolean"
+          }
+        },
+        "tabs": {
+          "main": {
+            "columns": {
+              "main": {
+                "groups": {
+                  "main": ["Name", "Surname", "Email", "Birthday", "SubscribeToNewsletter"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "visibleColumns": ["Name", "Surname"]
+    },
+    "UsersSetup": {
+      "type": "UsersSetup",
+      "fields": {
+        "ActiveUsers": {
+          "renderer": "ActiveUsers",
+          "api": "ActiveUsersApi",
+          "label": "Active Users"
+        },
+        "InactiveUsers": {
+          "renderer": "InactiveUsers",
+          "api": "InactiveUsersApi",
+          "label": "Inactive Users"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["ActiveUsers", "InactiveUsers"]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "UsersSetupLauncher": {
+      "kind": "passthrough",
+      "form": "UsersSetup",
+      "configType": "UsersSetupConfig"
+    }
+  }
+}
