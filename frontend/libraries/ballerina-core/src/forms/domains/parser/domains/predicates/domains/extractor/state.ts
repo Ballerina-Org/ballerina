@@ -83,8 +83,8 @@ export const PredicateValueExtractor = {
                   ]),
                 )
               : !v.isSome
-                ? ValueOrErrors.Default.return([])
-                : traverseSingleSelection(v.value);
+              ? ValueOrErrors.Default.return([])
+              : traverseSingleSelection(v.value);
         }
         case "multiSelection": {
           // multi selection only has 1 arg type, which is the same for all the selcted elements
@@ -118,29 +118,37 @@ export const PredicateValueExtractor = {
           const traverseKey = self(lookupName, typesMap, t.args[0]);
           const traverseValue = self(lookupName, typesMap, t.args[1]);
           return (v: PredicateValue) =>
-            !PredicateValue.Operations.IsRecord(v)
+            !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
                   Errors.Default.singleton(["not a ValueRecord (from Map)", v]),
                 )
-              : ValueOrErrors.Operations.All(
-                  List(
-                    v.fields
-                      .entrySeq()
-                      .map(([_k, field]) =>
-                        ValueOrErrors.Operations.All(
-                          List(
-                            [traverseKey, traverseValue].map((traverseField) =>
-                              traverseField(field),
+              : (
+                  ValueOrErrors.Operations.All(
+                    List(
+                      v.values.map((entry) =>
+                        !PredicateValue.Operations.IsTuple(entry)
+                          ? ValueOrErrors.Default.throwOne(
+                              Errors.Default.singleton([
+                                "not a ValueRecord (from inner Map)",
+                                entry,
+                              ]),
+                            )
+                          : ValueOrErrors.Operations.All(
+                              List(
+                                [traverseKey, traverseValue].map(
+                                  (traverseField, kvIdx) =>
+                                    traverseField(entry.values.get(kvIdx)!),
+                                ),
+                              ),
+                            ).Map((listFailingChecks) =>
+                              listFailingChecks.reduce(
+                                (acc, curr) => [...acc, ...curr],
+                                [] as Array<PredicateValue>,
+                              ),
                             ),
-                          ),
-                        ).Map((listFailingChecks) =>
-                          listFailingChecks.reduce(
-                            (acc, curr) => [...acc, ...curr],
-                            [] as Array<PredicateValue>,
-                          ),
-                        ),
                       ),
-                  ),
+                    ),
+                  ) as ValueOrErrors<List<PredicateValue[]>, Errors<any>>
                 ).Map((listFailingChecks) =>
                   listFailingChecks.reduce(
                     (acc, curr) => [...acc, ...curr],
@@ -180,7 +188,7 @@ export const PredicateValueExtractor = {
                 )
               : ValueOrErrors.Operations.All(
                   List(
-                    traverseTupleFields.flatMap((traverseField, idx) =>
+                    traverseTupleFields.map((traverseField, idx) =>
                       traverseField(v.values.get(idx)!),
                     ),
                   ),
