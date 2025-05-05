@@ -140,7 +140,7 @@ export const RecordFormRenderer = {
               validRecordForm.fields
                 .toArray()
                 .map(
-                  ([fieldName, fieldRecordRenderer]: [
+                  ([fieldName, recordFieldRenderer]: [
                     string,
                     SerializedBaseRenderer,
                   ]) => {
@@ -153,7 +153,7 @@ export const RecordFormRenderer = {
                     }
                     return BaseRenderer.Operations.DeserializeAs(
                       fieldType,
-                      fieldRecordRenderer,
+                      recordFieldRenderer,
                       fieldViews,
                       "recordField",
                       `field: ${fieldName}`,

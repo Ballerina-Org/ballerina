@@ -6,7 +6,7 @@ import {
 } from "../../../../../../parser/domains/built-ins/state";
 import { InjectedPrimitives } from "../../../../../../parser/domains/injectables/state";
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
-import { Unit } from "../../../../../../../../../main";
+import { MapRepo, Unit } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
 export const DispatchIsObject = (_: any): _ is object => typeof _ == "object";
@@ -25,15 +25,9 @@ export type SerializedApplicationType<T> = {
   args?: Array<SerializedType<T>>;
 };
 
-export type SerializedUnionCase = {
-  caseName: string;
-  extends?: Array<DispatchTypeName>;
-  fields?: object | string;
-};
-
 export type SerializedUnionType = {
   fun?: "Union";
-  args?: Array<SerializedUnionCase>;
+  args?: Array<string>;
 };
 
 export type SerializedOptionType = {
@@ -55,7 +49,6 @@ export type SerializedType<T> =
   | SerializedLookupType
   | SerializedUnionType
   | SerializedRecordType
-  | SerializedUnionCase
   | SerializedOptionType;
 
 export const SerializedType = {
@@ -69,16 +62,6 @@ export const SerializedType = {
     DispatchisString(type.extends[0]),
   hasFields: <T>(type: SerializedType<T>): type is { fields: any } =>
     typeof type == "object" && "fields" in type,
-  isMaybeUnion: (_: any): _ is SerializedUnionType =>
-    DispatchIsObject(_) &&
-    "fun" in _ &&
-    "args" in _ &&
-    _.fun == "Union" &&
-    Array.isArray(_["args"]) &&
-    _["args"].every(
-      (__) => typeof __ == "object" && "caseName" in __ && "fields" in __,
-    ),
-  isMaybePrimitive: (_: any) => DispatchisString(_),
   isPrimitive: <T>(
     _: SerializedType<T>,
     injectedPrimitives: InjectedPrimitives<T> | undefined,
@@ -87,12 +70,10 @@ export const SerializedType = {
       PrimitiveTypes.some((__) => _ == __) ||
         injectedPrimitives?.injectedPrimitives.has(_ as keyof T),
     ),
-  isMaybeApplication: (_: any): _ is Object => DispatchIsObject(_),
   isApplication: <T>(
     _: SerializedType<T>,
   ): _ is { fun: GenericType; args: Array<SerializedType<T>> } =>
     DispatchHasFun(_) && DispatchIsGenericType(_.fun) && DispatchHasArgs(_),
-  isMaybeLookup: (_: any) => DispatchisString(_),
   isLookup: (_: unknown, forms: Set<DispatchTypeName>): _ is DispatchTypeName =>
     DispatchisString(_) && forms.has(_),
   isList: <T>(
@@ -121,17 +102,26 @@ export const SerializedType = {
     SerializedType.isApplication(_) &&
     _.fun == "MultiSelection" &&
     _.args.length == 1,
-  isUnionCase: <T>(_: unknown): _ is SerializedUnionCase =>
-    _ != null && typeof _ == "object" && "caseName" in _,
   isUnion: <T>(
     _: SerializedType<T>,
-  ): _ is { fun: "Union"; args: Array<{ caseName: string; fields: object }> } =>
+  ): _ is {
+    fun: "Union";
+    args: Array<{
+      caseName: string;
+      fields: string | SerializedType<T>;
+    }>;
+  } =>
     DispatchHasFun(_) &&
     DispatchIsGenericType(_.fun) &&
     DispatchHasArgs(_) &&
     _.fun == "Union" &&
     _.args.length > 0 &&
-    _.args.every(SerializedType.isUnionCase),
+    _.args.every(
+      (arg) =>
+        (DispatchIsObject(arg) && "caseName" in arg && !("fields" in arg)) ||
+        ("fields" in arg &&
+          (DispatchisString(arg.fields) || DispatchIsObject(arg.fields))),
+    ),
   isTuple: <T>(
     _: SerializedType<T>,
   ): _ is { fun: "Tuple"; args: Array<SerializedType<T>> } =>
@@ -469,6 +459,7 @@ export const DispatchParsedType = {
       typeName: DispatchTypeName,
       rawType: unknown,
       typeNames: Set<DispatchTypeName>,
+      serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: InjectedPrimitives<T>,
     ): ValueOrErrors<RecordType<T>, string> => {
       if (!SerializedType.isRecord(rawType)) {
@@ -483,6 +474,7 @@ export const DispatchParsedType = {
               fieldName,
               fieldType as SerializedType<T>,
               typeNames,
+              serializedTypes,
               injectedPrimitives,
             ).Then((parsedField) =>
               ValueOrErrors.Default.return([fieldName, parsedField] as const),
@@ -511,59 +503,11 @@ export const DispatchParsedType = {
           ),
         );
     },
-    ParseUnionCaseFields: <T>(
-      rawType: SerializedUnionCase,
-      caseName: DispatchCaseName,
-      typeNames: Set<DispatchTypeName>,
-      injectedPrimitives?: InjectedPrimitives<T>,
-    ): ValueOrErrors<LookupType | RecordType<T>, string> => {
-      if (rawType.fields == undefined) {
-        return ValueOrErrors.Default.return(
-          DispatchParsedType.Default.record(
-            caseName,
-            Map<string, DispatchParsedType<T>>(),
-            caseName,
-            rawType.extends ?? [],
-          ),
-        );
-      }
-      if (SerializedType.isLookup(rawType.fields, typeNames)) {
-        return ValueOrErrors.Default.return(
-          DispatchParsedType.Default.lookup(rawType.fields),
-        );
-      }
-      if (SerializedType.isRecord(rawType)) {
-        return DispatchParsedType.Operations.ParseRecord(
-          caseName,
-          rawType,
-          typeNames,
-          injectedPrimitives,
-        );
-      }
-      return ValueOrErrors.Default.throwOne(
-        `Error: union case "${caseName}" has a non-lookup or non-record fields attribute`,
-      );
-    },
-    ParseRawUnionCase: <T>(
-      rawType: SerializedUnionCase,
-      typeNames: Set<DispatchTypeName>,
-      injectedPrimitives?: InjectedPrimitives<T>,
-    ): ValueOrErrors<DispatchParsedType<T>, string> =>
-      DispatchParsedType.Operations.ParseUnionCaseFields(
-        rawType,
-        rawType.caseName,
-        typeNames,
-        injectedPrimitives,
-      ).MapErrors((errors) =>
-        errors.map(
-          (error) =>
-            `${error}\n...When parsing union case "${rawType.caseName}"`,
-        ),
-      ),
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,
       typeNames: Set<DispatchTypeName>,
+      serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: InjectedPrimitives<T>,
     ): ValueOrErrors<DispatchParsedType<T>, string> => {
       const result: ValueOrErrors<DispatchParsedType<T>, string> = (() => {
@@ -579,6 +523,7 @@ export const DispatchParsedType = {
             `SingleSelection:Element`,
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
@@ -594,6 +539,7 @@ export const DispatchParsedType = {
             `MultiSelection:Element`,
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
@@ -609,6 +555,7 @@ export const DispatchParsedType = {
             `List:Element`,
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
@@ -623,6 +570,7 @@ export const DispatchParsedType = {
                   `Tuple:Item ${index + 1}`,
                   arg,
                   typeNames,
+                  serializedTypes,
                   injectedPrimitives,
                 ),
               ),
@@ -641,12 +589,14 @@ export const DispatchParsedType = {
             "Map:Key",
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArgs0) =>
             DispatchParsedType.Operations.ParseRawType(
               "Map:Value",
               rawType.args[1],
               typeNames,
+              serializedTypes,
               injectedPrimitives,
             ).Then((parsedArgs1) =>
               ValueOrErrors.Default.return(
@@ -663,12 +613,14 @@ export const DispatchParsedType = {
             "Sum:Left",
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArgs0) =>
             DispatchParsedType.Operations.ParseRawType(
               "Sum:Right",
               rawType.args[1],
               typeNames,
+              serializedTypes,
               injectedPrimitives,
             ).Then((parsedArgs1) =>
               ValueOrErrors.Default.return(
@@ -685,41 +637,15 @@ export const DispatchParsedType = {
             typeName,
             rawType,
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           );
-        if (SerializedType.isUnion(rawType)) {
-          return ValueOrErrors.Operations.All(
-            List<
-              ValueOrErrors<[DispatchCaseName, DispatchParsedType<T>], string>
-            >(
-              rawType.args.map((unionCase) => {
-                return DispatchParsedType.Operations.ParseRawUnionCase(
-                  unionCase,
-                  typeNames,
-                  injectedPrimitives,
-                ).Then((parsedUnionCase) => {
-                  return ValueOrErrors.Default.return([
-                    unionCase.caseName,
-                    parsedUnionCase,
-                  ]);
-                });
-              }),
-            ),
-          ).Then((parsedUnionCases) =>
-            ValueOrErrors.Default.return(
-              DispatchParsedType.Default.union(
-                typeName,
-                Map(parsedUnionCases),
-                typeName,
-              ),
-            ),
-          );
-        }
         if (SerializedType.isTable(rawType)) {
           return DispatchParsedType.Operations.ParseRawType(
             "TableType",
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
             ValueOrErrors.Default.return(
@@ -736,6 +662,53 @@ export const DispatchParsedType = {
             DispatchParsedType.Default.primitive("unit", typeName),
           );
         }
+        if (SerializedType.isUnion(rawType))
+          // for now we assume all union cases are lookup types
+          return ValueOrErrors.Operations.All(
+            List<ValueOrErrors<[string, DispatchParsedType<T>], string>>(
+              rawType.args.map((unionCase) =>
+                typeof unionCase.fields == "string" // lookup case
+                  ? serializedTypes[unionCase.fields] == undefined // probably dont need this
+                    ? ValueOrErrors.Default.throwOne(
+                        `Cannot find union case type: ${JSON.stringify(
+                          unionCase.fields,
+                        )} in types`,
+                      )
+                    : DispatchParsedType.Operations.ParseRawType(
+                        `Union:Case ${unionCase.caseName}`,
+                        unionCase.fields,
+                        typeNames,
+                        serializedTypes,
+                        injectedPrimitives,
+                      ).Then((parsedType) =>
+                        ValueOrErrors.Default.return([
+                          unionCase.caseName,
+                          parsedType,
+                        ]),
+                      )
+                  : DispatchParsedType.Operations.ParseRawType(
+                      `Union:Case ${unionCase.caseName}`,
+                      unionCase.fields == undefined ? {fields: {}} : unionCase,
+                      typeNames,
+                      serializedTypes,
+                      injectedPrimitives,
+                    ).Then((parsedType) =>
+                      ValueOrErrors.Default.return([
+                        unionCase.caseName,
+                        parsedType,
+                      ]),
+                    ),
+              ),
+            ),
+          ).Then((parsedUnionCases) =>
+            ValueOrErrors.Default.return(
+              DispatchParsedType.Default.union(
+                typeName,
+                Map(parsedUnionCases),
+                typeName,
+              ),
+            ),
+          );
         return ValueOrErrors.Default.throwOne(
           `Unrecognised type "${typeName}" : ${JSON.stringify(rawType)}`,
         );
@@ -804,4 +777,36 @@ export const DispatchParsedType = {
           errors.map((error) => `${error}\n...When extending types`),
         ),
   },
+  // ValueOrErrors<[DispatchTypeName, UnionType<T>], string>
+
+  //     if (SerializedType.isUnion(rawType)) {
+  //     //   return ValueOrErrors.Operations.All(
+  //     //     List<
+  //     //       ValueOrErrors<[DispatchCaseName, DispatchParsedType<T>], string>
+  //     //     >(
+  //     //       rawType.args.map((unionCase) => {
+  //     //         return DispatchParsedType.Operations.ParseRawUnionCase(
+  //     //           unionCase,
+  //     //           typeNames,
+  //     //           injectedPrimitives,
+  //     //         ).Then((parsedUnionCase) => {
+  //     //           return ValueOrErrors.Default.return([
+  //     //             unionCase.caseName,
+  //     //             parsedUnionCase,
+  //     //           ]);
+  //     //         });
+  //     //       }),
+  //     //     ),
+  //     //   ).Then((parsedUnionCases) =>
+  //     //     ValueOrErrors.Default.return(
+  //     //       DispatchParsedType.Default.union(
+  //     //         typeName,
+  //     //         Map(parsedUnionCases),
+  //     //         typeName,
+  //     //       ),
+  //     //     ),
+  //     //   );
+  //     // }
+  //   },
+  // },
 };

@@ -42,7 +42,7 @@ export const UnionAbstractRenderer = <
             ..._,
             ...(_.caseFormStates.get(caseName)! ??
               defaultCaseStates.get(caseName)!()),
-            value: _.value,
+            value: _.value.fields,
             type: _.type.args.get(caseName)!,
             identifiers: {
               withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
@@ -99,6 +99,15 @@ export const UnionAbstractRenderer = <
     },
     UnionAbstractRendererView<CaseFormState, ForeignMutationsExpected>
   >((props) => {
+    if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
+      console.error(
+        `UnionCase expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering union case field\n...${
+          props.context.identifiers.withLauncher
+        }`,
+      );
+    }
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}

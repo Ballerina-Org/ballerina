@@ -40,6 +40,7 @@ export const LoadValidateAndParseFormsConfig = <
             )(rawFormsConfig);
           if (validationResult.kind == "errors")
             return Sum.Default.right(validationResult.errors);
+
           return parseFormsToLaunchers(
             builtIns,
             injectedPrimitives,

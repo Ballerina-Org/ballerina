@@ -45,15 +45,27 @@ export const NestedUnionDispatcher = {
         dispatcherContext
           .defaultState(type, unionRenderer)
           .Then((defaultState) =>
-            ValueOrErrors.Default.return(
-              UnionAbstractRenderer(
-                // TODO better typing for state and consider this pattern for other dispatchers
-                (
-                  defaultState as UnionAbstractRendererState<any>
-                ).caseFormStates.map((caseState) => () => caseState),
-                Map(templates),
+            dispatcherContext
+              .getConcreteRenderer("union", unionRenderer.concreteRendererName)
+              .Then((concreteRenderer) =>
+                ValueOrErrors.Default.return(
+                  UnionAbstractRenderer(
+                    // TODO better typing for state and consider this pattern for other dispatchers
+                    (
+                      defaultState as UnionAbstractRendererState<any>
+                    ).caseFormStates.map((caseState) => () => caseState),
+                    Map(templates),
+                  )
+                    .mapContext((_: any) => ({
+                      ..._,
+                      type: unionRenderer.type,
+                      label: unionRenderer.label,
+                      tooltip: unionRenderer.tooltip,
+                      details: unionRenderer.details,
+                    }))
+                    .withView(concreteRenderer),
+                ),
               ),
-            ),
           ),
       )
       .MapErrors((errors) =>

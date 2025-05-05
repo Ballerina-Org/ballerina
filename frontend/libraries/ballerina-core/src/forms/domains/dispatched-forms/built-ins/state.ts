@@ -68,9 +68,8 @@ export type DispatchApiConverters<
 > = { [key in keyof T]: ApiConverter<T[key]["type"]> } & BuiltInApiConverters;
 
 type RawUnion = {
-  Deserializer: string;
-  caseName: Record<string, any>;
-};
+  [caseName: string]: Record<string, any>;
+} & { Discriminator: string };
 
 type Table = {
   data: Map<string, Record<string, any>>;
@@ -692,19 +691,19 @@ export const dispatchFromAPIRawValue =
       }
       if (t.kind == "union") {
         const result = converters["union"].fromAPIRawValue(raw);
-        const caseType = t.args.get(result.Deserializer);
+        const caseType = t.args.get(result.Discriminator);
         if (caseType == undefined)
           return ValueOrErrors.Default.throwOne(
             `union case ${
-              result.Deserializer
+              result.Discriminator
             } not found in type ${JSON.stringify(t)}`,
           );
 
-        if (caseType.kind != "record")
+        if (caseType.kind != "record" && caseType.kind != "lookup")
           return ValueOrErrors.Default.throwOne(
             `union case ${
-              result.Deserializer
-            } expected record type, got ${JSON.stringify(caseType)}`,
+              result.Discriminator
+            } expected record or lookup type, got ${JSON.stringify(caseType)}`,
           );
 
         // TODO  -- assumption here that the fields type is a record
@@ -714,7 +713,19 @@ export const dispatchFromAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(result.caseName);
+        )(result[result.Discriminator]).Then((value) =>
+          PredicateValue.Operations.IsRecord(value)
+            ? ValueOrErrors.Default.return(
+                PredicateValue.Default.unionCase(result.Discriminator, value),
+              )
+            : ValueOrErrors.Default.throwOne(
+                `union case ${
+                  result.Discriminator
+                } expected record, got ${PredicateValue.Operations.GetKind(
+                  value,
+                )}`,
+              ),
+        );
       }
 
       if (t.kind == "singleSelection") {

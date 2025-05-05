@@ -7,19 +7,19 @@
       "fun": "Union",
       "args": [
         {
-          "caseName": "SAP:S2",
+          "caseName": "SAPS2",
           "fields": {
             "S2OnlyField": "boolean"
           }
         },
         {
-          "caseName": "SAP:S3",
+          "caseName": "SAPS3",
           "fields": {
             "S3OnlyField": "boolean"
           }
         },
         {
-          "caseName": "SAP:S4",
+          "caseName": "SAPS4",
           "fields": {
             "S4OnlyField": "boolean"
           }
@@ -85,16 +85,16 @@
       "fun": "Union",
       "args": [
         {
-          "caseName": "ERP:SAP",
+          "caseName": "ERPSAP",
           "fields": {
             "Value": "SAPConfig"
           }
         },
         {
-          "caseName": "ERP:BC"
+          "caseName": "ERPBC"
         },
         {
-          "caseName": "ERP:FAndO"
+          "caseName": "ERPFAndO"
         }
       ]
     },
@@ -254,6 +254,16 @@
         "language": "string"
       }
     },
+    "DesignerJob": {
+      "extends": ["BaseJob"],
+      "fields": {
+        "designTool": "string",
+        "certifications": {
+          "fun": "List",
+          "args": ["string"]
+        }
+      }
+    },
     "Job": {
       "fun": "Union",
       "args": [
@@ -276,7 +286,19 @@
     },
     "Person": {
       "fields": {
-        "job": "Job",
+        "job": {
+          "fun": "Union",
+          "args": [
+            {
+              "caseName": "Developer",
+              "fields": "DeveloperJob"
+            },
+            {
+              "caseName": "Designer",
+              "fields": "DesignerJob"
+            }
+          ]
+        },
         "category": "injectedCategory",
         "fullName": {
           "fun": "Tuple",
@@ -620,6 +642,64 @@
         }
       }
     },
+    "developerJob": {
+      "type": "DeveloperJob",
+      "renderer": "person",
+      "fields": {
+        "name": {
+          "renderer": "defaultString"
+        },
+        "salary": {
+          "renderer": "defaultNumber"
+        },
+        "language": {
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["name", "salary", "language"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "designerJob": {
+      "type": "DesignerJob",
+      "renderer": "person",
+      "fields": {
+        "name": {
+          "renderer": "defaultString"
+        },
+        "salary": {
+          "renderer": "defaultNumber"
+        },
+        "designTool": {
+          "renderer": "defaultString"
+        },
+        "certifications": {
+          "renderer": "defaultList",
+          "elementRenderer": {
+            "renderer": "defaultString"
+          }
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["name", "salary", "designTool", "certifications"]
+              }
+            }
+          }
+        }
+      }
+    },
     "person": {
       "type": "Person",
       "renderer": "person",
@@ -628,8 +708,8 @@
           "label": "job",
           "renderer": "job",
           "cases": {
-            "DeveloperJob": "DeveloperJob",
-            "DesignerJob": "DesignerJob"
+            "Developer": "developerJob",
+            "Designer": "designerJob"
           }
         },
         "category": {

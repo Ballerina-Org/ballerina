@@ -217,6 +217,7 @@ export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-
 export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/form/domains/renderers/domains/tableFormRenderer/state";
 export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/nestedDispatcher/domains/nestedTableDisaptcher/state";
 export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/abstract-renderers/state";
+export * from "./src/forms/domains/dispatched-forms/dispatcher/domains/nestedDispatcher/domains/nestedUnionDispatcher/state";
 // import { simpleUpdater, simpleUpdaterWithChildren } from "./src/fun/domains/updater/domains/simpleUpdater/state"
 // import { Updater } from "./src/fun/domains/updater/state"
 
