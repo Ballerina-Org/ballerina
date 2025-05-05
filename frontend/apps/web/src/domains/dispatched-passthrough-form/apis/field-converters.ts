@@ -61,8 +61,8 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         typeof _ == "string"
           ? new Date(Date.parse(_))
           : typeof _ == "number"
-          ? new Date(_)
-          : new Date(Date.now()),
+            ? new Date(_)
+            : new Date(Date.now()),
       toAPIRawValue: ([_, __]) => _,
     },
     union: {

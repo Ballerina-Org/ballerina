@@ -105,7 +105,13 @@
             "columns": {
               "main": {
                 "groups": {
-                  "main": ["Name", "Surname", "Email", "Birthday", "SubscribeToNewsletter"]
+                  "main": [
+                    "Name",
+                    "Surname",
+                    "Email",
+                    "Birthday",
+                    "SubscribeToNewsletter"
+                  ]
                 }
               }
             }

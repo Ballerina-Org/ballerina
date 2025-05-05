@@ -11,9 +11,7 @@
       }
     },
     "CompanyRef": {
-      "extends": [
-        "CollectionReference"
-      ],
+      "extends": ["CollectionReference"],
       "fields": {}
     },
     "UserGroup": {
@@ -31,9 +29,7 @@
         "Salary": "Float64",
         "Company": {
           "fun": "SingleSelection",
-          "args": [
-            "CompanyRef"
-          ]
+          "args": ["CompanyRef"]
         }
       }
     },
@@ -81,29 +77,21 @@
           "args": [
             {
               "fun": "One",
-              "args": [
-                "Job"
-              ]
+              "args": ["Job"]
             }
           ]
         },
         "Team": {
           "fun": "One",
-          "args": [
-            "Team"
-          ]
+          "args": ["Team"]
         },
         "UserGroups": {
           "fun": "Many",
-          "args": [
-            "UserGroup"
-          ]
+          "args": ["UserGroup"]
         },
         "Activities": {
           "fun": "Many",
-          "args": [
-            "Activity"
-          ]
+          "args": ["Activity"]
         }
       }
     },
@@ -111,15 +99,11 @@
       "fields": {
         "Active": {
           "fun": "Table",
-          "args": [
-            "User"
-          ]
+          "args": ["User"]
         },
         "Inactive": {
           "fun": "Table",
-          "args": [
-            "User"
-          ]
+          "args": ["User"]
         }
       }
     }
@@ -142,39 +126,21 @@
         "one": {
           "UserTeamApi": {
             "type": "Team",
-            "methods": [
-              "get",
-              "update"
-            ]
+            "methods": ["get", "update"]
           },
           "UserJobApi": {
             "type": "Job",
-            "methods": [
-              "update",
-              "getManyUnlinked",
-              "create",
-              "delete"
-            ]
+            "methods": ["update", "getManyUnlinked", "create", "delete"]
           }
         },
         "many": {
           "UserGroupsApi": {
             "type": "UserGroup",
-            "methods": [
-              "update",
-              "getManyUnlinked",
-              "create",
-              "delete"
-            ]
+            "methods": ["update", "getManyUnlinked", "create", "delete"]
           },
           "UserActivitiesApi": {
             "type": "Activity",
-            "methods": [
-              "update",
-              "getManyUnlinked",
-              "create",
-              "delete"
-            ]
+            "methods": ["update", "getManyUnlinked", "create", "delete"]
           }
         }
       }
@@ -184,7 +150,7 @@
     "team": {
       "type": "Team",
       "containerRenderer": "grayBackground",
-      "renderer":"nameAndDescription",
+      "renderer": "nameAndDescription",
       "fields": {
         "Name": {
           "renderer": "string",
@@ -200,10 +166,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "Name",
-                  "Description"
-                ]
+                "main": ["Name", "Description"]
               }
             }
           }
@@ -219,9 +182,7 @@
           "label": "Email"
         }
       },
-      "visibleColumns": [
-        "Email"
-      ]
+      "visibleColumns": ["Email"]
     },
     "activeUsers": {
       "type": "User",
@@ -270,7 +231,7 @@
               "detailsRenderer": {
                 "renderer": {
                   "type": "Job",
-                  "renderer":"alternatingBackgroundColors",
+                  "renderer": "alternatingBackgroundColors",
                   "fields": {
                     "Name": {
                       "renderer": "string",
@@ -286,10 +247,7 @@
                     },
                     "Company": {
                       "renderer": "streamSingleselection",
-                      "stream": [
-                        "User",
-                        "UserCompaniesApi"
-                      ],
+                      "stream": ["User", "UserCompaniesApi"],
                       "label": "Company"
                     }
                   },
@@ -298,12 +256,7 @@
                       "columns": {
                         "main": {
                           "groups": {
-                            "main": [
-                              "Name",
-                              "Description",
-                              "Salary",
-                              "Company"
-                            ]
+                            "main": ["Name", "Description", "Salary", "Company"]
                           }
                         }
                       }
@@ -325,9 +278,7 @@
                       "columns": {
                         "main": {
                           "groups": {
-                            "main": [
-                              "Name"
-                            ]
+                            "main": ["Name"]
                           }
                         }
                       }
@@ -335,10 +286,7 @@
                   }
                 }
               },
-              "api": [
-                "User",
-                "UserJobApi"
-              ],
+              "api": ["User", "UserJobApi"],
               "label": "Job"
             }
           },
@@ -347,10 +295,7 @@
             "detailsRenderer": {
               "renderer": "team"
             },
-            "api": [
-              "User",
-              "UserTeamApi"
-            ],
+            "api": ["User", "UserTeamApi"],
             "label": "Team"
           },
           "UserGroups": {
@@ -375,10 +320,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name",
-                            "Description"
-                          ]
+                          "main": ["Name", "Description"]
                         }
                       }
                     }
@@ -401,9 +343,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name"
-                          ]
+                          "main": ["Name"]
                         }
                       }
                     }
@@ -411,10 +351,7 @@
                 }
               }
             },
-            "api": [
-              "User",
-              "UserGroupsApi"
-            ],
+            "api": ["User", "UserGroupsApi"],
             "label": "User Groups"
           },
           "Activities": {
@@ -431,15 +368,9 @@
                   "label": "Timestamp"
                 }
               },
-              "visibleColumns": [
-                "Log",
-                "Timestamp"
-              ]
+              "visibleColumns": ["Log", "Timestamp"]
             },
-            "api": [
-              "User",
-              "UserActivitiesApi"
-            ],
+            "api": ["User", "UserActivitiesApi"],
             "label": "User Groups"
           }
         },
@@ -463,9 +394,7 @@
           }
         }
       },
-      "visibleColumns": [
-        "Email"
-      ]
+      "visibleColumns": ["Email"]
     },
     "users": {
       "type": "Users",
@@ -486,10 +415,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "Active",
-                  "Inactive"
-                ]
+                "main": ["Active", "Inactive"]
               }
             }
           }
