@@ -65,7 +65,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
-    <PackageReference Update="FSharp.Core" Version="9.0.201" />
+    <PackageReference Update="FSharp.Core" Version="9.0.202" />
     <PackageReference Include="FSharp.Data" Version="6.4.1" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
   </ItemGroup>
