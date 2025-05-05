@@ -12,7 +12,7 @@ import {
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchParsedType, SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DispatchOnChange } from "../../../state";
 import {
   SumAbstractRendererReadonlyContext,
@@ -47,8 +47,7 @@ export const SumAbstractRenderer = <
       (
         _: SumAbstractRendererReadonlyContext &
           SumAbstractRendererState<LeftFormState, RightFormState>,
-      ): Value<PredicateValue> &
-        CommonAbstractRendererReadonlyContext &
+      ): CommonAbstractRendererReadonlyContext<DispatchParsedType<any>, PredicateValue> &
         LeftFormState => ({
         ..._.customFormState.left,
         disabled: _.disabled,
@@ -59,6 +58,7 @@ export const SumAbstractRenderer = <
           withLauncher: _.identifiers.withLauncher.concat(`[left]`),
           withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
         },
+        type: _.type.args[0]
       }),
     )
     ?.mapState(

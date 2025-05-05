@@ -1,9 +1,11 @@
 import { Map } from "immutable";
 import {
+  BaseOneRenderer,
   Expr,
   isObject,
   isString,
   MapRepo,
+  SerializedBaseOneRenderer,
   SerializedTableFormRenderer,
   TableFormRenderer,
   ValueOrErrors,
@@ -61,12 +63,14 @@ import {
 
 export type BaseSerializedBaseRenderer = {
   renderer?: unknown;
-  label?: string;
-  tooltip?: string;
-  details?: string;
+  detailsRenderer?: unknown;
+  previewRenderer?: unknown;
   visible?: unknown;
   disabled?: unknown;
   api?: unknown;
+  label?: string;
+  tooltip?: string;
+  details?: string;
 };
 
 export type SerializedBaseRenderer =
@@ -80,7 +84,8 @@ export type SerializedBaseRenderer =
   | SerializedBaseLookupRenderer
   | SerializedBaseListRenderer
   | SerializedSumUnitDateBaseRenderer
-  | SerializedBaseTableRenderer;
+  | SerializedBaseTableRenderer
+  | SerializedBaseOneRenderer;
 
 export type SerializedInlineRenderer =
   | SerializedTableFormRenderer
@@ -107,7 +112,8 @@ export type BaseRenderer<T> =
   | BaseTupleRenderer<T>
   | BaseUnionRenderer<T>
   | BaseSumUnitDateRenderer<T>
-  | BaseTableRenderer<T>;
+  | BaseTableRenderer<T>
+  | BaseOneRenderer<T>;
 
 export const BaseRenderer = {
   Operations: {
@@ -328,6 +334,16 @@ export const BaseRenderer = {
             types,
           );
         }
+        if (type.kind == "one") {
+          return BaseOneRenderer.Operations.Deserialize(
+            type,
+            serialized,
+            renderingContext,
+            fieldViews,
+            types,
+          );
+        }
+        // TODO -- verify and remove
         if (type.kind == "table") {
           return BaseTableRenderer.Operations.Deserialize(
             type,

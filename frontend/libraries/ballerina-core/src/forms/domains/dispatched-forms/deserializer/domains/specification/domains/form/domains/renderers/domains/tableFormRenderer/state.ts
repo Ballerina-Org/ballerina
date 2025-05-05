@@ -133,11 +133,12 @@ export const TableFormRenderer = {
     > =>
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
-        : BaseRenderer.Operations.Deserialize(
-            type,
+        : BaseRenderer.Operations.DeserializeAs(
+            type.args[0], // TODO check it should be type.args[0]
             serialized.detailsRenderer,
             fieldViews,
             "nested",
+            "details renderer",
             types,
           ),
     Deserialize: <T>(

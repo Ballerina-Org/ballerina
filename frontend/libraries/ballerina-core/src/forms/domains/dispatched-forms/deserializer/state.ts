@@ -19,6 +19,7 @@ import {
   simpleUpdater,
   ValueInfiniteStreamState,
   MapRepo,
+  OneAbstractRendererState,
 } from "../../../../../main";
 
 import { Form } from "./domains/specification/domains/form/state";
@@ -82,6 +83,7 @@ export type DispatcherContext<
   forms: Map<string, Form<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   tableApiSources?: DispatchTableApiSources;
+  lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
     type: DispatchParsedType<T>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
@@ -119,6 +121,16 @@ export type DispatchTableApiSources = BasicFun<
   ValueOrErrors<DispatchTableApiSource, string>
 >;
 
+export type DispatchOneName = string;
+export type DispatchOneSource = BasicFun<
+  DispatchOneName,
+  ValueOrErrors<OneAbstractRendererState["customFormState"]["getChunk"], string>
+>;
+
+export type DispatchLookupSources = (typeName: string) =>{
+  one?: DispatchOneSource;
+};
+
 export type DispatchConfigName = string;
 export type DispatchGlobalConfigurationSources = BasicFun<
   DispatchConfigName,
@@ -146,6 +158,7 @@ export const parseDispatchFormsToLaunchers =
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
     tableApiSources?: DispatchTableApiSources,
+    lookupSources?: DispatchLookupSources,
   ) =>
   (
     specification: Specification<T>,
@@ -219,6 +232,7 @@ export const parseDispatchFormsToLaunchers =
             injectedPrimitives,
             apiConverters,
             infiniteStreamSources,
+            lookupSources,
             enumOptionsSources,
             tableApiSources,
             entityApis,
@@ -238,6 +252,7 @@ export const parseDispatchFormsToLaunchers =
               injectedPrimitives,
               specification.types,
               specification.forms,
+              lookupSources,
             ),
             types: specification.types,
             parseFromApiByType: (type: DispatchParsedType<T>) =>
@@ -262,6 +277,7 @@ export type DispatchFormsParserContext<
   concreteRenderers: any;
   fieldTypeConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
+  lookupSources?: DispatchLookupSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;

@@ -1,20 +1,18 @@
 import {
-  FormLabel,
   simpleUpdater,
   Template,
   Value,
   ValueSum,
   View,
-  Bindings,
   simpleUpdaterWithChildren,
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
-  PredicateValue,
 } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
+import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export type SumAbstractRendererReadonlyContext = Value<ValueSum> &
-  CommonAbstractRendererReadonlyContext;
+export type SumAbstractRendererReadonlyContext =
+  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum>;
 
 export type SumAbstractRendererState<LeftFormState, RightFormState> =
   CommonAbstractRendererState & {

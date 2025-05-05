@@ -24,6 +24,8 @@ import {
   DispatchCommonFormState,
   UnionAbstractRendererState,
   TableFormRenderer,
+  OneAbstractRendererState,
+  DispatchLookupSources,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -77,6 +79,21 @@ type Table = {
   from: number;
   to: number;
 };
+
+export const DispatchGenericTypes = [
+  "SingleSelection",
+  "MultiSelection",
+  "List",
+  "Map",
+  "Union",
+  "Tuple",
+  "Option",
+  "Sum",
+  "KeyOf",
+  "Table",
+  "One",
+] as const;
+export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
 
 type BuiltInApiConverters = {
   string: ApiConverter<string>;
@@ -178,6 +195,7 @@ export const dispatchDefaultState =
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Form<T>>,
+    lookupSources?: DispatchLookupSources,
   ) =>
   (
     t: DispatchParsedType<any>,
@@ -193,76 +211,88 @@ export const dispatchDefaultState =
               `received non primitive renderer kind "${renderer.kind}" when resolving defaultState for primitive`,
             )
           : t.name == "unit"
-            ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
-            : t.name == "boolean"
-              ? ValueOrErrors.Default.return(
-                  BoolAbstractRendererState.Default(),
-                )
-              : t.name == "number"
-                ? ValueOrErrors.Default.return(
-                    NumberAbstractRendererState.Default(),
-                  )
-                : t.name == "string"
-                  ? ValueOrErrors.Default.return(
-                      StringAbstractRendererState.Default(),
-                    )
-                  : t.name == "base64File"
-                    ? ValueOrErrors.Default.return(
-                        Base64FileAbstractRendererState.Default(),
-                      )
-                    : t.name == "secret"
-                      ? ValueOrErrors.Default.return(
-                          SecretAbstractRendererState.Default(),
-                        )
-                      : t.name == "Date"
-                        ? ValueOrErrors.Default.return(
-                            DateAbstractRendererState.Default(),
-                          )
-                        : injectedPrimitives?.injectedPrimitives.get(
-                              t.name as keyof T,
-                            ) != undefined
-                          ? ValueOrErrors.Default.return({
-                              commonFormState:
-                                DispatchCommonFormState.Default(),
-                              ...injectedPrimitives.injectedPrimitives.get(
-                                t.name as keyof T,
-                              )!.defaultState,
-                            })
-                          : ValueOrErrors.Default.throwOne(
-                              `could not resolve defaultState for primitive renderer kind "${
-                                t.name as string
-                              }"`,
-                            );
+          ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
+          : t.name == "boolean"
+          ? ValueOrErrors.Default.return(BoolAbstractRendererState.Default())
+          : t.name == "number"
+          ? ValueOrErrors.Default.return(NumberAbstractRendererState.Default())
+          : t.name == "string"
+          ? ValueOrErrors.Default.return(StringAbstractRendererState.Default())
+          : t.name == "base64File"
+          ? ValueOrErrors.Default.return(
+              Base64FileAbstractRendererState.Default(),
+            )
+          : t.name == "secret"
+          ? ValueOrErrors.Default.return(SecretAbstractRendererState.Default())
+          : t.name == "Date"
+          ? ValueOrErrors.Default.return(DateAbstractRendererState.Default())
+          : injectedPrimitives?.injectedPrimitives.get(t.name as keyof T) !=
+            undefined
+          ? ValueOrErrors.Default.return({
+              commonFormState: DispatchCommonFormState.Default(),
+              ...injectedPrimitives.injectedPrimitives.get(t.name as keyof T)!
+                .defaultState,
+            })
+          : ValueOrErrors.Default.throwOne(
+              `could not resolve defaultState for primitive renderer kind "${
+                t.name as string
+              }"`,
+            );
 
       if (t.kind == "singleSelection")
         return renderer.kind == "baseEnumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
           : renderer.kind == "baseStreamRenderer"
-            ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
-                ValueOrErrors.Default.return(
-                  SearchableInfiniteStreamAbstractRendererState.Default(
-                    streamSource,
-                  ),
+          ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
+              ValueOrErrors.Default.return(
+                SearchableInfiniteStreamAbstractRendererState.Default(
+                  streamSource,
                 ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non singleSelection renderer kind "${renderer.kind}" when resolving defaultState for singleSelection`,
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non singleSelection renderer kind "${renderer.kind}" when resolving defaultState for singleSelection`,
+            );
+
+      if (t.kind == "one")
+        return renderer.kind != "baseOneRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
+            )
+          : lookupSources == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `lookup sources referenced but no lookup sources are provided`,
+            )
+          : lookupSources(renderer.api[0]) == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `cannot find lookup source for ${renderer.api[0]}`,
+            )
+          : lookupSources(renderer.api[0]).one == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `cannot find lookup one source for ${renderer.api[0]}`,
+            )
+          : lookupSources(renderer.api[0])
+              .one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+              .Then((oneSource) =>
+                ValueOrErrors.Default.return(
+                  OneAbstractRendererState.Default(oneSource),
+                ),
               );
 
       if (t.kind == "multiSelection")
         return renderer.kind == "baseEnumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
           : renderer.kind == "baseStreamRenderer"
-            ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
-                ValueOrErrors.Default.return(
-                  SearchableInfiniteStreamAbstractRendererState.Default(
-                    streamSource,
-                  ),
+          ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
+              ValueOrErrors.Default.return(
+                SearchableInfiniteStreamAbstractRendererState.Default(
+                  streamSource,
                 ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultState for multiSelection`,
-              );
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultState for multiSelection`,
+            );
 
       if (t.kind == "list")
         return renderer.kind == "baseListRenderer"
@@ -340,15 +370,15 @@ export const dispatchDefaultState =
                   ),
             )
           : renderer.kind == "baseSumUnitDateRenderer"
-            ? ValueOrErrors.Default.return(
-                SumAbstractRendererState().Default({
-                  left: UnitAbstractRendererState.Default(),
-                  right: DateAbstractRendererState.Default(),
-                }),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `renderer kind "${renderer.kind}" not supported for sum`,
-              );
+          ? ValueOrErrors.Default.return(
+              SumAbstractRendererState().Default({
+                left: UnitAbstractRendererState.Default(),
+                right: DateAbstractRendererState.Default(),
+              }),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `renderer kind "${renderer.kind}" not supported for sum`,
+            );
 
       if (t.kind == "record")
         return renderer.kind == "recordForm"
@@ -481,40 +511,30 @@ export const dispatchDefaultValue =
               `received non primitive renderer kind "${renderer.kind}" when resolving defaultValue for primitive`,
             )
           : t.name == "unit"
-            ? ValueOrErrors.Default.return(PredicateValue.Default.unit())
-            : t.name == "boolean"
-              ? ValueOrErrors.Default.return(PredicateValue.Default.boolean())
-              : t.name == "number"
-                ? ValueOrErrors.Default.return(PredicateValue.Default.number())
-                : t.name == "string"
-                  ? ValueOrErrors.Default.return(
-                      PredicateValue.Default.string(),
-                    )
-                  : t.name == "base64File"
-                    ? ValueOrErrors.Default.return(
-                        PredicateValue.Default.string(),
-                      )
-                    : t.name == "secret"
-                      ? ValueOrErrors.Default.return(
-                          PredicateValue.Default.string(),
-                        )
-                      : t.name == "Date"
-                        ? ValueOrErrors.Default.return(
-                            PredicateValue.Default.date(),
-                          )
-                        : injectedPrimitives?.injectedPrimitives.get(
-                              t.name as keyof T,
-                            ) != undefined
-                          ? ValueOrErrors.Default.return(
-                              injectedPrimitives.injectedPrimitives.get(
-                                t.name as keyof T,
-                              )!.defaultValue,
-                            )
-                          : ValueOrErrors.Default.throwOne(
-                              `could not resolve defaultValue for primitive renderer type "${
-                                t.name as string
-                              }"`,
-                            );
+          ? ValueOrErrors.Default.return(PredicateValue.Default.unit())
+          : t.name == "boolean"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.boolean())
+          : t.name == "number"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.number())
+          : t.name == "string"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "base64File"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "secret"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "Date"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.date())
+          : injectedPrimitives?.injectedPrimitives.get(t.name as keyof T) !=
+            undefined
+          ? ValueOrErrors.Default.return(
+              injectedPrimitives.injectedPrimitives.get(t.name as keyof T)!
+                .defaultValue,
+            )
+          : ValueOrErrors.Default.throwOne(
+              `could not resolve defaultValue for primitive renderer type "${
+                t.name as string
+              }"`,
+            );
 
       if (t.kind == "singleSelection")
         return renderer.kind == "baseEnumRenderer" ||
@@ -584,14 +604,14 @@ export const dispatchDefaultValue =
               ),
             )
           : renderer.kind == "baseSumUnitDateRenderer"
-            ? ValueOrErrors.Default.return(
-                PredicateValue.Default.sum(
-                  Sum.Default.left(PredicateValue.Default.unit()),
-                ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non sum renderer kind "${renderer.kind}" when resolving defaultValue for sum`,
-              );
+          ? ValueOrErrors.Default.return(
+              PredicateValue.Default.sum(
+                Sum.Default.left(PredicateValue.Default.unit()),
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non sum renderer kind "${renderer.kind}" when resolving defaultValue for sum`,
+            );
 
       if (t.kind == "record")
         return renderer.kind == "recordForm"

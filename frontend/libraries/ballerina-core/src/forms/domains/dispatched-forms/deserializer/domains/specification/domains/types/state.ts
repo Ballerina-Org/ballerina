@@ -1,17 +1,17 @@
 import { Set, List, Map, isMap } from "immutable";
-import {
-  GenericType,
-  GenericTypes,
-  PrimitiveTypes,
-} from "../../../../../../parser/domains/built-ins/state";
+import {} from "../../../../../../parser/domains/built-ins/state";
 import { InjectedPrimitives } from "../../../../../../parser/domains/injectables/state";
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
-import { MapRepo, Unit } from "../../../../../../../../../main";
+import {
+  Unit,
+  DispatchGenericType,
+  DispatchGenericTypes,
+} from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
 export const DispatchIsObject = (_: any): _ is object => typeof _ == "object";
-export const DispatchIsGenericType = (_: any): _ is GenericType =>
-  _ && GenericTypes.includes(_);
+export const DispatchIsGenericType = (_: any): _ is DispatchGenericType =>
+  _ && DispatchGenericTypes.includes(_);
 export const DispatchHasFun = (_: any): _ is { fun: string } =>
   DispatchIsObject(_) && "fun" in _ && DispatchisString(_.fun);
 export const DispatchHasArgs = (_: any): _ is { args: Array<any> } =>
@@ -21,7 +21,7 @@ export type DispatchFieldName = string;
 export type DispatchTypeName = string;
 
 export type SerializedApplicationType<T> = {
-  fun?: GenericType;
+  fun?: DispatchGenericType;
   args?: Array<SerializedType<T>>;
 };
 
@@ -51,6 +51,20 @@ export type SerializedType<T> =
   | SerializedRecordType
   | SerializedOptionType;
 
+export const DispatchPrimitiveTypeNames = [
+  "unit",
+  "guid", //resolves to string
+  "string",
+  "number",
+  "boolean",
+  "Date",
+  "base64File",
+  "secret",
+] as const;
+export type DispatchPrimitiveTypeName<T> =
+  | (typeof DispatchPrimitiveTypeNames)[number]
+  | keyof T;
+
 export const SerializedType = {
   isExtendedType: <T>(
     type: SerializedType<T>,
@@ -67,12 +81,12 @@ export const SerializedType = {
     injectedPrimitives: InjectedPrimitives<T> | undefined,
   ): _ is DispatchPrimitiveTypeName<T> =>
     Boolean(
-      PrimitiveTypes.some((__) => _ == __) ||
+      DispatchPrimitiveTypeNames.some((__) => _ == __) ||
         injectedPrimitives?.injectedPrimitives.has(_ as keyof T),
     ),
   isApplication: <T>(
     _: SerializedType<T>,
-  ): _ is { fun: GenericType; args: Array<SerializedType<T>> } =>
+  ): _ is { fun: DispatchGenericType; args: Array<SerializedType<T>> } =>
     DispatchHasFun(_) && DispatchIsGenericType(_.fun) && DispatchHasArgs(_),
   isLookup: (_: unknown, forms: Set<DispatchTypeName>): _ is DispatchTypeName =>
     DispatchisString(_) && forms.has(_),
@@ -157,19 +171,11 @@ export const SerializedType = {
     Array.isArray(_.args) &&
     _.args.length == 1 &&
     DispatchisString(_.args[0]),
+  isOne: <T>(
+    _: SerializedType<T>,
+  ): _ is { fun: "One"; args: Array<SerializedType<T>> } =>
+    SerializedType.isApplication(_) && _.fun == "One" && _.args.length == 1,
 };
-
-export type DispatchPrimitiveTypeName<T> =
-  | "unit"
-  | "string"
-  | "number"
-  | "maybeBoolean"
-  | "boolean"
-  | "Date"
-  | "base64File"
-  | "secret"
-  | keyof T
-  | "guid";
 
 export type UnionType<T> = {
   kind: "union";
@@ -247,6 +253,13 @@ export type TableType<T> = {
   typeName: DispatchTypeName;
 };
 
+export type OneType<T> = {
+  kind: "one";
+  name: DispatchTypeName;
+  args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
+};
+
 export type DispatchParsedType<T> =
   | RecordType<T>
   | LookupType
@@ -258,7 +271,8 @@ export type DispatchParsedType<T> =
   | TupleType<T>
   | SumType<T>
   | MapType<T>
-  | TableType<T>;
+  | TableType<T>
+  | OneType<T>;
 
 export const DispatchParsedType = {
   Default: {
@@ -285,7 +299,7 @@ export const DispatchParsedType = {
       extendedTypes,
     }),
     primitive: <T>(
-      name: DispatchPrimitiveTypeName<T> | keyof T,
+      name: DispatchPrimitiveTypeName<T>,
       typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "primitive",
@@ -367,6 +381,16 @@ export const DispatchParsedType = {
       name,
       typeName: name,
     }),
+    one: <T>(
+      name: DispatchTypeName,
+      args: Array<DispatchParsedType<T>>,
+      typeName: DispatchTypeName,
+    ): OneType<T> => ({
+      kind: "one",
+      name,
+      args,
+      typeName,
+    }),
   },
   Operations: {
     Equals: <T>(
@@ -376,38 +400,33 @@ export const DispatchParsedType = {
       fst.kind == "record" && snd.kind == "record"
         ? fst.name == snd.name
         : fst.kind == "table" && snd.kind == "table"
-          ? fst.name == snd.name
-          : fst.kind == "lookup" && snd.kind == "lookup"
-            ? fst.name == snd.name
-            : fst.kind == "primitive" && snd.kind == "primitive"
-              ? fst.name == snd.name
-              : fst.kind == "list" && snd.kind == "list"
-                ? fst.name == snd.name
-                : fst.kind == "singleSelection" && snd.kind == "singleSelection"
-                  ? fst.name == snd.name
-                  : fst.kind == "multiSelection" && snd.kind == "multiSelection"
-                    ? fst.name == snd.name
-                    : fst.kind == "map" && snd.kind == "map"
-                      ? fst.name == snd.name
-                      : fst.kind == "sum" && snd.kind == "sum"
-                        ? fst.name == snd.name
-                        : fst.kind == "tuple" && snd.kind == "tuple"
-                          ? fst.name == snd.name &&
-                            fst.args.length == snd.args.length &&
-                            fst.args.every((v, i) =>
-                              DispatchParsedType.Operations.Equals(
-                                v,
-                                snd.args[i],
-                              ),
-                            )
-                          : fst.kind == "union" && snd.kind == "union"
-                            ? fst.args.size == snd.args.size &&
-                              fst.args.every(
-                                (v, i) => v.name == snd.args.get(i)!.name,
-                              )
-                            : false,
-
-    // TODO -- possible source of error
+        ? fst.name == snd.name
+        : fst.kind == "one" && snd.kind == "one"
+        ? fst.name == snd.name
+        : fst.kind == "lookup" && snd.kind == "lookup"
+        ? fst.name == snd.name
+        : fst.kind == "primitive" && snd.kind == "primitive"
+        ? fst.name == snd.name
+        : fst.kind == "list" && snd.kind == "list"
+        ? fst.name == snd.name
+        : fst.kind == "singleSelection" && snd.kind == "singleSelection"
+        ? fst.name == snd.name
+        : fst.kind == "multiSelection" && snd.kind == "multiSelection"
+        ? fst.name == snd.name
+        : fst.kind == "map" && snd.kind == "map"
+        ? fst.name == snd.name
+        : fst.kind == "sum" && snd.kind == "sum"
+        ? fst.name == snd.name
+        : fst.kind == "tuple" && snd.kind == "tuple"
+        ? fst.name == snd.name &&
+          fst.args.length == snd.args.length &&
+          fst.args.every((v, i) =>
+            DispatchParsedType.Operations.Equals(v, snd.args[i]),
+          )
+        : fst.kind == "union" && snd.kind == "union"
+        ? fst.args.size == snd.args.size &&
+          fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
+        : false,
     ParseRawKeyOf: <T>(
       fieldName: DispatchTypeName,
       rawType: SerializedType<T>,
@@ -714,6 +733,17 @@ export const DispatchParsedType = {
                 Map(parsedUnionCases),
                 typeName,
               ),
+            ),
+          );
+        if (SerializedType.isOne(rawType))
+          return DispatchParsedType.Operations.ParseRawType(
+            "One:Element",
+            rawType.args[0],
+            typeNames,
+            injectedPrimitives,
+          ).Then((parsedArg) =>
+            ValueOrErrors.Default.return(
+              DispatchParsedType.Default.one(typeName, [parsedArg], typeName),
             ),
           );
         return ValueOrErrors.Default.throwOne(

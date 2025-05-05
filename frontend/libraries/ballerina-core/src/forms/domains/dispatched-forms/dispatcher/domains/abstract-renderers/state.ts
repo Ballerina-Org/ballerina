@@ -1,15 +1,21 @@
 import {
   Bindings,
+  DispatchParsedType,
   PredicateValue,
+  Value,
   simpleUpdater,
 } from "../../../../../../../main";
 
-export type CommonAbstractRendererReadonlyContext = {
-  value: PredicateValue;
+export type CommonAbstractRendererReadonlyContext<
+  T extends DispatchParsedType<any>,
+  V extends PredicateValue,
+> = {
+  value: V;
   disabled: boolean;
   bindings: Bindings;
   extraContext: any;
   identifiers: { withLauncher: string; withoutLauncher: string };
+  type: T;
   label?: string;
   tooltip?: string;
   details?: string;
