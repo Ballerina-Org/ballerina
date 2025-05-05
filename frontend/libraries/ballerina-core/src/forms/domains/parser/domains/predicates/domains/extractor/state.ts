@@ -83,8 +83,8 @@ export const PredicateValueExtractor = {
                   ]),
                 )
               : !v.isSome
-              ? ValueOrErrors.Default.return([])
-              : traverseSingleSelection(v.value);
+                ? ValueOrErrors.Default.return([])
+                : traverseSingleSelection(v.value);
         }
         case "multiSelection": {
           // multi selection only has 1 arg type, which is the same for all the selcted elements
