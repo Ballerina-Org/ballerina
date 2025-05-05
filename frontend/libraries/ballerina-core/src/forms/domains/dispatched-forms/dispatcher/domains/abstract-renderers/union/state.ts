@@ -1,44 +1,67 @@
 import {
   BasicFun,
+  BasicUpdater,
+  CommonAbstractRendererReadonlyContext,
   DispatchCommonFormState,
-  FormLabel,
+  MapRepo,
   simpleUpdater,
   Template,
+  UnionType,
+  Updater,
   Value,
   ValueUnionCase,
   View,
 } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
+import { Map } from "immutable";
 
-export type UnionAbstractRendererState = {
+export type UnionAbstractRendererReadonlyContext = Value<ValueUnionCase> &
+  CommonAbstractRendererReadonlyContext & { type: UnionType<any> };
+
+export type UnionAbstractRendererState<
+  CaseFormState extends { commonFormState: DispatchCommonFormState },
+> = {
   commonFormState: DispatchCommonFormState;
-} & {
-  customFormState: {
-    selectedCase: string;
-    caseState: any;
-  };
+  caseFormStates: Map<string, CaseFormState>;
 };
 
-export const UnionAbstractRendererState = () => ({
+export const UnionAbstractRendererState = <
+  CaseFormState extends { commonFormState: DispatchCommonFormState },
+>() => ({
   Default: (
-    customFormState: UnionAbstractRendererState["customFormState"],
-  ): UnionAbstractRendererState => ({
+    caseFormStates: UnionAbstractRendererState<CaseFormState>["caseFormStates"],
+  ): UnionAbstractRendererState<CaseFormState> => ({
     commonFormState: DispatchCommonFormState.Default(),
-    customFormState,
+    caseFormStates,
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<UnionAbstractRendererState>()("customFormState"),
+      ...simpleUpdater<UnionAbstractRendererState<CaseFormState>>()(
+        "commonFormState",
+      ),
+      ...simpleUpdater<UnionAbstractRendererState<CaseFormState>>()(
+        "caseFormStates",
+      ),
     },
-    Template: {},
+    Template: {
+      upsertCaseFormState: (
+        caseName: string,
+        defaultState: () => any,
+        updater: BasicUpdater<CaseFormState>,
+      ): Updater<UnionAbstractRendererState<CaseFormState>> =>
+        UnionAbstractRendererState<CaseFormState>().Updaters.Core.caseFormStates(
+          MapRepo.Updaters.upsert(caseName, defaultState, updater),
+        ),
+    },
   },
 });
 export type UnionAbstractRendererView<
-  Context extends FormLabel,
+  CaseFormState extends { commonFormState: DispatchCommonFormState },
   ForeignMutationsExpected,
 > = View<
-  Context & Value<ValueUnionCase> & UnionAbstractRendererState,
-  UnionAbstractRendererState,
+  UnionAbstractRendererReadonlyContext &
+    UnionAbstractRendererState<CaseFormState>,
+  UnionAbstractRendererState<CaseFormState>,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueUnionCase>;
   },
@@ -46,8 +69,9 @@ export type UnionAbstractRendererView<
     embeddedCaseTemplate: BasicFun<
       string,
       Template<
-        Context & Value<ValueUnionCase> & UnionAbstractRendererState,
-        UnionAbstractRendererState,
+        UnionAbstractRendererReadonlyContext &
+          UnionAbstractRendererState<CaseFormState>,
+        UnionAbstractRendererState<CaseFormState>,
         ForeignMutationsExpected & {
           onChange: DispatchOnChange<ValueUnionCase>;
         }

@@ -1,33 +1,72 @@
-import React, { Context } from "react";
 import {
-  BasicFun,
   BasicUpdater,
+  CommonAbstractRendererReadonlyContext,
   DispatchCommonFormState,
-  FormLabel,
+  DispatchParsedType,
+  MapRepo,
   PredicateValue,
+  UnionType,
   Updater,
-  Value,
   ValueUnionCase,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
-import { UnionAbstractRendererState, UnionAbstractRendererView } from "./state";
-import { Map, Set } from "immutable";
+import {
+  UnionAbstractRendererReadonlyContext,
+  UnionAbstractRendererState,
+  UnionAbstractRendererView,
+} from "./state";
+import { Map } from "immutable";
 import { DispatchOnChange } from "../../../state";
 
 export const UnionAbstractRenderer = <
-  Context extends FormLabel & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
   ForeignMutationsExpected,
+  CaseFormState extends { commonFormState: DispatchCommonFormState },
 >(
-  //TODO: Use state and values
-  defaultState: { Default: () => any },
-  defaultValues: { Default: () => PredicateValue },
-  caseTemplate: Template<any, any, any, any>,
+  defaultCaseStates: Map<string, () => CaseFormState>,
+  caseTemplates: Map<string, Template<any, any, any, any>>,
 ) => {
   const embeddedCaseTemplate = (caseName: string) =>
-    caseTemplate
+    caseTemplates
+      .get(caseName)!
+      .mapContext(
+        (
+          _: UnionAbstractRendererReadonlyContext &
+            UnionAbstractRendererState<CaseFormState> & {
+              type: UnionType<any>;
+            },
+        ): CommonAbstractRendererReadonlyContext & {
+          type: DispatchParsedType<any>;
+        } & UnionAbstractRendererState<CaseFormState> => {
+          const context = {
+            ..._,
+            ...(_.caseFormStates.get(caseName)! ??
+              defaultCaseStates.get(caseName)!()),
+            value: _.value,
+            type: _.type.args.get(caseName)!,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${caseName}]`,
+              ),
+            },
+          };
+          return context;
+        },
+      )
+      .mapState(
+        (
+          _: BasicUpdater<CaseFormState>,
+        ): Updater<UnionAbstractRendererState<CaseFormState>> =>
+          UnionAbstractRendererState<CaseFormState>().Updaters.Core.caseFormStates(
+            MapRepo.Updaters.upsert(
+              caseName,
+              defaultCaseStates.get(caseName)!,
+              _,
+            ),
+          ),
+      )
+
       .mapForeignMutationsFromProps<
         ForeignMutationsExpected & {
           onChange: DispatchOnChange<ValueUnionCase>;
@@ -50,51 +89,15 @@ export const UnionAbstractRenderer = <
             props.setState((_) => ({ ..._, modifiedByUser: true }));
           },
         }),
-      )
-      .mapContext(
-        (
-          _: Context & Value<ValueUnionCase> & UnionAbstractRendererState,
-        ): Context & Value<ValueUnionCase> & { caseNames: Set<string> } => {
-          const context: Context &
-            Value<ValueUnionCase> & { caseNames: Set<string> } = {
-            ..._,
-            ..._.customFormState.caseState,
-            value: _.value.fields,
-            commonFormState: {
-              modifiedByUser: true,
-            },
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${caseName}]`,
-              ),
-            },
-          };
-          return context;
-        },
-      )
-      .mapState(
-        (
-          _: BasicUpdater<{
-            formFieldStates: any;
-            commonFormState: DispatchCommonFormState;
-          }>,
-        ): Updater<UnionAbstractRendererState> =>
-          UnionAbstractRendererState().Updaters.Core.customFormState((__) => ({
-            ...__,
-            caseState: _(__.caseState),
-          })),
       );
+
   return Template.Default<
-    Context &
-      Value<ValueUnionCase> & {
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
-    UnionAbstractRendererState,
+    UnionAbstractRendererReadonlyContext,
+    UnionAbstractRendererState<CaseFormState>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueUnionCase>;
     },
-    UnionAbstractRendererView<Context, ForeignMutationsExpected>
+    UnionAbstractRendererView<CaseFormState, ForeignMutationsExpected>
   >((props) => {
     return (
       <span

@@ -140,7 +140,7 @@ export const BaseUnionRenderer = {
                       );
                     }
                     return BaseRenderer.Operations.DeserializeAs(
-                      caseType.fields,
+                      caseType,
                       caseProp,
                       fieldViews,
                       "nested",

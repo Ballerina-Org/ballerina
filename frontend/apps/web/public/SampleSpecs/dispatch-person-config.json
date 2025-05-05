@@ -1,5 +1,8 @@
 {
   "types": {
+    "AddressConfigConfig": {
+      "fields": {}
+    },
     "SAPConfig": {
       "fun": "Union",
       "args": [
@@ -78,14 +81,6 @@
         "Value": "AddressesFieldsEnum"
       }
     },
-    "AddressesConfig": {
-      "fields": {
-        "ActiveFields": {
-          "fun": "MultiSelection",
-          "args": ["AddressesFieldRef"]
-        }
-      }
-    },
     "ERPConfig": {
       "fun": "Union",
       "args": [
@@ -103,12 +98,11 @@
         }
       ]
     },
-    "GlobalConfiguration": {
-      "extends": [],
+    "PersonConfig": {
       "fields": {
         "IsAdmin": "boolean",
         "ERP": "ERPConfig",
-        "ActiveFields": {
+        "ActiveAddressFields": {
           "fun": "MultiSelection",
           "args": ["AddressesFieldRef"]
         }
@@ -248,8 +242,41 @@
       "extends": ["CollectionReference"],
       "fields": {}
     },
+    "BaseJob": {
+      "fields": {
+        "name": "string",
+        "salary": "number"
+      }
+    },
+    "DeveloperJob": {
+      "extends": ["BaseJob"],
+      "fields": {
+        "language": "string"
+      }
+    },
+    "Job": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Developer",
+          "fields": "DeveloperJob"
+        },
+        {
+          "caseName": "Designer",
+          "fields": {
+            "name": "string",
+            "designTool": "string",
+            "certifications": {
+              "fun": "List",
+              "args": ["string"]
+            }
+          }
+        }
+      ]
+    },
     "Person": {
       "fields": {
+        "job": "Job",
         "category": "injectedCategory",
         "fullName": {
           "fun": "Tuple",
@@ -535,6 +562,28 @@
                 ]
               }
             ]
+          },
+          "disabled": {
+            "kind": "equals",
+            "operands": [
+              {
+                "kind": "itemLookup",
+                "operands": [
+                  {
+                    "kind": "fieldLookup",
+                    "operands": [
+                      {
+                        "kind": "varLookup",
+                        "varName": "local"
+                      },
+                      "streetNumberAndCity"
+                    ]
+                  },
+                  2
+                ]
+              },
+              10
+            ]
           }
         }
       },
@@ -550,10 +599,10 @@
         }
       }
     },
-    "addressesConfig": {
-      "type": "AddressesConfig",
+    "personConfig": {
+      "type": "PersonConfig",
       "fields": {
-        "ActiveFields": {
+        "ActiveAddressFields": {
           "label": "addresses tab field selection",
           "renderer": "defaultEnumMultiselect",
           "options": "addressesFields"
@@ -564,7 +613,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["ActiveFields"]
+                "main": ["ActiveAddressFields"]
               }
             }
           }
@@ -573,7 +622,16 @@
     },
     "person": {
       "type": "Person",
+      "renderer": "person",
       "fields": {
+        "job": {
+          "label": "job",
+          "renderer": "job",
+          "cases": {
+            "DeveloperJob": "DeveloperJob",
+            "DesignerJob": "DesignerJob"
+          }
+        },
         "category": {
           "label": "category",
           "renderer": "defaultCategory"
@@ -1028,7 +1086,7 @@
                       "kind": "varLookup",
                       "varName": "global"
                     },
-                    "ActiveFields"
+                    "ActiveAddressFields"
                   ]
                 }
               }
@@ -1054,12 +1112,12 @@
     "person-transparent": {
       "kind": "passthrough",
       "form": "person",
-      "configType": "GlobalConfiguration"
+      "configType": "PersonConfig"
     },
-    "addresses-config": {
+    "person-config": {
       "kind": "passthrough",
-      "form": "addressesConfig",
-      "configType": "GlobalConfiguration"
+      "form": "personConfig",
+      "configType": "AddressConfigConfig"
     }
   }
 }

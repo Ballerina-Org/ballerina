@@ -183,15 +183,8 @@ export type DispatchPrimitiveTypeName<T> =
 
 export type UnionType<T> = {
   kind: "union";
-  args: Map<DispatchCaseName, UnionCaseType<T>>;
-  typeName: DispatchTypeName;
-};
-
-export type UnionCaseType<T> = {
-  kind: "unionCase";
-  name: DispatchCaseName;
-  fields: RecordType<T> | LookupType;
-  extendedTypes: Array<DispatchTypeName>;
+  name: DispatchTypeName;
+  args: Map<DispatchCaseName, DispatchParsedType<T>>;
   typeName: DispatchTypeName;
 };
 
@@ -212,42 +205,49 @@ export type LookupType = {
 export type DispatchPrimitiveType<T> = {
   kind: "primitive";
   name: DispatchPrimitiveTypeName<T>;
+  typeName: DispatchTypeName;
 };
 
 export type SingleSelectionType<T> = {
   kind: "singleSelection";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type MultiSelectionType<T> = {
   kind: "multiSelection";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type ListType<T> = {
   kind: "list";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type TupleType<T> = {
   kind: "tuple";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type SumType<T> = {
   kind: "sum";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type MapType<T> = {
   kind: "map";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
+  typeName: DispatchTypeName;
 };
 
 export type TableType<T> = {
@@ -257,7 +257,7 @@ export type TableType<T> = {
   typeName: DispatchTypeName;
 };
 
-export type DispatchParsedType<T> = (
+export type DispatchParsedType<T> =
   | RecordType<T>
   | LookupType
   | DispatchPrimitiveType<T>
@@ -268,23 +268,10 @@ export type DispatchParsedType<T> = (
   | TupleType<T>
   | SumType<T>
   | MapType<T>
-  | TableType<T>
-) & { typeName: DispatchTypeName };
+  | TableType<T>;
 
 export const DispatchParsedType = {
   Default: {
-    unionCase: <T>(
-      name: DispatchCaseName,
-      fields: RecordType<T> | LookupType,
-      typeName: DispatchTypeName,
-      extendedTypes: Array<DispatchTypeName>,
-    ): UnionCaseType<T> => ({
-      kind: "unionCase",
-      name,
-      fields,
-      typeName,
-      extendedTypes,
-    }),
     table: <T>(
       name: DispatchTypeName,
       args: Array<DispatchParsedType<T>>,
@@ -376,10 +363,12 @@ export const DispatchParsedType = {
       typeName: typeName,
     }),
     union: <T>(
-      args: Map<DispatchCaseName, UnionCaseType<T>>,
+      name: DispatchTypeName,
+      args: Map<DispatchCaseName, DispatchParsedType<T>>,
       typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "union",
+      name,
       args,
       typeName,
     }),
@@ -397,36 +386,33 @@ export const DispatchParsedType = {
       fst.kind == "record" && snd.kind == "record"
         ? fst.name == snd.name
         : fst.kind == "table" && snd.kind == "table"
-          ? fst.name == snd.name
-          : fst.kind == "lookup" && snd.kind == "lookup"
-            ? fst.name == snd.name
-            : fst.kind == "primitive" && snd.kind == "primitive"
-              ? fst.name == snd.name
-              : fst.kind == "list" && snd.kind == "list"
-                ? fst.name == snd.name
-                : fst.kind == "singleSelection" && snd.kind == "singleSelection"
-                  ? fst.name == snd.name
-                  : fst.kind == "multiSelection" && snd.kind == "multiSelection"
-                    ? fst.name == snd.name
-                    : fst.kind == "map" && snd.kind == "map"
-                      ? fst.name == snd.name
-                      : fst.kind == "sum" && snd.kind == "sum"
-                        ? fst.name == snd.name
-                        : fst.kind == "tuple" && snd.kind == "tuple"
-                          ? fst.name == snd.name &&
-                            fst.args.length == snd.args.length &&
-                            fst.args.every((v, i) =>
-                              DispatchParsedType.Operations.Equals(
-                                v,
-                                snd.args[i],
-                              ),
-                            )
-                          : fst.kind == "union" && snd.kind == "union"
-                            ? fst.args.size == snd.args.size &&
-                              fst.args.every(
-                                (v, i) => v.name == snd.args.get(i)!.name,
-                              )
-                            : false,
+        ? fst.name == snd.name
+        : fst.kind == "lookup" && snd.kind == "lookup"
+        ? fst.name == snd.name
+        : fst.kind == "primitive" && snd.kind == "primitive"
+        ? fst.name == snd.name
+        : fst.kind == "list" && snd.kind == "list"
+        ? fst.name == snd.name
+        : fst.kind == "singleSelection" && snd.kind == "singleSelection"
+        ? fst.name == snd.name
+        : fst.kind == "multiSelection" && snd.kind == "multiSelection"
+        ? fst.name == snd.name
+        : fst.kind == "map" && snd.kind == "map"
+        ? fst.name == snd.name
+        : fst.kind == "sum" && snd.kind == "sum"
+        ? fst.name == snd.name
+        : fst.kind == "tuple" && snd.kind == "tuple"
+        ? fst.name == snd.name &&
+          fst.args.length == snd.args.length &&
+          fst.args.every((v, i) =>
+            DispatchParsedType.Operations.Equals(v, snd.args[i]),
+          )
+        : fst.kind == "union" && snd.kind == "union"
+        ? fst.args.size == snd.args.size &&
+          fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
+        : false,
+
+    // TODO -- possible source of error
     ParseRawKeyOf: <T>(
       fieldName: DispatchTypeName,
       rawType: SerializedType<T>,
@@ -458,22 +444,19 @@ export const DispatchParsedType = {
           (key) =>
             [
               key,
-              DispatchParsedType.Default.unionCase(
+              DispatchParsedType.Default.record(
                 key,
-                DispatchParsedType.Default.record(
-                  key,
-                  Map<string, DispatchParsedType<T>>(),
-                  fieldName,
-                  [],
-                ),
+                Map<string, DispatchParsedType<T>>(),
                 fieldName,
                 [],
               ),
-            ] as [string, UnionCaseType<T>],
+            ] as [string, DispatchParsedType<T>],
         );
+
         return ValueOrErrors.Default.return(
           DispatchParsedType.Default.union(
-            Map<string, UnionCaseType<T>>(unionCases),
+            fieldName, // TODO: check if this is correct
+            Map<string, DispatchParsedType<T>>(unionCases),
             fieldName,
           ),
         );
@@ -562,33 +545,21 @@ export const DispatchParsedType = {
       );
     },
     ParseRawUnionCase: <T>(
-      typeName: DispatchTypeName,
       rawType: SerializedUnionCase,
       typeNames: Set<DispatchTypeName>,
       injectedPrimitives?: InjectedPrimitives<T>,
-    ): ValueOrErrors<UnionCaseType<T>, string> =>
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
       DispatchParsedType.Operations.ParseUnionCaseFields(
         rawType,
         rawType.caseName,
         typeNames,
         injectedPrimitives,
-      )
-        .Then((fields) =>
-          ValueOrErrors.Default.return(
-            DispatchParsedType.Default.unionCase(
-              rawType.caseName,
-              fields,
-              typeName,
-              rawType.extends ?? [],
-            ),
-          ),
-        )
-        .MapErrors((errors) =>
-          errors.map(
-            (error) =>
-              `${error}\n...When parsing union case "${rawType.caseName}"`,
-          ),
+      ).MapErrors((errors) =>
+        errors.map(
+          (error) =>
+            `${error}\n...When parsing union case "${rawType.caseName}"`,
         ),
+      ),
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,
@@ -718,10 +689,11 @@ export const DispatchParsedType = {
           );
         if (SerializedType.isUnion(rawType)) {
           return ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, UnionCaseType<T>], string>>(
+            List<
+              ValueOrErrors<[DispatchCaseName, DispatchParsedType<T>], string>
+            >(
               rawType.args.map((unionCase) => {
                 return DispatchParsedType.Operations.ParseRawUnionCase(
-                  typeName,
                   unionCase,
                   typeNames,
                   injectedPrimitives,
@@ -735,7 +707,11 @@ export const DispatchParsedType = {
             ),
           ).Then((parsedUnionCases) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.union(Map(parsedUnionCases), typeName),
+              DispatchParsedType.Default.union(
+                typeName,
+                Map(parsedUnionCases),
+                typeName,
+              ),
             ),
           );
         }
