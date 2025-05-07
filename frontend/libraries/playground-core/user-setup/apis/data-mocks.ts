@@ -46,6 +46,42 @@ const getActiveUsers: DispatchTableApiSource =
           Birthday: "1990-01-01",
           Email: "jane.doe@example.com",
           SubscribeToNewsletter: true,
+          InactiveUsers: {
+            Values: Range(1, 11)
+              .map((_) => ({
+                Id: v4(),
+                Name: faker.person.firstName(),
+                Surname: faker.person.lastName(),
+                Birthday: faker.date.birthdate().toISOString(),
+                Email: faker.internet.email(),
+                SubscribeToNewsletter: faker.datatype.boolean(),
+                InactiveUsers: {
+                  Values: Range(1, 2)
+                    .map((_) => ({
+                      Id: v4(),
+                      Name: faker.person.firstName(),
+                      Surname: faker.person.lastName(),
+                      Birthday: faker.date.birthdate().toISOString(),
+                      Email: faker.internet.email(),
+                      SubscribeToNewsletter: faker.datatype.boolean(),
+                    }))
+                    .reduce((acc, curr) => {
+                      acc[curr.Id] = curr;
+                      return acc;
+                    }, {} as any),
+                  HasMore: true,
+                  From: 0,
+                  To: 10,
+                },
+              }))
+              .reduce((acc, curr) => {
+                acc[curr.Id] = curr;
+                return acc;
+              }, {} as any),
+            HasMore: true,
+            From: 0,
+            To: 10,
+          },
         },
         [v4()]: {
           Id: v4(),
@@ -54,6 +90,24 @@ const getActiveUsers: DispatchTableApiSource =
           Birthday: "1990-01-01",
           Email: "john.doe@example.com",
           SubscribeToNewsletter: true,
+          InactiveUsers: {
+            Values: Range(1, 2)
+              .map((_) => ({
+                Id: v4(),
+                Name: faker.person.firstName(),
+                Surname: faker.person.lastName(),
+                Birthday: faker.date.birthdate().toISOString(),
+                Email: faker.internet.email(),
+                SubscribeToNewsletter: faker.datatype.boolean(),
+              }))
+              .reduce((acc, curr) => {
+                acc[curr.Id] = curr;
+                return acc;
+              }, {} as any),
+            HasMore: true,
+            From: 0,
+            To: 10,
+          },
         },
       },
       HasMore: true,
@@ -260,6 +314,24 @@ const entityApis: EntityApis = {
                   Birthday: faker.date.birthdate().toISOString(),
                   Email: faker.internet.email(),
                   SubscribeToNewsletter: faker.datatype.boolean(),
+                  InactiveUsers: {
+                    Values: Range(1, 2)
+                      .map((_) => ({
+                        Id: v4(),
+                        Name: faker.person.firstName(),
+                        Surname: faker.person.lastName(),
+                        Birthday: faker.date.birthdate().toISOString(),
+                        Email: faker.internet.email(),
+                        SubscribeToNewsletter: faker.datatype.boolean(),
+                      }))
+                      .reduce((acc, curr) => {
+                        acc[curr.Id] = curr;
+                        return acc;
+                      }, {} as any),
+                    HasMore: true,
+                    From: 0,
+                    To: 10,
+                  },
                 }))
                 .reduce((acc, curr) => {
                   acc[curr.Id] = curr;

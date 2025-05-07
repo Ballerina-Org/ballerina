@@ -150,6 +150,46 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
+    userDetails:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
+      (props) => {
+        return (
+          <>
+                {props.context.layout.valueSeq().map((tab) =>
+                  tab.columns.valueSeq().map((column) => (
+                    <div style={{ display: "block", float: "left" }}>
+                      {column.groups.valueSeq().map((group) =>
+                        group
+                          .filter((fieldName) =>
+                            props.VisibleFieldKeys.has(fieldName),
+                          )
+                          .map((fieldName) => (
+                            <>
+                              {/* <>{console.debug("fieldName", fieldName)}</> */}
+                              <div style={{ display: "block" }}>
+                                <h3>{fieldName}</h3>
+                                {props.EmbeddedFields.get(fieldName)!({
+                                  ...props,
+                                  context: {
+                                    ...props.context,
+                                    disabled:
+                                      props.DisabledFieldKeys.has(fieldName),
+                                  },
+                                  view: unit,
+                                })}
+                              </div>
+                            </>
+                          )),
+                      )}
+                    </div>
+                  )),
+                )}
+          </>
+        );
+      },
     address:
       <
         Context extends FormLabel,

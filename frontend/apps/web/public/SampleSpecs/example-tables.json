@@ -7,7 +7,11 @@
         "Surname": "string",
         "Birthday": "Date",
         "Email": "string",
-        "SubscribeToNewsletter": "boolean"
+        "SubscribeToNewsletter": "boolean",
+        "InactiveUsers": {
+          "fun": "Table",
+          "args": ["User"]
+        }
       }
     },
     "UsersSetupConfig": {
@@ -51,7 +55,7 @@
   "forms": {
     "InactiveUsers": {
       "type": "User",
-      "renderer": "table",
+      "renderer": "streamingTable",
       "columns": {
         "Name": {
           "renderer": "defaultString",
@@ -77,6 +81,7 @@
       },
       "detailsRenderer": {
         "type": "User",
+        "renderer": "userDetails",
         "fields": {
           "Name": {
             "label": "First Name",
@@ -98,6 +103,11 @@
           "SubscribeToNewsletter": {
             "label": "Subscribe to Newsletter",
             "renderer": "defaultBoolean"
+          },
+          "InactiveUsers": {
+            "label": "Active Users",
+            "renderer": "InactiveUsers",
+            "api": "ActiveUsersApi"
           }
         },
         "tabs": {
@@ -110,7 +120,8 @@
                     "Surname",
                     "Email",
                     "Birthday",
-                    "SubscribeToNewsletter"
+                    "SubscribeToNewsletter",
+                    "InactiveUsers"
                   ]
                 }
               }
@@ -122,16 +133,12 @@
     },
     "UsersSetup": {
       "type": "UsersSetup",
+      "renderer": "userDetails",
       "fields": {
         "ActiveUsers": {
           "renderer": "ActiveUsers",
           "api": "ActiveUsersApi",
           "label": "Active Users"
-        },
-        "InactiveUsers": {
-          "renderer": "InactiveUsers",
-          "api": "InactiveUsersApi",
-          "label": "Inactive Users"
         }
       },
       "tabs": {
@@ -139,7 +146,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["ActiveUsers", "InactiveUsers"]
+                "main": ["ActiveUsers"]
               }
             }
           }

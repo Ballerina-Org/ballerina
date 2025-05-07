@@ -17,6 +17,8 @@ import {
   DispatchCommonFormState,
   FormLabel,
   Bindings,
+  RecordAbstractRendererState,
+  RecordAbstractRenderer,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -161,17 +163,17 @@ export const TableAbstractRenderer = <
                 .get(chunkIndex)
                 ?.data.get(rowId);
 
-              const rowState = (
-                _.customFormState.stream.chunkStates.get(chunkIndex)
-                  ?.state as Record<string, any>
-              )?.[rowId];
+              const rowState = _.customFormState.stream.chunkStates
+                .get(chunkIndex)
+                ?.get(rowId);
+
+              const recordRowState = rowState
+                ? RecordAbstractRendererState.Default.fieldState(rowState)
+                : RecordAbstractRendererState.Default.fieldState(Map());
 
               return {
                 value,
-                commonFormState:
-                  rowState?.commonFormState ??
-                  DispatchCommonFormState.Default(),
-                customFormState: rowState?.customFormState,
+                ...recordRowState,
                 disabled: false, // to do think about
                 bindings: _.bindings,
                 extraContext: _.extraContext,
@@ -185,13 +187,20 @@ export const TableAbstractRenderer = <
                 },
               };
             })
-              .mapState<AbstractTableRendererState>((_) =>
-                AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-                  ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
-                    chunkIndex,
-                    rowId,
-                  )(_),
-                ),
+              .mapState<AbstractTableRendererState>(
+                (_: BasicUpdater<RecordAbstractRendererState>) =>
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                    ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
+                      chunkIndex,
+                      rowId,
+                    )((__) => {
+                      const temp =
+                        RecordAbstractRendererState.Default.fieldState(__);
+                      const updated = _(temp);
+                      const newState = updated.fieldStates;
+                      return newState;
+                    }),
+                  ),
               )
               .mapForeignMutationsFromProps<{
                 onChange: DispatchOnChange<PredicateValue>;

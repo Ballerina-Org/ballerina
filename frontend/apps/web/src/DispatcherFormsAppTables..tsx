@@ -25,7 +25,7 @@ import {
   UsersSetupFromConfigApis,
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
-import SPEC from "../public/SampleSpecs/person-config.json";
+import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,
@@ -175,7 +175,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
     );
   }
 
-  // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
+  console.log("formState", JSON.stringify(tablesRunnerState, null, 2));
 
   return (
     <div className="App">
