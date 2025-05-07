@@ -14,6 +14,14 @@ import {
   CoTypedFactory,
   ValueOption,
   Debounced,
+  replaceWith,
+  AsyncState,
+  Synchronize,
+  PredicateValue,
+  Unit,
+  ApiErrors,
+  Synchronized,
+  ValueOrErrors,
 } from "../../../../../../../../../main";
 
 const Co = CoTypedFactory<
@@ -22,7 +30,9 @@ const Co = CoTypedFactory<
 >();
 
 const DebouncerCo = CoTypedFactory<
-  OneAbstractRendererReadonlyContext & { onDebounce: SimpleCallback<void> },
+  OneAbstractRendererReadonlyContext & {
+    onDebounce: SimpleCallback<void>;
+  },
   OneAbstractRendererState
 >();
 
@@ -31,6 +41,36 @@ const DebouncedCo = CoTypedFactory<
   Value<string>
 >();
 
+const intializeOne = Co.GetState().then((current) => {
+  if (current.value == undefined) {
+    return Co.Wait(0);
+  }
+  const hasInitialValue = current.value.isSome;
+  if (hasInitialValue) {
+    return Co.SetState(
+      OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+        Synchronized.Updaters.sync(
+          AsyncState.Updaters.toLoaded(
+            ValueOrErrors.Default.return(current.value.value),
+          ),
+        ),
+      ),
+    );
+  }
+
+  return Synchronize<Unit, ValueOrErrors<ValueOption, string>>(
+    (_) =>
+      current.getApi(current.id)
+        .then((value) => current.fromTableApiParser(value)),
+    () => "transient failure",
+    5,
+    150,
+  ).embed(
+    (_) => _.customFormState.selectedValue,
+    (_) => OneAbstractRendererState.Updaters.Core.customFormState.children
+      .selectedValue(_),
+  );
+});
 
 const debouncer = DebouncerCo.Repeat(
   DebouncerCo.Seq([
@@ -49,7 +89,16 @@ const debouncer = DebouncerCo.Repeat(
   ]),
 );
 
-export const oneDebouncerRunner = DebouncerCo.Template<{
+export const initializeOneRunner = Co.Template<{
+  onChange: DispatchOnChange<ValueOption>;
+}>(intializeOne, {
+  interval: 15,
+  runFilter: (props) =>
+    !AsyncState.Operations.hasValue(
+      props.context.customFormState.selectedValue.sync,
+    ),
+});
+export const oneTableDebouncerRunner = DebouncerCo.Template<{
   onChange: DispatchOnChange<ValueOption>;
 }>(debouncer, {
   interval: 15,
@@ -59,7 +108,7 @@ export const oneDebouncerRunner = DebouncerCo.Template<{
     ),
 });
 
-export const oneLoaderRunner = Co.Template<{
+export const oneTableLoaderRunner = Co.Template<{
   onChange: DispatchOnChange<ValueOption>;
 }>(
   ValueInfiniteStreamLoader.embed(

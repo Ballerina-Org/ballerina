@@ -114,12 +114,11 @@ export type DispatchInfiniteStreamSources = BasicFun<
 >;
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
-  get: BasicFun<Guid, Promise<ValueOption>>;
+  get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
   >;
-  patch: Promise<ApiErrors>;
 };
 
 export type DispatchTableApiSources = BasicFun<
@@ -129,7 +128,7 @@ export type DispatchTableApiSources = BasicFun<
 
 export type DispatchApiName = string;
 export type DispatchOneSource = {
-  get: BasicFun<Guid, Promise<ValueOption>>;
+  get: BasicFun<Guid, Promise<any>>;
   getManyUnlinked: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<
@@ -137,7 +136,6 @@ export type DispatchOneSource = {
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >
   >;
-  patch: BasicFun<Guid, Promise<ApiErrors>>;
 };
 
 export type DispatchLookupSources = (typeName: string) => ValueOrErrors<

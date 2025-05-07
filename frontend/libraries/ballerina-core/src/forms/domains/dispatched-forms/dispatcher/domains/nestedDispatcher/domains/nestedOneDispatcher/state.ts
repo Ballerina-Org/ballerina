@@ -1,50 +1,61 @@
 import {
   BaseOneRenderer,
+  BasicFun,
   DispatcherContext,
   DispatchOneSource,
   DispatchTableApiSource,
+  Guid,
+  NestedDispatcher,
+  NestedTableDispatcher,
   OneAbstractRenderer,
   OneType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
 
-export const NestedTableDispatcher = {
+export const NestedOneDispatcher = {
   Operations: {
+    DispatchPreviewRenderer: <
+      T extends { [key in keyof T]: { type: any; state: any } },
+    >(
+      renderer: BaseOneRenderer<T>,
+      dispatcherContext: DispatcherContext<T>,
+    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
+      renderer.previewRenderer == undefined
+        ? ValueOrErrors.Default.return(undefined)
+        : NestedDispatcher.Operations.Dispatch(
+            renderer.type,
+            renderer.previewRenderer,
+            dispatcherContext,
+          ),
     GetApi: (
       api: string | string[],
       dispatcherContext: DispatcherContext<any>,
-    ): ValueOrErrors<
-      | { kind: "table"; source: DispatchTableApiSource }
-      | { kind: "one"; source: DispatchOneSource },
-      string
-    > =>
+    ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
         ? dispatcherContext.tableApiSources == undefined
           ? ValueOrErrors.Default.throwOne(`table apis are undefined`)
-          : dispatcherContext.tableApiSources(api).Then((source) =>
-              ValueOrErrors.Default.return({
-                kind: "table",
-                source,
-              }),
-            )
+          : dispatcherContext
+              .tableApiSources(api)
+              .Then((source) => ValueOrErrors.Default.return(source.get))
         : Array.isArray(api) &&
           api.length == 2 &&
           api.every((_) => typeof _ == "string")
         ? dispatcherContext.lookupSources == undefined
           ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
-          : dispatcherContext.lookupSources(api[0]).Then((lookupSource) =>
-              lookupSource.one == undefined
-                ? ValueOrErrors.Default.throwOne(
-                    `lookup source missing "one" api`,
-                  )
-                : lookupSource.one(api[1]).Then((source) =>
-                    ValueOrErrors.Default.return({
-                      kind: "one",
-                      source: source,
-                    }),
-                  ),
-            )
+          : dispatcherContext
+              .lookupSources(api[0])
+              .Then((lookupSource) =>
+                lookupSource.one == undefined
+                  ? ValueOrErrors.Default.throwOne(
+                      `lookup source missing "one" api`,
+                    )
+                  : lookupSource
+                      .one(api[1])
+                      .Then((source) =>
+                        ValueOrErrors.Default.return(source.get),
+                      ),
+              )
         : ValueOrErrors.Default.throwOne(
             `api must be a string or an array of strings`,
           ),
@@ -53,21 +64,45 @@ export const NestedTableDispatcher = {
       renderer: BaseOneRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      dispatcherContext
-        .getConcreteRenderer("one", renderer.concreteRendererName)
-        .Then((concreteRenderer) =>
-          NestedTableDispatcher.Operations.GetApi(
-            renderer.api,
-            dispatcherContext,
-          ).Then((api) =>
-            ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
-              OneAbstractRenderer.mapContext((_: any) => ({
-                ..._,
-                type,
-                api,
-              })).withView(concreteRenderer),
+      NestedOneDispatcher.Operations.DispatchPreviewRenderer(
+        renderer,
+        dispatcherContext,
+      ).Then((previewRenderer) =>
+        NestedDispatcher.Operations.Dispatch(
+          type,
+          renderer.detailsRenderer,
+          dispatcherContext,
+        ).Then((detailsRenderer) =>
+          dispatcherContext
+            .defaultState(type.args[0], renderer)
+            .Then((defaultState) =>
+              NestedOneDispatcher.Operations.GetApi(
+                renderer.api,
+                dispatcherContext,
+              ).Then((api) =>
+                dispatcherContext
+                  .getConcreteRenderer("one", renderer.concreteRendererName)
+                  .Then((concreteRenderer) =>
+                    ValueOrErrors.Default.return<
+                      Template<any, any, any, any>,
+                      string
+                    >(
+                      OneAbstractRenderer(
+                        defaultState,
+                        detailsRenderer,
+                        previewRenderer,
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type,
+                          api,
+                        }))
+                        .withView(concreteRenderer),
+                    ),
+                  ),
+              ),
             ),
-          ),
         ),
+      ),
   },
 };

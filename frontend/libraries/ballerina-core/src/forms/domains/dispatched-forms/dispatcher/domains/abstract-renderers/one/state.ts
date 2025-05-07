@@ -21,42 +21,53 @@ import {
   PredicateValue,
   ValueOrErrors,
   Guid,
+  AsyncState,
+  Synchronized,
+  Unit,
+  unit,
+  CommonAbstractRendererState,
+  Template,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
 import { DispatchOnChange } from "../../../state";
 
 export type OneAbstractRendererReadonlyContext =
-  | (CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
-      api: {
-        kind: "one";
-        source: DispatchOneSource;
-      } | {
-        kind: "table";
-        source: DispatchTableApiSource;
-      };
-      fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-      fromOneApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
+  | CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
+      getApi: BasicFun<Guid, Promise<any>>;
+      fromTableApiParser: (value: any) => ValueOrErrors<ValueOption, string>;
       id: Guid;
-    })
-
+    };
 
 export type OneAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
+    detailsState: {
+      commonFormState: DispatchCommonFormState;
+      customFormState: object;
+    };
+    selectedValue: Synchronized<Unit, ValueOrErrors<ValueOption, string>>;
     searchText: Debounced<Value<string>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
-    getChunkWithParams: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>;
+    getChunkWithParams: BasicFun<
+      string,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >;
   };
 };
 
 export const OneAbstractRendererState = {
   Default: (
-    getChunk: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>,
+    getChunk: BasicFun<
+      string,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >,
   ): OneAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
+      detailsState: CommonAbstractRendererState.Default(),
+      selectedValue: Synchronized.Default(unit),
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
       getChunkWithParams: getChunk,
@@ -67,6 +78,9 @@ export const OneAbstractRendererState = {
     Core: {
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "selectedValue",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "status",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
@@ -75,7 +89,15 @@ export const OneAbstractRendererState = {
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "searchText",
         ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "detailsState",
+        ),
       })("customFormState"),
+      ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
+        ...simpleUpdater<OneAbstractRendererState["commonFormState"]>()(
+          "modifiedByUser",
+        ),
+      })("commonFormState"),
     },
     Template: {
       searchText: (
@@ -87,7 +109,7 @@ export const OneAbstractRendererState = {
     },
   },
 };
-export type OneAbstractRendererView = View<
+export type OneTableAbstractRendererView = View<
   OneAbstractRendererReadonlyContext &
     Value<ValueOption> &
     OneAbstractRendererState & {
@@ -103,5 +125,9 @@ export type OneAbstractRendererView = View<
     select: SimpleCallback<ValueOption>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
+  },
+  {
+    DetailsRenderer: Template<any, any, any, any>;
+    PreviewRenderer: Template<any, any, any, any> | undefined;
   }
 >;
