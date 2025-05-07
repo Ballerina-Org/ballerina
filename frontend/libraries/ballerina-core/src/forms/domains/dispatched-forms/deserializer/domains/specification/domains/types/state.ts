@@ -740,6 +740,7 @@ export const DispatchParsedType = {
             "One:Element",
             rawType.args[0],
             typeNames,
+            serializedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
             ValueOrErrors.Default.return(

@@ -15,8 +15,8 @@ import {
 import { DispatchOnChange } from "../../../state";
 import { Map } from "immutable";
 
-export type UnionAbstractRendererReadonlyContext = Value<ValueUnionCase> &
-  CommonAbstractRendererReadonlyContext & { type: UnionType<any> };
+export type UnionAbstractRendererReadonlyContext =
+  CommonAbstractRendererReadonlyContext<UnionType<any>, ValueUnionCase>;
 
 export type UnionAbstractRendererState<
   CaseFormState extends { commonFormState: DispatchCommonFormState },

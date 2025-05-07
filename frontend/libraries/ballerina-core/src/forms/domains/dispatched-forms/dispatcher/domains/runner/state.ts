@@ -25,8 +25,6 @@ export type LauncherRef = {
     updater: Updater<PredicateValue>,
     delta: DispatchDelta,
   ) => void;
-  loadingComponent?: JSX.Element;
-  errorComponent?: JSX.Element;
 };
 
 export type DispatchFormRunnerStatus<
