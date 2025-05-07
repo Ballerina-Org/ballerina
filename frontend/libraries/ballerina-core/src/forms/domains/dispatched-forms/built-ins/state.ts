@@ -192,13 +192,14 @@ export const tryGetConcreteRenderer =
   };
 
 export const dispatchDefaultState =
-  <T>(
+  <T extends { [key in keyof T]: { type: any; state: any } }>(
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Form<T>>,
-    lookupSources?: DispatchLookupSources,
-    tableApiSources?: DispatchTableApiSources,
+    converters: DispatchApiConverters<T>,
+    lookupSources: DispatchLookupSources | undefined,
+    tableApiSources: DispatchTableApiSources | undefined,
   ) =>
   (
     t: DispatchParsedType<any>,
@@ -273,7 +274,16 @@ export const dispatchDefaultState =
               )
             : tableApiSources(renderer.api).Then((tableApiSource) =>
                 ValueOrErrors.Default.return(
-                  OneAbstractRendererState.Default(tableApiSource.getMany),
+                  OneAbstractRendererState.Default((_: string) =>
+                    tableApiSource.getMany(
+                      dispatchFromAPIRawValue(
+                        t.args[0],
+                        types,
+                        converters,
+                        injectedPrimitives,
+                      ),
+                    ),
+                  ),
                 ),
               )
           : lookupSources == undefined
@@ -293,7 +303,14 @@ export const dispatchDefaultState =
                     .Then((oneSource) =>
                       ValueOrErrors.Default.return(
                         OneAbstractRendererState.Default(
-                          oneSource.getManyUnlinked,
+                          oneSource.getManyUnlinked(
+                            dispatchFromAPIRawValue(
+                              t.args[0],
+                              types,
+                              converters,
+                              injectedPrimitives,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -347,6 +364,9 @@ export const dispatchDefaultState =
                     injectedPrimitives,
                     types,
                     forms,
+                    converters,
+                    lookupSources,
+                    tableApiSources,
                   )(_, renderer.itemRenderers[index]).Then((itemState) =>
                     ValueOrErrors.Default.return([index, itemState]),
                   ),
@@ -370,6 +390,9 @@ export const dispatchDefaultState =
               injectedPrimitives,
               types,
               forms,
+              converters,
+              lookupSources,
+              tableApiSources,
             )(t.args[0], renderer.leftRenderer).Then((left) =>
               renderer.rightRenderer == undefined
                 ? ValueOrErrors.Default.throwOne(
@@ -380,6 +403,9 @@ export const dispatchDefaultState =
                     injectedPrimitives,
                     types,
                     forms,
+                    converters,
+                    lookupSources,
+                    tableApiSources,
                   )(t.args[1], renderer.rightRenderer).Then((right) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRendererState().Default({
@@ -412,6 +438,9 @@ export const dispatchDefaultState =
                       injectedPrimitives,
                       types,
                       forms,
+                      converters,
+                      lookupSources,
+                      tableApiSources,
                     )(field, renderer.fields.get(fieldName)!).Then((value) =>
                       ValueOrErrors.Default.return([fieldName, value] as const),
                     ),
@@ -446,6 +475,9 @@ export const dispatchDefaultState =
                         injectedPrimitives,
                         types,
                         forms,
+                        converters,
+                        lookupSources,
+                        tableApiSources,
                       )(caseType, caseRenderer).Then((caseState) =>
                         ValueOrErrors.Default.return([caseName, caseState]),
                       ),
@@ -496,6 +528,9 @@ export const dispatchDefaultState =
           injectedPrimitives,
           types,
           forms,
+          converters,
+          lookupSources,
+          tableApiSources,
         )(lookupType, formRenderer);
       }
 

@@ -20,6 +20,7 @@ import {
   ValueInfiniteStreamState,
   MapRepo,
   OneAbstractRendererState,
+  ValueOption,
 } from "../../../../../main";
 
 import { Form } from "./domains/specification/domains/form/state";
@@ -113,9 +114,9 @@ export type DispatchInfiniteStreamSources = BasicFun<
 >;
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
-  get: Promise<ApiErrors>;
+  get: BasicFun<Guid, Promise<ValueOption>>;
   getMany: BasicFun<
-    BasicFun<string, ValueOrErrors<PredicateValue, string>>,
+    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
   >;
   patch: Promise<ApiErrors>;
@@ -128,11 +129,11 @@ export type DispatchTableApiSources = BasicFun<
 
 export type DispatchApiName = string;
 export type DispatchOneSource = {
-  get: BasicFun<Guid, Promise<ApiErrors>>;
+  get: BasicFun<Guid, Promise<ValueOption>>;
   getManyUnlinked: BasicFun<
-    Guid,
+    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<
-      BasicFun<string, ValueOrErrors<PredicateValue, string>>,
+      Guid,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >
   >;
@@ -267,7 +268,9 @@ export const parseDispatchFormsToLaunchers =
               injectedPrimitives,
               specification.types,
               specification.forms,
+              apiConverters,
               lookupSources,
+              tableApiSources,
             ),
             types: specification.types,
             parseFromApiByType: (type: DispatchParsedType<T>) =>

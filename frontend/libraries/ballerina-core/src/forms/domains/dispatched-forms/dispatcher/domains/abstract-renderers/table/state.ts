@@ -19,7 +19,6 @@ import {
   ValueTable,
   replaceWith,
   DispatchTableApiSource,
-  Sum,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -46,8 +45,11 @@ export type AbstractTableRendererState = {
     selectedDetailRow: string | undefined;
     isInitialized: boolean;
     streamParams: Debounced<Map<string, string>>;
-    stream: Sum<"not initialized", ValueInfiniteStreamState>;
-    getChunkWithParams: Sum<"not initialized", BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>;
+    stream: ValueInfiniteStreamState;
+    getChunkWithParams: BasicFun<
+      Map<string, string>,
+      ValueInfiniteStreamState["getChunk"]
+    >;
   };
 };
 export const AbstractTableRendererState = {
@@ -58,8 +60,9 @@ export const AbstractTableRendererState = {
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
-      getChunkWithParams: Sum.Default.left("not initialized"),
-      stream: Sum.Default.left("not initialized"),
+      // TODO: replace with su
+      getChunkWithParams: undefined as any,
+      stream: undefined as any,
     },
   }),
   Updaters: {
@@ -102,9 +105,7 @@ export const AbstractTableRendererState = {
         ),
       loadMore: (): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-          Sum.Updaters.right(
-            ValueInfiniteStreamState.Updaters.Template.loadMore(),
-          ),
+          ValueInfiniteStreamState.Updaters.Template.loadMore(),
         ),
     },
   },

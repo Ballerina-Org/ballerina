@@ -21,42 +21,46 @@ import {
   PredicateValue,
   ValueOrErrors,
   Guid,
-} from "../../../../../../../../main";
-import { Debounced } from "../../../../../../../debounced/state";
-import { Value } from "../../../../../../../value/state";
-import { DispatchOnChange } from "../../../state";
+  AsyncState,
+  Synchronized,
+  Unit,
+  unit,
+} from "../../../../../../../../../../main";
+import { Debounced } from "../../../../../../../../../debounced/state";
+import { Value } from "../../../../../../../../../value/state";
+import { DispatchOnChange } from "../../../../../state";
 
-export type OneAbstractRendererReadonlyContext =
-  | (CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
-      api: {
-        kind: "one";
-        source: DispatchOneSource;
-      } | {
-        kind: "table";
-        source: DispatchTableApiSource;
-      };
+export type OneTableAbstractRendererReadonlyContext =
+  | CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
+      api: DispatchTableApiSource;
       fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-      fromOneApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
       id: Guid;
-    })
+    };
 
-
-export type OneAbstractRendererState = {
+export type OneTableAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
+    selectedValue: Synchronized<Unit, ValueOption>;
     searchText: Debounced<Value<string>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
-    getChunkWithParams: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>;
+    getChunkWithParams: BasicFun<
+      string,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >;
   };
 };
 
-export const OneAbstractRendererState = {
+export const OneTableAbstractRendererState = {
   Default: (
-    getChunk: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>,
-  ): OneAbstractRendererState => ({
+    getChunk: BasicFun<
+      string,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >,
+  ): OneTableAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
+      selectedValue: Synchronized.Default(unit),
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
       getChunkWithParams: getChunk,
@@ -65,14 +69,17 @@ export const OneAbstractRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+      ...simpleUpdaterWithChildren<OneTableAbstractRendererState>()({
+        ...simpleUpdater<OneTableAbstractRendererState["customFormState"]>()(
+          "selectedValue",
+        ),
+        ...simpleUpdater<OneTableAbstractRendererState["customFormState"]>()(
           "status",
         ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<OneTableAbstractRendererState["customFormState"]>()(
           "stream",
         ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<OneTableAbstractRendererState["customFormState"]>()(
           "searchText",
         ),
       })("customFormState"),
@@ -80,21 +87,21 @@ export const OneAbstractRendererState = {
     Template: {
       searchText: (
         _: BasicUpdater<string>,
-      ): Updater<OneAbstractRendererState> =>
-        OneAbstractRendererState.Updaters.Core.customFormState.children.searchText(
+      ): Updater<OneTableAbstractRendererState> =>
+        OneTableAbstractRendererState.Updaters.Core.customFormState.children.searchText(
           Debounced.Updaters.Template.value(Value.Updaters.value(_)),
         ),
     },
   },
 };
-export type OneAbstractRendererView = View<
-  OneAbstractRendererReadonlyContext &
+export type OneTableAbstractRendererView = View<
+  OneTableAbstractRendererReadonlyContext &
     Value<ValueOption> &
-    OneAbstractRendererState & {
+    OneTableAbstractRendererState & {
       hasMoreValues: boolean;
       disabled: boolean;
     },
-  OneAbstractRendererState,
+  OneTableAbstractRendererState,
   {
     onChange: DispatchOnChange<ValueOption>;
     toggleOpen: SimpleCallback<void>;

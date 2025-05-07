@@ -20,11 +20,10 @@ import {
   DispatchTableApiSource,
   PredicateValue,
   ValueOrErrors,
-  Guid,
-} from "../../../../../../../../main";
-import { Debounced } from "../../../../../../../debounced/state";
-import { Value } from "../../../../../../../value/state";
-import { DispatchOnChange } from "../../../state";
+} from "../../../../../../../../../../main";
+import { Debounced } from "../../../../../../../../../debounced/state";
+import { Value } from "../../../../../../../../../value/state";
+import { DispatchOnChange } from "../../../../../state";
 
 export type OneAbstractRendererReadonlyContext =
   | (CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
@@ -37,7 +36,6 @@ export type OneAbstractRendererReadonlyContext =
       };
       fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
       fromOneApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-      id: Guid;
     })
 
 
