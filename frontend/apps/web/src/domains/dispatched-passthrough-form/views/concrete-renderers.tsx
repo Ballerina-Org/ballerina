@@ -233,7 +233,7 @@ export const PersonConcreteRenderers = {
   },
   table: {
     table: (props: any) => () => <>Test</>,
-    finiteTable: (props: any) => {
+    finiteTable: () => (props: any) => {
       return (
         <table>
           <thead style={{ border: "1px solid black" }}>
