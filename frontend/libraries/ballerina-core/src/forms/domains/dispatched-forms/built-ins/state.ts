@@ -26,6 +26,7 @@ import {
   TableFormRenderer,
   OneAbstractRendererState,
   DispatchLookupSources,
+  DispatchTableApiSources,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -137,6 +138,7 @@ export type ConcreteRendererKinds = {
   record: Set<string>;
   table: Set<string>;
   union: Set<string>;
+  one: Set<string>;
 };
 
 export const concreteRendererToKind =
@@ -196,6 +198,7 @@ export const dispatchDefaultState =
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Form<T>>,
     lookupSources?: DispatchLookupSources,
+    tableApiSources?: DispatchTableApiSources,
   ) =>
   (
     t: DispatchParsedType<any>,
@@ -259,6 +262,20 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
             )
+          : typeof renderer.api == "string"
+          ? tableApiSources == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `table api sources referenced but no table api sources are provided`,
+              )
+            : tableApiSources(renderer.api) == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `cannot find table api source for ${renderer.api}`,
+              )
+            : tableApiSources(renderer.api).Then((tableApiSource) =>
+                ValueOrErrors.Default.return(
+                  OneAbstractRendererState.Default(tableApiSource.getMany),
+                ),
+              )
           : lookupSources == undefined
           ? ValueOrErrors.Default.throwOne(
               `lookup sources referenced but no lookup sources are provided`,
@@ -267,17 +284,20 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Default.throwOne(
               `cannot find lookup source for ${renderer.api[0]}`,
             )
-          : lookupSources(renderer.api[0]).one == undefined
-          ? ValueOrErrors.Default.throwOne(
-              `cannot find lookup one source for ${renderer.api[0]}`,
-            )
-          : lookupSources(renderer.api[0])
-              .one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
-              .Then((oneSource) =>
-                ValueOrErrors.Default.return(
-                  OneAbstractRendererState.Default(oneSource),
-                ),
-              );
+          : lookupSources(renderer.api[0]).Then((lookupSource) =>
+              lookupSource.one == undefined
+                ? ValueOrErrors.Default.throwOne(
+                    `one source not provided for ${renderer.api[0]}`,
+                  )
+                : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                    .Then((oneSource) =>
+                      ValueOrErrors.Default.return(
+                        OneAbstractRendererState.Default(
+                          oneSource.getManyUnlinked,
+                        ),
+                      ),
+                    ),
+            );
 
       if (t.kind == "multiSelection")
         return renderer.kind == "baseEnumRenderer"

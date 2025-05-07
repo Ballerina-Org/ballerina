@@ -1,3 +1,4 @@
+import { Map } from "immutable";
 import {
   DispatchDelta,
   id,
@@ -138,9 +139,9 @@ export const OneAbstractRenderer = Template.Default<
       props.setState(
         OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.reload(
-            props.context.customFormState.getChunk(
+            props.context.customFormState.getChunkWithParams(
               props.context.customFormState.searchText.value,
-            ),
+            )(Map()),
           ),
         ),
       ),

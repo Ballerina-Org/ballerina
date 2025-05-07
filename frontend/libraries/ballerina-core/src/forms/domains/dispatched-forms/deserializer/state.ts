@@ -111,25 +111,40 @@ export type DispatchInfiniteStreamSources = BasicFun<
     string
   >
 >;
-export type DispatchTableApiSource = BasicFun<
-  BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-  BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
->;
+export type DispatchTableApiName = string;
+export type DispatchTableApiSource = {
+  get: Promise<ApiErrors>;
+  getMany: BasicFun<
+    BasicFun<string, ValueOrErrors<PredicateValue, string>>,
+    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+  >;
+  patch: Promise<ApiErrors>;
+};
 
 export type DispatchTableApiSources = BasicFun<
   string,
   ValueOrErrors<DispatchTableApiSource, string>
 >;
 
-export type DispatchOneName = string;
-export type DispatchOneSource = BasicFun<
-  DispatchOneName,
-  ValueOrErrors<OneAbstractRendererState["customFormState"]["getChunk"], string>
->;
-
-export type DispatchLookupSources = (typeName: string) =>{
-  one?: DispatchOneSource;
+export type DispatchApiName = string;
+export type DispatchOneSource = {
+  get: BasicFun<Guid, Promise<ApiErrors>>;
+  getManyUnlinked: BasicFun<
+    Guid,
+    BasicFun<
+      BasicFun<string, ValueOrErrors<PredicateValue, string>>,
+      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    >
+  >;
+  patch: BasicFun<Guid, Promise<ApiErrors>>;
 };
+
+export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
+  {
+    one?: BasicFun<DispatchApiName, ValueOrErrors<DispatchOneSource, string>>;
+  },
+  string
+>;
 
 export type DispatchConfigName = string;
 export type DispatchGlobalConfigurationSources = BasicFun<

@@ -18,6 +18,8 @@ import {
   Bindings,
   ValueTable,
   replaceWith,
+  DispatchTableApiSource,
+  Sum,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -28,7 +30,7 @@ import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-da
 import { DispatchOnChange } from "../../../state";
 
 export type AbstractTableRendererReadonlyContext = {
-  tableApiSource: TableApiSource;
+  tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
   type: ParsedType<any>;
   bindings: Bindings;
@@ -44,11 +46,8 @@ export type AbstractTableRendererState = {
     selectedDetailRow: string | undefined;
     isInitialized: boolean;
     streamParams: Debounced<Map<string, string>>;
-    stream: ValueInfiniteStreamState;
-    getChunkWithParams: BasicFun<
-      Map<string, string>,
-      ValueInfiniteStreamState["getChunk"]
-    >;
+    stream: Sum<"not initialized", ValueInfiniteStreamState>;
+    getChunkWithParams: Sum<"not initialized", BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>;
   };
 };
 export const AbstractTableRendererState = {
@@ -59,8 +58,8 @@ export const AbstractTableRendererState = {
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
-      getChunkWithParams: undefined as any,
-      stream: undefined as any,
+      getChunkWithParams: Sum.Default.left("not initialized"),
+      stream: Sum.Default.left("not initialized"),
     },
   }),
   Updaters: {
@@ -103,7 +102,9 @@ export const AbstractTableRendererState = {
         ),
       loadMore: (): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-          ValueInfiniteStreamState.Updaters.Template.loadMore(),
+          Sum.Updaters.right(
+            ValueInfiniteStreamState.Updaters.Template.loadMore(),
+          ),
         ),
     },
   },

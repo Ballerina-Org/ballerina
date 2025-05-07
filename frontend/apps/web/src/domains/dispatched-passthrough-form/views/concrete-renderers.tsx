@@ -238,7 +238,7 @@ export const PersonConcreteRenderers = {
         <table>
           <thead style={{ border: "1px solid black" }}>
             <tr style={{ border: "1px solid black" }}>
-              {props.VisibleColumns.map((header: any) => (
+              {props.TableHeaders.map((header: any) => (
                 <th style={{ border: "1px solid black" }}>{header}</th>
               ))}
             </tr>

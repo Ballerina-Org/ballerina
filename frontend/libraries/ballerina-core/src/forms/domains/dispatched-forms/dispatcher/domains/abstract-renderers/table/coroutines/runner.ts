@@ -8,6 +8,8 @@ import {
   AbstractTableRendererState,
   Unit,
   Value,
+  Sum,
+  BasicFun,
 } from "../../../../../../../../../main";
 import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
 import { ValueRecord } from "../../../../../../../../../main";
@@ -22,51 +24,67 @@ const Co = CoTypedFactory<
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
 const intialiseTable = Co.GetState().then((current) => {
-  if (current.value == undefined) {
-    return Co.Wait(0);
-  }
+  if (current.value == undefined) return Co.Wait(0);
+
   const initialData = current.value.data;
   const hasMoreValues = current.value.hasMoreValues;
   const from = current.value.from;
   const to = current.value.to;
-  const getChunkWithParams = current.tableApiSource(current.fromTableApiParser);
+  const getChunkWithParams = current.tableApiSource.getMany(
+    current.fromTableApiParser,
+  );
 
   return Co.SetState(
     replaceWith(AbstractTableRendererState.Default()).then(
       AbstractTableRendererState.Updaters.Core.customFormState.children
         .stream(
           replaceWith(
-            ValueInfiniteStreamState.Default(
-              DEFAULT_CHUNK_SIZE,
-              getChunkWithParams(Map<string, string>()),
-              initialData.size == 0 && hasMoreValues ? "loadMore" : false,
+            Sum.Default.right<"not initialized", ValueInfiniteStreamState>(
+              ValueInfiniteStreamState.Default(
+                DEFAULT_CHUNK_SIZE,
+                getChunkWithParams(Map<string, string>()),
+                initialData.size == 0 && hasMoreValues ? "loadMore" : false,
+              ),
             ),
           )
             .then(
-              ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
-                data: initialData,
-                hasMoreValues: hasMoreValues,
-                from,
-                to,
-              }),
+              Sum.Updaters.right(
+                ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
+                  data: initialData,
+                  hasMoreValues: hasMoreValues,
+                  from,
+                  to,
+                }),
+              ),
             )
             .then(
-              ValueInfiniteStreamState.Updaters.Core.position(
-                ValueStreamPosition.Updaters.Core.nextStart(
-                  replaceWith(to + 1),
+              Sum.Updaters.right(
+                ValueInfiniteStreamState.Updaters.Core.position(
+                  ValueStreamPosition.Updaters.Core.nextStart(
+                    replaceWith(to + 1),
+                  ),
                 ),
               ),
             ),
         )
         .then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
-            replaceWith(getChunkWithParams),
-          ),
-        )
-        .then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
-            replaceWith(true),
-          ),
+          AbstractTableRendererState.Updaters.Core.customFormState.children
+            .getChunkWithParams(
+              replaceWith(
+                Sum.Default.right<
+                  "not initialized",
+                  BasicFun<
+                    Map<string, string>,
+                    ValueInfiniteStreamState["getChunk"]
+                  >
+                >(getChunkWithParams),
+              ),
+            )
+            .then(
+              AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
+                replaceWith(true),
+              ),
+            ),
         ),
     ),
   );

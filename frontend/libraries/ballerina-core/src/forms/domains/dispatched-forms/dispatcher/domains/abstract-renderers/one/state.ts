@@ -1,3 +1,5 @@
+import { Map } from "immutable";
+
 import {
   BasicFun,
   BasicUpdater,
@@ -14,13 +16,28 @@ import {
   ValueInfiniteStreamState,
   CommonAbstractRendererReadonlyContext,
   OneType,
+  DispatchOneSource,
+  DispatchTableApiSource,
+  PredicateValue,
+  ValueOrErrors,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
 import { DispatchOnChange } from "../../../state";
 
 export type OneAbstractRendererReadonlyContext =
-  CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption>;
+  | (CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
+      api: {
+        kind: "one";
+        source: DispatchOneSource;
+      } | {
+        kind: "table";
+        source: DispatchTableApiSource;
+      };
+      fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
+      fromOneApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
+    })
+
 
 export type OneAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
@@ -28,20 +45,20 @@ export type OneAbstractRendererState = {
     searchText: Debounced<Value<string>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
-    getChunk: BasicFun<string, ValueInfiniteStreamState["getChunk"]>;
+    getChunkWithParams: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>;
   };
 };
 
 export const OneAbstractRendererState = {
   Default: (
-    getChunk: BasicFun<string, ValueInfiniteStreamState["getChunk"]>,
+    getChunk: BasicFun<string, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>,
   ): OneAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
-      getChunk,
-      stream: ValueInfiniteStreamState.Default(10, getChunk("")),
+      getChunkWithParams: getChunk,
+      stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())),
     },
   }),
   Updaters: {

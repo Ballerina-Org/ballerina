@@ -3,6 +3,7 @@ import { Map } from "immutable";
 import {
   DispatchParsedType,
   Expr,
+  isString,
   OneType,
   TableFormRenderer,
   ValueOrErrors,
@@ -24,7 +25,7 @@ export type SerializedBaseOneRenderer = {
 
 export type BaseOneRenderer<T> = BaseBaseRenderer & {
   kind: "baseOneRenderer";
-  api: Array<string>;
+  api: string | Array<string>;
   type: OneType<T>;
   concreteRendererName: string;
   detailsRenderer:
@@ -41,7 +42,7 @@ export const BaseOneRenderer = {
   Default: <T>(
     type: OneType<T>,
     concreteRendererName: string,
-    api: Array<string>,
+    api: string | Array<string>,
     detailsRenderer:
       | BaseRenderer<T>
       | TableFormRenderer<T>
@@ -75,19 +76,20 @@ export const BaseOneRenderer = {
       Omit<SerializedBaseOneRenderer, "renderer" | "api"> & {
         renderer: string;
         detailsRenderer: SerializedBaseRenderer;
-        api: Array<string>;
+        api: string | Array<string>;
       },
       string
     > =>
       serialized.api == undefined
         ? ValueOrErrors.Default.throwOne(`api is missing`)
-        : !Array.isArray(serialized.api)
-        ? ValueOrErrors.Default.throwOne(`api must be an array`)
-        : serialized.api.length != 2
+        : !isString(serialized.api) && !Array.isArray(serialized.api)
+        ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
+        : Array.isArray(serialized.api) && serialized.api.length != 2
         ? ValueOrErrors.Default.throwOne(`api must be an array of length 2`)
-        : typeof serialized.api[0] != "string" ||
-          typeof serialized.api[1] != "string"
-        ? ValueOrErrors.Default.throwOne(`api must be an array of strings`)
+        : Array.isArray(serialized.api) &&
+          (typeof serialized.api[0] != "string" ||
+            typeof serialized.api[1] != "string")
+        ? ValueOrErrors.Default.throwOne(`api array elements must be strings`)
         : serialized.renderer == undefined
         ? ValueOrErrors.Default.throwOne(`renderer is missing`)
         : typeof serialized.renderer != "string"
