@@ -278,7 +278,7 @@ export const ValueInfiniteStreamState = {
           ValueInfiniteStreamState.Updaters.Core.chunkStates(
             MapRepo.Updaters.upsert(
               chunkIndex,
-              () => StateChunk.Default({[chunkStateValueKey]: Map()}),
+              () => StateChunk.Default({ [chunkStateValueKey]: Map() }),
               MapRepo.Updaters.update(chunkStateValueKey, stateUpdater),
             ),
           ),
