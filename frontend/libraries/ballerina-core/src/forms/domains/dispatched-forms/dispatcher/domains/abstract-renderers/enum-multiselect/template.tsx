@@ -67,8 +67,8 @@ export const EnumMultiselectAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-enum-multiselect`}
       >
         <props.view
           {...props}
@@ -121,7 +121,7 @@ export const EnumMultiselectAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([
     Co.Template<

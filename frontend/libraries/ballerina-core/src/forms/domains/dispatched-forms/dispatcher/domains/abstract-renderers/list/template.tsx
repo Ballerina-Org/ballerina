@@ -156,8 +156,8 @@ export const ListAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-list`}
       >
         <props.view
           {...props}
@@ -290,7 +290,7 @@ export const ListAbstractRenderer = <
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

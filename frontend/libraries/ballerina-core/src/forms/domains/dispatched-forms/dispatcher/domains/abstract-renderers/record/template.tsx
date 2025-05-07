@@ -237,8 +237,8 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-record`}
       >
         <props.view
           context={{
@@ -253,7 +253,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

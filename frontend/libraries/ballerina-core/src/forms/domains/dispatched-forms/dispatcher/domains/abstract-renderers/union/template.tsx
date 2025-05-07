@@ -109,8 +109,8 @@ export const UnionAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-union`}
       >
         <props.view
           {...props}
@@ -120,7 +120,7 @@ export const UnionAbstractRenderer = <
           }}
           embeddedCaseTemplate={embeddedCaseTemplate}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

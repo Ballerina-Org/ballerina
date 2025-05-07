@@ -119,8 +119,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-searchable-infinite-stream-multiselect`}
       >
         <props.view
           {...props}
@@ -219,7 +219,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([
     loaderRunner,

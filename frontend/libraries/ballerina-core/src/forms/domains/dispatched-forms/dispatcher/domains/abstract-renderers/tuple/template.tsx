@@ -174,8 +174,8 @@ export const DispatchTupleAbstractRenderer = <
     }
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-tuple`}
       >
         <props.view
           {...props}
@@ -187,7 +187,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

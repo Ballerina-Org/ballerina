@@ -48,8 +48,8 @@ export const StringAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-string`}
       >
         <props.view
           {...props}
@@ -73,7 +73,7 @@ export const StringAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

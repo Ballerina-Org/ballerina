@@ -44,8 +44,8 @@ export const NumberAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-number`}
       >
         <props.view
           {...props}
@@ -65,7 +65,7 @@ export const NumberAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

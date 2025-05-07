@@ -43,8 +43,8 @@ export const Base64FileAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-base64-file`}
       >
         <props.view
           {...props}
@@ -64,7 +64,7 @@ export const Base64FileAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

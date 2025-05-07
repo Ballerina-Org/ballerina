@@ -42,8 +42,8 @@ export const BoolAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-boolean`}
       >
         <props.view
           {...props}
@@ -63,7 +63,7 @@ export const BoolAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

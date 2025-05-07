@@ -118,13 +118,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                elementUpdater(_.values.get(0)!),
-                                _.values.get(1)!,
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              elementUpdater(_.values.get(0)!),
+                              _.values.get(1)!,
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -231,13 +231,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                _.values.get(0)!,
-                                elementUpdater(_.values.get(1)!),
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              _.values.get(0)!,
+                              elementUpdater(_.values.get(1)!),
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -299,8 +299,8 @@ export const MapAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-map`}
       >
         <props.view
           {...props}
@@ -377,7 +377,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

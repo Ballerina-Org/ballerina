@@ -47,8 +47,8 @@ export const SecretAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-secret`}
       >
         <props.view
           {...props}
@@ -68,7 +68,7 @@ export const SecretAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </div>
     );
   }).any([]);
 };

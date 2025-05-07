@@ -336,8 +336,8 @@ export const TableAbstractRenderer = <
       );
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <div
+        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher} view-wrapper-table`}
       >
         <props.view
           {...props}
@@ -385,7 +385,7 @@ export const TableAbstractRenderer = <
           EmbeddedTableData={tableData}
           DetailsRenderer={embedDetailsRenderer}
         />
-      </span>
+      </div>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
 };
