@@ -94,6 +94,15 @@ export const PersonConcreteRenderers = {
         }
         const selectedValue =
           props.context.customFormState.selectedValue.sync.value.value.value;
+
+        if (!PredicateValue.Operations.IsRecord(selectedValue)) {
+          console.error(
+            `Record expected but got: ${JSON.stringify(
+              selectedValue,
+            )}\n...When rendering "one" field\n...`,
+          );
+          return undefined;
+        }
         console.debug("props", props);
         return (
           <>
@@ -108,8 +117,8 @@ export const PersonConcreteRenderers = {
               disabled={props.context.disabled}
               onClick={() => props.foreignMutations.toggleOpen()}
             >
-              {props.PreviewRenderer &&
-                props.PreviewRenderer(selectedValue)({
+              {props?.PreviewRenderer &&
+                props?.PreviewRenderer(selectedValue)?.({
                   ...props,
                   view: unit,
                 })}
@@ -140,17 +149,27 @@ export const PersonConcreteRenderers = {
                               )
                             }
                           >
-                            {JSON.stringify(element)}
+                            <div
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  PredicateValue.Default.option(true, element),
+                                )
+                              }
+                              style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                gap: "10px",
+                              }}
+                            />
                             {props.PreviewRenderer &&
-                              props.PreviewRenderer(
-                                PredicateValue.Default.option(true, element),
-                              )({
+                              props.PreviewRenderer(element)?.({
                                 ...props,
                                 view: unit,
                               })}
                             {props.context.value.isSome &&
                             (
-                              (props.context.value.value as ValueOption).value as ValueRecord
+                              (props.context.value.value as ValueOption)
+                                .value as ValueRecord
                             ).fields.get("Id") == element.fields.get("Id")
                               ? "✅"
                               : ""}

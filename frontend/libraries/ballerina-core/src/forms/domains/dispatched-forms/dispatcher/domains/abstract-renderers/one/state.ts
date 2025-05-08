@@ -127,6 +127,6 @@ export type OneAbstractRendererView = View<
   },
   {
     DetailsRenderer: Template<any, any, any, any>;
-    PreviewRenderer: Template<any, any, any, any> | undefined;
+    PreviewRenderer: (value: ValueRecord) => Template<any, any, any, any> | undefined;
   }
 >;

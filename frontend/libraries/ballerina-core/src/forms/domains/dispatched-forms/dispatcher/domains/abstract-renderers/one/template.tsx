@@ -161,33 +161,10 @@ export const OneAbstractRenderer = (
       },
     }));
 
-  const embeddedPreviewRenderer = (previewValue: ValueOption) => PreviewRenderer?.mapContext<
+  const embeddedPreviewRenderer = (previewValue: ValueRecord) => PreviewRenderer?.mapContext<
     OneAbstractRendererReadonlyContext & OneAbstractRendererState
   >((_) => {
-    if (!AsyncState.Operations.hasValue(_.customFormState.selectedValue.sync)) {
-      return undefined;
-    }
-    if (_.customFormState.selectedValue.sync.value.kind == "errors") {
-      console.error(
-        _.customFormState.selectedValue.sync.value.errors
-          .join("\n")
-          .concat(`\n...When parsing the "one" field value\n...`),
-      );
-      return undefined;
-    }
-    if (!_.customFormState.selectedValue.sync.value.value.isSome) {
-      return undefined;
-    }
-    if (
-      !PredicateValue.Operations.IsRecord(
-        _.customFormState.selectedValue.sync.value.value.value,
-      )
-    ) {
-      console.error(
-        "Expected Preview renderer to be of record type, but received something else",
-      );
-      return undefined;
-    }
+
     // const value = _.customFormState.selectedValue.sync.value.value.value;
     const state =
       _.customFormState?.detailsState ??
