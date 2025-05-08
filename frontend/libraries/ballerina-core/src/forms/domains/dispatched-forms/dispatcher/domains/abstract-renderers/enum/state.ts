@@ -41,7 +41,7 @@ export type EnumAbstractRendererView<
   Context &
     Value<ValueOption> &
     EnumAbstractRendererState & {
-      activeOptions: "loading" | Array<ValueRecord>;
+      activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
     } & { disabled: boolean },
   EnumAbstractRendererState,
   ForeignMutationsExpected & {

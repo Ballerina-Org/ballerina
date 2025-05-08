@@ -74,7 +74,7 @@ export const EnumAbstractRenderer = <
             activeOptions: !AsyncState.Operations.hasValue(
               props.context.customFormState.options.sync,
             )
-              ? "loading"
+              ? "unloaded"
               : props.context.customFormState.options.sync.value
                   .valueSeq()
                   .toArray(),
@@ -149,23 +149,29 @@ export const EnumAbstractRenderer = <
         onChange: DispatchOnChange<ValueOption>;
       }
     >(
-      Co.GetState().then((current) => {
-        return Synchronize<Unit, OrderedMap<Guid, ValueRecord>>(
-          current.getOptions,
-          () => "transient failure",
-          5,
-          50,
-        ).embed(
-          (_) => _.customFormState.options,
-          (_) => (current) => ({
+      Co.GetState().then((current) =>
+        Co.Seq([
+          Co.SetState((current) => ({
             ...current,
-            customFormState: {
-              ...current.customFormState,
-              options: _(current.customFormState.options),
-            },
-          }),
-        );
-      }),
+            activeOptions: "loading",
+          })),
+          Synchronize<Unit, OrderedMap<Guid, ValueRecord>>(
+            current.getOptions,
+            () => "transient failure",
+            5,
+            50,
+          ).embed(
+            (_) => _.customFormState.options,
+            (_) => (current) => ({
+              ...current,
+              customFormState: {
+                ...current.customFormState,
+                options: _(current.customFormState.options),
+              },
+            }),
+          ),
+        ]),
+      ),
       {
         interval: 15,
         runFilter: (props) => props.context.customFormState.shouldLoad,

@@ -628,21 +628,16 @@ export const PersonConcreteRenderers = {
                 <em>{props.context.details}</em>
               </p>
             )}
-            {props.context.activeOptions == "loading" ? (
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
               <select
                 value={value as string | undefined}
-                onChange={(e) =>
-                  props.foreignMutations.setNewValue(e.currentTarget.value)
-                }
                 onClick={() => props.foreignMutations.loadOptions()}
               >
                 <>
-                  <option></option>
-                  <option></option>
-                  <option></option>
-                  <option></option>
-                  <option></option>
-
+                  {value && (
+                    <option value={value as string}>{value as string}</option>
+                  )}
                 </>
               </select>
             ) : (
@@ -675,8 +670,8 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) =>
-        (
+      (props) => {
+        return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
             {props.context.details && (
@@ -684,8 +679,21 @@ export const PersonConcreteRenderers = {
                 <em>{props.context.details}</em>
               </p>
             )}
-            {props.context.activeOptions == "loading" ? (
-              "loading options"
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+              <select
+                multiple
+                value={props.context.selectedIds}
+                disabled={true}
+              >
+                <>
+                  {props.context.value.fields.map((o) => (
+                    <option value={(o as ValueRecord).fields.get("Value")! as string}>
+                      {(o as ValueRecord).fields.get("Value") as string}
+                    </option>
+                  ))}
+                </>
+              </select>
             ) : (
               <select
                 multiple
@@ -708,8 +716,14 @@ export const PersonConcreteRenderers = {
                 </>
               </select>
             )}
+            {props.context.activeOptions == "unloaded" && (
+              <button onClick={() => props.foreignMutations.loadOptions()}>
+                Load Options
+              </button>
+            )}
           </>
-        ),
+        );
+      },
   },
   streamSingleSelection: {
     defaultInfiniteStream:

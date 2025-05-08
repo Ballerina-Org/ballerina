@@ -17,12 +17,13 @@ export type EnumMultiselectAbstractRendererView<
     Value<ValueRecord> &
     EnumAbstractRendererState & {
       selectedIds: Array<Guid>;
-      activeOptions: "loading" | Array<ValueRecord>;
+      activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
       disabled: boolean;
     },
   EnumAbstractRendererState,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueRecord>;
     setNewValue: SimpleCallback<Array<Guid>>;
+    loadOptions: SimpleCallback<void>;
   }
 >;

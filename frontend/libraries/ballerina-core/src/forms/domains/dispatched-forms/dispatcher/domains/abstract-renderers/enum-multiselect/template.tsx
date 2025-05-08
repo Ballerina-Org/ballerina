@@ -78,7 +78,7 @@ export const EnumMultiselectAbstractRenderer = <
             activeOptions: !AsyncState.Operations.hasValue(
               props.context.customFormState.options.sync,
             )
-              ? "loading"
+              ? "unloaded"
               : props.context.customFormState.options.sync.value
                   .valueSeq()
                   .toArray(),
@@ -119,6 +119,15 @@ export const EnumMultiselectAbstractRenderer = <
                 delta,
               );
             },
+            loadOptions: () => {
+              props.setState((current) => ({
+                ...current,
+                customFormState: {
+                  ...current.customFormState,
+                  shouldLoad: true,
+                },
+              }));
+            },
           }}
         />
       </span>
@@ -130,28 +139,31 @@ export const EnumMultiselectAbstractRenderer = <
       }
     >(
       Co.GetState().then((current) =>
-        Synchronize<Unit, OrderedMap<Guid, ValueRecord>>(
-          current.getOptions,
-          () => "transient failure",
-          5,
-          50,
-        ).embed(
-          (_) => _.customFormState.options,
-          (_) => (current) => ({
+        Co.Seq([
+          Co.SetState((current) => ({
             ...current,
-            customFormState: {
-              ...current.customFormState,
-              options: _(current.customFormState.options),
-            },
-          }),
-        ),
+            activeOptions: "loading",
+          })),
+          Synchronize<Unit, OrderedMap<Guid, ValueRecord>>(
+            current.getOptions,
+            () => "transient failure",
+            5,
+            50,
+          ).embed(
+            (_) => _.customFormState.options,
+            (_) => (current) => ({
+              ...current,
+              customFormState: {
+                ...current.customFormState,
+                options: _(current.customFormState.options),
+              },
+            }),
+          ),
+        ]),
       ),
       {
         interval: 15,
-        runFilter: (props) =>
-          !AsyncState.Operations.hasValue(
-            props.context.customFormState.options.sync,
-          ),
+        runFilter: (props) => props.context.customFormState.shouldLoad,
       },
     ),
   ]);
