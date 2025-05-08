@@ -130,6 +130,15 @@ export const EnumAbstractRenderer = <
                 );
               }
             },
+            loadOptions: () => {
+              props.setState((current) => ({
+                ...current,
+                customFormState: {
+                  ...current.customFormState,
+                  shouldLoad: true,
+                },
+              }));
+            },
           }}
         />
       </span>
@@ -159,10 +168,7 @@ export const EnumAbstractRenderer = <
       }),
       {
         interval: 15,
-        runFilter: (props) =>
-          !AsyncState.Operations.hasValue(
-            props.context.customFormState.options.sync,
-          ),
+        runFilter: (props) => props.context.customFormState.shouldLoad,
       },
     ),
   ]);
