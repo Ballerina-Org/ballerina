@@ -29,7 +29,9 @@ const intialiseTable = Co.GetState().then((current) => {
   const hasMoreValues = current.value.hasMoreValues;
   const from = current.value.from;
   const to = current.value.to;
-  const getChunkWithParams = current.tableApiSource.getMany(current.fromTableApiParser);
+  const getChunkWithParams = current.tableApiSource.getMany(
+    current.fromTableApiParser,
+  );
 
   return Co.SetState(
     replaceWith(AbstractTableRendererState.Default()).then(

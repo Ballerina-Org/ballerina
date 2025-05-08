@@ -256,7 +256,11 @@ export const NestedDispatcher = {
         ? ValueOrErrors.Default.throwOne(
             `expected renderer.kind == "baseUnionRenderer" but got ${renderer.kind}`,
           )
-        : NestedUnionDispatcher.Operations.Dispatch(type, renderer, dispatcherContext),
+        : NestedUnionDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ),
     DispatchAsOneRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
@@ -268,7 +272,11 @@ export const NestedDispatcher = {
         ? ValueOrErrors.Default.throwOne(
             `expected renderer.kind == "baseOneRenderer" but got ${renderer.kind}`,
           )
-        : NestedOneDispatcher.Operations.Dispatch(type, renderer, dispatcherContext),
+        : NestedOneDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
       renderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
@@ -301,80 +309,82 @@ export const NestedDispatcher = {
             true,
           )
         : renderer.kind == "tableForm"
-        ? renderer.inlinedApi == undefined
-          ? ValueOrErrors.Default.throwOne(
-              "inlined table form renderer has no api",
-            )
-          : TableFormDispatcher.Operations.Dispatch(
-              renderer.type,
-              renderer,
-              dispatcherContext,
-              renderer.inlinedApi,
-              true,
-            )
-        : type.kind == "primitive"
-        ? NestedDispatcher.Operations.DispatchAsPrimitiveRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "singleSelection"
-        ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "multiSelection"
-        ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "sum"
-        ? NestedDispatcher.Operations.DispatchAsSumRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "tuple"
-        ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "list"
-        ? NestedDispatcher.Operations.DispatchAsListRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "map"
-        ? NestedDispatcher.Operations.DispatchAsMapRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "lookup"
-        ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "table"
-        ? NestedDispatcher.Operations.DispatchAsTableRenderer(
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "union"
-        ? NestedDispatcher.Operations.DispatchAsUnionRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : type.kind == "one"
-        ? NestedDispatcher.Operations.DispatchAsOneRenderer(
-            type,
-            renderer,
-            dispatcherContext,
-          )
-        : ValueOrErrors.Default.throwOne(`unknown type kind "${type.kind}"`);
+          ? renderer.inlinedApi == undefined
+            ? ValueOrErrors.Default.throwOne(
+                "inlined table form renderer has no api",
+              )
+            : TableFormDispatcher.Operations.Dispatch(
+                renderer.type,
+                renderer,
+                dispatcherContext,
+                renderer.inlinedApi,
+                true,
+              )
+          : type.kind == "primitive"
+            ? NestedDispatcher.Operations.DispatchAsPrimitiveRenderer(
+                type,
+                renderer,
+                dispatcherContext,
+              )
+            : type.kind == "singleSelection"
+              ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
+                  renderer,
+                  dispatcherContext,
+                )
+              : type.kind == "multiSelection"
+                ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
+                    renderer,
+                    dispatcherContext,
+                  )
+                : type.kind == "sum"
+                  ? NestedDispatcher.Operations.DispatchAsSumRenderer(
+                      type,
+                      renderer,
+                      dispatcherContext,
+                    )
+                  : type.kind == "tuple"
+                    ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
+                        type,
+                        renderer,
+                        dispatcherContext,
+                      )
+                    : type.kind == "list"
+                      ? NestedDispatcher.Operations.DispatchAsListRenderer(
+                          type,
+                          renderer,
+                          dispatcherContext,
+                        )
+                      : type.kind == "map"
+                        ? NestedDispatcher.Operations.DispatchAsMapRenderer(
+                            type,
+                            renderer,
+                            dispatcherContext,
+                          )
+                        : type.kind == "lookup"
+                          ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
+                              renderer,
+                              dispatcherContext,
+                            )
+                          : type.kind == "table"
+                            ? NestedDispatcher.Operations.DispatchAsTableRenderer(
+                                renderer,
+                                dispatcherContext,
+                              )
+                            : type.kind == "union"
+                              ? NestedDispatcher.Operations.DispatchAsUnionRenderer(
+                                  type,
+                                  renderer,
+                                  dispatcherContext,
+                                )
+                              : type.kind == "one"
+                                ? NestedDispatcher.Operations.DispatchAsOneRenderer(
+                                    type,
+                                    renderer,
+                                    dispatcherContext,
+                                  )
+                                : ValueOrErrors.Default.throwOne(
+                                    `unknown type kind "${type.kind}"`,
+                                  );
 
       return result.MapErrors((errors) =>
         errors.map(

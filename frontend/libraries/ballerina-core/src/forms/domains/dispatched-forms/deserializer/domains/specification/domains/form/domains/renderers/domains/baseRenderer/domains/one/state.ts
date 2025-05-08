@@ -83,25 +83,29 @@ export const BaseOneRenderer = {
       serialized.api == undefined
         ? ValueOrErrors.Default.throwOne(`api is missing`)
         : !isString(serialized.api) && !Array.isArray(serialized.api)
-        ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
-        : Array.isArray(serialized.api) && serialized.api.length != 2
-        ? ValueOrErrors.Default.throwOne(`api must be an array of length 2`)
-        : Array.isArray(serialized.api) &&
-          (typeof serialized.api[0] != "string" ||
-            typeof serialized.api[1] != "string")
-        ? ValueOrErrors.Default.throwOne(`api array elements must be strings`)
-        : serialized.renderer == undefined
-        ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-        : typeof serialized.renderer != "string"
-        ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
-        : serialized.detailsRenderer == undefined
-        ? ValueOrErrors.Default.throwOne(`detailsRenderer is missing`)
-        : ValueOrErrors.Default.return({
-            ...serialized,
-            detailsRenderer: serialized.detailsRenderer,
-            renderer: serialized.renderer,
-            api: serialized.api,
-          }),
+          ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
+          : Array.isArray(serialized.api) && serialized.api.length != 2
+            ? ValueOrErrors.Default.throwOne(`api must be an array of length 2`)
+            : Array.isArray(serialized.api) &&
+                (typeof serialized.api[0] != "string" ||
+                  typeof serialized.api[1] != "string")
+              ? ValueOrErrors.Default.throwOne(
+                  `api array elements must be strings`,
+                )
+              : serialized.renderer == undefined
+                ? ValueOrErrors.Default.throwOne(`renderer is missing`)
+                : typeof serialized.renderer != "string"
+                  ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+                  : serialized.detailsRenderer == undefined
+                    ? ValueOrErrors.Default.throwOne(
+                        `detailsRenderer is missing`,
+                      )
+                    : ValueOrErrors.Default.return({
+                        ...serialized,
+                        detailsRenderer: serialized.detailsRenderer,
+                        renderer: serialized.renderer,
+                        api: serialized.api,
+                      }),
     DeserializePreviewRenderer: <T>(
       type: OneType<T>,
       serialized: SerializedBaseOneRenderer,

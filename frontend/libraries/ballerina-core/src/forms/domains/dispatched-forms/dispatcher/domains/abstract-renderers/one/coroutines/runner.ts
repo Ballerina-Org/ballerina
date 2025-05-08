@@ -61,19 +61,24 @@ const intializeOne = Co.GetState().then((current) => {
 
   return Synchronize<Unit, ValueOrErrors<ValueOption, string>>(
     (_) =>
-      current.getApi(current.id)
-        .then((value) => {
-          console.debug("value", value);
-          console.debug("x", current.fromApiParser(value));
-          return current.fromApiParser(value);
-        }),
+      current.getApi(current.id).then((value) => {
+        return current
+          .fromApiParser(value)
+          .Then((result) =>
+            ValueOrErrors.Default.return(
+              PredicateValue.Default.option(true, result),
+            ),
+          );
+      }),
     () => "transient failure",
     5,
     150,
   ).embed(
     (_) => _.customFormState.selectedValue,
-    (_) => OneAbstractRendererState.Updaters.Core.customFormState.children
-      .selectedValue(_),
+    (_) =>
+      OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+        _,
+      ),
   );
 });
 

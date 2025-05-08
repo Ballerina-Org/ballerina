@@ -176,7 +176,13 @@
                 "columns": {
                   "main": {
                     "groups": {
-                      "main": ["Name", "Surname", "Birthday", "Email", "SubscribeToNewsletter"]
+                      "main": [
+                        "Name",
+                        "Surname",
+                        "Birthday",
+                        "Email",
+                        "SubscribeToNewsletter"
+                      ]
                     }
                   }
                 }

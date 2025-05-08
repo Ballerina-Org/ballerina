@@ -161,93 +161,98 @@ export const OneAbstractRenderer = (
       },
     }));
 
-  const embeddedPreviewRenderer = (previewValue: ValueRecord) => PreviewRenderer?.mapContext<
-    OneAbstractRendererReadonlyContext & OneAbstractRendererState
-  >((_) => {
-
-    // const value = _.customFormState.selectedValue.sync.value.value.value;
-    const state =
-      _.customFormState?.detailsState ??
-      RecordAbstractRendererState.Default.zero();
-    return {
-      ..._,
-      ...state,
-      value: previewValue,
-      disabled: false, // to do think about
-      bindings: _.bindings,
-      extraContext: _.extraContext,
-      identifiers: {
-        withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
-        withoutLauncher: _.identifiers.withoutLauncher.concat(`[preview]`),
-      },
-      type: _.type.args[0] as RecordType<any>,
-    };
-  })
-    .mapState(
-      OneAbstractRendererState.Updaters.Core.customFormState.children
-        .detailsState,
-    )
-    .mapForeignMutationsFromProps<{
-      onChange: DispatchOnChange<PredicateValue>;
-    }>((props) => ({
-      onChange: (_: BasicUpdater<ValueRecord>, nestedDelta: DispatchDelta) => {
-        props.setState(
-          OneAbstractRendererState.Updaters.Core.commonFormState.children
-            .modifiedByUser(replaceWith(true))
-            .then(
-              OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                RecordAbstractRendererState.Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
+  const embeddedPreviewRenderer = (previewValue: ValueRecord) =>
+    PreviewRenderer?.mapContext<
+      OneAbstractRendererReadonlyContext & OneAbstractRendererState
+    >((_) => {
+      // const value = _.customFormState.selectedValue.sync.value.value.value;
+      const state =
+        _.customFormState?.detailsState ??
+        RecordAbstractRendererState.Default.zero();
+      return {
+        ..._,
+        ...state,
+        value: previewValue,
+        disabled: false, // to do think about
+        bindings: _.bindings,
+        extraContext: _.extraContext,
+        identifiers: {
+          withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
+          withoutLauncher: _.identifiers.withoutLauncher.concat(`[preview]`),
+        },
+        type: _.type.args[0] as RecordType<any>,
+      };
+    })
+      .mapState(
+        OneAbstractRendererState.Updaters.Core.customFormState.children
+          .detailsState,
+      )
+      .mapForeignMutationsFromProps<{
+        onChange: DispatchOnChange<PredicateValue>;
+      }>((props) => ({
+        onChange: (
+          _: BasicUpdater<ValueRecord>,
+          nestedDelta: DispatchDelta,
+        ) => {
+          props.setState(
+            OneAbstractRendererState.Updaters.Core.commonFormState.children
+              .modifiedByUser(replaceWith(true))
+              .then(
+                OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                  RecordAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
                   ),
                 ),
-              ),
-            )
-            .then((__) => {
-              if (
-                __.customFormState.selectedValue.sync.kind != "loaded" ||
-                __.customFormState.selectedValue.sync.value.kind == "errors" ||
-                !__.customFormState.selectedValue.sync.value.value.isSome ||
-                !PredicateValue.Operations.IsRecord(
-                  __.customFormState.selectedValue.sync.value.value.value,
-                )
-              ) {
-                return __;
-              }
-              return {
-                ...__,
-                customFormState: {
-                  ...__.customFormState,
-                  selectedValue: {
-                    ...__.customFormState.selectedValue,
-                    sync: {
-                      ...__.customFormState.selectedValue.sync,
-                      value: {
-                        ...__.customFormState.selectedValue.sync.value,
+              )
+              .then((__) => {
+                if (
+                  __.customFormState.selectedValue.sync.kind != "loaded" ||
+                  __.customFormState.selectedValue.sync.value.kind ==
+                    "errors" ||
+                  !__.customFormState.selectedValue.sync.value.value.isSome ||
+                  !PredicateValue.Operations.IsRecord(
+                    __.customFormState.selectedValue.sync.value.value.value,
+                  )
+                ) {
+                  return __;
+                }
+                return {
+                  ...__,
+                  customFormState: {
+                    ...__.customFormState,
+                    selectedValue: {
+                      ...__.customFormState.selectedValue,
+                      sync: {
+                        ...__.customFormState.selectedValue.sync,
                         value: {
-                          ...__.customFormState.selectedValue.sync.value.value,
-                          value: _(
-                            __.customFormState.selectedValue.sync.value.value
+                          ...__.customFormState.selectedValue.sync.value,
+                          value: {
+                            ...__.customFormState.selectedValue.sync.value
                               .value,
-                          ),
+                            value: _(
+                              __.customFormState.selectedValue.sync.value.value
+                                .value,
+                            ),
+                          },
                         },
                       },
                     },
                   },
-                },
-              }; 
-            }),
-        );
+                };
+              }),
+          );
 
-        // TODO, must return the ID in the delta,
-        const delta: DispatchDelta = {
-          kind: "OptionValue",
-          value: nestedDelta,
-        };
+          // TODO, must return the ID in the delta,
+          const delta: DispatchDelta = {
+            kind: "OptionValue",
+            value: nestedDelta,
+          };
 
-        props.foreignMutations.onChange(id, delta);
-      },
-    }));
+          props.foreignMutations.onChange(id, delta);
+        },
+      }));
 
   return Template.Default<
     OneAbstractRendererReadonlyContext,

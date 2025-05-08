@@ -69,11 +69,8 @@ import { Map } from "immutable";
 export const PersonConcreteRenderers = {
   one: {
     admin:
-      <
-        OneAbstractRendererReadonlyContext,
-        ForeignMutationsExpected,
-      >(): OneAbstractRendererView =>
-      (props) => {
+      <OneAbstractRendererReadonlyContext, ForeignMutationsExpected>(): any =>
+      (props: any) => {
         if (
           !AsyncState.Operations.hasValue(
             props.context.customFormState.selectedValue.sync,
@@ -138,8 +135,8 @@ export const PersonConcreteRenderers = {
                 <ul>
                   {props.context.customFormState.stream.loadedElements
                     .valueSeq()
-                    .map((chunk) =>
-                      chunk.data.valueSeq().map((element) => (
+                    .map((chunk: any) =>
+                      chunk.data.valueSeq().map((element: any) => (
                         <li>
                           <button
                             disabled={props.context.disabled}
@@ -442,8 +439,8 @@ export const PersonConcreteRenderers = {
           DetailViewresult.kind == "errors"
             ? Template.Default<any, any, any, any>((props) => <div>Error</div>)
             : DetailViewresult.value == undefined
-            ? Template.Default<any, any, any, any>((props) => <></>)
-            : DetailViewresult.value;
+              ? Template.Default<any, any, any, any>((props) => <></>)
+              : DetailViewresult.value;
         return (
           <div
             style={{
@@ -640,49 +637,47 @@ export const PersonConcreteRenderers = {
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): BoolAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <input
-              disabled={props.context.disabled}
-              type="checkbox"
-              checked={props.context.value}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.checked)
-              }
-            />
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            disabled={props.context.disabled}
+            type="checkbox"
+            checked={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(e.currentTarget.checked)
+            }
+          />
+        </>
+      ),
     secondBoolean:
       <
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): BoolAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <input
-              disabled={props.context.disabled}
-              type="checkbox"
-              checked={props.context.value}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.checked)
-              }
-            />
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            disabled={props.context.disabled}
+            type="checkbox"
+            checked={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(e.currentTarget.checked)
+            }
+          />
+        </>
+      ),
   },
   number: {
     defaultNumber:
@@ -690,27 +685,26 @@ export const PersonConcreteRenderers = {
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): NumberAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <input
-              disabled={props.context.disabled}
-              type="number"
-              value={props.context.value}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(
-                  ~~parseInt(e.currentTarget.value),
-                )
-              }
-            />
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            disabled={props.context.disabled}
+            type="number"
+            value={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(
+                ~~parseInt(e.currentTarget.value),
+              )
+            }
+          />
+        </>
+      ),
   },
   string: {
     defaultString:
@@ -900,83 +894,82 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.tooltip && <p>{props.context.tooltip}</p>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <button
-              disabled={props.context.disabled}
-              onClick={() => props.foreignMutations.toggleOpen()}
-            >
-              {props.context.value.isSome &&
-                ((props.context.value.value as ValueRecord).fields.get(
-                  "DisplayValue",
-                ) as string)}{" "}
-              {props.context.customFormState.status == "open" ? "➖" : "➕"}
-            </button>
-            <button
-              disabled={props.context.disabled}
-              onClick={() => props.foreignMutations.clearSelection()}
-            >
-              ❌
-            </button>
-            {props.context.customFormState.status == "closed" ? (
-              <></>
-            ) : (
-              <>
-                <input
-                  disabled={props.context.disabled}
-                  value={props.context.customFormState.searchText.value}
-                  onChange={(e) =>
-                    props.foreignMutations.setSearchText(e.currentTarget.value)
-                  }
-                />
-                <ul>
-                  {props.context.customFormState.stream.loadedElements
-                    .valueSeq()
-                    .map((chunk) =>
-                      chunk.data.valueSeq().map((element) => (
-                        <li>
-                          <button
-                            disabled={props.context.disabled}
-                            onClick={() =>
-                              props.foreignMutations.select(
-                                PredicateValue.Default.option(
-                                  true,
-                                  ValueRecord.Default.fromJSON(element),
-                                ),
-                              )
-                            }
-                          >
-                            {element.DisplayValue}{" "}
-                            {props.context.value.isSome &&
-                            (
-                              props.context.value.value as ValueRecord
-                            ).fields.get("Id") == element.Id
-                              ? "✅"
-                              : ""}
-                          </button>
-                        </li>
-                      )),
-                    )}
-                </ul>
-              </>
-            )}
-            <button
-              disabled={props.context.hasMoreValues == false}
-              onClick={() => props.foreignMutations.loadMore()}
-            >
-              ⋯
-            </button>
-            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <button
+            disabled={props.context.disabled}
+            onClick={() => props.foreignMutations.toggleOpen()}
+          >
+            {props.context.value.isSome &&
+              ((props.context.value.value as ValueRecord).fields.get(
+                "DisplayValue",
+              ) as string)}{" "}
+            {props.context.customFormState.status == "open" ? "➖" : "➕"}
+          </button>
+          <button
+            disabled={props.context.disabled}
+            onClick={() => props.foreignMutations.clearSelection()}
+          >
+            ❌
+          </button>
+          {props.context.customFormState.status == "closed" ? (
+            <></>
+          ) : (
+            <>
+              <input
+                disabled={props.context.disabled}
+                value={props.context.customFormState.searchText.value}
+                onChange={(e) =>
+                  props.foreignMutations.setSearchText(e.currentTarget.value)
+                }
+              />
+              <ul>
+                {props.context.customFormState.stream.loadedElements
+                  .valueSeq()
+                  .map((chunk) =>
+                    chunk.data.valueSeq().map((element) => (
+                      <li>
+                        <button
+                          disabled={props.context.disabled}
+                          onClick={() =>
+                            props.foreignMutations.select(
+                              PredicateValue.Default.option(
+                                true,
+                                ValueRecord.Default.fromJSON(element),
+                              ),
+                            )
+                          }
+                        >
+                          {element.DisplayValue}{" "}
+                          {props.context.value.isSome &&
+                          (props.context.value.value as ValueRecord).fields.get(
+                            "Id",
+                          ) == element.Id
+                            ? "✅"
+                            : ""}
+                        </button>
+                      </li>
+                    )),
+                  )}
+              </ul>
+            </>
+          )}
+          <button
+            disabled={props.context.hasMoreValues == false}
+            onClick={() => props.foreignMutations.loadMore()}
+          >
+            ⋯
+          </button>
+          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
+        </>
+      ),
   },
   streamMultiSelection: {
     defaultInfiniteStreamMultiselect:
@@ -1172,24 +1165,23 @@ export const PersonConcreteRenderers = {
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): Base64FileAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <input
-              type="text"
-              value={props.context.value}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.value)
-              }
-            />
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            type="text"
+            value={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(e.currentTarget.value)
+            }
+          />
+        </>
+      ),
   },
   secret: {
     defaultSecret:
@@ -1197,24 +1189,23 @@ export const PersonConcreteRenderers = {
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): SecretAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <input
-              type="password"
-              value={props.context.value}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.value)
-              }
-            />
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            type="password"
+            value={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(e.currentTarget.value)
+            }
+          />
+        </>
+      ),
   },
   map: {
     defaultMap:
@@ -1229,48 +1220,45 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            {props.context.tooltip && <p>{props.context.tooltip}</p>}
-            {props.context.details && (
-              <p>
-                <em>{props.context.details}</em>
-              </p>
-            )}
-            <ul>
-              {props.context.value.values.map((_, elementIndex) => {
-                return (
-                  <li>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.remove(elementIndex)
-                      }
-                    >
-                      ❌
-                    </button>
-                    {props.embeddedKeyTemplate(elementIndex)({
-                      ...props,
-                      view: unit,
-                    })}
-                    {props.embeddedValueTemplate(elementIndex)({
-                      ...props,
-                      view: unit,
-                    })}
-                  </li>
-                );
-              })}
-            </ul>
-            <button
-              onClick={() => {
-                props.foreignMutations.add(unit);
-              }}
-            >
-              ➕
-            </button>
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <ul>
+            {props.context.value.values.map((_, elementIndex) => {
+              return (
+                <li>
+                  <button
+                    onClick={() => props.foreignMutations.remove(elementIndex)}
+                  >
+                    ❌
+                  </button>
+                  {props.embeddedKeyTemplate(elementIndex)({
+                    ...props,
+                    view: unit,
+                  })}
+                  {props.embeddedValueTemplate(elementIndex)({
+                    ...props,
+                    view: unit,
+                  })}
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            onClick={() => {
+              props.foreignMutations.add(unit);
+            }}
+          >
+            ➕
+          </button>
+        </>
+      ),
   },
   tuple: {
     defaultTuple2:
@@ -1283,24 +1271,23 @@ export const PersonConcreteRenderers = {
         Context,
         ForeignMutationsExpected
       > =>
-      (props) =>
-        (
-          <>
-            {props.context.label && <h3>{props.context.label}</h3>}
-            <div>
-              {props.context.value.values.map((_, elementIndex) => {
-                return (
-                  <>
-                    {props.embeddedItemTemplates(elementIndex)({
-                      ...props,
-                      view: unit,
-                    })}
-                  </>
-                );
-              })}
-            </div>
-          </>
-        ),
+      (props) => (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          <div>
+            {props.context.value.values.map((_, elementIndex) => {
+              return (
+                <>
+                  {props.embeddedItemTemplates(elementIndex)({
+                    ...props,
+                    view: unit,
+                  })}
+                </>
+              );
+            })}
+          </div>
+        </>
+      ),
     defaultTuple3:
       <
         ItemFormState extends { commonFormState: DispatchCommonFormState },
@@ -1377,11 +1364,11 @@ export const PersonConcreteRenderers = {
           props.context.value.value.kind == "l"
             ? ""
             : props.context.customFormState.right.commonFormState.modifiedByUser
-            ? props.context.customFormState.right.customFormState
-                .possiblyInvalidInput
-            : (props.context.value.value.value as Date)
-                .toISOString()
-                .slice(0, 10);
+              ? props.context.customFormState.right.customFormState
+                  .possiblyInvalidInput
+              : (props.context.value.value.value as Date)
+                  .toISOString()
+                  .slice(0, 10);
 
         const setNewValue = (_: Maybe<string>) => {
           props.setState(
@@ -1510,11 +1497,11 @@ export const PersonConcreteRenderers = {
           props.context.value.value.kind == "l"
             ? ""
             : props.context.customFormState.right.commonFormState.modifiedByUser
-            ? props.context.customFormState.right.customFormState
-                .possiblyInvalidInput
-            : (props.context.value.value.value as Date)
-                .toISOString()
-                .slice(0, 10);
+              ? props.context.customFormState.right.customFormState
+                  .possiblyInvalidInput
+              : (props.context.value.value.value as Date)
+                  .toISOString()
+                  .slice(0, 10);
 
         const setNewValue = (_: Maybe<string>) => {
           props.setState(

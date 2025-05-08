@@ -35,11 +35,11 @@ import { Value } from "../../../../../../../value/state";
 import { DispatchOnChange } from "../../../state";
 
 export type OneAbstractRendererReadonlyContext =
-  | CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
-      getApi: BasicFun<Guid, Promise<any>>;
-      fromApiParser: (value: any) => ValueOrErrors<ValueOption, string>;
-      id: Guid;
-    };
+  CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
+    getApi: BasicFun<Guid, Promise<any>>;
+    fromApiParser: (value: any) => ValueOrErrors<ValueRecord, string>;
+    id: Guid;
+  };
 
 export type OneAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
@@ -127,6 +127,8 @@ export type OneAbstractRendererView = View<
   },
   {
     DetailsRenderer: Template<any, any, any, any>;
-    PreviewRenderer: (value: ValueRecord) => Template<any, any, any, any> | undefined;
+    PreviewRenderer: (
+      value: ValueRecord,
+    ) => Template<any, any, any, any> | undefined;
   }
 >;
