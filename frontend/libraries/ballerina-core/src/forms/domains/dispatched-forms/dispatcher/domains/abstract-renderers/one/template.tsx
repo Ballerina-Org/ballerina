@@ -22,6 +22,7 @@ import {
   ValueOption,
   ValueOrErrors,
   ValueRecord,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { DispatchOnChange } from "../../../state";
 import {
@@ -262,25 +263,26 @@ export const OneAbstractRenderer = (
     },
     OneAbstractRendererView
   >((props) => {
+    const value = props.context.value;
     if (
-      !PredicateValue.Operations.IsOption(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsOption(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
-        `Option or unit  expected but got: ${JSON.stringify(
-          props.context.value,
+        `Option or unit expected but got: ${JSON.stringify(
+          value,
         )}\n...When rendering "one" field\n...${
           props.context.identifiers.withLauncher
         }`,
       );
-      return (
-        <></>
-        // <p>
-        //   {props.context.label && `${props.context.label}: `}RENDER ERROR: Option
-        //   value expected for "one" field but got something else
-        // </p>
-      );
+      return <></>;
     }
+    const rendererValue: ValueRecord | ValueUnit = PredicateValue.Operations.IsUnit(value)
+      ? value
+      : PredicateValue.Operations.IsOption(value) &&
+        PredicateValue.Operations.IsRecord(value.value)
+      ? value.value
+      : PredicateValue.Default.unit();
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
@@ -289,6 +291,7 @@ export const OneAbstractRenderer = (
           {...props}
           context={{
             ...props.context,
+            value,
             hasMoreValues: !(
               props.context.customFormState.stream.loadedElements.last()
                 ?.hasMoreValues == false
@@ -316,28 +319,6 @@ export const OneAbstractRenderer = (
                       : id,
                   ),
               ),
-            // clearSelection: () => {
-            //   const delta: DispatchDelta = {
-            //     kind: "OptionReplace",
-            //     replace: PredicateValue.Default.option(
-            //       false,
-            //       PredicateValue.Default.unit(),
-            //     ),
-            //     state: {
-            //       commonFormState: props.context.commonFormState,
-            //       customFormState: props.context.customFormState,
-            //     },
-            //     type: props.context.type,
-            //   };
-            //   props.foreignMutations.onChange(id, delta);
-            //   props.setState(
-            //     OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-            //       Synchronized.Updaters.sync(
-            //         AsyncState.Updaters.toLoaded(unit),
-            //       ),
-            //     ),
-            //   );
-            // },
             setSearchText: (_) =>
               props.setState(
                 OneAbstractRendererState.Updaters.Template.searchText(

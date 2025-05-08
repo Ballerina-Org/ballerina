@@ -29,13 +29,18 @@ import {
   Template,
   ValueRecord,
   RecordAbstractRendererState,
+  ValueUnit,
+  DispatchPrimitiveType,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
 import { DispatchOnChange } from "../../../state";
 
 export type OneAbstractRendererReadonlyContext =
-  CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
+  CommonAbstractRendererReadonlyContext<
+    OneType<any> | DispatchPrimitiveType<any>,
+    ValueOption | ValueUnit
+  > & {
     getApi: BasicFun<Guid, Promise<any>>;
     fromApiParser: (value: any) => ValueOrErrors<ValueRecord, string>;
     id: Guid;
@@ -110,7 +115,7 @@ export const OneAbstractRendererState = {
 };
 export type OneAbstractRendererView = View<
   OneAbstractRendererReadonlyContext &
-    Value<ValueOption> &
+    Value<ValueRecord | ValueUnit> &
     OneAbstractRendererState & {
       hasMoreValues: boolean;
       disabled: boolean;
