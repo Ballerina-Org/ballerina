@@ -73,35 +73,30 @@ export const NestedOneDispatcher = {
           renderer.detailsRenderer,
           dispatcherContext,
         ).Then((detailsRenderer) =>
-          dispatcherContext
-            .defaultState(type.args[0], renderer)
-            .Then((defaultState) =>
-              NestedOneDispatcher.Operations.GetApi(
-                renderer.api,
-                dispatcherContext,
-              ).Then((api) =>
-                dispatcherContext
-                  .getConcreteRenderer("one", renderer.concreteRendererName)
-                  .Then((concreteRenderer) =>
-                    ValueOrErrors.Default.return<
-                      Template<any, any, any, any>,
-                      string
-                    >(
-                      OneAbstractRenderer(
-                        defaultState,
-                        detailsRenderer,
-                        previewRenderer,
-                      )
-                        .mapContext((_: any) => ({
-                          ..._,
-                          type,
-                          api,
-                        }))
-                        .withView(concreteRenderer),
-                    ),
-                  ),
+          NestedOneDispatcher.Operations.GetApi(
+            renderer.api,
+            dispatcherContext,
+          ).Then((getApi) =>
+            dispatcherContext
+              .getConcreteRenderer("one", renderer.concreteRendererName)
+              .Then((concreteRenderer) =>
+                ValueOrErrors.Default.return<
+                  Template<any, any, any, any>,
+                  string
+                >(
+                  OneAbstractRenderer(detailsRenderer, previewRenderer)
+                    .mapContext((_: any) => ({
+                      ..._,
+                      type,
+                      getApi,
+                      fromApiParser: dispatcherContext.parseFromApiByType(
+                        type,
+                      ),
+                    }))
+                    .withView(concreteRenderer),
+                ),
               ),
-            ),
+          ),
         ),
       ),
   },

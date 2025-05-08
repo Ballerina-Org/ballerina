@@ -14,10 +14,11 @@ import { NestedDispatcher } from "../../state";
 import { BaseUnionRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/union/state";
 
 export const NestedUnionDispatcher = {
-  Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-    type: UnionType<T>,
-    unionRenderer: BaseUnionRenderer<T>,
-    dispatcherContext: DispatcherContext<T>,
+  Operations: {
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+      type: UnionType<T>,
+      unionRenderer: BaseUnionRenderer<T>,
+      dispatcherContext: DispatcherContext<T>,
   ): ValueOrErrors<Template<any, any, any, any>, string> =>
     ValueOrErrors.Operations.All(
       List<ValueOrErrors<[string, Template<any, any, any, any>], string>>(
@@ -71,4 +72,5 @@ export const NestedUnionDispatcher = {
       .MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching nested union`),
       ),
+  },
 };

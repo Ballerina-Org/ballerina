@@ -27,6 +27,8 @@ import {
   unit,
   CommonAbstractRendererState,
   Template,
+  ValueRecord,
+  RecordAbstractRendererState,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -35,17 +37,14 @@ import { DispatchOnChange } from "../../../state";
 export type OneAbstractRendererReadonlyContext =
   | CommonAbstractRendererReadonlyContext<OneType<any>, ValueOption> & {
       getApi: BasicFun<Guid, Promise<any>>;
-      fromTableApiParser: (value: any) => ValueOrErrors<ValueOption, string>;
+      fromApiParser: (value: any) => ValueOrErrors<ValueOption, string>;
       id: Guid;
     };
 
 export type OneAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
-    detailsState: {
-      commonFormState: DispatchCommonFormState;
-      customFormState: object;
-    };
+    detailsState: RecordAbstractRendererState;
     selectedValue: Synchronized<Unit, ValueOrErrors<ValueOption, string>>;
     searchText: Debounced<Value<string>>;
     status: "open" | "closed";
@@ -66,7 +65,7 @@ export const OneAbstractRendererState = {
   ): OneAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
-      detailsState: CommonAbstractRendererState.Default(),
+      detailsState: RecordAbstractRendererState.Default.zero(),
       selectedValue: Synchronized.Default(unit),
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
@@ -109,7 +108,7 @@ export const OneAbstractRendererState = {
     },
   },
 };
-export type OneTableAbstractRendererView = View<
+export type OneAbstractRendererView = View<
   OneAbstractRendererReadonlyContext &
     Value<ValueOption> &
     OneAbstractRendererState & {

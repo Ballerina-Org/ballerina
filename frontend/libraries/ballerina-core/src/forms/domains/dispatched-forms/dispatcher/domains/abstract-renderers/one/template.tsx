@@ -6,6 +6,7 @@ import {
   BasicUpdater,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
+  DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   id,
@@ -15,6 +16,7 @@ import {
   replaceWith,
   Synchronized,
   Template,
+  Unit,
   unit,
   ValueInfiniteStreamState,
   ValueOption,
@@ -25,7 +27,7 @@ import { DispatchOnChange } from "../../../state";
 import {
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,
-  OneTableAbstractRendererView,
+  OneAbstractRendererView,
 } from "./state";
 import {
   initializeOneRunner,
@@ -34,17 +36,16 @@ import {
 } from "./coroutines/runner";
 
 export const OneAbstractRenderer = (
-  GetDefaultState: () => any,
   DetailsRenderer: Template<
     CommonAbstractRendererReadonlyContext<RecordType<any>, ValueRecord>,
-    CommonAbstractRendererState,
+    RecordAbstractRendererState,
     any,
     any
   >,
   PreviewRenderer:
     | Template<
         CommonAbstractRendererReadonlyContext<RecordType<any>, ValueRecord>,
-        CommonAbstractRendererState,
+        RecordAbstractRendererState,
         any,
         any
       >
@@ -64,23 +65,23 @@ export const OneAbstractRenderer = (
       );
       return undefined;
     }
-    if (!_.customFormState.selectedValue.sync.value.value.isSome) {
-      return undefined;
-    }
+
     if (
       !PredicateValue.Operations.IsRecord(
-        _.customFormState.selectedValue.sync.value.value,
-      ) ||
-      _.type.args[0].kind !== "record"
+        _.customFormState.selectedValue.sync.value.value.value,
+      )
     ) {
       console.error(
         "Expected Details renderer to be of record type, but received something else",
       );
       return undefined;
     }
-    const state = _.customFormState?.detailsState ?? GetDefaultState();
+    const value = _.customFormState.selectedValue.sync.value.value.value;
+    const state =
+      _.customFormState?.detailsState ??
+      RecordAbstractRendererState.Default.zero();
     return {
-      value: _.customFormState.selectedValue.sync.value.value,
+      value,
       ...state,
       disabled: false, // to do think about
       bindings: _.bindings,
@@ -89,31 +90,66 @@ export const OneAbstractRenderer = (
         withLauncher: _.identifiers.withLauncher.concat(`[details]`),
         withoutLauncher: _.identifiers.withoutLauncher.concat(`[details]`),
       },
-      type: _.type.args[0],
+      // this is not correct, type is a lookup -- todo, resolve in the dispatcher
+      type: _.type.args[0] as RecordType<any>,
     };
   })
     // TO DO: TEST
-    .mapState(
-      OneAbstractRendererState.Updaters.Core.customFormState.children
-        .detailsState,
+    .mapState((_) =>
+      OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+        _,
+      ),
     )
     .mapForeignMutationsFromProps<{
       onChange: DispatchOnChange<PredicateValue>;
     }>((props) => ({
-      onChange: (
-        _: BasicUpdater<PredicateValue>,
-        nestedDelta: DispatchDelta,
-      ) => {
+      onChange: (_: BasicUpdater<ValueRecord>, nestedDelta: DispatchDelta) => {
         props.setState(
           OneAbstractRendererState.Updaters.Core.commonFormState.children
             .modifiedByUser(replaceWith(true))
             .then(
               OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                CommonAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                  replaceWith(true),
+                RecordAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
                 ),
               ),
-            ),
+            )
+            .then((__) => {
+              if (
+                __.customFormState.selectedValue.sync.kind != "loaded" ||
+                __.customFormState.selectedValue.sync.value.kind == "errors" ||
+                !__.customFormState.selectedValue.sync.value.value.isSome ||
+                !PredicateValue.Operations.IsRecord(
+                  __.customFormState.selectedValue.sync.value.value.value,
+                )
+              ) {
+                return __;
+              }
+              return {
+                ...__,
+                customFormState: {
+                  ...__.customFormState,
+                  selectedValue: {
+                    ...__.customFormState.selectedValue,
+                    sync: {
+                      ...__.customFormState.selectedValue.sync,
+                      value: {
+                        ...__.customFormState.selectedValue.sync.value,
+                        value: {
+                          ...__.customFormState.selectedValue.sync.value.value,
+                          value: _(
+                            __.customFormState.selectedValue.sync.value.value
+                              .value as ValueRecord,
+                          ),
+                        },
+                      },
+                    },
+                  },
+                },
+              };
+            }),
         );
 
         // TODO, must return the ID in the delta,
@@ -180,7 +216,7 @@ export const OneAbstractRenderer = (
     {
       onChange: DispatchOnChange<ValueOption>;
     },
-    OneTableAbstractRendererView
+    OneAbstractRendererView
   >((props) => {
     if (
       !PredicateValue.Operations.IsOption(props.context.value) &&

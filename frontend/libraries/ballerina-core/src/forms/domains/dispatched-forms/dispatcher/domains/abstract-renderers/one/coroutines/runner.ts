@@ -22,6 +22,7 @@ import {
   ApiErrors,
   Synchronized,
   ValueOrErrors,
+  ValueRecord,
 } from "../../../../../../../../../main";
 
 const Co = CoTypedFactory<
@@ -51,7 +52,7 @@ const intializeOne = Co.GetState().then((current) => {
       OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
         Synchronized.Updaters.sync(
           AsyncState.Updaters.toLoaded(
-            ValueOrErrors.Default.return(current.value.value),
+            ValueOrErrors.Default.return(current.value),
           ),
         ),
       ),
@@ -61,7 +62,11 @@ const intializeOne = Co.GetState().then((current) => {
   return Synchronize<Unit, ValueOrErrors<ValueOption, string>>(
     (_) =>
       current.getApi(current.id)
-        .then((value) => current.fromTableApiParser(value)),
+        .then((value) => {
+          console.debug("value", value);
+          console.debug("x", current.fromApiParser(value));
+          return current.fromApiParser(value);
+        }),
     () => "transient failure",
     5,
     150,

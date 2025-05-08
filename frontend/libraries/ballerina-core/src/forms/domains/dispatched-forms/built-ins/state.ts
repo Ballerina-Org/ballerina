@@ -27,6 +27,7 @@ import {
   OneAbstractRendererState,
   DispatchLookupSources,
   DispatchTableApiSources,
+  ValueOption,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -116,6 +117,7 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
+  One: ApiConverter<ValueOption>;
 };
 
 export type ConcreteRendererKinds = {
@@ -509,6 +511,7 @@ export const dispatchDefaultState =
             `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for lookup`,
           );
         }
+
         const lookupType = types.get(t.name);
 
         if (lookupType == undefined) {
@@ -994,6 +997,23 @@ export const dispatchFromAPIRawValue =
                 OrderedMap(values),
               ),
             ),
+          ),
+        );
+      }
+
+      if (t.kind == "one") {
+        const result = converters["One"].fromAPIRawValue(raw);
+        if (!result.isSome) {
+          return ValueOrErrors.Default.return(result);
+        }
+        return dispatchFromAPIRawValue(
+          t.args[0],
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.value).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.option(true, value),
           ),
         );
       }

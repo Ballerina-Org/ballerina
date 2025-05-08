@@ -19,6 +19,10 @@
     },
     "UsersSetup": {
       "fields": {
+        "Admin": {
+          "fun": "One",
+          "args": ["User"]
+        },
         "ActiveUsers": {
           "fun": "Table",
           "args": ["User"]
@@ -139,6 +143,36 @@
           "renderer": "ActiveUsers",
           "api": "ActiveUsersApi",
           "label": "Active Users"
+        },
+        "Admin": {
+          "renderer": "admin",
+          "detailsRenderer": {
+            "type": "User",
+            "renderer": "userDetails",
+            "fields": {
+              "Name": {
+                "label": "First Name",
+                "renderer": "defaultString"
+              },
+              "Surname": {
+                "label": "Last Name",
+                "renderer": "defaultString"
+              }
+            },
+            "tabs": {
+              "main": {
+                "columns": {
+                  "main": {
+                    "groups": {
+                      "main": ["Name", "Surname"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": "AdminApi",
+          "label": "Admin"
         }
       },
       "tabs": {
@@ -146,7 +180,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["ActiveUsers"]
+                "main": ["ActiveUsers", "Admin"]
               }
             }
           }
