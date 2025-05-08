@@ -12,6 +12,8 @@ import {
   DispatchEnumOptionsSources,
   DispatchTableApiSources,
   DispatchTableApiSource,
+  DispatchOneSource,
+  DispatchLookupSources,
 } from "ballerina-core";
 import { Map, OrderedMap, Range } from "immutable";
 import { ValueInfiniteStreamState, ValueStreamPosition } from "ballerina-core";
@@ -32,6 +34,68 @@ const usersSetupTabsEnum = [
   "UserGroupsFields",
   "ActivityFields",
 ];
+
+const getAdminLookup: DispatchOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      isRight: true,
+      right: {
+        Id: id,
+        Name: "Admin",
+        Surname: "User",
+        Birthday: "1990-01-01",
+        Email: "admin.user@example.com",
+        SubscribeToNewsletter: true,
+      },
+    }));
+  },
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const lookupSources: DispatchLookupSources = (typeName: string) =>
+  typeName == "User"
+    ? ValueOrErrors.Default.return({
+        one: (apiName: string) =>
+          apiName == "AdminApi"
+            ? ValueOrErrors.Default.return(getAdminLookup)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
+    : ValueOrErrors.Default.throwOne(
+        `can't find type ${typeName} when getting lookup api source`,
+      );
 
 const getActiveUsers: DispatchTableApiSource = {
   get: (id: Guid) => {
@@ -506,4 +570,5 @@ export const UsersSetupFromConfigApis = {
   enumApis,
   entityApis,
   tableApiSources,
+  lookupSources
 };

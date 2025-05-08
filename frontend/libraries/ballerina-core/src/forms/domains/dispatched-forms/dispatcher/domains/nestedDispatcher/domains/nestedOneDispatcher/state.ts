@@ -24,7 +24,7 @@ export const NestedOneDispatcher = {
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.Dispatch(
-            renderer.type,
+            renderer.type.args[0],
             renderer.previewRenderer,
             dispatcherContext,
           ),

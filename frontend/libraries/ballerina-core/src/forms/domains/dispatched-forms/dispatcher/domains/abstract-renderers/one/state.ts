@@ -119,7 +119,7 @@ export type OneAbstractRendererView = View<
   {
     onChange: DispatchOnChange<ValueOption>;
     toggleOpen: SimpleCallback<void>;
-    clearSelection: SimpleCallback<void>;
+    // clearSelection: SimpleCallback<void>;
     setSearchText: SimpleCallback<string>;
     select: SimpleCallback<ValueOption>;
     loadMore: SimpleCallback<void>;

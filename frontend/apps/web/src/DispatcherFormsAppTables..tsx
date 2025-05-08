@@ -197,6 +197,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     infiniteStreamSources:
                       DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
                     enumOptionsSources: UsersSetupFromConfigApis.enumApis,
+                    lookupSources: UsersSetupFromConfigApis.lookupSources,
                     entityApis: DispatchPersonFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,

@@ -157,6 +157,18 @@
               "Surname": {
                 "label": "Last Name",
                 "renderer": "defaultString"
+              },
+              "Birthday": {
+                "label": "Birthday",
+                "renderer": "defaultDate"
+              },
+              "Email": {
+                "label": "Email",
+                "renderer": "defaultString"
+              },
+              "SubscribeToNewsletter": {
+                "label": "Subscribe to Newsletter",
+                "renderer": "defaultBoolean"
               }
             },
             "tabs": {
@@ -164,14 +176,35 @@
                 "columns": {
                   "main": {
                     "groups": {
-                      "main": ["Name", "Surname"]
+                      "main": ["Name", "Surname", "Birthday", "Email", "SubscribeToNewsletter"]
                     }
                   }
                 }
               }
             }
           },
-          "api": "AdminApi",
+          "previewRenderer": {
+            "type": "User",
+            "renderer": "preview",
+            "fields": {
+              "Surname": {
+                "renderer": "defaultString",
+                "disabled": true
+              }
+            },
+            "tabs": {
+              "main": {
+                "columns": {
+                  "main": {
+                    "groups": {
+                      "main": ["Surname"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "AdminApi"],
           "label": "Admin"
         }
       },

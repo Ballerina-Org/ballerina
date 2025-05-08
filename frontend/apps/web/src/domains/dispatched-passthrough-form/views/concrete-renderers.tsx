@@ -61,6 +61,7 @@ import {
   CommonAbstractRendererState,
   UnionAbstractRendererView,
   OneAbstractRendererView,
+  ValueOption,
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
@@ -73,14 +74,100 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): OneAbstractRendererView =>
       (props) => {
+        if (
+          !AsyncState.Operations.hasValue(
+            props.context.customFormState.selectedValue.sync,
+          )
+        ) {
+          return undefined;
+        }
+        if (
+          props.context.customFormState.selectedValue.sync.value.kind ==
+          "errors"
+        ) {
+          console.error(
+            props.context.customFormState.selectedValue.sync.value.errors
+              .join("\n")
+              .concat(`\n...When parsing the "one" field value\n...`),
+          );
+          return undefined;
+        }
+        const selectedValue =
+          props.context.customFormState.selectedValue.sync.value.value.value;
         console.debug("props", props);
         return (
           <>
-            <div>Admin</div>
+            <p>one admin renderer</p>
+            <p>DetailsRenderer</p>
             {props.DetailsRenderer({
               ...props,
               view: unit,
             })}
+            <p>PreviewRenderer</p>
+            <button
+              disabled={props.context.disabled}
+              onClick={() => props.foreignMutations.toggleOpen()}
+            >
+              {props.PreviewRenderer &&
+                props.PreviewRenderer(selectedValue)({
+                  ...props,
+                  view: unit,
+                })}
+              {props.context.customFormState.status == "open" ? "➖" : "➕"}
+            </button>
+            {props.context.customFormState.status == "closed" ? (
+              <></>
+            ) : (
+              <>
+                <input
+                  disabled={props.context.disabled}
+                  value={props.context.customFormState.searchText.value}
+                  onChange={(e) =>
+                    props.foreignMutations.setSearchText(e.currentTarget.value)
+                  }
+                />
+                <ul>
+                  {props.context.customFormState.stream.loadedElements
+                    .valueSeq()
+                    .map((chunk) =>
+                      chunk.data.valueSeq().map((element) => (
+                        <li>
+                          <button
+                            disabled={props.context.disabled}
+                            onClick={() =>
+                              props.foreignMutations.select(
+                                PredicateValue.Default.option(true, element),
+                              )
+                            }
+                          >
+                            {JSON.stringify(element)}
+                            {props.PreviewRenderer &&
+                              props.PreviewRenderer(
+                                PredicateValue.Default.option(true, element),
+                              )({
+                                ...props,
+                                view: unit,
+                              })}
+                            {props.context.value.isSome &&
+                            (
+                              (props.context.value.value as ValueOption).value as ValueRecord
+                            ).fields.get("Id") == element.fields.get("Id")
+                              ? "✅"
+                              : ""}
+                          </button>
+                        </li>
+                      )),
+                    )}
+                </ul>
+              </>
+            )}
+            <button
+              disabled={props.context.hasMoreValues == false}
+              onClick={() => props.foreignMutations.loadMore()}
+            >
+              ⋯
+            </button>
+            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
           </>
         );
       },
@@ -181,6 +268,45 @@ export const PersonConcreteRenderers = {
             {props.context.layout.valueSeq().map((tab) =>
               tab.columns.valueSeq().map((column) => (
                 <div style={{ display: "block", float: "left" }}>
+                  {column.groups.valueSeq().map((group) =>
+                    group
+                      .filter((fieldName) =>
+                        props.VisibleFieldKeys.has(fieldName),
+                      )
+                      .map((fieldName) => (
+                        <>
+                          {/* <>{console.debug("fieldName", fieldName)}</> */}
+                          <div style={{ display: "block" }}>
+                            {props.EmbeddedFields.get(fieldName)!({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                disabled:
+                                  props.DisabledFieldKeys.has(fieldName),
+                              },
+                              view: unit,
+                            })}
+                          </div>
+                        </>
+                      )),
+                  )}
+                </div>
+              )),
+            )}
+          </>
+        );
+      },
+    preview:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
+      (props) => {
+        return (
+          <>
+            {props.context.layout.valueSeq().map((tab) =>
+              tab.columns.valueSeq().map((column) => (
+                <div style={{ display: "flex" }}>
                   {column.groups.valueSeq().map((group) =>
                     group
                       .filter((fieldName) =>
