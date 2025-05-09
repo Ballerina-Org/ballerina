@@ -1,17 +1,11 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module Expr =
-  open Model
   open Patterns
 
-  open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Patterns
-  open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
-  open System
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.Core.Json
@@ -39,9 +33,9 @@ module Expr =
     static member AllNames = BinaryOperator.ByName |> Map.keys |> Set.ofSeq
 
   type Expr with
-    static member ParseMatchCase
+    static member ParseMatchCase<'config, 'context>
       (json: JsonValue)
-      : State<string * VarName * Expr, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<string * VarName * Expr, 'config, 'context, Errors> =
       state {
         let! json = json |> JsonValue.AsRecord |> state.OfSum
         let! caseJson = json |> sum.TryFindField "caseName" |> state.OfSum
@@ -57,7 +51,7 @@ module Expr =
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
-    static member Parse(json: JsonValue) : State<Expr, CodeGenConfig, ParsedFormsContext, Errors> =
+    static member Parse<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
       state {
         return!
           state.Any(
