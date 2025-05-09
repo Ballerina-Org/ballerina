@@ -160,9 +160,7 @@ let codegenConfig: CodeGenConfig =
 let ``Should parse boolean`` () =
   let json = JsonValue.String "boolean"
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
 
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.BoolType, None)
 
@@ -176,9 +174,7 @@ let ``Should parse union`` () =
            [| JsonValue.Record [| "caseName", JsonValue.String "First"; "fields", JsonValue.Record [||] |]
               JsonValue.Record [| "caseName", JsonValue.String "Second"; "fields", JsonValue.Record [||] |] |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
 
   assertSuccess
     result
@@ -196,36 +192,31 @@ let ``Should parse union`` () =
 [<Test>]
 let ``Should parse string`` () =
   let json = JsonValue.String "string"
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.StringType, None)
 
 [<Test>]
 let ``Should parse int`` () =
   let json = JsonValue.String "number"
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
 
 [<Test>]
 let ``Should parse date`` () =
   let json = JsonValue.String "Date"
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.DateOnlyType, None)
 
 [<Test>]
 let ``Should parse guid`` () =
   let json = JsonValue.String "guid"
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.GuidType, None)
 
 [<Test>]
 let ``Should parse unit`` () =
   let json = JsonValue.String "unit"
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.UnitType, None)
 
 [<Test>]
@@ -235,8 +226,7 @@ let ``Should parse option`` () =
       [| "fun", JsonValue.String "Option"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType), None)
 
 [<Test>]
@@ -246,8 +236,7 @@ let ``Should parse list`` () =
       [| "fun", JsonValue.String "List"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType), None)
 
 [<Test>]
@@ -257,8 +246,7 @@ let ``Should parse set`` () =
       [| "fun", JsonValue.String "MultiSelection"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.SetType(ExprType.PrimitiveType PrimitiveType.StringType), None)
 
 [<Test>]
@@ -268,8 +256,7 @@ let ``Should parse map`` () =
       [| "fun", JsonValue.String "Map"
          "args", JsonValue.Array [| JsonValue.String "string"; JsonValue.String "number" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
 
   assertSuccess
     result
@@ -283,8 +270,7 @@ let ``Should parse sum`` () =
       [| "fun", JsonValue.String "Sum"
          "args", JsonValue.Array [| JsonValue.String "string"; JsonValue.String "number" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
 
   assertSuccess
     result
@@ -302,8 +288,7 @@ let ``Should parse tuple`` () =
               JsonValue.String "number"
               JsonValue.String "boolean" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
 
   assertSuccess
     result
@@ -321,8 +306,7 @@ let ``Should parse one`` () =
       [| "fun", JsonValue.String "One"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.OneType(ExprType.PrimitiveType PrimitiveType.StringType), None)
 
 [<Test>]
@@ -332,8 +316,7 @@ let ``Should parse many`` () =
       [| "fun", JsonValue.String "Many"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType), None)
 
 [<Test>]
@@ -343,6 +326,5 @@ let ``Should parse table`` () =
       [| "fun", JsonValue.String "Table"
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
-  let parsedFormContext: ParsedFormsContext = ParsedFormsContext.Empty
-  let result = (ExprType.Parse json).run (codegenConfig, parsedFormContext)
+  let result = (ExprType.Parse json).run (codegenConfig, ParsedFormsContext.Empty)
   assertSuccess result (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType), None)
