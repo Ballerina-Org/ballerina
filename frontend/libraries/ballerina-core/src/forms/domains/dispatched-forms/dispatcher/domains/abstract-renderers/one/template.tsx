@@ -302,15 +302,8 @@ export const OneAbstractRenderer = (
       );
       return <></>;
     }
-
-    console.debug(
-      "value",
-      props.context.customFormState.selectedValue.sync.value,
-    );
     const syncValue =
       props.context.customFormState.selectedValue.sync.value.value;
-
-    console.debug("rendererValue", syncValue);
 
     return (
       <span
@@ -324,10 +317,8 @@ export const OneAbstractRenderer = (
             kind: "initialized",
             value: syncValue,
             hasMoreValues: !(
-              (
-                props.context.customFormState.stream.loadedElements.last()
-                  ?.hasMoreValues == false
-              )
+              props.context.customFormState.stream.loadedElements.last()
+                ?.hasMoreValues == false
             ),
           }}
           // TO DO: Deltas here are on the whole One (selection)

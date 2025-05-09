@@ -498,7 +498,7 @@ const entityApis: EntityApis = {
               To: 10,
             },
             Admin: {
-              // isRight: false,
+              isRight: false,
               // isRight: true,
               // right: {
               //   Name: "Spiffy",
@@ -506,6 +506,15 @@ const entityApis: EntityApis = {
               //   Birthday: "1990-01-01",
               //   Email: "admin.user@example.com",
               //   SubscribeToNewsletter: true,
+              // },
+            },
+            SuperAdmin: {
+              isRight: false,
+              Value: {},
+              // isRight: true,
+              // right: {
+              //   Name: "Spiffy",
+              //   Surname: "User",
               // },
             },
             Inactive: {

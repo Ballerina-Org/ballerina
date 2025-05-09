@@ -165,12 +165,6 @@ export const RecordAbstractRenderer = <
       );
     }
 
-    console.debug(
-      "hello world",
-      props.context.identifiers.withoutLauncher,
-      props,
-    );
-
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,

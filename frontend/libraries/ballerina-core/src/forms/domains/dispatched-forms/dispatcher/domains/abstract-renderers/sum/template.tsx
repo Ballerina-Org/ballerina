@@ -223,16 +223,8 @@ export const SumAbstractRenderer = <
           foreignMutations={{
             ...props.foreignMutations,
           }}
-          embeddedLeftTemplate={
-            props.context.value.value.kind == "l"
-              ? embeddedLeftTemplate
-              : undefined
-          }
-          embeddedRightTemplate={
-            props.context.value.value.kind == "r"
-              ? embeddedRightTemplate
-              : undefined
-          }
+          embeddedLeftTemplate={embeddedLeftTemplate}
+          embeddedRightTemplate={embeddedRightTemplate}
         />
       </span>
     );

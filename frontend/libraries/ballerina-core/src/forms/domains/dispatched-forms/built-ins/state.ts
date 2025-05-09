@@ -28,7 +28,6 @@ import {
   DispatchLookupSources,
   DispatchTableApiSources,
   ValueOption,
-  isObject,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -815,7 +814,6 @@ export const dispatchFromAPIRawValue =
     injectedPrimitives?: InjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
-    console.debug("dispatchFromAPIRawValue", t, raw);
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
@@ -1049,12 +1047,6 @@ export const dispatchFromAPIRawValue =
       }
 
       if (t.kind == "one") {
-        // unit case
-        if (isObject(raw) && Object.keys(raw).length == 0) {
-          return ValueOrErrors.Default.return(
-            PredicateValue.Default.option(false, PredicateValue.Default.unit()),
-          );
-        }
         const result = converters["One"].fromAPIRawValue(raw);
         if (!result.isSome) {
           return ValueOrErrors.Default.return(result);
