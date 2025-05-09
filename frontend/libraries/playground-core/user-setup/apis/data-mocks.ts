@@ -499,14 +499,14 @@ const entityApis: EntityApis = {
             },
             Admin: {
               // isRight: false,
-              isRight: true,
-              right: {
-                Name: "Spiffy",
-                Surname: "User",
-                Birthday: "1990-01-01",
-                Email: "admin.user@example.com",
-                SubscribeToNewsletter: true,
-              },
+              // isRight: true,
+              // right: {
+              //   Name: "Spiffy",
+              //   Surname: "User",
+              //   Birthday: "1990-01-01",
+              //   Email: "admin.user@example.com",
+              //   SubscribeToNewsletter: true,
+              // },
             },
             Inactive: {
               Values: {},
