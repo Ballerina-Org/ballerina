@@ -159,7 +159,6 @@
               }
             }
           },
-
           "api": "AdminApi",
           "label": "Admin"
         },

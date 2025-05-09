@@ -1,103 +1,74 @@
-import { List } from "immutable";
+import { Map } from "immutable";
 import {
-  Expr,
+  DispatchParsedType,
+  isObject,
+  isString,
   ValueOrErrors,
-} from "../../../../../../../../../../../../../../../main";
-import {
-  BaseBaseRenderer,
-  CommonSerializedRendererProperties,
-  ParentContext,
-  NestedRenderer,
-} from "../../state";
+} from "../../../../../../../../../../../../../main";
 import {
   MultiSelectionType,
   SingleSelectionType,
-} from "../../../../../../../types/state";
-export type SerializedStreamBaseRenderer = {
-  stream?: string;
-} & CommonSerializedRendererProperties;
+} from "../../../../../types/state";
+import { Renderer } from "../../state";
 
-export type BaseStreamRenderer<T> = BaseBaseRenderer & {
-  kind: "baseStreamRenderer";
+export type SerializedStreamRenderer = {
+  renderer: unknown;
   stream: string;
-  type: SingleSelectionType<T> | MultiSelectionType<T>;
-  concreteRendererName: string;
 };
 
-export const BaseStreamRenderer = {
+export type StreamRenderer<T> = {
+  kind: "streamRenderer";
+  renderer: Renderer<T>;
+  stream: string;
+  type: SingleSelectionType<T> | MultiSelectionType<T>;
+};
+
+export const StreamRenderer = {
   Default: <T>(
     type: SingleSelectionType<T> | MultiSelectionType<T>,
     stream: string,
-    concreteRendererName: string,
-    visible?: Expr,
-    disabled?: Expr,
-    label?: string,
-    tooltip?: string,
-    details?: string,
-  ): BaseStreamRenderer<T> => ({
-    kind: "baseStreamRenderer",
+    renderer: Renderer<T>,
+  ): StreamRenderer<T> => ({
+    kind: "streamRenderer",
     type,
     stream,
-    concreteRendererName,
-    visible,
-    disabled,
-    label,
-    tooltip,
-    details,
+    renderer,
   }),
   Operations: {
-    hasRenderer: (
-      serialized: SerializedStreamBaseRenderer,
-    ): serialized is SerializedStreamBaseRenderer & {
-      renderer: string;
-    } =>
-      serialized.renderer != undefined &&
-      typeof serialized.renderer == "string",
-    hasStream: (
-      serialized: SerializedStreamBaseRenderer,
-    ): serialized is SerializedStreamBaseRenderer & {
-      stream: string;
-    } => serialized.stream != undefined && typeof serialized.stream == "string",
     tryAsValidStreamBaseRenderer: (
-      serialized: SerializedStreamBaseRenderer,
-    ): ValueOrErrors<
-      Omit<SerializedStreamBaseRenderer, "renderer" | "stream"> & {
-        renderer: string;
-        stream: string;
-      },
-      string
-    > =>
-      !BaseStreamRenderer.Operations.hasRenderer(serialized)
+      serialized: unknown,
+    ): ValueOrErrors<SerializedStreamRenderer, string> =>
+      !isObject(serialized)
+        ? ValueOrErrors.Default.throwOne(`stream renderer is not an object`)
+        : !("renderer" in serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
-        : !BaseStreamRenderer.Operations.hasStream(serialized)
-          ? ValueOrErrors.Default.throwOne(`stream is required`)
-          : ValueOrErrors.Default.return(serialized),
+        : !("stream" in serialized)
+        ? ValueOrErrors.Default.throwOne(`stream is required`)
+        : !isString(serialized.stream)
+        ? ValueOrErrors.Default.throwOne(`stream must be a string`)
+        : ValueOrErrors.Default.return({
+            ...serialized,
+            stream: serialized.stream,
+          }),
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
-      serialized: SerializedStreamBaseRenderer,
-      renderingContext: ParentContext,
-    ): ValueOrErrors<BaseStreamRenderer<T>, string> =>
-      BaseStreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)
-        .Then((renderer) =>
-          NestedRenderer.Operations.ComputeVisibility(
-            renderer.visible,
-            renderingContext,
-          ).Then((visibilityExpr) =>
-            NestedRenderer.Operations.ComputeDisabled(
-              renderer.disabled,
-              renderingContext,
-            ).Then((disabledExpr) =>
-              ValueOrErrors.Default.return(
-                BaseStreamRenderer.Default(
-                  type,
-                  renderer.stream,
-                  renderer.renderer,
-                  visibilityExpr,
-                  disabledExpr,
-                  renderer.label,
-                  renderer.tooltip,
-                  renderer.details,
-                ),
+      serialized: unknown,
+      fieldViews: any,
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<StreamRenderer<T>, string> =>
+      StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)
+        .Then((validatedSerialized) =>
+          Renderer.Operations.Deserialize(
+            type,
+            validatedSerialized.renderer,
+            fieldViews,
+            types,
+          ).Then((renderer) =>
+            ValueOrErrors.Default.return(
+              StreamRenderer.Default(
+                type,
+                validatedSerialized.stream,
+                renderer,
               ),
             ),
           ),

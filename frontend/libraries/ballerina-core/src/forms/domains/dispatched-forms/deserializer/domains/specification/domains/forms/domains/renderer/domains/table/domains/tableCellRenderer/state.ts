@@ -9,7 +9,7 @@ import {
 import {
   NestedRenderer,
   SerializedNestedRenderer,
-} from "../../../../../nestedRenderer/state";
+} from "../../../nestedRenderer/state";
 
 export type SerializedTableCellRenderer = {
   disabled?: unknown;

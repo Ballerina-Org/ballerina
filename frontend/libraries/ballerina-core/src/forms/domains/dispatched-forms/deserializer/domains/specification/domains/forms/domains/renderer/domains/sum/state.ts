@@ -1,136 +1,94 @@
 import { Map } from "immutable";
+import { Renderer } from "../../state";
+import { NestedRenderer } from "../nestedRenderer/state";
 import {
-  SerializedBaseRenderer,
-  SerializedNestedPrimitiveRenderer,
-  NestedRenderer,
-  BaseBaseRenderer as BaseBaseRenderer,
-  ParentContext,
-} from "../../state";
-import { DispatchParsedType, SumType } from "../../../../../../../types/state";
-import {
-  Expr,
-  TableFormRenderer,
+  DispatchParsedType,
+  isObject,
+  SumType,
   ValueOrErrors,
-} from "../../../../../../../../../../../../../../../main";
-import { RecordFormRenderer } from "../../../recordFormRenderer/state";
+} from "../../../../../../../../../../../../../main";
 
-export type SerializedSumBaseRenderer = {
-  leftRenderer?: unknown;
-  rightRenderer?: unknown;
-} & SerializedNestedPrimitiveRenderer;
-
-export type BaseSumRenderer<T> = BaseBaseRenderer & {
-  kind: "baseSumRenderer";
-  leftRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
-  rightRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
-  type: SumType<T>;
-  concreteRendererName: string;
+export type SerializedSumRenderer = {
+  renderer: unknown;
+  leftRenderer: unknown;
+  rightRenderer: unknown;
 };
 
-export const BaseSumRenderer = {
+export type SumRenderer<T> = {
+  kind: "sumRenderer";
+  renderer: Renderer<T>;
+  leftRenderer: NestedRenderer<T>;
+  rightRenderer: NestedRenderer<T>;
+  type: SumType<T>;
+};
+
+export const SumRenderer = {
   Default: <T>(
     type: SumType<T>,
-    concreteRendererName: string,
-    leftRenderer:
-      | BaseRenderer<T>
-      | TableFormRenderer<T>
-      | RecordFormRenderer<T>,
-    rightRenderer:
-      | BaseRenderer<T>
-      | TableFormRenderer<T>
-      | RecordFormRenderer<T>,
-    visible?: Expr,
-    disabled?: Expr,
-    label?: string,
-    tooltip?: string,
-    details?: string,
-  ): BaseSumRenderer<T> => ({
-    kind: "baseSumRenderer",
+    renderer: Renderer<T>,
+    leftRenderer: NestedRenderer<T>,
+    rightRenderer: NestedRenderer<T>,
+  ): SumRenderer<T> => ({
+    kind: "sumRenderer",
     type,
-    concreteRendererName,
+    renderer,
     leftRenderer,
     rightRenderer,
-    visible,
-    disabled,
-    label,
-    tooltip,
-    details,
   }),
   Operations: {
     hasRenderers: (
-      serialized: SerializedSumBaseRenderer,
-    ): serialized is SerializedSumBaseRenderer & {
-      renderer: string;
-      leftRenderer: SerializedBaseRenderer;
-      rightRenderer: SerializedBaseRenderer;
+      serialized: unknown,
+    ): serialized is SerializedSumRenderer & {
+      renderer: unknown;
+      leftRenderer: unknown;
+      rightRenderer: unknown;
     } =>
-      serialized.renderer != undefined &&
-      typeof serialized.renderer == "string" &&
-      serialized.leftRenderer != undefined &&
-      serialized.rightRenderer != undefined,
+      isObject(serialized) &&
+      "renderer" in serialized &&
+      "leftRenderer" in serialized &&
+      "rightRenderer" in serialized,
     tryAsValidSumBaseRenderer: (
-      serialized: SerializedSumBaseRenderer,
-    ): ValueOrErrors<
-      Omit<
-        SerializedSumBaseRenderer,
-        "renderer" | "leftRenderer" | "rightRenderer"
-      > & {
-        renderer: string;
-        leftRenderer: SerializedBaseRenderer;
-        rightRenderer: SerializedBaseRenderer;
-      },
-      string
-    > =>
-      !BaseSumRenderer.Operations.hasRenderers(serialized)
+      serialized: unknown,
+    ): ValueOrErrors<SerializedSumRenderer, string> =>
+      !SumRenderer.Operations.hasRenderers(serialized)
         ? ValueOrErrors.Default.throwOne(
             `renderer, leftRenderer and rightRenderer are required`,
           )
         : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SumType<T>,
-      serialized: SerializedSumBaseRenderer,
-      renderingContext: ParentContext,
+      serialized: unknown,
       fieldViews: any,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<BaseSumRenderer<T>, string> =>
-      BaseSumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)
-        .Then((renderer) =>
-          NestedRenderer.Operations.ComputeVisibility(
-            renderer.visible,
-            renderingContext,
-          ).Then((visibleExpr) =>
-            NestedRenderer.Operations.ComputeDisabled(
-              renderer.disabled,
-              renderingContext,
-            ).Then((disabledExpr) =>
-              NestedRenderer.Operations.DeserializeAs(
-                type.args[0],
-                renderer.leftRenderer,
+    ): ValueOrErrors<SumRenderer<T>, string> =>
+      SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)
+        .Then((validatedSerialized) =>
+          NestedRenderer.Operations.DeserializeAs(
+            type.args[0],
+            validatedSerialized.leftRenderer,
+            fieldViews,
+            "Left renderer",
+            types,
+          ).Then((deserializedLeftRenderer) =>
+            NestedRenderer.Operations.DeserializeAs(
+              type.args[1],
+              validatedSerialized.rightRenderer,
+              fieldViews,
+              "Right renderer",
+              types,
+            ).Then((deserializedRightRenderer) =>
+              Renderer.Operations.Deserialize(
+                type,
+                validatedSerialized.renderer,
                 fieldViews,
-                "nested",
-                "Left",
                 types,
-              ).Then((deserializedLeftRenderer) =>
-                NestedRenderer.Operations.DeserializeAs(
-                  type.args[1],
-                  renderer.rightRenderer,
-                  fieldViews,
-                  "nested",
-                  "Right",
-                  types,
-                ).Then((deserializedRightRenderer) =>
-                  ValueOrErrors.Default.return(
-                    BaseSumRenderer.Default(
-                      type,
-                      renderer.renderer,
-                      deserializedLeftRenderer,
-                      deserializedRightRenderer,
-                      visibleExpr,
-                      disabledExpr,
-                      renderer.label,
-                      renderer.tooltip,
-                      renderer.details,
-                    ),
+              ).Then((renderer) =>
+                ValueOrErrors.Default.return(
+                  SumRenderer.Default(
+                    type,
+                    renderer,
+                    deserializedLeftRenderer,
+                    deserializedRightRenderer,
                   ),
                 ),
               ),

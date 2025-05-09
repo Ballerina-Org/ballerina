@@ -1,114 +1,80 @@
+import { Map } from "immutable";
 import {
-  Expr,
+  DispatchParsedType,
+  Guid,
+  isObject,
   ValueOrErrors,
-} from "../../../../../../../../../../../../../../../main";
+} from "../../../../../../../../../../../../../main";
 import {
-  BaseBaseRenderer,
-  CommonSerializedRendererProperties,
-  ParentContext,
-  NestedRenderer,
-} from "../../state";
-import { SingleSelectionType } from "../../../../../../../types/state";
-import { MultiSelectionType } from "../../../../../../../types/state";
+  MultiSelectionType,
+  SingleSelectionType,
+} from "../../../../../types/state";
+import { Renderer, SerializedRenderer } from "../../state";
 
-export type SerializedEnumRecordFieldRenderer = {
-  options?: unknown;
-} & CommonSerializedRendererProperties;
-
-export type BaseEnumRenderer<T> = BaseBaseRenderer & {
-  kind: "baseEnumRenderer";
+export type SerializedEnumRenderer = {
+  renderer: unknown;
   options: string;
-  type: SingleSelectionType<T> | MultiSelectionType<T>;
-  concreteRendererName: string;
 };
 
-export const BaseEnumRenderer = {
+export type EnumRenderer<T> = {
+  kind: "enumRenderer";
+  renderer: Renderer<T>;
+  options: Guid;
+  type: SingleSelectionType<T> | MultiSelectionType<T>;
+};
+
+export const EnumRenderer = {
   Default: <T>(
     type: SingleSelectionType<T> | MultiSelectionType<T>,
     options: string,
-    concreteRendererName: string,
-    visible?: Expr,
-    disabled?: Expr,
-    label?: string,
-    tooltip?: string,
-    details?: string,
-  ): BaseEnumRenderer<T> => ({
-    kind: "baseEnumRenderer",
+    renderer: Renderer<T>,
+  ): EnumRenderer<T> => ({
+    kind: "enumRenderer",
     type,
     options,
-    concreteRendererName,
-    visible,
-    disabled,
-    label,
-    tooltip,
-    details,
+    renderer,
   }),
   Operations: {
     hasRenderer: (
-      serialized: SerializedEnumRecordFieldRenderer,
-    ): serialized is SerializedEnumRecordFieldRenderer & {
-      renderer: string;
-    } =>
-      serialized.renderer != undefined &&
-      typeof serialized.renderer == "string",
-
+      serialized: unknown,
+    ): serialized is SerializedEnumRenderer & {
+      renderer: SerializedRenderer;
+    } => isObject(serialized) && "renderer" in serialized,
     hasOptions: (
-      serialized: SerializedEnumRecordFieldRenderer,
-    ): serialized is SerializedEnumRecordFieldRenderer & {
+      serialized: unknown,
+    ): serialized is SerializedEnumRenderer & {
       options: string;
-    } =>
-      serialized.options != undefined && typeof serialized.options == "string",
-    tryAsValidEnumBaseRenderer: (
-      serialized: SerializedEnumRecordFieldRenderer,
-    ): ValueOrErrors<
-      Omit<SerializedEnumRecordFieldRenderer, "renderer" | "options"> & {
-        renderer: string;
-        options: string;
-        label?: string;
-        tooltip?: string;
-        details?: string;
-      },
-      string
-    > =>
-      !NestedRenderer.Operations.hasValidMetadata(serialized)
-        ? ValueOrErrors.Default.throwOne(`label, tooltip, and details must be strings if provided`)
-        : !BaseEnumRenderer.Operations.hasRenderer(serialized)
+    } => isObject(serialized) && "options" in serialized,
+    tryAsValidEnumRenderer: <T>(
+      serialized: unknown,
+    ): ValueOrErrors<SerializedEnumRenderer, string> =>
+      !EnumRenderer.Operations.hasRenderer(serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
-        : !BaseEnumRenderer.Operations.hasOptions(serialized)
-          ? ValueOrErrors.Default.throwOne(`options are required`)
-          : ValueOrErrors.Default.return(serialized),
+        : !EnumRenderer.Operations.hasOptions(serialized)
+        ? ValueOrErrors.Default.throwOne(`options are required`)
+        : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
-      serialized: SerializedEnumRecordFieldRenderer,
-      renderingContext: ParentContext,
-    ): ValueOrErrors<BaseEnumRenderer<T>, string> =>
-      BaseEnumRenderer.Operations.tryAsValidEnumBaseRenderer(serialized)
-        .Then((renderer) =>
-          NestedRenderer.Operations.ComputeVisibility(
-            renderer.visible,
-            renderingContext,
-          ).Then((visibilityExpr) =>
-            NestedRenderer.Operations.ComputeDisabled(
-              renderer.disabled,
-              renderingContext,
-            ).Then((disabledExpr) =>
-              ValueOrErrors.Default.return(
-                BaseEnumRenderer.Default(
-                  type,
-                  renderer.options,
-                  renderer.renderer,
-                  visibilityExpr,
-                  disabledExpr,
-                  renderer.label,
-                  renderer.tooltip,
-                  renderer.details,
-                ),
-              ),
+      serialized: unknown,
+      fieldViews: any,
+      types: Map<string, DispatchParsedType<T>>,
+    ): ValueOrErrors<EnumRenderer<T>, string> =>
+      EnumRenderer.Operations.tryAsValidEnumRenderer(serialized)
+        .Then((serialized) =>
+          Renderer.Operations.Deserialize(
+            type,
+            serialized.renderer,
+            fieldViews,
+            types,
+          ).Then((renderer) =>
+            ValueOrErrors.Default.return(
+              EnumRenderer.Default(type, serialized.options, renderer),
             ),
           ),
         )
+
         .MapErrors((errors) =>
-          errors.map((error) => `${error}\n...When parsing as Enum`),
+          errors.map((error) => `${error}\n...When parsing as EnumRenderer`),
         ),
   },
 };

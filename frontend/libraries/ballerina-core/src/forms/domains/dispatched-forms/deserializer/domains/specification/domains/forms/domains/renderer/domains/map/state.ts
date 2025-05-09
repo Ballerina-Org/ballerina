@@ -1,133 +1,91 @@
 import { Map } from "immutable";
 import {
-  Expr,
-  TableFormRenderer,
+  DispatchParsedType,
+  isObject,
   ValueOrErrors,
-} from "../../../../../../../../../../../../../../../main";
-import { DispatchParsedType, MapType } from "../../../../../../../types/state";
+} from "../../../../../../../../../../../../../main";
+import { MapType } from "../../../../../types/state";
 import {
-  BaseBaseRenderer,
-  CommonSerializedRendererProperties,
-  SerializedBaseRenderer,
-  ParentContext,
   NestedRenderer,
-} from "../../state";
-import { RecordFormRenderer } from "../../../recordFormRenderer/state";
+} from "../nestedRenderer/state";
+import { Renderer } from "../../state";
 
-export type SerializedBaseMapRenderer = {
-  keyRenderer?: unknown;
-  valueRenderer?: unknown;
-} & CommonSerializedRendererProperties;
-
-export type BaseMapRenderer<T> = BaseBaseRenderer & {
-  kind: "baseMapRenderer";
-  keyRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
-  valueRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>;
-  type: MapType<T>;
-  concreteRendererName: string;
+export type SerializedMapRenderer = {
+  renderer: unknown;
+  keyRenderer: unknown;
+  valueRenderer: unknown;
 };
 
-export const BaseMapRenderer = {
+export type MapRenderer<T> = {
+  kind: "mapRenderer";
+  renderer: Renderer<T>;
+  keyRenderer: NestedRenderer<T>;
+  valueRenderer: NestedRenderer<T>;
+  type: MapType<T>;
+};
+
+export const MapRenderer = {
   Default: <T>(
     type: MapType<T>,
-    concreteRendererName: string,
-    keyRenderer: BaseRenderer<T> | TableFormRenderer<T> | RecordFormRenderer<T>,
-    valueRenderer:
-      | BaseRenderer<T>
-      | TableFormRenderer<T>
-      | RecordFormRenderer<T>,
-    visible?: Expr,
-    disabled?: Expr,
-    label?: string,
-    tooltip?: string,
-    details?: string,
-  ): BaseMapRenderer<T> => ({
-    kind: "baseMapRenderer",
+    renderer: Renderer<T>,
+    keyRenderer: NestedRenderer<T>,
+    valueRenderer: NestedRenderer<T>,
+  ): MapRenderer<T> => ({
+    kind: "mapRenderer",
     type,
-    concreteRendererName,
+    renderer,
     keyRenderer,
     valueRenderer,
-    visible,
-    disabled,
-    label,
-    tooltip,
-    details,
   }),
   Operations: {
-    hasRenderers: (
-      serialized: SerializedBaseMapRenderer,
-    ): serialized is SerializedBaseMapRenderer & {
-      renderer: string;
-      keyRenderer: SerializedBaseRenderer;
-      valueRenderer: SerializedBaseRenderer;
-    } =>
-      serialized.renderer != undefined &&
-      typeof serialized.renderer == "string" &&
-      serialized.keyRenderer != undefined &&
-      serialized.valueRenderer != undefined,
     tryAsValidMapBaseRenderer: (
-      serialized: SerializedBaseMapRenderer,
-    ): ValueOrErrors<
-      Omit<
-        SerializedBaseMapRenderer,
-        "renderer" | "keyRenderer" | "valueRenderer"
-      > & {
-        renderer: string;
-        keyRenderer: SerializedBaseRenderer;
-        valueRenderer: SerializedBaseRenderer;
-      },
-      string
-    > =>
-      !BaseMapRenderer.Operations.hasRenderers(serialized)
+      serialized: unknown,
+    ): ValueOrErrors<SerializedMapRenderer, string> =>
+      !isObject(serialized)
         ? ValueOrErrors.Default.throwOne(
-            `renderer, keyRenderer and valueRenderer are required`,
+            `serialized map renderer is not an object`,
           )
+        : !("renderer" in serialized)
+        ? ValueOrErrors.Default.throwOne(`renderer is missing`)
+        : !("keyRenderer" in serialized)
+        ? ValueOrErrors.Default.throwOne(`keyRenderer is missing`)
+        : !("valueRenderer" in serialized)
+        ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
         : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: MapType<T>,
-      serialized: SerializedBaseMapRenderer,
+      serialized: unknown,
       fieldViews: any,
-      renderingContext: ParentContext,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<BaseMapRenderer<T>, string> =>
-      BaseMapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
+    ): ValueOrErrors<MapRenderer<T>, string> =>
+      MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
         .Then((renderer) =>
-          NestedRenderer.Operations.ComputeVisibility(
-            renderer.visible,
-            renderingContext,
-          ).Then((visibilityExpr) =>
-            NestedRenderer.Operations.ComputeDisabled(
-              renderer.disabled,
-              renderingContext,
-            ).Then((disabledExpr) =>
-              NestedRenderer.Operations.DeserializeAs(
-                type.args[0],
-                renderer.keyRenderer,
+          NestedRenderer.Operations.DeserializeAs(
+            type.args[0],
+            renderer.keyRenderer,
+            fieldViews,
+            "Map key",
+            types,
+          ).Then((deserializedKeyRenderer) =>
+            NestedRenderer.Operations.DeserializeAs(
+              type.args[1],
+              renderer.valueRenderer,
+              fieldViews,
+              "Map value",
+              types,
+            ).Then((deserializedValueRenderer) =>
+              Renderer.Operations.Deserialize(
+                type,
+                renderer.renderer,
                 fieldViews,
-                "nested",
-                "Key",
                 types,
-              ).Then((deserializedKeyRenderer) =>
-                NestedRenderer.Operations.DeserializeAs(
-                  type.args[1],
-                  renderer.valueRenderer,
-                  fieldViews,
-                  "nested",
-                  "Value",
-                  types,
-                ).Then((deserializedValueRenderer) =>
-                  ValueOrErrors.Default.return(
-                    BaseMapRenderer.Default(
-                      type,
-                      renderer.renderer,
-                      deserializedKeyRenderer,
-                      deserializedValueRenderer,
-                      visibilityExpr,
-                      disabledExpr,
-                      renderer.label,
-                      renderer.tooltip,
-                      renderer.details,
-                    ),
+              ).Then((deserializedRenderer) =>
+                ValueOrErrors.Default.return(
+                  MapRenderer.Default(
+                    type,
+                    deserializedRenderer,
+                    deserializedKeyRenderer,
+                    deserializedValueRenderer,
                   ),
                 ),
               ),

@@ -12,7 +12,7 @@ import {
   RecordFieldRenderer,
   SerializedRecordFieldRenderer,
 } from "./domains/recordFieldRenderer/state";
-import { Renderer } from "../../../renderer/state";
+import { Renderer } from "../../state";
 
 export type SerializedRecordRenderer = {
   type: string;

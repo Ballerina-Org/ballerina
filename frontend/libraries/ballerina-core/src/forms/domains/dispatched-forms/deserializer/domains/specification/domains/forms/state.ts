@@ -1,23 +1,19 @@
-import { List, Map } from "immutable";
+import { Map } from "immutable";
 import {
-  DispatchFieldName,
   DispatchIsObject,
   RecordType,
   DispatchParsedType,
-  UnionType,
   TableType,
 } from "../types/state";
+
 import {
-  RecordFormRenderer,
-  SerializedRecordFormRenderer,
-} from "./domains/renderer/domains/recordFormRenderer/state";
-import {
-  NestedRenderer,
   MapRepo,
   SerializedTableFormRenderer,
   TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../main";
+import { SerializedUnionRenderer } from "./domains/renderer/domains/union/state";
+import { Renderer } from "./domains/renderer/state";
 
 export type SerializedForm = {
   type?: unknown;
@@ -33,26 +29,6 @@ export type SerializedForm = {
 };
 export const SerializedForm = {
   Operations: {
-    IsSerializedTableFormRenderer: (
-      _: unknown,
-    ): _ is SerializedTableFormRenderer =>
-      DispatchIsObject(_) && "columns" in _,
-    IsSerializedRecordFormRenderer: (
-      _: unknown,
-    ): _ is SerializedRecordFormRenderer =>
-      DispatchIsObject(_) && "fields" in _,
-    hasRenderer: (_: unknown): _ is { renderer: unknown } =>
-      DispatchIsObject(_) && "renderer" in _,
-    hasCases: (_: unknown): _ is { cases: unknown } =>
-      DispatchIsObject(_) && "cases" in _,
-    hasFields: (_: unknown): _ is { fields: unknown } =>
-      DispatchIsObject(_) && "fields" in _,
-    hasTabs: (_: unknown): _ is { tabs: unknown } =>
-      DispatchIsObject(_) && "tabs" in _,
-    hasHeader: (_: unknown): _ is { header: unknown } =>
-      DispatchIsObject(_) && "header" in _,
-    hasExtends: (_: unknown): _ is { extends: unknown } =>
-      DispatchIsObject(_) && "extends" in _ && Array.isArray(_.extends),
     hasValidType: (_: unknown): _ is { type: string } =>
       DispatchIsObject(_) && "type" in _ && typeof _["type"] == "string",
     withType: <T>(
@@ -73,33 +49,31 @@ export const SerializedForm = {
     > =>
       SerializedForm.Operations.hasValidType(_)
         ? MapRepo.Operations.tryFindWithError(
-            _["type"],
+            _.type,
             types,
-            () => `form type ${_["type"]} is not supported`,
+            () => `form type ${_.type} is not supported`,
           ).Then((formType) =>
             formType.kind != "record"
               ? ValueOrErrors.Default.throwOne(
                   "form is missing the required type attribute",
                 )
               : SerializedForm.Operations.IsSerializedRecordFormRenderer(_)
-                ? ValueOrErrors.Default.return({
-                    kind: "recordForm",
-                    form: _,
-                    type: formType,
-                  })
-                : SerializedForm.Operations.IsSerializedTableFormRenderer(_)
-                  ? ValueOrErrors.Default.return({
-                      kind: "tableForm",
-                      form: _,
-                      type: DispatchParsedType.Default.table(
-                        formType.name,
-                        [formType],
-                        formType.typeName,
-                      ),
-                    })
-                  : ValueOrErrors.Default.throwOne(
-                      "form kind is not supported",
-                    ),
+              ? ValueOrErrors.Default.return({
+                  kind: "recordForm",
+                  form: _,
+                  type: formType,
+                })
+              : SerializedForm.Operations.IsSerializedTableFormRenderer(_)
+              ? ValueOrErrors.Default.return({
+                  kind: "tableForm",
+                  form: _,
+                  type: DispatchParsedType.Default.table(
+                    formType.name,
+                    [formType],
+                    formType.typeName,
+                  ),
+                })
+              : ValueOrErrors.Default.throwOne("form kind is not supported"),
           )
         : ValueOrErrors.Default.throwOne(
             "form is missing the required type attribute",
@@ -107,25 +81,23 @@ export const SerializedForm = {
   },
 };
 
-export type FormRenderer<T> = RecordFormRenderer<T> | TableFormRenderer<T>;
-
 export const Form = <T>() => ({
   Operations: {
     Deserialize: (
       types: Map<string, DispatchParsedType<T>>,
       formName: string,
-      serialized: SerializedForm,
+      serialized: unknown,
       fieldViews?: any,
-    ): ValueOrErrors<FormRenderer<T>, string> =>
+    ): ValueOrErrors<Renderer<T>, string> =>
       SerializedForm.Operations.withType(serialized, types)
         .Then((serializedWithType) =>
           serializedWithType.kind == "recordForm"
-            ? (RecordFormRenderer.Operations.Deserialize(
+            ? RecordFormRenderer.Operations.Deserialize(
                 serializedWithType.type,
                 serializedWithType.form,
                 types,
                 fieldViews,
-              ) as ValueOrErrors<FormRenderer<T>, string>) /// TODO 
+              )
             : (TableFormRenderer.Operations.Deserialize(
                 serializedWithType.type,
                 serializedWithType.form,

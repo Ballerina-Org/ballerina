@@ -1,89 +1,66 @@
+import { Map } from "immutable";
 import {
-  Expr,
+  DispatchParsedType,
+} from "../../../../../../../../../../../../../main";
+import {
+  isObject,
   ValueOrErrors,
-} from "../../../../../../../../../../../../../../../main";
-import { SumType } from "../../../../../../../types/state";
-import {
-  SerializedNestedPrimitiveRenderer,
-  BaseBaseRenderer,
-  NestedRenderer,
-  ParentContext,
-} from "../../state";
+} from "../../../../../../../../../../../../../main";
+import { SumType } from "../../../../../types/state";
+import { Renderer } from "../../state";
 
-export type SerializedSumUnitDateBaseRenderer = SerializedNestedPrimitiveRenderer;
+export type SerializedSumUnitDateBaseRenderer = {
+  renderer: unknown;
+};
 
-export type BaseSumUnitDateRenderer<T> = BaseBaseRenderer & {
-  kind: "baseSumUnitDateRenderer";
+export type SumUnitDateRenderer<T> = {
+  kind: "sumUnitDateRenderer";
   type: SumType<T>;
-  concreteRendererName: string;
+  renderer: Renderer<T>;
+};
+
+export type BaseSumUnitDateRenderer<T> = {
+  kind: "sumUnitDateRenderer";
+  type: SumType<T>;
+  renderer: Renderer<T>;
 };
 
 export const BaseSumUnitDateRenderer = {
   Default: <T>(
     type: SumType<T>,
-    concreteRendererName: string,
-    visible?: Expr,
-    disabled?: Expr,
-    label?: string,
-    tooltip?: string,
-    details?: string,
+    renderer: Renderer<T>,
   ): BaseSumUnitDateRenderer<T> => ({
-    kind: "baseSumUnitDateRenderer",
+    kind: "sumUnitDateRenderer",
     type,
-    concreteRendererName,
-    visible,
-    disabled,
-    label,
-    tooltip,
-    details,
+    renderer,
   }),
   Operations: {
-    hasRenderer: (
-      serialized: SerializedSumUnitDateBaseRenderer,
-    ): serialized is SerializedSumUnitDateBaseRenderer & {
-      renderer: string;
-    } =>
-      serialized.renderer != undefined &&
-      typeof serialized.renderer == "string",
     tryAsValidSumUnitDateBaseRenderer: (
-      serialized: SerializedSumUnitDateBaseRenderer,
-    ): ValueOrErrors<
-      Omit<SerializedSumUnitDateBaseRenderer, "renderer"> & {
-        renderer: string;
-      },
-      string
-    > =>
-      !BaseSumUnitDateRenderer.Operations.hasRenderer(serialized)
+      serialized: unknown,
+    ): ValueOrErrors<SerializedSumUnitDateBaseRenderer, string> =>
+      !isObject(serialized)
+        ? ValueOrErrors.Default.throwOne(`renderer is required`)
+        : !("renderer" in serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
         : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SumType<T>,
-      serialized: SerializedSumUnitDateBaseRenderer,
-      renderingContext: ParentContext,
+      serialized: unknown,
+      fieldViews: any,
+      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(
         serialized,
       )
-        .Then((sumUnitDateRenderer) =>
-          NestedRenderer.Operations.ComputeVisibility(
-            sumUnitDateRenderer.visible,
-            renderingContext,
-          ).Then((visible) =>
-            NestedRenderer.Operations.ComputeDisabled(
-              sumUnitDateRenderer.disabled,
-              renderingContext,
-            ).Then((disabled) =>
-              ValueOrErrors.Default.return(
-                BaseSumUnitDateRenderer.Default(
-                  type,
-                  sumUnitDateRenderer.renderer,
-                  visible,
-                  disabled,
-                  sumUnitDateRenderer.label,
-                  sumUnitDateRenderer.tooltip,
-                  sumUnitDateRenderer.details,
-                ),
-              ),
+        .Then((validatedSerialized) =>
+          Renderer.Operations.Deserialize(
+            type,
+            validatedSerialized.renderer,
+            fieldViews,
+            types,
+          ).Then((renderer) =>
+            ValueOrErrors.Default.return(
+              BaseSumUnitDateRenderer.Default(type, renderer),
             ),
           ),
         )
