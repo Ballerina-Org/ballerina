@@ -38,7 +38,7 @@ const usersSetupTabsEnum = [
 const getAdminLookup: DispatchOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      Id: id,
+      Id: v4(),
       Name: "Admin",
       Surname: "User",
       Birthday: "1990-01-01",
@@ -262,15 +262,12 @@ const getInactiveUsers: DispatchTableApiSource = {
 const getAdmin: DispatchTableApiSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      isRight: true,
-      right: {
-        Id: id,
-        Name: "Admin",
-        Surname: "User",
-        Birthday: "1990-01-01",
-        Email: "admin.user@example.com",
-        SubscribeToNewsletter: true,
-      },
+      Id: v4(),
+      Name: "Admin",
+      Surname: "User",
+      Birthday: "1990-01-01",
+      Email: "admin.user@example.com",
+      SubscribeToNewsletter: true,
     }));
   },
   getMany:
@@ -378,16 +375,14 @@ const tableApiSources: DispatchTableApiSources = (streamName: string) =>
   streamName == "ActiveUsersApi"
     ? ValueOrErrors.Default.return(getActiveUsers)
     : streamName == "InactiveUsersApi"
-      ? ValueOrErrors.Default.return(getInactiveUsers)
-      : streamName == "UserGroupsApi"
-        ? ValueOrErrors.Default.return(getUserGroups)
-        : streamName == "ActivitiesApi"
-          ? ValueOrErrors.Default.return(getActivities)
-          : streamName == "AdminApi"
-            ? ValueOrErrors.Default.return(getAdmin)
-            : ValueOrErrors.Default.throwOne(
-                `Cannot find table API ${streamName}`,
-              );
+    ? ValueOrErrors.Default.return(getInactiveUsers)
+    : streamName == "UserGroupsApi"
+    ? ValueOrErrors.Default.return(getUserGroups)
+    : streamName == "ActivitiesApi"
+    ? ValueOrErrors.Default.return(getActivities)
+    : streamName == "AdminApi"
+    ? ValueOrErrors.Default.return(getAdmin)
+    : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "UserFieldsApi"
@@ -400,33 +395,33 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
         ),
       )
     : enumName == "UserGroupFieldsApi"
-      ? ValueOrErrors.Default.return(() =>
-          PromiseRepo.Default.mock(
-            () => userGroupFieldsEnum.map((_) => ({ Value: _ })),
-            undefined,
-            1,
-            0,
-          ),
-        )
-      : enumName == "ActivityFieldsApi"
-        ? ValueOrErrors.Default.return(() =>
-            PromiseRepo.Default.mock(
-              () => activityFieldsEnum.map((_) => ({ Value: _ })),
-              undefined,
-              1,
-              0,
-            ),
-          )
-        : enumName == "UsersSetupTabsApi"
-          ? ValueOrErrors.Default.return(() =>
-              PromiseRepo.Default.mock(
-                () => usersSetupTabsEnum.map((_) => ({ Value: _ })),
-                undefined,
-                1,
-                0,
-              ),
-            )
-          : ValueOrErrors.Default.throwOne(`Cannot find enum API ${enumName}`);
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => userGroupFieldsEnum.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "ActivityFieldsApi"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => activityFieldsEnum.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "UsersSetupTabsApi"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => usersSetupTabsEnum.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : ValueOrErrors.Default.throwOne(`Cannot find enum API ${enumName}`);
 const entityApis: EntityApis = {
   create: (apiName: string) => (e: any) => {
     alert(`Cannot find entity API ${apiName} for 'create'`);
@@ -503,15 +498,15 @@ const entityApis: EntityApis = {
               To: 10,
             },
             Admin: {
-              isRight: false,
-              // isRight: true,
-              // right: {
-              //   Name: "Spiffy",
-              //   Surname: "User",
-              //   Birthday: "1990-01-01",
-              //   Email: "admin.user@example.com",
-              //   SubscribeToNewsletter: true,
-              // },
+              // isRight: false,
+              isRight: true,
+              right: {
+                Name: "Spiffy",
+                Surname: "User",
+                Birthday: "1990-01-01",
+                Email: "admin.user@example.com",
+                SubscribeToNewsletter: true,
+              },
             },
             Inactive: {
               Values: {},

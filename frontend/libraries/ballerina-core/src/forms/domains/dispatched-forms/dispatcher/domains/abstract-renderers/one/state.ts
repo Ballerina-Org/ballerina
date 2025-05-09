@@ -38,7 +38,7 @@ import { DispatchOnChange } from "../../../state";
 
 export type OneAbstractRendererReadonlyContext =
   CommonAbstractRendererReadonlyContext<
-    OneType<any> | DispatchPrimitiveType<any>,
+    OneType<any>,
     ValueOption | ValueUnit
   > & {
     getApi: BasicFun<Guid, Promise<any>>;
@@ -50,7 +50,10 @@ export type OneAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
     detailsState: RecordAbstractRendererState;
-    selectedValue: Synchronized<Unit, ValueOrErrors<ValueOption, string>>;
+    selectedValue: Synchronized<
+      Unit,
+      ValueOrErrors<ValueRecord | ValueUnit, string>
+    >;
     searchText: Debounced<Value<string>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
@@ -114,26 +117,36 @@ export const OneAbstractRendererState = {
   },
 };
 export type OneAbstractRendererView = View<
-  OneAbstractRendererReadonlyContext &
-    Value<ValueRecord | ValueUnit> &
-    OneAbstractRendererState & {
-      hasMoreValues: boolean;
-      disabled: boolean;
+  | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
+      value: ValueRecord | ValueUnit;
+    } & OneAbstractRendererState & {
+        hasMoreValues: boolean;
+        disabled: boolean;
+        kind: "initialized";
+      })
+  | {
+      kind: "uninitialized";
     },
   OneAbstractRendererState,
-  {
-    onChange: DispatchOnChange<ValueOption>;
-    toggleOpen: SimpleCallback<void>;
-    // clearSelection: SimpleCallback<void>;
-    setSearchText: SimpleCallback<string>;
-    select: SimpleCallback<ValueOption>;
-    loadMore: SimpleCallback<void>;
-    reload: SimpleCallback<void>;
-  },
-  {
-    DetailsRenderer: Template<any, any, any, any>;
-    PreviewRenderer: (
-      value: ValueRecord,
-    ) => Template<any, any, any, any> | undefined;
-  }
+  | {
+      kind: "initialized";
+      onChange: DispatchOnChange<ValueRecord | ValueUnit>;
+      toggleOpen: SimpleCallback<void>;
+      // clearSelection: SimpleCallback<void>;
+      setSearchText: SimpleCallback<string>;
+      select: SimpleCallback<ValueRecord | ValueUnit>;
+      loadMore: SimpleCallback<void>;
+      reload: SimpleCallback<void>;
+    }
+  | {
+      kind: "uninitialized";
+    },
+  | {
+      kind: "initialized";
+      DetailsRenderer: Template<any, any, any, any>;
+      PreviewRenderer: (value: ValueRecord) => Template<any, any, any, any> | undefined;
+    }
+  | {
+      kind: "uninitialized";
+    }
 >;

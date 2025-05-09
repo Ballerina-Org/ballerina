@@ -153,14 +153,14 @@ export const RecordAbstractRenderer = <
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering record field\n...${
+        )}\n...When rendering record\n...${
           props.context.identifiers.withLauncher
         }`,
       );
       return (
         <p>
           {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for record but got something else`
+          Record value expected for record but got something else
         </p>
       );
     }

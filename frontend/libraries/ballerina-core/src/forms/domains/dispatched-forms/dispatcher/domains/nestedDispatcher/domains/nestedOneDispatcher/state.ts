@@ -89,7 +89,7 @@ export const NestedOneDispatcher = {
                       ..._,
                       type,
                       getApi,
-                      fromApiParser: dispatcherContext.parseFromApiByType(type),
+                      fromApiParser: dispatcherContext.parseFromApiByType(type.args[0]),
                     }))
                     .withView(concreteRenderer),
                 ),

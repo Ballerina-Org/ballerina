@@ -23,6 +23,7 @@ import {
   Synchronized,
   ValueOrErrors,
   ValueRecord,
+  ValueUnit,
 } from "../../../../../../../../../main";
 
 const Co = CoTypedFactory<
@@ -46,29 +47,39 @@ const intializeOne = Co.GetState().then((current) => {
   if (current.value == undefined) {
     return Co.Wait(0);
   }
-  const hasInitialValue = current.value.isSome;
+
+  const hasInitialValue =
+    (PredicateValue.Operations.IsOption(current.value) &&
+      current.value.isSome) ||
+    PredicateValue.Operations.IsUnit(current.value);
   if (hasInitialValue) {
+    const initialValue =
+      PredicateValue.Operations.IsOption(current.value) &&
+      current.value.isSome
+        ? current.value.value
+        : current.value;
     return Co.SetState(
       OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
         Synchronized.Updaters.sync(
           AsyncState.Updaters.toLoaded(
-            ValueOrErrors.Default.return(current.value),
+            ValueOrErrors.Default.return(initialValue),
           ),
         ),
       ),
     );
   }
 
-  return Synchronize<Unit, ValueOrErrors<ValueOption, string>>(
+  console.debug("initializing one", current.value);
+
+  return Synchronize<Unit, ValueOrErrors<ValueRecord | ValueUnit, string>>(
     (_) =>
       current.getApi(current.id).then((value) => {
-        return current
-          .fromApiParser(value)
-          .Then((result) =>
-            ValueOrErrors.Default.return(
-              PredicateValue.Default.option(true, result),
-            ),
-          );
+        console.debug("inside value", value);
+        console.debug("fromApiParser", current.fromApiParser(value));
+        return current.fromApiParser(value).Then((result) => {
+          console.debug("result", result);
+          return ValueOrErrors.Default.return(result);
+        });
       }),
     () => "transient failure",
     5,
@@ -106,7 +117,7 @@ export const initializeOneRunner = Co.Template<{
   runFilter: (props) =>
     !AsyncState.Operations.hasValue(
       props.context.customFormState.selectedValue.sync,
-    ),
+    ) && !PredicateValue.Operations.IsUnit(props.context.value),
 });
 export const oneTableDebouncerRunner = DebouncerCo.Template<{
   onChange: DispatchOnChange<ValueOption>;

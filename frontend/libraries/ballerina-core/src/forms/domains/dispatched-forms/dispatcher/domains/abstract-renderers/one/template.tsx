@@ -38,14 +38,20 @@ import {
 
 export const OneAbstractRenderer = (
   DetailsRenderer: Template<
-    CommonAbstractRendererReadonlyContext<RecordType<any>, ValueRecord>,
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue
+    >,
     RecordAbstractRendererState,
     any,
     any
   >,
   PreviewRenderer:
     | Template<
-        CommonAbstractRendererReadonlyContext<RecordType<any>, ValueRecord>,
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue
+        >,
         RecordAbstractRendererState,
         any,
         any
@@ -66,18 +72,11 @@ export const OneAbstractRenderer = (
       );
       return undefined;
     }
-
-    if (
-      !PredicateValue.Operations.IsRecord(
-        _.customFormState.selectedValue.sync.value.value.value,
-      )
-    ) {
-      console.error(
-        "Expected Details renderer to be of record type, but received something else",
-      );
+    if (PredicateValue.Operations.IsUnit(_.value)) {
       return undefined;
     }
-    const value = _.customFormState.selectedValue.sync.value.value.value;
+
+    const value = _.customFormState.selectedValue.sync.value.value;
     const state =
       _.customFormState?.detailsState ??
       RecordAbstractRendererState.Default.zero();
@@ -120,9 +119,8 @@ export const OneAbstractRenderer = (
               if (
                 __.customFormState.selectedValue.sync.kind != "loaded" ||
                 __.customFormState.selectedValue.sync.value.kind == "errors" ||
-                !__.customFormState.selectedValue.sync.value.value.isSome ||
                 !PredicateValue.Operations.IsRecord(
-                  __.customFormState.selectedValue.sync.value.value.value,
+                  __.customFormState.selectedValue.sync.value.value,
                 )
               ) {
                 return __;
@@ -137,13 +135,9 @@ export const OneAbstractRenderer = (
                       ...__.customFormState.selectedValue.sync,
                       value: {
                         ...__.customFormState.selectedValue.sync.value,
-                        value: {
-                          ...__.customFormState.selectedValue.sync.value.value,
-                          value: _(
-                            __.customFormState.selectedValue.sync.value.value
-                              .value,
-                          ),
-                        },
+                        value: _(
+                          __.customFormState.selectedValue.sync.value.value,
+                        ),
                       },
                     },
                   },
@@ -162,18 +156,15 @@ export const OneAbstractRenderer = (
       },
     }));
 
-  const embeddedPreviewRenderer = (previewValue: ValueRecord) =>
+  const embeddedPreviewRenderer = (value: ValueRecord) =>
     PreviewRenderer?.mapContext<
       OneAbstractRendererReadonlyContext & OneAbstractRendererState
     >((_) => {
-      // const value = _.customFormState.selectedValue.sync.value.value.value;
-      const state =
-        _.customFormState?.detailsState ??
-        RecordAbstractRendererState.Default.zero();
+      const state = RecordAbstractRendererState.Default.zero();
       return {
         ..._,
         ...state,
-        value: previewValue,
+        value,
         disabled: false, // to do think about
         bindings: _.bindings,
         extraContext: _.extraContext,
@@ -181,7 +172,7 @@ export const OneAbstractRenderer = (
           withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
           withoutLauncher: _.identifiers.withoutLauncher.concat(`[preview]`),
         },
-        type: _.type.args[0] as RecordType<any>,
+        type: _.type.args[0],
       };
     })
       .mapState(
@@ -212,9 +203,8 @@ export const OneAbstractRenderer = (
                   __.customFormState.selectedValue.sync.kind != "loaded" ||
                   __.customFormState.selectedValue.sync.value.kind ==
                     "errors" ||
-                  !__.customFormState.selectedValue.sync.value.value.isSome ||
                   !PredicateValue.Operations.IsRecord(
-                    __.customFormState.selectedValue.sync.value.value.value,
+                    __.customFormState.selectedValue.sync.value.value,
                   )
                 ) {
                   return __;
@@ -229,14 +219,9 @@ export const OneAbstractRenderer = (
                         ...__.customFormState.selectedValue.sync,
                         value: {
                           ...__.customFormState.selectedValue.sync.value,
-                          value: {
-                            ...__.customFormState.selectedValue.sync.value
-                              .value,
-                            value: _(
-                              __.customFormState.selectedValue.sync.value.value
-                                .value,
-                            ),
-                          },
+                          value: _(
+                            __.customFormState.selectedValue.sync.value.value,
+                          ),
                         },
                       },
                     },
@@ -265,11 +250,14 @@ export const OneAbstractRenderer = (
   >((props) => {
     const value = props.context.value;
     if (
-      !PredicateValue.Operations.IsOption(value) &&
-      !PredicateValue.Operations.IsUnit(value)
+      !PredicateValue.Operations.IsUnit(value) &&
+      (!PredicateValue.Operations.IsOption(value) ||
+        (PredicateValue.Operations.IsOption(value) &&
+          value.isSome &&
+          !PredicateValue.Operations.IsRecord(value.value)))
     ) {
       console.error(
-        `Option or unit expected but got: ${JSON.stringify(
+        `Option of record or unit expected but got: ${JSON.stringify(
           value,
         )}\n...When rendering "one" field\n...${
           props.context.identifiers.withLauncher
@@ -277,29 +265,81 @@ export const OneAbstractRenderer = (
       );
       return <></>;
     }
-    const rendererValue: ValueRecord | ValueUnit = PredicateValue.Operations.IsUnit(value)
-      ? value
-      : PredicateValue.Operations.IsOption(value) &&
-        PredicateValue.Operations.IsRecord(value.value)
-      ? value.value
-      : PredicateValue.Default.unit();
+
+    if (
+      !AsyncState.Operations.hasValue(
+        props.context.customFormState.selectedValue.sync,
+      )
+    ) {
+      return (
+        <>
+          <span
+            className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+          >
+            <props.view
+              {...props}
+              context={{
+                ...props.context,
+                kind: "uninitialized",
+              }}
+              kind="uninitialized"
+              foreignMutations={{
+                kind: "uninitialized",
+              }}
+            />
+          </span>
+        </>
+      );
+    }
+
+    if (
+      props.context.customFormState.selectedValue.sync.value.kind == "errors"
+    ) {
+      console.error(
+        props.context.customFormState.selectedValue.sync.value.errors.join(
+          "\n",
+        ),
+      );
+      return <></>;
+    }
+
+    console.debug(
+      "value",
+      props.context.customFormState.selectedValue.sync.value,
+    );
+    const syncValue =
+      props.context.customFormState.selectedValue.sync.value.value;
+
+    console.debug("rendererValue", syncValue);
+
     return (
       <span
         className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
+          kind="initialized"
           context={{
             ...props.context,
-            value,
+            kind: "initialized",
+            value: syncValue,
             hasMoreValues: !(
-              props.context.customFormState.stream.loadedElements.last()
-                ?.hasMoreValues == false
+              (
+                props.context.customFormState.stream.loadedElements.last()
+                  ?.hasMoreValues == false
+              )
             ),
           }}
           // TO DO: Deltas here are on the whole One (selection)
           foreignMutations={{
             ...props.foreignMutations,
+            kind: "initialized",
+            onChange: (
+              _: BasicUpdater<ValueRecord | ValueUnit>,
+              nestedDelta: DispatchDelta,
+            ) => {
+              props.foreignMutations.onChange(id, nestedDelta);
+            },
             toggleOpen: () =>
               props.setState(
                 OneAbstractRendererState.Updaters.Core.customFormState.children

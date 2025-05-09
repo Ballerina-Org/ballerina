@@ -304,11 +304,7 @@ export const dispatchDefaultState =
                           OneAbstractRendererState.Default((_: string) =>
                             tableApiSource.getMany(
                               dispatchFromAPIRawValue(
-                                DispatchParsedType.Default.table(
-                                  "table",
-                                  [lookupType],
-                                  "table",
-                                ),
+                                lookupType,
                                 types,
                                 converters,
                                 injectedPrimitives,
@@ -345,11 +341,7 @@ export const dispatchDefaultState =
                                 OneAbstractRendererState.Default(
                                   oneSource.getManyUnlinked(
                                     dispatchFromAPIRawValue(
-                                      DispatchParsedType.Default.table(
-                                        "table",
-                                        [lookupType],
-                                        "table",
-                                      ),
+                                      lookupType,
                                       types,
                                       converters,
                                       injectedPrimitives,
@@ -822,6 +814,7 @@ export const dispatchFromAPIRawValue =
     injectedPrimitives?: InjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
+    console.debug("dispatchFromAPIRawValue", t, raw);
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
