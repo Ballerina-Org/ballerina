@@ -1,16 +1,13 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module Renderers =
-  open Model
   open Patterns
   open Expr
-  open ExprType
 
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
+  open Ballerina.DSL.FormEngine.Parser.FormsPatterns
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map
@@ -18,7 +15,6 @@ module Renderers =
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
-  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 

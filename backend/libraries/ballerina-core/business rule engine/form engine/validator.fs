@@ -2,12 +2,10 @@ namespace Ballerina.DSL.FormEngine
 
 module Validator =
 
-  open System
   open Ballerina.Core.Object
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.FormEngine.Parser.Model
   open Ballerina.DSL.FormEngine.Parser.Patterns
-  open Ballerina.DSL.FormEngine.Parser.Runner
+  open Ballerina.DSL.FormEngine.Parser.FormsPatterns
   open Ballerina.DSL.Model
   open Ballerina.Collections.Tuple
   open Ballerina.DSL.Expr.Model
@@ -18,8 +16,6 @@ module Validator =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
-  open Ballerina.Collections.NonEmptyList
-  open Ballerina.Fun
 
   type NestedRenderer with
     static member Validate
