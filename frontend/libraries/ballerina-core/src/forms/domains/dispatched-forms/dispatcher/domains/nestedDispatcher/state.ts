@@ -29,8 +29,8 @@ import {
   TableFormRenderer,
   ValueOrErrors,
 } from "../../../../../../../main";
-import { BaseRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
-import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
+import { NestedRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
+import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/recordFormRenderer/state";
 import { FormDispatcher } from "../../state";
 
 export const NestedDispatcher = {

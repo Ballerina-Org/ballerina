@@ -6,7 +6,7 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { BaseMapRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/map/state";
+import { BaseMapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/map/state";
 
 export const NestedMapDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(

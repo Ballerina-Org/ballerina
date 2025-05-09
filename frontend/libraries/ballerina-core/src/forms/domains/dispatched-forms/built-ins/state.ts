@@ -46,9 +46,9 @@ import { SumAbstractRendererState } from "../dispatcher/domains/abstract-rendere
 import { EnumAbstractRendererState } from "../dispatcher/domains/abstract-renderers/enum/state";
 import { ListAbstractRendererState } from "../dispatcher/domains/abstract-renderers/list/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
-import { Form } from "../deserializer/domains/specification/domains/form/state";
-import { RecordFormRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
-import { BaseRenderer } from "../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
+import { FormRenderer } from "../deserializer/domains/specification/domains/forms/state";
+import { RecordFormRenderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/domains/recordFormRenderer/state";
+import { NestedRenderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
   Object.keys(obj)
@@ -198,14 +198,14 @@ export const dispatchDefaultState =
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
-    forms: Map<string, Form<T>>,
+    forms: Map<string, FormRenderer<T>>,
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
   ) =>
   (
     t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    renderer: BaseRenderer<any> | FormRenderer<any>,
   ): ValueOrErrors<any, string> => {
     const result: ValueOrErrors<any, string> = (() => {
       if (renderer == undefined) {
@@ -588,11 +588,11 @@ export const dispatchDefaultValue =
   <T>(
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
-    forms: Map<string, Form<T>>,
+    forms: Map<string, FormRenderer<T>>,
   ) =>
   (
     t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    renderer: BaseRenderer<any> | FormRenderer<any>,
   ): ValueOrErrors<PredicateValue, string> => {
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (renderer == undefined) {

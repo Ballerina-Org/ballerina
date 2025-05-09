@@ -10,7 +10,7 @@ import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErro
 import { List, Map } from "immutable";
 import { Expr } from "../../../../parser/domains/predicates/state";
 import { TableType } from "../../../deserializer/domains/specification/domains/types/state";
-import { TableFormRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/tableFormRenderer/state";
+import { TableFormRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/tableFormRenderer/state";
 
 export const TableFormDispatcher = {
   Operations: {

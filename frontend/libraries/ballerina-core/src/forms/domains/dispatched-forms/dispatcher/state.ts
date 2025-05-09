@@ -4,7 +4,7 @@ import { ValueOrErrors } from "../../../../collections/domains/valueOrErrors/sta
 import { DispatcherContext, Template } from "../../../../../main";
 import { RecordFormDispatcher } from "./domains/recordFormDispatcher/state";
 import { DispatchParsedType } from "../deserializer/domains/specification/domains/types/state";
-import { Form } from "../deserializer/domains/specification/domains/form/state";
+import { FormRenderer } from "../deserializer/domains/specification/domains/forms/state";
 
 export type DispatchOnChange<Entity> = (
   updater: BasicUpdater<Entity>,
@@ -16,7 +16,7 @@ export const FormDispatcher = {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       formName: string,
       type: DispatchParsedType<T>,
-      renderer: Form<T>,
+      renderer: FormRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       isNested: boolean,
       launcherName?: string,

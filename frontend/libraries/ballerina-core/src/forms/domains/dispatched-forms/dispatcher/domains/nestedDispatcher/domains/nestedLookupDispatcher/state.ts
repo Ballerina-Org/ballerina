@@ -4,13 +4,13 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { FormDispatcher } from "../../../../state";
-import { BaseLookupRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/lookup/state";
-import { Form } from "../../../../../deserializer/domains/specification/domains/form/state";
+import { BaseLookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/lookup/state";
+import { FormRenderer } from "../../../../../deserializer/domains/specification/domains/forms/state";
 
 export const NestedLookupDispatcher = {
   Operations: {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      form: Form<T>,
+      form: FormRenderer<T>,
       renderer: BaseLookupRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>

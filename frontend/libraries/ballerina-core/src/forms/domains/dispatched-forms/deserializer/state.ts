@@ -23,7 +23,7 @@ import {
   ValueOption,
 } from "../../../../../main";
 
-import { Form } from "./domains/specification/domains/form/state";
+import { FormRenderer } from "./domains/specification/domains/forms/state";
 import {
   DispatchApiConverters,
   ConcreteRendererKinds,
@@ -35,12 +35,12 @@ import {
   tryGetConcreteRenderer,
 } from "../built-ins/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
-import { BaseRenderer } from "./domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
+import { NestedRenderer } from "./domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
 
 export type DispatchParsedPassthroughLauncher<T> = {
   kind: "passthrough";
   formName: string;
-  renderer: Form<T>;
+  renderer: FormRenderer<T>;
   parseEntityFromApi: (_: any) => ValueOrErrors<PredicateValue, string>;
   parseGlobalConfigurationFromApi: (
     _: any,
@@ -75,13 +75,13 @@ export type DispatcherContext<
   ) => ValueOrErrors<any, string>;
   defaultValue: (
     t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    renderer: BaseRenderer<any> | FormRenderer<any>,
   ) => ValueOrErrors<PredicateValue, string>;
   defaultState: (
     t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    renderer: BaseRenderer<any> | FormRenderer<any>,
   ) => ValueOrErrors<any, string>;
-  forms: Map<string, Form<T>>;
+  forms: Map<string, FormRenderer<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;

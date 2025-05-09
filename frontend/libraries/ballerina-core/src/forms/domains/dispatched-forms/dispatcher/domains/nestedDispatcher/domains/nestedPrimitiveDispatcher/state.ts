@@ -12,7 +12,7 @@ import { NumberAbstractRenderer } from "../../../abstract-renderers/number/templ
 import { BoolAbstractRenderer } from "../../../abstract-renderers/boolean/template";
 import { SecretAbstractRenderer } from "../../../abstract-renderers/secret/template";
 import { Base64FileAbstractRenderer } from "../../../abstract-renderers/base-64-file/template";
-import { BasePrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/primitive/state";
+import { BasePrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/primitive/state";
 import { ConcreteRendererKinds } from "../../../../../built-ins/state";
 
 export const NestedPrimitiveDispatcher = {

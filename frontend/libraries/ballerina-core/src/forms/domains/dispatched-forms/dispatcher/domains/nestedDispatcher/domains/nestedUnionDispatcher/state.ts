@@ -11,7 +11,7 @@ import {
 
 import { UnionType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { NestedDispatcher } from "../../state";
-import { BaseUnionRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/union/state";
+import { BaseUnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/union/state";
 
 export const NestedUnionDispatcher = {
   Operations: {

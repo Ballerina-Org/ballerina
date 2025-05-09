@@ -305,7 +305,7 @@
           "args": ["string", "string"]
         },
         "birthday": "Date",
-        "subscribeToNewsletter": "boolean",
+        "subscribeToNewsletter": "boolean", 
         "favoriteColor": {
           "fun": "SingleSelection",
           "args": ["ColorRef"]

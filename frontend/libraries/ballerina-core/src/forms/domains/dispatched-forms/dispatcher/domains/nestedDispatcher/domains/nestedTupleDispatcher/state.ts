@@ -9,7 +9,7 @@ import {
 
 import { NestedDispatcher } from "../../state";
 import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { BaseTupleRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/tuple/state";
+import { BaseTupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/tuple/state";
 
 export const NestedTupleDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(

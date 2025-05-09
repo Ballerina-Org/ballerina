@@ -25,7 +25,7 @@ export const NestedOneDispatcher = {
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.Dispatch(
             renderer.type.args[0],
-            renderer.previewRenderer,
+            renderer.previewRenderer.renderer,
             dispatcherContext,
           ),
     GetApi: (
@@ -70,7 +70,7 @@ export const NestedOneDispatcher = {
       ).Then((previewRenderer) =>
         NestedDispatcher.Operations.Dispatch(
           type,
-          renderer.detailsRenderer,
+          renderer.detailsRenderer.renderer,
           dispatcherContext,
         ).Then((detailsRenderer) =>
           NestedOneDispatcher.Operations.GetApi(

@@ -7,8 +7,8 @@ import {
 import { NestedDispatcher } from "../../state";
 import { SumAbstractRenderer } from "../../../abstract-renderers/sum/template";
 import { SumType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { BaseSumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/sum/state";
-import { BaseSumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/sumUnitDate/state";
+import { BaseSumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/sum/state";
+import { BaseSumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/sumUnitDate/state";
 
 export const NestedSumDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(

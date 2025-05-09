@@ -17,7 +17,7 @@ import {
   LookupApis,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
-import { Form } from "./domains/form/state";
+import { FormRenderer } from "./domains/forms/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
 import { DispatchApiConverters } from "../../../built-ins/state";
 
@@ -45,7 +45,7 @@ export type SerializedSpecification = {
 export type Specification<T> = {
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   apis: SpecificationApis;
-  forms: Map<string, Form<T>>;
+  forms: Map<string, FormRenderer<T>>;
   launchers: {
     create: Map<string, CreateLauncher>;
     edit: Map<string, EditLauncher>;
@@ -106,9 +106,9 @@ export const Specification = {
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
       fieldViews?: any,
-    ): ValueOrErrors<Map<string, Form<T>>, string> =>
+    ): ValueOrErrors<Map<string, FormRenderer<T>>, string> =>
       ValueOrErrors.Operations.All(
-        List<ValueOrErrors<[string, Form<T>], string>>(
+        List<ValueOrErrors<[string, FormRenderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
             Form<T>()
               .Operations.Deserialize(types, formName, form, fieldViews)

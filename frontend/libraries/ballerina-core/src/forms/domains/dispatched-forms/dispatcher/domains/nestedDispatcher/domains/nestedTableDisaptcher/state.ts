@@ -6,13 +6,13 @@ import {
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { BaseTableRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/table/state";
-import { Form } from "../../../../../deserializer/domains/specification/domains/form/state";
+import { BaseTableRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/table/state";
+import { FormRenderer } from "../../../../../deserializer/domains/specification/domains/forms/state";
 
 export const NestedTableDispatcher = {
   Operations: {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      form: Form<T>,
+      form: FormRenderer<T>,
       renderer: BaseTableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>

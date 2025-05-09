@@ -6,7 +6,7 @@ import {
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { BaseListRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/list/state";
+import { BaseListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/list/state";
 
 export const NestedListDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(

@@ -10,8 +10,8 @@ import {
   unit,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
-import { BaseEnumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/enum/state";
-import { BaseStreamRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/stream/state";
+import { BaseEnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/enum/state";
+import { BaseStreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/stream/state";
 import { OrderedMap } from "immutable";
 
 export const NestedMultiSelectionDispatcher = {

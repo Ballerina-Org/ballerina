@@ -10,9 +10,9 @@ import {
   PredicateValue,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
-import { BaseStreamRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/stream/state";
+import { BaseStreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/stream/state";
 import { OrderedMap } from "immutable";
-import { BaseEnumRenderer } from "../../../../../deserializer/domains/specification/domains/form/domains/renderers/domains/baseRenderer/domains/enum/state";
+import { BaseEnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/enum/state";
 
 export const NestedSingleSelectionDispatcher = {
   Operations: {

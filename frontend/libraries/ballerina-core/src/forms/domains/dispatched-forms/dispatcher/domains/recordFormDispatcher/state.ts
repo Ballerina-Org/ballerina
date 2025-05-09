@@ -9,7 +9,7 @@ import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErro
 import { List, Map } from "immutable";
 import { Expr } from "../../../../parser/domains/predicates/state";
 import { RecordType } from "../../../deserializer/domains/specification/domains/types/state";
-import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/form/domains/renderers/domains/recordFormRenderer/state";
+import { RecordFormRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/recordFormRenderer/state";
 
 export const RecordFormDispatcher = {
   Operations: {
