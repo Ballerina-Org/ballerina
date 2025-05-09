@@ -1,0 +1,105 @@
+[project]
+authors = [
+  {name = "Davide Walder", email = "davide.walder@gmail.com"},
+]
+dependencies = []
+description = ""
+name = "ballerina-core"
+readme = "README.md"
+requires-python = ">=3.11"
+version = "0.1.0"
+
+[tool.poetry]
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+
+[tool.poetry.dependencies]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "0.11.7"
+# Keep in sync with the extension! https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker
+mypy = "1.15.0"
+pytest = "8.3.5"
+
+[tool.ruff]
+line-length = 120
+preview = true
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+# Rule codes are here: https://docs.astral.sh/ruff/rules/
+# Mapping from pylint to ruff: https://github.com/astral-sh/ruff/issues/970
+extend-select = [
+  "Q002",
+  "D210",
+] # FIXME: Use names - Only codes supported atm: https://github.com/astral-sh/ruff/issues/1773
+ignore = ["TRY003", "DTZ005", "DTZ001", "COM812", "S101", "E501", "E203", "PLR0904"]
+select = [
+  "RUF",
+  "LOG",
+  "FURB",
+  "FLY",
+  "TRY",
+  "PL",
+  "PGH",
+  "ERA",
+  "PTH",
+  "ARG",
+  "INT",
+  "TID",
+  "SIM",
+  "SLOT",
+  "SLF",
+  "RET",
+  "RSE",
+  "Q",
+  "PIE",
+  "INP",
+  "G",
+  "ICN", # "EXE",
+  "DTZ",
+  "C4",
+  "COM",
+  "A",
+  "B",
+  "FBT",
+  "BLE", # "S", disable security rules, we work with shells a lot here and it's too verbose
+  "ASYNC1",
+  "ASYNC",
+  "ANN",
+  "YTT",
+  "UP",
+  "N",
+  "I",
+  "C90",
+  "E",
+  "W",
+  "F",
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+implicit_reexport = false
+local_partial_types = true
+no_implicit_optional = true
+packages = ["ballerina_core"]
+strict = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = [
+  "tests",
+]
