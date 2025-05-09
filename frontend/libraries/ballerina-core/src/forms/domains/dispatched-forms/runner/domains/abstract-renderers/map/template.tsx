@@ -14,6 +14,7 @@ import {
   replaceWith,
   DispatchCommonFormState,
   DispatchOnChange,
+  IdWrapperProps,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -49,6 +50,7 @@ export const MapAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,  
 ) => {
   const embeddedKeyTemplate = (elementIndex: number) =>
     keyTemplate
@@ -299,8 +301,8 @@ export const MapAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -377,7 +379,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

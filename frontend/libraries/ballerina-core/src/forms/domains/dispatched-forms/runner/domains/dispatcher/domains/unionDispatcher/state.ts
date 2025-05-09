@@ -69,6 +69,7 @@ export const UnionDispatcher = {
                             defaultState as UnionAbstractRendererState<any>
                           ).caseFormStates.map((caseState) => () => caseState),
                           Map(templates),
+                          dispatcherContext.IdWrapper,
                         ).withView(concreteRenderer),
                       ),
                     ),

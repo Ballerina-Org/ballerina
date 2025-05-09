@@ -3,6 +3,7 @@ import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   DispatchOnChange,
@@ -13,7 +14,9 @@ import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
 export const DateAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<Date> & {
@@ -41,8 +44,8 @@ export const DateAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -73,7 +76,7 @@ export const DateAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

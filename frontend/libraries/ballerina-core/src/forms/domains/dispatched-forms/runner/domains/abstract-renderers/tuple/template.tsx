@@ -7,6 +7,7 @@ import {
   DispatchCommonFormState,
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   MapRepo,
   PredicateValue,
   replaceWith,
@@ -43,6 +44,7 @@ export const DispatchTupleAbstractRenderer = <
       }
     >
   >,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
 ) => {
   const embeddedItemTemplates = (itemIndex: number) =>
     itemTemplates
@@ -174,8 +176,8 @@ export const DispatchTupleAbstractRenderer = <
     }
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -187,7 +189,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

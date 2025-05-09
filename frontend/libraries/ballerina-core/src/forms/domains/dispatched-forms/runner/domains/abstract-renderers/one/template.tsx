@@ -24,6 +24,7 @@ import {
   ValueRecord,
   ValueUnit,
   DispatchOnChange,
+  IdWrapperProps
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererReadonlyContext,
@@ -57,6 +58,7 @@ export const OneAbstractRenderer = (
         any
       >
     | undefined,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
 ) => {
   const embeddedDetailsRenderer = DetailsRenderer.mapContext<
     OneAbstractRendererReadonlyContext & OneAbstractRendererState
@@ -306,8 +308,8 @@ export const OneAbstractRenderer = (
       props.context.customFormState.selectedValue.sync.value.value;
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -393,7 +395,7 @@ export const OneAbstractRenderer = (
           DetailsRenderer={embeddedDetailsRenderer}
           PreviewRenderer={embeddedPreviewRenderer}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     initializeOneRunner,

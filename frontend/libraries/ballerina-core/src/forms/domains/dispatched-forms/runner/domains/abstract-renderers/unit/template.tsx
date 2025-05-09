@@ -3,6 +3,7 @@ import {
   DispatchDelta,
   DispatchOnChange,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   Template,
   Unit,
@@ -10,7 +11,9 @@ import {
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const UnitAbstractRenderer = <Context extends FormLabel>() =>
+export const UnitAbstractRenderer = <Context extends FormLabel>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) =>
   Template.Default<
     Context & {
       value: ValueUnit;
@@ -35,8 +38,8 @@ export const UnitAbstractRenderer = <Context extends FormLabel>() =>
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -56,6 +59,6 @@ export const UnitAbstractRenderer = <Context extends FormLabel>() =>
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);

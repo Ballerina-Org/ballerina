@@ -3,6 +3,7 @@ import {
   AsyncState,
   DispatchDelta,
   Guid,
+  IdWrapperProps,
   replaceWith,
   Synchronize,
   Unit,
@@ -27,7 +28,9 @@ import { OrderedMap } from "immutable";
 export const EnumMultiselectAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueRecord> &
@@ -67,8 +70,8 @@ export const EnumMultiselectAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -130,7 +133,7 @@ export const EnumMultiselectAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     Co.Template<

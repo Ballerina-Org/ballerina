@@ -1,6 +1,7 @@
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
@@ -16,7 +17,9 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 export const NumberAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<number> & {
@@ -44,8 +47,8 @@ export const NumberAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -65,7 +68,7 @@ export const NumberAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

@@ -90,7 +90,7 @@ export const OneDispatcher = {
                         Template<any, any, any, any>,
                         string
                       >(
-                        OneAbstractRenderer(detailsRenderer, previewRenderer)
+                        OneAbstractRenderer(detailsRenderer, previewRenderer, dispatcherContext.IdWrapper)
                           .mapContext((_: any) => ({
                             ..._,
                             getApi,

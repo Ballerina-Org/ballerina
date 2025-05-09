@@ -3,6 +3,7 @@ import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   Value,
   DispatchOnChange,
@@ -14,7 +15,9 @@ import { BoolAbstractRendererState } from "./state";
 export const BoolAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<boolean> & {
@@ -42,8 +45,8 @@ export const BoolAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -63,7 +66,7 @@ export const BoolAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

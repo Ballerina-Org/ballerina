@@ -58,6 +58,15 @@ export type DispatchParsedLaunchers<T> = {
   passthrough: Map<string, DispatchParsedPassthroughLauncher<T>>;
 };
 
+export type IdWrapperProps = {
+  id: string;
+  children: React.ReactNode;
+};
+
+export type ErrorRendererProps = {
+  message: string;
+};
+
 export type DispatcherContext<
   T extends { [key in keyof T]: { type: any; state: any } },
 > = {
@@ -82,6 +91,8 @@ export type DispatcherContext<
   ) => ValueOrErrors<any, string>;
   forms: Map<string, Renderer<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode;
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
@@ -170,6 +181,8 @@ export const parseDispatchFormsToLaunchers =
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
+    IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
     tableApiSources?: DispatchTableApiSources,
     lookupSources?: DispatchLookupSources,
   ) =>
@@ -277,6 +290,8 @@ export const parseDispatchFormsToLaunchers =
                 apiConverters,
                 injectedPrimitives,
               ),
+            IdWrapper,
+            ErrorRenderer,
           },
         }),
       )
@@ -290,6 +305,8 @@ export type DispatchFormsParserContext<
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
   concreteRenderers: Record<keyof ConcreteRendererKinds, any>;
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode;
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   fieldTypeConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   lookupSources?: DispatchLookupSources;

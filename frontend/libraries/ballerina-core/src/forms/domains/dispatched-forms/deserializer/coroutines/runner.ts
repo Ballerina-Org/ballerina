@@ -69,6 +69,8 @@ export const LoadAndDeserializeSpecification = <
             current.infiniteStreamSources,
             current.enumOptionsSources,
             current.entityApis,
+            current.IdWrapper,
+            current.ErrorRenderer,
             current.tableApiSources,
             current.lookupSources,
           )(deserializationResult.value);

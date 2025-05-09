@@ -18,6 +18,9 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
+  id,
+  IdWrapperProps,
+  ErrorRendererProps,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
@@ -41,6 +44,16 @@ const ShowFormsParsingErrors = (
   <div style={{ border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
       JSON.stringify(parsedFormsConfig.errors)}
+  </div>
+);
+
+const IdWrapper = ({ id, children }: IdWrapperProps) => (
+  <div className={id}>{children}</div>
+);
+
+const ErrorRenderer = ({ message }: ErrorRendererProps) => (
+  <div style={{ border: "red" }}>
+    <p>{message}</p>
   </div>
 );
 
@@ -301,6 +314,8 @@ export const DispatcherFormsApp = (props: {}) => {
                       DispatchPersonFromConfigApis.tableApiSources,
                     lookupSources: DispatchPersonFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
+                    IdWrapper,
+                    ErrorRenderer,
                     injectedPrimitives: Map([
                       [
                         "injectedCategory",

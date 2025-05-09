@@ -10,6 +10,7 @@ import {
   DispatchDelta,
   FormLabel,
   id,
+  IdWrapperProps,
   InfiniteStreamLoader,
   InfiniteStreamState,
   PredicateValue,
@@ -27,7 +28,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueRecord> & {
@@ -119,8 +122,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -219,7 +222,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     loaderRunner,

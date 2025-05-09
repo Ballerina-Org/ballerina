@@ -18,6 +18,7 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
+  IdWrapperProps,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import {
@@ -45,6 +46,10 @@ const ShowFormsParsingErrors = (
     {parsedFormsConfig.kind == "errors" &&
       JSON.stringify(parsedFormsConfig.errors)}
   </div>
+);
+
+const IdWrapper = ({ id, children }: IdWrapperProps) => (
+  <div className={id}>{children}</div>
 );
 
 const InstantiedPersonFormsParserTemplate =
@@ -202,6 +207,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     entityApis: DispatchPersonFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,
+                    IdWrapper,
                     injectedPrimitives: Map([
                       [
                         "injectedCategory",

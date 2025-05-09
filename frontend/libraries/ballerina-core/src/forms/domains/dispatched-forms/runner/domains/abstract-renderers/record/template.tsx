@@ -18,6 +18,7 @@ import {
   ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
+  IdWrapperProps,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -42,6 +43,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   Layout: PredicateFormLayout,
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
     fieldName: string,
@@ -237,8 +239,8 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           context={{
@@ -253,7 +255,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([]);
 };

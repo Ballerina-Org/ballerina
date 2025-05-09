@@ -4,6 +4,7 @@ import {
   AsyncState,
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   Guid,
   PredicateValue,
   replaceWith,
@@ -25,7 +26,9 @@ import { OrderedMap } from "immutable";
 export const EnumAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueOption> & {
@@ -64,8 +67,8 @@ export const EnumAbstractRenderer = <
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
       >
         <props.view
           {...props}
@@ -141,7 +144,7 @@ export const EnumAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </IdWrapper>
     );
   }).any([
     Co.Template<
