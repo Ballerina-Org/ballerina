@@ -1,27 +1,29 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module ExprType =
-  open Model
   open Patterns
 
-  open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Patterns
   open System
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
-  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
+  type ContextActions<'context> =
+    { TryFindType: 'context -> string -> Sum<TypeBinding, Errors> }
+
   type ExprType with
-    static member ParseUnionCase(json: JsonValue) : State<UnionCase, CodeGenConfig, ParsedFormsContext, Errors> =
+    static member ParseUnionCase<'config, 'context>
+      (contextActions: ContextActions<'context>)
+      (json: JsonValue)
+      : State<UnionCase, 'config, 'context, Errors> =
+      let (!) = ExprType.Parse contextActions
+
       state {
         let! args = json |> JsonValue.AsRecord |> state.OfSum
 
@@ -39,7 +41,7 @@ module ExprType =
                 fieldsJson
                 |> Seq.map (fun (fieldName, fieldType) ->
                   state {
-                    let! fieldType = ExprType.Parse fieldType
+                    let! fieldType = !fieldType
                     return fieldName, fieldType
                   }
                   |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")))
@@ -53,15 +55,18 @@ module ExprType =
               else
                 ExprType.RecordType fields
             })
-            (ExprType.Parse fieldsJson)
+            (fieldsJson |> (!))
 
         return
           { CaseName = caseName
             Fields = fieldsType }
       }
 
-    static member Parse(json: JsonValue) : State<ExprType, CodeGenConfig, ParsedFormsContext, Errors> =
-      let (!) = ExprType.Parse
+    static member Parse<'config, 'context>
+      (contextActions: ContextActions<'context>)
+      (json: JsonValue)
+      : State<ExprType, 'config, 'context, Errors> =
+      let (!) = ExprType.Parse contextActions
 
       state {
         return!
@@ -126,8 +131,8 @@ module ExprType =
 
                   return!
                     state {
-                      let! (s: ParsedFormsContext) = state.GetState()
-                      let! typeId = s.TryFindType typeName |> state.OfSum
+                      let! s = state.GetState()
+                      let! typeId = contextActions.TryFindType s typeName |> state.OfSum
                       return ExprType.LookupType typeId.TypeId
                     }
                     |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -311,7 +316,7 @@ module ExprType =
                                 let! argsJson = (fields |> state.TryFindField "args")
                                 let! cases = argsJson |> JsonValue.AsArray |> state.OfSum
 
-                                let! cases = state.All(cases |> Seq.map (ExprType.ParseUnionCase))
+                                let! cases = state.All(cases |> Seq.map (ExprType.ParseUnionCase contextActions))
 
                                 return
                                   ExprType.UnionType(
@@ -341,7 +346,8 @@ module ExprType =
                                         $"Error: cannot parse generic type {funJson}. Expected a single type name, found {records}"
                                     )
                                 else
-                                  let! record = records.[0] |> state.TryFindType
+                                  let! s = state.GetState()
+                                  let! record = contextActions.TryFindType s records.[0] |> state.OfSum
                                   let! record = record.Type |> ExprType.AsRecord |> state.OfSum
 
                                   return

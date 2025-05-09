@@ -3,18 +3,14 @@ namespace Ballerina.DSL.FormEngine.Parser
 module Runner =
   open Model
   open Patterns
-  open Expr
   open ExprType
   open Renderers
 
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Patterns
   open System
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.Core.Json
@@ -129,8 +125,11 @@ module Runner =
       (enumName: string)
       (enumTypeJson: JsonValue)
       : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
-        let! enumType = ExprType.Parse enumTypeJson
+        let! enumType = ExprType.Parse contextActions enumTypeJson
         let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
         let! ctx = state.GetState()
         let! enumType = ExprType.ResolveLookup ctx enumType |> state.OfSum
@@ -163,8 +162,11 @@ module Runner =
       (streamName: string)
       (streamTypeJson: JsonValue)
       : State<StreamApi, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
-        let! streamType = ExprType.Parse streamTypeJson
+        let! streamType = ExprType.Parse contextActions streamTypeJson
         let! streamTypeId = streamType |> ExprType.AsLookupId |> state.OfSum
 
         return
@@ -203,12 +205,15 @@ module Runner =
       (tableName: string)
       (tableTypeJson: JsonValue)
       : State<TableApi, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
         let! typeJson = (tableTypeFieldJsons |> state.TryFindField "type")
 
-        let! tableType = ExprType.Parse typeJson
+        let! tableType = ExprType.Parse contextActions typeJson
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
 
         let tableApi =
@@ -223,6 +228,9 @@ module Runner =
       (tableName: string)
       (tableTypeJson: JsonValue)
       : State<TableApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -232,7 +240,7 @@ module Runner =
             (tableTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! tableType = ExprType.Parse typeJson
+        let! tableType = ExprType.Parse contextActions typeJson
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -250,6 +258,9 @@ module Runner =
       (entityName: string)
       (entityTypeJson: JsonValue)
       : State<EntityApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
         let! entityTypeFieldJsons = entityTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -259,7 +270,7 @@ module Runner =
             (entityTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! entityType = ExprType.Parse typeJson
+        let! entityType = ExprType.Parse contextActions typeJson
         let! entityTypeId = entityType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -370,6 +381,9 @@ module Runner =
     static member ParseTypes
       (typesJson: seq<string * JsonValue>)
       : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
 
         let! typesJson =
@@ -430,7 +444,7 @@ module Runner =
                             extends
                             |> Seq.map (fun extendsJson ->
                               state {
-                                let! parsed = ExprType.Parse extendsJson
+                                let! parsed = ExprType.Parse contextActions extendsJson
                                 return! ExprType.ResolveLookup s parsed |> state.OfSum
                               })
                             |> state.All
@@ -439,7 +453,7 @@ module Runner =
                             fields
                             |> Seq.map (fun (fieldName, fieldType) ->
                               state {
-                                let! fieldType = ExprType.Parse fieldType
+                                let! fieldType = ExprType.Parse contextActions fieldType
                                 return fieldName, fieldType
                               }
                               |> state.MapError(
@@ -479,7 +493,7 @@ module Runner =
                     [ state {
                         let typeId: TypeId = { TypeName = typeName }
 
-                        let! parsedType = ExprType.Parse typeJson
+                        let! parsedType = ExprType.Parse contextActions typeJson
 
                         do!
                           state.SetState(
@@ -621,6 +635,9 @@ module Runner =
       generatedLanguageSpecificConfig
       (jsons: List<JsonValue>)
       : State<TopLevel, CodeGenConfig, ParsedFormsContext, Errors> =
+      let contextActions: ContextActions<ParsedFormsContext> =
+        { TryFindType = fun s -> s.TryFindType }
+
       state {
         // let! ctx = state.GetState()
         // do System.Console.WriteLine ctx.Types.ToFSharpString
@@ -639,7 +656,7 @@ module Runner =
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot parse generic type {tstring}")
             |> state.OfSum
 
-          let! t = ExprType.Parse tjson
+          let! t = ExprType.Parse contextActions tjson
 
           do!
             state.SetState(
