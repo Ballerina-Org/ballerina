@@ -4,6 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar, assert_never
 
+from ballerina_core.serialization.serializer import Deserializer, Json, Serializer
+
 _SumL = TypeVar("_SumL")
 _SumR = TypeVar("_SumR")
 
@@ -51,6 +53,37 @@ class Sum(Generic[_SumL, _SumR]):
     def map_right(self, on_right: Callable[[_SumR], _O], /) -> Sum[_SumL, _O]:
         return self.fold(Sum.left, lambda value: Sum.right(on_right(value)))
 
+    @staticmethod
+    def serializer(
+        left_serializer: Serializer[_SumL], right_serializer: Serializer[_SumR], /
+    ) -> Serializer[Sum[_SumL, _SumR]]:
+        def serialize(value: Sum[_SumL, _SumR]) -> Json:
+            return value.fold(
+                lambda a: {"discriminator": "left", "value": left_serializer(a)},
+                lambda b: {"discriminator": "right", "value": right_serializer(b)},
+            )
+
+        return serialize
+
+    @staticmethod
+    def deserializer(
+        left_deserializer: Deserializer[_SumL], right_deserializer: Deserializer[_SumR], /
+    ) -> Deserializer[Sum[_SumL, _SumR]]:
+        def deserialize(value: Json) -> Sum[_SumL, _SumR]:
+            match value:
+                case dict():
+                    match value["discriminator"]:
+                        case discriminator if discriminator == "left":
+                            return Sum.left(left_deserializer(value["value"]))
+                        case discriminator if discriminator == "right":
+                            return Sum.right(right_deserializer(value["value"]))
+                        case _:
+                            raise ValueError(f"Invalid discriminator: {value['discriminator']}")
+                case _:
+                    raise ValueError(f"Not a dictionary: {value}")
+
+        return deserialize
+
 
 _Option = TypeVar("_Option")
 _Some = TypeVar("_Some")
@@ -94,3 +127,32 @@ class Option(Generic[_Option]):
 
     def flat_map(self, on_some: Callable[[_Option], Option[_O]], /) -> Option[_O]:
         return self.fold(on_some, Option.nothing)
+
+    @staticmethod
+    def serializer(some_serializer: Serializer[_Option], /) -> Serializer[Option[_Option]]:
+        def serialize(value: Option[_Option]) -> Json:
+            return value.fold(
+                lambda a: {"discriminator": "some", "value": some_serializer(a)},
+                lambda: {"discriminator": "nothing", "value": None},
+            )
+
+        return serialize
+
+    @staticmethod
+    def deserializer(
+        some_deserializer: Deserializer[_Option], nothing_deserializer: Deserializer[_Nothing], /
+    ) -> Deserializer[Option[_Option]]:
+        def deserialize(value: Json) -> Option[_Option]:
+            match value:
+                case dict():
+                    match value["discriminator"]:
+                        case discriminator if discriminator == "some":
+                            return Option.some(some_deserializer(value["value"]))
+                        case discriminator if discriminator == "nothing":
+                            return Option.nothing()
+                        case _:
+                            raise ValueError(f"Invalid discriminator: {value['discriminator']}")
+                case _:
+                    raise ValueError(f"Not a dictionary: {value}")
+
+        return deserialize
