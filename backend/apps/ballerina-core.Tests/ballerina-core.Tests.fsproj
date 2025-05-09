@@ -6,6 +6,8 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarnOn>1182,3387,3389</WarnOn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Update="FSharp.Core" Version="9.0.202" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.4.0" />
