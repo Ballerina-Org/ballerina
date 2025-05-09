@@ -2,6 +2,8 @@ module Ballerina.Core.Tests.BusinessRuleEngine.FormEngine.Parser.ExprType
 
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Types.Model
+open Ballerina.DSL.Expr.Types.Patterns
+open Ballerina.DSL.FormEngine.Parser.Patterns
 open Ballerina.DSL.FormEngine.Parser.ExprType
 open FSharp.Data
 open NUnit.Framework

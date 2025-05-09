@@ -7,7 +7,7 @@ module Renderers =
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.FormEngine.Parser.FormsPatterns
+  open FormsPatterns
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map

@@ -1,7 +1,7 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module FormsPatterns =
-
+  open Ballerina.DSL.FormEngine.Parser.Patterns
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Collections.Sum
@@ -9,6 +9,9 @@ module FormsPatterns =
   open Ballerina.Errors
 
   type ParsedFormsContext with
+    static member ContextActions: ContextActions<ParsedFormsContext> =
+      { TryFindType = fun ctx name -> ctx.TryFindType name }
+
     member ctx.TryFindEnum name =
       ctx.Apis.Enums |> Map.tryFindWithError name "enum" name
 

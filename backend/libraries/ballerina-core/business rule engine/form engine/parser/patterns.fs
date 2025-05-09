@@ -5,6 +5,10 @@ module Patterns =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
+  open Ballerina.DSL.Expr.Types.Model
+
+  type ContextActions<'context> =
+    { TryFindType: 'context -> string -> Sum<TypeBinding, Errors> }
 
   type SumBuilder with
     member sum.TryFindField name fields =

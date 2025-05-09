@@ -6,7 +6,6 @@ module ExprType =
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Patterns
   open System
-  open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.Core.Json
@@ -14,8 +13,6 @@ module ExprType =
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
-  type ContextActions<'context> =
-    { TryFindType: 'context -> string -> Sum<TypeBinding, Errors> }
 
   type ExprType with
     static member ParseUnionCase<'config, 'context>
