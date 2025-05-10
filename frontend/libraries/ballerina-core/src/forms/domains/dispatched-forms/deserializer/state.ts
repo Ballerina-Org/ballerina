@@ -33,7 +33,7 @@ import {
   dispatchToAPIRawValue,
   tryGetConcreteRenderer,
 } from "../built-ins/state";
-import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
+import { SearchableInfiniteStreamAbstractRendererState } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Renderer } from "./domains/specification/domains/forms/domains/renderer/state";
 
 export type DispatchParsedPassthroughLauncher<T> = {
