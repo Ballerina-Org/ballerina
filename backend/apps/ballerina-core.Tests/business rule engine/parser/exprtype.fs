@@ -1,4 +1,4 @@
-module Ballerina.Core.Tests.BusinessRuleEngine.FormEngine.Parser.ExprType
+module Ballerina.Core.Tests.BusinessRuleEngine.Parser.ExprType
 
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Types.Model
