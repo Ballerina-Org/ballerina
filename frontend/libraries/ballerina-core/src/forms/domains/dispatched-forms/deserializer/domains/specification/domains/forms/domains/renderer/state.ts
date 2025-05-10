@@ -199,6 +199,20 @@ export const Renderer = {
             concreteRenderers,
             types,
           )
+        : type.kind == "tuple"
+        ? TupleRenderer.Operations.Deserialize(
+            type,
+            serialized,
+            concreteRenderers,
+            types,
+          )
+        : type.kind == "table"
+        ? TableRenderer.Operations.Deserialize(
+            type,
+            serialized,
+            concreteRenderers,
+            types,
+          )
         : ValueOrErrors.Default.throwOne<Renderer<T>, string>(
             `Unknown renderer ${JSON.stringify(serialized)} and type of kind ${
               type.kind

@@ -94,23 +94,29 @@ export const NestedRenderer = {
         type.kind == "map"
           ? Renderer.Operations.Deserialize(
               type,
-              validatedSerialized,
+              type.kind == "primitive"
+                ? validatedSerialized.renderer
+                : validatedSerialized,
               concreteRenderers,
               types,
             ).Then((renderer) =>
               renderer.kind == "tableRenderer" ||
               renderer.kind == "recordRenderer" ||
-              renderer.kind == "unionRenderer" ||
-              renderer.kind == "lookupRenderer"
-                ? ValueOrErrors.Default.throwOne(
+              renderer.kind == "unionRenderer"
+                ? ValueOrErrors.Default.throwOne<NestedRenderer<T>, string>(
                     `renderer ${renderer.kind} does not match type ${type.kind}`,
                   )
-                : ValueOrErrors.Default.return({
+                : ValueOrErrors.Default.return<NestedRenderer<T>, string>({
                     renderer,
                     label: validatedSerialized.label,
                     tooltip: validatedSerialized.tooltip,
                     details: validatedSerialized.details,
-                  }),
+                  }).MapErrors<NestedRenderer<T>, string, string>((errors) =>
+                    errors.map(
+                      (error) =>
+                        `${error}\n...When parsing as ${renderer.kind} nested renderer`,
+                    ),
+                  ),
             )
           : Renderer.Operations.Deserialize(
               type,
@@ -127,15 +133,26 @@ export const NestedRenderer = {
                     label: validatedSerialized.label,
                     tooltip: validatedSerialized.tooltip,
                     details: validatedSerialized.details,
-                  })
+                  }).MapErrors((errors) =>
+                    errors.map(
+                      (error) =>
+                        `${error}\n...When parsing as table nested renderer`,
+                    ),
+                  )
                 : renderer.kind == "recordRenderer" ||
-                  renderer.kind == "unionRenderer"
+                  renderer.kind == "unionRenderer" ||
+                  renderer.kind == "lookupRenderer"
                 ? ValueOrErrors.Default.return({
                     renderer,
                     label: validatedSerialized.label,
                     tooltip: validatedSerialized.tooltip,
                     details: validatedSerialized.details,
-                  })
+                  }).MapErrors((errors) =>
+                    errors.map(
+                      (error) =>
+                        `${error}\n...When parsing as ${renderer.kind} nested renderer`,
+                    ),
+                  )
                 : ValueOrErrors.Default.throwOne(
                     `renderer ${renderer.kind} does not match type ${type.kind}`,
                   ),

@@ -108,7 +108,7 @@ export const TableRenderer = {
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type,
+            type.args[0],
             serialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
@@ -116,7 +116,7 @@ export const TableRenderer = {
           ),
     Deserialize: <T>(
       type: TableType<T>,
-      serialized: SerializedTableRenderer,
+      serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string

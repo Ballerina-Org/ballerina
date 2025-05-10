@@ -53,7 +53,7 @@ export const TupleRenderer = {
           }),
     Deserialize: <T>(
       type: TupleType<T>,
-      serialized: SerializedTupleRenderer,
+      serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
