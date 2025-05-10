@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -13,6 +13,7 @@
   <ItemGroup>
     <Compile Include="business rule engine/parser/common.fs" />
     <Compile Include="business rule engine/parser/exprtype.fs" />
+    <Compile Include="business rule engine/parser/expr.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
