@@ -176,3 +176,5 @@ libraries/ballerina-core/nupkg/
 project.lock.json
 project.assets.json
 packages.lock.json
+
+*.pyc
