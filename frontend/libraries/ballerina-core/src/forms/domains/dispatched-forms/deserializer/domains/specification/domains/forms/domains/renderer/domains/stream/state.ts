@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   isString,
@@ -53,7 +54,7 @@ export const StreamRenderer = {
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)
@@ -61,7 +62,7 @@ export const StreamRenderer = {
           Renderer.Operations.Deserialize(
             type,
             validatedSerialized.renderer,
-            fieldViews,
+            concreteRenderers,
             types,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(

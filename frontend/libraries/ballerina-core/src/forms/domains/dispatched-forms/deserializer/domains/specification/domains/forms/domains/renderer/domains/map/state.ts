@@ -1,13 +1,12 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { MapType } from "../../../../../types/state";
-import {
-  NestedRenderer,
-} from "../nestedRenderer/state";
+import { NestedRenderer } from "../nestedRenderer/state";
 import { Renderer } from "../../state";
 
 export type SerializedMapRenderer = {
@@ -55,7 +54,7 @@ export const MapRenderer = {
     Deserialize: <T>(
       type: MapType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<MapRenderer<T>, string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
@@ -63,21 +62,21 @@ export const MapRenderer = {
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             renderer.keyRenderer,
-            fieldViews,
+            concreteRenderers,
             "Map key",
             types,
           ).Then((deserializedKeyRenderer) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
               renderer.valueRenderer,
-              fieldViews,
+              concreteRenderers,
               "Map value",
               types,
             ).Then((deserializedValueRenderer) =>
               Renderer.Operations.Deserialize(
                 type,
                 renderer.renderer,
-                fieldViews,
+                concreteRenderers,
                 types,
               ).Then((deserializedRenderer) =>
                 ValueOrErrors.Default.return(

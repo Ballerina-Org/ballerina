@@ -1,5 +1,6 @@
 import { List, Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchIsObject,
   DispatchParsedType,
   FormLayout,
@@ -83,19 +84,19 @@ export const RecordRenderer = {
           }),
     DeserializeRenderer: <T>(
       type: RecordType<T>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
-      fieldViews: any,
       serialized?: unknown,
     ): ValueOrErrors<Renderer<T> | undefined, string> =>
       serialized
-        ? Renderer.Operations.Deserialize(type, serialized, types, fieldViews)
+        ? Renderer.Operations.Deserialize(type, serialized,concreteRenderers, types)
         : ValueOrErrors.Default.return(undefined),
 
     Deserialize: <T>(
       type: RecordType<T>,
       serialized: unknown,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
-      fieldViews: any,
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
         (validRecordForm) =>
@@ -104,30 +105,30 @@ export const RecordRenderer = {
               validRecordForm.fields
                 .toArray()
                 .map(([fieldName, recordFieldRenderer]: [string, unknown]) =>
-                  MapRepo.Operations.tryFindWithError(
+                  (console.debug('fieldName', type.fields), MapRepo.Operations.tryFindWithError(
                     fieldName,
-                    types,
-                    () => `Cannot find field type for ${fieldName} in types`,
-                  ).Then((fieldType) =>
-                    RecordFieldRenderer.Deserialize(
+                    type.fields,
+                    () => `Cannot find field type for ${fieldName} in fields`,
+                  )).Then((fieldType) =>
+                    (console.debug('fieldType', fieldType), RecordFieldRenderer.Deserialize(
                       fieldType,
                       recordFieldRenderer,
-                      fieldViews,
+                      concreteRenderers,
                       types,
-                    ).Then((renderer) =>
+                    )).Then((renderer) =>
                       ValueOrErrors.Default.return([fieldName, renderer]),
                     ),
                   ),
-                ),
+                )
             ),
           )
             .Then((fieldTuples) =>
-              RecordRenderer.Operations.DeserializeRenderer(
+              (console.debug('fieldTuples', fieldTuples), RecordRenderer.Operations.DeserializeRenderer(
                 type,
+                concreteRenderers,
                 types,
-                fieldViews,
                 validRecordForm.renderer,
-              ).Then((renderer) =>
+              )).Then((renderer) =>
                 FormLayout.Operations.ParseLayout(validRecordForm)
                   .Then((tabs) =>
                     ValueOrErrors.Default.return(

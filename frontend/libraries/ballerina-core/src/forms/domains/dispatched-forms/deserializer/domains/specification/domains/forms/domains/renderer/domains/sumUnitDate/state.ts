@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -46,7 +47,7 @@ export const BaseSumUnitDateRenderer = {
     Deserialize: <T>(
       type: SumType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(
@@ -56,7 +57,7 @@ export const BaseSumUnitDateRenderer = {
           Renderer.Operations.Deserialize(
             type,
             validatedSerialized.renderer,
-            fieldViews,
+            concreteRenderers,
             types,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(

@@ -1,11 +1,11 @@
 import {
+  ConcreteRendererKinds,
   MapRepo,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { DispatchIsObject, UnionType } from "../../../../../types/state";
-
-import { List, Map } from "immutable";
 import { DispatchParsedType } from "../../../../../types/state";
+import { List, Map } from "immutable";
 import { Renderer } from "../../state";
 
 export type SerializedUnionRenderer = {
@@ -47,7 +47,7 @@ export const UnionRenderer = {
     Deserialize: <T>(
       type: UnionType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)
@@ -65,9 +65,9 @@ export const UnionRenderer = {
                   ).Then((caseType) =>
                     Renderer.Operations.Deserialize(
                       caseType,
-                      caseName,
                       caseRenderer,
-                      fieldViews,
+                      concreteRenderers,
+                      types,
                     ).Then((caseRenderer) =>
                       ValueOrErrors.Default.return([caseName, caseRenderer]),
                     ),
@@ -78,7 +78,7 @@ export const UnionRenderer = {
             Renderer.Operations.Deserialize(
               type,
               validSerialized.renderer,
-              fieldViews,
+              concreteRenderers,
               types,
             ).Then((renderer) =>
               ValueOrErrors.Default.return(

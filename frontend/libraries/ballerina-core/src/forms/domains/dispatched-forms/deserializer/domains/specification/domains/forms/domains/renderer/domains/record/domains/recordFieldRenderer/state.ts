@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   Expr,
   isObject,
@@ -55,7 +56,7 @@ export const RecordFieldRenderer = {
   Deserialize: <T>(
     type: DispatchParsedType<T>,
     serialized: unknown,
-    fieldViews: any,
+    concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
     types: Map<string, DispatchParsedType<T>>,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
@@ -63,7 +64,7 @@ export const RecordFieldRenderer = {
         NestedRenderer.Operations.DeserializeAs(
           type,
           validatedSerialized,
-          fieldViews,
+          concreteRenderers,
           `Record field renderer`,
           types,
         ).Then((deserializedNestedRenderer) =>

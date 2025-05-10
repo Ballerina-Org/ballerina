@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   Guid,
   isObject,
@@ -56,7 +57,7 @@ export const EnumRenderer = {
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<EnumRenderer<T>, string> =>
       EnumRenderer.Operations.tryAsValidEnumRenderer(serialized)
@@ -64,7 +65,7 @@ export const EnumRenderer = {
           Renderer.Operations.Deserialize(
             type,
             serialized.renderer,
-            fieldViews,
+            concreteRenderers,
             types,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(

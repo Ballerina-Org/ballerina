@@ -1,11 +1,15 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   ListType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
-import { NestedRenderer, SerializedNestedRenderer } from "../nestedRenderer/state";
+import {
+  NestedRenderer,
+  SerializedNestedRenderer,
+} from "../nestedRenderer/state";
 import { Renderer, SerializedRenderer } from "../../state";
 
 export type SerializedListRenderer = {
@@ -52,9 +56,7 @@ export const ListRenderer = {
       string
     > =>
       type.kind != "list"
-        ? ValueOrErrors.Default.throwOne(
-            `type ${type.kind} is not a list`,
-          )
+        ? ValueOrErrors.Default.throwOne(`type ${type.kind} is not a list`)
         : !ListRenderer.Operations.hasRenderers(serialized)
         ? ValueOrErrors.Default.throwOne(
             `renderer and elementRenderer are required`,
@@ -64,7 +66,7 @@ export const ListRenderer = {
     Deserialize: <T>(
       type: ListType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)
@@ -72,14 +74,14 @@ export const ListRenderer = {
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             serializedRenderer.elementRenderer,
-            fieldViews,
+            concreteRenderers,
             "list element",
             types,
           ).Then((elementRenderer) =>
             Renderer.Operations.Deserialize(
               type,
               serializedRenderer.renderer,
-              fieldViews,
+              concreteRenderers,
               types,
             ).Then((renderer) =>
               ValueOrErrors.Default.return(

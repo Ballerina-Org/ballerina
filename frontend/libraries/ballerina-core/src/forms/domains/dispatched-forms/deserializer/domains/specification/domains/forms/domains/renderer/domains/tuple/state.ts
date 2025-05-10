@@ -3,7 +3,10 @@ import { NestedRenderer } from "../nestedRenderer/state";
 import { DispatchParsedType, TupleType } from "../../../../../types/state";
 import { Renderer } from "../../state";
 import { ValueOrErrors } from "../../../../../../../../../../../../collections/domains/valueOrErrors/state";
-import { isObject } from "../../../../../../../../../../../../../main";
+import {
+  ConcreteRendererKinds,
+  isObject,
+} from "../../../../../../../../../../../../../main";
 
 export type SerializedTupleRenderer = {
   renderer: unknown;
@@ -51,7 +54,7 @@ export const TupleRenderer = {
     Deserialize: <T>(
       type: TupleType<T>,
       serialized: SerializedTupleRenderer,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized).Then(
@@ -62,7 +65,7 @@ export const TupleRenderer = {
                 NestedRenderer.Operations.DeserializeAs(
                   type.args[index],
                   itemRenderer,
-                  fieldViews,
+                  concreteRenderers,
                   `Item ${index + 1}`,
                   types,
                 ).Then((deserializedItemRenderer) =>
@@ -75,7 +78,7 @@ export const TupleRenderer = {
               Renderer.Operations.Deserialize(
                 type,
                 validatedSerialized.renderer,
-                fieldViews,
+                concreteRenderers,
                 types,
               ).Then((deserializedRenderer) =>
                 ValueOrErrors.Default.return(

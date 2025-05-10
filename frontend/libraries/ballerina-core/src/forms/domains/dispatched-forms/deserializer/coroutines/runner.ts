@@ -53,6 +53,8 @@ export const LoadAndDeserializeSpecification = <
             injectedPrimitives,
           )(serializedSpecifications);
 
+          console.debug('res', deserializationResult);
+
           if (deserializationResult.kind == "errors") {
             console.error(
               deserializationResult.errors.valueSeq().toArray().join("\n"),

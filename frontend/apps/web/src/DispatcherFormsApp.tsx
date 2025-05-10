@@ -240,22 +240,22 @@ export const DispatcherFormsApp = (props: {}) => {
       });
   }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
-  console.debug(
-    "personPassthroughFormState",
-    JSON.stringify(
-      personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
-      null,
-      2,
-    ),
-  );
-  console.debug(
-    "personPassthroughFormState common",
-    JSON.stringify(
-      personPassthroughFormState?.formState?.commonFormState,
-      null,
-      2,
-    ),
-  );
+  // console.debug(
+  //   "personPassthroughFormState",
+  //   JSON.stringify(
+  //     personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
+  //     null,
+  //     2,
+  //   ),
+  // );
+  // console.debug(
+  //   "personPassthroughFormState common",
+  //   JSON.stringify(
+  //     personPassthroughFormState?.formState?.commonFormState,
+  //     null,
+  //     2,
+  //   ),
+  // );
   // console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (
@@ -323,7 +323,7 @@ export const DispatcherFormsApp = (props: {}) => {
 
                 <h4>Config</h4>
                 <div style={{ border: "2px dashed lightblue" }}>
-                  <InstantiedPersonDispatchFormRunnerTemplate
+                  {/* <InstantiedPersonDispatchFormRunnerTemplate
                     context={{
                       ...specificationDeserializer,
                       ...personConfigState,
@@ -344,7 +344,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     setState={setPersonConfigState}
                     view={unit}
                     foreignMutations={unit}
-                  />
+                  /> */}
                 </div>
                 <h3>Person</h3>
                 {entityPath && entityPath.kind == "value" && (
@@ -363,7 +363,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
                   </p>
                 )}
-                <InstantiedPersonDispatchFormRunnerTemplate
+                {/* <InstantiedPersonDispatchFormRunnerTemplate
                   context={{
                     ...specificationDeserializer,
                     ...personPassthroughFormState,
@@ -382,7 +382,7 @@ export const DispatcherFormsApp = (props: {}) => {
                   setState={setPersonPassthroughFormState}
                   view={unit}
                   foreignMutations={unit}
-                />
+                /> */}
               </td>
             </tr>
           </tbody>

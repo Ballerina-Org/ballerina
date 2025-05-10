@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   Expr,
   isObject,
@@ -44,7 +45,7 @@ export const TableCellRenderer = {
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
       columnName: string,
     ): ValueOrErrors<TableCellRenderer<T>, string> =>
@@ -53,7 +54,7 @@ export const TableCellRenderer = {
           NestedRenderer.Operations.DeserializeAs(
             type,
             validatedSerialized,
-            fieldViews,
+            concreteRenderers,
             `Table cell renderer for column ${columnName}`,
             types,
           ).Then((deserializedNestedRenderer) =>

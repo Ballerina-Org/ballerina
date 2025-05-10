@@ -2,6 +2,7 @@ import { Map } from "immutable";
 import { Renderer } from "../../state";
 import { NestedRenderer } from "../nestedRenderer/state";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   SumType,
@@ -58,7 +59,7 @@ export const SumRenderer = {
     Deserialize: <T>(
       type: SumType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<SumRenderer<T>, string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)
@@ -66,21 +67,21 @@ export const SumRenderer = {
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             validatedSerialized.leftRenderer,
-            fieldViews,
+            concreteRenderers,
             "Left renderer",
             types,
           ).Then((deserializedLeftRenderer) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
               validatedSerialized.rightRenderer,
-              fieldViews,
+              concreteRenderers,
               "Right renderer",
               types,
             ).Then((deserializedRightRenderer) =>
               Renderer.Operations.Deserialize(
                 type,
                 validatedSerialized.renderer,
-                fieldViews,
+                concreteRenderers,
                 types,
               ).Then((renderer) =>
                 ValueOrErrors.Default.return(

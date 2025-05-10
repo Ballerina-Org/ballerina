@@ -5,6 +5,7 @@ import {
   TableType,
 } from "../../../../../types/state";
 import {
+  ConcreteRendererKinds,
   isString,
   MapRepo,
   PredicateVisibleColumns,
@@ -100,15 +101,15 @@ export const TableFormRenderer = {
     DeserializeDetailsRenderer: <T>(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type.args[0], // TODO check it should be type.args[0]
+            type.args[0],
             serialized.detailsRenderer,
-            fieldViews,
+            concreteRenderers,
             "details renderer",
             types,
           ),
@@ -116,7 +117,7 @@ export const TableFormRenderer = {
       type: TableType<T>,
       serialized: SerializedTableRenderer,
       types: Map<string, DispatchParsedType<T>>,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
     ): ValueOrErrors<TableRenderer<T>, string> =>
       TableFormRenderer.Operations.tryAsValidTableForm(serialized).Then(
         (validTableForm) =>
@@ -143,7 +144,7 @@ export const TableFormRenderer = {
                           TableCellRenderer.Operations.Deserialize(
                             columnType,
                             columnRenderer,
-                            fieldViews,
+                            concreteRenderers,
                             types,
                             columnName,
                           ).Then((renderer) =>
@@ -162,13 +163,13 @@ export const TableFormRenderer = {
                 TableFormRenderer.Operations.DeserializeDetailsRenderer(
                   type,
                   validTableForm,
-                  fieldViews,
+                  concreteRenderers,
                   types,
                 ).Then((detailsRenderer) =>
                   Renderer.Operations.Deserialize(
                     type,
                     validTableForm.renderer,
-                    fieldViews,
+                    concreteRenderers,
                     types,
                   ).Then((renderer) =>
                     ValueOrErrors.Default.return(
@@ -187,6 +188,5 @@ export const TableFormRenderer = {
             ),
           ),
       ),
-    // TODO - detail view
   },
 };

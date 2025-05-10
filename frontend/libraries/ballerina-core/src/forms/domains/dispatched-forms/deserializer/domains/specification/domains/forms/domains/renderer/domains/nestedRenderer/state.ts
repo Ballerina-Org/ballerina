@@ -1,5 +1,6 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   isString,
@@ -53,42 +54,40 @@ export const NestedRenderer = {
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
-      Renderer.Operations.DeserializeAs(
+      NestedRenderer.Operations.Deserialize(
         type,
         serialized,
-        fieldViews,
-        as,
+        concreteRenderers,
         types,
-      ).Then((renderer) =>
-        ValueOrErrors.Default.return({
-          renderer,
-        }),
+      ).MapErrors((errors) =>
+        errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
-      NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(serialized)
-        .Then((validatedSerialized) =>
-          Renderer.Operations.Deserialize(
-            type,
-            validatedSerialized.renderer,
-            fieldViews,
-            types,
-          ).Then((renderer) =>
-            ValueOrErrors.Default.return({
-              renderer,
-              label: validatedSerialized.label,
-              tooltip: validatedSerialized.tooltip,
-              details: validatedSerialized.details,
-            }),
-          ),
+      NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
+        serialized,
+      ).Then((validatedSerialized) =>
+        Renderer.Operations.Deserialize(
+          type,
+          validatedSerialized.renderer,
+          concreteRenderers,
+          types,
+        ).Then((renderer) =>
+          ValueOrErrors.Default.return({
+            renderer,
+            label: validatedSerialized.label,
+            tooltip: validatedSerialized.tooltip,
+            details: validatedSerialized.details,
+          }),
         ),
+      ),
   },
 };

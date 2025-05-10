@@ -1,9 +1,9 @@
 import { Map } from "immutable";
 import {
+  ConcreteRendererKinds,
   DispatchParsedType,
   isObject,
   isString,
-  SerializedBaseOneRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { OneType } from "../../../../../types/state";
@@ -67,8 +67,8 @@ export const OneRenderer = {
           }),
     DeserializePreviewRenderer: <T>(
       type: OneType<T>,
-      serialized: SerializedBaseOneRenderer,
-      fieldViews: any,
+      serialized: SerializedOneRenderer,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
@@ -76,14 +76,14 @@ export const OneRenderer = {
         : NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             serialized.previewRenderer,
-            fieldViews,
+            concreteRenderers,
             "preview renderer",
             types,
           ),
     Deserialize: <T>(
       type: OneType<T>,
       serialized: unknown,
-      fieldViews: any,
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidBaseOneRenderer(serialized).Then(
@@ -91,20 +91,20 @@ export const OneRenderer = {
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             validatedSerialized.detailsRenderer,
-            fieldViews,
+            concreteRenderers,
             "detail renderer",
             types,
           ).Then((detailsRenderer) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,
               validatedSerialized,
-              fieldViews,
+              concreteRenderers,
               types,
             ).Then((previewRenderer) =>
               Renderer.Operations.Deserialize(
                 type,
                 validatedSerialized.renderer,
-                fieldViews,
+                concreteRenderers,
                 types,
               ).Then((renderer) =>
                 ValueOrErrors.Default.return(

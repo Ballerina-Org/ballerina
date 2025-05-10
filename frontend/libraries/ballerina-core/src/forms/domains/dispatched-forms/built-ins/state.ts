@@ -23,7 +23,6 @@ import {
   ValueTable,
   DispatchCommonFormState,
   UnionAbstractRendererState,
-  TableFormRenderer,
   OneAbstractRendererState,
   DispatchLookupSources,
   DispatchTableApiSources,
@@ -46,9 +45,8 @@ import { SumAbstractRendererState } from "../dispatcher/domains/abstract-rendere
 import { EnumAbstractRendererState } from "../dispatcher/domains/abstract-renderers/enum/state";
 import { ListAbstractRendererState } from "../dispatcher/domains/abstract-renderers/list/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
-import { FormRenderer } from "../deserializer/domains/specification/domains/forms/state";
-import { RecordFormRenderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/domains/recordFormRenderer/state";
 import { NestedRenderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
+import { Renderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
   Object.keys(obj)
@@ -198,100 +196,124 @@ export const dispatchDefaultState =
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
-    forms: Map<string, FormRenderer<T>>,
+    forms: Map<string, Renderer<T>>,
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
   ) =>
   (
-    t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | FormRenderer<any>,
+    t: DispatchParsedType<T>,
+    renderer: Renderer<T>,
   ): ValueOrErrors<any, string> => {
     const result: ValueOrErrors<any, string> = (() => {
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(undefined);
       }
       if (t.kind == "primitive")
-        return renderer.kind != "basePrimitiveRenderer"
+        return renderer.kind != "lookupRenderer"
           ? ValueOrErrors.Default.throwOne(
-              `received non primitive renderer kind "${renderer.kind}" when resolving defaultState for primitive`,
+              `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for primitive`,
             )
           : t.name == "unit"
-            ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
-            : t.name == "boolean"
-              ? ValueOrErrors.Default.return(
-                  BoolAbstractRendererState.Default(),
-                )
-              : t.name == "number"
-                ? ValueOrErrors.Default.return(
-                    NumberAbstractRendererState.Default(),
-                  )
-                : t.name == "string"
-                  ? ValueOrErrors.Default.return(
-                      StringAbstractRendererState.Default(),
-                    )
-                  : t.name == "base64File"
-                    ? ValueOrErrors.Default.return(
-                        Base64FileAbstractRendererState.Default(),
-                      )
-                    : t.name == "secret"
-                      ? ValueOrErrors.Default.return(
-                          SecretAbstractRendererState.Default(),
-                        )
-                      : t.name == "Date"
-                        ? ValueOrErrors.Default.return(
-                            DateAbstractRendererState.Default(),
-                          )
-                        : injectedPrimitives?.injectedPrimitives.get(
-                              t.name as keyof T,
-                            ) != undefined
-                          ? ValueOrErrors.Default.return({
-                              commonFormState:
-                                DispatchCommonFormState.Default(),
-                              ...injectedPrimitives.injectedPrimitives.get(
-                                t.name as keyof T,
-                              )!.defaultState,
-                            })
-                          : ValueOrErrors.Default.throwOne(
-                              `could not resolve defaultState for primitive renderer kind "${
-                                t.name as string
-                              }"`,
-                            );
+          ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
+          : t.name == "boolean"
+          ? ValueOrErrors.Default.return(BoolAbstractRendererState.Default())
+          : t.name == "number"
+          ? ValueOrErrors.Default.return(NumberAbstractRendererState.Default())
+          : t.name == "string"
+          ? ValueOrErrors.Default.return(StringAbstractRendererState.Default())
+          : t.name == "base64File"
+          ? ValueOrErrors.Default.return(
+              Base64FileAbstractRendererState.Default(),
+            )
+          : t.name == "secret"
+          ? ValueOrErrors.Default.return(SecretAbstractRendererState.Default())
+          : t.name == "Date"
+          ? ValueOrErrors.Default.return(DateAbstractRendererState.Default())
+          : injectedPrimitives?.injectedPrimitives.get(t.name as keyof T) !=
+            undefined
+          ? ValueOrErrors.Default.return({
+              commonFormState: DispatchCommonFormState.Default(),
+              ...injectedPrimitives.injectedPrimitives.get(t.name as keyof T)!
+                .defaultState,
+            })
+          : ValueOrErrors.Default.throwOne(
+              `could not resolve defaultState for primitive renderer kind "${
+                t.name as string
+              }"`,
+            );
 
       if (t.kind == "singleSelection")
-        return renderer.kind == "baseEnumRenderer"
+        return renderer.kind == "enumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
-          : renderer.kind == "baseStreamRenderer"
-            ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
-                ValueOrErrors.Default.return(
-                  SearchableInfiniteStreamAbstractRendererState.Default(
-                    streamSource,
-                  ),
+          : renderer.kind == "streamRenderer"
+          ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
+              ValueOrErrors.Default.return(
+                SearchableInfiniteStreamAbstractRendererState.Default(
+                  streamSource,
                 ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non singleSelection renderer kind "${renderer.kind}" when resolving defaultState for singleSelection`,
-              );
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non singleSelection renderer kind "${renderer.kind}" when resolving defaultState for singleSelection`,
+            );
 
       if (t.kind == "one")
-        return renderer.kind != "baseOneRenderer"
+        return renderer.kind != "oneRenderer"
           ? ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
             )
           : typeof renderer.api == "string"
-            ? tableApiSources == undefined
-              ? ValueOrErrors.Default.throwOne(
-                  `table api sources referenced but no table api sources are provided`,
-                )
-              : tableApiSources(renderer.api) == undefined
+          ? tableApiSources == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `table api sources referenced but no table api sources are provided`,
+              )
+            : tableApiSources(renderer.api) == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `cannot find table api source for ${renderer.api}`,
+              )
+            : t.args[0].kind !== "lookup"
+            ? ValueOrErrors.Default.throwOne(
+                `expected lookup type for one but got ${t.args[0]}`,
+              )
+            : tableApiSources(renderer.api).Then((tableApiSource) =>
+                MapRepo.Operations.tryFindWithError(
+                  t.args[0].name,
+                  types,
+                  () =>
+                    `cannot find lookup type ${JSON.stringify(
+                      t.args[0],
+                    )} in ${JSON.stringify(t)}`,
+                ).Then((lookupType) =>
+                  ValueOrErrors.Default.return(
+                    OneAbstractRendererState.Default((_: string) =>
+                      tableApiSource.getMany(
+                        dispatchFromAPIRawValue(
+                          lookupType,
+                          types,
+                          converters,
+                          injectedPrimitives,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+          : lookupSources == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `lookup sources referenced but no lookup sources are provided`,
+            )
+          : lookupSources(renderer.api[0]) == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `cannot find lookup source for ${renderer.api[0]}`,
+            )
+          : lookupSources(renderer.api[0]).Then((lookupSource) =>
+              lookupSource.one == undefined
                 ? ValueOrErrors.Default.throwOne(
-                    `cannot find table api source for ${renderer.api}`,
+                    `one source not provided for ${renderer.api[0]}`,
                   )
-                : t.args[0].kind !== "lookup"
-                  ? ValueOrErrors.Default.throwOne(
-                      `expected lookup type for one but got ${t.args[0]}`,
-                    )
-                  : tableApiSources(renderer.api).Then((tableApiSource) =>
+                : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                    .Then((oneSource) =>
                       MapRepo.Operations.tryFindWithError(
                         t.args[0].name,
                         types,
@@ -301,8 +323,8 @@ export const dispatchDefaultState =
                           )} in ${JSON.stringify(t)}`,
                       ).Then((lookupType) =>
                         ValueOrErrors.Default.return(
-                          OneAbstractRendererState.Default((_: string) =>
-                            tableApiSource.getMany(
+                          OneAbstractRendererState.Default(
+                            oneSource.getManyUnlinked(
                               dispatchFromAPIRawValue(
                                 lookupType,
                                 types,
@@ -313,63 +335,26 @@ export const dispatchDefaultState =
                           ),
                         ),
                       ),
-                    )
-            : lookupSources == undefined
-              ? ValueOrErrors.Default.throwOne(
-                  `lookup sources referenced but no lookup sources are provided`,
-                )
-              : lookupSources(renderer.api[0]) == undefined
-                ? ValueOrErrors.Default.throwOne(
-                    `cannot find lookup source for ${renderer.api[0]}`,
-                  )
-                : lookupSources(renderer.api[0]).Then((lookupSource) =>
-                    lookupSource.one == undefined
-                      ? ValueOrErrors.Default.throwOne(
-                          `one source not provided for ${renderer.api[0]}`,
-                        )
-                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
-                          .Then((oneSource) =>
-                            MapRepo.Operations.tryFindWithError(
-                              t.args[0].name,
-                              types,
-                              () =>
-                                `cannot find lookup type ${JSON.stringify(
-                                  t.args[0],
-                                )} in ${JSON.stringify(t)}`,
-                            ).Then((lookupType) =>
-                              ValueOrErrors.Default.return(
-                                OneAbstractRendererState.Default(
-                                  oneSource.getManyUnlinked(
-                                    dispatchFromAPIRawValue(
-                                      lookupType,
-                                      types,
-                                      converters,
-                                      injectedPrimitives,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                  );
+                    ),
+            );
 
       if (t.kind == "multiSelection")
-        return renderer.kind == "baseEnumRenderer"
+        return renderer.kind == "enumRenderer"
           ? ValueOrErrors.Default.return(EnumAbstractRendererState().Default())
-          : renderer.kind == "baseStreamRenderer"
-            ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
-                ValueOrErrors.Default.return(
-                  SearchableInfiniteStreamAbstractRendererState.Default(
-                    streamSource,
-                  ),
+          : renderer.kind == "streamRenderer"
+          ? infiniteStreamSources(renderer.stream).Then((streamSource) =>
+              ValueOrErrors.Default.return(
+                SearchableInfiniteStreamAbstractRendererState.Default(
+                  streamSource,
                 ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultState for multiSelection`,
-              );
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultState for multiSelection`,
+            );
 
       if (t.kind == "list")
-        return renderer.kind == "baseListRenderer"
+        return renderer.kind == "listRenderer"
           ? ValueOrErrors.Default.return(
               ListAbstractRendererState.Default.zero(),
             )
@@ -378,7 +363,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "map")
-        return renderer.kind == "baseMapRenderer"
+        return renderer.kind == "mapRenderer"
           ? ValueOrErrors.Default.return(
               MapAbstractRendererState().Default.zero(),
             )
@@ -387,7 +372,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "tuple")
-        return renderer.kind == "baseTupleRenderer"
+        return renderer.kind == "tupleRenderer"
           ? ValueOrErrors.Operations.All(
               List<
                 ValueOrErrors<
@@ -404,8 +389,9 @@ export const dispatchDefaultState =
                     converters,
                     lookupSources,
                     tableApiSources,
-                  )(_, renderer.itemRenderers[index]).Then((itemState) =>
-                    ValueOrErrors.Default.return([index, itemState]),
+                  )(_, renderer.itemRenderers[index].renderer).Then(
+                    (itemState) =>
+                      ValueOrErrors.Default.return([index, itemState]),
                   ),
                 ),
               ),
@@ -421,7 +407,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "sum")
-        return renderer.kind == "baseSumRenderer"
+        return renderer.kind == "sumRenderer"
           ? dispatchDefaultState(
               infiniteStreamSources,
               injectedPrimitives,
@@ -430,10 +416,10 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
-            )(t.args[0], renderer.leftRenderer).Then((left) =>
+            )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
               renderer.rightRenderer == undefined
                 ? ValueOrErrors.Default.throwOne(
-                    `rightRenderer is undefined when resolving defaultState sum view ${renderer.concreteRendererName}`,
+                    `rightRenderer is undefined when resolving defaultState sum view ${renderer.renderer}`,
                   )
                 : dispatchDefaultState(
                     infiniteStreamSources,
@@ -443,7 +429,7 @@ export const dispatchDefaultState =
                     converters,
                     lookupSources,
                     tableApiSources,
-                  )(t.args[1], renderer.rightRenderer).Then((right) =>
+                  )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRendererState().Default({
                         left,
@@ -452,34 +438,44 @@ export const dispatchDefaultState =
                     ),
                   ),
             )
-          : renderer.kind == "baseSumUnitDateRenderer"
-            ? ValueOrErrors.Default.return(
-                SumAbstractRendererState().Default({
-                  left: UnitAbstractRendererState.Default(),
-                  right: DateAbstractRendererState.Default(),
-                }),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `renderer kind "${renderer.kind}" not supported for sum`,
-              );
+          : renderer.kind == "sumUnitDateRenderer"
+          ? ValueOrErrors.Default.return(
+              SumAbstractRendererState().Default({
+                left: UnitAbstractRendererState.Default(),
+                right: DateAbstractRendererState.Default(),
+              }),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `renderer kind "${renderer.kind}" not supported for sum`,
+            );
 
       if (t.kind == "record")
-        return renderer.kind == "recordForm"
+        return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<[string, PredicateValue], string>>(
                 t.fields
                   .entrySeq()
-                  .map(([fieldName, field]) =>
-                    dispatchDefaultState(
-                      infiniteStreamSources,
-                      injectedPrimitives,
-                      types,
-                      forms,
-                      converters,
-                      lookupSources,
-                      tableApiSources,
-                    )(field, renderer.fields.get(fieldName)!).Then((value) =>
-                      ValueOrErrors.Default.return([fieldName, value] as const),
+                  .map(([fieldName, fieldType]) =>
+                    MapRepo.Operations.tryFindWithError(
+                      fieldName,
+                      renderer.fields,
+                      () =>
+                        `field ${fieldName} not found in renderer ${renderer.renderer} fields`,
+                    ).Then((fieldRenderer) =>
+                      dispatchDefaultState(
+                        infiniteStreamSources,
+                        injectedPrimitives,
+                        types,
+                        forms,
+                        converters,
+                        lookupSources,
+                        tableApiSources,
+                      )(fieldType, fieldRenderer.renderer).Then((value) =>
+                        ValueOrErrors.Default.return([
+                          fieldName,
+                          value,
+                        ] as const),
+                      ),
                     ),
                   ),
               ),
@@ -493,7 +489,7 @@ export const dispatchDefaultState =
             );
 
       if (t.kind == "union") {
-        return renderer.kind == "baseUnionRenderer"
+        return renderer.kind == "unionRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<[string, any], string>>(
                 renderer.cases
@@ -532,8 +528,7 @@ export const dispatchDefaultState =
       }
 
       if (t.kind == "table") {
-        return renderer.kind == "tableForm" ||
-          renderer.kind == "baseTableRenderer"
+        return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(AbstractTableRendererState.Default())
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultState for table`,
@@ -541,35 +536,32 @@ export const dispatchDefaultState =
       }
 
       if (t.kind == "lookup") {
-        if (renderer.kind != "baseLookupRenderer") {
+        if (renderer.kind != "lookupRenderer")
           return ValueOrErrors.Default.throwOne(
             `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for lookup`,
           );
-        }
 
-        const lookupType = types.get(t.name);
-
-        if (lookupType == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `lookup type ${t.name} not found in types`,
-          );
-        }
-        const formRenderer = forms.get(renderer.lookupRendererName);
-        if (formRenderer == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `lookup form renderer ${renderer.lookupRendererName} not found in forms`,
-          );
-        }
-
-        return dispatchDefaultState(
-          infiniteStreamSources,
-          injectedPrimitives,
+        MapRepo.Operations.tryFindWithError(
+          t.name,
           types,
-          forms,
-          converters,
-          lookupSources,
-          tableApiSources,
-        )(lookupType, formRenderer);
+          () => `lookup type ${t.name} not found in types`,
+        ).Then((lookupType) =>
+          MapRepo.Operations.tryFindWithError(
+            renderer.name,
+            forms,
+            () => `lookup form renderer ${renderer.name} not found in forms`,
+          ).Then((formRenderer) =>
+            dispatchDefaultState(
+              infiniteStreamSources,
+              injectedPrimitives,
+              types,
+              forms,
+              converters,
+              lookupSources,
+              tableApiSources,
+            )(lookupType, formRenderer),
+          ),
+        );
       }
 
       return ValueOrErrors.Default.throwOne(
@@ -588,60 +580,50 @@ export const dispatchDefaultValue =
   <T>(
     injectedPrimitives: InjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
-    forms: Map<string, FormRenderer<T>>,
+    forms: Map<string, Renderer<T>>,
   ) =>
   (
     t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | FormRenderer<any>,
+    renderer: Renderer<T>,
   ): ValueOrErrors<PredicateValue, string> => {
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(PredicateValue.Default.unit());
       }
       if (t.kind == "primitive")
-        return renderer.kind != "basePrimitiveRenderer"
+        return renderer.kind != "lookupRenderer"
           ? ValueOrErrors.Default.throwOne(
               `received non primitive renderer kind "${renderer.kind}" when resolving defaultValue for primitive`,
             )
           : t.name == "unit"
-            ? ValueOrErrors.Default.return(PredicateValue.Default.unit())
-            : t.name == "boolean"
-              ? ValueOrErrors.Default.return(PredicateValue.Default.boolean())
-              : t.name == "number"
-                ? ValueOrErrors.Default.return(PredicateValue.Default.number())
-                : t.name == "string"
-                  ? ValueOrErrors.Default.return(
-                      PredicateValue.Default.string(),
-                    )
-                  : t.name == "base64File"
-                    ? ValueOrErrors.Default.return(
-                        PredicateValue.Default.string(),
-                      )
-                    : t.name == "secret"
-                      ? ValueOrErrors.Default.return(
-                          PredicateValue.Default.string(),
-                        )
-                      : t.name == "Date"
-                        ? ValueOrErrors.Default.return(
-                            PredicateValue.Default.date(),
-                          )
-                        : injectedPrimitives?.injectedPrimitives.get(
-                              t.name as keyof T,
-                            ) != undefined
-                          ? ValueOrErrors.Default.return(
-                              injectedPrimitives.injectedPrimitives.get(
-                                t.name as keyof T,
-                              )!.defaultValue,
-                            )
-                          : ValueOrErrors.Default.throwOne(
-                              `could not resolve defaultValue for primitive renderer type "${
-                                t.name as string
-                              }"`,
-                            );
+          ? ValueOrErrors.Default.return(PredicateValue.Default.unit())
+          : t.name == "boolean"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.boolean())
+          : t.name == "number"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.number())
+          : t.name == "string"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "base64File"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "secret"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.string())
+          : t.name == "Date"
+          ? ValueOrErrors.Default.return(PredicateValue.Default.date())
+          : injectedPrimitives?.injectedPrimitives.get(t.name as keyof T) !=
+            undefined
+          ? ValueOrErrors.Default.return(
+              injectedPrimitives.injectedPrimitives.get(t.name as keyof T)!
+                .defaultValue,
+            )
+          : ValueOrErrors.Default.throwOne(
+              `could not resolve defaultValue for primitive renderer type "${
+                t.name as string
+              }"`,
+            );
 
       if (t.kind == "singleSelection")
-        return renderer.kind == "baseEnumRenderer" ||
-          renderer.kind == "baseStreamRenderer"
+        return renderer.kind == "enumRenderer" ||
+          renderer.kind == "streamRenderer"
           ? ValueOrErrors.Default.return(
               PredicateValue.Default.option(
                 false,
@@ -653,29 +635,29 @@ export const dispatchDefaultValue =
             );
 
       if (t.kind == "multiSelection")
-        return renderer.kind == "baseEnumRenderer" ||
-          renderer.kind == "baseStreamRenderer"
+        return renderer.kind == "enumRenderer" ||
+          renderer.kind == "streamRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.record(Map()))
           : ValueOrErrors.Default.throwOne(
               `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultValue for multiSelection`,
             );
 
       if (t.kind == "list")
-        return renderer.kind == "baseListRenderer"
+        return renderer.kind == "listRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.tuple(List()))
           : ValueOrErrors.Default.throwOne(
               `received non list renderer kind "${renderer.kind}" when resolving defaultValue for list`,
             );
 
       if (t.kind == "map")
-        return renderer.kind == "baseMapRenderer"
+        return renderer.kind == "mapRenderer"
           ? ValueOrErrors.Default.return(PredicateValue.Default.tuple(List()))
           : ValueOrErrors.Default.throwOne(
               `received non map renderer kind "${renderer.kind}" when resolving defaultValue for map`,
             );
 
       if (t.kind == "tuple")
-        return renderer.kind == "baseTupleRenderer"
+        return renderer.kind == "tupleRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<PredicateValue, string>>(
                 t.args.map((_, index) =>
@@ -683,7 +665,7 @@ export const dispatchDefaultValue =
                     injectedPrimitives,
                     types,
                     forms,
-                  )(_, renderer.itemRenderers[index]),
+                  )(_, renderer.itemRenderers[index].renderer),
                 ),
               ),
             ).Then((values) =>
@@ -696,28 +678,28 @@ export const dispatchDefaultValue =
             );
 
       if (t.kind == "sum")
-        return renderer.kind == "baseSumRenderer"
+        return renderer.kind == "sumRenderer"
           ? dispatchDefaultValue(
               injectedPrimitives,
               types,
               forms,
-            )(t.args[0], renderer.leftRenderer).Then((left) =>
+            )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
               ValueOrErrors.Default.return(
                 PredicateValue.Default.sum(Sum.Default.left(left)),
               ),
             )
-          : renderer.kind == "baseSumUnitDateRenderer"
-            ? ValueOrErrors.Default.return(
-                PredicateValue.Default.sum(
-                  Sum.Default.left(PredicateValue.Default.unit()),
-                ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `received non sum renderer kind "${renderer.kind}" when resolving defaultValue for sum`,
-              );
+          : renderer.kind == "sumUnitDateRenderer"
+          ? ValueOrErrors.Default.return(
+              PredicateValue.Default.sum(
+                Sum.Default.left(PredicateValue.Default.unit()),
+              ),
+            )
+          : ValueOrErrors.Default.throwOne(
+              `received non sum renderer kind "${renderer.kind}" when resolving defaultValue for sum`,
+            );
 
       if (t.kind == "record")
-        return renderer.kind == "recordForm"
+        return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<[string, PredicateValue], string>>(
                 t.fields
@@ -727,8 +709,12 @@ export const dispatchDefaultValue =
                       injectedPrimitives,
                       types,
                       forms,
-                    )(field, renderer.fields.get(fieldName)!).Then((value) =>
-                      ValueOrErrors.Default.return([fieldName, value] as const),
+                    )(field, renderer.fields.get(fieldName)!.renderer).Then(
+                      (value) =>
+                        ValueOrErrors.Default.return([
+                          fieldName,
+                          value,
+                        ] as const),
                     ),
                   ),
               ),
@@ -743,56 +729,50 @@ export const dispatchDefaultValue =
 
       // TODO -- needs more thought
       if (t.kind == "union") {
-        if (renderer.kind != "baseUnionRenderer") {
-          return ValueOrErrors.Default.throwOne(
-            `received non union renderer kind "${renderer.kind}" when resolving defaultValue for union`,
-          );
-        }
-
-        const firstCase = t.args.first();
-        if (firstCase == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `union type ${t.name} has no cases`,
-          );
-        }
-        const firstCaseRenderer = renderer.cases.first();
-        if (firstCaseRenderer == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `union renderer ${renderer.concreteRendererName} has no cases`,
-          );
-        }
-
-        return dispatchDefaultValue(
-          injectedPrimitives,
-          types,
-          forms,
-        )(firstCase, firstCaseRenderer);
+        return renderer.kind != "unionRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non union renderer kind "${renderer.kind}" when resolving defaultValue for union`,
+            )
+          : MapRepo.Operations.tryFirstWithError(
+              t.args,
+              () => `union type ${t.name} has no cases`,
+            ).Then((firstCaseType) =>
+              MapRepo.Operations.tryFirstWithError(
+                renderer.cases,
+                () => `union renderer has no cases`,
+              ).Then((firstCaseRenderer) =>
+                dispatchDefaultValue(
+                  injectedPrimitives,
+                  types,
+                  forms,
+                )(firstCaseType, firstCaseRenderer),
+              ),
+            );
       }
 
-      if (t.kind == "lookup") {
-        if (renderer.kind != "baseLookupRenderer") {
-          return ValueOrErrors.Default.throwOne(
-            `received non lookup renderer kind "${renderer.kind}" when resolving defaultValue for lookup`,
-          );
-        }
-        const lookupType = types.get(t.name);
-        if (lookupType == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `lookup type ${t.name} not found in types`,
-          );
-        }
-        const formRenderer = forms.get(renderer.lookupRendererName);
-        if (formRenderer == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `lookup form renderer ${renderer.lookupRendererName} not found in forms`,
-          );
-        }
-        return dispatchDefaultValue(
-          injectedPrimitives,
-          types,
-          forms,
-        )(lookupType, formRenderer);
-      }
+      if (t.kind == "lookup")
+        return renderer.kind != "lookupRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non lookup renderer kind "${renderer.kind}" when resolving defaultValue for lookup`,
+            )
+          : MapRepo.Operations.tryFindWithError(
+              t.name,
+              types,
+              () => `lookup type ${t.name} not found in types`,
+            ).Then((lookupType) =>
+              MapRepo.Operations.tryFindWithError(
+                renderer.name,
+                forms,
+                () =>
+                  `lookup form renderer ${renderer.name} not found in forms`,
+              ).Then((formRenderer) =>
+                dispatchDefaultValue(
+                  injectedPrimitives,
+                  types,
+                  forms,
+                )(lookupType, formRenderer),
+              ),
+            );
 
       return ValueOrErrors.Default.throwOne(
         `type of kind ${t.kind} not supported by defaultValue`,

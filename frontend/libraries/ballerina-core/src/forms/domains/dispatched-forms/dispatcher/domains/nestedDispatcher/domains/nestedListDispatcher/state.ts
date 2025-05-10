@@ -6,12 +6,12 @@ import {
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { BaseListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/list/state";
+import { ListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
 
 export const NestedListDispatcher = {
   Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
     type: ListType<T>,
-    renderer: BaseListRenderer<T>,
+    renderer: ListRenderer<T>,
     dispatcherContext: DispatcherContext<T>,
   ): ValueOrErrors<Template<any, any, any, any>, string> =>
     NestedDispatcher.Operations.DispatchAs(
@@ -22,13 +22,13 @@ export const NestedListDispatcher = {
     )
       .Then((elementTemplate) =>
         dispatcherContext
-          .defaultState(type.args[0], renderer.elementRenderer)
+          .defaultState(type.args[0], renderer.elementRenderer.renderer)
           .Then((defaultElementState) =>
             dispatcherContext
-              .defaultValue(type.args[0], renderer.elementRenderer)
+              .defaultValue(type.args[0], renderer.elementRenderer.renderer)
               .Then((defaultElementValue) =>
                 dispatcherContext
-                  .getConcreteRenderer("list", renderer.concreteRendererName)
+                  .getConcreteRenderer("list", renderer.renderer)
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return(
                       ListAbstractRenderer(
