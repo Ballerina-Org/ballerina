@@ -89,7 +89,12 @@ export const RecordRenderer = {
       serialized?: unknown,
     ): ValueOrErrors<Renderer<T> | undefined, string> =>
       serialized
-        ? Renderer.Operations.Deserialize(type, serialized,concreteRenderers, types)
+        ? Renderer.Operations.Deserialize(
+            type,
+            serialized,
+            concreteRenderers,
+            types,
+          )
         : ValueOrErrors.Default.return(undefined),
 
     Deserialize: <T>(
@@ -105,30 +110,31 @@ export const RecordRenderer = {
               validRecordForm.fields
                 .toArray()
                 .map(([fieldName, recordFieldRenderer]: [string, unknown]) =>
-                  (console.debug('fieldName', type.fields), MapRepo.Operations.tryFindWithError(
+                  MapRepo.Operations.tryFindWithError(
                     fieldName,
                     type.fields,
                     () => `Cannot find field type for ${fieldName} in fields`,
-                  )).Then((fieldType) =>
-                    (console.debug('fieldType', fieldType), RecordFieldRenderer.Deserialize(
+                  ).Then((fieldType) =>
+                    RecordFieldRenderer.Deserialize(
                       fieldType,
                       recordFieldRenderer,
                       concreteRenderers,
                       types,
-                    )).Then((renderer) =>
+                      fieldName,
+                    ).Then((renderer) =>
                       ValueOrErrors.Default.return([fieldName, renderer]),
                     ),
                   ),
-                )
+                ),
             ),
           )
             .Then((fieldTuples) =>
-              (console.debug('fieldTuples', fieldTuples), RecordRenderer.Operations.DeserializeRenderer(
+              RecordRenderer.Operations.DeserializeRenderer(
                 type,
                 concreteRenderers,
                 types,
                 validRecordForm.renderer,
-              )).Then((renderer) =>
+              ).Then((renderer) =>
                 FormLayout.Operations.ParseLayout(validRecordForm)
                   .Then((tabs) =>
                     ValueOrErrors.Default.return(

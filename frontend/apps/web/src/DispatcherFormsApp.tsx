@@ -297,6 +297,8 @@ export const DispatcherFormsApp = (props: {}) => {
                       DispatchPersonFromConfigApis.streamApis,
                     enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
                     entityApis: DispatchPersonFromConfigApis.entityApis,
+                    tableApiSources: DispatchPersonFromConfigApis.tableApiSources,
+                    lookupSources: DispatchPersonFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     injectedPrimitives: Map([
                       [

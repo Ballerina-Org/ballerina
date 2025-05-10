@@ -58,6 +58,7 @@ export const RecordFieldRenderer = {
     serialized: unknown,
     concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
     types: Map<string, DispatchParsedType<T>>,
+    fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
       (validatedSerialized) =>
@@ -65,7 +66,7 @@ export const RecordFieldRenderer = {
           type,
           validatedSerialized,
           concreteRenderers,
-          `Record field renderer`,
+          `Record field renderer for field ${fieldName}`,
           types,
         ).Then((deserializedNestedRenderer) =>
           RecordFieldRenderer.ComputeVisibility(

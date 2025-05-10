@@ -30,6 +30,7 @@ import { SerializedUnionRenderer, UnionRenderer } from "./domains/union/state";
 import { SerializedTupleRenderer, TupleRenderer } from "./domains/tuple/state";
 import { SerializedTableRenderer, TableRenderer } from "./domains/table/state";
 import { ConcreteRendererKinds } from "../../../../../../../built-ins/state";
+import { MapRepo } from "../../../../../../../../../../collections/domains/immutable/domains/map/state";
 
 export type CommonSerializedRendererProperties = {
   renderer?: unknown;
@@ -77,6 +78,8 @@ export const Renderer = {
       isObject(_) && "options" in _,
     HasStream: (_: unknown): _ is SerializedStreamRenderer =>
       isObject(_) && "stream" in _,
+    HasColumns: (_: unknown): _ is SerializedTableRenderer =>
+      isObject(_) && "columns" in _,
     IsSumUnitDate: (
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
@@ -91,23 +94,35 @@ export const Renderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<Renderer<T>, string> => {
-      return Renderer.Operations.Deserialize(
+    ): ValueOrErrors<Renderer<T>, string> =>
+      Renderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
-      );
-    },
+      ),
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<Renderer<T>, string> =>
-      typeof serialized == "string"
+      type.kind == "lookup"
+        ? MapRepo.Operations.tryFindWithError(
+            type.name,
+            types,
+            () => `cannot find lookup type ${type.typeName} in types`,
+          ).Then((lookupType) =>
+            Renderer.Operations.Deserialize(
+              lookupType,
+              serialized,
+              concreteRenderers,
+              types,
+            ),
+          )
+        : typeof serialized == "string"
         ? LookupRenderer.Operations.Deserialize(type, serialized)
         : Renderer.Operations.HasOptions(serialized) &&
           (type.kind == "singleSelection" || type.kind == "multiSelection")
@@ -120,6 +135,13 @@ export const Renderer = {
         : Renderer.Operations.HasStream(serialized) &&
           (type.kind == "singleSelection" || type.kind == "multiSelection")
         ? StreamRenderer.Operations.Deserialize(
+            type,
+            serialized,
+            concreteRenderers,
+            types,
+          )
+        : Renderer.Operations.HasColumns(serialized) && type.kind == "table"
+        ? TableRenderer.Operations.Deserialize(
             type,
             serialized,
             concreteRenderers,

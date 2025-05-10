@@ -7,8 +7,16 @@ import {
   DispatchInfiniteStreamSources,
   ValueOrErrors,
   DispatchEnumOptionsSources,
+  DispatchTableApiSource,
+  BasicFun,
+  PredicateValue,
+  ValueStreamPosition,
+  AbstractTableRendererState,
+  DispatchTableApiSources,
+  DispatchOneSource,
+  DispatchLookupSources,
 } from "ballerina-core";
-import { OrderedMap, List } from "immutable";
+import { Range, Map } from "immutable";
 import { City } from "../../address/state";
 import { AddressApi } from "../../address/apis/mocks";
 import { v4 } from "uuid";
@@ -19,12 +27,197 @@ const colors = ["Red", "Green", "Blue"];
 const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
 
+const getActiveUsers: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Name: "Jane",
+      Surname: "Doe",
+      Birthday: "1990-01-01",
+      Email: "jane.doe@example.com",
+      SubscribeToNewsletter: true,
+      InactiveUsers: {
+        Values: Range(1, 2)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: true,
+        From: 0,
+        To: 10,
+      },
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: "Jane",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "jane.doe@example.com",
+            SubscribeToNewsletter: true,
+            InactiveUsers: {
+              Values: Range(1, 11)
+                .map((_) => ({
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  InactiveUsers: {
+                    Values: Range(1, 2)
+                      .map((_) => ({
+                        Id: v4(),
+                        Name: faker.person.firstName(),
+                        Surname: faker.person.lastName(),
+                        Birthday: faker.date.birthdate().toISOString(),
+                        Email: faker.internet.email(),
+                        SubscribeToNewsletter: faker.datatype.boolean(),
+                      }))
+                      .reduce((acc, curr) => {
+                        acc[curr.Id] = curr;
+                        return acc;
+                      }, {} as any),
+                    HasMore: true,
+                    From: 0,
+                    To: 10,
+                  },
+                }))
+                .reduce((acc, curr) => {
+                  acc[curr.Id] = curr;
+                  return acc;
+                }, {} as any),
+              HasMore: true,
+              From: 0,
+              To: 10,
+            },
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: "John",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "john.doe@example.com",
+            SubscribeToNewsletter: true,
+            InactiveUsers: {
+              Values: Range(1, 2)
+                .map((_) => ({
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                }))
+                .reduce((acc, curr) => {
+                  acc[curr.Id] = curr;
+                  return acc;
+                }, {} as any),
+              HasMore: true,
+              From: 0,
+              To: 10,
+            },
+          },
+        },
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const getAdminLookup: DispatchOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: v4(),
+      Name: "Admin",
+      Surname: "User",
+      Birthday: "1990-01-01",
+      Email: "admin.user@example.com",
+      SubscribeToNewsletter: true,
+    }));
+  },
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const lookupSources: DispatchLookupSources = (typeName: string) =>
+  typeName == "User"
+    ? ValueOrErrors.Default.return({
+        one: (apiName: string) =>
+          apiName == "AdminApi"
+            ? ValueOrErrors.Default.return(getAdminLookup)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
+    : ValueOrErrors.Default.throwOne(
+        `can't find type ${typeName} when getting lookup api source`,
+      );
+
+const tableApiSources: DispatchTableApiSources = (streamName: string) =>
+  streamName == "ActiveUsersApi"
+    ? ValueOrErrors.Default.return(getActiveUsers)
+    : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
+
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
   streamName == "departments"
     ? ValueOrErrors.Default.return(PersonApi.getDepartments())
     : streamName == "cities"
-      ? ValueOrErrors.Default.return(AddressApi.getCities())
-      : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
+    ? ValueOrErrors.Default.return(AddressApi.getCities())
+    : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "colors"
@@ -37,57 +230,55 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
         ),
       )
     : enumName == "permissions"
-      ? ValueOrErrors.Default.return(() =>
-          PromiseRepo.Default.mock(
-            () => permissions.map((_) => ({ Value: _ })),
-            undefined,
-            1,
-            0,
-          ),
-        )
-      : enumName == "genders"
-        ? ValueOrErrors.Default.return(() =>
-            PromiseRepo.Default.mock(
-              () => genders.map((_) => ({ Value: _ })),
-              undefined,
-              1,
-              0,
-            ),
-          )
-        : enumName == "interests"
-          ? ValueOrErrors.Default.return(() =>
-              PromiseRepo.Default.mock(
-                () => interests.map((_) => ({ Value: _ })),
-                undefined,
-                1,
-                0,
-              ),
-            )
-          : enumName == "addressesFields"
-            ? ValueOrErrors.Default.return(() =>
-                PromiseRepo.Default.mock(
-                  () =>
-                    [
-                      "addressesByCity",
-                      "departments",
-                      "schoolAddress",
-                      "mainAddress",
-                      "addressesAndAddressesWithLabel",
-                      "addressesWithColorLabel",
-                      "addressesBy",
-                      "permissions",
-                      "cityByDepartment",
-                      "holidays",
-                      "friendsAddresses",
-                    ].map((_) => ({ Value: _ })),
-                  undefined,
-                  1,
-                  0,
-                ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `Cannot find enum API ${enumName}`,
-              );
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => permissions.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "genders"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => genders.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "interests"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => interests.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "addressesFields"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () =>
+            [
+              "addressesByCity",
+              "departments",
+              "schoolAddress",
+              "mainAddress",
+              "addressesAndAddressesWithLabel",
+              "addressesWithColorLabel",
+              "addressesBy",
+              "permissions",
+              "cityByDepartment",
+              "holidays",
+              "friendsAddresses",
+            ].map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : ValueOrErrors.Default.throwOne(`Cannot find enum API ${enumName}`);
 const entityApis: EntityApis = {
   create: (apiName: string) =>
     apiName == "person"
@@ -602,5 +793,7 @@ export const DispatchPersonFromConfigApis = {
   streamApis,
   enumApis,
   entityApis,
+  tableApiSources,
+  lookupSources,
 };
 //

@@ -18,7 +18,10 @@ import {
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
-import { ConcreteRendererKinds, DispatchApiConverters } from "../../../built-ins/state";
+import {
+  ConcreteRendererKinds,
+  DispatchApiConverters,
+} from "../../../built-ins/state";
 import { Renderer } from "./domains/forms/domains/renderer/state";
 
 // TODO -- either add the lookups to merge, or remove the front end merger
@@ -110,7 +113,7 @@ export const Specification = {
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
-            !DispatchIsObject(form) ||
+            (console.debug("form", formName), !DispatchIsObject(form)) ||
             !("type" in form) ||
             typeof form.type != "string"
               ? ValueOrErrors.Default.throwOne(
@@ -273,11 +276,6 @@ export const Specification = {
                               Map<DispatchTypeName, DispatchParsedType<T>>(),
                             ),
                           ),
-                        ),
-                      )
-                      .Then((unresolvedTypes) =>
-                        DispatchParsedType.Operations.EvaluateLookupTypes(
-                          unresolvedTypes,
                         ),
                       )
                       .Then((allTypes) =>

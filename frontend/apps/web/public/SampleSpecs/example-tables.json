@@ -67,12 +67,6 @@
     }
   },
   "forms": {
-    "User": {
-      "type": "User",
-      "fields": {
-      },
-      "tabs": {}
-    },
     "InactiveUsers": {
       "type": "User",
       "renderer": "streamingTable",
@@ -100,7 +94,54 @@
         }
       },
       "detailsRenderer": {
-        "renderer": "User"
+        "type": "User",
+        "renderer": "userDetails",
+        "fields": {
+          "Name": {
+            "label": "First Name",
+            "renderer": "defaultString"
+          },
+          "Surname": {
+            "label": "Last Name",
+            "renderer": "defaultString",
+            "disabled": true
+          },
+          "Email": {
+            "label": "Email",
+            "renderer": "defaultString"
+          },
+          "Birthday": {
+            "label": "Birthday",
+            "renderer": "defaultDate"
+          },
+          "SubscribeToNewsletter": {
+            "label": "Subscribe to Newsletter",
+            "renderer": "defaultBoolean"
+          },
+          "InactiveUsers": {
+            "label": "Active Users",
+            "renderer": "InactiveUsers",
+            "api": "ActiveUsersApi"
+          }
+        },
+        "tabs": {
+          "main": {
+            "columns": {
+              "main": {
+                "groups": {
+                  "main": [
+                    "Name",
+                    "Surname",
+                    "Email",
+                    "Birthday",
+                    "SubscribeToNewsletter",
+                    "InactiveUsers"
+                  ]
+                }
+              }
+            }
+          }
+        }
       },
       "visibleColumns": ["Name", "Surname"]
     },
@@ -117,7 +158,8 @@
           "renderer": "admin",
           "detailsRenderer": {
             "renderer": {
-              "type": "User",       
+              "type": "User",
+              "renderer": "userDetails",
               "fields": {
                 "Name": {
                   "label": "First Name",
@@ -152,6 +194,29 @@
                           "Email",
                           "SubscribeToNewsletter"
                         ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "renderer": "preview",
+              "fields": {
+                "Surname": {
+                  "renderer": "defaultString",
+                  "disabled": true
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Surname"]
                       }
                     }
                   }

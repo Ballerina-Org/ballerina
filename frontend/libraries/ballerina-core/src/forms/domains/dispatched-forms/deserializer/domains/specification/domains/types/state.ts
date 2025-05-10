@@ -756,6 +756,22 @@ export const DispatchParsedType = {
         errors.map((error) => `${error}\n...When parsing type "${typeName}"`),
       );
     },
+    ResolveLookupType: <T>(
+      typeName: string,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      MapRepo.Operations.tryFindWithError(
+        typeName,
+        types,
+        () => `cannot find lookup type ${typeName} in types`,
+      ),
+    AsResolvedType: <T>(
+      type: DispatchParsedType<T>,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      type.kind == "lookup"
+        ? DispatchParsedType.Operations.ResolveLookupType(type.name, types)
+        : ValueOrErrors.Default.return(type),
     ExtendDispatchParsedTypes: <T>(
       DispatchParsedTypes: Map<DispatchTypeName, DispatchParsedType<T>>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
@@ -815,33 +831,5 @@ export const DispatchParsedType = {
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When extending types`),
         ),
-    EvaluateLookupTypes: <T>(
-      DispatchParsedTypes: Map<DispatchTypeName, DispatchParsedType<T>>,
-    ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
-      ValueOrErrors.Operations.All(
-        List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
-          DispatchParsedTypes.entrySeq()
-            .toArray()
-            .map(([name, dispatchParsedType]) =>
-              dispatchParsedType.kind != "lookup"
-                ? ValueOrErrors.Default.return([name, dispatchParsedType])
-                : MapRepo.Operations.tryFindWithError<
-                    string,
-                    DispatchParsedType<T>,
-                    string
-                  >(
-                    name,
-                    DispatchParsedTypes,
-                    () => `Lookup type ${name} not found`,
-                  ).Then((resolvedType) =>
-                    ValueOrErrors.Default.return([name, resolvedType]),
-                  ),
-            ),
-        ),
-      ).Then((evaluatedTypes) =>
-        ValueOrErrors.Default.return(Map(evaluatedTypes)),
-      ).MapErrors((errors) =>
-        errors.map((error) => `${error}\n...When evaluating lookup types`),
-      ),
   },
 };
