@@ -1,8 +1,8 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module Renderers =
-  open Patterns
-  open Expr
+  open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Parser.Expr
 
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model

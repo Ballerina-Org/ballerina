@@ -1,4 +1,4 @@
-namespace Ballerina.DSL.FormEngine.Parser
+namespace Ballerina.DSL.Parser
 
 module ExprType =
   open Patterns

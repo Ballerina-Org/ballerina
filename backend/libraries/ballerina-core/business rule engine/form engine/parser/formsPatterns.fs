@@ -1,7 +1,7 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module FormsPatterns =
-  open Ballerina.DSL.FormEngine.Parser.Patterns
+  open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Collections.Sum

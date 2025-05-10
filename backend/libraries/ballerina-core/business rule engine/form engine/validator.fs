@@ -4,7 +4,7 @@ module Validator =
 
   open Ballerina.Core.Object
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.FormEngine.Parser.Patterns
+  open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.FormEngine.Parser.FormsPatterns
   open Ballerina.DSL.Model
   open Ballerina.Collections.Tuple

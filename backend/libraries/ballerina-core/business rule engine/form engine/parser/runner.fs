@@ -2,8 +2,8 @@ namespace Ballerina.DSL.FormEngine.Parser
 
 module Runner =
   open Model
-  open Patterns
-  open ExprType
+  open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Parser.ExprType
   open Renderers
 
   open Ballerina.DSL.FormEngine.Model
