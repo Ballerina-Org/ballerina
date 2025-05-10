@@ -83,7 +83,7 @@ export const OneAbstractRenderer = (
     return {
       value,
       ...state,
-      disabled: false, // to do think about
+      disabled: _.disabled,
       bindings: _.bindings,
       extraContext: _.extraContext,
       identifiers: {
@@ -165,7 +165,7 @@ export const OneAbstractRenderer = (
         ..._,
         ...state,
         value,
-        disabled: false, // to do think about
+        disabled: _.disabled,
         bindings: _.bindings,
         extraContext: _.extraContext,
         identifiers: {

@@ -13,21 +13,16 @@ export const RecordFieldDispatcher = {
       renderer: RecordFieldRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      return NestedDispatcher.Operations.Dispatch(renderer, dispatcherContext, fieldName)
-        .Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              visible: renderer.visible,
-              disabled: renderer.disabled,
-            })),
-          ),
-        )
-        .MapErrors((errors) =>
-          errors.map(
-            (error) => `${error}\n...When dispatching field ${fieldName}`,
-          ),
-        );
+      return NestedDispatcher.Operations.Dispatch(
+        renderer,
+        dispatcherContext,
+        fieldName,
+      )
+      .MapErrors((errors) =>
+        errors.map(
+          (error) => `${error}\n...When dispatching field ${fieldName}`,
+        ),
+      )
     },
   },
 };

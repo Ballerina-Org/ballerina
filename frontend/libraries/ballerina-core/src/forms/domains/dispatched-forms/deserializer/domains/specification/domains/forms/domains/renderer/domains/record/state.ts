@@ -103,7 +103,7 @@ export const RecordRenderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<RecordRenderer<T>, string> =>
-      (console.debug('ser', serialized), RecordRenderer.Operations.tryAsValidRecordForm(serialized)).Then(
+      RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
         (validRecordForm) =>
           ValueOrErrors.Operations.All(
             List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(

@@ -76,8 +76,9 @@ export type DispatchApiConverters<
 > = { [key in keyof T]: ApiConverter<T[key]["type"]> } & BuiltInApiConverters;
 
 type RawUnion = {
-  [caseName: string]: Record<string, any>;
-} & { Discriminator: string };
+  caseName: string,
+  fields: Record<string, any>
+};
 
 type Table = {
   data: Map<string, Record<string, any>>;
@@ -805,6 +806,7 @@ export const dispatchFromAPIRawValue =
     injectedPrimitives?: InjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
+    console.debug("RAW", raw);
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
@@ -827,39 +829,35 @@ export const dispatchFromAPIRawValue =
         );
       }
       if (t.kind == "union") {
-        console.debug("zdxraw", raw);
         const result = converters["union"].fromAPIRawValue(raw);
-        console.debug("zdxresult", result);
-        const caseType = t.args.get(result.Discriminator);
+        const caseType = t.args.get(result.caseName);
         if (caseType == undefined)
           return ValueOrErrors.Default.throwOne(
             `union case ${
-              result.Discriminator
+              result.caseName
             } not found in type ${JSON.stringify(t)}`,
           );
 
         if (caseType.kind != "record" && caseType.kind != "lookup")
           return ValueOrErrors.Default.throwOne(
             `union case ${
-              result.Discriminator
+              result.caseName
             } expected record or lookup type, got ${JSON.stringify(caseType)}`,
           );
-
-        // TODO  -- assumption here that the fields type is a record
 
         return dispatchFromAPIRawValue(
           caseType,
           types,
           converters,
           injectedPrimitives,
-        )(result[result.Discriminator]).Then((value) =>
+        )(result.fields).Then((value) =>
           PredicateValue.Operations.IsRecord(value)
             ? ValueOrErrors.Default.return(
-                PredicateValue.Default.unionCase(result.Discriminator, value),
+                PredicateValue.Default.unionCase(result.caseName, value),
               )
             : ValueOrErrors.Default.throwOne(
                 `union case ${
-                  result.Discriminator
+                  result.caseName
                 } expected record, got ${PredicateValue.Operations.GetKind(
                   value,
                 )}`,

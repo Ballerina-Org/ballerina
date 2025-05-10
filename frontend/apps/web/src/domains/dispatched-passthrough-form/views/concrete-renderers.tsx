@@ -345,7 +345,7 @@ export const PersonConcreteRenderers = {
         { commonFormState: DispatchCommonFormState },
         ForeignMutationsExpected
       > =>
-    (props) => {
+      (props) => {
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
@@ -993,7 +993,7 @@ export const PersonConcreteRenderers = {
               <select
                 multiple
                 value={props.context.selectedIds}
-                disabled={true}
+                onClick={() => props.foreignMutations.loadOptions()}
               >
                 <>
                   {props.context.value.fields.map((o) => (
@@ -1026,11 +1026,6 @@ export const PersonConcreteRenderers = {
                   ))}
                 </>
               </select>
-            )}
-            {props.context.activeOptions == "unloaded" && (
-              <button onClick={() => props.foreignMutations.loadOptions()}>
-                Load Options
-              </button>
             )}
           </>
         );

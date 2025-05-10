@@ -17,7 +17,7 @@ import {
   Value,
   ValueOrErrors,
   ValueRecord,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -149,6 +149,7 @@ export const RecordAbstractRenderer = <
     },
     RecordAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
+    console.debug("record", props.context.value.fields.toJS());
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(

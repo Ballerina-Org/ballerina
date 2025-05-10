@@ -53,16 +53,12 @@ export const LoadAndDeserializeSpecification = <
             injectedPrimitives,
           )(serializedSpecifications);
 
-          console.debug('res pre', JSON.stringify(deserializationResult));
-
           if (deserializationResult.kind == "errors") {
             console.error(
               deserializationResult.errors.valueSeq().toArray().join("\n"),
             );
             return deserializationResult;
           }
-
-          console.debug('res', JSON.stringify(deserializationResult.value));
 
           const result = parseDispatchFormsToLaunchers(
             injectedPrimitives,

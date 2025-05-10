@@ -113,7 +113,7 @@ export const Specification = {
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
-            (console.debug("form", formName), !DispatchIsObject(form)) ||
+            !DispatchIsObject(form) ||
             !("type" in form) ||
             typeof form.type != "string"
               ? ValueOrErrors.Default.throwOne(

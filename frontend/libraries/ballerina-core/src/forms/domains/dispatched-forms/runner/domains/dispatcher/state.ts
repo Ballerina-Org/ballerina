@@ -64,6 +64,13 @@ export const Dispatcher = {
                 dispatcherContext,
                 isNested,
                 formName,
+              ).Then((template) =>
+                ValueOrErrors.Default.return(
+                  template.mapContext((_: any) => ({
+                    ..._,
+                    type: renderer.type,
+                  })),
+                ),
               ),
             ),
           )
@@ -78,6 +85,13 @@ export const Dispatcher = {
               dispatcherContext,
               isNested,
               formName,
+            ).Then((template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
             ),
           )
         : renderer.kind == "recordRenderer" && type.kind == "record"
@@ -114,15 +128,24 @@ export const Dispatcher = {
             renderer.renderer,
             dispatcherContext.forms,
             () => `cannot find form ${renderer.renderer}`,
-          ).Then((formRenderer) =>
-            Dispatcher.Operations.Dispatch(
-              type,
-              formRenderer,
-              dispatcherContext,
-              true,
-              renderer.renderer,
-            ),
           )
+            .Then((formRenderer) =>
+              Dispatcher.Operations.Dispatch(
+                type,
+                formRenderer,
+                dispatcherContext,
+                true,
+                renderer.renderer,
+              ),
+            )
+            .Then((template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
+            )
         : renderer.kind == "listRenderer" && type.kind == "list"
         ? ListDispatcher.Operations.Dispatch(
             type,
@@ -236,6 +259,13 @@ export const Dispatcher = {
             renderer,
             dispatcherContext,
             isNested,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
           )
         : ValueOrErrors.Default.throwOne(
             `non matching renderer ${renderer.kind} and type ${type.kind}`,
