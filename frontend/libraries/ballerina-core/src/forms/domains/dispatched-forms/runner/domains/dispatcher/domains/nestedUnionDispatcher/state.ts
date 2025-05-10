@@ -10,7 +10,7 @@ import {
 } from "../../../../../../../../../main";
 
 import { UnionType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { NestedDispatcher } from "../../state";
+import { NestedDispatcher } from "../../state-3";
 import { BaseUnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/union/state";
 
 export const NestedUnionDispatcher = {

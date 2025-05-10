@@ -8,7 +8,7 @@ import {
   DispatchCommonFormState,
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type DateAbstractRendererState = {
   commonFormState: DispatchCommonFormState;

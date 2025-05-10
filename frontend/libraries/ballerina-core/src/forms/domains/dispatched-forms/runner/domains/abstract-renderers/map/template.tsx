@@ -15,7 +15,7 @@ import {
   DispatchCommonFormState,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import {
   DispatchParsedType,
   MapType,

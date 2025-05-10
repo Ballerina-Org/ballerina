@@ -24,7 +24,7 @@ import {
   ValueRecord,
   ValueUnit,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import {
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,

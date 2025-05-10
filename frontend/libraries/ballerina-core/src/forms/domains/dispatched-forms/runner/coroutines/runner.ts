@@ -9,7 +9,7 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { FormDispatcher } from "../domains/dispatcher/state";
+import { FormDispatcher } from "../domains/dispatcher/state-3";
 
 export const DispatchFormRunner = <
   T extends { [key in keyof T]: { type: any; state: any } },

@@ -12,7 +12,7 @@ import { Unit, unit } from "../../../../../../../fun/domains/unit/state";
 import { ValueRecord } from "../../../../../../../../main";
 import { OrderedMap } from "immutable";
 import { Guid } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type DispatchBaseEnumContext = {
   getOptions: () => Promise<OrderedMap<Guid, ValueRecord>>;

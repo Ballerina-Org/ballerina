@@ -8,7 +8,7 @@ import {
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { Value } from "../../../../../../../value/state";
 import { View } from "../../../../../../../template/state";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";

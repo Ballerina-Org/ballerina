@@ -12,7 +12,7 @@ import {
   ValueUnionCase,
   View,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { Map } from "immutable";
 
 export type UnionAbstractRendererReadonlyContext =

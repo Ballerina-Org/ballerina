@@ -25,7 +25,7 @@ export type SerializedRecordRenderer = {
 
 export type RecordRenderer<T> = {
   kind: "recordRenderer";
-  renderer?: unknown;
+  renderer?: Renderer<T>;
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
   tabs: PredicateFormLayout;

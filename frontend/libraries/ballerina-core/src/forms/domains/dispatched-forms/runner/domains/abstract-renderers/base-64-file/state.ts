@@ -6,7 +6,7 @@ import {
   SimpleCallback,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type Base64FileAbstractRendererState = {
   commonFormState: DispatchCommonFormState;

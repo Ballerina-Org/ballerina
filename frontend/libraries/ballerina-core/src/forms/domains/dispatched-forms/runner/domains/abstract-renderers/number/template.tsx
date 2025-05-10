@@ -6,7 +6,7 @@ import {
   Template,
   Value,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import {
   NumberAbstractRendererState,
   NumberAbstractRendererView,

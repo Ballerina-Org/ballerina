@@ -34,7 +34,7 @@ import {
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type OneAbstractRendererReadonlyContext =
   CommonAbstractRendererReadonlyContext<

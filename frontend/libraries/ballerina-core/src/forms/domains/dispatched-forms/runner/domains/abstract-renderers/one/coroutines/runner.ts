@@ -1,4 +1,4 @@
-import { DispatchOnChange } from "../../../dispatcher/state";
+import { DispatchOnChange } from "../../../dispatcher/state-3";
 
 import { ValueInfiniteStreamLoader } from "../../../../../../../../value-infinite-data-stream/coroutines/infiniteLoader";
 import { ValueInfiniteStreamState } from "../../../../../../../../value-infinite-data-stream/state";

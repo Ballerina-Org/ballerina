@@ -24,7 +24,7 @@ import {
   RecordAbstractRendererState,
   RecordAbstractRendererView,
 } from "./state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export const RecordAbstractRenderer = <
   Context extends FormLabel & { bindings: Bindings } & {

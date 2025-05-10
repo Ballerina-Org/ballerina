@@ -7,7 +7,7 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 
-import { NestedDispatcher } from "../../state";
+import { NestedDispatcher } from "../../state-3";
 import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { BaseTupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/tuple/state";
 

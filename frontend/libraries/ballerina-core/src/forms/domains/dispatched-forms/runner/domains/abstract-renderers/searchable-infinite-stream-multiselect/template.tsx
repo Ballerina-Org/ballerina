@@ -20,7 +20,7 @@ import {
   ValueRecord,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   Context extends FormLabel & {

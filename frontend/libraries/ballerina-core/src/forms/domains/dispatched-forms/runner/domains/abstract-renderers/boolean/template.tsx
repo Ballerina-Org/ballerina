@@ -8,7 +8,7 @@ import {
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { BoolAbstractRendererState } from "./state";
 
 export const BoolAbstractRenderer = <

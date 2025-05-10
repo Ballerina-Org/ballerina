@@ -7,7 +7,7 @@ import {
   DispatchBaseEnumContext,
   EnumAbstractRendererState,
 } from "../enum/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type EnumMultiselectAbstractRendererView<
   Context extends FormLabel & DispatchBaseEnumContext,

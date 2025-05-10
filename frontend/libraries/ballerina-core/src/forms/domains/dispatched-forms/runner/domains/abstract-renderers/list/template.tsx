@@ -17,7 +17,7 @@ import {
   DispatchParsedType,
   ListType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { ListAbstractRendererState, ListAbstractRendererView } from "./state";
 
 export const ListAbstractRenderer = <

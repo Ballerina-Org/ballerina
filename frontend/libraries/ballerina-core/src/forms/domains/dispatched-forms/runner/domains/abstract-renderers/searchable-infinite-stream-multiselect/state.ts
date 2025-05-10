@@ -5,7 +5,7 @@ import { View } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
 import { ValueRecord } from "../../../../../parser/domains/predicates/state";
 import { CollectionReference } from "../../../../../collection/domains/reference/state";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { SimpleCallback } from "../../../../../../../../main";
 
 export type InfiniteStreamMultiselectAbstractRendererView<

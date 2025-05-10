@@ -15,7 +15,7 @@ import {
   Value,
   ValueTuple,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state";
+import { DispatchOnChange } from "../../dispatcher/state-3";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
