@@ -175,11 +175,7 @@ export const TableRenderer = {
                       ).Then((renderer) =>
                         ValueOrErrors.Default.return(
                           TableRenderer.Default(
-                            DispatchParsedType.Default.table(
-                              "table",
-                              [type],
-                              "table",
-                            ),
+                            type,
                             Map<string, TableCellRenderer<T>>(columns),
                             layout,
                             renderer,

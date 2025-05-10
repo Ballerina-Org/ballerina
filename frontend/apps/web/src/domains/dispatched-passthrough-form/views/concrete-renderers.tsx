@@ -345,7 +345,7 @@ export const PersonConcreteRenderers = {
         { commonFormState: DispatchCommonFormState },
         ForeignMutationsExpected
       > =>
-      (props) => {
+    (props) => {
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
@@ -356,7 +356,7 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
-    job:
+    Job:
       <
         UnionAbstractRendererReadonlyContext,
         ForeignMutationsExpected,

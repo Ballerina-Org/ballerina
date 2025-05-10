@@ -9,21 +9,26 @@ export const NestedDispatcher = {
       renderer: NestedRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       as: string,
+      formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
+        formName,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       renderer: NestedRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
+      formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         renderer.renderer.type,
         renderer.renderer,
         dispatcherContext,
+        true,
+        formName,
       )
         .Then((template) =>
           ValueOrErrors.Default.return(

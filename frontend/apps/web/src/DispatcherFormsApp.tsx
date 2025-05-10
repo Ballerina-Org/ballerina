@@ -234,6 +234,7 @@ export const DispatcherFormsApp = (props: {}) => {
           if (parsed.kind == "errors") {
             console.error("parsed person config errors", parsed.errors);
           } else {
+            console.debug("parsed person config", JSON.stringify(parsed, null, 2));
             setConfig(Sum.Default.left(parsed));
           }
         }

@@ -13,7 +13,7 @@ export const RecordFieldDispatcher = {
       renderer: RecordFieldRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      return NestedDispatcher.Operations.Dispatch(renderer, dispatcherContext)
+      return NestedDispatcher.Operations.Dispatch(renderer, dispatcherContext, fieldName)
         .Then((template) =>
           ValueOrErrors.Default.return(
             template.mapContext((_: any) => ({

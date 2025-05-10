@@ -41,8 +41,8 @@ export const TableDispatcher = {
       type: TableType<T>,
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      api?: string,
-      isNested?: boolean,
+      api: string | undefined,
+      isNested: boolean,
       launcherName?: string,
       formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -50,10 +50,10 @@ export const TableDispatcher = {
         ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(
             `no launcher name or form name provided for top level table form`,
           )
-        : DispatchParsedType.Operations.ResolveLookupType(
+        : (console.debug('type', type),DispatchParsedType.Operations.ResolveLookupType(
             type.args[0].typeName, // TODO -- possible source of error
             dispatcherContext.types,
-          )
+          ))
             .Then((tableEntityType) =>
               tableEntityType.kind == "record"
                 ? ValueOrErrors.Operations.All(

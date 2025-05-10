@@ -682,7 +682,7 @@ const entityApis: EntityApis = {
               { Value: "addressesByCity" },
               { Value: "friendsAddresses" },
             ],
-            ERPConfig: {
+            ERP: {
               Discriminator: "ERPSAP",
               ERPSAP: {
                 Discriminator: "SAPS2",

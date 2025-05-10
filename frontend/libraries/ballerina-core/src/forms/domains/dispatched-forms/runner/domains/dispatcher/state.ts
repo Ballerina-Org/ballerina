@@ -2,6 +2,7 @@ import {
   DispatcherContext,
   DispatchParsedType,
   DispatchPrimitiveType,
+  MapRepo,
   Template,
   ValueOrErrors,
 } from "../../../../../../../main";
@@ -21,252 +22,65 @@ import { UnionDispatcher } from "./domains/unionDispatcher/state";
 
 export const Dispatcher = {
   Operations: {
-    // DispatchAsSingleSelectionRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseEnumRenderer" &&
-    //   renderer.kind != "baseStreamRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseEnumRenderer" or "baseStreamRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "enumSingleSelection" &&
-    //           viewKind != "streamSingleSelection"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "enumSingleSelection" or "streamSingleSelection" but got ${viewKind}`,
-    //               )
-    //             : NestedSingleSelectionDispatcher.Operations.Dispatch(
-    //                 viewKind,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsMultiSelectionRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseEnumRenderer" &&
-    //   renderer.kind != "baseStreamRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseEnumRenderer" or "baseStreamRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "enumMultiSelection" &&
-    //           viewKind != "streamMultiSelection"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "enumMultiSelection" or "streamMultiSelection" but got ${viewKind}`,
-    //               )
-    //             : NestedMultiSelectionDispatcher.Operations.Dispatch(
-    //                 viewKind,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsSumRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: SumType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseSumRenderer" &&
-    //   renderer.kind != "baseSumUnitDateRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `type is kind "sum" but renderer is not compatible, kind "${renderer.kind}"`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "sum" && viewKind != "sumUnitDate"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "sum" or "sumUnitDate" but got ${viewKind}`,
-    //               )
-    //             : NestedSumDispatcher.Dispatch(
-    //                 type,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsTupleRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: TupleType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseTupleRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind of "baseTupleRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "tuple"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "tuple" but got ${viewKind}`,
-    //               )
-    //             : NestedTupleDispatcher.Dispatch(
-    //                 type,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsListRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: ListType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseListRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseListRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "list"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "list" but got ${viewKind}`,
-    //               )
-    //             : NestedListDispatcher.Dispatch(
-    //                 type,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsMapRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: MapType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseMapRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "recordFieldMapRenderer" or "baseMapRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : dispatcherContext
-    //         .getConcreteRendererKind(renderer.concreteRendererName)
-    //         .Then((viewKind) =>
-    //           viewKind != "map"
-    //             ? ValueOrErrors.Default.throwOne(
-    //                 `expected viewKind == "map" but got ${viewKind}`,
-    //               )
-    //             : NestedMapDispatcher.Dispatch(
-    //                 type,
-    //                 renderer,
-    //                 dispatcherContext,
-    //               ),
-    //         ),
-    // DispatchAsTableRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseTableRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseTableRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : MapRepo.Operations.tryFindWithError(
-    //         renderer.lookupRendererName,
-    //         dispatcherContext.forms,
-    //         () => `cannot find form ${renderer.lookupRendererName}`,
-    //       ).Then((form) =>
-    //         NestedTableDispatcher.Operations.Dispatch(
-    //           form,
-    //           renderer,
-    //           dispatcherContext,
-    //         ),
-    //       ),
-    // DispatchAsLookupRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseLookupRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseLookupRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : MapRepo.Operations.tryFindWithError(
-    //         renderer.lookupRendererName,
-    //         dispatcherContext.forms,
-    //         () => `cannot find form ${renderer.lookupRendererName}`,
-    //       ).Then((form) =>
-    //         NestedLookupDispatcher.Operations.Dispatch(
-    //           form,
-    //           renderer,
-    //           dispatcherContext,
-    //         ),
-    //       ),
-    // DispatchAsUnionRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: UnionType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseUnionRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseUnionRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : NestedUnionDispatcher.Operations.Dispatch(
-    //         type,
-    //         renderer,
-    //         dispatcherContext,
-    //       ),
-    // DispatchAsOneRenderer: <
-    //   T extends { [key in keyof T]: { type: any; state: any } },
-    // >(
-    //   type: OneType<T>,
-    //   renderer: BaseRenderer<T>,
-    //   dispatcherContext: DispatcherContext<T>,
-    // ): ValueOrErrors<Template<any, any, any, any>, string> =>
-    //   renderer.kind != "baseOneRenderer"
-    //     ? ValueOrErrors.Default.throwOne(
-    //         `expected renderer.kind == "baseOneRenderer" but got ${renderer.kind}`,
-    //       )
-    //     : NestedOneDispatcher.Operations.Dispatch(
-    //         type,
-    //         renderer,
-    //         dispatcherContext,
-    //       ),
     DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<T>,
       as: string,
+      isNested: boolean,
+      formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         type,
         renderer,
         dispatcherContext,
+        isNested,
+        formName,
       ).MapErrors((errors) =>
-        errors.map(
-          (error) => `${error}\n...When dispatching base renderer as: ${as}`,
-        ),
+        errors.map((error) => `${error}\n...When dispatching as: ${as}`),
       ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      isNested?: boolean,
+      isNested: boolean,
       formName?: string,
       launcherName?: string,
       tableApi?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind == "recordRenderer" && type.kind == "record"
+      type.kind == "lookup" && renderer.kind == "lookupRenderer"
+        ? DispatchParsedType.Operations.ResolveLookupType(
+            type.name,
+            dispatcherContext.types,
+          ).Then((lookupType) =>
+            MapRepo.Operations.tryFindWithError(
+              renderer.renderer,
+              dispatcherContext.forms,
+              () => `cannot find form ${lookupType}`,
+            ).Then((formRenderer) =>
+              Dispatcher.Operations.Dispatch(
+                lookupType,
+                formRenderer,
+                dispatcherContext,
+                isNested,
+                formName,
+              ),
+            ),
+          )
+        : type.kind == "lookup"
+        ? DispatchParsedType.Operations.ResolveLookupType(
+            type.name,
+            dispatcherContext.types,
+          ).Then((lookupType) =>
+            Dispatcher.Operations.Dispatch(
+              lookupType,
+              renderer,
+              dispatcherContext,
+              isNested,
+              formName,
+            ),
+          )
+        : renderer.kind == "recordRenderer" && type.kind == "record"
         ? RecordDispatcher.Operations.Dispatch(
             type,
             renderer,
@@ -293,6 +107,20 @@ export const Dispatcher = {
                 ..._,
                 type: renderer.type,
               })),
+            ),
+          )
+        : renderer.kind == "lookupRenderer"
+        ? MapRepo.Operations.tryFindWithError(
+            renderer.renderer,
+            dispatcherContext.forms,
+            () => `cannot find form ${renderer.renderer}`,
+          ).Then((formRenderer) =>
+            Dispatcher.Operations.Dispatch(
+              type,
+              formRenderer,
+              dispatcherContext,
+              true,
+              renderer.renderer,
             ),
           )
         : renderer.kind == "listRenderer" && type.kind == "list"
@@ -403,8 +231,15 @@ export const Dispatcher = {
             ),
           )
         : type.kind == "union" && renderer.kind == "unionRenderer"
-        ? UnionDispatcher.Operations.Dispatch(type, renderer, dispatcherContext)
-        : ValueOrErrors.Default.throwOne(`unknown type kind "${type.kind}"`),
+        ? UnionDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+            isNested,
+          )
+        : ValueOrErrors.Default.throwOne(
+            `non matching renderer ${renderer.kind} and type ${type.kind}`,
+          ),
     //     )
     //   : renderer.kind == "tableForm"
     //     ? renderer.inlinedApi == undefined

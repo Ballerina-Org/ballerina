@@ -25,6 +25,8 @@ export const LookupDispatcher = {
             resolvedRenderer.type,
             resolvedRenderer,
             dispatcherContext,
+            true,
+            renderer.renderer,
           ),
         )
         .MapErrors((errors) =>

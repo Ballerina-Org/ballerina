@@ -215,12 +215,44 @@ export const dispatchDefaultState =
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(undefined);
       }
+      if (t.kind == "lookup") {
+        return MapRepo.Operations.tryFindWithError(
+          t.name,
+          types,
+          () => `lookup type ${t.name} not found in types`,
+        ).Then((lookupType) =>
+          dispatchDefaultState(
+            infiniteStreamSources,
+            injectedPrimitives,
+            types,
+            forms,
+            converters,
+            lookupSources,
+            tableApiSources,
+          )(lookupType, renderer),
+        );
+      }
+
+      if (t.kind != "primitive" && renderer.kind == "lookupRenderer") {
+        return MapRepo.Operations.tryFindWithError(
+          renderer.renderer,
+          forms,
+          () => `lookup form renderer ${renderer.renderer} not found in forms`,
+        ).Then((formRenderer) =>
+          dispatchDefaultState(
+            infiniteStreamSources,
+            injectedPrimitives,
+            types,
+            forms,
+            converters,
+            lookupSources,
+            tableApiSources,
+          )(t, formRenderer),
+        );
+      }
+
       if (t.kind == "primitive")
-        return renderer.kind != "lookupRenderer"
-          ? ValueOrErrors.Default.throwOne(
-              `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for primitive`,
-            )
-          : t.name == "unit"
+        return t.name == "unit"
           ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
           : t.name == "boolean"
           ? ValueOrErrors.Default.return(BoolAbstractRendererState.Default())
@@ -459,15 +491,17 @@ export const dispatchDefaultState =
         return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
               List<ValueOrErrors<[string, PredicateValue], string>>(
-                t.fields
+                renderer.fields
                   .entrySeq()
-                  .map(([fieldName, fieldType]) =>
+                  .map(([fieldName, fieldRenderer]) =>
                     MapRepo.Operations.tryFindWithError(
                       fieldName,
-                      renderer.fields,
+                      t.fields,
                       () =>
-                        `field ${fieldName} not found in renderer ${renderer.renderer} fields`,
-                    ).Then((fieldRenderer) =>
+                        `field ${fieldName} not found in renderer ${JSON.stringify(
+                          renderer.fields,
+                        )} fields`,
+                    ).Then((fieldType) =>
                       dispatchDefaultState(
                         infiniteStreamSources,
                         injectedPrimitives,
@@ -539,35 +573,6 @@ export const dispatchDefaultState =
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultState for table`,
             );
-      }
-
-      if (t.kind == "lookup") {
-        if (renderer.kind != "lookupRenderer")
-          return ValueOrErrors.Default.throwOne(
-            `received non lookup renderer kind "${renderer.kind}" when resolving defaultState for lookup`,
-          );
-
-        MapRepo.Operations.tryFindWithError(
-          t.name,
-          types,
-          () => `lookup type ${t.name} not found in types`,
-        ).Then((lookupType) =>
-          MapRepo.Operations.tryFindWithError(
-            renderer.renderer,
-            forms,
-            () => `lookup form renderer ${renderer.renderer} not found in forms`,
-          ).Then((formRenderer) =>
-            dispatchDefaultState(
-              infiniteStreamSources,
-              injectedPrimitives,
-              types,
-              forms,
-              converters,
-              lookupSources,
-              tableApiSources,
-            )(lookupType, formRenderer),
-          ),
-        );
       }
 
       return ValueOrErrors.Default.throwOne(
@@ -822,7 +827,9 @@ export const dispatchFromAPIRawValue =
         );
       }
       if (t.kind == "union") {
+        console.debug("zdxraw", raw);
         const result = converters["union"].fromAPIRawValue(raw);
+        console.debug("zdxresult", result);
         const caseType = t.args.get(result.Discriminator);
         if (caseType == undefined)
           return ValueOrErrors.Default.throwOne(

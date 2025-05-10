@@ -488,12 +488,12 @@
         "addressesFields": "AddressesFieldRef",
         "genders": "GenderRef",
         "colors": "ColorRef",
-        "Interests": "InterestRef",
-        "Permissions": "PermissionRef"
+        "interests": "InterestRef",
+        "permissions": "PermissionRef"
       },
       "searchableStreams": {
         "cities": "CityRef",
-        "Departments": "DepartmentRef"
+        "departments": "DepartmentRef"
       },
       "tables": {
         "ActiveUsersApi": {
@@ -999,7 +999,7 @@
           "Interests": {
             "label": "Interests",
             "renderer": "defaultEnumMultiselect",
-            "options": "Interests",
+            "options": "interests",
             "visible": {
               "kind": "fieldLookup",
               "operands": [
@@ -1014,7 +1014,7 @@
           "Departments": {
             "label": "Departments",
             "renderer": "defaultInfiniteStreamMultiselect",
-            "stream": "Departments",
+            "stream": "departments",
             "disabled": {
               "kind": "fieldLookup",
               "operands": [
@@ -1184,7 +1184,7 @@
             "keyRenderer": {
               "label": "permission",
               "renderer": "defaultEnum",
-              "options": "Permissions"
+              "options": "permissions"
             },
             "valueRenderer": {
               "label": "granted",
@@ -1197,7 +1197,7 @@
             "keyRenderer": {
               "label": "department",
               "renderer": "defaultInfiniteStream",
-              "stream": "Departments"
+              "stream": "departments"
             },
             "valueRenderer": {
               "label": "city",

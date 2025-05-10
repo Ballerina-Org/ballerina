@@ -35,7 +35,7 @@ export const RecordDispatcher = {
       type: RecordType<T>,
       renderer: RecordRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      isNested: boolean = false,
+      isNested: boolean,
       formName?: string,
       launcherName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -96,12 +96,12 @@ export const RecordDispatcher = {
               ? ValueOrErrors.Default.throwOne<
                   Template<any, any, any, any>,
                   string
-                >("launcherName is required for top level forms")
+                >("internal error: launcherName is required for top level forms")
               : formName == undefined
               ? ValueOrErrors.Default.throwOne<
                   Template<any, any, any, any>,
                   string
-                >("formName is required for all forms")
+                >("internal error: formName is required for all forms")
               : ValueOrErrors.Default.return(
                   RecordAbstractRenderer(Map(fieldTemplates), renderer.tabs)
                     .mapContext((_: any) => ({

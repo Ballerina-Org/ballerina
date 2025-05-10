@@ -11,7 +11,6 @@ import {
 
 import { UnionType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
-import { NestedDispatcher } from "../nestedDispatcher/state";
 import { Dispatcher } from "../../state";
 
 export const UnionDispatcher = {
@@ -20,6 +19,7 @@ export const UnionDispatcher = {
       type: UnionType<T>,
       unionRenderer: UnionRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
+      isNested: boolean,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Template<any, any, any, any>], string>>(
@@ -30,12 +30,14 @@ export const UnionDispatcher = {
                 caseName,
                 unionRenderer.cases,
                 () => `cannot find case ${caseName}`,
-              ).Then((caseRenderer) =>
+              ).Then((caseRenderer) => 
                 Dispatcher.Operations.DispatchAs(
                   caseType,
                   caseRenderer,
                   dispatcherContext,
                   `case ${caseName}`,
+                  isNested,
+                  caseName,
                 ).Then((template) =>
                   ValueOrErrors.Default.return([caseName, template]),
                 ),
