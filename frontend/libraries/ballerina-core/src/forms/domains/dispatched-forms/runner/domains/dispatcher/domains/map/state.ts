@@ -9,49 +9,49 @@ export const MapDispatcher = {
   Operations: {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: MapType<T>,
-      mapRenderer: MapRenderer<T>,
+      renderer: MapRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
-        mapRenderer.keyRenderer,
+        renderer.keyRenderer,
         dispatcherContext,
         "key",
       )
         .Then((keyTemplate) =>
           dispatcherContext
-            .defaultState(type.args[0], mapRenderer.keyRenderer.renderer)
+            .defaultState(type.args[0], renderer.keyRenderer.renderer)
             .Then((defaultKeyState) =>
               dispatcherContext
-                .defaultValue(type.args[0], mapRenderer.keyRenderer.renderer)
+                .defaultValue(type.args[0], renderer.keyRenderer.renderer)
                 .Then((defaultKeyValue) =>
                   NestedDispatcher.Operations.DispatchAs(
-                    mapRenderer.valueRenderer,
+                    renderer.valueRenderer,
                     dispatcherContext,
                     "value",
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(
                         type.args[1],
-                        mapRenderer.valueRenderer.renderer,
+                        renderer.valueRenderer.renderer,
                       )
                       .Then((defaultValueState) =>
                         dispatcherContext
                           .defaultValue(
                             type.args[1],
-                            mapRenderer.valueRenderer.renderer,
+                            renderer.valueRenderer.renderer,
                           )
                           .Then((defaultValueValue) =>
-                            mapRenderer.renderer.kind != "lookupRenderer"
+                            renderer.renderer.kind != "lookupRenderer"
                               ? ValueOrErrors.Default.throwOne<
                                   Template<any, any, any, any>,
                                   string
                                 >(
-                                  `received non lookup renderer kind "${mapRenderer.renderer.kind}" when resolving defaultState for map`,
+                                  `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for map`,
                                 )
                               : dispatcherContext
                                   .getConcreteRenderer(
                                     "map",
-                                    mapRenderer.renderer.name,
+                                    renderer.renderer.renderer,
                                   )
                                   .Then((concreteRenderer) =>
                                     ValueOrErrors.Default.return(

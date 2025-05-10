@@ -16,9 +16,9 @@ export const LookupDispatcher = {
       renderers: Map<string, Renderer<T>>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       MapRepo.Operations.tryFindWithError(
-        renderer.name,
+        renderer.renderer,
         renderers,
-        () => `cannot find renderer "${renderer.name}"`,
+        () => `cannot find renderer "${renderer.renderer}"`,
       )
         .Then((resolvedRenderer) =>
           Dispatcher.Operations.Dispatch(

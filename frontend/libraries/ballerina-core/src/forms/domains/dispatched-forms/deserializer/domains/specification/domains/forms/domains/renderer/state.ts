@@ -108,6 +108,7 @@ export const Renderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
+      tableApi?: string,
     ): ValueOrErrors<Renderer<T>, string> =>
       type.kind == "lookup"
         ? MapRepo.Operations.tryFindWithError(
@@ -146,6 +147,7 @@ export const Renderer = {
             serialized,
             concreteRenderers,
             types,
+            tableApi,
           )
         : type.kind == "list"
         ? ListRenderer.Operations.Deserialize(

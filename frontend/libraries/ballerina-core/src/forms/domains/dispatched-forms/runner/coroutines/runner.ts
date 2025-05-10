@@ -9,7 +9,7 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { FormDispatcher } from "../domains/dispatcher/state-3";
+import { Dispatcher } from "../../../../../../main";
 
 export const DispatchFormRunner = <
   T extends { [key in keyof T]: { type: any; state: any } },
@@ -81,38 +81,39 @@ export const DispatchFormRunner = <
                 );
               }
 
-              const formRef = current.launcherRef;
+              const launcherRef = current.launcherRef;
               const dispatcherContext =
                 current.deserializedSpecification.sync.value.value
                   .dispatcherContext;
 
               const passthroughFormLauncher =
                 current.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                  formRef.name,
+                  launcherRef.name,
                 );
 
               if (passthroughFormLauncher == undefined) {
                 console.error(
-                  `Cannot find form '${formRef.name}' in the launchers`,
+                  `Cannot find form '${launcherRef.name}' in the launchers`,
                 );
 
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
                     errors: List([
-                      `Cannot find form '${formRef.name}' in the launchers`,
+                      `Cannot find form '${launcherRef.name}' in the launchers`,
                     ]),
                   }),
                 );
               }
 
-              const Form = FormDispatcher.Operations.Dispatch(
-                passthroughFormLauncher.formName,
+              const Form = Dispatcher.Operations.Dispatch(
                 passthroughFormLauncher.type,
                 passthroughFormLauncher.renderer,
                 dispatcherContext,
                 false,
-                formRef.name,
+                passthroughFormLauncher.formName,
+                launcherRef.name,
+                // TODO: inject api here for table launchers
               );
 
               if (Form.kind == "errors") {

@@ -25,7 +25,7 @@ export const MultiSelectionDispatcher = {
             `received non lookup renderer kind when resolving defaultState for enum multi selection`,
           )
         : dispatcherContext
-            .getConcreteRendererKind(renderer.renderer.name)
+            .getConcreteRendererKind(renderer.renderer.renderer)
             .Then((viewKind) =>
               viewKind == "enumMultiSelection" &&
               renderer.kind == "enumRenderer" &&
@@ -33,7 +33,7 @@ export const MultiSelectionDispatcher = {
                 ? dispatcherContext
                     .getConcreteRenderer(
                       "enumMultiSelection",
-                      renderer.renderer.name,
+                      renderer.renderer.renderer,
                     )
                     .Then((concreteRenderer) =>
                       dispatcherContext
@@ -79,7 +79,7 @@ export const MultiSelectionDispatcher = {
                   : dispatcherContext
                       .getConcreteRenderer(
                         "streamMultiSelection",
-                        renderer.renderer.name,
+                        renderer.renderer.renderer,
                       )
                       .Then((concreteRenderer) =>
                         ValueOrErrors.Default.return(

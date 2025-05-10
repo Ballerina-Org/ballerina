@@ -5,8 +5,8 @@ import {
   Value,
   View,
   DispatchCommonFormState,
+  DispatchOnChange,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type SecretAbstractRendererState = {
   commonFormState: DispatchCommonFormState;

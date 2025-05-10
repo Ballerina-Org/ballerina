@@ -13,8 +13,8 @@ import {
   View,
   MapRepo,
   BasicUpdater,
+  DispatchOnChange
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type MapAbstractRendererState<KeyFormState, ValueFormState> = {
   commonFormState: DispatchCommonFormState;

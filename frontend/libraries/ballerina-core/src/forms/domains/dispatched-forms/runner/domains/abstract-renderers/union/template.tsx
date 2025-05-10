@@ -8,6 +8,7 @@ import {
   UnionType,
   Updater,
   ValueUnionCase,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -17,7 +18,6 @@ import {
   UnionAbstractRendererView,
 } from "./state";
 import { Map } from "immutable";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export const UnionAbstractRenderer = <
   ForeignMutationsExpected,

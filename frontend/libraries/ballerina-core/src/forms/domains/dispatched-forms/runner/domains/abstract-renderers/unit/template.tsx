@@ -1,6 +1,7 @@
 import { UnitAbstractRendererState, UnitAbstractRendererView } from "./state";
 import {
   DispatchDelta,
+  DispatchOnChange,
   FormLabel,
   PredicateValue,
   Template,
@@ -8,7 +9,6 @@ import {
   ValueUnit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export const UnitAbstractRenderer = <Context extends FormLabel>() =>
   Template.Default<

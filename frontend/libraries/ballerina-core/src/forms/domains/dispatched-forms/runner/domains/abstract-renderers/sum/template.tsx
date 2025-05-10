@@ -1,7 +1,6 @@
 import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
-  CommonFormState,
   DispatchCommonFormState,
   DispatchDelta,
   PredicateValue,
@@ -9,14 +8,10 @@ import {
   Sum,
   Value,
   ValueSum,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import {
-  DispatchParsedType,
-  SumType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
+import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   SumAbstractRendererReadonlyContext,
   SumAbstractRendererState,

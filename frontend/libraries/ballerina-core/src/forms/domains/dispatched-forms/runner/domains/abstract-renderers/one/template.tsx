@@ -23,8 +23,8 @@ import {
   ValueOrErrors,
   ValueRecord,
   ValueUnit,
+  DispatchOnChange
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import {
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,

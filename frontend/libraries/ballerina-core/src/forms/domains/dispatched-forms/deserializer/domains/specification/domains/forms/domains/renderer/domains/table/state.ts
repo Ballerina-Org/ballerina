@@ -33,6 +33,7 @@ export type TableRenderer<T> = {
   visibleColumns: PredicateVisibleColumns;
   renderer: Renderer<T>;
   detailsRenderer?: NestedRenderer<T>;
+  api?: string
 };
 
 export const TableRenderer = {
@@ -42,6 +43,7 @@ export const TableRenderer = {
     visibleColumns: PredicateVisibleColumns,
     renderer: Renderer<T>,
     detailsRenderer?: NestedRenderer<T>,
+    api?: string
   ): TableRenderer<T> => ({
     kind: "tableRenderer",
     type,
@@ -49,6 +51,7 @@ export const TableRenderer = {
     visibleColumns,
     renderer,
     detailsRenderer,
+    api,
   }),
   Operations: {
     hasType: (_: unknown): _ is { type: string } =>
@@ -116,6 +119,7 @@ export const TableRenderer = {
       serialized: SerializedTableRenderer,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
+      api?: string
     ): ValueOrErrors<TableRenderer<T>, string> =>
       TableRenderer.Operations.tryAsValidTableForm(serialized)
         .Then((validTableForm) =>
@@ -180,6 +184,7 @@ export const TableRenderer = {
                             layout,
                             renderer,
                             detailsRenderer,
+                            api,
                           ),
                         ),
                       ),

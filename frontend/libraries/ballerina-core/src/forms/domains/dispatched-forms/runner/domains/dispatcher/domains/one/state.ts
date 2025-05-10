@@ -82,7 +82,7 @@ export const OneDispatcher = {
                   `received non lookup renderer kind when resolving defaultState for one`,
                 )
               : dispatcherContext
-                  .getConcreteRenderer("one", renderer.renderer.name)
+                  .getConcreteRenderer("one", renderer.renderer.renderer)
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return<
                       Template<any, any, any, any>,

@@ -33,7 +33,7 @@ export const PrimitiveDispatcher = {
           );
         }
         const viewKindRes = dispatcherContext.getConcreteRendererKind(
-          renderer.name,
+          renderer.renderer,
         );
         if (viewKindRes.kind == "errors") {
           return viewKindRes;
@@ -56,7 +56,7 @@ export const PrimitiveDispatcher = {
           return dispatcherContext
             .getConcreteRenderer(
               viewKind as keyof ConcreteRendererKinds,
-              renderer.name,
+              renderer.renderer,
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
@@ -68,7 +68,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "unit") {
           return dispatcherContext
-            .getConcreteRenderer("unit", renderer.name)
+            .getConcreteRenderer("unit", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 UnitAbstractRenderer()
@@ -78,7 +78,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "string") {
           return dispatcherContext
-            .getConcreteRenderer("string", renderer.name)
+            .getConcreteRenderer("string", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 StringAbstractRenderer()
@@ -88,7 +88,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "number") {
           return dispatcherContext
-            .getConcreteRenderer("number", renderer.name)
+            .getConcreteRenderer("number", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 NumberAbstractRenderer()
@@ -98,7 +98,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "boolean") {
           return dispatcherContext
-            .getConcreteRenderer("boolean", renderer.name)
+            .getConcreteRenderer("boolean", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 BoolAbstractRenderer()
@@ -108,7 +108,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "secret") {
           return dispatcherContext
-            .getConcreteRenderer("secret", renderer.name)
+            .getConcreteRenderer("secret", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 SecretAbstractRenderer()
@@ -118,7 +118,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "base64File") {
           return dispatcherContext
-            .getConcreteRenderer("base64File", renderer.name)
+            .getConcreteRenderer("base64File", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 Base64FileAbstractRenderer()
@@ -128,7 +128,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "date") {
           return dispatcherContext
-            .getConcreteRenderer("date", renderer.name)
+            .getConcreteRenderer("date", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 DateAbstractRenderer()

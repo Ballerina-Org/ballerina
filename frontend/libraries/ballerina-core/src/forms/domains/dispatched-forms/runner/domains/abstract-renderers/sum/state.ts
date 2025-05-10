@@ -7,8 +7,8 @@ import {
   simpleUpdaterWithChildren,
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
+  DispatchOnChange
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export type SumAbstractRendererReadonlyContext =

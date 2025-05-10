@@ -35,7 +35,7 @@ export const SumDispatcher = {
             renderer.kind == "sumUnitDateRenderer" &&
             renderer.renderer.kind == "lookupRenderer"
               ? dispatcherContext
-                  .getConcreteRenderer("sumUnitDate", renderer.renderer.name)
+                  .getConcreteRenderer("sumUnitDate", renderer.renderer.renderer)
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRenderer(leftForm, rightForm).withView(
@@ -45,7 +45,7 @@ export const SumDispatcher = {
                   )
               : renderer.renderer.kind == "lookupRenderer"
               ? dispatcherContext
-                  .getConcreteRenderer("sum", renderer.renderer.name)
+                  .getConcreteRenderer("sum", renderer.renderer.renderer)
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRenderer(leftForm, rightForm).withView(

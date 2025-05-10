@@ -6,17 +6,17 @@ export type SerializedLookupRenderer = string;
 
 export type LookupRenderer<T> = {
   kind: "lookupRenderer";
-  name: string;
+  renderer: string;
   type: DispatchParsedType<T>;
 };
 
 export const LookupRenderer = {
   Default: <T>(
-    name: string,
+    renderer: string,
     type: DispatchParsedType<T>,
   ): LookupRenderer<T> => ({
     kind: "lookupRenderer",
-    name,
+    renderer,
     type,
   }),
   Operations: {

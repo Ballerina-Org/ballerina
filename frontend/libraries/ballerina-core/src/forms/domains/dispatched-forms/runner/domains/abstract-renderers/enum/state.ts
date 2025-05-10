@@ -4,6 +4,7 @@ import {
   SimpleCallback,
   ValueOption,
   DispatchCommonFormState,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { FormLabel } from "../../../../../../../../main";
@@ -12,7 +13,6 @@ import { Unit, unit } from "../../../../../../../fun/domains/unit/state";
 import { ValueRecord } from "../../../../../../../../main";
 import { OrderedMap } from "immutable";
 import { Guid } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type DispatchBaseEnumContext = {
   getOptions: () => Promise<OrderedMap<Guid, ValueRecord>>;

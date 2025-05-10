@@ -25,7 +25,7 @@ export const SingleSelectionDispatcher = {
             `received non lookup renderer kind when resolving defaultState for enum single selection`,
           )
         : dispatcherContext
-            .getConcreteRendererKind(renderer.renderer.name)
+            .getConcreteRendererKind(renderer.renderer.renderer)
             .Then((viewKind) =>
               viewKind == "enumSingleSelection" &&
               renderer.kind == "enumRenderer" &&
@@ -33,7 +33,7 @@ export const SingleSelectionDispatcher = {
                 ? dispatcherContext
                     .getConcreteRenderer(
                       "enumSingleSelection",
-                      renderer.renderer.name,
+                      renderer.renderer.renderer,
                     )
                     .Then((concreteRenderer) =>
                       dispatcherContext
@@ -73,7 +73,7 @@ export const SingleSelectionDispatcher = {
                 ? dispatcherContext
                     .getConcreteRenderer(
                       "streamSingleSelection",
-                      renderer.renderer.name,
+                      renderer.renderer.renderer,
                     )
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(

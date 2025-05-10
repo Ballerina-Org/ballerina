@@ -36,7 +36,7 @@ export const ListDispatcher = {
                         `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
                       )
                     : dispatcherContext
-                        .getConcreteRenderer("list", renderer.renderer.name)
+                        .getConcreteRenderer("list", renderer.renderer.renderer)
                         .Then((concreteRenderer) =>
                           ValueOrErrors.Default.return(
                             ListAbstractRenderer(

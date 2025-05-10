@@ -3,10 +3,10 @@ import {
   FormLabel,
   PredicateValue,
   Value,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import {
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,

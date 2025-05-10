@@ -12,8 +12,8 @@ import {
   ValueRecord,
   View,
   DispatchCommonFormState,
+  DispatchOnChange
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type RecordAbstractRendererState = {
   commonFormState: DispatchCommonFormState;

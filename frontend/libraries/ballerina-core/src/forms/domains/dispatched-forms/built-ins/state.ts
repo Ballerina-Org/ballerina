@@ -27,6 +27,8 @@ import {
   DispatchLookupSources,
   DispatchTableApiSources,
   ValueOption,
+  BasicUpdater,
+  DispatchDelta,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -59,6 +61,11 @@ const simpleMapKeyToIdentifer = (key: any): string => {
   if (typeof key == "object") return JSON.stringify(sortObjectKeys(key));
   return JSON.stringify(key);
 };
+
+export type DispatchOnChange<Entity> = (
+  updater: BasicUpdater<Entity>,
+  delta: DispatchDelta,
+) => void;
 
 type ApiConverter<T> = {
   fromAPIRawValue: BasicFun<any, T>;
@@ -546,9 +553,9 @@ export const dispatchDefaultState =
           () => `lookup type ${t.name} not found in types`,
         ).Then((lookupType) =>
           MapRepo.Operations.tryFindWithError(
-            renderer.name,
+            renderer.renderer,
             forms,
-            () => `lookup form renderer ${renderer.name} not found in forms`,
+            () => `lookup form renderer ${renderer.renderer} not found in forms`,
           ).Then((formRenderer) =>
             dispatchDefaultState(
               infiniteStreamSources,
@@ -760,10 +767,10 @@ export const dispatchDefaultValue =
               () => `lookup type ${t.name} not found in types`,
             ).Then((lookupType) =>
               MapRepo.Operations.tryFindWithError(
-                renderer.name,
+                renderer.renderer,
                 forms,
                 () =>
-                  `lookup form renderer ${renderer.name} not found in forms`,
+                  `lookup form renderer ${renderer.renderer} not found in forms`,
               ).Then((formRenderer) =>
                 dispatchDefaultValue(
                   injectedPrimitives,

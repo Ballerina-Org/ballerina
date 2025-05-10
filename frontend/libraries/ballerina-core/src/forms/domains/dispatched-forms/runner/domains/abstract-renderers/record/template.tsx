@@ -17,6 +17,7 @@ import {
   Value,
   ValueOrErrors,
   ValueRecord,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -24,7 +25,6 @@ import {
   RecordAbstractRendererState,
   RecordAbstractRendererView,
 } from "./state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export const RecordAbstractRenderer = <
   Context extends FormLabel & { bindings: Bindings } & {

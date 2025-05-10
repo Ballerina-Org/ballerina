@@ -19,6 +19,7 @@ import {
   ValueTable,
   replaceWith,
   DispatchTableApiSource,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -26,7 +27,6 @@ import { Template, View } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type AbstractTableRendererReadonlyContext = {
   tableApiSource: DispatchTableApiSource;

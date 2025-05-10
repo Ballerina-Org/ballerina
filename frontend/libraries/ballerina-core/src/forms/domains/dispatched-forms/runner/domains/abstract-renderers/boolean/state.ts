@@ -4,9 +4,9 @@ import {
   SimpleCallback,
   Value,
   DispatchCommonFormState,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type BoolAbstractRendererState = {
   commonFormState: DispatchCommonFormState;

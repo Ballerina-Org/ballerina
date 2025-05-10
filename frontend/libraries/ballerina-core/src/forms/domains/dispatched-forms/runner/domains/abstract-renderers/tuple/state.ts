@@ -9,10 +9,10 @@ import {
   Value,
   ValueTuple,
   DispatchCommonFormState,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { FormLabel, View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type TupleAbstractRendererState<
   ItemFormState extends { commonFormState: DispatchCommonFormState },

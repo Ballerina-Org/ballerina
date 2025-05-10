@@ -9,6 +9,7 @@ import {
   replaceWith,
   Updater,
   ValueTuple,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
@@ -17,7 +18,6 @@ import {
   DispatchParsedType,
   ListType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import { ListAbstractRendererState, ListAbstractRendererView } from "./state";
 
 export const ListAbstractRenderer = <

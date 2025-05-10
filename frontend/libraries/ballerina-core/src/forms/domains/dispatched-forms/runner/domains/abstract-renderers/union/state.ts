@@ -8,11 +8,11 @@ import {
   Template,
   UnionType,
   Updater,
-  Value,
+
   ValueUnionCase,
   View,
+  DispatchOnChange,
 } from "../../../../../../../../main";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import { Map } from "immutable";
 
 export type UnionAbstractRendererReadonlyContext =

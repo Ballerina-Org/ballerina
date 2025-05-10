@@ -11,9 +11,9 @@ import {
   Template,
   ValidateRunner,
   Value,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import React from "react";
 
 export const StringAbstractRenderer = <

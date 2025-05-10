@@ -10,14 +10,15 @@ import {
 } from "../../../../../../../../../main";
 
 import { UnionType } from "../../../../../deserializer/domains/specification/domains/types/state";
-import { NestedDispatcher } from "../../state-3";
-import { BaseUnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/domains/union/state";
+import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
+import { NestedDispatcher } from "../nestedDispatcher/state";
+import { Dispatcher } from "../../state";
 
-export const NestedUnionDispatcher = {
+export const UnionDispatcher = {
   Operations: {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: UnionType<T>,
-      unionRenderer: BaseUnionRenderer<T>,
+      unionRenderer: UnionRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
@@ -30,7 +31,7 @@ export const NestedUnionDispatcher = {
                 unionRenderer.cases,
                 () => `cannot find case ${caseName}`,
               ).Then((caseRenderer) =>
-                NestedDispatcher.Operations.DispatchAs(
+                Dispatcher.Operations.DispatchAs(
                   caseType,
                   caseRenderer,
                   dispatcherContext,
@@ -46,30 +47,29 @@ export const NestedUnionDispatcher = {
           dispatcherContext
             .defaultState(type, unionRenderer)
             .Then((defaultState) =>
-              dispatcherContext
-                .getConcreteRenderer(
-                  "union",
-                  unionRenderer.concreteRendererName,
-                )
-                .Then((concreteRenderer) =>
-                  ValueOrErrors.Default.return(
-                    UnionAbstractRenderer(
-                      // TODO better typing for state and consider this pattern for other dispatchers
-                      (
-                        defaultState as UnionAbstractRendererState<any>
-                      ).caseFormStates.map((caseState) => () => caseState),
-                      Map(templates),
+              unionRenderer.renderer.kind != "lookupRenderer"
+                ? ValueOrErrors.Default.throwOne<
+                    Template<any, any, any, any>,
+                    string
+                  >(
+                    `received non lookup renderer kind "${unionRenderer.renderer.kind}" when resolving defaultState for union`,
+                  )
+                : dispatcherContext
+                    .getConcreteRenderer(
+                      "union",
+                      unionRenderer.renderer.renderer,
                     )
-                      .mapContext((_: any) => ({
-                        ..._,
-                        type: unionRenderer.type,
-                        label: unionRenderer.label,
-                        tooltip: unionRenderer.tooltip,
-                        details: unionRenderer.details,
-                      }))
-                      .withView(concreteRenderer),
-                  ),
-                ),
+                    .Then((concreteRenderer) =>
+                      ValueOrErrors.Default.return(
+                        UnionAbstractRenderer(
+                          // TODO better typing for state and consider this pattern for other dispatchers
+                          (
+                            defaultState as UnionAbstractRendererState<any>
+                          ).caseFormStates.map((caseState) => () => caseState),
+                          Map(templates),
+                        ).withView(concreteRenderer),
+                      ),
+                    ),
             ),
         )
         .MapErrors((errors) =>

@@ -28,7 +28,7 @@ export const RecordDispatcher = {
           )
         : dispatcherContext.getConcreteRenderer(
             "record",
-            renderer?.name,
+            renderer?.renderer,
             isNested,
           ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(

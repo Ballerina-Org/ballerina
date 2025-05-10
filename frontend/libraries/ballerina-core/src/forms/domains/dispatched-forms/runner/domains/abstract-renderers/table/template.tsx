@@ -17,11 +17,11 @@ import {
   FormLabel,
   Bindings,
   RecordAbstractRendererState,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 import { TableRunner } from "./coroutines/runner";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 const EmbeddedValueInfiniteStreamTemplate =
   ValueInfiniteStreamTemplate.mapContext<

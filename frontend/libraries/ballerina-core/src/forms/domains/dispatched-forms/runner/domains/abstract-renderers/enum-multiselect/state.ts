@@ -1,13 +1,18 @@
 import { Value } from "../../../../../../../value/state";
-import { Guid, SimpleCallback } from "../../../../../../../../main";
-import { ValueRecord } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../../../../main";
+
+import {
+  ValueRecord,
+  DispatchOnChange,
+  FormLabel,
+  Guid,
+  SimpleCallback,
+} from "../../../../../../../../main";
+
 import { View } from "../../../../../../../template/state";
 import {
   DispatchBaseEnumContext,
   EnumAbstractRendererState,
 } from "../enum/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 
 export type EnumMultiselectAbstractRendererView<
   Context extends FormLabel & DispatchBaseEnumContext,

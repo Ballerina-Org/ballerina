@@ -11,6 +11,7 @@ import {
   Unit,
   ValueOption,
   ValueRecord,
+  DispatchOnChange
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -19,7 +20,6 @@ import {
 } from "./state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { Value } from "../../../../../../../value/state";
-import { DispatchOnChange } from "../../dispatcher/state-3";
 import { OrderedMap } from "immutable";
 
 export const EnumAbstractRenderer = <

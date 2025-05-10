@@ -10,9 +10,18 @@ import { Renderer } from "../../state";
 
 export type SerializedNestedRenderer = {
   renderer: unknown;
+  options?: unknown;
+  stream?: unknown;
+  leftRenderer?: unknown;
+  rightRenderer?: unknown;
+  elementRenderer?: unknown;
+  itemRenderers?: unknown;
+  keyRenderer?: unknown;
+  valueRenderer?: unknown;
   label?: unknown;
   tooltip?: unknown;
   details?: unknown;
+  api?: unknown;
 };
 
 export type NestedRenderer<T> = {
@@ -75,19 +84,62 @@ export const NestedRenderer = {
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
       ).Then((validatedSerialized) =>
-        Renderer.Operations.Deserialize(
-          type,
-          validatedSerialized.renderer,
-          concreteRenderers,
-          types,
-        ).Then((renderer) =>
-          ValueOrErrors.Default.return({
-            renderer,
-            label: validatedSerialized.label,
-            tooltip: validatedSerialized.tooltip,
-            details: validatedSerialized.details,
-          }),
-        ),
+        type.kind == "primitive" ||
+        type.kind == "singleSelection" ||
+        type.kind == "multiSelection" ||
+        type.kind == "list" ||
+        type.kind == "sum" ||
+        type.kind == "tuple" ||
+        type.kind == "one" ||
+        type.kind == "map"
+          ? Renderer.Operations.Deserialize(
+              type,
+              validatedSerialized,
+              concreteRenderers,
+              types,
+            ).Then((renderer) =>
+              renderer.kind == "tableRenderer" ||
+              renderer.kind == "recordRenderer" ||
+              renderer.kind == "unionRenderer" ||
+              renderer.kind == "lookupRenderer"
+                ? ValueOrErrors.Default.throwOne(
+                    `renderer ${renderer.kind} does not match type ${type.kind}`,
+                  )
+                : ValueOrErrors.Default.return({
+                    renderer,
+                    label: validatedSerialized.label,
+                    tooltip: validatedSerialized.tooltip,
+                    details: validatedSerialized.details,
+                  }),
+            )
+          : Renderer.Operations.Deserialize(
+              type,
+              validatedSerialized.renderer,
+              concreteRenderers,
+              types,
+              "api" in validatedSerialized && isString(validatedSerialized.api)
+                ? validatedSerialized.api
+                : undefined,
+            ).Then((renderer) =>
+              type.kind == "table" && renderer.kind == "tableRenderer"
+                ? ValueOrErrors.Default.return({
+                    renderer,
+                    label: validatedSerialized.label,
+                    tooltip: validatedSerialized.tooltip,
+                    details: validatedSerialized.details,
+                  })
+                : renderer.kind == "recordRenderer" ||
+                  renderer.kind == "unionRenderer"
+                ? ValueOrErrors.Default.return({
+                    renderer,
+                    label: validatedSerialized.label,
+                    tooltip: validatedSerialized.tooltip,
+                    details: validatedSerialized.details,
+                  })
+                : ValueOrErrors.Default.throwOne(
+                    `renderer ${renderer.kind} does not match type ${type.kind}`,
+                  ),
+            ),
       ),
   },
 };

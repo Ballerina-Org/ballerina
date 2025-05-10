@@ -17,10 +17,12 @@ import { TableRenderer } from "../../../../../deserializer/domains/specification
 export const TableDispatcher = {
   Operations: {
     GetApi: (
-      api: string,
+      api: string | undefined,
       dispatcherContext: DispatcherContext<any>,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
-      dispatcherContext.tableApiSources == undefined
+      api == undefined
+        ? ValueOrErrors.Default.throwOne("api is not defined")
+        : dispatcherContext.tableApiSources == undefined
         ? ValueOrErrors.Default.throwOne("table api sources are not defined")
         : dispatcherContext.tableApiSources(api),
     DispatchDetailsRenderer: <
@@ -39,7 +41,7 @@ export const TableDispatcher = {
       type: TableType<T>,
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      api: string,
+      api?: string,
       isNested?: boolean,
       launcherName?: string,
       formName?: string,
@@ -126,12 +128,12 @@ export const TableDispatcher = {
                         : dispatcherContext
                             .getConcreteRenderer(
                               "table",
-                              renderer.renderer.name,
+                              renderer.renderer.renderer,
                               isNested,
                             )
                             .Then((concreteRenderer) =>
                               TableDispatcher.Operations.GetApi(
-                                api,
+                                renderer.api ?? api,
                                 dispatcherContext,
                               ).Then((tableApiSource) =>
                                 ValueOrErrors.Default.return(

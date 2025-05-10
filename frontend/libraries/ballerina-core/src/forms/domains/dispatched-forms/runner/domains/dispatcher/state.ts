@@ -1,4 +1,10 @@
-import { DispatcherContext, DispatchParsedType, DispatchPrimitiveType, Template, ValueOrErrors } from "../../../../../../../main";
+import {
+  DispatcherContext,
+  DispatchParsedType,
+  DispatchPrimitiveType,
+  Template,
+  ValueOrErrors,
+} from "../../../../../../../main";
 import { Renderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/state";
 import { ListDispatcher } from "./domains/list/state";
 import { LookupDispatcher } from "./domains/lookup/state";
@@ -10,7 +16,8 @@ import { RecordDispatcher } from "./domains/record/state";
 import { SingleSelectionDispatcher } from "./domains/singleSelectionDispatcher/state";
 import { SumDispatcher } from "./domains/sum/state";
 import { TableDispatcher } from "./domains/table/state";
-
+import { TupleDispatcher } from "./domains/tupleDispatcher/state";
+import { UnionDispatcher } from "./domains/unionDispatcher/state";
 
 export const Dispatcher = {
   Operations: {
@@ -257,213 +264,238 @@ export const Dispatcher = {
       isNested?: boolean,
       formName?: string,
       launcherName?: string,
+      tableApi?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      renderer.kind == "recordRenderer" && type.kind == "record" ?
-        RecordDispatcher.Operations.Dispatch(
-          type,
-          renderer,
-          dispatcherContext,
-          isNested,
-          formName,
-          launcherName,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          )
-        )
-      : renderer.kind == "lookupRenderer" && type.kind == "primitive" ?
-        PrimitiveDispatcher.Operations.Dispatch(
-          type,
-          renderer,
-          dispatcherContext,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          )
-        )
-      : renderer.kind == "listRenderer" && type.kind == "list" ?
-        ListDispatcher.Operations.Dispatch(
-          type,
-          renderer,
-          dispatcherContext,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          ))
-      : renderer.kind == "mapRenderer" && type.kind == "map" ?
-        MapDispatcher.Operations.Dispatch(
-          type,
-          renderer,
-          dispatcherContext,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          ))
-      : type.kind == "multiSelection" && (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer") ?
-        MultiSelectionDispatcher.Operations.Dispatch(
-          renderer,
-          dispatcherContext,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          ))
-        : type.kind == "one" && renderer.kind == "oneRenderer" ?
-        OneDispatcher.Operations.Dispatch(
-          type,
-          renderer,
-          dispatcherContext,
-        ).Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
-              ..._,
-              type: renderer.type,
-            }))
-          ))
-          : 
-          type.kind == "singleSelection" && (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer") ?
-          SingleSelectionDispatcher.Operations.Dispatch(
-            renderer,
-            dispatcherContext,
-          ).Then((template) =>
-            ValueOrErrors.Default.return(
-              template.mapContext((_: any) => ({
-                ..._,
-                type: renderer.type,
-              }))
-            )
-          ) :
-
-          type.kind == "sum" && (renderer.kind == "sumRenderer" || renderer.kind == "sumUnitDateRenderer" ) ?
-          SumDispatcher.Operations.Dispatch(
-
-            renderer,
-            dispatcherContext,
-          ).Then((template) =>
-            ValueOrErrors.Default.return(
-              template.mapContext((_: any) => ({
-                ..._,
-                type: renderer.type,
-              }))
-            )
-          ) :
-
-          type.kind == "table" && renderer.kind == "tableRenderer" ?
-          TableDispatcher.Operations.Dispatch(
+      renderer.kind == "recordRenderer" && type.kind == "record"
+        ? RecordDispatcher.Operations.Dispatch(
             type,
             renderer,
             dispatcherContext,
-            
             isNested,
             formName,
             launcherName,
-          ) :
-          
-      //     )
-      //   : renderer.kind == "tableForm"
-      //     ? renderer.inlinedApi == undefined
-      //       ? ValueOrErrors.Default.throwOne(
-      //           "inlined table form renderer has no api",
-      //         )
-      //       : TableFormDispatcher.Operations.Dispatch(
-      //           renderer.type,
-      //           renderer,
-      //           dispatcherContext,
-      //           renderer.inlinedApi,
-      //           true,
-      //         )
-      //     : type.kind == "primitive"
-      //       ? NestedDispatcher.Operations.DispatchAsPrimitiveRenderer(
-      //           type,
-      //           renderer,
-      //           dispatcherContext,
-      //         )
-      //       : type.kind == "singleSelection"
-      //         ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
-      //             renderer,
-      //             dispatcherContext,
-      //           )
-      //         : type.kind == "multiSelection"
-      //           ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
-      //               renderer,
-      //               dispatcherContext,
-      //             )
-      //           : type.kind == "sum"
-      //             ? NestedDispatcher.Operations.DispatchAsSumRenderer(
-      //                 type,
-      //                 renderer,
-      //                 dispatcherContext,
-      //               )
-      //             : type.kind == "tuple"
-      //               ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
-      //                   type,
-      //                   renderer,
-      //                   dispatcherContext,
-      //                 )
-      //               : type.kind == "list"
-      //                 ? NestedDispatcher.Operations.DispatchAsListRenderer(
-      //                     type,
-      //                     renderer,
-      //                     dispatcherContext,
-      //                   )
-      //                 : type.kind == "map"
-      //                   ? NestedDispatcher.Operations.DispatchAsMapRenderer(
-      //                       type,
-      //                       renderer,
-      //                       dispatcherContext,
-      //                     )
-      //                   : type.kind == "lookup"
-      //                     ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
-      //                         renderer,
-      //                         dispatcherContext,
-      //                       )
-      //                     : type.kind == "table"
-      //                       ? NestedDispatcher.Operations.DispatchAsTableRenderer(
-      //                           renderer,
-      //                           dispatcherContext,
-      //                         )
-      //                       : type.kind == "union"
-      //                         ? NestedDispatcher.Operations.DispatchAsUnionRenderer(
-      //                             type,
-      //                             renderer,
-      //                             dispatcherContext,
-      //                           )
-      //                         : type.kind == "one"
-      //                           ? NestedDispatcher.Operations.DispatchAsOneRenderer(
-      //                               type,
-      //                               renderer,
-      //                               dispatcherContext,
-      //                             )
-      //                           : ValueOrErrors.Default.throwOne(
-      //                               `unknown type kind "${type.kind}"`,
-      //                             );
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "lookupRenderer" && type.kind == "primitive"
+        ? PrimitiveDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "listRenderer" && type.kind == "list"
+        ? ListDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "mapRenderer" && type.kind == "map"
+        ? MapDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "multiSelection" &&
+          (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer")
+        ? MultiSelectionDispatcher.Operations.Dispatch(
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "one" && renderer.kind == "oneRenderer"
+        ? OneDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "singleSelection" &&
+          (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer")
+        ? SingleSelectionDispatcher.Operations.Dispatch(
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "sum" &&
+          (renderer.kind == "sumRenderer" ||
+            renderer.kind == "sumUnitDateRenderer")
+        ? SumDispatcher.Operations.Dispatch(renderer, dispatcherContext).Then(
+            (template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
+          )
+        : type.kind == "table" && renderer.kind == "tableRenderer"
+        ? TableDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+            tableApi,
+            isNested,
+            formName,
+            launcherName,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "tuple" && renderer.kind == "tupleRenderer"
+        ? TupleDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "union" && renderer.kind == "unionRenderer"
+        ? UnionDispatcher.Operations.Dispatch(type, renderer, dispatcherContext)
+        : ValueOrErrors.Default.throwOne(`unknown type kind "${type.kind}"`),
+    //     )
+    //   : renderer.kind == "tableForm"
+    //     ? renderer.inlinedApi == undefined
+    //       ? ValueOrErrors.Default.throwOne(
+    //           "inlined table form renderer has no api",
+    //         )
+    //       : TableFormDispatcher.Operations.Dispatch(
+    //           renderer.type,
+    //           renderer,
+    //           dispatcherContext,
+    //           renderer.inlinedApi,
+    //           true,
+    //         )
+    //     : type.kind == "primitive"
+    //       ? NestedDispatcher.Operations.DispatchAsPrimitiveRenderer(
+    //           type,
+    //           renderer,
+    //           dispatcherContext,
+    //         )
+    //       : type.kind == "singleSelection"
+    //         ? NestedDispatcher.Operations.DispatchAsSingleSelectionRenderer(
+    //             renderer,
+    //             dispatcherContext,
+    //           )
+    //         : type.kind == "multiSelection"
+    //           ? NestedDispatcher.Operations.DispatchAsMultiSelectionRenderer(
+    //               renderer,
+    //               dispatcherContext,
+    //             )
+    //           : type.kind == "sum"
+    //             ? NestedDispatcher.Operations.DispatchAsSumRenderer(
+    //                 type,
+    //                 renderer,
+    //                 dispatcherContext,
+    //               )
+    //             : type.kind == "tuple"
+    //               ? NestedDispatcher.Operations.DispatchAsTupleRenderer(
+    //                   type,
+    //                   renderer,
+    //                   dispatcherContext,
+    //                 )
+    //               : type.kind == "list"
+    //                 ? NestedDispatcher.Operations.DispatchAsListRenderer(
+    //                     type,
+    //                     renderer,
+    //                     dispatcherContext,
+    //                   )
+    //                 : type.kind == "map"
+    //                   ? NestedDispatcher.Operations.DispatchAsMapRenderer(
+    //                       type,
+    //                       renderer,
+    //                       dispatcherContext,
+    //                     )
+    //                   : type.kind == "lookup"
+    //                     ? NestedDispatcher.Operations.DispatchAsLookupRenderer(
+    //                         renderer,
+    //                         dispatcherContext,
+    //                       )
+    //                     : type.kind == "table"
+    //                       ? NestedDispatcher.Operations.DispatchAsTableRenderer(
+    //                           renderer,
+    //                           dispatcherContext,
+    //                         )
+    //                       : type.kind == "union"
+    //                         ? NestedDispatcher.Operations.DispatchAsUnionRenderer(
+    //                             type,
+    //                             renderer,
+    //                             dispatcherContext,
+    //                           )
+    //                         : type.kind == "one"
+    //                           ? NestedDispatcher.Operations.DispatchAsOneRenderer(
+    //                               type,
+    //                               renderer,
+    //                               dispatcherContext,
+    //                             )
+    //                           : ValueOrErrors.Default.throwOne(
+    //                               `unknown type kind "${type.kind}"`,
+    //                             );
 
-      // return result.MapErrors((errors) =>
-      //   errors.map(
-      //     (error) =>
-      //       `${error}\n...When dispatching base renderer: ${
-      //         renderer.kind == "baseLookupRenderer" ||
-      //         renderer.kind == "baseTableRenderer"
-      //           ? renderer.lookupRendererName
-      //           : renderer.concreteRendererName
-      //       }`,
-      //   ),
-      // );
-    
+    // return result.MapErrors((errors) =>
+    //   errors.map(
+    //     (error) =>
+    //       `${error}\n...When dispatching base renderer: ${
+    //         renderer.kind == "baseLookupRenderer" ||
+    //         renderer.kind == "baseTableRenderer"
+    //           ? renderer.lookupRendererName
+    //           : renderer.concreteRendererName
+    //       }`,
+    //   ),
+    // );
+
     // if (viewKind == "union") {
     //   return NestedUnionDispatcher.Dispatch(
     //     type,
