@@ -479,11 +479,25 @@
         "Friends": {
           "fun": "Table",
           "args": ["User"]
+        },
+        "BestFriend": {
+          "fun": "One",
+          "args": ["User"]
         }
       }
     }
   },
   "apis": {
+    "lookups": {
+      "User": {
+        "one": {
+          "BestFriendApi": {
+            "type": "User",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      }
+    },
     "enumOptions": {
       "addressesFields": "AddressesFieldRef",
       "genders": "GenderRef",
@@ -1242,6 +1256,59 @@
               "renderer": "address"
             }
           }
+        },
+        "BestFriend": {
+          "label": "Best Friend",
+          "renderer": "bestFriend",
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "BestFriendApi"]
         }
       },
       "tabs": {
@@ -1250,6 +1317,7 @@
             "demographics": {
               "groups": {
                 "main": [
+                  "BestFriend",
                   "Friends",
                   "Job",
                   "Category",

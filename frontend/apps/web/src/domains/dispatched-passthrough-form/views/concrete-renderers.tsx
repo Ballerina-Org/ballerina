@@ -335,6 +335,106 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
+    bestFriend:
+      <
+        OneAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): OneAbstractRendererView =>
+      (props) => {
+        const fm = props.foreignMutations;
+        const ctx = props.context;
+        if (
+          ctx.kind == "uninitialized" ||
+          fm.kind == "uninitialized" ||
+          props.kind == "uninitialized"
+        ) {
+          return <></>;
+        }
+        if (
+          !AsyncState.Operations.hasValue(
+            ctx.customFormState.selectedValue.sync,
+          )
+        ) {
+          return <></>;
+        }
+        if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+          console.error(
+            ctx.customFormState.selectedValue.sync.value.errors
+              .join("\n")
+              .concat(`\n...When parsing the "one" field value\n...`),
+          );
+          return <></>;
+        }
+
+        if (PredicateValue.Operations.IsUnit(ctx.value)) {
+          return <></>;
+        }
+
+        return (
+          <>
+            {props.DetailsRenderer({
+              ...props,
+              view: unit,
+            })}
+            <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
+              {props?.PreviewRenderer &&
+                props?.PreviewRenderer(ctx.value)?.({
+                  ...props,
+                  view: unit,
+                })}
+              {ctx.customFormState.status == "open" ? "➖" : "➕"}
+            </button>
+            {ctx.customFormState.status == "closed" ? (
+              <></>
+            ) : (
+              <>
+                <input
+                  disabled={ctx.disabled}
+                  value={ctx.customFormState.searchText.value}
+                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                />
+                <ul>
+                  {ctx.customFormState.stream.loadedElements
+                    .valueSeq()
+                    .map((chunk: any) =>
+                      chunk.data.valueSeq().map((element: any) => {
+                        return (
+                          <li>
+                            <button
+                              disabled={ctx.disabled}
+                              onClick={() => fm.select(element)}
+                            >
+                              <div
+                                onClick={() => fm.select(element)}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  gap: "10px",
+                                }}
+                              />
+                              {props?.PreviewRenderer &&
+                                props?.PreviewRenderer(element)?.({
+                                  ...props,
+                                  view: unit,
+                                })}
+                            </button>
+                          </li>
+                        );
+                      }),
+                    )}
+                </ul>
+              </>
+            )}
+            <button
+              disabled={ctx.hasMoreValues == false}
+              onClick={() => fm.loadMore()}
+            >
+              ⋯
+            </button>
+            <button onClick={() => fm.reload()}>🔄</button>
+          </>
+        );
+      },
   },
   union: {
     person:

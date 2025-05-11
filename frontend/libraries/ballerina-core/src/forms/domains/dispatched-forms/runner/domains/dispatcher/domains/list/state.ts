@@ -19,7 +19,8 @@ export const ListDispatcher = {
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,
         dispatcherContext,
-        "list element",
+        "listElement",
+        "listElement",
       )
         .Then((elementTemplate) =>
           dispatcherContext

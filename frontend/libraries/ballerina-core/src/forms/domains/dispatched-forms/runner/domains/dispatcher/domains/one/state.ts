@@ -22,9 +22,11 @@ export const OneDispatcher = {
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
-        : NestedDispatcher.Operations.Dispatch(
+        : NestedDispatcher.Operations.DispatchAs(
             renderer.previewRenderer,
             dispatcherContext,
+            "previewRenderer",
+            "previewRenderer",
           ),
     GetApi: (
       api: string | string[],
@@ -66,9 +68,11 @@ export const OneDispatcher = {
         renderer,
         dispatcherContext,
       ).Then((previewRenderer) =>
-        NestedDispatcher.Operations.Dispatch(
+        NestedDispatcher.Operations.DispatchAs(
           renderer.detailsRenderer,
           dispatcherContext,
+          "detailsRenderer",
+          "detailsRenderer",
         ).Then((detailsRenderer) =>
           OneDispatcher.Operations.GetApi(
             renderer.api,

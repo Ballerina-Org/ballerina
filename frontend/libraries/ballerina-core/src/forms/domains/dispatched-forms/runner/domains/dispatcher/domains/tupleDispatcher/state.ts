@@ -25,6 +25,7 @@ export const TupleDispatcher = {
               renderer.itemRenderers[index],
               dispatcherContext,
               `Item ${index + 1}`,
+              `Item ${index + 1}`,
             ).Then((template) =>
               ValueOrErrors.Default.return([index, template]),
             ),

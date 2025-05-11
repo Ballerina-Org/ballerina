@@ -16,6 +16,7 @@ export const MapDispatcher = {
         renderer.keyRenderer,
         dispatcherContext,
         "key",
+        "key",
       )
         .Then((keyTemplate) =>
           dispatcherContext
@@ -28,6 +29,7 @@ export const MapDispatcher = {
                     renderer.valueRenderer,
                     dispatcherContext,
                     "value",
+                    "value"
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(

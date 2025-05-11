@@ -20,6 +20,7 @@ export const SumDispatcher = {
             renderer.leftRenderer,
             dispatcherContext,
             "left",
+            "left",
           )
         : ValueOrErrors.Default.return<undefined, string>(undefined)
       )
@@ -29,6 +30,7 @@ export const SumDispatcher = {
                 renderer.rightRenderer,
                 dispatcherContext,
                 "right",
+                "right"
               )
             : ValueOrErrors.Default.return<undefined, string>(undefined)
           ).Then((rightForm) =>

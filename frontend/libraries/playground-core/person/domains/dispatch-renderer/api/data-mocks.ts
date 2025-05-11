@@ -76,14 +76,14 @@ const getActiveUsers: DispatchTableApiSource = {
     },
 };
 
-const getAdminLookup: DispatchOneSource = {
+const getFriends: DispatchOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
       Id: v4(),
-      Name: "Admin",
-      Surname: "User",
+      Name: "Tim",
+      Surname: "Pool",
       Birthday: "1990-01-01",
-      Email: "admin.user@example.com",
+      Email: "tim.pool@example.com",
       SubscribeToNewsletter: true,
     }));
   },
@@ -125,8 +125,8 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
         one: (apiName: string) =>
-          apiName == "AdminApi"
-            ? ValueOrErrors.Default.return(getAdminLookup)
+          apiName == "BestFriendApi"
+            ? ValueOrErrors.Default.return(getFriends)
             : ValueOrErrors.Default.throwOne(
                 `can't find api ${apiName} when getting lookup api sources`,
               ),
@@ -236,6 +236,17 @@ const entityApis: EntityApis = {
             //     Language: "TypeScript",
             //   },
             // },
+            BestFriend: {
+              isRight: true,
+              right: {
+                Id: v4(),
+                Name: "John",
+                Surname: "Doe",
+                Birthday: "1990-01-01",
+                Email: "john.doe@example.com",
+                SubscribeToNewsletter: true,
+              },
+            },
             Friends: {
               From: 0,
               To: 0,
