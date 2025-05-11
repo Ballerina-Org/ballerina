@@ -45,12 +45,12 @@ export const MapRenderer = {
             `serialized map renderer is not an object`,
           )
         : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-        : !("keyRenderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`keyRenderer is missing`)
-        : !("valueRenderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
-        : ValueOrErrors.Default.return(serialized),
+          ? ValueOrErrors.Default.throwOne(`renderer is missing`)
+          : !("keyRenderer" in serialized)
+            ? ValueOrErrors.Default.throwOne(`keyRenderer is missing`)
+            : !("valueRenderer" in serialized)
+              ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
+              : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: MapType<T>,
       serialized: unknown,

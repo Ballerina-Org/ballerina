@@ -50,22 +50,28 @@ export const OneRenderer = {
             `serialized one renderer is not an object`,
           )
         : !("api" in serialized)
-        ? ValueOrErrors.Default.throwOne(`api is missing`)
-        : !isString(serialized.api) && !Array.isArray(serialized.api)
-        ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
-        : Array.isArray(serialized.api) && serialized.api.length != 2
-        ? ValueOrErrors.Default.throwOne(`api must be an array of length 2`)
-        : Array.isArray(serialized.api) && !serialized.api.every(isString)
-        ? ValueOrErrors.Default.throwOne(`api array elements must be strings`)
-        : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-        : !("detailsRenderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`detailsRenderer is missing`)
-        : ValueOrErrors.Default.return({
-            ...serialized,
-            detailsRenderer: serialized.detailsRenderer,
-            api: serialized.api,
-          }),
+          ? ValueOrErrors.Default.throwOne(`api is missing`)
+          : !isString(serialized.api) && !Array.isArray(serialized.api)
+            ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
+            : Array.isArray(serialized.api) && serialized.api.length != 2
+              ? ValueOrErrors.Default.throwOne(
+                  `api must be an array of length 2`,
+                )
+              : Array.isArray(serialized.api) && !serialized.api.every(isString)
+                ? ValueOrErrors.Default.throwOne(
+                    `api array elements must be strings`,
+                  )
+                : !("renderer" in serialized)
+                  ? ValueOrErrors.Default.throwOne(`renderer is missing`)
+                  : !("detailsRenderer" in serialized)
+                    ? ValueOrErrors.Default.throwOne(
+                        `detailsRenderer is missing`,
+                      )
+                    : ValueOrErrors.Default.return({
+                        ...serialized,
+                        detailsRenderer: serialized.detailsRenderer,
+                        api: serialized.api,
+                      }),
     DeserializePreviewRenderer: <T>(
       type: OneType<T>,
       serialized: SerializedOneRenderer,

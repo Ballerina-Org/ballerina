@@ -52,8 +52,8 @@ export const EnumRenderer = {
       !EnumRenderer.Operations.hasRenderer(serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
         : !EnumRenderer.Operations.hasOptions(serialized)
-        ? ValueOrErrors.Default.throwOne(`options are required`)
-        : ValueOrErrors.Default.return(serialized),
+          ? ValueOrErrors.Default.throwOne(`options are required`)
+          : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,

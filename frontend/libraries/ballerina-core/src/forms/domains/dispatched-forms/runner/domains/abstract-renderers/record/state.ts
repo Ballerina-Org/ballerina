@@ -12,7 +12,7 @@ import {
   ValueRecord,
   View,
   DispatchCommonFormState,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 
 export type RecordAbstractRendererState = {

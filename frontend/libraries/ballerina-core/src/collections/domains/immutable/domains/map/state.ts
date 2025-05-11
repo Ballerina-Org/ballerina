@@ -47,7 +47,7 @@ export const MapRepo = {
       e: () => e,
     ): ValueOrErrors<v, e> =>
       ValueOrErrors.Default.ofOption(
-        m.size != 0 ? Sum.Default.right(m.first()!): Sum.Default.left(unit),
+        m.size != 0 ? Sum.Default.right(m.first()!) : Sum.Default.left(unit),
         e,
       ),
     tryFind: <k, v>(k: k, m: Map<k, v>): Option<v> =>

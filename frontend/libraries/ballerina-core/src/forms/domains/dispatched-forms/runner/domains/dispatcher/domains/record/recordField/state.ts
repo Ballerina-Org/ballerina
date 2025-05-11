@@ -17,12 +17,11 @@ export const RecordFieldDispatcher = {
         renderer,
         dispatcherContext,
         fieldName,
-      )
-      .MapErrors((errors) =>
+      ).MapErrors((errors) =>
         errors.map(
           (error) => `${error}\n...When dispatching field ${fieldName}`,
         ),
-      )
+      );
     },
   },
 };

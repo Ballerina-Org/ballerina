@@ -7,7 +7,7 @@ import {
   simpleUpdaterWithChildren,
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 

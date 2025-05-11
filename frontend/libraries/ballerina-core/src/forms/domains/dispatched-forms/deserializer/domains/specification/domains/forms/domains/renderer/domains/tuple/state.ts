@@ -38,19 +38,19 @@ export const TupleRenderer = {
       !isObject(serialized)
         ? ValueOrErrors.Default.throwOne(`serialized must be an object`)
         : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is required`)
-        : !("itemRenderers" in serialized)
-        ? ValueOrErrors.Default.throwOne(`itemRenderers is required`)
-        : !Array.isArray(serialized.itemRenderers)
-        ? ValueOrErrors.Default.throwOne(`itemRenderers must be an array`)
-        : serialized.itemRenderers.length == 0
-        ? ValueOrErrors.Default.throwOne(
-            `itemRenderers must have at least one item`,
-          )
-        : ValueOrErrors.Default.return({
-            ...serialized,
-            itemRenderers: serialized.itemRenderers,
-          }),
+          ? ValueOrErrors.Default.throwOne(`renderer is required`)
+          : !("itemRenderers" in serialized)
+            ? ValueOrErrors.Default.throwOne(`itemRenderers is required`)
+            : !Array.isArray(serialized.itemRenderers)
+              ? ValueOrErrors.Default.throwOne(`itemRenderers must be an array`)
+              : serialized.itemRenderers.length == 0
+                ? ValueOrErrors.Default.throwOne(
+                    `itemRenderers must have at least one item`,
+                  )
+                : ValueOrErrors.Default.return({
+                    ...serialized,
+                    itemRenderers: serialized.itemRenderers,
+                  }),
     Deserialize: <T>(
       type: TupleType<T>,
       serialized: unknown,

@@ -13,7 +13,7 @@ import {
   Bindings,
   replaceWith,
   DispatchCommonFormState,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {

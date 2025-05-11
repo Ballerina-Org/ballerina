@@ -68,35 +68,35 @@ export const MultiSelectionDispatcher = {
                       ),
                     )
                 : viewKind == "streamMultiSelection" &&
-                  renderer.kind == "streamRenderer"
-                ? renderer.renderer.kind != "lookupRenderer"
-                  ? ValueOrErrors.Default.throwOne<
-                      Template<any, any, any, any>,
-                      string
-                    >(
-                      `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for stream multi selection`,
-                    )
-                  : dispatcherContext
-                      .getConcreteRenderer(
-                        "streamMultiSelection",
-                        renderer.renderer.renderer,
+                    renderer.kind == "streamRenderer"
+                  ? renderer.renderer.kind != "lookupRenderer"
+                    ? ValueOrErrors.Default.throwOne<
+                        Template<any, any, any, any>,
+                        string
+                      >(
+                        `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for stream multi selection`,
                       )
-                      .Then((concreteRenderer) =>
-                        ValueOrErrors.Default.return(
-                          InfiniteMultiselectDropdownFormAbstractRenderer().withView(
-                            concreteRenderer,
+                    : dispatcherContext
+                        .getConcreteRenderer(
+                          "streamMultiSelection",
+                          renderer.renderer.renderer,
+                        )
+                        .Then((concreteRenderer) =>
+                          ValueOrErrors.Default.return(
+                            InfiniteMultiselectDropdownFormAbstractRenderer().withView(
+                              concreteRenderer,
+                            ),
                           ),
-                        ),
-                      )
-                      .MapErrors((errors) =>
-                        errors.map(
-                          (error) =>
-                            `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
-                        ),
-                      )
-                : ValueOrErrors.Default.throwOne(
-                    `could not resolve multi selection concrete renderer for ${viewKind}`,
-                  ),
+                        )
+                        .MapErrors((errors) =>
+                          errors.map(
+                            (error) =>
+                              `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
+                          ),
+                        )
+                  : ValueOrErrors.Default.throwOne(
+                      `could not resolve multi selection concrete renderer for ${viewKind}`,
+                    ),
             ),
   },
 };

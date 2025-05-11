@@ -37,13 +37,13 @@ export const UnionRenderer = {
             `union form is missing the required cases attribute`,
           )
         : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(
-            `union form is missing the required renderer attribute`,
-          )
-        : ValueOrErrors.Default.return({
-            ...serialized,
-            cases: Map(serialized.cases),
-          }),
+          ? ValueOrErrors.Default.throwOne(
+              `union form is missing the required renderer attribute`,
+            )
+          : ValueOrErrors.Default.return({
+              ...serialized,
+              cases: Map(serialized.cases),
+            }),
     Deserialize: <T>(
       type: UnionType<T>,
       serialized: unknown,

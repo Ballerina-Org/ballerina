@@ -8,7 +8,6 @@ import {
   Template,
   UnionType,
   Updater,
-
   ValueUnionCase,
   View,
   DispatchOnChange,

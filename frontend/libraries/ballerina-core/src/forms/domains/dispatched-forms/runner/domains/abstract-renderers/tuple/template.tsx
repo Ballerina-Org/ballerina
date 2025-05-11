@@ -14,7 +14,7 @@ import {
   Updater,
   Value,
   ValueTuple,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 

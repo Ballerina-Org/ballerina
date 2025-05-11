@@ -96,28 +96,30 @@ export const RecordDispatcher = {
               ? ValueOrErrors.Default.throwOne<
                   Template<any, any, any, any>,
                   string
-                >("internal error: launcherName is required for top level forms")
+                >(
+                  "internal error: launcherName is required for top level forms",
+                )
               : formName == undefined
-              ? ValueOrErrors.Default.throwOne<
-                  Template<any, any, any, any>,
-                  string
-                >("internal error: formName is required for all forms")
-              : ValueOrErrors.Default.return(
-                  RecordAbstractRenderer(Map(fieldTemplates), renderer.tabs)
-                    .mapContext((_: any) => ({
-                      ..._,
-                      type: renderer.type,
-                      ...(!isNested && launcherName
-                        ? {
-                            identifiers: {
-                              withLauncher: `[${launcherName}][${formName}]`,
-                              withoutLauncher: `[${formName}]`,
-                            },
-                          }
-                        : {}),
-                    }))
-                    .withView(concreteRenderer),
-                ),
+                ? ValueOrErrors.Default.throwOne<
+                    Template<any, any, any, any>,
+                    string
+                  >("internal error: formName is required for all forms")
+                : ValueOrErrors.Default.return(
+                    RecordAbstractRenderer(Map(fieldTemplates), renderer.tabs)
+                      .mapContext((_: any) => ({
+                        ..._,
+                        type: renderer.type,
+                        ...(!isNested && launcherName
+                          ? {
+                              identifiers: {
+                                withLauncher: `[${launcherName}][${formName}]`,
+                                withoutLauncher: `[${formName}]`,
+                              },
+                            }
+                          : {}),
+                      }))
+                      .withView(concreteRenderer),
+                  ),
           ),
         )
         .MapErrors((errors) =>

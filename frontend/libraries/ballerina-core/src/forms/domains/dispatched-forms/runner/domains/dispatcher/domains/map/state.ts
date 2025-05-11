@@ -29,7 +29,7 @@ export const MapDispatcher = {
                     renderer.valueRenderer,
                     dispatcherContext,
                     "value",
-                    "value"
+                    "value",
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(

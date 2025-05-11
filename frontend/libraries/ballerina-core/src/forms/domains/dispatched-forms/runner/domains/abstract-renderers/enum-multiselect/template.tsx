@@ -6,7 +6,7 @@ import {
   replaceWith,
   Synchronize,
   Unit,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";

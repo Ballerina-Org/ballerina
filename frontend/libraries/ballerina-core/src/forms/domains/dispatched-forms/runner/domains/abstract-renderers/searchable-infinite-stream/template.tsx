@@ -15,7 +15,7 @@ import {
   Template,
   Value,
   ValueOption,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";

@@ -13,7 +13,7 @@ import {
   View,
   MapRepo,
   BasicUpdater,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 
 export type MapAbstractRendererState<KeyFormState, ValueFormState> = {

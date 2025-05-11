@@ -4,7 +4,7 @@ import {
   SimpleCallback,
   ValueOption,
   DispatchCommonFormState,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { FormLabel } from "../../../../../../../../main";

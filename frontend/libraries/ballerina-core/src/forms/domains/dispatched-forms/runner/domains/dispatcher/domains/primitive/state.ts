@@ -60,9 +60,7 @@ export const PrimitiveDispatcher = {
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                injectedPrimitive.abstractRenderer(
-                  concreteRenderer,
-                ),
+                injectedPrimitive.abstractRenderer(concreteRenderer),
               ),
             );
         }
@@ -71,8 +69,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("unit", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                UnitAbstractRenderer()
-                  .withView(concreteRenderer),
+                UnitAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -81,8 +78,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("string", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                StringAbstractRenderer()
-                  .withView(concreteRenderer),
+                StringAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -91,8 +87,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("number", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                NumberAbstractRenderer()
-                  .withView(concreteRenderer),
+                NumberAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -101,8 +96,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("boolean", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                BoolAbstractRenderer()
-                  .withView(concreteRenderer),
+                BoolAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -111,8 +105,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("secret", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                SecretAbstractRenderer()
-                  .withView(concreteRenderer),
+                SecretAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -121,8 +114,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("base64File", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                Base64FileAbstractRenderer()
-                  .withView(concreteRenderer),
+                Base64FileAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }
@@ -131,8 +123,7 @@ export const PrimitiveDispatcher = {
             .getConcreteRenderer("date", renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                DateAbstractRenderer()
-                  .withView(concreteRenderer),
+                DateAbstractRenderer().withView(concreteRenderer),
               ),
             );
         }

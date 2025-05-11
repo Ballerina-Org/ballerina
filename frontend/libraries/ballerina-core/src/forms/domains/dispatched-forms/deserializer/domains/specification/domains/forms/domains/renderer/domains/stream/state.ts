@@ -42,15 +42,15 @@ export const StreamRenderer = {
       !isObject(serialized)
         ? ValueOrErrors.Default.throwOne(`stream renderer is not an object`)
         : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is required`)
-        : !("stream" in serialized)
-        ? ValueOrErrors.Default.throwOne(`stream is required`)
-        : !isString(serialized.stream)
-        ? ValueOrErrors.Default.throwOne(`stream must be a string`)
-        : ValueOrErrors.Default.return({
-            ...serialized,
-            stream: serialized.stream,
-          }),
+          ? ValueOrErrors.Default.throwOne(`renderer is required`)
+          : !("stream" in serialized)
+            ? ValueOrErrors.Default.throwOne(`stream is required`)
+            : !isString(serialized.stream)
+              ? ValueOrErrors.Default.throwOne(`stream must be a string`)
+              : ValueOrErrors.Default.return({
+                  ...serialized,
+                  stream: serialized.stream,
+                }),
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,

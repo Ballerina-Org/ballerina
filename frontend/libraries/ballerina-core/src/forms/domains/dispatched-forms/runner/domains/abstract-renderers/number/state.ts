@@ -5,7 +5,7 @@ import {
   Value,
   View,
   DispatchCommonFormState,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 
 export type NumberAbstractRendererState = {

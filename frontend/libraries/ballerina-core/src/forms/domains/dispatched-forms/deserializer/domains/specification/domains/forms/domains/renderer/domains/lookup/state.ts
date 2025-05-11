@@ -1,5 +1,8 @@
 import { type } from "node:os";
-import { DispatchParsedType, ValueOrErrors } from "../../../../../../../../../../../../../main";
+import {
+  DispatchParsedType,
+  ValueOrErrors,
+} from "../../../../../../../../../../../../../main";
 import { LookupType } from "../../../../../../../../../../../../../main";
 
 export type SerializedLookupRenderer = string;
@@ -28,6 +31,8 @@ export const LookupRenderer = {
       serialized: SerializedLookupRenderer,
       api?: string | string[],
     ): ValueOrErrors<LookupRenderer<T>, string> =>
-      ValueOrErrors.Default.return(LookupRenderer.Default(serialized, type, api)),
+      ValueOrErrors.Default.return(
+        LookupRenderer.Default(serialized, type, api),
+      ),
   },
 };

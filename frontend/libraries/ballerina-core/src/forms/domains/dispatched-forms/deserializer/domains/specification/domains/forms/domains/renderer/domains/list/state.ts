@@ -58,10 +58,10 @@ export const ListRenderer = {
       type.kind != "list"
         ? ValueOrErrors.Default.throwOne(`type ${type.kind} is not a list`)
         : !ListRenderer.Operations.hasRenderers(serialized)
-        ? ValueOrErrors.Default.throwOne(
-            `renderer and elementRenderer are required`,
-          )
-        : ValueOrErrors.Default.return(serialized),
+          ? ValueOrErrors.Default.throwOne(
+              `renderer and elementRenderer are required`,
+            )
+          : ValueOrErrors.Default.return(serialized),
 
     Deserialize: <T>(
       type: ListType<T>,

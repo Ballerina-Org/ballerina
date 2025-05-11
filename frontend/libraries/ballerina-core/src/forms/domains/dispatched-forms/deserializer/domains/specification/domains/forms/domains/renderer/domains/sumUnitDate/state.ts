@@ -42,8 +42,8 @@ export const BaseSumUnitDateRenderer = {
       !isObject(serialized)
         ? ValueOrErrors.Default.throwOne(`renderer is required`)
         : !("renderer" in serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is required`)
-        : ValueOrErrors.Default.return(serialized),
+          ? ValueOrErrors.Default.throwOne(`renderer is required`)
+          : ValueOrErrors.Default.return(serialized),
     Deserialize: <T>(
       type: SumType<T>,
       serialized: unknown,

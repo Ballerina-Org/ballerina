@@ -9,7 +9,7 @@ import {
   replaceWith,
   Updater,
   ValueTuple,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";

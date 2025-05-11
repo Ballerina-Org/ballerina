@@ -31,7 +31,7 @@ import {
   RecordAbstractRendererState,
   ValueUnit,
   DispatchPrimitiveType,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -144,7 +144,9 @@ export type OneAbstractRendererView = View<
   | {
       kind: "initialized";
       DetailsRenderer: Template<any, any, any, any>;
-      PreviewRenderer: (value: ValueRecord) => Template<any, any, any, any> | undefined;
+      PreviewRenderer: (
+        value: ValueRecord,
+      ) => Template<any, any, any, any> | undefined;
     }
   | {
       kind: "uninitialized";

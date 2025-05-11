@@ -19,7 +19,7 @@ import {
   ValueTable,
   replaceWith,
   DispatchTableApiSource,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";

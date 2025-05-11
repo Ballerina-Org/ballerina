@@ -8,7 +8,7 @@ import {
   UnionType,
   Updater,
   ValueUnionCase,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 

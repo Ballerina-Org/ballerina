@@ -5,7 +5,7 @@ import {
   replaceWith,
   Template,
   Value,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererState,

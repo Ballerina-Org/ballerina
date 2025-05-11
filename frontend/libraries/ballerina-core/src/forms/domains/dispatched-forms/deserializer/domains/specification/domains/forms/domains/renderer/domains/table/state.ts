@@ -74,31 +74,31 @@ export const TableRenderer = {
       !DispatchIsObject(_)
         ? ValueOrErrors.Default.throwOne("table form renderer not an object")
         : !TableRenderer.Operations.hasType(_)
-        ? ValueOrErrors.Default.throwOne(
-            "table form renderer is missing or has invalid type property",
-          )
-        : !TableRenderer.Operations.hasRenderer(_)
-        ? ValueOrErrors.Default.throwOne(
-            "table form renderer is missing or has invalid renderer property",
-          )
-        : !TableRenderer.Operations.hasColumns(_)
-        ? ValueOrErrors.Default.throwOne(
-            "table form renderer is missing or has invalid columns property",
-          )
-        : !TableRenderer.Operations.hasVisibleColumns(_)
-        ? ValueOrErrors.Default.throwOne(
-            "table form renderer is missing or has invakid visible columns property",
-          )
-        : !TableRenderer.Operations.hasValidApi(_)
-        ? ValueOrErrors.Default.throwOne(
-            "table form renderer has a non string api property",
-          )
-        : ValueOrErrors.Default.return({
-            ..._,
-            columns: Map<string, unknown>(_.columns),
-            visibleColumns: _.visibleColumns,
-            api: _?.api,
-          }),
+          ? ValueOrErrors.Default.throwOne(
+              "table form renderer is missing or has invalid type property",
+            )
+          : !TableRenderer.Operations.hasRenderer(_)
+            ? ValueOrErrors.Default.throwOne(
+                "table form renderer is missing or has invalid renderer property",
+              )
+            : !TableRenderer.Operations.hasColumns(_)
+              ? ValueOrErrors.Default.throwOne(
+                  "table form renderer is missing or has invalid columns property",
+                )
+              : !TableRenderer.Operations.hasVisibleColumns(_)
+                ? ValueOrErrors.Default.throwOne(
+                    "table form renderer is missing or has invakid visible columns property",
+                  )
+                : !TableRenderer.Operations.hasValidApi(_)
+                  ? ValueOrErrors.Default.throwOne(
+                      "table form renderer has a non string api property",
+                    )
+                  : ValueOrErrors.Default.return({
+                      ..._,
+                      columns: Map<string, unknown>(_.columns),
+                      visibleColumns: _.visibleColumns,
+                      api: _?.api,
+                    }),
     DeserializeDetailsRenderer: <T>(
       type: TableType<T>,
       serialized: SerializedTableRenderer,

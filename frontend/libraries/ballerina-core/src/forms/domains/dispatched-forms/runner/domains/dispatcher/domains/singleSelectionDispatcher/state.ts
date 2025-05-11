@@ -68,29 +68,29 @@ export const SingleSelectionDispatcher = {
                       ),
                     )
                 : viewKind == "streamSingleSelection" &&
-                  renderer.kind == "streamRenderer" &&
-                  renderer.renderer.kind == "lookupRenderer"
-                ? dispatcherContext
-                    .getConcreteRenderer(
-                      "streamSingleSelection",
-                      renderer.renderer.renderer,
-                    )
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return(
-                        SearchableInfiniteStreamAbstractRenderer().withView(
-                          concreteRenderer,
+                    renderer.kind == "streamRenderer" &&
+                    renderer.renderer.kind == "lookupRenderer"
+                  ? dispatcherContext
+                      .getConcreteRenderer(
+                        "streamSingleSelection",
+                        renderer.renderer.renderer,
+                      )
+                      .Then((concreteRenderer) =>
+                        ValueOrErrors.Default.return(
+                          SearchableInfiniteStreamAbstractRenderer().withView(
+                            concreteRenderer,
+                          ),
                         ),
-                      ),
-                    )
-                    .MapErrors((errors) =>
-                      errors.map(
-                        (error) =>
-                          `${error}\n...When dispatching nested stream single selection`,
-                      ),
-                    )
-                : ValueOrErrors.Default.throwOne(
-                    `could not resolve view for ${viewKind}`,
-                  ),
+                      )
+                      .MapErrors((errors) =>
+                        errors.map(
+                          (error) =>
+                            `${error}\n...When dispatching nested stream single selection`,
+                        ),
+                      )
+                  : ValueOrErrors.Default.throwOne(
+                      `could not resolve view for ${viewKind}`,
+                    ),
             ),
   },
 };

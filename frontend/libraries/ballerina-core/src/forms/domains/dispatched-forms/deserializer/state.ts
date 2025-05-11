@@ -74,7 +74,7 @@ export type DispatcherContext<
   ) => ValueOrErrors<any, string>;
   defaultValue: (
     t: DispatchParsedType<T>,
-    renderer: Renderer<T>
+    renderer: Renderer<T>,
   ) => ValueOrErrors<PredicateValue, string>;
   defaultState: (
     t: DispatchParsedType<T>,

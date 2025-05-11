@@ -5,7 +5,7 @@ import {
   PredicateValue,
   SimpleCallback,
   DispatchCommonFormState,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";

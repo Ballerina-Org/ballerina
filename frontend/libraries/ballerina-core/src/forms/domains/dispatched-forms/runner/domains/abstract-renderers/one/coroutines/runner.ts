@@ -19,7 +19,7 @@ import {
   ValueOrErrors,
   ValueRecord,
   ValueUnit,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../../main";
 
 const Co = CoTypedFactory<
@@ -50,8 +50,7 @@ const intializeOne = Co.GetState().then((current) => {
     PredicateValue.Operations.IsUnit(current.value);
   if (hasInitialValue) {
     const initialValue =
-      PredicateValue.Operations.IsOption(current.value) &&
-      current.value.isSome
+      PredicateValue.Operations.IsOption(current.value) && current.value.isSome
         ? current.value.value
         : PredicateValue.Default.unit();
     return Co.SetState(

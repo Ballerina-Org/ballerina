@@ -11,7 +11,7 @@ import {
   Unit,
   ValueOption,
   ValueRecord,
-  DispatchOnChange
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,

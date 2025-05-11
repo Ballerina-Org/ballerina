@@ -30,7 +30,7 @@ export const UnionDispatcher = {
                 caseName,
                 unionRenderer.cases,
                 () => `cannot find case ${caseName}`,
-              ).Then((caseRenderer) => 
+              ).Then((caseRenderer) =>
                 Dispatcher.Operations.DispatchAs(
                   caseType,
                   caseRenderer,
