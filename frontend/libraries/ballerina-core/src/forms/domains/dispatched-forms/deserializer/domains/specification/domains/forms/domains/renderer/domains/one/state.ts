@@ -42,7 +42,7 @@ export const OneRenderer = {
     previewRenderer,
   }),
   Operations: {
-    tryAsValidBaseOneRenderer: <T>(
+    tryAsValidOneRenderer: (
       serialized: unknown,
     ): ValueOrErrors<SerializedOneRenderer, string> =>
       !isObject(serialized)
@@ -63,6 +63,7 @@ export const OneRenderer = {
         ? ValueOrErrors.Default.throwOne(`detailsRenderer is missing`)
         : ValueOrErrors.Default.return({
             ...serialized,
+            detailsRenderer: serialized.detailsRenderer,
             api: serialized.api,
           }),
     DeserializePreviewRenderer: <T>(
@@ -79,6 +80,9 @@ export const OneRenderer = {
             concreteRenderers,
             "preview renderer",
             types,
+            typeof serialized.previewRenderer == "object" && 
+            "renderer" in serialized.previewRenderer &&
+            typeof serialized.previewRenderer.renderer == "object",
           ),
     Deserialize: <T>(
       type: OneType<T>,
@@ -86,14 +90,17 @@ export const OneRenderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
-      OneRenderer.Operations.tryAsValidBaseOneRenderer(serialized).Then(
+      OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
             validatedSerialized.detailsRenderer,
             concreteRenderers,
-            "detail renderer",
+            "details renderer",
             types,
+            typeof validatedSerialized.detailsRenderer == "object" && 
+            "renderer" in validatedSerialized.detailsRenderer! &&
+            typeof validatedSerialized.detailsRenderer.renderer == "object",
           ).Then((detailsRenderer) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,

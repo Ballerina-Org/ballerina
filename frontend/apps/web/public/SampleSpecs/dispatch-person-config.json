@@ -783,6 +783,23 @@
         }
       }
     },
+    "friendsTable": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        }
+      },
+      "visibleColumns": ["Name", "Surname"],
+      "detailsRenderer": {
+        "renderer": "userDetails"
+      }
+    },
     "person": {
       "type": "Person",
       "renderer": "person",
@@ -802,7 +819,48 @@
             },
             "visibleColumns": ["Name", "Surname"],
             "detailsRenderer": {
-              "renderer": "userDetails"
+              "renderer": {
+                "renderer": "userDetails",
+                "fields": {
+                  "Name": {
+                    "label": "First Name",
+                    "renderer": "defaultString"
+                  },
+                  "Surname": {
+                    "label": "Last Name",
+                    "renderer": "defaultString"
+                  },
+                  "Birthday": {
+                    "label": "Birthday",
+                    "renderer": "defaultDate"
+                  },
+                  "Email": {
+                    "label": "Email",
+                    "renderer": "defaultString"
+                  },
+                  "SubscribeToNewsletter": {
+                    "label": "Subscribe to Newsletter",
+                    "renderer": "defaultBoolean"
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": [
+                            "Name",
+                            "Surname",
+                            "Birthday",
+                            "Email",
+                            "SubscribeToNewsletter"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "api": "ActiveUsersApi"
@@ -1262,7 +1320,6 @@
           "renderer": "bestFriend",
           "detailsRenderer": {
             "renderer": {
-              "type": "User",
               "fields": {
                 "Name": {
                   "renderer": "defaultString"
@@ -1283,7 +1340,6 @@
           },
           "previewRenderer": {
             "renderer": {
-              "type": "User",
               "fields": {
                 "Name": {
                   "renderer": "defaultString"

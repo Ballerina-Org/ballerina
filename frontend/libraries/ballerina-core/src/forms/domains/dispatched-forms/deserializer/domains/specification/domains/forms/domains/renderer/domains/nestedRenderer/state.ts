@@ -66,12 +66,14 @@ export const NestedRenderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
+      canOmitType?: boolean,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
+        canOmitType,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -80,6 +82,7 @@ export const NestedRenderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
+      canOmitType?: boolean,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
@@ -126,6 +129,7 @@ export const NestedRenderer = {
               "api" in validatedSerialized && isString(validatedSerialized.api)
                 ? validatedSerialized.api
                 : undefined,
+              canOmitType,
             ).Then((renderer) =>
               type.kind == "table" && renderer.kind == "tableRenderer"
                 ? ValueOrErrors.Default.return({

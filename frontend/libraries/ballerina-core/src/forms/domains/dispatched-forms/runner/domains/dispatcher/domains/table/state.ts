@@ -33,9 +33,11 @@ export const TableDispatcher = {
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
-        : NestedDispatcher.Operations.Dispatch(
+        : NestedDispatcher.Operations.DispatchAs(
             renderer.detailsRenderer,
             dispatcherContext,
+            "table details renderer",
+            "details"
           ),
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: TableType<T>,

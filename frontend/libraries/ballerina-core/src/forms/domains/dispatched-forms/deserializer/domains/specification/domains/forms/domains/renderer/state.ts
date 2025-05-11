@@ -94,12 +94,15 @@ export const Renderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
+      canOmitType?: boolean,
     ): ValueOrErrors<Renderer<T>, string> =>
       Renderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
+        undefined,
+        canOmitType ?? false,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -109,6 +112,7 @@ export const Renderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
       tableApi?: string,
+      canOmitType?: boolean,
     ): ValueOrErrors<Renderer<T>, string> =>
       type.kind == "lookup"
         ? MapRepo.Operations.tryFindWithError(
@@ -121,6 +125,8 @@ export const Renderer = {
               serialized,
               concreteRenderers,
               types,
+              tableApi,
+              canOmitType,
             ),
           )
         : typeof serialized == "string"
@@ -141,9 +147,16 @@ export const Renderer = {
             concreteRenderers,
             types,
           )
-        : Renderer.Operations.HasColumns(serialized) && type.kind == "table"
+        : Renderer.Operations.HasColumns(serialized) &&
+          (type.kind == "table" || type.kind == "record")
         ? TableRenderer.Operations.Deserialize(
-            type,
+            type.kind == "table"
+              ? type
+              : DispatchParsedType.Default.table(
+                  "tableForm",
+                  [type],
+                  "tableForm",
+                ),
             serialized,
             concreteRenderers,
             types,
@@ -191,6 +204,7 @@ export const Renderer = {
             serialized,
             concreteRenderers,
             types,
+            canOmitType ?? false,
           )
         : type.kind == "union"
         ? UnionRenderer.Operations.Deserialize(
