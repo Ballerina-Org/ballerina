@@ -111,7 +111,7 @@ export const Renderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
       types: Map<string, DispatchParsedType<T>>,
-      tableApi?: string,
+      api?: string | string[],
       canOmitType?: boolean,
     ): ValueOrErrors<Renderer<T>, string> =>
       type.kind == "lookup"
@@ -125,12 +125,12 @@ export const Renderer = {
               serialized,
               concreteRenderers,
               types,
-              tableApi,
+              api,
               canOmitType,
             ),
           )
         : typeof serialized == "string"
-        ? LookupRenderer.Operations.Deserialize(type, serialized)
+        ? LookupRenderer.Operations.Deserialize(type, serialized, api)
         : Renderer.Operations.HasOptions(serialized) &&
           (type.kind == "singleSelection" || type.kind == "multiSelection")
         ? EnumRenderer.Operations.Deserialize(
@@ -160,7 +160,7 @@ export const Renderer = {
             serialized,
             concreteRenderers,
             types,
-            tableApi,
+            api,
           )
         : type.kind == "list"
         ? ListRenderer.Operations.Deserialize(
@@ -215,13 +215,6 @@ export const Renderer = {
           )
         : type.kind == "tuple"
         ? TupleRenderer.Operations.Deserialize(
-            type,
-            serialized,
-            concreteRenderers,
-            types,
-          )
-        : type.kind == "table"
-        ? TableRenderer.Operations.Deserialize(
             type,
             serialized,
             concreteRenderers,

@@ -113,7 +113,7 @@ export const RecordRenderer = {
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(
         serialized,
-        (console.debug("type",type,"canOmitType",canOmitType),canOmitType),
+        canOmitType,
       ).Then((validRecordForm) =>
         ValueOrErrors.Operations.All(
           List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(

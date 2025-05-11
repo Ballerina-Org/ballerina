@@ -17,13 +17,15 @@ import { TableRenderer } from "../../../../../deserializer/domains/specification
 export const TableDispatcher = {
   Operations: {
     GetApi: (
-      api: string | undefined,
+      api: string | string[] | undefined,
       dispatcherContext: DispatcherContext<any>,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
       api == undefined
-        ? ValueOrErrors.Default.throwOne("api is not defined")
+        ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
         : dispatcherContext.tableApiSources == undefined
         ? ValueOrErrors.Default.throwOne("table api sources are not defined")
+        : Array.isArray(api)
+        ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
         : dispatcherContext.tableApiSources(api),
     DispatchDetailsRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
@@ -43,7 +45,7 @@ export const TableDispatcher = {
       type: TableType<T>,
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
-      api: string | undefined,
+      api: string | string[] | undefined,
       isNested: boolean,
       launcherName?: string,
       formName?: string,

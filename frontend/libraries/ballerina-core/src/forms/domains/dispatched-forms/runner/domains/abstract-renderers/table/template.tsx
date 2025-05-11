@@ -244,8 +244,6 @@ export const TableAbstractRenderer = <
     any,
     any
   >((props) => {
-    console.debug("table", props);
-
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
         `Table expected but got: ${JSON.stringify(

@@ -29,6 +29,8 @@ export const Dispatcher = {
       as: string,
       isNested: boolean,
       formName?: string,
+      launcherName?: string,
+      api?: string | string[],
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         type,
@@ -36,6 +38,8 @@ export const Dispatcher = {
         dispatcherContext,
         isNested,
         formName,
+        launcherName,
+        api,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as: ${as}`),
       ),
@@ -46,7 +50,7 @@ export const Dispatcher = {
       isNested: boolean,
       formName?: string,
       launcherName?: string,
-      tableApi?: string,
+      api?: string | string[],
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       type.kind == "lookup" && renderer.kind == "lookupRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
@@ -54,7 +58,7 @@ export const Dispatcher = {
             dispatcherContext.types,
           ).Then((lookupType) =>
             MapRepo.Operations.tryFindWithError(
-              renderer.renderer,
+              (console.debug("renderer", renderer),renderer.renderer),
               dispatcherContext.forms,
               () => `cannot find form ${lookupType}`,
             ).Then((formRenderer) =>
@@ -64,6 +68,8 @@ export const Dispatcher = {
                 dispatcherContext,
                 isNested,
                 formName,
+                launcherName,
+                api ?? renderer.api,
               ).Then((template) =>
                 ValueOrErrors.Default.return(
                   template.mapContext((_: any) => ({
@@ -85,6 +91,8 @@ export const Dispatcher = {
               dispatcherContext,
               isNested,
               formName,
+              launcherName,
+              api,
             ).Then((template) =>
               ValueOrErrors.Default.return(
                 template.mapContext((_: any) => ({
@@ -136,6 +144,8 @@ export const Dispatcher = {
                 dispatcherContext,
                 true,
                 renderer.renderer,
+                launcherName,
+                api ?? renderer.api,
               ),
             )
             .Then((template) =>
@@ -228,7 +238,7 @@ export const Dispatcher = {
             type,
             renderer,
             dispatcherContext,
-            tableApi,
+            api,
             isNested,
             formName,
             launcherName,
