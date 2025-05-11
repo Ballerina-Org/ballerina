@@ -117,7 +117,7 @@ module ExprParserTests =
     assertSuccess result (Expr.VarLookup { VarName = "x" })
 
   [<Test>]
-  let ``Should parse itemLookup`` () =
+  let ``Should parse projection`` () =
     let json =
       JsonValue.Record
         [| "kind", JsonValue.String "itemLookup"
@@ -126,3 +126,114 @@ module ExprParserTests =
     let result = parseExpr json
 
     assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2))
+
+module ExprUnparseParseTests =
+  [<Test>]
+  let ``Should unparse and parse boolean`` () =
+    let expr = Expr.Value(Value.ConstBool true)
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse string`` () =
+    let expr = Expr.Value(Value.ConstString "string")
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse number`` () =
+    let expr = Expr.Value(Value.ConstInt 42)
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse binary operation`` () =
+    let expr =
+      Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstBool true), Expr.Value(Value.ConstBool false))
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse varLookup`` () =
+    let expr = Expr.VarLookup { VarName = "x" }
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse projection`` () =
+    let expr = Expr.Project(Expr.Value(Value.ConstString "array"), 2)
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+
+  [<Test>]
+  let ``Should unparse and parse lambda`` () =
+    let expr =
+      Expr.Value(Value.Lambda({ VarName = "x" }, Expr.Value(Value.ConstBool true)))
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse matchCase`` () =
+    let expr =
+      Expr.MatchCase(
+        Expr.Value(Value.ConstString "test"),
+        Map.ofList [ ("case1", ({ VarName = "x" }, Expr.Value(Value.ConstBool true))) ]
+      )
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse fieldLookup`` () =
+    let expr =
+      Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName")
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse isCase`` () =
+    let expr = Expr.IsCase("caseName", Expr.Value(Value.ConstString "value"))
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+module ExprUnparsePareComplexCases =
+  [<Test>]
+  let ``Should unparse and parse nested expressions`` () =
+    let expr =
+      Expr.Binary(
+        BinaryOperator.And,
+        Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstBool true), Expr.VarLookup { VarName = "x" }),
+        Expr.Project(Expr.Value(Value.ConstString "array"), 2)
+      )
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+module ExprParserErrorTests =
+  [<Test>]
+  let ``Should fail on invalid operator`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "invalidOperator"
+           "operands", JsonValue.Array [| JsonValue.Boolean true; JsonValue.Boolean false |] |]
+
+    let result = parseExpr json
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right _ -> Assert.Pass()

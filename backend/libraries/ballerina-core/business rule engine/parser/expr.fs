@@ -30,6 +30,9 @@ module Expr =
       }
       |> Map.ofSeq
 
+    static member ToName =
+      BinaryOperator.ByName |> Map.toSeq |> Seq.map (fun (k, v) -> v, k) |> Map.ofSeq
+
     static member AllNames = BinaryOperator.ByName |> Map.keys |> Set.ofSeq
 
   type Expr with
@@ -251,3 +254,108 @@ module Expr =
           )
       }
       |> state.MapError(Errors.HighestPriority)
+
+    static member UnparseValue<'config, 'context>(value: Value) : Sum<JsonValue, Errors> =
+      sum {
+        match value with
+        | Value.ConstBool b -> JsonValue.Boolean b
+        | Value.ConstInt i -> JsonValue.Number(decimal i)
+        | Value.ConstString s -> JsonValue.String s
+        | Value.ConstGuid g -> JsonValue.String(g.ToString())
+        | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
+        | Value.Lambda(v, e) ->
+          let! body = Expr.Unparse e
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "lambda"
+               "parameter", JsonValue.String v.VarName
+               "body", body |]
+        | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
+        | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
+        | Value.Record _ -> return! sum.Throw(Errors.Singleton "Error: Record not implemented")
+        | Value.ConstFloat _ -> return! sum.Throw(Errors.Singleton "Error: ConstFloat not implemented")
+        | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
+      }
+
+    static member Unparse<'config, 'context>(expr: Expr) : Sum<JsonValue, Errors> =
+      let (!) = Expr.Unparse
+
+      sum {
+        match expr with
+        | Expr.Value value -> return! Expr.UnparseValue value
+        | Expr.Binary(op, l, r) ->
+          let! unparsedL = !l
+          let! unparsedR = !r
+
+          let! operatorName =
+            Map.tryFind op BinaryOperator.ToName
+            |> Sum.fromOption (fun () -> Errors.Singleton $"No name for binary operator {op}")
+
+          JsonValue.Record
+            [| "kind", JsonValue.String operatorName
+               "operands", JsonValue.Array [| unparsedL; unparsedR |] |]
+        | Expr.MatchCase(expr, cases) ->
+          let! unparsedExpr = !expr
+
+          let! unparsedCases =
+            cases
+            |> Map.toList
+            |> List.map (fun (caseName, (varName, body)) ->
+              sum {
+                let! unparsedBody = Expr.Unparse body
+
+                return
+                  JsonValue.Record
+                    [| "caseName", JsonValue.String caseName
+                       "handler",
+                       JsonValue.Record
+                         [| "kind", JsonValue.String "lambda"
+                            "parameter", JsonValue.String varName.VarName
+                            "body", unparsedBody |] |]
+              })
+            |> sum.All
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "matchCase"
+               "operands", JsonValue.Array(Array.append [| unparsedExpr |] (unparsedCases |> List.toArray)) |]
+        | Expr.Apply(func, arg) ->
+          let! unparsedFunc = Expr.Unparse func
+          let! unparsedArg = Expr.Unparse arg
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "apply"
+               "function", unparsedFunc
+               "argument", unparsedArg |]
+        | Expr.VarLookup varName ->
+          JsonValue.Record
+            [| "kind", JsonValue.String "varLookup"
+               "varName", JsonValue.String varName.VarName |]
+        | Expr.RecordFieldLookup(expr, fieldName) ->
+          let! unparsedExpr = !expr
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "fieldLookup"
+               "operands", JsonValue.Array [| unparsedExpr; JsonValue.String fieldName |] |]
+        | Expr.IsCase(caseName, expr) ->
+          let! unparsedExpr = !expr
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "isCase"
+               "operands", JsonValue.Array [| unparsedExpr; JsonValue.String caseName |] |]
+        | Expr.Project(expr, index) ->
+          let! unparsedExpr = !expr
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "itemLookup"
+               "operands", JsonValue.Array [| unparsedExpr; JsonValue.Number(decimal index) |] |]
+        | Expr.MakeRecord _ -> return! sum.Throw(Errors.Singleton "Error: MakeRecord not implemented")
+        | Expr.MakeTuple _ -> return! sum.Throw(Errors.Singleton "Error: MakeTuple not implemented")
+        | Expr.MakeSet _ -> return! sum.Throw(Errors.Singleton "Error: MakeSet not implemented")
+        | Expr.MakeCase _ -> return! sum.Throw(Errors.Singleton "Error: MakeCase not implemented")
+        | Expr.Exists _ -> return! sum.Throw(Errors.Singleton "Error: Exists not implemented")
+        | Expr.SumBy _ -> return! sum.Throw(Errors.Singleton "Error: SumBy not implemented")
+        | Expr.Unary _ -> return! sum.Throw(Errors.Singleton "Error: Unary not implemented")
+        | Expr.FieldLookup _ -> return! sum.Throw(Errors.Singleton "Error: FieldLookup not implemented")
+
+      }
+      |> sum.MapError Errors.HighestPriority
