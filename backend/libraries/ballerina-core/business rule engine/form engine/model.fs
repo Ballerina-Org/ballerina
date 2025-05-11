@@ -312,8 +312,8 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details: Option<FormBody>
-         Preview: Option<FormBody>
+         Details: Option<NestedRenderer>
+         //  Preview: Option<FormBody>
          Columns: Map<string, Column>
          VisibleColumns: FormGroup
          RowType: ExprType |}

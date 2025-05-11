@@ -23,7 +23,6 @@ import {
   ValueOption,
 } from "../../../../../main";
 
-import { Form } from "./domains/specification/domains/form/state";
 import {
   DispatchApiConverters,
   ConcreteRendererKinds,
@@ -34,13 +33,13 @@ import {
   dispatchToAPIRawValue,
   tryGetConcreteRenderer,
 } from "../built-ins/state";
-import { SearchableInfiniteStreamAbstractRendererState } from "../dispatcher/domains/abstract-renderers/searchable-infinite-stream/state";
-import { BaseRenderer } from "./domains/specification/domains/form/domains/renderers/domains/baseRenderer/state";
+import { SearchableInfiniteStreamAbstractRendererState } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
+import { Renderer } from "./domains/specification/domains/forms/domains/renderer/state";
 
 export type DispatchParsedPassthroughLauncher<T> = {
   kind: "passthrough";
   formName: string;
-  renderer: Form<T>;
+  renderer: Renderer<T>;
   parseEntityFromApi: (_: any) => ValueOrErrors<PredicateValue, string>;
   parseGlobalConfigurationFromApi: (
     _: any,
@@ -74,14 +73,14 @@ export type DispatcherContext<
     isNested?: boolean,
   ) => ValueOrErrors<any, string>;
   defaultValue: (
-    t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    t: DispatchParsedType<T>,
+    renderer: Renderer<T>,
   ) => ValueOrErrors<PredicateValue, string>;
   defaultState: (
-    t: DispatchParsedType<any>,
-    renderer: BaseRenderer<any> | Form<any>,
+    t: DispatchParsedType<T>,
+    renderer: Renderer<T>,
   ) => ValueOrErrors<any, string>;
-  forms: Map<string, Form<T>>;
+  forms: Map<string, Renderer<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
@@ -167,7 +166,7 @@ export const parseDispatchFormsToLaunchers =
     apiConverters: DispatchApiConverters<T>,
     defaultRecordRenderer: any,
     defaultNestedRecordRenderer: any,
-    concreteRenderers: any,
+    concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
@@ -290,7 +289,7 @@ export type DispatchFormsParserContext<
 > = {
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
-  concreteRenderers: any;
+  concreteRenderers: Record<keyof ConcreteRendererKinds, any>;
   fieldTypeConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   lookupSources?: DispatchLookupSources;

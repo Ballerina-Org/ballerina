@@ -53,11 +53,12 @@
     <Compile Include="business rule engine/rule/variableRestrictionPredicate.fs" />
     <Compile Include="business rule engine/rule/preprocess.fs" />
     <Compile Include="business rule engine/rule/execute.fs" />
+    <Compile Include="business rule engine/parser/patterns.fs" />
+    <Compile Include="business rule engine/parser/expr.fs" />
+    <Compile Include="business rule engine/parser/exprtype.fs" />
     <Compile Include="business rule engine/form engine/model.fs" />
     <Compile Include="business rule engine/form engine/parser/model.fs" />
-    <Compile Include="business rule engine/form engine/parser/patterns.fs" />
-    <Compile Include="business rule engine/form engine/parser/expr.fs" />
-    <Compile Include="business rule engine/form engine/parser/exprtype.fs" />
+    <Compile Include="business rule engine/form engine/parser/formsPatterns.fs" />
     <Compile Include="business rule engine/form engine/parser/renderers.fs" />
     <Compile Include="business rule engine/form engine/parser/runner.fs" />
     <Compile Include="business rule engine/form engine/validator.fs" />

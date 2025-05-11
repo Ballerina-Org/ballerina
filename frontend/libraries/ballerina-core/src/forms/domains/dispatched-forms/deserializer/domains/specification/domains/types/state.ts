@@ -6,6 +6,7 @@ import {
   Unit,
   DispatchGenericType,
   DispatchGenericTypes,
+  MapRepo,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -762,6 +763,22 @@ export const DispatchParsedType = {
         errors.map((error) => `${error}\n...When parsing type "${typeName}"`),
       );
     },
+    ResolveLookupType: <T>(
+      typeName: string,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      MapRepo.Operations.tryFindWithError(
+        typeName,
+        types,
+        () => `cannot find lookup type ${typeName} in types`,
+      ),
+    AsResolvedType: <T>(
+      type: DispatchParsedType<T>,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      type.kind == "lookup"
+        ? DispatchParsedType.Operations.ResolveLookupType(type.name, types)
+        : ValueOrErrors.Default.return(type),
     ExtendDispatchParsedTypes: <T>(
       DispatchParsedTypes: Map<DispatchTypeName, DispatchParsedType<T>>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
@@ -822,36 +839,4 @@ export const DispatchParsedType = {
           errors.map((error) => `${error}\n...When extending types`),
         ),
   },
-  // ValueOrErrors<[DispatchTypeName, UnionType<T>], string>
-
-  //     if (SerializedType.isUnion(rawType)) {
-  //     //   return ValueOrErrors.Operations.All(
-  //     //     List<
-  //     //       ValueOrErrors<[DispatchCaseName, DispatchParsedType<T>], string>
-  //     //     >(
-  //     //       rawType.args.map((unionCase) => {
-  //     //         return DispatchParsedType.Operations.ParseRawUnionCase(
-  //     //           unionCase,
-  //     //           typeNames,
-  //     //           injectedPrimitives,
-  //     //         ).Then((parsedUnionCase) => {
-  //     //           return ValueOrErrors.Default.return([
-  //     //             unionCase.caseName,
-  //     //             parsedUnionCase,
-  //     //           ]);
-  //     //         });
-  //     //       }),
-  //     //     ),
-  //     //   ).Then((parsedUnionCases) =>
-  //     //     ValueOrErrors.Default.return(
-  //     //       DispatchParsedType.Default.union(
-  //     //         typeName,
-  //     //         Map(parsedUnionCases),
-  //     //         typeName,
-  //     //       ),
-  //     //     ),
-  //     //   );
-  //     // }
-  //   },
-  // },
 };

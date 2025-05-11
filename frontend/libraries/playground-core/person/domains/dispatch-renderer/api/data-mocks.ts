@@ -7,8 +7,16 @@ import {
   DispatchInfiniteStreamSources,
   ValueOrErrors,
   DispatchEnumOptionsSources,
+  DispatchTableApiSource,
+  BasicFun,
+  PredicateValue,
+  ValueStreamPosition,
+  AbstractTableRendererState,
+  DispatchTableApiSources,
+  DispatchOneSource,
+  DispatchLookupSources,
 } from "ballerina-core";
-import { OrderedMap, List } from "immutable";
+import { Range, Map } from "immutable";
 import { City } from "../../address/state";
 import { AddressApi } from "../../address/apis/mocks";
 import { v4 } from "uuid";
@@ -18,6 +26,119 @@ const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
 const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
+
+const getActiveUsers: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Name: "Jane",
+      Surname: "Doe",
+      Birthday: "1990-01-01",
+      Email: "jane.doe@example.com",
+      SubscribeToNewsletter: true,
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: "Jane",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "jane.doe@example.com",
+            SubscribeToNewsletter: true,
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: "John",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "john.doe@example.com",
+            SubscribeToNewsletter: true,
+          },
+        },
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const getFriends: DispatchOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: v4(),
+      Name: "Tim",
+      Surname: "Pool",
+      Birthday: "1990-01-01",
+      Email: "tim.pool@example.com",
+      SubscribeToNewsletter: true,
+    }));
+  },
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const lookupSources: DispatchLookupSources = (typeName: string) =>
+  typeName == "User"
+    ? ValueOrErrors.Default.return({
+        one: (apiName: string) =>
+          apiName == "BestFriendApi"
+            ? ValueOrErrors.Default.return(getFriends)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
+    : ValueOrErrors.Default.throwOne(
+        `can't find type ${typeName} when getting lookup api source`,
+      );
+
+const tableApiSources: DispatchTableApiSources = (streamName: string) =>
+  streamName == "ActiveUsersApi"
+    ? ValueOrErrors.Default.return(getActiveUsers)
+    : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
 
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
   streamName == "departments"
@@ -68,17 +189,17 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
                 PromiseRepo.Default.mock(
                   () =>
                     [
-                      "addressesByCity",
-                      "departments",
-                      "schoolAddress",
-                      "mainAddress",
-                      "addressesAndAddressesWithLabel",
-                      "addressesWithColorLabel",
-                      "addressesBy",
-                      "permissions",
-                      "cityByDepartment",
-                      "holidays",
-                      "friendsAddresses",
+                      "AddressesByCity",
+                      "Departments",
+                      "SchoolAddress",
+                      "MainAddress",
+                      "AddressesAndAddressesWithLabel",
+                      "AddressesWithColorLabel",
+                      "AddressesBy",
+                      "Permissions",
+                      "CityByDepartment",
+                      "Holidays",
+                      "FriendsAddresses",
                     ].map((_) => ({ Value: _ })),
                   undefined,
                   1,
@@ -109,37 +230,63 @@ const entityApis: EntityApis = {
         return (id: Guid) => {
           console.log(`get person ${id}`);
           return Promise.resolve({
-            job: {
-              Discriminator: "Developer",
-              Developer: {
-                name: "Developer",
-                salary: Math.floor(Math.random() * 100000),
-                language: "TypeScript",
+            // Job: {
+            //   Discriminator: "Developer",
+            //   Developer: {
+            //     Name: "Developer",
+            //     Salary: Math.floor(Math.random() * 100000),
+            //     Language: "TypeScript",
+            //   },
+            // },
+            BestFriend: {
+              isRight: true,
+              right: {
+                Id: v4(),
+                Name: "John",
+                Surname: "Doe",
+                Birthday: "1990-01-01",
+                Email: "john.doe@example.com",
+                SubscribeToNewsletter: true,
               },
             },
-            category: {
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+            Job: {
+              Discriminator: "Designer",
+              Designer: {
+                Name: "Designer",
+                Salary: Math.floor(Math.random() * 100000),
+                DesignTool: "Figma",
+                Certifications: ["cool stuff"],
+              },
+            },
+            Category: {
               kind: ["child", "adult", "senior"][
                 Math.round(Math.random() * 10) % 3
               ],
               extraSpecial: false,
             },
-            fullName: {
+            FullName: {
               Item1: faker.person.firstName(),
               Item2: faker.person.lastName(),
             },
-            birthday: new Date(
+            Birthday: new Date(
               Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
             ).toISOString(),
-            subscribeToNewsletter: Math.random() > 0.5,
-            favoriteColor: {
+            SubscribeToNewsletter: Math.random() > 0.5,
+            FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
             },
-            gender: {
+            Gender: {
               IsRight: true,
               Value: { IsSome: true, Value: { Value: "M" } },
             },
-            dependants: [
+            Dependants: [
               {
                 Key: "Steve",
                 Value: {
@@ -159,8 +306,8 @@ const entityApis: EntityApis = {
                 },
               },
             ],
-            friendsByCategory: [],
-            relatives: [
+            FriendsByCategory: [],
+            Relatives: [
               {
                 kind: ["child", "adult", "senior"][
                   Math.round(Math.random() * 10) % 3
@@ -180,16 +327,16 @@ const entityApis: EntityApis = {
                 extraSpecial: false,
               },
             ],
-            interests: [{ Value: interests[1] }, { Value: interests[2] }],
-            departments: [
+            Interests: [{ Value: interests[1] }, { Value: interests[2] }],
+            Departments: [
               { Id: v4(), DisplayValue: "Department 1" },
               { Id: v4(), DisplayValue: "Department 2" },
             ],
-            emails: ["john@doe.it", "johnthedon@doe.com"],
-            schoolAddress: {
-              streetNumberAndCity: {
+            Emails: ["john@doe.it", "johnthedon@doe.com"],
+            SchoolAddress: {
+              StreetNumberAndCity: {
                 Item1: faker.location.street(),
-                Item2: Math.floor(Math.random() * 500),
+                Item2: 100,
                 Item3: {
                   IsSome: true,
                   Value: {
@@ -198,11 +345,11 @@ const entityApis: EntityApis = {
                 },
               },
             },
-            mainAddress: {
+            MainAddress: {
               IsRight: true,
               Value: {
                 Item1: {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -217,17 +364,17 @@ const entityApis: EntityApis = {
                   },
                 },
                 Item2: {
-                  landArea: {
-                    x: Math.floor(Math.random() * 100),
-                    y: Math.floor(Math.random() * 100),
+                  LandArea: {
+                    X: Math.floor(Math.random() * 100),
+                    Y: Math.floor(Math.random() * 100),
                   },
                 },
               },
             },
-            addressesAndAddressesWithLabel: {
+            AddressesAndAddressesWithLabel: {
               Item1: [
                 {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -242,7 +389,7 @@ const entityApis: EntityApis = {
                   },
                 },
                 {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -261,7 +408,7 @@ const entityApis: EntityApis = {
                 {
                   Key: "my house",
                   Value: {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3:
@@ -278,14 +425,14 @@ const entityApis: EntityApis = {
                 },
               ],
             },
-            addressesByCity: [
+            AddressesByCity: [
               {
                 Key: {
                   IsSome: true,
                   Value: { ...City.Default(v4(), faker.location.city()) },
                 },
                 Value: {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -306,7 +453,7 @@ const entityApis: EntityApis = {
                   Value: { ...City.Default(v4(), faker.location.city()) },
                 },
                 Value: {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -322,11 +469,11 @@ const entityApis: EntityApis = {
                 },
               },
             ],
-            importantDate: {
+            ImportantDate: {
               IsRight: false,
               Value: {},
             },
-            cutOffDates: [
+            CutOffDates: [
               {
                 IsRight: true,
                 Value: new Date(
@@ -340,13 +487,13 @@ const entityApis: EntityApis = {
                 ).toISOString(),
               },
             ],
-            addressesBy: {
+            AddressesBy: {
               IsRight: true,
               Value: [
                 {
                   Key: "home",
                   Value: {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3:
@@ -363,14 +510,14 @@ const entityApis: EntityApis = {
                 },
               ],
             },
-            addressesWithColorLabel: [
+            AddressesWithColorLabel: [
               {
                 Key: {
                   IsSome: true,
                   Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
                 },
                 Value: {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -391,7 +538,7 @@ const entityApis: EntityApis = {
                   Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
                 },
                 Value: {
-                  streetNumberAndCity: {
+                  StreetNumberAndCity: {
                     Item1: faker.location.street(),
                     Item2: Math.floor(Math.random() * 500),
                     Item3:
@@ -407,17 +554,17 @@ const entityApis: EntityApis = {
                 },
               },
             ],
-            permissions: [],
-            cityByDepartment: [],
-            shoeColours: [],
-            friendsBirthdays: [],
-            holidays: [],
-            friendsAddresses: [
+            Permissions: [],
+            CityByDepartment: [],
+            ShoeColours: [{ Value: "Red" }],
+            FriendsBirthdays: [],
+            Holidays: [],
+            FriendsAddresses: [
               {
                 Key: `${faker.person.firstName()} ${faker.person.lastName()}`,
                 Value: [
                   {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3: {
@@ -429,7 +576,7 @@ const entityApis: EntityApis = {
                     },
                   },
                   {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3: {
@@ -446,7 +593,7 @@ const entityApis: EntityApis = {
                 Key: `${faker.person.firstName()} ${faker.person.lastName()}`,
                 Value: [
                   {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3: {
@@ -458,7 +605,7 @@ const entityApis: EntityApis = {
                     },
                   },
                   {
-                    streetNumberAndCity: {
+                    StreetNumberAndCity: {
                       Item1: faker.location.street(),
                       Item2: Math.floor(Math.random() * 500),
                       Item3: {
@@ -479,24 +626,26 @@ const entityApis: EntityApis = {
           return Promise.resolve({
             IsAdmin: false,
             ActiveAddressFields: [
-              { Value: "departments" },
-              { Value: "schoolAddress" },
-              { Value: "mainAddress" },
-              { Value: "addressesAndAddressesWithLabel" },
-              { Value: "addressesWithColorLabel" },
-              { Value: "addressesBy" },
-              { Value: "permissions" },
-              { Value: "cityByDepartment" },
-              { Value: "holidays" },
-              { Value: "addressesByCity" },
-              { Value: "friendsAddresses" },
+              { Value: "Departments" },
+              { Value: "SchoolAddress" },
+              { Value: "MainAddress" },
+              { Value: "AddressesAndAddressesWithLabel" },
+              { Value: "AddressesWithColorLabel" },
+              { Value: "AddressesBy" },
+              { Value: "Permissions" },
+              { Value: "CityByDepartment" },
+              { Value: "Holidays" },
+              { Value: "AddressesByCity" },
+              { Value: "FriendsAddresses" },
             ],
-            ERPConfig: {
+            ERP: {
               Discriminator: "ERPSAP",
               ERPSAP: {
-                Discriminator: "SAPS2",
-                SAPS2: {
-                  S2OnlyField: true,
+                Value: {
+                  Discriminator: "SAPS2",
+                  SAPS2: {
+                    S2OnlyField: true,
+                  },
                 },
               },
             },
@@ -529,29 +678,35 @@ const entityApis: EntityApis = {
       ? (_) =>
           PromiseRepo.Default.mock(() => {
             return {
-              category: {
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: false,
+                Values: {},
+              },
+              Category: {
                 kind: "adult",
                 extraSpecial: false,
               },
-              fullName: {
+              FullName: {
                 Item1: "",
                 Item2: "",
               },
-              birthday: "01/01/2000",
-              subscribeToNewsletter: false,
-              favoriteColor: { Value: { Value: null }, IsSome: false },
-              gender: {
+              Birthday: "01/01/2000",
+              SubscribeToNewsletter: false,
+              FavoriteColor: { Value: { Value: null }, IsSome: false },
+              Gender: {
                 IsRight: false,
                 Value: {},
               },
-              dependants: [],
-              friendsByCategory: [],
-              relatives: [],
-              interests: [],
-              departments: [],
-              emails: [],
-              schoolAddress: {
-                streetNumberAndCity: {
+              Dependants: [],
+              FriendsByCategory: [],
+              Relatives: [],
+              Interests: [],
+              Departments: [],
+              Emails: [],
+              SchoolAddress: {
+                StreetNumberAndCity: {
                   Item1: faker.location.street(),
                   Item2: Math.floor(Math.random() * 500),
                   Item3:
@@ -565,31 +720,31 @@ const entityApis: EntityApis = {
                         },
                 },
               },
-              mainAddress: {
+              MainAddress: {
                 IsRight: false,
                 Value: "",
               },
-              addressesAndAddressesWithLabel: {
+              AddressesAndAddressesWithLabel: {
                 Item1: [],
                 Item2: [],
               },
-              addressesByCity: [],
-              importantDate: {
+              AddressesByCity: [],
+              ImportantDate: {
                 IsRight: false,
                 Value: "",
               },
-              cutOffDates: [],
-              addressesBy: {
+              CutOffDates: [],
+              AddressesBy: {
                 IsRight: false,
                 Value: [],
               },
-              addressesWithColorLabel: [],
-              permissions: [],
-              cityByDepartment: [],
-              shoeColours: [],
-              friendsBirthdays: [],
-              holidays: [],
-              friendsAddresses: [],
+              AddressesWithColorLabel: [],
+              Permissions: [],
+              CityByDepartment: [],
+              ShoeColours: [],
+              FriendsBirthdays: [],
+              Holidays: [],
+              FriendsAddresses: [],
             };
           })
       : (_) => {
@@ -602,5 +757,7 @@ export const DispatchPersonFromConfigApis = {
   streamApis,
   enumApis,
   entityApis,
+  tableApiSources,
+  lookupSources,
 };
 //

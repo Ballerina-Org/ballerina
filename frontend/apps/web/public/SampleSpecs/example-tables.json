@@ -23,6 +23,16 @@
           "fun": "One",
           "args": ["User"]
         },
+        "SuperAdmin": {
+          "fun": "Sum",
+          "args": [
+            "unit",
+            {
+              "fun": "One",
+              "args": ["User"]
+            }
+          ]
+        },
         "ActiveUsers": {
           "fun": "Table",
           "args": ["User"]
@@ -147,42 +157,44 @@
         "Admin": {
           "renderer": "admin",
           "detailsRenderer": {
-            "type": "User",
-            "renderer": "userDetails",
-            "fields": {
-              "Name": {
-                "label": "First Name",
-                "renderer": "defaultString"
+            "renderer": {
+              "type": "User",
+              "renderer": "userDetails",
+              "fields": {
+                "Name": {
+                  "label": "First Name",
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "label": "Last Name",
+                  "renderer": "defaultString"
+                },
+                "Birthday": {
+                  "label": "Birthday",
+                  "renderer": "defaultDate"
+                },
+                "Email": {
+                  "label": "Email",
+                  "renderer": "defaultString"
+                },
+                "SubscribeToNewsletter": {
+                  "label": "Subscribe to Newsletter",
+                  "renderer": "defaultBoolean"
+                }
               },
-              "Surname": {
-                "label": "Last Name",
-                "renderer": "defaultString"
-              },
-              "Birthday": {
-                "label": "Birthday",
-                "renderer": "defaultDate"
-              },
-              "Email": {
-                "label": "Email",
-                "renderer": "defaultString"
-              },
-              "SubscribeToNewsletter": {
-                "label": "Subscribe to Newsletter",
-                "renderer": "defaultBoolean"
-              }
-            },
-            "tabs": {
-              "main": {
-                "columns": {
-                  "main": {
-                    "groups": {
-                      "main": [
-                        "Name",
-                        "Surname",
-                        "Birthday",
-                        "Email",
-                        "SubscribeToNewsletter"
-                      ]
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": [
+                          "Name",
+                          "Surname",
+                          "Birthday",
+                          "Email",
+                          "SubscribeToNewsletter"
+                        ]
+                      }
                     }
                   }
                 }
@@ -190,28 +202,106 @@
             }
           },
           "previewRenderer": {
-            "type": "User",
-            "renderer": "preview",
-            "fields": {
-              "Surname": {
-                "renderer": "defaultString",
-                "disabled": true
-              }
-            },
-            "tabs": {
-              "main": {
-                "columns": {
-                  "main": {
-                    "groups": {
-                      "main": ["Surname"]
+            "renderer": {
+              "type": "User",
+              "renderer": "preview",
+              "fields": {
+                "Surname": {
+                  "renderer": "defaultString",
+                  "disabled": true
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Surname"]
+                      }
                     }
                   }
                 }
               }
             }
           },
-          "api": ["User", "AdminApi"],
+          "api": "AdminApi",
           "label": "Admin"
+        },
+        "SuperAdmin": {
+          "renderer": "alwaysRight",
+          "leftRenderer": {
+            "renderer": "defaultUnit"
+          },
+          "rightRenderer": {
+            "renderer": "partialAdmin",
+            "detailsRenderer": {
+              "type": "User",
+              "renderer": "userDetails",
+              "fields": {
+                "Name": {
+                  "label": "First Name",
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "label": "Last Name",
+                  "renderer": "defaultString"
+                },
+                "Birthday": {
+                  "label": "Birthday",
+                  "renderer": "defaultDate"
+                },
+                "Email": {
+                  "label": "Email",
+                  "renderer": "defaultString"
+                },
+                "SubscribeToNewsletter": {
+                  "label": "Subscribe to Newsletter",
+                  "renderer": "defaultBoolean"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": [
+                          "Name",
+                          "Surname",
+                          "Birthday",
+                          "Email",
+                          "SubscribeToNewsletter"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "previewRenderer": {
+              "type": "User",
+              "renderer": "preview",
+              "fields": {
+                "Surname": {
+                  "renderer": "defaultString",
+                  "disabled": true
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Surname"]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "api": "AdminApi",
+            "label": "Admin"
+          },
+          "label": "Super Admin"
         }
       },
       "tabs": {
@@ -219,7 +309,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["ActiveUsers", "Admin"]
+                "main": ["ActiveUsers", "SuperAdmin"]
               }
             }
           }

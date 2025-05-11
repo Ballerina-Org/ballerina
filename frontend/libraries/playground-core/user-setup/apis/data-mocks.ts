@@ -38,7 +38,7 @@ const usersSetupTabsEnum = [
 const getAdminLookup: DispatchOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      Id: id,
+      Id: v4(),
       Name: "Admin",
       Surname: "User",
       Birthday: "1990-01-01",
@@ -262,15 +262,12 @@ const getInactiveUsers: DispatchTableApiSource = {
 const getAdmin: DispatchTableApiSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
-      isRight: true,
-      right: {
-        Id: id,
-        Name: "Admin",
-        Surname: "User",
-        Birthday: "1990-01-01",
-        Email: "admin.user@example.com",
-        SubscribeToNewsletter: true,
-      },
+      Id: v4(),
+      Name: "Admin",
+      Surname: "User",
+      Birthday: "1990-01-01",
+      Email: "admin.user@example.com",
+      SubscribeToNewsletter: true,
     }));
   },
   getMany:
@@ -511,6 +508,15 @@ const entityApis: EntityApis = {
               //   Birthday: "1990-01-01",
               //   Email: "admin.user@example.com",
               //   SubscribeToNewsletter: true,
+              // },
+            },
+            SuperAdmin: {
+              isRight: false,
+              Value: {},
+              // isRight: true,
+              // right: {
+              //   Name: "Spiffy",
+              //   Surname: "User",
               // },
             },
             Inactive: {

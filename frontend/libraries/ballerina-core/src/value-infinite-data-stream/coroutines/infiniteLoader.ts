@@ -16,8 +16,8 @@ export const ValueInfiniteStreamLoader = Co.Seq([
       Co.Await(
         () => current.getChunk([current.position]),
         () => "error" as const,
-      ).then((apiResult) =>
-        apiResult.kind == "l"
+      ).then((apiResult) => {
+        return apiResult.kind == "l"
           ? Co.SetState(
               updaters.Core.loadingMore(
                 replaceWith(AsyncState.Default.loaded({})),
@@ -42,8 +42,8 @@ export const ValueInfiniteStreamLoader = Co.Seq([
                   ),
                 ),
             )
-          : Co.Wait(500),
-      ),
+          : Co.Wait(500);
+      }),
     ),
   ),
 ]);

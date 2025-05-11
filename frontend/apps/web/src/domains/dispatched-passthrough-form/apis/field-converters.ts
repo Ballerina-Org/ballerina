@@ -79,8 +79,8 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           return _;
         }
         return {
-          Discriminator: _.Discriminator,
-          [_.Discriminator]: _[_.Discriminator],
+          caseName: _.Discriminator,
+          fields: _[_.Discriminator],
         };
       },
       toAPIRawValue: ([_, __]) => _,

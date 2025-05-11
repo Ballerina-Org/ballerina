@@ -26,6 +26,7 @@ import {
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/example-tables.json";
+// import SPEC from "/Users/johnblp/Desktop/blp-example.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,

@@ -69,38 +69,40 @@ import { Map } from "immutable";
 export const PersonConcreteRenderers = {
   one: {
     admin:
-      <OneAbstractRendererReadonlyContext, ForeignMutationsExpected>(): any =>
-      (props: any) => {
+      <
+        OneAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): OneAbstractRendererView =>
+      (props) => {
+        const fm = props.foreignMutations;
+        const ctx = props.context;
         if (
-          !AsyncState.Operations.hasValue(
-            props.context.customFormState.selectedValue.sync,
-          )
+          ctx.kind == "uninitialized" ||
+          fm.kind == "uninitialized" ||
+          props.kind == "uninitialized"
         ) {
-          return undefined;
+          return <></>;
         }
         if (
-          props.context.customFormState.selectedValue.sync.value.kind ==
-          "errors"
+          !AsyncState.Operations.hasValue(
+            ctx.customFormState.selectedValue.sync,
+          )
         ) {
+          return <></>;
+        }
+        if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
           console.error(
-            props.context.customFormState.selectedValue.sync.value.errors
+            ctx.customFormState.selectedValue.sync.value.errors
               .join("\n")
               .concat(`\n...When parsing the "one" field value\n...`),
           );
-          return undefined;
+          return <></>;
         }
-        const selectedValue =
-          props.context.customFormState.selectedValue.sync.value.value.value;
 
-        if (!PredicateValue.Operations.IsRecord(selectedValue)) {
-          console.error(
-            `Record expected but got: ${JSON.stringify(
-              selectedValue,
-            )}\n...When rendering "one" field\n...`,
-          );
-          return undefined;
+        if (PredicateValue.Operations.IsUnit(ctx.value)) {
+          return <></>;
         }
-        console.debug("props", props);
+
         return (
           <>
             <p>one admin renderer</p>
@@ -110,80 +112,326 @@ export const PersonConcreteRenderers = {
               view: unit,
             })}
             <p>PreviewRenderer</p>
-            <button
-              disabled={props.context.disabled}
-              onClick={() => props.foreignMutations.toggleOpen()}
-            >
+            <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
               {props?.PreviewRenderer &&
-                props?.PreviewRenderer(selectedValue)?.({
+                props?.PreviewRenderer(ctx.value)?.({
                   ...props,
                   view: unit,
                 })}
-              {props.context.customFormState.status == "open" ? "➖" : "➕"}
+              {ctx.customFormState.status == "open" ? "➖" : "➕"}
             </button>
-            {props.context.customFormState.status == "closed" ? (
+            {ctx.customFormState.status == "closed" ? (
               <></>
             ) : (
               <>
                 <input
-                  disabled={props.context.disabled}
-                  value={props.context.customFormState.searchText.value}
-                  onChange={(e) =>
-                    props.foreignMutations.setSearchText(e.currentTarget.value)
-                  }
+                  disabled={ctx.disabled}
+                  value={ctx.customFormState.searchText.value}
+                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
                 />
                 <ul>
-                  {props.context.customFormState.stream.loadedElements
+                  {ctx.customFormState.stream.loadedElements
                     .valueSeq()
                     .map((chunk: any) =>
-                      chunk.data.valueSeq().map((element: any) => (
-                        <li>
-                          <button
-                            disabled={props.context.disabled}
-                            onClick={() =>
-                              props.foreignMutations.select(
-                                PredicateValue.Default.option(true, element),
-                              )
-                            }
-                          >
-                            <div
-                              onClick={() =>
-                                props.foreignMutations.select(
-                                  PredicateValue.Default.option(true, element),
-                                )
-                              }
-                              style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                gap: "10px",
-                              }}
-                            />
-                            {props.PreviewRenderer &&
-                              props.PreviewRenderer(element)?.({
-                                ...props,
-                                view: unit,
-                              })}
-                            {props.context.value.isSome &&
-                            (
-                              (props.context.value.value as ValueOption)
-                                .value as ValueRecord
-                            ).fields.get("Id") == element.fields.get("Id")
-                              ? "✅"
-                              : ""}
-                          </button>
-                        </li>
-                      )),
+                      chunk.data.valueSeq().map((element: any) => {
+                        return (
+                          <li>
+                            <button
+                              disabled={ctx.disabled}
+                              onClick={() => fm.select(element)}
+                            >
+                              <div
+                                onClick={() => fm.select(element)}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  gap: "10px",
+                                }}
+                              />
+                              {props?.PreviewRenderer &&
+                                props?.PreviewRenderer(element)?.({
+                                  ...props,
+                                  view: unit,
+                                })}
+                            </button>
+                          </li>
+                        );
+                      }),
                     )}
                 </ul>
               </>
             )}
             <button
-              disabled={props.context.hasMoreValues == false}
-              onClick={() => props.foreignMutations.loadMore()}
+              disabled={ctx.hasMoreValues == false}
+              onClick={() => fm.loadMore()}
             >
               ⋯
             </button>
-            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
+            <button onClick={() => fm.reload()}>🔄</button>
+          </>
+        );
+      },
+    partialAdmin:
+      <
+        OneAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): OneAbstractRendererView =>
+      (props) => {
+        const fm = props.foreignMutations;
+        const ctx = props.context;
+        if (
+          ctx.kind == "uninitialized" ||
+          fm.kind == "uninitialized" ||
+          props.kind == "uninitialized"
+        ) {
+          return <></>;
+        }
+        if (
+          !AsyncState.Operations.hasValue(
+            ctx.customFormState.selectedValue.sync,
+          )
+        ) {
+          return <></>;
+        }
+        if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+          console.error(
+            ctx.customFormState.selectedValue.sync.value.errors
+              .join("\n")
+              .concat(`\n...When parsing the "one" field value\n...`),
+          );
+          return <></>;
+        }
+
+        if (PredicateValue.Operations.IsUnit(ctx.value)) {
+          return (
+            <>
+              <p>one admin renderer</p>
+              <p>DetailsRenderer</p>
+              {props.DetailsRenderer({
+                ...props,
+                view: unit,
+              })}
+              <p>PreviewRenderer</p>
+              <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
+                {ctx.customFormState.status == "open" ? "➖" : "➕"}
+              </button>
+              {ctx.customFormState.status == "closed" ? (
+                <></>
+              ) : (
+                <>
+                  <input
+                    disabled={ctx.disabled}
+                    value={ctx.customFormState.searchText.value}
+                    onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                  />
+                  <ul>
+                    {ctx.customFormState.stream.loadedElements
+                      .valueSeq()
+                      .map((chunk: any) =>
+                        chunk.data.valueSeq().map((element: any) => {
+                          return (
+                            <li>
+                              <button
+                                disabled={ctx.disabled}
+                                onClick={() => fm.select(element)}
+                              >
+                                <div
+                                  onClick={() => fm.select(element)}
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    gap: "10px",
+                                  }}
+                                />
+                                {props?.PreviewRenderer &&
+                                  props?.PreviewRenderer(element)?.({
+                                    ...props,
+                                    view: unit,
+                                  })}
+                              </button>
+                            </li>
+                          );
+                        }),
+                      )}
+                  </ul>
+                </>
+              )}
+              <button
+                disabled={ctx.hasMoreValues == false}
+                onClick={() => fm.loadMore()}
+              >
+                ⋯
+              </button>
+              <button onClick={() => fm.reload()}>🔄</button>
+            </>
+          );
+        }
+
+        return (
+          <>
+            <p>one admin renderer</p>
+            <p>DetailsRenderer</p>
+            {props.DetailsRenderer({
+              ...props,
+              view: unit,
+            })}
+            <p>PreviewRenderer</p>
+            <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
+              {props?.PreviewRenderer &&
+                props?.PreviewRenderer(ctx.value)?.({
+                  ...props,
+                  view: unit,
+                })}
+              {ctx.customFormState.status == "open" ? "➖" : "➕"}
+            </button>
+            {ctx.customFormState.status == "closed" ? (
+              <></>
+            ) : (
+              <>
+                <input
+                  disabled={ctx.disabled}
+                  value={ctx.customFormState.searchText.value}
+                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                />
+                <ul>
+                  {ctx.customFormState.stream.loadedElements
+                    .valueSeq()
+                    .map((chunk: any) =>
+                      chunk.data.valueSeq().map((element: any) => {
+                        return (
+                          <li>
+                            <button
+                              disabled={ctx.disabled}
+                              onClick={() => fm.select(element)}
+                            >
+                              <div
+                                onClick={() => fm.select(element)}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  gap: "10px",
+                                }}
+                              />
+                              {props?.PreviewRenderer &&
+                                props?.PreviewRenderer(element)?.({
+                                  ...props,
+                                  view: unit,
+                                })}
+                            </button>
+                          </li>
+                        );
+                      }),
+                    )}
+                </ul>
+              </>
+            )}
+            <button
+              disabled={ctx.hasMoreValues == false}
+              onClick={() => fm.loadMore()}
+            >
+              ⋯
+            </button>
+            <button onClick={() => fm.reload()}>🔄</button>
+          </>
+        );
+      },
+    bestFriend:
+      <
+        OneAbstractRendererReadonlyContext,
+        ForeignMutationsExpected,
+      >(): OneAbstractRendererView =>
+      (props) => {
+        const fm = props.foreignMutations;
+        const ctx = props.context;
+        if (
+          ctx.kind == "uninitialized" ||
+          fm.kind == "uninitialized" ||
+          props.kind == "uninitialized"
+        ) {
+          return <></>;
+        }
+        if (
+          !AsyncState.Operations.hasValue(
+            ctx.customFormState.selectedValue.sync,
+          )
+        ) {
+          return <></>;
+        }
+        if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+          console.error(
+            ctx.customFormState.selectedValue.sync.value.errors
+              .join("\n")
+              .concat(`\n...When parsing the "one" field value\n...`),
+          );
+          return <></>;
+        }
+
+        if (PredicateValue.Operations.IsUnit(ctx.value)) {
+          return <></>;
+        }
+
+        return (
+          <>
+            {props.DetailsRenderer({
+              ...props,
+              view: unit,
+            })}
+            <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
+              {props?.PreviewRenderer &&
+                props?.PreviewRenderer(ctx.value)?.({
+                  ...props,
+                  view: unit,
+                })}
+              {ctx.customFormState.status == "open" ? "➖" : "➕"}
+            </button>
+            {ctx.customFormState.status == "closed" ? (
+              <></>
+            ) : (
+              <>
+                <input
+                  disabled={ctx.disabled}
+                  value={ctx.customFormState.searchText.value}
+                  onChange={(e) => fm.setSearchText(e.currentTarget.value)}
+                />
+                <ul>
+                  {ctx.customFormState.stream.loadedElements
+                    .valueSeq()
+                    .map((chunk: any) =>
+                      chunk.data.valueSeq().map((element: any) => {
+                        return (
+                          <li>
+                            <button
+                              disabled={ctx.disabled}
+                              onClick={() => fm.select(element)}
+                            >
+                              <div
+                                onClick={() => fm.select(element)}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "row",
+                                  gap: "10px",
+                                }}
+                              />
+                              {props?.PreviewRenderer &&
+                                props?.PreviewRenderer(element)?.({
+                                  ...props,
+                                  view: unit,
+                                })}
+                            </button>
+                          </li>
+                        );
+                      }),
+                    )}
+                </ul>
+              </>
+            )}
+            <button
+              disabled={ctx.hasMoreValues == false}
+              onClick={() => fm.loadMore()}
+            >
+              ⋯
+            </button>
+            <button onClick={() => fm.reload()}>🔄</button>
           </>
         );
       },
@@ -208,7 +456,7 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
-    job:
+    Job:
       <
         UnionAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
@@ -842,7 +1090,7 @@ export const PersonConcreteRenderers = {
               <select
                 multiple
                 value={props.context.selectedIds}
-                disabled={true}
+                onClick={() => props.foreignMutations.loadOptions()}
               >
                 <>
                   {props.context.value.fields.map((o) => (
@@ -875,11 +1123,6 @@ export const PersonConcreteRenderers = {
                   ))}
                 </>
               </select>
-            )}
-            {props.context.activeOptions == "unloaded" && (
-              <button onClick={() => props.foreignMutations.loadOptions()}>
-                Load Options
-              </button>
             )}
           </>
         );
@@ -1338,12 +1581,40 @@ export const PersonConcreteRenderers = {
       return (props) => {
         return (
           <>
-            {props?.embeddedLeftTemplate?.({
-              ...props,
-              view: unit,
-            })}
+            {props.context.value.value.kind == "l"
+              ? props?.embeddedLeftTemplate?.({
+                  ...props,
+                  view: unit,
+                })
+              : props?.embeddedRightTemplate?.({
+                  ...props,
+                  view: unit,
+                })}
+          </>
+        );
+      };
+    },
+    alwaysRight: <
+      Context extends FormLabel & { disabled: boolean; type: ParsedType<any> },
+      ForeignMutationsExpected,
+    >(): SumAbstractRendererView<
+      UnitFormState,
+      UnitFormState,
+      Context,
+      ForeignMutationsExpected
+    > => {
+      return (props) => {
+        return (
+          <>
+            <h1>HELLO </h1>
             {props?.embeddedRightTemplate?.({
               ...props,
+              context: {
+                ...props.context,
+                value: PredicateValue.Default.sum(
+                  Sum.Default.right(PredicateValue.Default.unit()),
+                ),
+              },
               view: unit,
             })}
           </>

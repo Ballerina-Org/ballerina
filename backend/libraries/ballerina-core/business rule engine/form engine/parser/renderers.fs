@@ -1,16 +1,13 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module Renderers =
-  open Model
-  open Patterns
-  open Expr
-  open ExprType
+  open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Parser.Expr
 
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
+  open FormsPatterns
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map
@@ -18,7 +15,6 @@ module Renderers =
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
-  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
@@ -993,11 +989,11 @@ module Renderers =
                 |> state.Catch
                 |> state.Map(Sum.toOption)
 
-              let! previewJson =
-                fields
-                |> state.TryFindField "previewRenderer"
-                |> state.Catch
-                |> state.Map(Sum.toOption)
+              // let! previewJson =
+              //   fields
+              //   |> state.TryFindField "previewRenderer"
+              //   |> state.Catch
+              //   |> state.Map(Sum.toOption)
 
               let! renderer = rendererJson |> JsonValue.AsString |> state.OfSum
               let! config = state.GetContext()
@@ -1005,27 +1001,18 @@ module Renderers =
 
               let! details =
                 detailsJson
-                |> Option.map (fun detailsJson ->
-                  state {
-                    let! detailsFields = detailsJson |> JsonValue.AsRecord |> state.OfSum
-
-                    return! FormBody.Parse detailsFields formTypeId
-                  })
+                |> Option.map (fun detailsJson -> state { return! NestedRenderer.Parse detailsJson })
                 |> state.RunOption
 
-              let! preview =
-                previewJson
-                |> Option.map (fun previewJson ->
-                  state {
-                    let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
+              // let! preview =
+              //   previewJson
+              //   |> Option.map (fun previewJson ->
+              //     state {
+              //       let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
 
-                    return! FormBody.Parse previewFields formTypeId
-                  })
-                |> state.RunOption
-
-              // if detailsJson.IsSome then
-              // do Console.WriteLine detailsJson.ToFSharpString
-              // do Console.ReadLine() |> ignore
+              //       return! FormBody.Parse previewFields formTypeId
+              //     })
+              //   |> state.RunOption
 
               if config.Table.SupportedRenderers |> Set.contains renderer |> not then
                 return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
@@ -1074,7 +1061,7 @@ module Renderers =
                   {| Columns = columns
                      RowType = t.Type
                      Details = details
-                     Preview = preview
+                     //  Preview = preview
                      Renderer = renderer
                      VisibleColumns = visibleColumns |}
                   |> FormBody.Table
