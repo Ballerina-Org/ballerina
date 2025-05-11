@@ -255,7 +255,7 @@ module Expr =
       }
       |> state.MapError(Errors.HighestPriority)
 
-    static member UnparseValue<'config, 'context>(value: Value) : Sum<JsonValue, Errors> =
+    static member UnparseValue(value: Value) : Sum<JsonValue, Errors> =
       sum {
         match value with
         | Value.ConstBool b -> JsonValue.Boolean b
