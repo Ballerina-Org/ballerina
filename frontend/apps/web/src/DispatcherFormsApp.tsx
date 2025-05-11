@@ -240,22 +240,22 @@ export const DispatcherFormsApp = (props: {}) => {
       });
   }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
-  console.debug(
-    "personPassthroughFormState",
-    JSON.stringify(
-      personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
-      null,
-      2,
-    ),
-  );
-  console.debug(
-    "personPassthroughFormState common",
-    JSON.stringify(
-      personPassthroughFormState?.formState?.commonFormState,
-      null,
-      2,
-    ),
-  );
+  // console.debug(
+  //   "personPassthroughFormState",
+  //   JSON.stringify(
+  //     personPassthroughFormState?.formState?.fieldStates?.get("dependants"),
+  //     null,
+  //     2,
+  //   ),
+  // );
+  // console.debug(
+  //   "personPassthroughFormState common",
+  //   JSON.stringify(
+  //     personPassthroughFormState?.formState?.commonFormState,
+  //     null,
+  //     2,
+  //   ),
+  // );
   // console.debug("personConfig", JSON.stringify(config, null, 2));
 
   if (
@@ -297,6 +297,9 @@ export const DispatcherFormsApp = (props: {}) => {
                       DispatchPersonFromConfigApis.streamApis,
                     enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
                     entityApis: DispatchPersonFromConfigApis.entityApis,
+                    tableApiSources:
+                      DispatchPersonFromConfigApis.tableApiSources,
+                    lookupSources: DispatchPersonFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     injectedPrimitives: Map([
                       [

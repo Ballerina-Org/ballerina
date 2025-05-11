@@ -2,12 +2,10 @@ namespace Ballerina.DSL.FormEngine
 
 module Validator =
 
-  open System
   open Ballerina.Core.Object
   open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.FormEngine.Parser.Model
-  open Ballerina.DSL.FormEngine.Parser.Patterns
-  open Ballerina.DSL.FormEngine.Parser.Runner
+  open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.FormEngine.Parser.FormsPatterns
   open Ballerina.DSL.Model
   open Ballerina.Collections.Tuple
   open Ballerina.DSL.Expr.Model
@@ -18,8 +16,6 @@ module Validator =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
-  open Ballerina.Collections.NonEmptyList
-  open Ballerina.Fun
 
   type NestedRenderer with
     static member Validate
@@ -41,6 +37,28 @@ module Validator =
 
       sum {
         match fr with
+        | Renderer.Multiple(m) ->
+          do! !m.First.NestedRenderer.Renderer |> Sum.map ignore
+
+          do!
+            (m.Rest |> Map.values)
+            |> Seq.map (fun r -> !r.Renderer)
+            |> sum.All
+            |> Sum.map ignore
+
+          do!
+            (m.Rest |> Map.values)
+            |> Seq.map (fun r ->
+              ExprType.Unify
+                Map.empty
+                (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                r.Renderer.Type
+                m.First.NestedRenderer.Type)
+            |> sum.All
+            |> Sum.map ignore
+
+
+          return m.First.NestedRenderer.Type
         | Renderer.InlineFormRenderer i ->
           let formType = i.Body.Type
 
@@ -203,6 +221,9 @@ module Validator =
 
       state {
         match r with
+        | Renderer.Multiple(m) ->
+          do! !!m.First.NestedRenderer
+          do! (m.Rest |> Map.values) |> Seq.map (!!) |> state.All |> state.Map ignore
         | Renderer.InlineFormRenderer i ->
           let formType = i.Body.Type
 
@@ -549,12 +570,12 @@ module Validator =
           return localType
         | _, FormBody.Table table ->
           match table.Details with
-          | Some details -> do! FormBody.Validate codegen ctx localType details |> Sum.map ignore
+          | Some details -> do! NestedRenderer.Validate codegen ctx localType details |> Sum.map ignore
           | None -> return ()
 
-          match table.Preview with
-          | Some preview -> do! FormBody.Validate codegen ctx localType preview |> Sum.map ignore
-          | None -> return ()
+          // match table.Preview with
+          // | Some preview -> do! FormBody.Validate codegen ctx localType preview |> Sum.map ignore
+          // | None -> return ()
 
           do!
             sum.All(
@@ -611,12 +632,20 @@ module Validator =
             do! FieldConfig.ValidatePredicates ctx globalType rootType columnType false column.Value.FieldConfig
 
             match table.Details with
-            | Some details -> do! FormBody.ValidatePredicates ctx globalType rootType localType details
+            | Some details ->
+              do!
+                NestedRenderer.ValidatePredicates
+                  FormConfig.ValidatePredicates
+                  ctx
+                  globalType
+                  rootType
+                  localType
+                  details
             | None -> return ()
 
-            match table.Preview with
-            | Some preview -> do! FormBody.ValidatePredicates ctx globalType rootType localType preview
-            | None -> return ()
+          // match table.Preview with
+          // | Some preview -> do! FormBody.ValidatePredicates ctx globalType rootType localType preview
+          // | None -> return ()
 
           match table.VisibleColumns with
           | Inlined _ -> return ()

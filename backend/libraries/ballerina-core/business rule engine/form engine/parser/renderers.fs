@@ -1,16 +1,13 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
 module Renderers =
-  open Model
-  open Patterns
-  open Expr
-  open ExprType
+  open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Parser.Expr
 
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
+  open FormsPatterns
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map
@@ -18,7 +15,6 @@ module Renderers =
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
-  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
@@ -588,7 +584,6 @@ module Renderers =
           let! s = json |> JsonValue.AsString |> state.OfSum
           let! (formsState: ParsedFormsContext) = state.GetState()
 
-
           return!
             state.Any(
               NonEmptyList.OfList(
@@ -719,33 +714,61 @@ module Renderers =
           let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
           return!
-            state {
+            state.Either
+              (state {
 
-              let! typeJson = (fields |> state.TryFindField "type")
-              let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
-              let! (s: ParsedFormsContext) = state.GetState()
-              let! typeBinding = s.TryFindType typeName |> state.OfSum
-              let! formBody = FormBody.Parse fields typeBinding.TypeId
-              // do Console.WriteLine $"found record for type {typeName}/{typeBinding.Type}"
-              // do Console.ReadLine() |> ignore
+                let! typeJson = (fields |> state.TryFindField "type")
 
-              let! containerRendererJson =
-                fields
-                |> state.TryFindField "containerRenderer"
-                |> state.Catch
-                |> state.Map(Sum.toOption)
+                return!
+                  state {
+                    let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
+                    let! (s: ParsedFormsContext) = state.GetState()
+                    let! typeBinding = s.TryFindType typeName |> state.OfSum
+                    let! formBody = FormBody.Parse fields typeBinding.TypeId
+                    // do Console.WriteLine $"found record for type {typeName}/{typeBinding.Type}"
+                    // do Console.ReadLine() |> ignore
 
-              let! (containerRenderer: Option<string>) =
-                containerRendererJson
-                |> Option.map (JsonValue.AsString >> state.OfSum)
-                |> state.RunOption
+                    let! containerRendererJson =
+                      fields
+                      |> state.TryFindField "containerRenderer"
+                      |> state.Catch
+                      |> state.Map(Sum.toOption)
 
-              return
-                Renderer.InlineFormRenderer
-                  {| Body = formBody
-                     ContainerRenderer = containerRenderer |}
-            }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+                    let! (containerRenderer: Option<string>) =
+                      containerRendererJson
+                      |> Option.map (JsonValue.AsString >> state.OfSum)
+                      |> state.RunOption
+
+                    return
+                      Renderer.InlineFormRenderer
+                        {| Body = formBody
+                           ContainerRenderer = containerRenderer |}
+                  }
+                  |> state.MapError(Errors.WithPriority ErrorPriority.High)
+              })
+              (state {
+
+                let! renderers =
+                  fields
+                  |> Seq.map (fun (fieldName, fieldJson) ->
+                    state {
+                      let! parsedField = NestedRenderer.Parse fieldJson
+                      return fieldName, parsedField
+                    })
+                  |> state.All
+
+                match renderers with
+                | [] -> return! state.Throw(Errors.Singleton $"Error: cannot match empty generic renderers")
+                | (firstName, firstRenderer) :: gs ->
+
+                  return
+                    Renderer.Multiple
+                      {| First =
+                          {| Name = firstName
+                             NestedRenderer = firstRenderer |}
+                         Rest = gs |> Map.ofList |}
+              })
+
 
         })
       |> state.MapError(Errors.HighestPriority)
@@ -966,11 +989,11 @@ module Renderers =
                 |> state.Catch
                 |> state.Map(Sum.toOption)
 
-              let! previewJson =
-                fields
-                |> state.TryFindField "previewRenderer"
-                |> state.Catch
-                |> state.Map(Sum.toOption)
+              // let! previewJson =
+              //   fields
+              //   |> state.TryFindField "previewRenderer"
+              //   |> state.Catch
+              //   |> state.Map(Sum.toOption)
 
               let! renderer = rendererJson |> JsonValue.AsString |> state.OfSum
               let! config = state.GetContext()
@@ -978,27 +1001,18 @@ module Renderers =
 
               let! details =
                 detailsJson
-                |> Option.map (fun detailsJson ->
-                  state {
-                    let! detailsFields = detailsJson |> JsonValue.AsRecord |> state.OfSum
-
-                    return! FormBody.Parse detailsFields formTypeId
-                  })
+                |> Option.map (fun detailsJson -> state { return! NestedRenderer.Parse detailsJson })
                 |> state.RunOption
 
-              let! preview =
-                previewJson
-                |> Option.map (fun previewJson ->
-                  state {
-                    let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
+              // let! preview =
+              //   previewJson
+              //   |> Option.map (fun previewJson ->
+              //     state {
+              //       let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
 
-                    return! FormBody.Parse previewFields formTypeId
-                  })
-                |> state.RunOption
-
-              // if detailsJson.IsSome then
-              // do Console.WriteLine detailsJson.ToFSharpString
-              // do Console.ReadLine() |> ignore
+              //       return! FormBody.Parse previewFields formTypeId
+              //     })
+              //   |> state.RunOption
 
               if config.Table.SupportedRenderers |> Set.contains renderer |> not then
                 return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
@@ -1047,7 +1061,7 @@ module Renderers =
                   {| Columns = columns
                      RowType = t.Type
                      Details = details
-                     Preview = preview
+                     //  Preview = preview
                      Renderer = renderer
                      VisibleColumns = visibleColumns |}
                   |> FormBody.Table

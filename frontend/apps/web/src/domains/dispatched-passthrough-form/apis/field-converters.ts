@@ -3,8 +3,10 @@ import {
   CollectionSelection,
   DispatchApiConverters,
   fromAPIRawValue,
+  PredicateValue,
   Sum,
   toAPIRawValue,
+  ValueOption,
 } from "ballerina-core";
 import { List, OrderedMap, Map } from "immutable";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
@@ -77,8 +79,8 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           return _;
         }
         return {
-          Discriminator: _.Discriminator,
-          [_.Discriminator]: _[_.Discriminator],
+          caseName: _.Discriminator,
+          fields: _[_.Discriminator],
         };
       },
       toAPIRawValue: ([_, __]) => _,
@@ -175,6 +177,13 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           to: _.To,
         };
       },
+      toAPIRawValue: ([_, __]) => _,
+    },
+    One: {
+      fromAPIRawValue: (_) =>
+        _.isRight
+          ? PredicateValue.Default.option(true, _.right)
+          : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
       toAPIRawValue: ([_, __]) => _,
     },
   };

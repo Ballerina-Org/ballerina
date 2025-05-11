@@ -42,6 +42,14 @@ export const MapRepo = {
       ),
   },
   Operations: {
+    tryFirstWithError: <k, v, e>(
+      m: Map<k, v>,
+      e: () => e,
+    ): ValueOrErrors<v, e> =>
+      ValueOrErrors.Default.ofOption(
+        m.size != 0 ? Sum.Default.right(m.first()!) : Sum.Default.left(unit),
+        e,
+      ),
     tryFind: <k, v>(k: k, m: Map<k, v>): Option<v> =>
       m.has(k) ? Sum.Default.right(m.get(k)!) : Sum.Default.left(unit),
     tryFindWithError: <k, v, e>(

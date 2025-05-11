@@ -70,6 +70,7 @@ export const LoadAndDeserializeSpecification = <
             current.enumOptionsSources,
             current.entityApis,
             current.tableApiSources,
+            current.lookupSources,
           )(deserializationResult.value);
 
           if (result.kind == "errors") {

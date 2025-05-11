@@ -312,8 +312,8 @@ module Model =
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details: Option<FormBody>
-         Preview: Option<FormBody>
+         Details: Option<NestedRenderer>
+         //  Preview: Option<FormBody>
          Columns: Map<string, Column>
          VisibleColumns: FormGroup
          RowType: ExprType |}
@@ -369,43 +369,36 @@ module Model =
     static member Name(f: FieldConfig) = f.FieldName
 
   and Renderer =
+    | Multiple of
+      {| First:
+           {| Name: string
+              NestedRenderer: NestedRenderer |}
+         Rest: Map<string, NestedRenderer> |}
     | PrimitiveRenderer of PrimitiveRenderer
     | MapRenderer of
       {| Map: Renderer
          Key: NestedRenderer
-         Value: NestedRenderer
-      //  Children: RendererChildren
-      |}
+         Value: NestedRenderer |}
     | TupleRenderer of
       {| Tuple: Renderer
-         Elements: List<NestedRenderer>
-      //  Children: RendererChildren
-      |}
+         Elements: List<NestedRenderer> |}
     | OptionRenderer of
       {| Option: Renderer
          Some: NestedRenderer
-         None: NestedRenderer
-      //  Children: RendererChildren
-      |}
+         None: NestedRenderer |}
     | ListRenderer of
       {| List: Renderer
-         Element: NestedRenderer
-      //  Children: RendererChildren
-      |}
+         Element: NestedRenderer |}
     | OneRenderer of
       {| One: Renderer
          Details: NestedRenderer
          Preview: Option<NestedRenderer>
-         OneApiId: Choice<TableApiId, TypeId * string>
-      //  Children: RendererChildren
-      |}
+         OneApiId: Choice<TableApiId, TypeId * string> |}
     | ManyRenderer of
       {| Many: Renderer
          Details: NestedRenderer
          Preview: Option<NestedRenderer>
-         ManyApiId: TypeId * string
-      //  Children: RendererChildren
-      |}
+         ManyApiId: TypeId * string |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer
@@ -413,9 +406,7 @@ module Model =
     | SumRenderer of
       {| Sum: Renderer
          Left: NestedRenderer
-         Right: NestedRenderer
-      //Children: RendererChildren
-      |}
+         Right: NestedRenderer |}
     | EnumRenderer of EnumApiId * Renderer
     | StreamRenderer of StreamRendererApi * Renderer
     | FormRenderer of FormConfigId * ExprType //* RendererChildren

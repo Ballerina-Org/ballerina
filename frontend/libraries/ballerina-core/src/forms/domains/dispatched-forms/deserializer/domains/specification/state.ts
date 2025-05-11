@@ -12,14 +12,17 @@ import {
   EnumApis,
   StreamApis,
   SpecificationApis,
-  isObject,
   TableApis,
   LookupApis,
+  MapRepo,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
-import { Form } from "./domains/form/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
-import { DispatchApiConverters } from "../../../built-ins/state";
+import {
+  ConcreteRendererKinds,
+  DispatchApiConverters,
+} from "../../../built-ins/state";
+import { Renderer } from "./domains/forms/domains/renderer/state";
 
 // TODO -- either add the lookups to merge, or remove the front end merger
 const INITIAL_CONFIG = {
@@ -45,7 +48,7 @@ export type SerializedSpecification = {
 export type Specification<T> = {
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   apis: SpecificationApis;
-  forms: Map<string, Form<T>>;
+  forms: Map<string, Renderer<T>>;
   launchers: {
     create: Map<string, CreateLauncher>;
     edit: Map<string, EditLauncher>;
@@ -105,21 +108,45 @@ export const Specification = {
     DeserializeForms: <T>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      fieldViews?: any,
-    ): ValueOrErrors<Map<string, Form<T>>, string> =>
+      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+    ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
-        List<ValueOrErrors<[string, Form<T>], string>>(
+        List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
-            Form<T>()
-              .Operations.Deserialize(types, formName, form, fieldViews)
-              .Then((form) => ValueOrErrors.Default.return([formName, form])),
+            !DispatchIsObject(form) ||
+            !("type" in form) ||
+            typeof form.type != "string"
+              ? ValueOrErrors.Default.throwOne(
+                  `form ${formName} is missing the required type attribute`,
+                )
+              : MapRepo.Operations.tryFindWithError(
+                  form.type,
+                  types,
+                  () => `form type ${form.type} not found in types`,
+                ).Then((formType) =>
+                  Renderer.Operations.Deserialize(
+                    formType,
+                    form,
+                    concreteRenderers,
+                    types,
+                  )
+                    .MapErrors((errors) =>
+                      errors.map(
+                        (error) =>
+                          `${error}\n...When deserializing form ${formName}`,
+                      ),
+                    )
+                    .Then((form) =>
+                      ValueOrErrors.Default.return([formName, form]),
+                    ),
+                ),
           ),
         ),
       ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
       <T extends { [key in keyof T]: { type: any; state: any } }>(
         apiConverters: DispatchApiConverters<T>,
-        fieldViews: any,
+        concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
         injectedPrimitives?: InjectedPrimitives<T>,
       ) =>
       (
@@ -264,7 +291,7 @@ export const Specification = {
                             : Specification.Operations.DeserializeForms<T>(
                                 serializedSpecifications.forms,
                                 allTypes,
-                                fieldViews,
+                                concreteRenderers,
                               ).Then((forms) =>
                                 !Specification.Operations.hasApis(
                                   serializedSpecifications,

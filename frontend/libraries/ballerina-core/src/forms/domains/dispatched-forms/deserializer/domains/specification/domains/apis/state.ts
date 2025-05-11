@@ -189,7 +189,7 @@ export type LookupApi = {
   >;
 };
 
-// TODO add one and many deserialization
+// TODO add many deserialization
 export const LookupApis = {
   Operations: {
     isLookupApi: (

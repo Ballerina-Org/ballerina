@@ -107,6 +107,12 @@
     ❌ add a `visibleCases` (optional) tab to the union renderers
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
+    ❌  | SumRenderer of
+        {| Sum: Renderer  ---->  string
+          Left: NestedRenderer
+          Right: NestedRenderer
+        //Children: RendererChildren
+        |}
     ✅ parse records - add renderer to the go config which must map the name of the renderer to the array of the fields that the renderer processes
       ✅ renderer is optional
     ✅ make sure that whenever a type is used for a lookup, that the root type has an id
