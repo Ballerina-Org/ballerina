@@ -5,8 +5,10 @@ open Ballerina.DSL.Parser.Expr
 open FSharp.Data
 open NUnit.Framework
 open Common
+open Ballerina.Collections.Sum
 
-let private parseExpr json = (Expr.Parse json).run ((), ())
+let private parseExpr json =
+  (Expr.Parse json).run ((), ()) |> Sum.map2 fst fst
 
 module ExprParserTests =
   [<Test>]
@@ -15,19 +17,19 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.Value(Value.ConstBool true), None)
+    assertSuccess result (Expr.Value(Value.ConstBool true))
 
   [<Test>]
   let ``Should parse string`` () =
     let json = JsonValue.String "string"
     let result = parseExpr json
-    assertSuccess result (Expr.Value(Value.ConstString "string"), None)
+    assertSuccess result (Expr.Value(Value.ConstString "string"))
 
   [<Test>]
   let ``Should parse int`` () =
     let json = JsonValue.Number 1m
     let result = parseExpr json
-    assertSuccess result (Expr.Value(Value.ConstInt 1), None)
+    assertSuccess result (Expr.Value(Value.ConstInt 1))
 
   [<Test>]
   let ``Should parse binary operator`` () =
@@ -40,7 +42,7 @@ module ExprParserTests =
 
     assertSuccess
       result
-      (Expr.Binary(BinaryOperator.And, Expr.Value(Value.ConstBool true), Expr.Value(Value.ConstBool false)), None)
+      (Expr.Binary(BinaryOperator.And, Expr.Value(Value.ConstBool true), Expr.Value(Value.ConstBool false)))
 
   [<Test>]
   let ``Should parse lambda`` () =
@@ -52,7 +54,7 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.Value(Value.Lambda({ VarName = "x" }, Expr.Value(Value.ConstBool true))), None)
+    assertSuccess result (Expr.Value(Value.Lambda({ VarName = "x" }, Expr.Value(Value.ConstBool true))))
 
 
   [<Test>]
@@ -79,8 +81,7 @@ module ExprParserTests =
       (Expr.MatchCase(
         Expr.Value(Value.ConstString "test"),
         Map.ofList [ ("case1", ({ VarName = "x" }, Expr.Value(Value.ConstBool true))) ]
-       ),
-       None)
+      ))
 
   [<Test>]
   let ``Should parse fieldLookup`` () =
@@ -91,7 +92,7 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName"), None)
+    assertSuccess result (Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName"))
 
   [<Test>]
   let ``Should parse isCase`` () =
@@ -102,7 +103,7 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.IsCase("caseName", Expr.Value(Value.ConstString "value")), None)
+    assertSuccess result (Expr.IsCase("caseName", Expr.Value(Value.ConstString "value")))
 
 
 
@@ -113,7 +114,7 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.VarLookup { VarName = "x" }, None)
+    assertSuccess result (Expr.VarLookup { VarName = "x" })
 
   [<Test>]
   let ``Should parse itemLookup`` () =
@@ -124,4 +125,4 @@ module ExprParserTests =
 
     let result = parseExpr json
 
-    assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2), None)
+    assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2))
