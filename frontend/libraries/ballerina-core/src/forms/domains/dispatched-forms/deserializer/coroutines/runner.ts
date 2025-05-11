@@ -59,12 +59,7 @@ export const LoadAndDeserializeSpecification = <
             );
             return deserializationResult;
           }
-
-          console.debug(
-            "deserializationResult",
-            JSON.stringify(deserializationResult.value),
-          );
-
+          
           const result = parseDispatchFormsToLaunchers(
             injectedPrimitives,
             current.fieldTypeConverters,

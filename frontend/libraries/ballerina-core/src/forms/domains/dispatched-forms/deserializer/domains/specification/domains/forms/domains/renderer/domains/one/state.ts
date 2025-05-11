@@ -80,9 +80,6 @@ export const OneRenderer = {
             concreteRenderers,
             "preview renderer",
             types,
-            typeof serialized.previewRenderer == "object" && 
-            "renderer" in serialized.previewRenderer &&
-            typeof serialized.previewRenderer.renderer == "object",
           ),
     Deserialize: <T>(
       type: OneType<T>,
@@ -98,9 +95,6 @@ export const OneRenderer = {
             concreteRenderers,
             "details renderer",
             types,
-            typeof validatedSerialized.detailsRenderer == "object" && 
-            "renderer" in validatedSerialized.detailsRenderer! &&
-            typeof validatedSerialized.detailsRenderer.renderer == "object",
           ).Then((detailsRenderer) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,

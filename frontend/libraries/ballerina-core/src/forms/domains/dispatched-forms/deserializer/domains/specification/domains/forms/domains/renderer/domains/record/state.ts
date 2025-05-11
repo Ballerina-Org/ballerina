@@ -74,7 +74,7 @@ export const RecordRenderer = {
           )
         : !canOmitType && !("type" in _)
         ? ValueOrErrors.Default.throwOne(
-            "top level record form is missing the required type attribute",
+            "form is missing the required type attribute, only inlined table detail renderers may omit it",
           )
         : ("type" in _ && typeof _.type != "string")
         ? ValueOrErrors.Default.throwOne(

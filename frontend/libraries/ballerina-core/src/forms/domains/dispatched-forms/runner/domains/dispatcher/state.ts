@@ -58,7 +58,7 @@ export const Dispatcher = {
             dispatcherContext.types,
           ).Then((lookupType) =>
             MapRepo.Operations.tryFindWithError(
-              (console.debug("renderer", renderer),renderer.renderer),
+              renderer.renderer,
               dispatcherContext.forms,
               () => `cannot find form ${lookupType}`,
             ).Then((formRenderer) =>

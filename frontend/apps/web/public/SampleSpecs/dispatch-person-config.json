@@ -1320,6 +1320,7 @@
           "renderer": "bestFriend",
           "detailsRenderer": {
             "renderer": {
+              "type": "User",
               "fields": {
                 "Name": {
                   "renderer": "defaultString"
@@ -1340,6 +1341,7 @@
           },
           "previewRenderer": {
             "renderer": {
+              "type": "User",
               "fields": {
                 "Name": {
                   "renderer": "defaultString"
