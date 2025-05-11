@@ -6,6 +6,7 @@ open FSharp.Data
 open NUnit.Framework
 open Common
 open Ballerina.Collections.Sum
+open Ballerina.Collections.NonEmptyList
 
 let private parseExpr json =
   (Expr.Parse json).run ((), ()) |> Sum.map2 fst fst
@@ -295,3 +296,16 @@ module ExprParserErrorTests =
     match result with
     | Left _ -> Assert.Fail "Expected error but got success"
     | Right _ -> Assert.Pass()
+
+  [<Test>]
+  let ``Should fail explicitly on not implemented`` () =
+    let expr =
+      Expr.MakeRecord(Map.ofList [ ("fieldName", Expr.Value(Value.ConstString "value")) ])
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right errors ->
+      Assert.That(errors.Errors.Head.Message, Is.EqualTo "Error: MakeRecord not implemented")
+      Assert.That(errors.Errors.Tail, Is.Empty)
