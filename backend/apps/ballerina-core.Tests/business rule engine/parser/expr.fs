@@ -210,14 +210,72 @@ module ExprUnparseParseTests =
 
     assertSuccess result expr
 
-module ExprUnparsePareComplexCases =
+module ExprUnparsePareRecursiveExpressions =
+
   [<Test>]
-  let ``Should unparse and parse nested expressions`` () =
+  let ``Should unparse and parse nested match case`` () =
+    let expr =
+      Expr.MatchCase(
+        Expr.Value(Value.ConstString "test"),
+        Map.ofList
+          [ ("case1",
+             ({ VarName = "x" },
+              Expr.Binary(BinaryOperator.And, Expr.Value(Value.ConstBool true), Expr.VarLookup { VarName = "x" }))) ]
+      )
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse nested field lookup`` () =
+    let expr =
+      Expr.RecordFieldLookup(
+        Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstString "record1"), Expr.Value(Value.ConstString "record2")),
+        "fieldName"
+      )
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse nested isCase`` () =
+    let expr =
+      Expr.IsCase("caseName", Expr.Project(Expr.Value(Value.ConstString "array"), 2))
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse deeply nested binary operations`` () =
     let expr =
       Expr.Binary(
         BinaryOperator.And,
-        Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstBool true), Expr.VarLookup { VarName = "x" }),
-        Expr.Project(Expr.Value(Value.ConstString "array"), 2)
+        Expr.Binary(
+          BinaryOperator.Or,
+          Expr.Value(Value.ConstBool true),
+          Expr.Binary(BinaryOperator.And, Expr.Value(Value.ConstBool false), Expr.VarLookup { VarName = "x" })
+        ),
+        Expr.Value(Value.ConstBool true)
+      )
+
+    let result = expr |> Expr.Unparse |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should unparse and parse nested lambda with match case`` () =
+    let expr =
+      Expr.Value(
+        Value.Lambda(
+          { VarName = "x" },
+          Expr.MatchCase(
+            Expr.VarLookup { VarName = "x" },
+            Map.ofList [ ("case1", ({ VarName = "y" }, Expr.Value(Value.ConstBool true))) ]
+          )
+        )
       )
 
     let result = expr |> Expr.Unparse |> Sum.bind parseExpr
