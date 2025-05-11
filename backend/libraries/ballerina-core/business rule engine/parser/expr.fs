@@ -261,7 +261,7 @@ module Expr =
         | Value.ConstBool b -> JsonValue.Boolean b
         | Value.ConstInt i -> JsonValue.Number(decimal i)
         | Value.ConstString s -> JsonValue.String s
-        | Value.ConstGuid g -> JsonValue.String(g.ToString())
+        | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
         | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
         | Value.Lambda(v, e) ->
           let! body = Expr.Unparse e
