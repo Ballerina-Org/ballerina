@@ -6,6 +6,7 @@ import {
   Unit,
   DispatchGenericType,
   DispatchGenericTypes,
+  MapRepo,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -400,40 +401,33 @@ export const DispatchParsedType = {
       fst.kind == "record" && snd.kind == "record"
         ? fst.name == snd.name
         : fst.kind == "table" && snd.kind == "table"
-          ? fst.name == snd.name
-          : fst.kind == "one" && snd.kind == "one"
-            ? fst.name == snd.name
-            : fst.kind == "lookup" && snd.kind == "lookup"
-              ? fst.name == snd.name
-              : fst.kind == "primitive" && snd.kind == "primitive"
-                ? fst.name == snd.name
-                : fst.kind == "list" && snd.kind == "list"
-                  ? fst.name == snd.name
-                  : fst.kind == "singleSelection" &&
-                      snd.kind == "singleSelection"
-                    ? fst.name == snd.name
-                    : fst.kind == "multiSelection" &&
-                        snd.kind == "multiSelection"
-                      ? fst.name == snd.name
-                      : fst.kind == "map" && snd.kind == "map"
-                        ? fst.name == snd.name
-                        : fst.kind == "sum" && snd.kind == "sum"
-                          ? fst.name == snd.name
-                          : fst.kind == "tuple" && snd.kind == "tuple"
-                            ? fst.name == snd.name &&
-                              fst.args.length == snd.args.length &&
-                              fst.args.every((v, i) =>
-                                DispatchParsedType.Operations.Equals(
-                                  v,
-                                  snd.args[i],
-                                ),
-                              )
-                            : fst.kind == "union" && snd.kind == "union"
-                              ? fst.args.size == snd.args.size &&
-                                fst.args.every(
-                                  (v, i) => v.name == snd.args.get(i)!.name,
-                                )
-                              : false,
+        ? fst.name == snd.name
+        : fst.kind == "one" && snd.kind == "one"
+        ? fst.name == snd.name
+        : fst.kind == "lookup" && snd.kind == "lookup"
+        ? fst.name == snd.name
+        : fst.kind == "primitive" && snd.kind == "primitive"
+        ? fst.name == snd.name
+        : fst.kind == "list" && snd.kind == "list"
+        ? fst.name == snd.name
+        : fst.kind == "singleSelection" && snd.kind == "singleSelection"
+        ? fst.name == snd.name
+        : fst.kind == "multiSelection" && snd.kind == "multiSelection"
+        ? fst.name == snd.name
+        : fst.kind == "map" && snd.kind == "map"
+        ? fst.name == snd.name
+        : fst.kind == "sum" && snd.kind == "sum"
+        ? fst.name == snd.name
+        : fst.kind == "tuple" && snd.kind == "tuple"
+        ? fst.name == snd.name &&
+          fst.args.length == snd.args.length &&
+          fst.args.every((v, i) =>
+            DispatchParsedType.Operations.Equals(v, snd.args[i]),
+          )
+        : fst.kind == "union" && snd.kind == "union"
+        ? fst.args.size == snd.args.size &&
+          fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
+        : false,
     ParseRawKeyOf: <T>(
       fieldName: DispatchTypeName,
       rawType: SerializedType<T>,
@@ -762,6 +756,22 @@ export const DispatchParsedType = {
         errors.map((error) => `${error}\n...When parsing type "${typeName}"`),
       );
     },
+    ResolveLookupType: <T>(
+      typeName: string,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      MapRepo.Operations.tryFindWithError(
+        typeName,
+        types,
+        () => `cannot find lookup type ${typeName} in types`,
+      ),
+    AsResolvedType: <T>(
+      type: DispatchParsedType<T>,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    ): ValueOrErrors<DispatchParsedType<T>, string> =>
+      type.kind == "lookup"
+        ? DispatchParsedType.Operations.ResolveLookupType(type.name, types)
+        : ValueOrErrors.Default.return(type),
     ExtendDispatchParsedTypes: <T>(
       DispatchParsedTypes: Map<DispatchTypeName, DispatchParsedType<T>>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
@@ -822,36 +832,4 @@ export const DispatchParsedType = {
           errors.map((error) => `${error}\n...When extending types`),
         ),
   },
-  // ValueOrErrors<[DispatchTypeName, UnionType<T>], string>
-
-  //     if (SerializedType.isUnion(rawType)) {
-  //     //   return ValueOrErrors.Operations.All(
-  //     //     List<
-  //     //       ValueOrErrors<[DispatchCaseName, DispatchParsedType<T>], string>
-  //     //     >(
-  //     //       rawType.args.map((unionCase) => {
-  //     //         return DispatchParsedType.Operations.ParseRawUnionCase(
-  //     //           unionCase,
-  //     //           typeNames,
-  //     //           injectedPrimitives,
-  //     //         ).Then((parsedUnionCase) => {
-  //     //           return ValueOrErrors.Default.return([
-  //     //             unionCase.caseName,
-  //     //             parsedUnionCase,
-  //     //           ]);
-  //     //         });
-  //     //       }),
-  //     //     ),
-  //     //   ).Then((parsedUnionCases) =>
-  //     //     ValueOrErrors.Default.return(
-  //     //       DispatchParsedType.Default.union(
-  //     //         typeName,
-  //     //         Map(parsedUnionCases),
-  //     //         typeName,
-  //     //       ),
-  //     //     ),
-  //     //   );
-  //     // }
-  //   },
-  // },
 };

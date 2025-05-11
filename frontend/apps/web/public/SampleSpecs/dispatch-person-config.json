@@ -1,7 +1,34 @@
 {
   "types": {
-    "AddressConfigConfig": {
-      "fields": {}
+    "GlobalConfiguration": {
+      "extends": [],
+      "fields": {
+        "IsAdmin": "boolean",
+        "ERP": "ERPConfig",
+        "ActiveAddressFields": {
+          "fun": "MultiSelection",
+          "args": ["AddressesFieldRef"]
+        }
+      }
+    },
+    "ERPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "ERPSAP",
+          "fields": {
+            "Value": "SAPConfig"
+          }
+        },
+        {
+          "caseName": "ERPBC",
+          "fields": {}
+        },
+        {
+          "caseName": "ERPFAndO",
+          "fields": {}
+        }
+      ]
     },
     "SAPConfig": {
       "fun": "Union",
@@ -26,6 +53,19 @@
         }
       ]
     },
+    "User": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean"
+      }
+    },
+    "AddressConfigConfig": {
+      "fields": {}
+    },
     "UnusedEnum": {
       "fun": "Union",
       "args": [
@@ -40,7 +80,8 @@
           "fields": "PlotInfo"
         },
         {
-          "caseName": "C"
+          "caseName": "C",
+          "fields": {}
         }
       ]
     },
@@ -48,31 +89,40 @@
       "fun": "Union",
       "args": [
         {
-          "caseName": "departments"
+          "caseName": "Departments",
+          "fields": {}
         },
         {
-          "caseName": "schoolAddress"
+          "caseName": "SchoolAddress",
+          "fields": {}
         },
         {
-          "caseName": "mainAddress"
+          "caseName": "MainAddress",
+          "fields": {}
         },
         {
-          "caseName": "addressesAndAddressesWithLabel"
+          "caseName": "AddressesAndAddressesWithLabel",
+          "fields": {}
         },
         {
-          "caseName": "addressesWithColorLabel"
+          "caseName": "AddressesWithColorLabel",
+          "fields": {}
         },
         {
-          "caseName": "addressesBy"
+          "caseName": "AddressesBy",
+          "fields": {}
         },
         {
-          "caseName": "permissions"
+          "caseName": "Permissions",
+          "fields": {}
         },
         {
-          "caseName": "cityByDepartment"
+          "caseName": "CityByDepartment",
+          "fields": {}
         },
         {
-          "caseName": "holidays"
+          "caseName": "Holidays",
+          "fields": {}
         }
       ]
     },
@@ -80,23 +130,6 @@
       "fields": {
         "Value": "AddressesFieldsEnum"
       }
-    },
-    "ERPConfig": {
-      "fun": "Union",
-      "args": [
-        {
-          "caseName": "ERPSAP",
-          "fields": {
-            "Value": "SAPConfig"
-          }
-        },
-        {
-          "caseName": "ERPBC"
-        },
-        {
-          "caseName": "ERPFAndO"
-        }
-      ]
     },
     "PersonConfig": {
       "fields": {
@@ -121,18 +154,18 @@
     },
     "LandArea": {
       "fields": {
-        "x": "number",
-        "y": "number"
+        "X": "number",
+        "Y": "number"
       }
     },
     "PlotInfo": {
       "fields": {
-        "landArea": "LandArea"
+        "LandArea": "LandArea"
       }
     },
     "Address": {
       "fields": {
-        "streetNumberAndCity": {
+        "StreetNumberAndCity": {
           "fun": "Tuple",
           "args": [
             "string",
@@ -149,13 +182,16 @@
       "fun": "Union",
       "args": [
         {
-          "caseName": "M"
+          "caseName": "M",
+          "fields": {}
         },
         {
-          "caseName": "F"
+          "caseName": "F",
+          "fields": {}
         },
         {
-          "caseName": "X"
+          "caseName": "X",
+          "fields": {}
         }
       ]
     },
@@ -244,21 +280,21 @@
     },
     "BaseJob": {
       "fields": {
-        "name": "string",
-        "salary": "number"
+        "Name": "string",
+        "Salary": "number"
       }
     },
     "DeveloperJob": {
       "extends": ["BaseJob"],
       "fields": {
-        "language": "string"
+        "Language": "string"
       }
     },
     "DesignerJob": {
       "extends": ["BaseJob"],
       "fields": {
-        "designTool": "string",
-        "certifications": {
+        "DesignTool": "string",
+        "Certifications": {
           "fun": "List",
           "args": ["string"]
         }
@@ -273,44 +309,25 @@
         },
         {
           "caseName": "Designer",
-          "fields": {
-            "name": "string",
-            "designTool": "string",
-            "certifications": {
-              "fun": "List",
-              "args": ["string"]
-            }
-          }
+          "fields": "DesignerJob"
         }
       ]
     },
     "Person": {
       "fields": {
-        "job": {
-          "fun": "Union",
-          "args": [
-            {
-              "caseName": "Developer",
-              "fields": "DeveloperJob"
-            },
-            {
-              "caseName": "Designer",
-              "fields": "DesignerJob"
-            }
-          ]
-        },
-        "category": "injectedCategory",
-        "fullName": {
+        "Job": "Job",
+        "Category": "injectedCategory",
+        "FullName": {
           "fun": "Tuple",
           "args": ["string", "string"]
         },
-        "birthday": "Date",
-        "subscribeToNewsletter": "boolean",
-        "favoriteColor": {
+        "Birthday": "Date",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
           "fun": "SingleSelection",
           "args": ["ColorRef"]
         },
-        "gender": {
+        "Gender": {
           "fun": "Sum",
           "args": [
             "unit",
@@ -320,32 +337,32 @@
             }
           ]
         },
-        "dependants": {
+        "Dependants": {
           "fun": "Map",
           "args": ["string", "injectedCategory"]
         },
-        "friendsByCategory": {
+        "FriendsByCategory": {
           "fun": "Map",
           "args": ["injectedCategory", "string"]
         },
-        "relatives": {
+        "Relatives": {
           "fun": "List",
           "args": ["injectedCategory"]
         },
-        "interests": {
+        "Interests": {
           "fun": "MultiSelection",
           "args": ["InterestRef"]
         },
-        "departments": {
+        "Departments": {
           "fun": "MultiSelection",
           "args": ["DepartmentRef"]
         },
-        "emails": {
+        "Emails": {
           "fun": "List",
           "args": ["string"]
         },
-        "schoolAddress": "Address",
-        "mainAddress": {
+        "SchoolAddress": "Address",
+        "MainAddress": {
           "fun": "Sum",
           "args": [
             "string",
@@ -355,7 +372,7 @@
             }
           ]
         },
-        "addressesAndAddressesWithLabel": {
+        "AddressesAndAddressesWithLabel": {
           "fun": "Tuple",
           "args": [
             {
@@ -368,7 +385,7 @@
             }
           ]
         },
-        "addressesByCity": {
+        "AddressesByCity": {
           "fun": "Map",
           "args": [
             {
@@ -378,11 +395,11 @@
             "Address"
           ]
         },
-        "importantDate": {
+        "ImportantDate": {
           "fun": "Sum",
           "args": ["unit", "Date"]
         },
-        "cutOffDates": {
+        "CutOffDates": {
           "fun": "List",
           "args": [
             {
@@ -391,7 +408,7 @@
             }
           ]
         },
-        "addressesBy": {
+        "AddressesBy": {
           "fun": "Sum",
           "args": [
             {
@@ -410,7 +427,7 @@
             }
           ]
         },
-        "addressesWithColorLabel": {
+        "AddressesWithColorLabel": {
           "fun": "Map",
           "args": [
             {
@@ -420,7 +437,7 @@
             "Address"
           ]
         },
-        "permissions": {
+        "Permissions": {
           "fun": "Map",
           "args": [
             {
@@ -430,7 +447,7 @@
             "boolean"
           ]
         },
-        "cityByDepartment": {
+        "CityByDepartment": {
           "fun": "Map",
           "args": [
             {
@@ -443,26 +460,44 @@
             }
           ]
         },
-        "shoeColours": {
+        "ShoeColours": {
           "fun": "MultiSelection",
           "args": ["ColorRef"]
         },
-        "friendsBirthdays": {
+        "FriendsBirthdays": {
           "fun": "Map",
           "args": ["string", "Date"]
         },
-        "holidays": {
+        "Holidays": {
           "fun": "List",
           "args": ["Date"]
         },
-        "friendsAddresses": {
+        "FriendsAddresses": {
           "fun": "Map",
           "args": ["string", { "fun": "List", "args": ["Address"] }]
+        },
+        "Friends": {
+          "fun": "Table",
+          "args": ["User"]
+        },
+        "BestFriend": {
+          "fun": "One",
+          "args": ["User"]
         }
       }
     }
   },
   "apis": {
+    "lookups": {
+      "User": {
+        "one": {
+          "BestFriendApi": {
+            "type": "User",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      }
+    },
     "enumOptions": {
       "addressesFields": "AddressesFieldRef",
       "genders": "GenderRef",
@@ -473,6 +508,11 @@
     "searchableStreams": {
       "cities": "CityRef",
       "departments": "DepartmentRef"
+    },
+    "tables": {
+      "ActiveUsersApi": {
+        "type": "User"
+      }
     },
     "entities": {
       "person": {
@@ -486,14 +526,57 @@
     }
   },
   "forms": {
-    "landArea": {
+    "userDetails": {
+      "type": "User",
+      "renderer": "userDetails",
+      "fields": {
+        "Name": {
+          "label": "First Name",
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "label": "Last Name",
+          "renderer": "defaultString"
+        },
+        "Birthday": {
+          "label": "Birthday",
+          "renderer": "defaultDate"
+        },
+        "Email": {
+          "label": "Email",
+          "renderer": "defaultString"
+        },
+        "SubscribeToNewsletter": {
+          "label": "Subscribe to Newsletter",
+          "renderer": "defaultBoolean"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "Surname",
+                  "Birthday",
+                  "Email",
+                  "SubscribeToNewsletter"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "LandArea": {
       "type": "LandArea",
       "fields": {
-        "x": {
+        "X": {
           "renderer": "defaultNumber",
           "visible": true
         },
-        "y": {
+        "Y": {
           "renderer": "defaultNumber",
           "visible": true
         }
@@ -503,7 +586,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["x", "y"]
+                "main": ["X", "Y"]
               }
             }
           }
@@ -513,8 +596,8 @@
     "plotInfo": {
       "type": "PlotInfo",
       "fields": {
-        "landArea": {
-          "renderer": "landArea",
+        "LandArea": {
+          "renderer": "LandArea",
           "visible": true
         }
       },
@@ -523,7 +606,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["landArea"]
+                "main": ["LandArea"]
               }
             }
           }
@@ -534,7 +617,7 @@
       "type": "Address",
       "renderer": "address",
       "fields": {
-        "streetNumberAndCity": {
+        "StreetNumberAndCity": {
           "renderer": "defaultTuple3",
           "itemRenderers": [
             {
@@ -558,7 +641,7 @@
                     "kind": "varLookup",
                     "varName": "root"
                   },
-                  "subscribeToNewsletter"
+                  "SubscribeToNewsletter"
                 ]
               },
               {
@@ -574,7 +657,7 @@
                             "kind": "varLookup",
                             "varName": "local"
                           },
-                          "streetNumberAndCity"
+                          "StreetNumberAndCity"
                         ]
                       },
                       2
@@ -598,13 +681,13 @@
                         "kind": "varLookup",
                         "varName": "local"
                       },
-                      "streetNumberAndCity"
+                      "StreetNumberAndCity"
                     ]
                   },
                   2
                 ]
               },
-              10
+              100
             ]
           }
         }
@@ -614,7 +697,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["streetNumberAndCity"]
+                "main": ["StreetNumberAndCity"]
               }
             }
           }
@@ -646,13 +729,13 @@
       "type": "DeveloperJob",
       "renderer": "person",
       "fields": {
-        "name": {
+        "Name": {
           "renderer": "defaultString"
         },
-        "salary": {
+        "Salary": {
           "renderer": "defaultNumber"
         },
-        "language": {
+        "Language": {
           "renderer": "defaultString"
         }
       },
@@ -661,7 +744,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["name", "salary", "language"]
+                "main": ["Name", "Salary", "Language"]
               }
             }
           }
@@ -672,16 +755,16 @@
       "type": "DesignerJob",
       "renderer": "person",
       "fields": {
-        "name": {
+        "Name": {
           "renderer": "defaultString"
         },
-        "salary": {
+        "Salary": {
           "renderer": "defaultNumber"
         },
-        "designTool": {
+        "DesignTool": {
           "renderer": "defaultString"
         },
-        "certifications": {
+        "Certifications": {
           "renderer": "defaultList",
           "elementRenderer": {
             "renderer": "defaultString"
@@ -693,35 +776,141 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["name", "salary", "designTool", "certifications"]
+                "main": ["Name", "Salary", "DesignTool", "Certifications"]
               }
             }
           }
         }
       }
     },
+    "friendsTable": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        }
+      },
+      "visibleColumns": ["Name", "Surname"],
+      "detailsRenderer": {
+        "renderer": "userDetails"
+      }
+    },
     "person": {
       "type": "Person",
       "renderer": "person",
       "fields": {
-        "job": {
-          "label": "job",
-          "renderer": "job",
-          "cases": {
-            "Developer": "developerJob",
-            "Designer": "designerJob"
+        "Friends": {
+          "renderer": {
+            "type": "User",
+            "renderer": "streamingTable",
+            "columns": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Surname": {
+                "renderer": "defaultString",
+                "disabled": true
+              }
+            },
+            "visibleColumns": ["Name", "Surname"],
+            "detailsRenderer": {
+              "renderer": {
+                "renderer": "userDetails",
+                "fields": {
+                  "Name": {
+                    "label": "First Name",
+                    "renderer": "defaultString"
+                  },
+                  "Surname": {
+                    "label": "Last Name",
+                    "renderer": "defaultString"
+                  },
+                  "Birthday": {
+                    "label": "Birthday",
+                    "renderer": "defaultDate"
+                  },
+                  "Email": {
+                    "label": "Email",
+                    "renderer": "defaultString"
+                  },
+                  "SubscribeToNewsletter": {
+                    "label": "Subscribe to Newsletter",
+                    "renderer": "defaultBoolean"
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": [
+                            "Name",
+                            "Surname",
+                            "Birthday",
+                            "Email",
+                            "SubscribeToNewsletter"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": "ActiveUsersApi"
+        },
+        "Job": {
+          "label": "Job",
+          "renderer": {
+            "type": "Job",
+            "renderer": "Job",
+            "cases": {
+              "Developer": {
+                "type": "DeveloperJob",
+                "renderer": "person",
+                "fields": {
+                  "Name": {
+                    "renderer": "defaultString"
+                  },
+                  "Salary": {
+                    "renderer": "defaultNumber"
+                  },
+                  "Language": {
+                    "renderer": "defaultString"
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": ["Name", "Salary", "Language"]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "Designer": "designerJob"
+            }
           }
         },
-        "category": {
-          "label": "category",
+        "Category": {
+          "label": "Category",
           "renderer": "defaultCategory"
         },
-        "fullName": {
-          "label": "full name",
+        "FullName": {
+          "label": "full Name",
           "renderer": "defaultTuple2",
           "itemRenderers": [
             {
-              "label": "name",
+              "label": "Name",
               "renderer": "defaultString"
             },
             {
@@ -730,16 +919,16 @@
             }
           ]
         },
-        "birthday": {
+        "Birthday": {
           "renderer": "defaultDate",
-          "tooltip": "happy birthday!"
+          "tooltip": "happy Birthday!"
         },
-        "favoriteColor": {
+        "FavoriteColor": {
           "renderer": "defaultEnum",
           "options": "colors"
         },
-        "gender": {
-          "label": "gender",
+        "Gender": {
+          "label": "Gender",
           "renderer": "defaultSum",
           "leftRenderer": {
             "label": "left",
@@ -762,7 +951,7 @@
               },
               {
                 "kind": "caseName",
-                "caseName": "ERP:SAP",
+                "caseName": "ERPSAP",
                 "handler": {
                   "kind": "lambda",
                   "parameter": "sapFields",
@@ -778,7 +967,7 @@
                       },
                       {
                         "kind": "caseName",
-                        "caseName": "SAP:S2",
+                        "caseName": "SAPS2",
                         "handler": {
                           "kind": "lambda",
                           "parameter": "s2Fields",
@@ -793,7 +982,7 @@
                       },
                       {
                         "kind": "caseName",
-                        "caseName": "SAP:S3",
+                        "caseName": "SAPS3",
                         "handler": {
                           "kind": "lambda",
                           "parameter": "s3Fields",
@@ -808,7 +997,7 @@
                       },
                       {
                         "kind": "caseName",
-                        "caseName": "SAP:S4",
+                        "caseName": "SAPS4",
                         "handler": {
                           "kind": "lambda",
                           "parameter": "s4Fields",
@@ -827,46 +1016,46 @@
               },
               {
                 "kind": "caseName",
-                "caseName": "ERP:BC",
+                "caseName": "ERPBC",
                 "handler": { "kind": "lambda", "parameter": "_", "body": false }
               },
               {
                 "kind": "caseName",
-                "caseName": "ERP:FAndO",
+                "caseName": "ERPFAndO",
                 "handler": { "kind": "lambda", "parameter": "_", "body": false }
               }
             ]
           }
         },
-        "dependants": {
-          "label": "dependants",
+        "Dependants": {
+          "label": "Dependants",
           "renderer": "defaultMap",
           "tooltip": "someone who depends on you",
           "keyRenderer": {
-            "label": "name",
-            "tooltip": "their name",
+            "label": "Name",
+            "tooltip": "their Name",
             "renderer": "defaultString"
           },
           "valueRenderer": {
-            "label": "category",
-            "tooltip": "their category",
+            "label": "Category",
+            "tooltip": "their Category",
             "renderer": "defaultCategory"
           }
         },
-        "friendsByCategory": {
-          "label": "friends by category",
+        "FriendsByCategory": {
+          "label": "Friends by Category",
           "renderer": "defaultMap",
           "keyRenderer": {
-            "label": "category",
+            "label": "Category",
             "renderer": "defaultCategory"
           },
           "valueRenderer": {
-            "label": "name",
+            "label": "Name",
             "renderer": "defaultString"
           }
         },
-        "relatives": {
-          "label": "relatives",
+        "Relatives": {
+          "label": "Relatives",
           "tooltip": "someone who you are related to",
           "renderer": "defaultList",
           "elementRenderer": {
@@ -875,12 +1064,12 @@
             "renderer": "defaultCategory"
           }
         },
-        "subscribeToNewsletter": {
+        "SubscribeToNewsletter": {
           "label": "subscribe to newsletter",
           "renderer": "defaultBoolean"
         },
-        "interests": {
-          "label": "interests",
+        "Interests": {
+          "label": "Interests",
           "renderer": "defaultEnumMultiselect",
           "options": "interests",
           "visible": {
@@ -890,30 +1079,27 @@
                 "kind": "varLookup",
                 "varName": "root"
               },
-              "subscribeToNewsletter"
+              "SubscribeToNewsletter"
             ]
           }
         },
-        "departments": {
-          "label": "departments",
+        "Departments": {
+          "label": "Departments",
           "renderer": "defaultInfiniteStreamMultiselect",
           "stream": "departments",
           "disabled": {
             "kind": "fieldLookup",
             "operands": [
-              {
-                "kind": "varLookup",
-                "varName": "local"
-              },
-              "subscribeToNewsletter"
+              { "kind": "varLookup", "varName": "local" },
+              "SubscribeToNewsletter"
             ]
           }
         },
-        "schoolAddress": {
+        "SchoolAddress": {
           "label": "school address",
           "renderer": "address"
         },
-        "mainAddress": {
+        "MainAddress": {
           "label": "main address",
           "renderer": "defaultSum",
           "leftRenderer": {
@@ -939,11 +1125,11 @@
                 "kind": "varLookup",
                 "varName": "local"
               },
-              "subscribeToNewsletter"
+              "SubscribeToNewsletter"
             ]
           }
         },
-        "addressesBy": {
+        "AddressesBy": {
           "label": "addresses by",
           "renderer": "defaultSum",
           "leftRenderer": {
@@ -972,13 +1158,13 @@
             }
           }
         },
-        "importantDate": {
+        "ImportantDate": {
           "label": "important date",
           "renderer": "maybeDate",
           "visible": true,
           "disabled": false
         },
-        "cutOffDates": {
+        "CutOffDates": {
           "label": "cut off dates",
           "renderer": "defaultList",
           "elementRenderer": {
@@ -986,15 +1172,15 @@
             "renderer": "maybeDate"
           }
         },
-        "emails": {
-          "label": "emails",
+        "Emails": {
+          "label": "Emails",
           "renderer": "defaultList",
           "elementRenderer": {
             "label": "email",
             "renderer": "defaultString"
           }
         },
-        "addressesAndAddressesWithLabel": {
+        "AddressesAndAddressesWithLabel": {
           "label": "other addresses",
           "renderer": "defaultTuple2",
           "itemRenderers": [
@@ -1013,7 +1199,7 @@
                           "kind": "varLookup",
                           "varName": "root"
                         },
-                        "subscribeToNewsletter"
+                        "SubscribeToNewsletter"
                       ]
                     },
                     true
@@ -1034,7 +1220,7 @@
             }
           ]
         },
-        "addressesByCity": {
+        "AddressesByCity": {
           "label": "addresses by city",
           "renderer": "defaultMap",
           "keyRenderer": {
@@ -1048,7 +1234,7 @@
             "renderer": "address"
           }
         },
-        "addressesWithColorLabel": {
+        "AddressesWithColorLabel": {
           "renderer": "defaultMap",
           "label": "addresses with color label",
           "keyRenderer": {
@@ -1061,8 +1247,8 @@
             "renderer": "address"
           }
         },
-        "permissions": {
-          "label": "permissions",
+        "Permissions": {
+          "label": "Permissions",
           "renderer": "defaultMap",
           "keyRenderer": {
             "label": "permission",
@@ -1074,7 +1260,7 @@
             "renderer": "defaultBoolean"
           }
         },
-        "cityByDepartment": {
+        "CityByDepartment": {
           "label": "city by department",
           "renderer": "defaultMap",
           "keyRenderer": {
@@ -1088,36 +1274,36 @@
             "stream": "cities"
           }
         },
-        "shoeColours": {
+        "ShoeColours": {
           "label": "shoe colours",
           "renderer": "defaultEnumMultiselect",
           "options": "colors"
         },
-        "friendsBirthdays": {
+        "FriendsBirthdays": {
           "renderer": "defaultMap",
-          "label": "friends birthdays",
+          "label": "Friends birthdays",
           "keyRenderer": {
-            "label": "name",
+            "label": "Name",
             "renderer": "defaultString"
           },
           "valueRenderer": {
-            "label": "birthday",
+            "label": "Birthday",
             "renderer": "defaultDate"
           }
         },
-        "holidays": {
-          "label": "holidays",
+        "Holidays": {
+          "label": "Holidays",
           "renderer": "defaultList",
           "elementRenderer": {
             "label": "holiday",
             "renderer": "defaultDate"
           }
         },
-        "friendsAddresses": {
-          "label": "friends addresses",
+        "FriendsAddresses": {
+          "label": "Friends addresses",
           "renderer": "defaultMap",
           "keyRenderer": {
-            "label": "name",
+            "label": "Name",
             "renderer": "defaultString"
           },
           "valueRenderer": {
@@ -1128,6 +1314,59 @@
               "renderer": "address"
             }
           }
+        },
+        "BestFriend": {
+          "label": "Best Friend",
+          "renderer": "bestFriend",
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "BestFriendApi"]
         }
       },
       "tabs": {
@@ -1136,25 +1375,27 @@
             "demographics": {
               "groups": {
                 "main": [
-                  "job",
-                  "category",
-                  "fullName",
-                  "birthday",
-                  "gender",
-                  "emails",
-                  "dependants",
-                  "friendsByCategory",
-                  "relatives",
-                  "friendsBirthdays",
-                  "shoeColours",
-                  "importantDate",
-                  "cutOffDates"
+                  "BestFriend",
+                  "Friends",
+                  "Job",
+                  "Category",
+                  "FullName",
+                  "Birthday",
+                  "Gender",
+                  "Emails",
+                  "Dependants",
+                  "FriendsByCategory",
+                  "Relatives",
+                  "FriendsBirthdays",
+                  "ShoeColours",
+                  "ImportantDate",
+                  "CutOffDates"
                 ]
               }
             },
             "mailing": {
               "groups": {
-                "main": ["subscribeToNewsletter", "interests", "favoriteColor"]
+                "main": ["SubscribeToNewsletter", "Interests", "FavoriteColor"]
               }
             },
             "addresses": {
