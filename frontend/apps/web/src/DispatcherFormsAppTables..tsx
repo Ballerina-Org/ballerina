@@ -20,6 +20,7 @@ import {
   DispatchParsedType,
   IdWrapperProps,
   ErrorRendererProps,
+  DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import {
@@ -28,13 +29,12 @@ import {
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/example-tables.json";
-// import SPEC from "/Users/johnblp/Desktop/blp-example.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
-  dispatchCategoryForm,
+  CategoryAbstractRenderer,
   DispatchCategoryState,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
@@ -53,13 +53,11 @@ const IdWrapper = ({ id, children }: IdWrapperProps) => (
   <div className={id}>{children}</div>
 );
 
-
 const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   <div style={{ border: "red" }}>
     <p>{message}</p>
   </div>
 );
-
 
 const InstantiedPersonFormsParserTemplate =
   DispatchFormsParserTemplate<PersonFormInjectedTypes>();
@@ -218,22 +216,20 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,
                     IdWrapper,
                     ErrorRenderer,
-                    injectedPrimitives: Map([
-                      [
+                    injectedPrimitives: [
+                      DispatchInjectedPrimitive.Default(
                         "injectedCategory",
+                        CategoryAbstractRenderer,
                         {
-                          fieldView: dispatchCategoryForm,
-                          defaultValue: {
-                            kind: "custom",
-                            value: {
-                              kind: "adult",
-                              extraSpecial: false,
-                            },
+                          kind: "custom",
+                          value: {
+                            kind: "adult",
+                            extraSpecial: false,
                           },
-                          defaultState: DispatchCategoryState.Default(),
                         },
-                      ],
-                    ]),
+                        DispatchCategoryState.Default(),
+                      ),
+                    ],
                   }}
                   setState={setSpecificationDeserializer}
                   view={unit}

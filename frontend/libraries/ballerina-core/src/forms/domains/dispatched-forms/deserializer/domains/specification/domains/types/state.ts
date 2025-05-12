@@ -1,12 +1,12 @@
 import { Set, List, Map, isMap } from "immutable";
 import {} from "../../../../../../parser/domains/built-ins/state";
-import { InjectedPrimitives } from "../../../../../../parser/domains/injectables/state";
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
 import {
   Unit,
   DispatchGenericType,
   DispatchGenericTypes,
   MapRepo,
+  DispatchInjectedPrimitives,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -79,11 +79,11 @@ export const SerializedType = {
     typeof type == "object" && "fields" in type,
   isPrimitive: <T>(
     _: SerializedType<T>,
-    injectedPrimitives: InjectedPrimitives<T> | undefined,
+    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
   ): _ is DispatchPrimitiveTypeName<T> =>
     Boolean(
       DispatchPrimitiveTypeNames.some((__) => _ == __) ||
-        injectedPrimitives?.injectedPrimitives.has(_ as keyof T),
+        injectedPrimitives?.has(_ as keyof T),
     ),
   isApplication: <T>(
     _: SerializedType<T>,
@@ -492,7 +492,7 @@ export const DispatchParsedType = {
       rawType: unknown,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
-      injectedPrimitives?: InjectedPrimitives<T>,
+      injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<RecordType<T>, string> => {
       if (!SerializedType.isRecord(rawType)) {
         return ValueOrErrors.Default.throwOne(
@@ -540,7 +540,7 @@ export const DispatchParsedType = {
       rawType: SerializedType<T>,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
-      injectedPrimitives?: InjectedPrimitives<T>,
+      injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<DispatchParsedType<T>, string> => {
       const result: ValueOrErrors<DispatchParsedType<T>, string> = (() => {
         if (SerializedType.isPrimitive(rawType, injectedPrimitives))

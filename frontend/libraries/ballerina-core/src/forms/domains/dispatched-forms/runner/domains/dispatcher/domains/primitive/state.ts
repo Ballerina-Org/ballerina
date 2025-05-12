@@ -40,12 +40,12 @@ export const PrimitiveDispatcher = {
         }
         const viewKind = viewKindRes.value;
         if (
-          dispatcherContext.injectedPrimitives?.injectedPrimitives.has(
+          dispatcherContext.injectedPrimitives?.has(
             type.name as keyof T,
           )
         ) {
           const injectedPrimitive =
-            dispatcherContext.injectedPrimitives.injectedPrimitives.get(
+            dispatcherContext.injectedPrimitives?.get(
               type.name as keyof T,
             );
           if (injectedPrimitive == undefined) {
@@ -55,12 +55,15 @@ export const PrimitiveDispatcher = {
           }
           return dispatcherContext
             .getConcreteRenderer(
-              viewKind as keyof ConcreteRendererKinds,
+              viewKind as keyof ConcreteRendererKinds<T>,
               renderer.renderer,
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                injectedPrimitive.abstractRenderer(concreteRenderer),
+                injectedPrimitive.abstractRenderer(
+                  dispatcherContext.IdWrapper,
+                  dispatcherContext.ErrorRenderer,
+                ).withView(concreteRenderer),
               ),
             );
         }

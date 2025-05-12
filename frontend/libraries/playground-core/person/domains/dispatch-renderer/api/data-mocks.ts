@@ -321,7 +321,7 @@ const entityApis: EntityApis = {
               extraSpecial: false,
             },
             FullName: {
-              Item1: faker.person.firstName(),
+              Item1: true,
               Item2: faker.person.lastName(),
             },
             Birthday: new Date(

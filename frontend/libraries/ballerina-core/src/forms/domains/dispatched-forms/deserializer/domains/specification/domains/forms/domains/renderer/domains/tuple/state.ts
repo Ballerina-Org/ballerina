@@ -54,7 +54,7 @@ export const TupleRenderer = {
     Deserialize: <T>(
       type: TupleType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized).Then(

@@ -21,6 +21,8 @@ import {
   id,
   IdWrapperProps,
   ErrorRendererProps,
+  InjectedPrimitive,
+  DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
@@ -32,7 +34,7 @@ import {
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
-  dispatchCategoryForm,
+  CategoryAbstractRenderer,
   DispatchCategoryState,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
@@ -41,7 +43,7 @@ import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-fo
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
 ) => (
-  <div style={{ border: "red" }}>
+  <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
       JSON.stringify(parsedFormsConfig.errors)}
   </div>
@@ -52,8 +54,23 @@ const IdWrapper = ({ id, children }: IdWrapperProps) => (
 );
 
 const ErrorRenderer = ({ message }: ErrorRendererProps) => (
-  <div style={{ border: "red" }}>
-    <p>{message}</p>
+  <div
+    style={{
+      display: "flex",
+      border: "2px dashed red",
+      maxWidth: "200px",
+      maxHeight: "50px",
+      overflowY: "scroll",
+      padding: "10px",
+    }}
+  >
+    <pre
+      style={{
+        whiteSpace: "pre-wrap",
+        maxWidth: "200px",
+        lineBreak: "anywhere",
+      }}
+    >{`Error: ${message}`}</pre>
   </div>
 );
 
@@ -316,22 +333,20 @@ export const DispatcherFormsApp = (props: {}) => {
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,
-                    injectedPrimitives: Map([
-                      [
+                    injectedPrimitives: [
+                      DispatchInjectedPrimitive.Default(
                         "injectedCategory",
+                        CategoryAbstractRenderer,
                         {
-                          fieldView: dispatchCategoryForm,
-                          defaultValue: {
-                            kind: "custom",
-                            value: {
-                              kind: "adult",
-                              extraSpecial: false,
-                            },
+                          kind: "custom",
+                          value: {
+                            kind: "adult",
+                            extraSpecial: false,
                           },
-                          defaultState: DispatchCategoryState.Default(),
                         },
-                      ],
-                    ]),
+                        DispatchCategoryState.Default(),
+                      ),
+                    ],
                   }}
                   setState={setSpecificationDeserializer}
                   view={unit}

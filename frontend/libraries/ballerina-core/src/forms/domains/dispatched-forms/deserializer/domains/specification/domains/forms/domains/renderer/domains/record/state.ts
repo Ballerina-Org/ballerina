@@ -90,7 +90,7 @@ export const RecordRenderer = {
                     }),
     DeserializeRenderer: <T>(
       type: RecordType<T>,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       serialized?: unknown,
     ): ValueOrErrors<Renderer<T> | undefined, string> =>
@@ -108,7 +108,7 @@ export const RecordRenderer = {
     Deserialize: <T>(
       type: RecordType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType: boolean,
     ): ValueOrErrors<RecordRenderer<T>, string> =>

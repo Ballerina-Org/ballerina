@@ -63,7 +63,7 @@ import {
   OneAbstractRendererView,
   ValueOption,
 } from "ballerina-core";
-import { DispatchCategoryView } from "../injected-forms/category";
+import { CategoryAbstractRendererView } from "../injected-forms/category";
 import { Map } from "immutable";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
@@ -849,7 +849,7 @@ export const PersonConcreteRenderers = {
       <
         Context extends FormLabel,
         ForeignMutationsExpected,
-      >(): DispatchCategoryView<Context, ForeignMutationsExpected> =>
+      >(): CategoryAbstractRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
         return (
           <>

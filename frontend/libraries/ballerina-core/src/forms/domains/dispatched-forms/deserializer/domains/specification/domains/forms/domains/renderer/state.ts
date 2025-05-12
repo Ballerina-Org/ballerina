@@ -80,9 +80,9 @@ export const Renderer = {
       isObject(_) && "stream" in _,
     HasColumns: (_: unknown): _ is SerializedTableRenderer =>
       isObject(_) && "columns" in _,
-    IsSumUnitDate: (
+    IsSumUnitDate: <T>(
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
     ): boolean =>
       isObject(serialized) &&
       "renderer" in serialized &&
@@ -91,7 +91,7 @@ export const Renderer = {
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType?: boolean,
@@ -109,7 +109,7 @@ export const Renderer = {
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
       canOmitType?: boolean,

@@ -63,7 +63,7 @@ export const NestedRenderer = {
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType?: boolean,
@@ -80,7 +80,7 @@ export const NestedRenderer = {
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType?: boolean,
     ): ValueOrErrors<NestedRenderer<T>, string> =>

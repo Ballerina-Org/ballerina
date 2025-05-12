@@ -102,7 +102,7 @@ export const TableRenderer = {
     DeserializeDetailsRenderer: <T>(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
@@ -120,7 +120,7 @@ export const TableRenderer = {
     Deserialize: <T>(
       type: TableType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
     ): ValueOrErrors<TableRenderer<T>, string> =>

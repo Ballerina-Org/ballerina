@@ -4,23 +4,18 @@ import {
   Value,
   OnChange,
   SimpleCallback,
-  BasicFun,
-  FieldValidation,
   Template,
   replaceWith,
-  ValidateRunner,
-  FieldValidationWithPath,
   Unit,
   simpleUpdater,
   simpleUpdaterWithChildren,
   DeltaCustom,
   ParsedType,
   CommonFormState,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "ballerina-core";
-import {
-  CategoryState,
-  CategoryView,
-} from "src/domains/person-from-config/injected-forms/category";
 
 export type DispatchCategory = {
   kind: "custom";
@@ -37,6 +32,26 @@ export type DispatchCategoryState = {
   customFormState: {
     likelyOutdated: boolean;
   };
+};
+
+export const DispatchCategory = {
+  Operations: {
+    IsDispatchCategory: (value: unknown): boolean => {
+      return (
+        typeof value === "object" &&
+        value !== null &&
+        "kind" in value &&
+        value.kind === "custom" &&
+        "value" in value &&
+        typeof value.value === "object" &&
+        value.value !== null &&
+        "kind" in value.value &&
+        (value.value.kind === "child" ||
+          value.value.kind === "adult" ||
+          value.value.kind === "senior")
+      );
+    },
+  },
 };
 
 export const DispatchCategoryState = {
@@ -59,7 +74,7 @@ export const DispatchCategoryState = {
   },
 };
 
-export type DispatchCategoryView<
+export type CategoryAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
 > = View<
@@ -78,64 +93,67 @@ export type DispatchCategoryView<
   }
 >;
 
-export const DispatchCategoryForm = <
+export const CategoryAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
-      Value<DispatchCategory> & { disabled: boolean; type: ParsedType<any> },
+      Value<DispatchCategory> & {
+        disabled: boolean;
+        type: ParsedType<any>;
+        identifiers: { withLauncher: string; withoutLauncher: string };
+      },
     {
       commonFormState: CommonFormState;
       customFormState: DispatchCategoryState["customFormState"];
     },
     ForeignMutationsExpected & { onChange: OnChange<DispatchCategory> },
-    DispatchCategoryView<Context, ForeignMutationsExpected>
-  >((props) => (
-    <>
-      <props.view
-        {...props}
-        foreignMutations={{
-          ...props.foreignMutations,
-          setNewValue: (_) => {
-            const delta: DeltaCustom = {
-              kind: "CustomDelta",
-              value: {
-                kind: "CategoryReplace",
-                replace: _,
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
+    CategoryAbstractRendererView<Context, ForeignMutationsExpected>
+  >((props) => {
+    if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
+      return (
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Expected dispatch category, got: ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
+      );
+    }
+    return (
+      <IdWrapper
+        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+      >
+        <props.view
+          {...props}
+          foreignMutations={{
+            ...props.foreignMutations,
+            setNewValue: (_) => {
+              const delta: DeltaCustom = {
+                kind: "CustomDelta",
+                value: {
+                  kind: "CategoryReplace",
+                  replace: _,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
                 },
-                type: props.context.type,
-              },
-            };
-            props.foreignMutations.onChange(replaceWith(_), delta);
-          },
-        }}
-      />
-    </>
-  ));
+              };
+              props.foreignMutations.onChange(replaceWith(_), delta);
+            },
+          }}
+        />
+      </IdWrapper>
+    );
+  });
 };
-
-export const dispatchCategoryForm = (
-  concreteRenderer: any,
-  label: string,
-  tooltip?: string,
-  details?: string,
-) =>
-  DispatchCategoryForm<any & FormLabel, Unit>()
-    .withView(concreteRenderer)
-    .mapContext<any & CommonFormState & Value<DispatchCategory>>((_) => ({
-      ..._,
-      type: {
-        kind: "primitive",
-        name: "injectedCategory",
-      },
-      label,
-      tooltip,
-      details,
-    })) as any;
 
 export type DispatchPassthroughFormInjectedTypes = {
   injectedCategory: { type: DispatchCategory; state: DispatchCategoryState };

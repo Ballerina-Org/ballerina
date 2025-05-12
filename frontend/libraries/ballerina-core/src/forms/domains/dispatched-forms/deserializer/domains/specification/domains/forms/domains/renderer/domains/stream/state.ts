@@ -54,7 +54,7 @@ export const StreamRenderer = {
     Deserialize: <T>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)
