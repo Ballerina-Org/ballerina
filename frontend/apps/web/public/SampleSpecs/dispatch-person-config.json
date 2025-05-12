@@ -60,7 +60,11 @@
         "Surname": "string",
         "Birthday": "Date",
         "Email": "string",
-        "SubscribeToNewsletter": "boolean"
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        }
       }
     },
     "AddressConfigConfig": {
@@ -549,6 +553,11 @@
         "SubscribeToNewsletter": {
           "label": "Subscribe to Newsletter",
           "renderer": "defaultBoolean"
+        },
+        "FavoriteColor": {
+          "label": "Favorite Color",
+          "renderer": "defaultEnum",
+          "options": "colors"
         }
       },
       "tabs": {
@@ -561,7 +570,8 @@
                   "Surname",
                   "Birthday",
                   "Email",
-                  "SubscribeToNewsletter"
+                  "SubscribeToNewsletter",
+                  "FavoriteColor"
                 ]
               }
             }
@@ -793,9 +803,13 @@
         "Surname": {
           "renderer": "defaultString",
           "disabled": true
+        },
+        "FavoriteColor": {
+          "renderer": "defaultEnum",
+          "options": "colors"
         }
       },
-      "visibleColumns": ["Name", "Surname"],
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"],
       "detailsRenderer": {
         "renderer": "userDetails"
       }
@@ -815,9 +829,13 @@
               "Surname": {
                 "renderer": "defaultString",
                 "disabled": true
+              },
+              "FavoriteColor": {
+                "renderer": "defaultEnum",
+                "options": "colors"
               }
             },
-            "visibleColumns": ["Name", "Surname"],
+            "visibleColumns": ["Name", "Surname", "FavoriteColor"],
             "detailsRenderer": {
               "renderer": {
                 "renderer": "userDetails",
@@ -841,6 +859,11 @@
                   "SubscribeToNewsletter": {
                     "label": "Subscribe to Newsletter",
                     "renderer": "defaultBoolean"
+                  },
+                  "FavoriteColor": {
+                    "label": "Favorite Color",
+                    "renderer": "defaultEnum",
+                    "options": "colors"
                   }
                 },
                 "tabs": {
@@ -853,7 +876,8 @@
                             "Surname",
                             "Birthday",
                             "Email",
-                            "SubscribeToNewsletter"
+                            "SubscribeToNewsletter",
+                            "FavoriteColor"
                           ]
                         }
                       }

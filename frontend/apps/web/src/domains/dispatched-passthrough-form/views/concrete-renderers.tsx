@@ -65,6 +65,8 @@ import {
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
+import { useEffect, useState } from "react";
+import { v4 } from "uuid";
 
 export const PersonConcreteRenderers = {
   one: {
@@ -689,6 +691,7 @@ export const PersonConcreteRenderers = {
             : DetailViewresult.value == undefined
               ? Template.Default<any, any, any, any>((props) => <></>)
               : DetailViewresult.value;
+
         return (
           <div
             style={{

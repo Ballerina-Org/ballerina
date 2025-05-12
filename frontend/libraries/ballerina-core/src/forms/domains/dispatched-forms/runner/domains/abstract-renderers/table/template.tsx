@@ -58,13 +58,12 @@ export const TableAbstractRenderer = <
       cellTemplate
         // TODO, more helpful typing
         .mapContext<any>((_: any) => {
-          const rowState = (
-            _.customFormState.stream.chunkStates.get(chunkIndex)
-              ?.state as Record<string, any>
-          )?.[rowId];
+          const rowState = _.customFormState.stream.chunkStates
+            .get(chunkIndex)
+            ?.get(rowId);
 
           const cellState =
-            rowState?.fields?.get(column) ??
+            rowState?.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
 
           return {

@@ -36,6 +36,10 @@ const getActiveUsers: DispatchTableApiSource = {
       Birthday: "1990-01-01",
       Email: "jane.doe@example.com",
       SubscribeToNewsletter: true,
+      FavoriteColor: {
+        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+        IsSome: true,
+      },
     }));
   },
   getMany:
@@ -51,6 +55,10 @@ const getActiveUsers: DispatchTableApiSource = {
             Birthday: "1990-01-01",
             Email: "jane.doe@example.com",
             SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
           },
           [v4()]: {
             Id: v4(),
@@ -59,6 +67,10 @@ const getActiveUsers: DispatchTableApiSource = {
             Birthday: "1990-01-01",
             Email: "john.doe@example.com",
             SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: {},
+              IsSome: false,
+            },
           },
         },
         HasMore: true,
@@ -85,6 +97,10 @@ const getFriends: DispatchOneSource = {
       Birthday: "1990-01-01",
       Email: "tim.pool@example.com",
       SubscribeToNewsletter: true,
+      FavoriteColor: {
+        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+        IsSome: true,
+      },
     }));
   },
   getManyUnlinked:
@@ -101,6 +117,10 @@ const getFriends: DispatchOneSource = {
             Birthday: faker.date.birthdate().toISOString(),
             Email: faker.internet.email(),
             SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
           }))
           .reduce((acc, curr) => {
             acc[curr.Id] = curr;
