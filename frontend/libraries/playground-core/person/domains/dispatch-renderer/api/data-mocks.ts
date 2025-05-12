@@ -40,6 +40,12 @@ const getActiveUsers: DispatchTableApiSource = {
         Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
         IsSome: true,
       },
+      Friends: {
+        From: 0,
+        To: 0,
+        HasMore: true,
+        Values: {},
+      },
     }));
   },
   getMany:
@@ -50,14 +56,20 @@ const getActiveUsers: DispatchTableApiSource = {
         Values: {
           [v4()]: {
             Id: v4(),
-            Name: "Jane",
-            Surname: "Doe",
-            Birthday: "1990-01-01",
-            Email: "jane.doe@example.com",
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
             SubscribeToNewsletter: true,
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
             },
           },
           [v4()]: {
@@ -70,6 +82,12 @@ const getActiveUsers: DispatchTableApiSource = {
             FavoriteColor: {
               Value: {},
               IsSome: false,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
             },
           },
         },
@@ -101,6 +119,12 @@ const getFriends: DispatchOneSource = {
         Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
         IsSome: true,
       },
+      Friends: {
+        From: 0,
+        To: 0,
+        HasMore: true,
+        Values: {},
+      },
     }));
   },
   getManyUnlinked:
@@ -120,6 +144,12 @@ const getFriends: DispatchOneSource = {
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
             },
           }))
           .reduce((acc, curr) => {

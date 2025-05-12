@@ -42,7 +42,7 @@ export type AbstractTableRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
     selectedRows: Set<string>;
-    selectedDetailRow: string | undefined;
+    selectedDetailRow: [number, string] | undefined;
     isInitialized: boolean;
     streamParams: Debounced<Map<string, string>>;
     stream: ValueInfiniteStreamState;
@@ -150,7 +150,7 @@ export type AbstractTableRendererView<
     select: SimpleCallback<ValueOption>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
-    selectDetailView: SimpleCallback<string | undefined>;
+    selectDetailView: SimpleCallback<string>;
     clearDetailView: SimpleCallback<void>;
     selectRow: SimpleCallback<string>;
     selectAllRows: SimpleCallback<void>;
@@ -172,9 +172,6 @@ export type AbstractTableRendererView<
         >
       >
     >;
-    DetailsRenderer: (
-      rowId: string,
-      stream: ValueInfiniteStreamState,
-    ) => ValueOrErrors<Template<any, any, any, any> | undefined, string>;
+    DetailsRenderer: Template<any, any, any, any>;
   }
 >;

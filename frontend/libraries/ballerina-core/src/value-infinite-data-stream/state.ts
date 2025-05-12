@@ -126,6 +126,7 @@ export const ValueChunk = {
 };
 
 export type ValueChunkIndex = number;
+export type StateChunkIndex = number;
 // TODO -- better state typing
 export type StateChunkValue = Map<string, any>;
 
@@ -144,7 +145,7 @@ export type ValueInfiniteStreamState = {
   loadedElements: OrderedMap<ValueChunkIndex, ValueChunk>;
   position: ValueStreamPosition;
   getChunk: BasicFun<[ValueStreamPosition], Promise<ValueChunk>>;
-  chunkStates: Map<ValueChunkIndex, StateChunk>;
+  chunkStates: Map<StateChunkIndex, StateChunk>;
 };
 
 export const ValueInfiniteStreamState = {
@@ -279,7 +280,11 @@ export const ValueInfiniteStreamState = {
             MapRepo.Updaters.upsert(
               chunkIndex,
               () => StateChunk.Default({ [chunkStateValueKey]: Map() }),
-              MapRepo.Updaters.update(chunkStateValueKey, stateUpdater),
+              MapRepo.Updaters.upsert(
+                chunkStateValueKey,
+                () => Map(),
+                stateUpdater,
+              ),
             ),
           ),
       updateChunkStateValueItem:

@@ -64,6 +64,24 @@
         "FavoriteColor": {
           "fun": "SingleSelection",
           "args": ["ColorRef"]
+        },
+        "Friends": {
+          "fun": "Table",
+          "args": ["Friend"]
+        }
+      }
+    },
+    "Friend": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
         }
       }
     },
@@ -530,6 +548,26 @@
     }
   },
   "forms": {
+    "friendDetails": {
+      "type": "Friend",
+      "fields": {
+        "Name": {
+          "label": "First Name",
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "label": "Last Name",
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": ["Name", "Surname"]
+          }
+        }
+      }
+    },
     "userDetails": {
       "type": "User",
       "renderer": "userDetails",
@@ -558,6 +596,27 @@
           "label": "Favorite Color",
           "renderer": "defaultEnum",
           "options": "colors"
+        },
+        "Friends": {
+          "renderer": {
+            "type": "Friend",
+            "renderer": "streamingTable",
+            "columns": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Surname": {
+                "renderer": "defaultString",
+                "disabled": true
+              },
+              "FavoriteColor": {
+                "renderer": "defaultEnum",
+                "options": "colors"
+              }
+            },
+            "visibleColumns": ["Name", "Surname", "FavoriteColor"]
+          },
+          "api": "ActiveUsersApi"
         }
       },
       "tabs": {
@@ -571,7 +630,8 @@
                   "Birthday",
                   "Email",
                   "SubscribeToNewsletter",
-                  "FavoriteColor"
+                  "FavoriteColor",
+                  "Friends"
                 ]
               }
             }
@@ -814,6 +874,24 @@
         "renderer": "userDetails"
       }
     },
+    "friendsFriendsTable": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        },
+        "FavoriteColor": {
+          "renderer": "defaultEnum",
+          "options": "colors"
+        }
+      },
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"]
+    },
     "person": {
       "type": "Person",
       "renderer": "person",
@@ -838,6 +916,7 @@
             "visibleColumns": ["Name", "Surname", "FavoriteColor"],
             "detailsRenderer": {
               "renderer": {
+                "type": "User",
                 "renderer": "userDetails",
                 "fields": {
                   "Name": {
@@ -864,6 +943,11 @@
                     "label": "Favorite Color",
                     "renderer": "defaultEnum",
                     "options": "colors"
+                  },
+                  "Friends": {
+                    "label": "Friends",
+                    "renderer": "friendsFriendsTable",
+                    "api": "ActiveUsersApi"
                   }
                 },
                 "tabs": {
@@ -874,10 +958,7 @@
                           "main": [
                             "Name",
                             "Surname",
-                            "Birthday",
-                            "Email",
-                            "SubscribeToNewsletter",
-                            "FavoriteColor"
+                            "Friends"
                           ]
                         }
                       }
