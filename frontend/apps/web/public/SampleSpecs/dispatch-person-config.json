@@ -60,7 +60,29 @@
         "Surname": "string",
         "Birthday": "Date",
         "Email": "string",
-        "SubscribeToNewsletter": "boolean"
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        },
+        "Friends": {
+          "fun": "Table",
+          "args": ["Friend"]
+        }
+      }
+    },
+    "Friend": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        }
       }
     },
     "AddressConfigConfig": {
@@ -526,6 +548,26 @@
     }
   },
   "forms": {
+    "friendDetails": {
+      "type": "Friend",
+      "fields": {
+        "Name": {
+          "label": "First Name",
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "label": "Last Name",
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": ["Name", "Surname"]
+          }
+        }
+      }
+    },
     "userDetails": {
       "type": "User",
       "renderer": "userDetails",
@@ -549,6 +591,32 @@
         "SubscribeToNewsletter": {
           "label": "Subscribe to Newsletter",
           "renderer": "defaultBoolean"
+        },
+        "FavoriteColor": {
+          "label": "Favorite Color",
+          "renderer": "defaultEnum",
+          "options": "colors"
+        },
+        "Friends": {
+          "renderer": {
+            "type": "Friend",
+            "renderer": "streamingTable",
+            "columns": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Surname": {
+                "renderer": "defaultString",
+                "disabled": true
+              },
+              "FavoriteColor": {
+                "renderer": "defaultEnum",
+                "options": "colors"
+              }
+            },
+            "visibleColumns": ["Name", "Surname", "FavoriteColor"]
+          },
+          "api": "ActiveUsersApi"
         }
       },
       "tabs": {
@@ -561,7 +629,9 @@
                   "Surname",
                   "Birthday",
                   "Email",
-                  "SubscribeToNewsletter"
+                  "SubscribeToNewsletter",
+                  "FavoriteColor",
+                  "Friends"
                 ]
               }
             }
@@ -793,12 +863,34 @@
         "Surname": {
           "renderer": "defaultString",
           "disabled": true
+        },
+        "FavoriteColor": {
+          "renderer": "defaultEnum",
+          "options": "colors"
         }
       },
-      "visibleColumns": ["Name", "Surname"],
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"],
       "detailsRenderer": {
         "renderer": "userDetails"
       }
+    },
+    "friendsFriendsTable": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Surname": {
+          "renderer": "defaultString",
+          "disabled": true
+        },
+        "FavoriteColor": {
+          "renderer": "defaultEnum",
+          "options": "colors"
+        }
+      },
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"]
     },
     "person": {
       "type": "Person",
@@ -815,11 +907,16 @@
               "Surname": {
                 "renderer": "defaultString",
                 "disabled": true
+              },
+              "FavoriteColor": {
+                "renderer": "defaultEnum",
+                "options": "colors"
               }
             },
-            "visibleColumns": ["Name", "Surname"],
+            "visibleColumns": ["Name", "Surname", "FavoriteColor"],
             "detailsRenderer": {
               "renderer": {
+                "type": "User",
                 "renderer": "userDetails",
                 "fields": {
                   "Name": {
@@ -841,6 +938,16 @@
                   "SubscribeToNewsletter": {
                     "label": "Subscribe to Newsletter",
                     "renderer": "defaultBoolean"
+                  },
+                  "FavoriteColor": {
+                    "label": "Favorite Color",
+                    "renderer": "defaultEnum",
+                    "options": "colors"
+                  },
+                  "Friends": {
+                    "label": "Friends",
+                    "renderer": "friendsFriendsTable",
+                    "api": "ActiveUsersApi"
                   }
                 },
                 "tabs": {
@@ -848,13 +955,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name",
-                            "Surname",
-                            "Birthday",
-                            "Email",
-                            "SubscribeToNewsletter"
-                          ]
+                          "main": ["Name", "Surname", "Friends"]
                         }
                       }
                     }

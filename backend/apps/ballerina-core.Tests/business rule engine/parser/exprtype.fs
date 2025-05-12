@@ -1,21 +1,10 @@
 module Ballerina.Core.Tests.BusinessRuleEngine.Parser.ExprType
 
-open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Types.Model
-open Ballerina.DSL.Expr.Types.Patterns
-open Ballerina.DSL.Parser.Patterns
 open Ballerina.DSL.Parser.ExprType
 open FSharp.Data
 open NUnit.Framework
-open Ballerina.Errors
-
-let private assertSuccess<'T, 'E> (result: Sum<'T, 'E>) (expected: 'T) =
-  match result with
-  | Left value -> Assert.That(value, Is.EqualTo expected)
-  | Right err -> Assert.Fail($"Expected success but got error: {err}")
-
-let private contextActions: ContextActions<unit> =
-  { TryFindType = fun _ _ -> sum.Throw(Errors.Singleton "Type lookup not expected") }
+open Common
 
 let private parseExprType json =
   (ExprType.Parse contextActions json).run ((), ())

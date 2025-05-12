@@ -174,7 +174,9 @@ export const EnumAbstractRenderer = <
       ),
       {
         interval: 15,
-        runFilter: (props) => props.context.customFormState.shouldLoad,
+        runFilter: (props) => {
+          return props.context.customFormState.shouldLoad;
+        },
       },
     ),
   ]);

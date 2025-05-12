@@ -65,6 +65,8 @@ import {
 } from "ballerina-core";
 import { DispatchCategoryView } from "../injected-forms/category";
 import { Map } from "immutable";
+import { useEffect, useState } from "react";
+import { v4 } from "uuid";
 
 export const PersonConcreteRenderers = {
   one: {
@@ -560,6 +562,46 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
+    friendsDetails:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
+      (props) => {
+        console.debug("friendsDetails", props);
+        return (
+          <>
+            {props.context.layout.valueSeq().map((tab) =>
+              tab.columns.valueSeq().map((column) => (
+                <div style={{ display: "block", float: "left" }}>
+                  {column.groups.valueSeq().map((group) =>
+                    group
+                      .filter((fieldName) =>
+                        props.VisibleFieldKeys.has(fieldName),
+                      )
+                      .map((fieldName) => (
+                        <>
+                          {/* <>{console.debug("fieldName", fieldName)}</> */}
+                          <div style={{ display: "block" }}>
+                            {props.EmbeddedFields.get(fieldName)!({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                disabled:
+                                  props.DisabledFieldKeys.has(fieldName),
+                              },
+                              view: unit,
+                            })}
+                          </div>
+                        </>
+                      )),
+                  )}
+                </div>
+              )),
+            )}
+          </>
+        );
+      },
     preview:
       <
         Context extends FormLabel,
@@ -677,18 +719,6 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
-        const DetailViewresult = props.context.customFormState.selectedDetailRow
-          ? props.DetailsRenderer(
-              props.context.customFormState.selectedDetailRow,
-              props.context.customFormState.stream,
-            )
-          : ValueOrErrors.Default.return(undefined);
-        const DetailView =
-          DetailViewresult.kind == "errors"
-            ? Template.Default<any, any, any, any>((props) => <div>Error</div>)
-            : DetailViewresult.value == undefined
-              ? Template.Default<any, any, any, any>((props) => <></>)
-              : DetailViewresult.value;
         return (
           <div
             style={{
@@ -730,13 +760,16 @@ export const PersonConcreteRenderers = {
                       <tr style={{ border: "1px solid black" }}>
                         <button
                           onClick={() =>
-                            props.context.customFormState.selectedDetailRow ==
-                            id
+                            props.context.customFormState.selectedDetailRow &&
+                            props.context.customFormState
+                              .selectedDetailRow[1] == id
                               ? props.foreignMutations.clearDetailView()
                               : props.foreignMutations.selectDetailView(id)
                           }
                         >
-                          {props.context.customFormState.selectedDetailRow == id
+                          {props.context.customFormState.selectedDetailRow &&
+                          props.context.customFormState.selectedDetailRow[1] ==
+                            id
                             ? "🙉"
                             : "🙈"}
                         </button>
@@ -769,38 +802,44 @@ export const PersonConcreteRenderers = {
               </button>
             </div>
 
-            {props.context.customFormState.selectedDetailRow ? (
-              <>
+            <div key={props.context.customFormState.selectedDetailRow?.[1]}>
+              {props.context.customFormState.selectedDetailRow ? (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                      minWidth: "300px",
+                      maxWidth: "300px",
+                      backgroundColor: "dimgray",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <h3>Detail View</h3>
+                    {props.DetailsRenderer({
+                      ...props,
+                      view: unit,
+                    })}
+                    {/* {DetailView({
+                    ...props,
+                    view: unit,
+                  })} */}
+                  </div>
+                </>
+              ) : (
                 <div
                   style={{
                     display: "flex",
                     flexDirection: "column",
                     gap: "10px",
                     minWidth: "300px",
-                    maxWidth: "300px",
-                    backgroundColor: "dimgray",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "10px",
                   }}
-                >
-                  <h3>Detail View</h3>
-                  {DetailView({
-                    ...props,
-                    view: unit,
-                  })}
-                </div>
-              </>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  minWidth: "300px",
-                }}
-              />
-            )}
+                />
+              )}
+            </div>
           </div>
         );
       },
