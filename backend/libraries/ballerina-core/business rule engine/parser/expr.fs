@@ -263,13 +263,13 @@ module Expr =
         | Value.ConstString s -> JsonValue.String s
         | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
         | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
-        | Value.Lambda(variable, expression) ->
-          let! body = Expr.Unparse expression
+        | Value.Lambda(parameter, body) ->
+          let! unparsedBody = Expr.Unparse body
 
           JsonValue.Record
             [| "kind", JsonValue.String "lambda"
-               "parameter", JsonValue.String variable.VarName
-               "body", body |]
+               "parameter", JsonValue.String parameter.VarName
+               "body", unparsedBody |]
         | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
         | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
         | Value.Record _ -> return! sum.Throw(Errors.Singleton "Error: Record not implemented")
