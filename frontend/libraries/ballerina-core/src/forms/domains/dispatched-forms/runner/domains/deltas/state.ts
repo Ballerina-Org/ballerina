@@ -5,7 +5,7 @@ import {
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 
-export type DispatchDelta =
+export type DispatchDelta = (
   | DispatchDeltaPrimitive
   | DispatchDeltaOption
   | DispatchDeltaSum
@@ -17,7 +17,10 @@ export type DispatchDelta =
   | DispatchDeltaTuple
   | DispatchDeltaCustom
   | DispatchDeltaUnit
-  | DispatchDeltaTable;
+  | DispatchDeltaTable
+) & {
+  isUpdatingWholeEntity: boolean;
+};
 export type DispatchDeltaPrimitive =
   | {
       kind: "NumberReplace";
