@@ -255,34 +255,12 @@ module Expr =
       }
       |> state.MapError(Errors.HighestPriority)
 
-    static member ValueToJson(value: Value) : Sum<JsonValue, Errors> =
-      sum {
-        match value with
-        | Value.ConstBool b -> JsonValue.Boolean b
-        | Value.ConstInt i -> JsonValue.Number(decimal i)
-        | Value.ConstString s -> JsonValue.String s
-        | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
-        | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
-        | Value.Lambda(parameter, body) ->
-          let! jsonBody = Expr.ToJson body
-
-          JsonValue.Record
-            [| "kind", JsonValue.String "lambda"
-               "parameter", JsonValue.String parameter.VarName
-               "body", jsonBody |]
-        | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
-        | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
-        | Value.Record _ -> return! sum.Throw(Errors.Singleton "Error: Record not implemented")
-        | Value.ConstFloat _ -> return! sum.Throw(Errors.Singleton "Error: ConstFloat not implemented")
-        | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
-      }
-
     static member ToJson<'config, 'context>(expr: Expr) : Sum<JsonValue, Errors> =
       let (!) = Expr.ToJson
 
       sum {
         match expr with
-        | Expr.Value value -> return! Expr.ValueToJson value
+        | Expr.Value value -> return! Value.ToJson value
         | Expr.Binary(op, l, r) ->
           let! jsonL = !l
           let! jsonR = !r
@@ -359,3 +337,26 @@ module Expr =
 
       }
       |> sum.MapError Errors.HighestPriority
+
+  and Value with
+    static member ToJson(value: Value) : Sum<JsonValue, Errors> =
+      sum {
+        match value with
+        | Value.ConstBool b -> JsonValue.Boolean b
+        | Value.ConstInt i -> JsonValue.Number(decimal i)
+        | Value.ConstString s -> JsonValue.String s
+        | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
+        | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
+        | Value.Lambda(parameter, body) ->
+          let! jsonBody = Expr.ToJson body
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "lambda"
+               "parameter", JsonValue.String parameter.VarName
+               "body", jsonBody |]
+        | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
+        | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
+        | Value.Record _ -> return! sum.Throw(Errors.Singleton "Error: Record not implemented")
+        | Value.ConstFloat _ -> return! sum.Throw(Errors.Singleton "Error: ConstFloat not implemented")
+        | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
+      }
