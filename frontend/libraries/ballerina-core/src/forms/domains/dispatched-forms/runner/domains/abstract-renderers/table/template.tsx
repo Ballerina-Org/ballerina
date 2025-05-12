@@ -176,8 +176,7 @@ export const TableAbstractRenderer = <
             },
           };
         })
-          .mapStateFromProps<AbstractTableRendererState>(([props, updater]) =>
-          {
+          .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
             return AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
               ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
                 props.context.customFormState.selectedDetailRow[0],
@@ -188,9 +187,8 @@ export const TableAbstractRenderer = <
                 const newState = updated.fieldStates;
                 return newState;
               }),
-            )
-          }
-          )
+            );
+          })
           .mapForeignMutationsFromProps<{
             onChange: DispatchOnChange<PredicateValue>;
           }>((props) => ({
@@ -222,7 +220,7 @@ export const TableAbstractRenderer = <
               props.foreignMutations.onChange(id, delta);
             },
           }));
-          
+
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
   );

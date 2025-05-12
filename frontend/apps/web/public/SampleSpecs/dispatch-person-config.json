@@ -955,11 +955,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name",
-                            "Surname",
-                            "Friends"
-                          ]
+                          "main": ["Name", "Surname", "Friends"]
                         }
                       }
                     }
