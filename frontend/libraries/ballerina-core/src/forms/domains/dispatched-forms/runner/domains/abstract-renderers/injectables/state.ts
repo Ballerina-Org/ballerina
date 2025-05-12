@@ -76,29 +76,29 @@ export const injectedPrimitivesFromConcreteRenderers = <
               } not found in concreteRenderers`,
             )
           : typeof concreteRenderers[injectable.name] !== "object"
-          ? ValueOrErrors.Default.throwOne<
-              [keyof T, DispatchInjectedPrimitive<T>],
-              string
-            >(
-              `Injectable renderer kind ${
-                injectable.name as string
-              } is not an object in concreteRenderers`,
-            )
-          : ValueOrErrors.Default.return<
-              [keyof T, DispatchInjectedPrimitive<T>],
-              string
-            >([
-              injectable.name,
-              {
-                name: injectable.name as string,
-                renderers: Set(
-                  Object.keys(concreteRenderers[injectable.name]),
-                ) as Set<keyof T>,
-                defaultValue: injectable.defaultValue,
-                abstractRenderer: injectable.abstractRenderer,
-                defaultState: injectable.defaultState,
-              },
-            ]),
+            ? ValueOrErrors.Default.throwOne<
+                [keyof T, DispatchInjectedPrimitive<T>],
+                string
+              >(
+                `Injectable renderer kind ${
+                  injectable.name as string
+                } is not an object in concreteRenderers`,
+              )
+            : ValueOrErrors.Default.return<
+                [keyof T, DispatchInjectedPrimitive<T>],
+                string
+              >([
+                injectable.name,
+                {
+                  name: injectable.name as string,
+                  renderers: Set(
+                    Object.keys(concreteRenderers[injectable.name]),
+                  ) as Set<keyof T>,
+                  defaultValue: injectable.defaultValue,
+                  abstractRenderer: injectable.abstractRenderer,
+                  defaultState: injectable.defaultState,
+                },
+              ]),
       ),
     ),
   ).Then((injectableTuples) =>

@@ -39,15 +39,10 @@ export const PrimitiveDispatcher = {
           return viewKindRes;
         }
         const viewKind = viewKindRes.value;
-        if (
-          dispatcherContext.injectedPrimitives?.has(
+        if (dispatcherContext.injectedPrimitives?.has(type.name as keyof T)) {
+          const injectedPrimitive = dispatcherContext.injectedPrimitives?.get(
             type.name as keyof T,
-          )
-        ) {
-          const injectedPrimitive =
-            dispatcherContext.injectedPrimitives?.get(
-              type.name as keyof T,
-            );
+          );
           if (injectedPrimitive == undefined) {
             return ValueOrErrors.Default.throwOne(
               `could not find injected primitive ${type.name as string}`,
@@ -60,10 +55,12 @@ export const PrimitiveDispatcher = {
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
-                injectedPrimitive.abstractRenderer(
-                  dispatcherContext.IdWrapper,
-                  dispatcherContext.ErrorRenderer,
-                ).withView(concreteRenderer),
+                injectedPrimitive
+                  .abstractRenderer(
+                    dispatcherContext.IdWrapper,
+                    dispatcherContext.ErrorRenderer,
+                  )
+                  .withView(concreteRenderer),
               ),
             );
         }

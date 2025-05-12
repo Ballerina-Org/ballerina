@@ -123,13 +123,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                        ? _
-                        : PredicateValue.Default.tuple(
-                            List([
-                              elementUpdater(_.values.get(0)!),
-                              _.values.get(1)!,
-                            ]),
-                          ),
+                          ? _
+                          : PredicateValue.Default.tuple(
+                              List([
+                                elementUpdater(_.values.get(0)!),
+                                _.values.get(1)!,
+                              ]),
+                            ),
                   ),
                 ),
               ),
@@ -236,13 +236,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                        ? _
-                        : PredicateValue.Default.tuple(
-                            List([
-                              _.values.get(0)!,
-                              elementUpdater(_.values.get(1)!),
-                            ]),
-                          ),
+                          ? _
+                          : PredicateValue.Default.tuple(
+                              List([
+                                _.values.get(0)!,
+                                elementUpdater(_.values.get(1)!),
+                              ]),
+                            ),
                   ),
                 ),
               ),
