@@ -9,7 +9,9 @@ import {
   Updater,
   ValueUnionCase,
   DispatchOnChange,
-  IdWrapperProps
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -27,6 +29,7 @@ export const UnionAbstractRenderer = <
   defaultCaseStates: Map<string, () => CaseFormState>,
   caseTemplates: Map<string, Template<any, any, any, any>>,
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedCaseTemplate = (caseName: string) =>
     caseTemplates
@@ -111,6 +114,15 @@ export const UnionAbstractRenderer = <
         )}\n...When rendering union case field\n...${
           props.context.identifiers.withLauncher
         }`,
+      );
+      return (
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: UnionCase value expected for union case but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

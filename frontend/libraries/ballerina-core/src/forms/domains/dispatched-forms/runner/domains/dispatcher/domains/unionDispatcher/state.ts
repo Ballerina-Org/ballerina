@@ -70,6 +70,7 @@ export const UnionDispatcher = {
                           ).caseFormStates.map((caseState) => () => caseState),
                           Map(templates),
                           dispatcherContext.IdWrapper,
+                          dispatcherContext.ErrorRenderer,
                         ).withView(concreteRenderer),
                       ),
                     ),

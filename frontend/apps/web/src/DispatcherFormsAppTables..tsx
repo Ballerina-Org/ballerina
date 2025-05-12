@@ -19,6 +19,7 @@ import {
   DispatchFormRunnerState,
   DispatchParsedType,
   IdWrapperProps,
+  ErrorRendererProps,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import {
@@ -51,6 +52,14 @@ const ShowFormsParsingErrors = (
 const IdWrapper = ({ id, children }: IdWrapperProps) => (
   <div className={id}>{children}</div>
 );
+
+
+const ErrorRenderer = ({ message }: ErrorRendererProps) => (
+  <div style={{ border: "red" }}>
+    <p>{message}</p>
+  </div>
+);
+
 
 const InstantiedPersonFormsParserTemplate =
   DispatchFormsParserTemplate<PersonFormInjectedTypes>();
@@ -208,6 +217,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,
                     IdWrapper,
+                    ErrorRenderer,
                     injectedPrimitives: Map([
                       [
                         "injectedCategory",

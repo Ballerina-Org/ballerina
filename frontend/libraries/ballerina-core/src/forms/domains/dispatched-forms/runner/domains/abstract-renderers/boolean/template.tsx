@@ -7,6 +7,8 @@ import {
   PredicateValue,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -17,6 +19,7 @@ export const BoolAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     Context &
@@ -38,10 +41,13 @@ export const BoolAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Boolean value expected for boolean but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Boolean expected for boolean but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

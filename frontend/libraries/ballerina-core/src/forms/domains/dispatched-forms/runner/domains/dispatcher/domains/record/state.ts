@@ -105,7 +105,12 @@ export const RecordDispatcher = {
                     string
                   >("internal error: formName is required for all forms")
                 : ValueOrErrors.Default.return(
-                    RecordAbstractRenderer(Map(fieldTemplates), renderer.tabs)
+                    RecordAbstractRenderer(
+                      Map(fieldTemplates),
+                      renderer.tabs,
+                      dispatcherContext.IdWrapper,
+                      dispatcherContext.ErrorRenderer,
+                    )
                       .mapContext((_: any) => ({
                         ..._,
                         type: renderer.type,

@@ -5,6 +5,8 @@ import {
   PredicateValue,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -18,6 +20,7 @@ export const Base64FileAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     Context &
@@ -39,10 +42,13 @@ export const Base64FileAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          String value expected for base64 but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: String expected for base64 but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

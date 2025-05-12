@@ -40,7 +40,10 @@ export const SingleSelectionDispatcher = {
                         .enumOptionsSources(renderer.options)
                         .Then((optionsSource) =>
                           ValueOrErrors.Default.return(
-                            EnumAbstractRenderer()
+                            EnumAbstractRenderer(
+                              dispatcherContext.IdWrapper,
+                              dispatcherContext.ErrorRenderer,
+                            )
                               .mapContext((_: any) => ({
                                 ..._,
                                 getOptions: (): Promise<
@@ -77,9 +80,10 @@ export const SingleSelectionDispatcher = {
                       )
                       .Then((concreteRenderer) =>
                         ValueOrErrors.Default.return(
-                          SearchableInfiniteStreamAbstractRenderer().withView(
-                            concreteRenderer,
-                          ),
+                          SearchableInfiniteStreamAbstractRenderer(
+                            dispatcherContext.IdWrapper,
+                            dispatcherContext.ErrorRenderer,
+                          ).withView(concreteRenderer),
                         ),
                       )
                       .MapErrors((errors) =>

@@ -7,6 +7,8 @@ import {
   Template,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererState,
@@ -19,6 +21,7 @@ export const NumberAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     Context &
@@ -40,10 +43,13 @@ export const NumberAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Number value expected for number but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Number value expected for number but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

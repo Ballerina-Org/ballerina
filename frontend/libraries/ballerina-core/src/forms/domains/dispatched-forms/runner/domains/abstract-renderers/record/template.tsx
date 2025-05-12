@@ -19,6 +19,8 @@ import {
   ValueRecord,
   DispatchOnChange,
   IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -44,6 +46,7 @@ export const RecordAbstractRenderer = <
   >,
   Layout: PredicateFormLayout,
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
     fieldName: string,
@@ -160,10 +163,13 @@ export const RecordAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for record but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for record but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 

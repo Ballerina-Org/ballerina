@@ -43,27 +43,33 @@ export const SumDispatcher = {
                   )
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return(
-                      SumAbstractRenderer(leftForm, rightForm).withView(
-                        concreteRenderer,
-                      ),
+                      SumAbstractRenderer(
+                        dispatcherContext.IdWrapper,
+                        dispatcherContext.ErrorRenderer,
+                        leftForm,
+                        rightForm,
+                      ).withView(concreteRenderer),
                     ),
                   )
               : renderer.renderer.kind == "lookupRenderer"
-                ? dispatcherContext
-                    .getConcreteRenderer("sum", renderer.renderer.renderer)
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return(
-                        SumAbstractRenderer(leftForm, rightForm).withView(
-                          concreteRenderer,
-                        ),
-                      ),
-                    )
-                : ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
-                    string
-                  >(
-                    `received non lookup renderer kind for sum concrete renderer`,
-                  ),
+              ? dispatcherContext
+                  .getConcreteRenderer("sum", renderer.renderer.renderer)
+                  .Then((concreteRenderer) =>
+                    ValueOrErrors.Default.return(
+                      SumAbstractRenderer(
+                        dispatcherContext.IdWrapper,
+                        dispatcherContext.ErrorRenderer,
+                        leftForm,
+                        rightForm,
+                      ).withView(concreteRenderer),
+                    ),
+                  )
+              : ValueOrErrors.Default.throwOne<
+                  Template<any, any, any, any>,
+                  string
+                >(
+                  `received non lookup renderer kind for sum concrete renderer`,
+                ),
           ),
         )
         .MapErrors((errors) =>

@@ -12,6 +12,8 @@ import {
   Template,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -22,6 +24,7 @@ export const SecretAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     Context &
@@ -43,10 +46,13 @@ export const SecretAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          String value expected for secret but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: String value expected for secret but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

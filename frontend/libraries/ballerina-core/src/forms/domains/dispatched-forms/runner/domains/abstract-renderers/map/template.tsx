@@ -15,6 +15,8 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -50,7 +52,8 @@ export const MapAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,  
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedKeyTemplate = (elementIndex: number) =>
     keyTemplate
@@ -120,13 +123,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                elementUpdater(_.values.get(0)!),
-                                _.values.get(1)!,
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              elementUpdater(_.values.get(0)!),
+                              _.values.get(1)!,
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -233,13 +236,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                _.values.get(0)!,
-                                elementUpdater(_.values.get(1)!),
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              _.values.get(0)!,
+                              elementUpdater(_.values.get(1)!),
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -294,10 +297,13 @@ export const MapAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for map but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for map but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

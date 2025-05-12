@@ -18,9 +18,9 @@ import {
   Bindings,
   RecordAbstractRendererState,
   DispatchOnChange,
-  RecordAbstractRenderer,
   IdWrapperProps,
   ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -236,7 +236,7 @@ export const TableAbstractRenderer = <
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
-        `Table expected but got: ${JSON.stringify(
+        `TableValue expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering table field\n...${
           props.context.identifiers.withLauncher
@@ -244,9 +244,11 @@ export const TableAbstractRenderer = <
       );
       return (
         <ErrorRenderer
-          message={`Table value expected for table but got something else\n...When rendering table field\n...${
-            props.context.identifiers.withLauncher
-          }`}
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Table value expected for table but got ${JSON.stringify(
+            props.context.value,
+          )}`}
         />
       );
     }
@@ -265,14 +267,13 @@ export const TableAbstractRenderer = <
       Layout,
     );
 
-    // TODO -- set error template up top
     if (visibleColumns.kind == "errors") {
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`Error while computing visible columns, check console\n...When rendering table field\n...${
-            props.context.identifiers.withLauncher
-          }`}
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while computing visible columns, check console`}
         />
       );
     }
@@ -300,9 +301,9 @@ export const TableAbstractRenderer = <
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`Error while computing disabled column keys, check console\n...When rendering table field\n...${
-            props.context.identifiers.withLauncher
-          }`}
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while computing disabled column keys, check console`}
         />
       );
     }

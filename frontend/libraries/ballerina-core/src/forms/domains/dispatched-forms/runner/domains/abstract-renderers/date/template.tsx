@@ -7,6 +7,8 @@ import {
   PredicateValue,
   replaceWith,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
@@ -16,6 +18,7 @@ export const DateAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     Context &
@@ -37,10 +40,13 @@ export const DateAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Date
-          value expected for date but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Date value expected for date but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

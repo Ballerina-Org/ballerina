@@ -2,7 +2,9 @@ import { UnitAbstractRendererState, UnitAbstractRendererView } from "./state";
 import {
   DispatchDelta,
   DispatchOnChange,
+  ErrorRendererProps,
   FormLabel,
+  getLeafIdentifierFromIdentifier,
   IdWrapperProps,
   PredicateValue,
   Template,
@@ -13,6 +15,7 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 
 export const UnitAbstractRenderer = <Context extends FormLabel>(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
   Template.Default<
     Context & {
@@ -34,7 +37,13 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
         )}`,
       );
       return (
-        <p>{props.context.label}: Unit value expected but got something else</p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Unit value expected but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

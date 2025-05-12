@@ -13,6 +13,8 @@ import {
   ValueOption,
   ValueRecord,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -28,6 +30,7 @@ export const EnumAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
     Context &
@@ -60,10 +63,13 @@ export const EnumAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Option value expected for enum but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Option value expected for enum but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

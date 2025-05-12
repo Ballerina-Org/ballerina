@@ -17,6 +17,8 @@ import {
   ValueOption,
   DispatchOnChange,
   IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -30,6 +32,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
     Context &
@@ -119,11 +122,13 @@ export const SearchableInfiniteStreamAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Option value expected for searchable infinite stream but got something
-          else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Option value expected for searchable infinite stream but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

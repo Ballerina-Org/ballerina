@@ -8,6 +8,8 @@ import {
   Synchronize,
   Unit,
   DispatchOnChange,
+  getLeafIdentifierFromIdentifier,
+  ErrorRendererProps,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -30,6 +32,7 @@ export const EnumMultiselectAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
     Context &
@@ -63,10 +66,13 @@ export const EnumMultiselectAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for enum multiselect but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for enum multiselect but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (

@@ -64,6 +64,8 @@ export const MapDispatcher = {
                                         () => defaultValueValue,
                                         keyTemplate,
                                         valueTemplate,
+                                        dispatcherContext.IdWrapper,
+                                        dispatcherContext.ErrorRenderer,
                                       ).withView(concreteRenderer),
                                     ),
                                   ),

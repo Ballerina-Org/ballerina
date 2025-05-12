@@ -58,6 +58,8 @@ export const TupleDispatcher = {
                       DispatchTupleAbstractRenderer(
                         Map(ItemDefaultStates).map((state) => () => state),
                         Map(templates),
+                        dispatcherContext.IdWrapper,
+                        dispatcherContext.ErrorRenderer,
                       ).withView(concreteRenderer),
                     ),
                   ),

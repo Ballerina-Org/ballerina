@@ -20,6 +20,8 @@ import {
   Value,
   ValueRecord,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -30,6 +32,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   ForeignMutationsExpected,
 >(
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
     Context &
@@ -114,11 +117,13 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for searchable infinite stream multiselect but
-          got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for searchable infinite stream multiselect but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
