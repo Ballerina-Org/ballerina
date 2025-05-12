@@ -37,12 +37,6 @@ export const StringAbstractRenderer = <
     ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
     StringAbstractRendererView<Context, ForeignMutationsExpected>
   >((props) => {
-    console.debug(
-      `${getLeafIdentifierFromIdentifier(
-        props.context.identifiers.withoutLauncher,
-      )}: `,
-      props.context.value,
-    );
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
