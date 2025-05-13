@@ -68,6 +68,21 @@
         "Friends": {
           "fun": "Table",
           "args": ["Friend"]
+        },
+        "City": {
+          "fun": "SingleSelection",
+          "args": ["CityRef"]
+        },
+        "StreetNumberAndCity": {
+          "fun": "Tuple",
+          "args": [
+            "string",
+            "number",
+            {
+              "fun": "SingleSelection",
+              "args": ["CityRef"]
+            }
+          ]
         }
       }
     },
@@ -911,9 +926,34 @@
               "FavoriteColor": {
                 "renderer": "defaultEnum",
                 "options": "colors"
+              },
+              "City": {
+                "renderer": "defaultInfiniteStream",
+                "stream": "cities"
+              },
+              "StreetNumberAndCity": {
+                "renderer": "defaultTuple3",
+                "itemRenderers": [
+                  {
+                    "renderer": "defaultString"
+                  },
+                  {
+                    "renderer": "defaultNumber"
+                  },
+                  {
+                    "renderer": "defaultInfiniteStream",
+                    "stream": "cities"
+                  }
+                ]
               }
             },
-            "visibleColumns": ["Name", "Surname", "FavoriteColor"],
+            "visibleColumns": [
+              "Name",
+              "Surname",
+              "FavoriteColor",
+              "City",
+              "StreetNumberAndCity"
+            ],
             "detailsRenderer": {
               "renderer": {
                 "type": "User",
