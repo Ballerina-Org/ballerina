@@ -73,8 +73,7 @@ export const TableAbstractRenderer = <
 
           return {
             value,
-            commonFormState: _.commonFormState,
-            customFormState: cellState.customFormState,
+            ...cellState,
             disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
