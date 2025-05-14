@@ -59,19 +59,8 @@ module Expr =
         return!
           state.Any(
             NonEmptyList.OfList(
-              state {
-                let! v = JsonValue.AsBoolean json |> state.OfSum
-                return v |> Value.ConstBool |> Expr.Value
-              },
+              Value.Parse json |> state.Map Expr.Value,
               [ state {
-                  let! v = JsonValue.AsString json |> state.OfSum
-                  return v |> Value.ConstString |> Expr.Value
-                }
-                state {
-                  let! v = JsonValue.AsNumber json |> state.OfSum
-                  return v |> int |> Value.ConstInt |> Expr.Value
-                }
-                state {
                   let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
 
                   return!
@@ -339,6 +328,28 @@ module Expr =
       |> sum.MapError Errors.HighestPriority
 
   and Value with
+
+    static member Parse<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        return!
+          state.Any(
+            NonEmptyList.OfList(
+              state {
+                let! v = JsonValue.AsBoolean json |> state.OfSum
+                return Value.ConstBool v
+              },
+              [ state {
+                  let! v = JsonValue.AsString json |> state.OfSum
+                  return Value.ConstString v
+                }
+                state {
+                  let! v = JsonValue.AsNumber json |> state.OfSum
+                  return Value.ConstInt (int v)
+                }
+              ]
+            )
+          )
+      }
     static member ToJson(value: Value) : Sum<JsonValue, Errors> =
       sum {
         match value with
