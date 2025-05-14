@@ -2,6 +2,7 @@ import math
 
 from ballerina_core.primitives.option import Option
 from ballerina_core.primitives.sum import Sum
+from ballerina_core.serialization.dictionary import dict_deserializer, dict_serializer
 from ballerina_core.serialization.list import list_deserializer, list_serializer
 from ballerina_core.serialization.option import option_deserializer, option_serializer
 from ballerina_core.serialization.primitives import (
@@ -17,8 +18,6 @@ from ballerina_core.serialization.primitives import (
     str_serializer,
 )
 from ballerina_core.serialization.products import (
-    dict_deserializer,
-    dict_serializer,
     tuple1_deserializer,
     tuple1_serializer,
     tuple2_deserializer,
@@ -125,6 +124,8 @@ class TestProductsSerializer:
         value = deserializer(serialized)
         assert value == (42, "hello")
 
+
+class TestDictionarySerializer:
     @staticmethod
     def test_dict_serializer() -> None:
         value = {"a": 42, "b": 43}
