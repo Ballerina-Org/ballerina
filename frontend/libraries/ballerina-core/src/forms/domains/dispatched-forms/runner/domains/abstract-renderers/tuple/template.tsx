@@ -109,6 +109,7 @@ export const DispatchTupleAbstractRenderer = <
               kind: "TupleCase",
               item: [itemIndex, nestedDelta],
               tupleType: props.context.type,
+              isWholeEntityMutation: false, // TODO: check
             };
             props.foreignMutations.onChange(
               Updater((tuple) =>

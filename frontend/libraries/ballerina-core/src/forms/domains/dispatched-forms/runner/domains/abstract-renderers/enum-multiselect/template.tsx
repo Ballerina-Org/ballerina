@@ -121,6 +121,7 @@ export const EnumMultiselectAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false, // TODO: check
               };
               props.foreignMutations.onChange(
                 replaceWith(

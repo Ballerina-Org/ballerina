@@ -77,6 +77,7 @@ export const StringAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false, // TODO: check
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },

@@ -112,6 +112,7 @@ export const EnumAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  isWholeEntityMutation: false, // TODO: check
                 };
                 return props.foreignMutations.onChange(
                   replaceWith(
@@ -131,6 +132,7 @@ export const EnumAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  isWholeEntityMutation: false, // TODO: check
                 };
                 return props.foreignMutations.onChange(
                   replaceWith(

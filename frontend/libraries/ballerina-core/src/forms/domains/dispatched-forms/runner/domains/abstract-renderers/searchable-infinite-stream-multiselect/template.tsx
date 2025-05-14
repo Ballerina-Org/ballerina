@@ -178,6 +178,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false, // TODO: check
               };
               props.foreignMutations.onChange(
                 ValueRecord.Updaters.clear(),
@@ -223,6 +224,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false, // TODO: check
               };
               props.foreignMutations.onChange(updater, delta);
             },

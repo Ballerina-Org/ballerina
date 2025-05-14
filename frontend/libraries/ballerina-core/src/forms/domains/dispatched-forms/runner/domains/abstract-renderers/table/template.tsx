@@ -142,6 +142,7 @@ export const TableAbstractRenderer = <
               id: rowId,
               nestedDelta: nestedDelta,
               tableType: props.context.type,
+              isWholeEntityMutation: false, // TODO: check
             };
 
             props.foreignMutations.onChange(id, delta);
@@ -217,6 +218,7 @@ export const TableAbstractRenderer = <
             id: props.context.customFormState.selectedDetailRow,
             nestedDelta: nestedDelta,
             tableType: props.context.type,
+            isWholeEntityMutation: false, // TODO: check
           };
 
           props.foreignMutations.onChange(id, delta);
