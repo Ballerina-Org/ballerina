@@ -379,6 +379,22 @@ module Expr =
 
                       return fieldValues |> Map.ofList |> Value.Record
                     }
+                }
+                state {
+                  let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+                  let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
+                  do!
+                    kindJson
+                    |> JsonValue.AsEnum(Set.singleton "caseCons")
+                    |> state.OfSum
+                    |> state.Map ignore
+
+                  let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
+                  let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+                  let! case = JsonValue.AsString caseJson |> state.OfSum
+                  let! value = Value.Parse valueJson
+                  return Value.CaseCons(case, value)
                 } ]
             )
           )
@@ -399,7 +415,13 @@ module Expr =
             [| "kind", JsonValue.String "lambda"
                "parameter", JsonValue.String parameter.VarName
                "body", jsonBody |]
-        | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
+        | Value.CaseCons(case, value) ->
+          let! jsonValue = Value.ToJson value
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "caseCons"
+               "case", JsonValue.String case
+               "value", jsonValue |]
         | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
         | Value.Record fields ->
           let! jsonFields =

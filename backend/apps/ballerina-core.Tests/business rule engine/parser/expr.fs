@@ -145,6 +145,20 @@ module ExprParserTests =
 
     assertSuccess result expectedExpr
 
+  [<Test>]
+  let ``Should parse caseCons`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "caseCons"
+           "case", JsonValue.String "caseName"
+           "value", JsonValue.Number 30m |]
+
+    let result = parseExpr json
+
+    let expectedExpr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
+
+    assertSuccess result expectedExpr
+
 module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert to and from Json boolean`` () =
@@ -233,6 +247,13 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
 
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert to and from Json caseCons`` () =
+    let expr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
     assertSuccess result expr
