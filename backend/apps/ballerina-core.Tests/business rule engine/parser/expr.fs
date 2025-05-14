@@ -13,6 +13,12 @@ let private parseExpr json =
 
 module ExprParserTests =
   [<Test>]
+  let ``Should parse unit`` () =
+    let json = JsonValue.Record [| "kind", JsonValue.String "unit" |]
+    let result = parseExpr json
+    assertSuccess result (Expr.Value(Value.Unit))
+
+  [<Test>]
   let ``Should parse boolean`` () =
     let json = JsonValue.Boolean true
 
@@ -160,6 +166,13 @@ module ExprParserTests =
     assertSuccess result expectedExpr
 
 module ExprToAndFromJsonTests =
+  [<Test>]
+  let ``Should convert to and from Json unit`` () =
+    let expr = Expr.Value(Value.Unit)
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
   [<Test>]
   let ``Should convert to and from Json boolean`` () =
     let expr = Expr.Value(Value.ConstBool true)

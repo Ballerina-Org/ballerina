@@ -352,6 +352,18 @@ module Expr =
 
                   do!
                     kindJson
+                    |> JsonValue.AsEnum(Set.singleton "unit")
+                    |> state.OfSum
+                    |> state.Map ignore
+
+                  Value.Unit
+                }
+                state {
+                  let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+                  let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
+                  do!
+                    kindJson
                     |> JsonValue.AsEnum(Set.singleton "record")
                     |> state.OfSum
                     |> state.Map ignore
@@ -407,7 +419,7 @@ module Expr =
         | Value.ConstInt i -> JsonValue.Number(decimal i)
         | Value.ConstString s -> JsonValue.String s
         | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
-        | Value.Unit -> return! sum.Throw(Errors.Singleton "Error: Unit not implemented")
+        | Value.Unit -> JsonValue.Record [| "kind", JsonValue.String "unit" |]
         | Value.Lambda(parameter, body) ->
           let! jsonBody = Expr.ToJson body
 
