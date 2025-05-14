@@ -5,8 +5,8 @@ from typing import TypeVar
 
 Json = Mapping[str, "Json"] | Sequence["Json"] | str | int | float | bool | None
 
-_SerializerType = TypeVar("_SerializerType")
-Serializer = Callable[[_SerializerType], Json]
+_ToJsonType = TypeVar("_ToJsonType")
+ToJson = Callable[[_ToJsonType], Json]
 
-_DeserializerType = TypeVar("_DeserializerType")
-Deserializer = Callable[[Json], _DeserializerType]
+_FromJsonType = TypeVar("_FromJsonType")
+FromJson = Callable[[Json], _FromJsonType]

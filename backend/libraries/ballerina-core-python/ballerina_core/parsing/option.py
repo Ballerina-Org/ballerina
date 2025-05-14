@@ -1,7 +1,7 @@
 from typing import TypeVar
 
+from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
 from ballerina_core.primitives.option import Option
-from ballerina_core.parsing.parsing_types import Deserializer, Json, Serializer
 
 _Option = TypeVar("_Option")
 
@@ -11,19 +11,19 @@ _SOME_VALUE: str = "some"
 _NOTHING_VALUE: str = "nothing"
 
 
-def option_serializer(some_serializer: Serializer[_Option], /) -> Serializer[Option[_Option]]:
-    def serialize(value: Option[_Option]) -> Json:
+def option_to_json(some_to_json: ToJson[_Option], /) -> ToJson[Option[_Option]]:
+    def to_json(value: Option[_Option]) -> Json:
         none: Json = None  # needed because dictionaries are invariant
         return value.fold(
-            lambda a: {_DISCRIMINATOR_KEY: _SOME_VALUE, _VALUE_KEY: some_serializer(a)},
+            lambda a: {_DISCRIMINATOR_KEY: _SOME_VALUE, _VALUE_KEY: some_to_json(a)},
             lambda: {_DISCRIMINATOR_KEY: _NOTHING_VALUE, _VALUE_KEY: none},
         )
 
-    return serialize
+    return to_json
 
 
-def option_deserializer(some_deserializer: Deserializer[_Option], /) -> Deserializer[Option[_Option]]:
-    def deserialize(value: Json) -> Option[_Option]:
+def option_from_json(some_from_json: FromJson[_Option], /) -> FromJson[Option[_Option]]:
+    def from_json(value: Json) -> Option[_Option]:
         match value:
             case dict():
                 if _DISCRIMINATOR_KEY not in value:
@@ -32,7 +32,7 @@ def option_deserializer(some_deserializer: Deserializer[_Option], /) -> Deserial
                     case discriminator if discriminator == _SOME_VALUE:
                         if _VALUE_KEY not in value:
                             raise ValueError(f"Missing value: {value}")
-                        return Option.some(some_deserializer(value[_VALUE_KEY]))
+                        return Option.some(some_from_json(value[_VALUE_KEY]))
                     case discriminator if discriminator == _NOTHING_VALUE:
                         return Option.nothing()
                     case _:
@@ -40,4 +40,4 @@ def option_deserializer(some_deserializer: Deserializer[_Option], /) -> Deserial
             case _:
                 raise ValueError(f"Not a dictionary: {value}")
 
-    return deserialize
+    return from_json

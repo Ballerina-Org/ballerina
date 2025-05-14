@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TypeVar
 
+from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
 from ballerina_core.primitives.sum import Sum
-from ballerina_core.parsing.parsing_types import Deserializer, Json, Serializer
 
 _SumL = TypeVar("_SumL")
 _SumR = TypeVar("_SumR")
@@ -14,22 +14,18 @@ _LEFT_VALUE = "left"
 _RIGHT_VALUE = "right"
 
 
-def sum_serializer(
-    left_serializer: Serializer[_SumL], right_serializer: Serializer[_SumR], /
-) -> Serializer[Sum[_SumL, _SumR]]:
-    def serialize(value: Sum[_SumL, _SumR]) -> Json:
+def sum_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
+    def to_json(value: Sum[_SumL, _SumR]) -> Json:
         return value.fold(
-            lambda a: {_DISCRIMINATOR_KEY: _LEFT_VALUE, _VALUE_KEY: left_serializer(a)},
-            lambda b: {_DISCRIMINATOR_KEY: _RIGHT_VALUE, _VALUE_KEY: right_serializer(b)},
+            lambda a: {_DISCRIMINATOR_KEY: _LEFT_VALUE, _VALUE_KEY: left_to_json(a)},
+            lambda b: {_DISCRIMINATOR_KEY: _RIGHT_VALUE, _VALUE_KEY: right_to_json(b)},
         )
 
-    return serialize
+    return to_json
 
 
-def sum_deserializer(
-    left_deserializer: Deserializer[_SumL], right_deserializer: Deserializer[_SumR], /
-) -> Deserializer[Sum[_SumL, _SumR]]:
-    def deserialize(value: Json) -> Sum[_SumL, _SumR]:
+def sum_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
+    def from_json(value: Json) -> Sum[_SumL, _SumR]:
         match value:
             case dict():
                 if _DISCRIMINATOR_KEY not in value:
@@ -38,12 +34,12 @@ def sum_deserializer(
                     raise ValueError(f"Missing value: {value}")
                 match value[_DISCRIMINATOR_KEY]:
                     case discriminator if discriminator == _LEFT_VALUE:
-                        return Sum.left(left_deserializer(value[_VALUE_KEY]))
+                        return Sum.left(left_from_json(value[_VALUE_KEY]))
                     case discriminator if discriminator == _RIGHT_VALUE:
-                        return Sum.right(right_deserializer(value[_VALUE_KEY]))
+                        return Sum.right(right_from_json(value[_VALUE_KEY]))
                     case _:
                         raise ValueError(f"Invalid discriminator: {value}")
             case _:
                 raise ValueError(f"Not a dictionary: {value}")
 
-    return deserialize
+    return from_json
