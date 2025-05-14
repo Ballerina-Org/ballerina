@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from ballerina_core.parsing.parsing_types import Json
 
 
@@ -51,13 +53,13 @@ def bool_from_json(value: Json) -> bool:
             raise ValueError(f"Not a bool: {value}")
 
 
-def float_to_json(value: float) -> Json:
+def decimal_to_json(value: Decimal) -> Json:
     return value
 
 
-def float_from_json(value: Json) -> float:
+def decimal_from_json(value: Json) -> Decimal:
     match value:
-        case float():
+        case Decimal():
             return value
         case _:
-            raise ValueError(f"Not a float: {value}")
+            raise ValueError(f"Not a decimal: {value}")

@@ -1,4 +1,5 @@
 import math
+from decimal import Decimal
 
 from ballerina_core.parsing.dictionary import dict_from_json, dict_to_json
 from ballerina_core.parsing.list import list_from_json, list_to_json
@@ -7,8 +8,8 @@ from ballerina_core.parsing.parsing_types import Json
 from ballerina_core.parsing.primitives import (
     bool_from_json,
     bool_to_json,
-    float_from_json,
-    float_to_json,
+    decimal_from_json,
+    decimal_to_json,
     int_from_json,
     int_to_json,
     none_from_json,
@@ -65,13 +66,13 @@ class TestPrimitivesSerializer:
 
     @staticmethod
     def test_float_to_json() -> None:
-        value = math.pi
-        assert float_to_json(value) == value
+        value = Decimal(math.pi)
+        assert decimal_to_json(value) == value
 
     @staticmethod
     def test_float_from_json() -> None:
-        serialized: Json = math.pi
-        assert float_from_json(serialized) == serialized
+        serialized: Json = Decimal(math.pi)
+        assert decimal_from_json(serialized) == serialized
 
 
 class TestListSerializer:
