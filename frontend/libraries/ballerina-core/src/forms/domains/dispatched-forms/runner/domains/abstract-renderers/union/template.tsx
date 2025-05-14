@@ -28,7 +28,7 @@ export const UnionAbstractRenderer = <
 >(
   defaultCaseStates: Map<string, () => CaseFormState>,
   caseTemplates: Map<string, Template<any, any, any, any>>,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedCaseTemplate = (caseName: string) =>
@@ -126,9 +126,10 @@ export const UnionAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={props.context}
@@ -137,7 +138,7 @@ export const UnionAbstractRenderer = <
           }}
           embeddedCaseTemplate={embeddedCaseTemplate}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

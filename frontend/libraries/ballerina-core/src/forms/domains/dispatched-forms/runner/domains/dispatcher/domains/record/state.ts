@@ -108,7 +108,7 @@ export const RecordDispatcher = {
                     RecordAbstractRenderer(
                       Map(fieldTemplates),
                       renderer.tabs,
-                      dispatcherContext.IdWrapper,
+                      dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
                     )
                       .mapContext((_: any) => ({

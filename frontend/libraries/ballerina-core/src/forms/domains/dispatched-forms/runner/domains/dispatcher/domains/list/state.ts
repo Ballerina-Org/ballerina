@@ -44,7 +44,7 @@ export const ListDispatcher = {
                               () => defaultElementState,
                               () => defaultElementValue,
                               elementTemplate,
-                              dispatcherContext.IdWrapper,
+                              dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             ).withView(concreteRenderer),
                           ),

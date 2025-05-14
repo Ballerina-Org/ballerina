@@ -31,7 +31,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
@@ -132,9 +132,10 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -220,7 +221,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   }).any([
     loaderRunner,

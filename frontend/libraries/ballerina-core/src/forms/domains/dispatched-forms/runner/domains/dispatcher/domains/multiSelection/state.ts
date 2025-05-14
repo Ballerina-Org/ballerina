@@ -41,7 +41,7 @@ export const MultiSelectionDispatcher = {
                         .Then((optionsSource) =>
                           ValueOrErrors.Default.return(
                             EnumMultiselectAbstractRenderer(
-                              dispatcherContext.IdWrapper,
+                              dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             )
                               .mapContext((_: any) => ({
@@ -87,7 +87,7 @@ export const MultiSelectionDispatcher = {
                         .Then((concreteRenderer) =>
                           ValueOrErrors.Default.return(
                             InfiniteMultiselectDropdownFormAbstractRenderer(
-                              dispatcherContext.IdWrapper,
+                              dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             ).withView(concreteRenderer),
                           ),

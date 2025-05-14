@@ -51,7 +51,7 @@ export const TableAbstractRenderer = <
   >,
   DetailsRenderer: Template<any, any, any, any> | undefined,
   Layout: PredicateVisibleColumns,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedCellTemplate =
@@ -336,9 +336,10 @@ export const TableAbstractRenderer = <
       );
 
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -396,7 +397,7 @@ export const TableAbstractRenderer = <
           EmbeddedTableData={tableData}
           DetailsRenderer={embedDetailsRenderer}
         />
-      </IdWrapper>
+      </>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
 };

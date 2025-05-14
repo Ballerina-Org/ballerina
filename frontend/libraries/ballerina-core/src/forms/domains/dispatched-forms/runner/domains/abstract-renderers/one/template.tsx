@@ -60,7 +60,7 @@ export const OneAbstractRenderer = (
         any
       >
     | undefined,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedDetailsRenderer = DetailsRenderer.mapContext<
@@ -277,21 +277,20 @@ export const OneAbstractRenderer = (
     ) {
       return (
         <>
-          <span
-            className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-          >
-            <props.view
-              {...props}
-              context={{
-                ...props.context,
-                kind: "uninitialized",
-              }}
-              kind="uninitialized"
-              foreignMutations={{
-                kind: "uninitialized",
-              }}
-            />
-          </span>
+          <IdProvider
+            id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+          />
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              kind: "uninitialized",
+            }}
+            kind="uninitialized"
+            foreignMutations={{
+              kind: "uninitialized",
+            }}
+          />
         </>
       );
     }
@@ -310,9 +309,10 @@ export const OneAbstractRenderer = (
       props.context.customFormState.selectedValue.sync.value.value;
 
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           kind="initialized"
@@ -397,7 +397,7 @@ export const OneAbstractRenderer = (
           DetailsRenderer={embeddedDetailsRenderer}
           PreviewRenderer={embeddedPreviewRenderer}
         />
-      </IdWrapper>
+      </>
     );
   }).any([
     initializeOneRunner,

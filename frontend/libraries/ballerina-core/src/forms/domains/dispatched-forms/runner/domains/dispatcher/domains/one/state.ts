@@ -93,7 +93,7 @@ export const OneDispatcher = {
                         OneAbstractRenderer(
                           detailsRenderer,
                           previewRenderer,
-                          dispatcherContext.IdWrapper,
+                          dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                         )
                           .mapContext((_: any) => ({

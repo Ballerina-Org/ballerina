@@ -26,7 +26,7 @@ export const SumAbstractRenderer = <
   RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   leftTemplate?: Template<
     Value<PredicateValue> &
@@ -217,9 +217,10 @@ export const SumAbstractRenderer = <
     }
 
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{ ...props.context }}
@@ -229,7 +230,7 @@ export const SumAbstractRenderer = <
           embeddedLeftTemplate={embeddedLeftTemplate}
           embeddedRightTemplate={embeddedRightTemplate}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

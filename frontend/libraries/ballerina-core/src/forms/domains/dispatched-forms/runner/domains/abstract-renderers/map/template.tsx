@@ -52,7 +52,7 @@ export const MapAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedKeyTemplate = (elementIndex: number) =>
@@ -307,9 +307,10 @@ export const MapAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -385,7 +386,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

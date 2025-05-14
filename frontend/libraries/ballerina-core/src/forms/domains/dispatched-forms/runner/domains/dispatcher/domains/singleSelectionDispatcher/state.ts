@@ -41,7 +41,7 @@ export const SingleSelectionDispatcher = {
                         .Then((optionsSource) =>
                           ValueOrErrors.Default.return(
                             EnumAbstractRenderer(
-                              dispatcherContext.IdWrapper,
+                              dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             )
                               .mapContext((_: any) => ({
@@ -81,7 +81,7 @@ export const SingleSelectionDispatcher = {
                       .Then((concreteRenderer) =>
                         ValueOrErrors.Default.return(
                           SearchableInfiniteStreamAbstractRenderer(
-                            dispatcherContext.IdWrapper,
+                            dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                           ).withView(concreteRenderer),
                         ),

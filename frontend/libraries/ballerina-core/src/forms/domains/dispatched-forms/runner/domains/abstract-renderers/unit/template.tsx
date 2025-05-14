@@ -14,7 +14,7 @@ import {
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const UnitAbstractRenderer = <Context extends FormLabel>(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
   Template.Default<
@@ -47,9 +47,10 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           foreignMutations={{
@@ -68,6 +69,6 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);

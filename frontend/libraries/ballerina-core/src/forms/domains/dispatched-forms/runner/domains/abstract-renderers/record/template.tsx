@@ -45,7 +45,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   Layout: PredicateFormLayout,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
@@ -245,9 +245,10 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           context={{
             ...props.context,
@@ -261,7 +262,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

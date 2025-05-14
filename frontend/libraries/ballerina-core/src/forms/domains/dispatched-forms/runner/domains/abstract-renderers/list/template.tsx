@@ -42,7 +42,7 @@ export const ListAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedElementTemplate = (elementIndex: number) =>
@@ -164,9 +164,10 @@ export const ListAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -298,7 +299,7 @@ export const ListAbstractRenderer = <
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

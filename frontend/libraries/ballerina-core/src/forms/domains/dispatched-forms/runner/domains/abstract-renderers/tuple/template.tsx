@@ -46,7 +46,7 @@ export const DispatchTupleAbstractRenderer = <
       }
     >
   >,
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedItemTemplates = (itemIndex: number) =>
@@ -182,9 +182,10 @@ export const DispatchTupleAbstractRenderer = <
     }
 
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -195,7 +196,7 @@ export const DispatchTupleAbstractRenderer = <
           }}
           embeddedItemTemplates={embeddedItemTemplates}
         />
-      </IdWrapper>
+      </>
     );
   }).any([]);
 };

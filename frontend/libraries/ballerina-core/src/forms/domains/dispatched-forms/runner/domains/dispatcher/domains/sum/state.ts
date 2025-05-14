@@ -44,7 +44,7 @@ export const SumDispatcher = {
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRenderer(
-                        dispatcherContext.IdWrapper,
+                        dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
                         leftForm,
                         rightForm,
@@ -57,7 +57,7 @@ export const SumDispatcher = {
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
                         SumAbstractRenderer(
-                          dispatcherContext.IdWrapper,
+                          dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           leftForm,
                           rightForm,

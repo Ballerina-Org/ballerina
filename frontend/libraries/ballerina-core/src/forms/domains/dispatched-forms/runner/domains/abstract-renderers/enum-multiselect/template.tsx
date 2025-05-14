@@ -31,7 +31,7 @@ export const EnumMultiselectAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
@@ -76,9 +76,10 @@ export const EnumMultiselectAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -139,7 +140,7 @@ export const EnumMultiselectAbstractRenderer = <
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   }).any([
     Co.Template<

@@ -29,7 +29,7 @@ export const EnumAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
@@ -73,9 +73,10 @@ export const EnumAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -150,7 +151,7 @@ export const EnumAbstractRenderer = <
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   }).any([
     Co.Template<

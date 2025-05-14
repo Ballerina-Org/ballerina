@@ -97,7 +97,7 @@ export const CategoryAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
@@ -126,9 +126,10 @@ export const CategoryAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           foreignMutations={{
@@ -150,7 +151,7 @@ export const CategoryAbstractRenderer = <
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   });
 };

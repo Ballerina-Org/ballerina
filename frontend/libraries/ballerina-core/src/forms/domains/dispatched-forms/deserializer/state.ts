@@ -61,7 +61,6 @@ export type DispatchParsedLaunchers<T> = {
 
 export type IdWrapperProps = {
   id: string;
-  children: React.ReactNode;
 };
 
 export type ErrorRendererProps = {
@@ -92,7 +91,7 @@ export type DispatcherContext<
   ) => ValueOrErrors<any, string>;
   forms: Map<string, Renderer<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode;
+  IdProvider: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
@@ -182,7 +181,7 @@ export const parseDispatchFormsToLaunchers =
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
-    IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+    IdProvider: (props: IdWrapperProps) => React.ReactNode,
     ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
     tableApiSources?: DispatchTableApiSources,
     lookupSources?: DispatchLookupSources,
@@ -291,7 +290,7 @@ export const parseDispatchFormsToLaunchers =
                 apiConverters,
                 injectedPrimitives,
               ),
-            IdWrapper,
+            IdProvider,
             ErrorRenderer,
           },
         }),

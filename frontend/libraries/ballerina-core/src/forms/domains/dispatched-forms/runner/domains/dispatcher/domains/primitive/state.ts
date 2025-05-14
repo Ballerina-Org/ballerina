@@ -57,7 +57,7 @@ export const PrimitiveDispatcher = {
               ValueOrErrors.Default.return(
                 injectedPrimitive
                   .abstractRenderer(
-                    dispatcherContext.IdWrapper,
+                    dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
                   )
                   .withView(concreteRenderer),
@@ -70,7 +70,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 UnitAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -82,7 +82,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 StringAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -94,7 +94,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 NumberAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -106,7 +106,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 BoolAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -118,7 +118,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 SecretAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -130,7 +130,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 Base64FileAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),
@@ -142,7 +142,7 @@ export const PrimitiveDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 DateAbstractRenderer(
-                  dispatcherContext.IdWrapper,
+                  dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
               ),

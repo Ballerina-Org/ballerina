@@ -31,7 +31,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   },
   ForeignMutationsExpected,
 >(
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
@@ -127,9 +127,10 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       );
     }
     return (
-      <IdWrapper
-        id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -227,7 +228,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
             },
           }}
         />
-      </IdWrapper>
+      </>
     );
   }).any([
     loaderRunner,
