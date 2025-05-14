@@ -165,6 +165,21 @@ module ExprParserTests =
 
     assertSuccess result expectedExpr
 
+  [<Test>]
+  let ``Should parse tuple`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "tuple"
+           "elements", JsonValue.Array [| JsonValue.String "a"; JsonValue.String "b" |] |]
+
+    let result = parseExpr json
+
+    let expectedExpr =
+      Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
+
+    assertSuccess result expectedExpr
+
+
 module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert to and from Json unit`` () =
@@ -267,6 +282,14 @@ module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert to and from Json caseCons`` () =
     let expr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert tuple to and from Json`` () =
+    let expr = Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
+
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
     assertSuccess result expr

@@ -407,6 +407,23 @@ module Expr =
                   let! case = JsonValue.AsString caseJson |> state.OfSum
                   let! value = Value.Parse valueJson
                   return Value.CaseCons(case, value)
+                }
+                state {
+                  let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+                  let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
+                  do!
+                    kindJson
+                    |> JsonValue.AsEnum(Set.singleton "tuple")
+                    |> state.OfSum
+                    |> state.Map ignore
+
+                  let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
+                  let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
+
+                  let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
+
+                  Value.Tuple elements
                 } ]
             )
           )
@@ -434,7 +451,12 @@ module Expr =
             [| "kind", JsonValue.String "caseCons"
                "case", JsonValue.String case
                "value", jsonValue |]
-        | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
+        | Value.Tuple elements ->
+          let! jsonElements = elements |> List.map Value.ToJson |> sum.All
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "tuple"
+               "elements", jsonElements |> Array.ofList |> JsonValue.Array |]
         | Value.Record fields ->
           let! jsonFields =
             fields
