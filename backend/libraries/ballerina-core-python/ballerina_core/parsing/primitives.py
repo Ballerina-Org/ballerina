@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ballerina_core.serialization.serializer import Json
+from ballerina_core.parsing.parsing_types import Json
 
 
 def str_serializer(value: str) -> str:

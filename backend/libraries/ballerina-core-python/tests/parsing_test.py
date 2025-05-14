@@ -2,10 +2,10 @@ import math
 
 from ballerina_core.primitives.option import Option
 from ballerina_core.primitives.sum import Sum
-from ballerina_core.serialization.dictionary import dict_deserializer, dict_serializer
-from ballerina_core.serialization.list import list_deserializer, list_serializer
-from ballerina_core.serialization.option import option_deserializer, option_serializer
-from ballerina_core.serialization.primitives import (
+from ballerina_core.parsing.dictionary import dict_deserializer, dict_serializer
+from ballerina_core.parsing.list import list_deserializer, list_serializer
+from ballerina_core.parsing.option import option_deserializer, option_serializer
+from ballerina_core.parsing.primitives import (
     bool_deserializer,
     bool_serializer,
     float_deserializer,
@@ -17,14 +17,14 @@ from ballerina_core.serialization.primitives import (
     str_deserializer,
     str_serializer,
 )
-from ballerina_core.serialization.products import (
+from ballerina_core.parsing.products import (
     tuple1_deserializer,
     tuple1_serializer,
     tuple2_deserializer,
     tuple2_serializer,
 )
-from ballerina_core.serialization.serializer import Json
-from ballerina_core.serialization.sum import sum_deserializer, sum_serializer
+from ballerina_core.parsing.parsing_types import Json
+from ballerina_core.parsing.sum import sum_deserializer, sum_serializer
 
 
 class TestPrimitivesSerializer:

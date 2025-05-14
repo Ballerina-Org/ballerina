@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TypeVar
 
-from ballerina_core.serialization.serializer import Deserializer, Json, Serializer
+from ballerina_core.parsing.parsing_types import Deserializer, Json, Serializer
 
 _A = TypeVar("_A")
 _B = TypeVar("_B")

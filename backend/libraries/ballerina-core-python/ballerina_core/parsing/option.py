@@ -1,7 +1,7 @@
 from typing import TypeVar
 
 from ballerina_core.primitives.option import Option
-from ballerina_core.serialization.serializer import Deserializer, Json, Serializer
+from ballerina_core.parsing.parsing_types import Deserializer, Json, Serializer
 
 _Option = TypeVar("_Option")
 
