@@ -128,6 +128,23 @@ module ExprParserTests =
 
     assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2))
 
+  [<Test>]
+  let ``Should parse record`` () =
+    let json =
+      JsonValue.Record
+        [| "kind", JsonValue.String "record"
+           "fields",
+           JsonValue.Array
+             [| JsonValue.Record [| "name", JsonValue.String "name"; "value", JsonValue.String "Alice" |]
+                JsonValue.Record [| "name", JsonValue.String "age"; "value", JsonValue.Number 30m |] |] |]
+
+    let result = parseExpr json
+
+    let expectedExpr =
+      Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
+
+    assertSuccess result expectedExpr
+
 module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert to and from Json boolean`` () =
@@ -210,6 +227,16 @@ module ExprToAndFromJsonTests =
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
     assertSuccess result expr
+
+  [<Test>]
+  let ``Should convert to and from Json record`` () =
+    let expr =
+      Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
+
+    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+
+    assertSuccess result expr
+
 
 module ExprToAndFromJsonRecursiveExpressions =
 

@@ -344,12 +344,46 @@ module Expr =
                 }
                 state {
                   let! v = JsonValue.AsNumber json |> state.OfSum
-                  return Value.ConstInt (int v)
+                  return Value.ConstInt(int v)
                 }
-              ]
+                state {
+                  let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+                  let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
+                  do!
+                    kindJson
+                    |> JsonValue.AsEnum(Set.singleton "record")
+                    |> state.OfSum
+                    |> state.Map ignore
+
+
+                  return!
+                    state {
+                      let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
+
+                      let! fieldsArray = fieldsJson |> JsonValue.AsArray |> state.OfSum
+
+                      let! fieldValues =
+                        fieldsArray
+                        |> Array.map (fun fieldJson ->
+                          state {
+                            let! fieldAsRecord = fieldJson |> JsonValue.AsRecord |> state.OfSum
+                            let! nameJson = fieldAsRecord |> sum.TryFindField "name" |> state.OfSum
+                            let! valueJson = fieldAsRecord |> sum.TryFindField "value" |> state.OfSum
+                            let! name = JsonValue.AsString nameJson |> state.OfSum
+                            let! value = Value.Parse valueJson
+                            name, value
+                          })
+                        |> Array.toList
+                        |> state.All
+
+                      return fieldValues |> Map.ofList |> Value.Record
+                    }
+                } ]
             )
           )
       }
+
     static member ToJson(value: Value) : Sum<JsonValue, Errors> =
       sum {
         match value with
@@ -367,7 +401,20 @@ module Expr =
                "body", jsonBody |]
         | Value.CaseCons _ -> return! sum.Throw(Errors.Singleton "Error: CaseCons not implemented")
         | Value.Tuple _ -> return! sum.Throw(Errors.Singleton "Error: Tuple not implemented")
-        | Value.Record _ -> return! sum.Throw(Errors.Singleton "Error: Record not implemented")
+        | Value.Record fields ->
+          let! jsonFields =
+            fields
+            |> Map.toList
+            |> List.map (fun (fieldName, fieldValue) ->
+              sum {
+                let! jsonValue = Value.ToJson fieldValue
+                return JsonValue.Record [| "name", JsonValue.String fieldName; "value", jsonValue |]
+              })
+            |> sum.All
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "record"
+               "fields", jsonFields |> Array.ofList |> JsonValue.Array |]
         | Value.ConstFloat _ -> return! sum.Throw(Errors.Singleton "Error: ConstFloat not implemented")
         | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
       }
