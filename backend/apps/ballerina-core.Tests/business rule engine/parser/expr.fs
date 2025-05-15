@@ -34,7 +34,9 @@ module ExprParserTests =
 
   [<Test>]
   let ``Should parse int`` () =
-    let json = JsonValue.Number 1m
+    let json =
+      JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "1" |]
+
     let result = parseExpr json
     assertSuccess result (Expr.Value(Value.ConstInt 1))
 
@@ -142,7 +144,9 @@ module ExprParserTests =
            "fields",
            JsonValue.Array
              [| JsonValue.Record [| "name", JsonValue.String "name"; "value", JsonValue.String "Alice" |]
-                JsonValue.Record [| "name", JsonValue.String "age"; "value", JsonValue.Number 30m |] |] |]
+                JsonValue.Record
+                  [| "name", JsonValue.String "age"
+                     "value", JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "30" |] |] |] |]
 
     let result = parseExpr json
 
@@ -157,11 +161,11 @@ module ExprParserTests =
       JsonValue.Record
         [| "kind", JsonValue.String "caseCons"
            "case", JsonValue.String "caseName"
-           "value", JsonValue.Number 30m |]
+           "value", JsonValue.Boolean true |]
 
     let result = parseExpr json
 
-    let expectedExpr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
+    let expectedExpr = Expr.Value(Value.CaseCons("caseName", Value.ConstBool true))
 
     assertSuccess result expectedExpr
 
@@ -203,7 +207,7 @@ module ExprToAndFromJsonTests =
     assertSuccess result expr
 
   [<Test>]
-  let ``Should convert to and from Json number`` () =
+  let ``Should convert int to and from Json`` () =
     let expr = Expr.Value(Value.ConstInt 42)
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 

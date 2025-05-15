@@ -313,10 +313,6 @@ module Expr =
               return Value.ConstString v
             }
             state {
-              let! v = JsonValue.AsNumber json |> state.OfSum
-              return Value.ConstInt(int v)
-            }
-            state {
               let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
               let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
 
@@ -374,6 +370,26 @@ module Expr =
                         let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
 
                         Value.Tuple elements
+                      }
+                      state {
+                        do! assertKindIs "int" kindJson
+
+                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+                        let! value = JsonValue.AsString valueJson |> state.OfSum
+
+                        match System.Int32.TryParse value with
+                        | true, v -> Value.ConstInt v
+                        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as int")
+                      }
+                      state {
+                        do! assertKindIs "float" kindJson
+
+                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+                        let! value = JsonValue.AsString valueJson |> state.OfSum
+
+                        match System.Double.TryParse value with
+                        | true, v -> Value.ConstFloat v
+                        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as float")
                       } ]
                   )
                 )
@@ -385,7 +401,12 @@ module Expr =
       sum {
         match value with
         | Value.ConstBool b -> JsonValue.Boolean b
-        | Value.ConstInt i -> JsonValue.Number(decimal i)
+        | Value.ConstInt i ->
+          JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String(i.ToString()) |]
+        | Value.ConstFloat value ->
+          JsonValue.Record
+            [| "kind", JsonValue.String "float"
+               "value", JsonValue.String(value.ToString()) |]
         | Value.ConstString s -> JsonValue.String s
         | Value.ConstGuid _ -> return! sum.Throw(Errors.Singleton "Error: ConstGuid not implemented")
         | Value.Unit -> JsonValue.Record [| "kind", JsonValue.String "unit" |]
@@ -423,6 +444,5 @@ module Expr =
           JsonValue.Record
             [| "kind", JsonValue.String "record"
                "fields", jsonFields |> Array.ofList |> JsonValue.Array |]
-        | Value.ConstFloat _ -> return! sum.Throw(Errors.Singleton "Error: ConstFloat not implemented")
         | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
       }
