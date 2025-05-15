@@ -151,7 +151,7 @@ export const OneAbstractRenderer = (
         const delta: DispatchDelta = {
           kind: "OptionValue",
           value: nestedDelta,
-          isWholeEntityMutation: false, // TODO: check
+          isWholeEntityMutation: true
         };
 
         props.foreignMutations.onChange(id, delta);
@@ -236,7 +236,7 @@ export const OneAbstractRenderer = (
           const delta: DispatchDelta = {
             kind: "OptionValue",
             value: nestedDelta,
-            isWholeEntityMutation: false, // TODO: check
+            isWholeEntityMutation: true
           };
 
           props.foreignMutations.onChange(id, delta);
@@ -425,7 +425,7 @@ export const OneAbstractRenderer = (
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
-                isWholeEntityMutation: false, // TODO: check
+                isWholeEntityMutation: true
               };
               props.setState(
                 OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(

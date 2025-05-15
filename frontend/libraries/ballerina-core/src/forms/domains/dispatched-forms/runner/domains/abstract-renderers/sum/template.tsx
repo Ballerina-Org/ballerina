@@ -85,7 +85,7 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumLeft",
             value: nestedDelta,
-            isWholeEntityMutation: false, // TODO: check
+            isWholeEntityMutation: false
           };
           props.foreignMutations.onChange(
             (_) => ({
@@ -151,7 +151,7 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumRight",
             value: nestedDelta,
-            isWholeEntityMutation: false, // TODO: check
+            isWholeEntityMutation: false
           };
           props.foreignMutations.onChange(
             (_) => ({
