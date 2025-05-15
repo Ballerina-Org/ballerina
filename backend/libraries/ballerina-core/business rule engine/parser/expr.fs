@@ -386,7 +386,7 @@ module Expr =
                         let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
                         let! value = JsonValue.AsString valueJson |> state.OfSum
 
-                        match System.Double.TryParse value with
+                        match System.Decimal.TryParse value with
                         | true, v -> Value.ConstFloat v
                         | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as float")
                       } ]
