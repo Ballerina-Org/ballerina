@@ -61,11 +61,12 @@ module Expr =
           [ state {
               let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
 
+              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
               return!
                 state.Any(
                   NonEmptyList.OfList(
                     state {
-                      let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
 
                       let! operator = kindJson |> JsonValue.AsEnum BinaryOperator.AllNames |> state.OfSum
 
@@ -88,8 +89,6 @@ module Expr =
                         |> state.MapError(Errors.WithPriority ErrorPriority.High)
                     },
                     [ state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "lambda")
@@ -111,8 +110,6 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "matchCase")
@@ -145,8 +142,6 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "fieldLookup")
@@ -167,8 +162,6 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "isCase")
@@ -189,8 +182,6 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "varLookup")
@@ -207,8 +198,6 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
                         do!
                           kindJson
                           |> JsonValue.AsEnum(Set.singleton "itemLookup")
@@ -345,80 +334,78 @@ module Expr =
               let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
               let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
 
-              do!
-                kindJson
-                |> JsonValue.AsEnum(Set.singleton "unit")
-                |> state.OfSum
-                |> state.Map ignore
-
-              Value.Unit
-            }
-            state {
-              let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
-              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
-              do!
-                kindJson
-                |> JsonValue.AsEnum(Set.singleton "record")
-                |> state.OfSum
-                |> state.Map ignore
-
-
               return!
-                state {
-                  let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
+                state.Any(
+                  NonEmptyList.OfList(
+                    state {
+                      do!
+                        kindJson
+                        |> JsonValue.AsEnum(Set.singleton "unit")
+                        |> state.OfSum
+                        |> state.Map ignore
 
-                  let! fieldsArray = fieldsJson |> JsonValue.AsArray |> state.OfSum
+                      Value.Unit
+                    },
+                    [ state {
+                        do!
+                          kindJson
+                          |> JsonValue.AsEnum(Set.singleton "record")
+                          |> state.OfSum
+                          |> state.Map ignore
 
-                  let! fieldValues =
-                    fieldsArray
-                    |> Array.map (fun fieldJson ->
+
+                        return!
+                          state {
+                            let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
+
+                            let! fieldsArray = fieldsJson |> JsonValue.AsArray |> state.OfSum
+
+                            let! fieldValues =
+                              fieldsArray
+                              |> Array.map (fun fieldJson ->
+                                state {
+                                  let! fieldAsRecord = fieldJson |> JsonValue.AsRecord |> state.OfSum
+                                  let! nameJson = fieldAsRecord |> sum.TryFindField "name" |> state.OfSum
+                                  let! valueJson = fieldAsRecord |> sum.TryFindField "value" |> state.OfSum
+                                  let! name = JsonValue.AsString nameJson |> state.OfSum
+                                  let! value = Value.Parse valueJson
+                                  name, value
+                                })
+                              |> Array.toList
+                              |> state.All
+
+                            return fieldValues |> Map.ofList |> Value.Record
+                          }
+                      }
                       state {
-                        let! fieldAsRecord = fieldJson |> JsonValue.AsRecord |> state.OfSum
-                        let! nameJson = fieldAsRecord |> sum.TryFindField "name" |> state.OfSum
-                        let! valueJson = fieldAsRecord |> sum.TryFindField "value" |> state.OfSum
-                        let! name = JsonValue.AsString nameJson |> state.OfSum
+                        do!
+                          kindJson
+                          |> JsonValue.AsEnum(Set.singleton "caseCons")
+                          |> state.OfSum
+                          |> state.Map ignore
+
+                        let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
+                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+                        let! case = JsonValue.AsString caseJson |> state.OfSum
                         let! value = Value.Parse valueJson
-                        name, value
-                      })
-                    |> Array.toList
-                    |> state.All
+                        return Value.CaseCons(case, value)
+                      }
+                      state {
+                        do!
+                          kindJson
+                          |> JsonValue.AsEnum(Set.singleton "tuple")
+                          |> state.OfSum
+                          |> state.Map ignore
 
-                  return fieldValues |> Map.ofList |> Value.Record
-                }
-            }
-            state {
-              let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
-              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+                        let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
+                        let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
 
-              do!
-                kindJson
-                |> JsonValue.AsEnum(Set.singleton "caseCons")
-                |> state.OfSum
-                |> state.Map ignore
+                        let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
 
-              let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
-              let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
-              let! case = JsonValue.AsString caseJson |> state.OfSum
-              let! value = Value.Parse valueJson
-              return Value.CaseCons(case, value)
-            }
-            state {
-              let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
-              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
-              do!
-                kindJson
-                |> JsonValue.AsEnum(Set.singleton "tuple")
-                |> state.OfSum
-                |> state.Map ignore
-
-              let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
-              let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
-
-              let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
-
-              Value.Tuple elements
+                        Value.Tuple elements
+                      } ]
+                  )
+                )
             } ]
         )
       )
