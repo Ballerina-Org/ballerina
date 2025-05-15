@@ -51,7 +51,7 @@ jobs:
         working-directory: ./backend/libraries/ballerina-core-go
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-go@v5.4.0
+      - uses: actions/setup-go@v5.5.0
         with:
           go-version-file: backend/libraries/ballerina-core-go/go.mod
       - name: Check formatting
