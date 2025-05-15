@@ -14,6 +14,12 @@ module Expr =
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
+  let private assertKindIs expected kindJson =
+    kindJson
+    |> JsonValue.AsEnum(Set.singleton expected)
+    |> state.OfSum
+    |> state.Map ignore
+
   type BinaryOperator with
     static member ByName =
       seq {
@@ -89,11 +95,7 @@ module Expr =
                         |> state.MapError(Errors.WithPriority ErrorPriority.High)
                     },
                     [ state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "lambda")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "lambda" kindJson
 
                         return!
                           state {
@@ -110,11 +112,7 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "matchCase")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "matchCase" kindJson
 
                         return!
                           state {
@@ -142,11 +140,8 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "fieldLookup")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "fieldLookup" kindJson
+
 
                         return!
                           state {
@@ -162,11 +157,8 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "isCase")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "isCase" kindJson
+
 
                         return!
                           state {
@@ -182,11 +174,8 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "varLookup")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "varLookup" kindJson
+
 
                         return!
                           state {
@@ -198,11 +187,8 @@ module Expr =
                           |> state.MapError(Errors.WithPriority ErrorPriority.High)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "itemLookup")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "itemLookup" kindJson
+
 
 
                         return!
@@ -338,20 +324,12 @@ module Expr =
                 state.Any(
                   NonEmptyList.OfList(
                     state {
-                      do!
-                        kindJson
-                        |> JsonValue.AsEnum(Set.singleton "unit")
-                        |> state.OfSum
-                        |> state.Map ignore
+                      do! assertKindIs "unit" kindJson
 
                       Value.Unit
                     },
                     [ state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "record")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "record" kindJson
 
 
                         return!
@@ -378,11 +356,7 @@ module Expr =
                           }
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "caseCons")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "caseCons" kindJson
 
                         let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
                         let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
@@ -391,11 +365,8 @@ module Expr =
                         return Value.CaseCons(case, value)
                       }
                       state {
-                        do!
-                          kindJson
-                          |> JsonValue.AsEnum(Set.singleton "tuple")
-                          |> state.OfSum
-                          |> state.Map ignore
+                        do! assertKindIs "tuple" kindJson
+
 
                         let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
                         let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
