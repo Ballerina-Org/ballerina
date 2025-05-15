@@ -52,14 +52,14 @@ export const NestedRenderer = {
             `serialized nested renderer is not an object`,
           )
         : "label" in serialized && !isString(serialized.label)
-          ? ValueOrErrors.Default.throwOne(`label is not a string`)
-          : "tooltip" in serialized && !isString(serialized.tooltip)
-            ? ValueOrErrors.Default.throwOne(`tooltip is not a string`)
-            : "details" in serialized && !isString(serialized.details)
-              ? ValueOrErrors.Default.throwOne(`details is not a string`)
-              : !("renderer" in serialized)
-                ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-                : ValueOrErrors.Default.return(serialized),
+        ? ValueOrErrors.Default.throwOne(`label is not a string`)
+        : "tooltip" in serialized && !isString(serialized.tooltip)
+        ? ValueOrErrors.Default.throwOne(`tooltip is not a string`)
+        : "details" in serialized && !isString(serialized.details)
+        ? ValueOrErrors.Default.throwOne(`details is not a string`)
+        : !("renderer" in serialized)
+        ? ValueOrErrors.Default.throwOne(`renderer is missing`)
+        : ValueOrErrors.Default.return(serialized),
     DeserializeAs: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
@@ -73,7 +73,6 @@ export const NestedRenderer = {
         serialized,
         concreteRenderers,
         types,
-        canOmitType,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -82,7 +81,6 @@ export const NestedRenderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType?: boolean,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
@@ -129,7 +127,7 @@ export const NestedRenderer = {
               "api" in validatedSerialized && isString(validatedSerialized.api)
                 ? validatedSerialized.api
                 : undefined,
-              canOmitType,
+              typeof validatedSerialized.renderer == "object",
             ).Then((renderer) =>
               type.kind == "table" && renderer.kind == "tableRenderer"
                 ? ValueOrErrors.Default.return({
@@ -144,22 +142,22 @@ export const NestedRenderer = {
                     ),
                   )
                 : renderer.kind == "recordRenderer" ||
-                    renderer.kind == "unionRenderer" ||
-                    renderer.kind == "lookupRenderer"
-                  ? ValueOrErrors.Default.return({
-                      renderer,
-                      label: validatedSerialized.label,
-                      tooltip: validatedSerialized.tooltip,
-                      details: validatedSerialized.details,
-                    }).MapErrors((errors) =>
-                      errors.map(
-                        (error) =>
-                          `${error}\n...When parsing as ${renderer.kind} nested renderer`,
-                      ),
-                    )
-                  : ValueOrErrors.Default.throwOne(
-                      `renderer ${renderer.kind} does not match type ${type.kind}`,
+                  renderer.kind == "unionRenderer" ||
+                  renderer.kind == "lookupRenderer"
+                ? ValueOrErrors.Default.return({
+                    renderer,
+                    label: validatedSerialized.label,
+                    tooltip: validatedSerialized.tooltip,
+                    details: validatedSerialized.details,
+                  }).MapErrors((errors) =>
+                    errors.map(
+                      (error) =>
+                        `${error}\n...When parsing as ${renderer.kind} nested renderer`,
                     ),
+                  )
+                : ValueOrErrors.Default.throwOne(
+                    `renderer ${renderer.kind} does not match type ${type.kind}`,
+                  ),
             ),
       ),
   },

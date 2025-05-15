@@ -37,13 +37,13 @@ export const UnionRenderer = {
             `union form is missing the required cases attribute`,
           )
         : !("renderer" in serialized)
-          ? ValueOrErrors.Default.throwOne(
-              `union form is missing the required renderer attribute`,
-            )
-          : ValueOrErrors.Default.return({
-              ...serialized,
-              cases: Map(serialized.cases),
-            }),
+        ? ValueOrErrors.Default.throwOne(
+            `union form is missing the required renderer attribute`,
+          )
+        : ValueOrErrors.Default.return({
+            ...serialized,
+            cases: Map(serialized.cases),
+          }),
     Deserialize: <T>(
       type: UnionType<T>,
       serialized: unknown,
@@ -65,7 +65,12 @@ export const UnionRenderer = {
                   ).Then((caseType) =>
                     Renderer.Operations.Deserialize(
                       caseType,
-                      caseRenderer,
+                      // TODO likely the cases should be typed as nested renderers to avoid this
+                      typeof caseRenderer === "object" &&
+                        caseRenderer !== null &&
+                        "renderer" in caseRenderer
+                        ? caseRenderer.renderer
+                        : caseRenderer,
                       concreteRenderers,
                       types,
                     ).Then((caseRenderer) =>

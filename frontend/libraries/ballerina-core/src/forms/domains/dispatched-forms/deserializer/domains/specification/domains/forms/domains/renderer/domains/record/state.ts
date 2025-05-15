@@ -56,7 +56,6 @@ export const RecordRenderer = {
       (_.length == 0 || _.every((e) => typeof e == "string")),
     tryAsValidRecordForm: <T>(
       _: unknown,
-      canOmitType: boolean,
     ): ValueOrErrors<SerializedRecordRenderer, string> =>
       !DispatchIsObject(_)
         ? ValueOrErrors.Default.throwOne("record form is not an object")
@@ -75,10 +74,6 @@ export const RecordRenderer = {
               ? ValueOrErrors.Default.throwOne(
                   "record form extends attribute is not an array of strings",
                 )
-              : !canOmitType && !("type" in _)
-                ? ValueOrErrors.Default.throwOne(
-                    "form is missing the required type attribute, only inlined table detail renderers may omit it",
-                  )
                 : "type" in _ && typeof _.type != "string"
                   ? ValueOrErrors.Default.throwOne(
                       "top level record form type attribute is not a string",
@@ -104,20 +99,17 @@ export const RecordRenderer = {
             concreteRenderers,
             types,
             undefined,
-            typeof serialized == "object",
           )
         : ValueOrErrors.Default.return(undefined),
-
     Deserialize: <T>(
       type: RecordType<T>,
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType: boolean, // Being used now to know if the record is inlined or not, longer term should rename to isInlined
+      isInlined: boolean,
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(
         serialized,
-        canOmitType,
       ).Then((validRecordForm) =>
         ValueOrErrors.Operations.All(
           List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(
@@ -156,7 +148,7 @@ export const RecordRenderer = {
                       type,
                       Map(fieldTuples.toArray()),
                       tabs,
-                      canOmitType,
+                      isInlined,
                       validRecordForm.extends,
                       renderer,
                     ),

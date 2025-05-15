@@ -125,7 +125,6 @@ const intializeOne = Co.GetState().then((current) => {
       (_) =>
         current.getApi(id).then((value) => {
           return current.fromApiParser(value).Then((result) => {
-            console.debug("result X", current.getApi);
             return ValueOrErrors.Default.return(result);
           });
         }),
