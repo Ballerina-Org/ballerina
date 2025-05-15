@@ -75,8 +75,6 @@ export const TableAbstractRenderer = <
             .get(chunkIndex)
             ?.data.get(rowId);
 
-          console.debug("rowValue", rowValue);
-
           return {
             value,
             ...cellState,
