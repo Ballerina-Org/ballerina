@@ -52,7 +52,7 @@ const getAdminLookup: DispatchOneSource = {
     (id: Guid) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
-      console.debug("id")
+      console.debug("id");
       return PromiseRepo.Default.mock(() => ({
         Values: Range(1, 5)
           .map((_) => ({
