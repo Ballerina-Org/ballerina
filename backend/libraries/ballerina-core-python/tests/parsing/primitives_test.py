@@ -1,4 +1,3 @@
-import math
 from decimal import Decimal
 
 from ballerina_core.parsing.dictionary import dict_from_json, dict_to_json
