@@ -19,6 +19,11 @@
     <!-- Repository info -->
     <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+
+    <!-- Include source and symbols in the package -->
+    <IncludeSource>true</IncludeSource>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
