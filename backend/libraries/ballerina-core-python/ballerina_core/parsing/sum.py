@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TypeVar
 
 from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
-from ballerina_core.primitives.sum import Sum
+from ballerina_core.sum import Sum
 
 _SumL = TypeVar("_SumL")
 _SumR = TypeVar("_SumR")

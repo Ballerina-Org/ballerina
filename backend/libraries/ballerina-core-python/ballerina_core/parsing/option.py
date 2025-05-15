@@ -1,7 +1,7 @@
 from typing import TypeVar
 
+from ballerina_core.option import Option
 from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
-from ballerina_core.primitives.option import Option
 
 _Option = TypeVar("_Option")
 

@@ -1,6 +1,7 @@
 import math
 from decimal import Decimal
 
+from ballerina_core.option import Option
 from ballerina_core.parsing.dictionary import dict_from_json, dict_to_json
 from ballerina_core.parsing.list import list_from_json, list_to_json
 from ballerina_core.parsing.option import option_from_json, option_to_json
@@ -19,8 +20,7 @@ from ballerina_core.parsing.primitives import (
 )
 from ballerina_core.parsing.products import tuple1_from_json, tuple1_to_json, tuple2_from_json, tuple2_to_json
 from ballerina_core.parsing.sum import sum_from_json, sum_to_json
-from ballerina_core.primitives.option import Option
-from ballerina_core.primitives.sum import Sum
+from ballerina_core.sum import Sum
 
 
 class TestPrimitivesSerializer:
