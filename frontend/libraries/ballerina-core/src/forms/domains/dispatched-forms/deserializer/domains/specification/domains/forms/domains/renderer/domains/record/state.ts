@@ -29,6 +29,7 @@ export type RecordRenderer<T> = {
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
   tabs: PredicateFormLayout;
+  isInlined: boolean;
   extendsForms?: string[];
 };
 
@@ -37,6 +38,7 @@ export const RecordRenderer = {
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
+    isInlined: boolean,
     extendsForms?: string[],
     renderer?: Renderer<T>,
   ): RecordRenderer<T> => ({
@@ -46,6 +48,7 @@ export const RecordRenderer = {
     tabs,
     extendsForms,
     renderer,
+    isInlined,
   }),
   Operations: {
     hasValidExtends: (_: unknown): _ is string[] =>
@@ -110,7 +113,7 @@ export const RecordRenderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType: boolean,
+      canOmitType: boolean, // Being used now to know if the record is inlined or not, longer term should rename to isInlined
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(
         serialized,
@@ -153,6 +156,7 @@ export const RecordRenderer = {
                       type,
                       Map(fieldTuples.toArray()),
                       tabs,
+                      canOmitType,
                       validRecordForm.extends,
                       renderer,
                     ),
