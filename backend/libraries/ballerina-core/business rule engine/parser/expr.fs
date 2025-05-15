@@ -308,7 +308,11 @@ module Expr =
             let! v = JsonValue.AsBoolean json |> state.OfSum
             return Value.ConstBool v
           },
-          [ state {
+          [ state { // NOTE: kept for backward compatibility
+              let! v = JsonValue.AsNumber json |> state.OfSum
+              v |> int |> Value.ConstInt
+            }
+            state {
               let! v = JsonValue.AsString json |> state.OfSum
               return Value.ConstString v
             }

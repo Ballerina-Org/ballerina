@@ -41,6 +41,13 @@ module ExprParserTests =
     assertSuccess result (Expr.Value(Value.ConstInt 1))
 
   [<Test>]
+  let ``Should parse int (backward compatibility)`` () =
+    let json = JsonValue.Number 2m
+
+    let result = parseExpr json
+    assertSuccess result (Expr.Value(Value.ConstInt 2))
+
+  [<Test>]
   let ``Should parse binary operator`` () =
     let json =
       JsonValue.Record
