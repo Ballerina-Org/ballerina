@@ -171,7 +171,7 @@ export const TableAbstractRenderer = <
         value,
         ...recordRowState,
         disabled: _.disabled,
-        bindings: _.bindings.set("local", _.value),
+        bindings: _.bindings.set("local", value),
         extraContext: _.extraContext,
         identifiers: {
           withLauncher: _.identifiers.withLauncher.concat(
