@@ -29,6 +29,7 @@ export type RecordRenderer<T> = {
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
   tabs: PredicateFormLayout;
+  isInlined: boolean;
   extendsForms?: string[];
 };
 
@@ -37,6 +38,7 @@ export const RecordRenderer = {
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
+    isInlined: boolean,
     extendsForms?: string[],
     renderer?: Renderer<T>,
   ): RecordRenderer<T> => ({
@@ -46,6 +48,7 @@ export const RecordRenderer = {
     tabs,
     extendsForms,
     renderer,
+    isInlined,
   }),
   Operations: {
     hasValidExtends: (_: unknown): _ is string[] =>
@@ -58,36 +61,35 @@ export const RecordRenderer = {
       !DispatchIsObject(_)
         ? ValueOrErrors.Default.throwOne("record form is not an object")
         : !("fields" in _) || typeof _.fields != "object"
-          ? ValueOrErrors.Default.throwOne(
-              "record form is missing the required fields attribute",
-            )
-          : !("tabs" in _) || typeof _.tabs != "object"
-            ? ValueOrErrors.Default.throwOne(
-                "record form is missing the required tabs attribute",
-              )
-            : "extends" in _ &&
-                (!Array.isArray(_.extends) ||
-                  (Array.isArray(_.extends) &&
-                    _.extends.some((e) => typeof e != "string")))
-              ? ValueOrErrors.Default.throwOne(
-                  "record form extends attribute is not an array of strings",
-                )
-              : !canOmitType && !("type" in _)
-                ? ValueOrErrors.Default.throwOne(
-                    "form is missing the required type attribute, only inlined table detail renderers may omit it",
-                  )
-                : "type" in _ && typeof _.type != "string"
-                  ? ValueOrErrors.Default.throwOne(
-                      "top level record form type attribute is not a string",
-                    )
-                  : ValueOrErrors.Default.return({
-                      ..._,
-                      type: "type" in _ ? (_.type as string) : undefined,
-                      fields: Map(_.fields as object),
-                      tabs: _.tabs as object,
-                      extends:
-                        "extends" in _ ? (_.extends as string[]) : undefined,
-                    }),
+        ? ValueOrErrors.Default.throwOne(
+            "record form is missing the required fields attribute",
+          )
+        : !("tabs" in _) || typeof _.tabs != "object"
+        ? ValueOrErrors.Default.throwOne(
+            "record form is missing the required tabs attribute",
+          )
+        : "extends" in _ &&
+          (!Array.isArray(_.extends) ||
+            (Array.isArray(_.extends) &&
+              _.extends.some((e) => typeof e != "string")))
+        ? ValueOrErrors.Default.throwOne(
+            "record form extends attribute is not an array of strings",
+          )
+        : !canOmitType && !("type" in _)
+        ? ValueOrErrors.Default.throwOne(
+            "form is missing the required type attribute, only inlined table detail renderers may omit it",
+          )
+        : "type" in _ && typeof _.type != "string"
+        ? ValueOrErrors.Default.throwOne(
+            "top level record form type attribute is not a string",
+          )
+        : ValueOrErrors.Default.return({
+            ..._,
+            type: "type" in _ ? (_.type as string) : undefined,
+            fields: Map(_.fields as object),
+            tabs: _.tabs as object,
+            extends: "extends" in _ ? (_.extends as string[]) : undefined,
+          }),
     DeserializeRenderer: <T>(
       type: RecordType<T>,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
@@ -110,7 +112,7 @@ export const RecordRenderer = {
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType: boolean,
+      canOmitType: boolean, // Being used now to know if the record is inlined or not, longer term should rename to isInlined
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(
         serialized,
@@ -153,6 +155,7 @@ export const RecordRenderer = {
                       type,
                       Map(fieldTuples.toArray()),
                       tabs,
+                      canOmitType,
                       validRecordForm.extends,
                       renderer,
                     ),

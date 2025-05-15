@@ -110,6 +110,7 @@ export const RecordDispatcher = {
                       renderer.tabs,
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
+                      renderer.isInlined,
                     )
                       .mapContext((_: any) => ({
                         ..._,

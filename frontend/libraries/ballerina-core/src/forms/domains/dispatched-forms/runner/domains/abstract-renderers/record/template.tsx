@@ -47,6 +47,7 @@ export const RecordAbstractRenderer = <
   Layout: PredicateFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  isInlined: boolean,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
     fieldName: string,
@@ -174,7 +175,7 @@ export const RecordAbstractRenderer = <
       );
     }
 
-    const updatedBindings = props.context.bindings.set(
+    const updatedBindings = isInlined ? props.context.bindings : props.context.bindings.set(
       "local",
       props.context.value,
     );
