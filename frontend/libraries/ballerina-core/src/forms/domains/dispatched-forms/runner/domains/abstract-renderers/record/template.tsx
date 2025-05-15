@@ -102,7 +102,7 @@ export const RecordAbstractRenderer = <
               kind: "RecordField",
               field: [fieldName, nestedDelta],
               recordType: props.context.type,
-              isWholeEntityMutation: false
+              isWholeEntityMutation: false,
             };
 
             props.foreignMutations.onChange(

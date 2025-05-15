@@ -97,7 +97,7 @@ export const ListAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: false
+              isWholeEntityMutation: false,
             };
             props.foreignMutations.onChange(
               Updater((list) =>

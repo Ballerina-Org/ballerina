@@ -73,7 +73,7 @@ export const SecretAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
-                isWholeEntityMutation: false
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },

@@ -112,7 +112,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: true
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
@@ -226,7 +226,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapValue",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: true
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
