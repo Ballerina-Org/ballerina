@@ -20,6 +20,20 @@ module Expr =
     |> state.OfSum
     |> state.Map ignore
 
+  let private assertKindIsAndGetFields expected json =
+    state {
+      let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+      let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+
+      do!
+        kindJson
+        |> JsonValue.AsEnum(Set.singleton expected)
+        |> state.OfSum
+        |> state.Map ignore
+
+      fieldsJson
+    }
+
   type BinaryOperator with
     static member ByName =
       seq {
@@ -42,7 +56,7 @@ module Expr =
     static member AllNames = BinaryOperator.ByName |> Map.keys |> Set.ofSeq
 
   type Expr with
-    static member ParseMatchCase<'config, 'context>
+    static member private ParseMatchCase<'config, 'context>
       (json: JsonValue)
       : State<string * VarName * Expr, 'config, 'context, Errors> =
       state {
@@ -60,158 +74,109 @@ module Expr =
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
+    static member private ParseBinaryOperator<'config, 'context>
+      (json: JsonValue)
+      : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+        let! operator = kindJson |> JsonValue.AsEnum BinaryOperator.AllNames |> state.OfSum
+        let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
+        let! firstJson, secondJson = JsonValue.AsPair operandsJson |> state.OfSum
+        let! first = Expr.Parse firstJson
+        let! second = Expr.Parse secondJson
+
+        let! operator =
+          BinaryOperator.ByName
+          |> Map.tryFindWithError operator "binary operator" operator
+          |> state.OfSum
+
+        return Expr.Binary(operator, first, second)
+      }
+
+    static member private ParseLambda<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "lambda" json
+        let! parameterJson = fieldsJson |> sum.TryFindField "parameter" |> state.OfSum
+        let! parameterName = parameterJson |> JsonValue.AsString |> state.OfSum
+        let! bodyJson = fieldsJson |> sum.TryFindField "body" |> state.OfSum
+        let! body = bodyJson |> Expr.Parse
+        return Expr.Value(Value.Lambda({ VarName = parameterName }, body))
+      }
+
+    static member ParseMatchCases<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "matchCase" json
+        let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
+        let! operandsJson = JsonValue.AsArray operandsJson |> state.OfSum
+
+        if operandsJson.Length < 1 then
+          return!
+            state.Throw(
+              Errors.Singleton
+                $"Error: matchCase needs at least one operand, the value to match. Instead, found zero operands."
+            )
+        else
+          let valueJson = operandsJson.[0]
+          let! value = Expr.Parse valueJson
+          let casesJson = operandsJson |> Seq.skip 1 |> Seq.toList
+          let! cases = state.All(casesJson |> Seq.map (Expr.ParseMatchCase))
+          let cases = cases |> Seq.map (fun (c, v, b) -> (c, (v, b))) |> Map.ofSeq
+          return Expr.MatchCase(value, cases)
+      }
+
+    static member private ParseFieldLookup<'config, 'context>
+      (json: JsonValue)
+      : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "fieldLookup" json
+        let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
+        let! firstJson, fieldNameJson = JsonValue.AsPair operandsJson |> state.OfSum
+        let! fieldName = JsonValue.AsString fieldNameJson |> state.OfSum
+        let! first = Expr.Parse firstJson
+        return Expr.RecordFieldLookup(first, fieldName)
+      }
+
+    static member private ParseIsCase<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "isCase" json
+        let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
+        let! firstJson, caseNameJson = JsonValue.AsPair operandsJson |> state.OfSum
+        let! caseName = JsonValue.AsString caseNameJson |> state.OfSum
+        let! first = Expr.Parse firstJson
+        return Expr.IsCase(caseName, first)
+      }
+
+    static member private ParseVarLookup<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "varLookup" json
+        let! varNameJson = fieldsJson |> sum.TryFindField "varName" |> state.OfSum
+        let! varName = JsonValue.AsString varNameJson |> state.OfSum
+        return Expr.VarLookup { VarName = varName }
+      }
+
+    static member private ParseItemLookup<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "itemLookup" json
+        let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
+        let! firstJson, itemIndexJson = JsonValue.AsPair operandsJson |> state.OfSum
+        let! itemIndex = JsonValue.AsNumber itemIndexJson |> state.OfSum
+        let! first = Expr.Parse firstJson
+        return Expr.Project(first, itemIndex |> int)
+      }
+
     static member Parse<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
           Value.Parse json |> state.Map Expr.Value,
-          [ state {
-              let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
-
-              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
-              return!
-                state.Any(
-                  NonEmptyList.OfList(
-                    state {
-
-                      let! operator = kindJson |> JsonValue.AsEnum BinaryOperator.AllNames |> state.OfSum
-
-                      return!
-                        state {
-                          let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-
-                          let! (firstJson, secondJson) = JsonValue.AsPair operandsJson |> state.OfSum
-
-                          let! first = Expr.Parse firstJson
-                          let! second = Expr.Parse secondJson
-
-                          let! operator =
-                            BinaryOperator.ByName
-                            |> Map.tryFindWithError operator "binary operator" operator
-                            |> state.OfSum
-
-                          return Expr.Binary(operator, first, second)
-                        }
-                        |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                    },
-                    [ state {
-                        do! assertKindIs "lambda" kindJson
-
-                        return!
-                          state {
-                            let! parameterJson = fieldsJson |> sum.TryFindField "parameter" |> state.OfSum
-
-                            let! parameterName = parameterJson |> JsonValue.AsString |> state.OfSum
-
-                            let! bodyJson = fieldsJson |> sum.TryFindField "body" |> state.OfSum
-
-                            let! body = bodyJson |> Expr.Parse
-
-                            return Expr.Value(Value.Lambda({ VarName = parameterName }, body))
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state {
-                        do! assertKindIs "matchCase" kindJson
-
-                        return!
-                          state {
-                            let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-
-                            let! operandsJson = JsonValue.AsArray operandsJson |> state.OfSum
-
-                            if operandsJson.Length < 1 then
-                              return!
-                                state.Throw(
-                                  Errors.Singleton
-                                    $"Error: matchCase needs at least one operand, the value to match. Instead, found zero operands."
-                                )
-                            else
-                              let valueJson = operandsJson.[0]
-                              let! value = Expr.Parse valueJson
-                              let casesJson = operandsJson |> Seq.skip 1 |> Seq.toList
-
-                              let! cases = state.All(casesJson |> Seq.map (Expr.ParseMatchCase))
-
-                              let cases = cases |> Seq.map (fun (c, v, b) -> (c, (v, b))) |> Map.ofSeq
-
-                              return Expr.MatchCase(value, cases)
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state {
-                        do! assertKindIs "fieldLookup" kindJson
-
-
-                        return!
-                          state {
-                            let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-
-                            let! (firstJson, fieldNameJson) = JsonValue.AsPair operandsJson |> state.OfSum
-
-                            let! fieldName = JsonValue.AsString fieldNameJson |> state.OfSum
-
-                            let! first = Expr.Parse firstJson
-                            return Expr.RecordFieldLookup(first, fieldName)
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state {
-                        do! assertKindIs "isCase" kindJson
-
-
-                        return!
-                          state {
-                            let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-
-                            let! (firstJson, caseNameJson) = JsonValue.AsPair operandsJson |> state.OfSum
-
-                            let! caseName = JsonValue.AsString caseNameJson |> state.OfSum
-
-                            let! first = Expr.Parse firstJson
-                            return Expr.IsCase(caseName, first)
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state {
-                        do! assertKindIs "varLookup" kindJson
-
-
-                        return!
-                          state {
-                            let! varNameJson = fieldsJson |> sum.TryFindField "varName" |> state.OfSum
-
-                            let! varName = JsonValue.AsString varNameJson |> state.OfSum
-                            return Expr.VarLookup { VarName = varName }
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state {
-                        do! assertKindIs "itemLookup" kindJson
-
-
-
-                        return!
-                          state {
-                            let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-
-                            let! (firstJson, itemIndexJson) = JsonValue.AsPair operandsJson |> state.OfSum
-
-                            let! itemIndex = JsonValue.AsNumber itemIndexJson |> state.OfSum
-
-                            let! first = Expr.Parse firstJson
-                            return Expr.Project(first, itemIndex |> int)
-                          }
-                          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                      }
-                      state.Throw(
-                        Errors.Singleton
-                          $"Error: cannot parse expression {fieldsJson.ToFSharpString.ReasonablyClamped}."
-                      ) ]
-                  )
-                )
-            }
-            |> state.MapError(Errors.HighestPriority) ]
+          [ Expr.ParseBinaryOperator json
+            Expr.ParseLambda json
+            Expr.ParseMatchCases json
+            Expr.ParseFieldLookup json
+            Expr.ParseIsCase json
+            Expr.ParseVarLookup json
+            Expr.ParseItemLookup json
+            state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
         )
       )
       |> state.MapError(Errors.HighestPriority)
@@ -301,98 +266,106 @@ module Expr =
 
   and Value with
 
+    static member private ParseBool<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! v = JsonValue.AsBoolean json |> state.OfSum
+        return Value.ConstBool v
+      }
+
+    static member private ParseIntForBackwardCompatibility<'config, 'context>
+      (json: JsonValue)
+      : State<Value, 'config, 'context, Errors> =
+      state {
+        let! v = JsonValue.AsNumber json |> state.OfSum
+        return Value.ConstInt(int v)
+      }
+
+    static member private ParseString<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! v = JsonValue.AsString json |> state.OfSum
+        return Value.ConstString v
+      }
+
+    static member private ParseUnit<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
+        let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
+        do! assertKindIs "unit" kindJson
+        return Value.Unit
+      }
+
+    static member private ParseRecord<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "record" json
+        let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
+        let! fieldAsRecord = fieldsJson |> JsonValue.AsRecord |> state.OfSum
+
+        let! fieldValues =
+          fieldAsRecord
+          |> List.ofArray
+          |> List.map (fun (name, valueJson) ->
+            state {
+              let! value = Value.Parse valueJson
+              return name, value
+            })
+          |> state.All
+
+        return fieldValues |> Map.ofList |> Value.Record
+      }
+
+    static member private ParseCaseCons<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "caseCons" json
+        let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
+        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+        let! case = JsonValue.AsString caseJson |> state.OfSum
+        let! value = Value.Parse valueJson
+        return Value.CaseCons(case, value)
+      }
+
+    static member private ParseTuple<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "tuple" json
+        let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
+        let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
+        let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
+        return Value.Tuple elements
+      }
+
+    static member private ParseInt<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "int" json
+        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+        let! value = JsonValue.AsString valueJson |> state.OfSum
+
+        match System.Int32.TryParse value with
+        | true, v -> return Value.ConstInt v
+        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as int")
+      }
+
+    static member private ParseFloat<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "float" json
+        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
+        let! value = JsonValue.AsString valueJson |> state.OfSum
+
+        match System.Decimal.TryParse value with
+        | true, v -> return Value.ConstFloat v
+        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as float")
+      }
+
     static member Parse<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
-          state {
-            let! v = JsonValue.AsBoolean json |> state.OfSum
-            return Value.ConstBool v
-          },
-          [ state { // NOTE: kept for backward compatibility
-              let! v = JsonValue.AsNumber json |> state.OfSum
-              v |> int |> Value.ConstInt
-            }
-            state {
-              let! v = JsonValue.AsString json |> state.OfSum
-              return Value.ConstString v
-            }
-            state {
-              let! fieldsJson = JsonValue.AsRecord json |> state.OfSum
-              let! kindJson = fieldsJson |> sum.TryFindField "kind" |> state.OfSum
-
-              return!
-                state.Any(
-                  NonEmptyList.OfList(
-                    state {
-                      do! assertKindIs "unit" kindJson
-
-                      Value.Unit
-                    },
-                    [ state {
-                        do! assertKindIs "record" kindJson
-
-
-                        return!
-                          state {
-                            let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
-                            let! fieldAsRecord = fieldsJson |> JsonValue.AsRecord |> state.OfSum
-
-                            let! fieldValues =
-                              fieldAsRecord
-                              |> List.ofArray
-                              |> List.map (fun (name, valueJson) ->
-                                state {
-                                  let! value = Value.Parse valueJson
-                                  return name, value
-                                })
-                              |> state.All
-
-                            fieldValues |> Map.ofList |> Value.Record
-                          }
-                      }
-                      state {
-                        do! assertKindIs "caseCons" kindJson
-
-                        let! caseJson = fieldsJson |> sum.TryFindField "case" |> state.OfSum
-                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
-                        let! case = JsonValue.AsString caseJson |> state.OfSum
-                        let! value = Value.Parse valueJson
-                        return Value.CaseCons(case, value)
-                      }
-                      state {
-                        do! assertKindIs "tuple" kindJson
-
-
-                        let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
-                        let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
-
-                        let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
-
-                        Value.Tuple elements
-                      }
-                      state {
-                        do! assertKindIs "int" kindJson
-
-                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
-                        let! value = JsonValue.AsString valueJson |> state.OfSum
-
-                        match System.Int32.TryParse value with
-                        | true, v -> Value.ConstInt v
-                        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as int")
-                      }
-                      state {
-                        do! assertKindIs "float" kindJson
-
-                        let! valueJson = fieldsJson |> sum.TryFindField "value" |> state.OfSum
-                        let! value = JsonValue.AsString valueJson |> state.OfSum
-
-                        match System.Decimal.TryParse value with
-                        | true, v -> Value.ConstFloat v
-                        | false, _ -> return! state.Throw(Errors.Singleton $"Error: could not parse {value} as float")
-                      } ]
-                  )
-                )
-            } ]
+          Value.ParseBool json,
+          [ Value.ParseIntForBackwardCompatibility json
+            Value.ParseString json
+            Value.ParseUnit json
+            Value.ParseRecord json
+            Value.ParseCaseCons json
+            Value.ParseTuple json
+            Value.ParseInt json
+            Value.ParseFloat json ]
         )
       )
 
