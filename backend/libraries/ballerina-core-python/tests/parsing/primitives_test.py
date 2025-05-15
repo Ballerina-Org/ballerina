@@ -61,14 +61,14 @@ class TestPrimitivesSerializer:
         assert bool_from_json(serialized) == serialized
 
     @staticmethod
-    def test_float_to_json() -> None:
-        value = Decimal(math.pi)
-        assert decimal_to_json(value) == value
+    def test_decimal_to_json() -> None:
+        value = Decimal("3.14")
+        assert decimal_to_json(value) == "3.14"
 
     @staticmethod
-    def test_float_from_json() -> None:
-        serialized: Json = Decimal(math.pi)
-        assert decimal_from_json(serialized) == serialized
+    def test_decimal_from_json() -> None:
+        serialized: Json = "3.14"
+        assert decimal_from_json(serialized) == Decimal("3.14")
 
 
 class TestListSerializer:

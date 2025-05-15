@@ -54,12 +54,12 @@ def bool_from_json(value: Json) -> bool:
 
 
 def decimal_to_json(value: Decimal) -> Json:
-    return value
+    return str(value)
 
 
 def decimal_from_json(value: Json) -> Decimal:
     match value:
-        case Decimal():
-            return value
+        case str():
+            return Decimal(value)
         case _:
-            raise ValueError(f"Not a decimal: {value}")
+            raise ValueError(f"Not a string: {value}")
