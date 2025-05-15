@@ -104,7 +104,7 @@
       ✅ use it instead of `Table`
       ✅ use it in the MANYPATCH
       ✅ use it in the sample go-config
-    ❌ add a `visibleCases` (optional) tab to the union renderers
+    ❌ add generics - types, apis, renderers
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
     ❌  | SumRenderer of
@@ -213,7 +213,6 @@
     ❌ disallow unsupported keywords (`visibIle` wasted me a good chunk of time)
     ❌ gently deprecate "defaultX" naming convention
     ❌ make recursive `Value/Expr` types work in Go
-    ❌ add custom generics with their renderer (for example, `WithEvidenceAndApproval<value>`)
     ❌ support multiple imports or none at all
     ❌ add custom operators to codegenConfig
     ❌ refactor `sprintf` instances in `typeCheck.fs`

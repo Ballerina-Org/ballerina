@@ -18,6 +18,9 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
+  IdWrapperProps,
+  ErrorRendererProps,
+  DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map } from "immutable";
 import {
@@ -26,13 +29,12 @@ import {
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/example-tables.json";
-// import SPEC from "/Users/johnblp/Desktop/blp-example.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
-  dispatchCategoryForm,
+  CategoryAbstractRenderer,
   DispatchCategoryState,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
@@ -44,6 +46,14 @@ const ShowFormsParsingErrors = (
   <div style={{ border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
       JSON.stringify(parsedFormsConfig.errors)}
+  </div>
+);
+
+const IdWrapper = ({ id }: IdWrapperProps) => <div className={id} />;
+
+const ErrorRenderer = ({ message }: ErrorRendererProps) => (
+  <div style={{ border: "red" }}>
+    <p>{message}</p>
   </div>
 );
 
@@ -202,22 +212,22 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     entityApis: DispatchPersonFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,
-                    injectedPrimitives: Map([
-                      [
+                    IdWrapper,
+                    ErrorRenderer,
+                    injectedPrimitives: [
+                      DispatchInjectedPrimitive.Default(
                         "injectedCategory",
+                        CategoryAbstractRenderer,
                         {
-                          fieldView: dispatchCategoryForm,
-                          defaultValue: {
-                            kind: "custom",
-                            value: {
-                              kind: "adult",
-                              extraSpecial: false,
-                            },
+                          kind: "custom",
+                          value: {
+                            kind: "adult",
+                            extraSpecial: false,
                           },
-                          defaultState: DispatchCategoryState.Default(),
                         },
-                      ],
-                    ]),
+                        DispatchCategoryState.Default(),
+                      ),
+                    ],
                   }}
                   setState={setSpecificationDeserializer}
                   view={unit}

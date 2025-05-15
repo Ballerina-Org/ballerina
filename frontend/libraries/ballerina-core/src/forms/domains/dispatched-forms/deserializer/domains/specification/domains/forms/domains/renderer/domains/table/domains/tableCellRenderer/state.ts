@@ -45,7 +45,7 @@ export const TableCellRenderer = {
     Deserialize: <T>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       columnName: string,
     ): ValueOrErrors<TableCellRenderer<T>, string> =>

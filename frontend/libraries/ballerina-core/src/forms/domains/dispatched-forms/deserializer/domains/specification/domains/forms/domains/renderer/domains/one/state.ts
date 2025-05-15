@@ -75,7 +75,7 @@ export const OneRenderer = {
     DeserializePreviewRenderer: <T>(
       type: OneType<T>,
       serialized: SerializedOneRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
@@ -90,7 +90,7 @@ export const OneRenderer = {
     Deserialize: <T>(
       type: OneType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(

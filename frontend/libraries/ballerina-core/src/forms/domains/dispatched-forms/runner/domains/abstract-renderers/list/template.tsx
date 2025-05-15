@@ -3,6 +3,7 @@ import {
   Bindings,
   DispatchCommonFormState,
   DispatchDelta,
+  IdWrapperProps,
   ListRepo,
   MapRepo,
   PredicateValue,
@@ -10,6 +11,8 @@ import {
   Updater,
   ValueTuple,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
@@ -39,6 +42,8 @@ export const ListAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedElementTemplate = (elementIndex: number) =>
     elementTemplate
@@ -92,6 +97,7 @@ export const ListAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: false,
             };
             props.foreignMutations.onChange(
               Updater((list) =>
@@ -149,16 +155,20 @@ export const ListAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for list but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for list but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -175,6 +185,7 @@ export const ListAbstractRenderer = <
                   elementFormStates: props.context.elementFormStates,
                 },
                 type: (props.context.type as ListType<any>).args[0],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -198,6 +209,7 @@ export const ListAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "ArrayRemoveAt",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -220,6 +232,7 @@ export const ListAbstractRenderer = <
                 kind: "ArrayMoveFromTo",
                 from: index,
                 to: to,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -244,6 +257,7 @@ export const ListAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "ArrayDuplicateAt",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -267,6 +281,7 @@ export const ListAbstractRenderer = <
                 value: [_, GetDefaultElementValue()],
                 elementState: GetDefaultElementState(),
                 elementType: (props.context.type as ListType<any>).args[0],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -290,7 +305,7 @@ export const ListAbstractRenderer = <
           }}
           embeddedElementTemplate={embeddedElementTemplate}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

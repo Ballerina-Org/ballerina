@@ -1,6 +1,6 @@
 import {
   AsyncState,
-  injectablesFromFieldViews,
+  injectedPrimitivesFromConcreteRenderers,
   Sum,
   Synchronize,
   Unit,
@@ -40,12 +40,24 @@ export const LoadAndDeserializeSpecification = <
               "Error getting forms config in LoadAndDeserializeSpecification",
             );
           }
-          const injectedPrimitives = current.injectedPrimitives
-            ? injectablesFromFieldViews(
+          const injectedPrimitivesResult = current.injectedPrimitives
+            ? injectedPrimitivesFromConcreteRenderers(
                 current.concreteRenderers,
                 current.injectedPrimitives,
               )
-            : undefined;
+            : ValueOrErrors.Default.return(undefined);
+
+          if (injectedPrimitivesResult.kind == "errors") {
+            console.error(
+              injectedPrimitivesResult.errors.valueSeq().toArray().join("\n"),
+            );
+            return ValueOrErrors.Default.throwOne(
+              "Error getting injected primitives in LoadAndDeserializeSpecification: " +
+                injectedPrimitivesResult.errors.valueSeq().toArray().join("\n"),
+            );
+          }
+
+          const injectedPrimitives = injectedPrimitivesResult.value;
 
           const deserializationResult = Specification.Operations.Deserialize(
             current.fieldTypeConverters,
@@ -69,6 +81,8 @@ export const LoadAndDeserializeSpecification = <
             current.infiniteStreamSources,
             current.enumOptionsSources,
             current.entityApis,
+            current.IdWrapper,
+            current.ErrorRenderer,
             current.tableApiSources,
             current.lookupSources,
           )(deserializationResult.value);

@@ -953,11 +953,22 @@ module Renderers =
                 let! cases =
                   casesJson
                   |> Seq.map (fun (caseName, caseJson) ->
-                    state {
-                      // let! caseJson = caseJson |> JsonValue.AsRecord |> state.OfSum
-                      let! caseBody = Renderer.Parse [||] caseJson
-                      return caseName, caseBody
-                    }
+                    state.Either
+                      (state {
+                        let! caseBody = Renderer.Parse [||] caseJson
+
+                        return
+                          caseName,
+                          { Label = None
+                            Tooltip = None
+                            Details = None
+                            Renderer = caseBody }
+                      })
+                      (state {
+                        let! caseBody = NestedRenderer.Parse caseJson
+
+                        return caseName, caseBody
+                      })
                     |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
                   |> state.All
                   |> state.Map(Map.ofSeq)

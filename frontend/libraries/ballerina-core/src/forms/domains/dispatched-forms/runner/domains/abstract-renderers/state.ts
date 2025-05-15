@@ -7,6 +7,12 @@ import {
   simpleUpdaterWithChildren,
 } from "../../../../../../../main";
 
+export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
+  const matches = [...identifier.matchAll(/\[([^\]]+)\]/g)];
+  if (matches.length === 0) return "";
+  return matches[matches.length - 1][1];
+};
+
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,

@@ -59,7 +59,7 @@ export const SumRenderer = {
     Deserialize: <T>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<SumRenderer<T>, string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)

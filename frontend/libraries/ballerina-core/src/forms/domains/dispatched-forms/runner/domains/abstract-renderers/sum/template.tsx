@@ -3,12 +3,15 @@ import {
   CommonAbstractRendererState,
   DispatchCommonFormState,
   DispatchDelta,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   Sum,
   Value,
   ValueSum,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -23,6 +26,8 @@ export const SumAbstractRenderer = <
   RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
 >(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   leftTemplate?: Template<
     Value<PredicateValue> &
       LeftFormState & { disabled: boolean; extraContext: any },
@@ -80,6 +85,7 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumLeft",
             value: nestedDelta,
+            isWholeEntityMutation: false,
           };
           props.foreignMutations.onChange(
             (_) => ({
@@ -145,6 +151,7 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumRight",
             value: nestedDelta,
+            isWholeEntityMutation: false,
           };
           props.foreignMutations.onChange(
             (_) => ({
@@ -201,17 +208,21 @@ export const SumAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Sum
-          value expected for sum but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Sum value expected for sum but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{ ...props.context }}
@@ -221,7 +232,7 @@ export const SumAbstractRenderer = <
           embeddedLeftTemplate={embeddedLeftTemplate}
           embeddedRightTemplate={embeddedRightTemplate}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

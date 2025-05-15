@@ -33,11 +33,9 @@ export const OneDispatcher = {
       dispatcherContext: DispatcherContext<any>,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
-        ? dispatcherContext.tableApiSources == undefined
-          ? ValueOrErrors.Default.throwOne(`table apis are undefined`)
-          : dispatcherContext
-              .tableApiSources(api)
-              .Then((source) => ValueOrErrors.Default.return(source.get))
+        ? ValueOrErrors.Default.throwOne(
+            `Attempted to use a table API for a one, this is not allowed`,
+          )
         : Array.isArray(api) &&
             api.length == 2 &&
             api.every((_) => typeof _ == "string")
@@ -90,7 +88,12 @@ export const OneDispatcher = {
                         Template<any, any, any, any>,
                         string
                       >(
-                        OneAbstractRenderer(detailsRenderer, previewRenderer)
+                        OneAbstractRenderer(
+                          detailsRenderer,
+                          previewRenderer,
+                          dispatcherContext.IdProvider,
+                          dispatcherContext.ErrorRenderer,
+                        )
                           .mapContext((_: any) => ({
                             ..._,
                             getApi,

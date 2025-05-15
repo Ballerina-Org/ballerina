@@ -16,7 +16,7 @@ import {
   unit,
   ValueTuple,
   DispatchInfiniteStreamSources,
-  InjectedPrimitives,
+  DispatchInjectedPrimitives,
   RecordAbstractRendererState,
   AbstractTableRendererState,
   MapRepo,
@@ -125,7 +125,7 @@ type BuiltInApiConverters = {
   One: ApiConverter<ValueOption>;
 };
 
-export type ConcreteRendererKinds = {
+export type ConcreteRendererKinds<T> = {
   unit: Set<string>;
   boolean: Set<string>;
   number: Set<string>;
@@ -146,14 +146,16 @@ export type ConcreteRendererKinds = {
   table: Set<string>;
   union: Set<string>;
   one: Set<string>;
-};
+} & { [key in keyof T]: Set<string> };
 
 export const concreteRendererToKind =
-  (concreteRenderers: Record<string, any>) =>
+  <T>(concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>) =>
   (name: string): ValueOrErrors<string, string> => {
     const viewTypes = Object.keys(concreteRenderers);
     for (const viewType of viewTypes) {
-      if (name in concreteRenderers[viewType]) {
+      if (
+        name in concreteRenderers[viewType as keyof ConcreteRendererKinds<T>]
+      ) {
         return ValueOrErrors.Default.return(viewType);
       }
     }
@@ -164,13 +166,13 @@ export const concreteRendererToKind =
 
 // TODO -- JSX instead of any
 export const tryGetConcreteRenderer =
-  (
-    concreteRenderers: Record<string, any>,
+  <T>(
+    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
     defaultRecordRenderer: any,
     defaultNestedRecordRenderer: any,
   ) =>
   (
-    kind: keyof ConcreteRendererKinds,
+    kind: keyof ConcreteRendererKinds<T>,
     name?: string,
     isNested?: boolean, // valid only for record kind
   ): ValueOrErrors<JSX.Element, string> => {
@@ -182,26 +184,26 @@ export const tryGetConcreteRenderer =
     }
     if (name == undefined) {
       return ValueOrErrors.Default.throwOne(
-        `concrete renderer name is undefined for kind "${kind}"`,
+        `concrete renderer name is undefined for kind "${kind as string}"`,
       );
     }
     if (!concreteRenderers[kind]) {
       return ValueOrErrors.Default.throwOne(
-        `cannot find concrete renderer kind "${kind}" in formViews`,
+        `cannot find concrete renderer kind "${kind as string}" in formViews`,
       );
     }
     if (concreteRenderers[kind][name]) {
       return ValueOrErrors.Default.return(concreteRenderers[kind][name]());
     }
     return ValueOrErrors.Default.throwOne(
-      `cannot find concrete renderer "${name}" in kind "${kind}"`,
+      `cannot find concrete renderer "${name}" in kind "${kind as string}"`,
     );
   };
 
 export const dispatchDefaultState =
   <T extends { [key in keyof T]: { type: any; state: any } }>(
     infiniteStreamSources: DispatchInfiniteStreamSources,
-    injectedPrimitives: InjectedPrimitives<T> | undefined,
+    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Renderer<T>>,
     converters: DispatchApiConverters<T>,
@@ -277,14 +279,11 @@ export const dispatchDefaultState =
                       ? ValueOrErrors.Default.return(
                           DateAbstractRendererState.Default(),
                         )
-                      : injectedPrimitives?.injectedPrimitives.get(
-                            t.name as keyof T,
-                          ) != undefined
+                      : injectedPrimitives?.get(t.name as keyof T) != undefined
                         ? ValueOrErrors.Default.return({
                             commonFormState: DispatchCommonFormState.Default(),
-                            ...injectedPrimitives.injectedPrimitives.get(
-                              t.name as keyof T,
-                            )!.defaultState,
+                            ...injectedPrimitives?.get(t.name as keyof T)!
+                              .defaultState,
                           })
                         : ValueOrErrors.Default.throwOne(
                             `could not resolve defaultState for primitive renderer kind "${
@@ -597,7 +596,7 @@ export const dispatchDefaultState =
 
 export const dispatchDefaultValue =
   <T>(
-    injectedPrimitives: InjectedPrimitives<T> | undefined,
+    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Renderer<T>>,
   ) =>
@@ -657,13 +656,10 @@ export const dispatchDefaultValue =
                       ? ValueOrErrors.Default.return(
                           PredicateValue.Default.date(),
                         )
-                      : injectedPrimitives?.injectedPrimitives.get(
-                            t.name as keyof T,
-                          ) != undefined
+                      : injectedPrimitives?.get(t.name as keyof T) != undefined
                         ? ValueOrErrors.Default.return(
-                            injectedPrimitives.injectedPrimitives.get(
-                              t.name as keyof T,
-                            )!.defaultValue,
+                            injectedPrimitives?.get(t.name as keyof T)!
+                              .defaultValue,
                           )
                         : ValueOrErrors.Default.throwOne(
                             `could not resolve defaultValue for primitive renderer type "${
@@ -844,7 +840,7 @@ export const dispatchFromAPIRawValue =
     t: DispatchParsedType<T>,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     converters: DispatchApiConverters<T>,
-    injectedPrimitives?: InjectedPrimitives<T>,
+    injectedPrimitives?: DispatchInjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
     const result: ValueOrErrors<PredicateValue, string> = (() => {
@@ -856,9 +852,7 @@ export const dispatchFromAPIRawValue =
 
         if (
           !PredicateValue.Operations.IsPrimitive(raw) &&
-          !injectedPrimitives?.injectedPrimitives
-            .keySeq()
-            .contains(t.name as keyof T)
+          !injectedPrimitives?.keySeq().contains(t.name as keyof T)
         ) {
           return ValueOrErrors.Default.throwOne(
             `primitive expected but got ${JSON.stringify(raw)}`,
@@ -1149,7 +1143,7 @@ export const dispatchToAPIRawValue =
     t: DispatchParsedType<T>,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     converters: DispatchApiConverters<T>,
-    injectedPrimitives?: InjectedPrimitives<T>,
+    injectedPrimitives?: DispatchInjectedPrimitives<T>,
   ) =>
   (raw: PredicateValue, formState: any): ValueOrErrors<any, string> => {
     const result: ValueOrErrors<any, string> = (() => {

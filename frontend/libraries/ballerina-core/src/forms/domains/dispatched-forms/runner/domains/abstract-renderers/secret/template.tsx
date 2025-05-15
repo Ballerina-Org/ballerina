@@ -6,11 +6,14 @@ import {
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -19,7 +22,10 @@ export const SecretAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
->() => {
+>(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<string> & {
@@ -40,16 +46,20 @@ export const SecretAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          String value expected for secret but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: String value expected for secret but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           foreignMutations={{
@@ -63,12 +73,13 @@ export const SecretAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },
           }}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

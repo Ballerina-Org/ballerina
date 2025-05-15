@@ -66,7 +66,7 @@ export const ListRenderer = {
     Deserialize: <T>(
       type: ListType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)

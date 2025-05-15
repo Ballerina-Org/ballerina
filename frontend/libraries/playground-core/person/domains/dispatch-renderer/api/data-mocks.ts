@@ -40,6 +40,22 @@ const getActiveUsers: DispatchTableApiSource = {
         Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
         IsSome: true,
       },
+      City: {
+        IsSome: true,
+        Value: {
+          ...City.Default(v4(), faker.location.city()),
+        },
+      },
+      StreetNumberAndCity: {
+        Item1: faker.location.street(),
+        Item2: 100,
+        Item3: {
+          IsSome: true,
+          Value: {
+            ...City.Default(v4(), faker.location.city()),
+          },
+        },
+      },
       Friends: {
         From: 0,
         To: 0,
@@ -65,6 +81,22 @@ const getActiveUsers: DispatchTableApiSource = {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
             },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
+              },
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
+                },
+              },
+            },
             Friends: {
               From: 0,
               To: 0,
@@ -82,6 +114,22 @@ const getActiveUsers: DispatchTableApiSource = {
             FavoriteColor: {
               Value: {},
               IsSome: false,
+            },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
+              },
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
+                },
+              },
             },
             Friends: {
               From: 0,
@@ -280,6 +328,7 @@ const entityApis: EntityApis = {
         return (id: Guid) => {
           console.log(`get person ${id}`);
           return Promise.resolve({
+            Id: v4(),
             // Job: {
             //   Discriminator: "Developer",
             //   Developer: {
@@ -321,7 +370,7 @@ const entityApis: EntityApis = {
               extraSpecial: false,
             },
             FullName: {
-              Item1: faker.person.firstName(),
+              Item1: true,
               Item2: faker.person.lastName(),
             },
             Birthday: new Date(

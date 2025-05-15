@@ -1,6 +1,6 @@
 import { Set, Map, List } from "immutable";
 import {
-  InjectedPrimitives,
+  DispatchInjectedPrimitives,
   DispatchIsObject,
   DispatchTypeName,
   EntityApi,
@@ -108,7 +108,7 @@ export const Specification = {
     DeserializeForms: <T>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -146,16 +146,16 @@ export const Specification = {
     Deserialize:
       <T extends { [key in keyof T]: { type: any; state: any } }>(
         apiConverters: DispatchApiConverters<T>,
-        concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
-        injectedPrimitives?: InjectedPrimitives<T>,
+        concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+        injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (
         serializedSpecifications:
           | SerializedSpecification
           | SerializedSpecification[],
       ): ValueOrErrors<Specification<T>, string> =>
-        injectedPrimitives?.injectedPrimitives
-          .keySeq()
+        injectedPrimitives
+          ?.keySeq()
           .toArray()
           .some(
             (injectedPrimitiveName) =>

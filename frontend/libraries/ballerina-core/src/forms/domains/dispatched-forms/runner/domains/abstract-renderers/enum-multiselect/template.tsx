@@ -3,10 +3,13 @@ import {
   AsyncState,
   DispatchDelta,
   Guid,
+  IdWrapperProps,
   replaceWith,
   Synchronize,
   Unit,
   DispatchOnChange,
+  getLeafIdentifierFromIdentifier,
+  ErrorRendererProps,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -27,7 +30,10 @@ import { OrderedMap } from "immutable";
 export const EnumMultiselectAbstractRenderer = <
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
->() => {
+>(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueRecord> &
@@ -60,16 +66,20 @@ export const EnumMultiselectAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for enum multiselect but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for enum multiselect but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -111,6 +121,7 @@ export const EnumMultiselectAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(
                 replaceWith(
@@ -130,7 +141,7 @@ export const EnumMultiselectAbstractRenderer = <
             },
           }}
         />
-      </span>
+      </>
     );
   }).any([
     Co.Template<

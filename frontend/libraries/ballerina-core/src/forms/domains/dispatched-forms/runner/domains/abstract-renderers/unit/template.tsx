@@ -2,7 +2,10 @@ import { UnitAbstractRendererState, UnitAbstractRendererView } from "./state";
 import {
   DispatchDelta,
   DispatchOnChange,
+  ErrorRendererProps,
   FormLabel,
+  getLeafIdentifierFromIdentifier,
+  IdWrapperProps,
   PredicateValue,
   Template,
   Unit,
@@ -10,7 +13,10 @@ import {
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const UnitAbstractRenderer = <Context extends FormLabel>() =>
+export const UnitAbstractRenderer = <Context extends FormLabel>(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) =>
   Template.Default<
     Context & {
       value: ValueUnit;
@@ -31,13 +37,20 @@ export const UnitAbstractRenderer = <Context extends FormLabel>() =>
         )}`,
       );
       return (
-        <p>{props.context.label}: Unit value expected but got something else</p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Unit value expected but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           foreignMutations={{
@@ -51,11 +64,12 @@ export const UnitAbstractRenderer = <Context extends FormLabel>() =>
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(_, delta);
             },
           }}
         />
-      </span>
+      </>
     );
   }).any([]);

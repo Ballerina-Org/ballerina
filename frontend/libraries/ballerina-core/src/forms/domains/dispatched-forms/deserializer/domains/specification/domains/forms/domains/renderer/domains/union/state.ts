@@ -47,7 +47,7 @@ export const UnionRenderer = {
     Deserialize: <T>(
       type: UnionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)

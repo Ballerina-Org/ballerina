@@ -147,6 +147,8 @@ export const TableDispatcher = {
                                     Map(cellTemplates),
                                     detailsRenderer,
                                     renderer.visibleColumns,
+                                    dispatcherContext.IdProvider,
+                                    dispatcherContext.ErrorRenderer,
                                   )
                                     .mapContext((_: any) => ({
                                       ..._,

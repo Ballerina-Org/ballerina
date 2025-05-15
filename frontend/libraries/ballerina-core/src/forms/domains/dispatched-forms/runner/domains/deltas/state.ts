@@ -5,7 +5,7 @@ import {
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 
-export type DispatchDelta =
+export type DispatchDelta = (
   | DispatchDeltaPrimitive
   | DispatchDeltaOption
   | DispatchDeltaSum
@@ -17,7 +17,10 @@ export type DispatchDelta =
   | DispatchDeltaTuple
   | DispatchDeltaCustom
   | DispatchDeltaUnit
-  | DispatchDeltaTable;
+  | DispatchDeltaTable
+) & {
+  isWholeEntityMutation: boolean;
+};
 export type DispatchDeltaPrimitive =
   | {
       kind: "NumberReplace";
@@ -312,6 +315,8 @@ export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
 
 export type DispatchDeltaTransferComparand = string;
 
+export type DispatchDeltaTransferIsWholeEntityMutation = boolean;
+
 export const DispatchDeltaTransfer = {
   Default: {
     FromDelta:
@@ -333,6 +338,7 @@ export const DispatchDeltaTransfer = {
             [
               DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
               DispatchDeltaTransferComparand,
+              DispatchDeltaTransferIsWholeEntityMutation,
             ],
             string
           >,
@@ -349,6 +355,7 @@ export const DispatchDeltaTransfer = {
         [
           DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
           DispatchDeltaTransferComparand,
+          DispatchDeltaTransferIsWholeEntityMutation,
         ],
         string
       > => {
@@ -356,6 +363,7 @@ export const DispatchDeltaTransfer = {
           [
             DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
             DispatchDeltaTransferComparand,
+            DispatchDeltaTransferIsWholeEntityMutation,
           ],
           string
         > = (() => {
@@ -366,6 +374,8 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -374,6 +384,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[NumberReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -384,6 +395,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -392,6 +404,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[StringReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -402,6 +415,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -410,6 +424,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[BoolReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -420,6 +435,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -428,6 +444,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[TimeReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -438,6 +455,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -446,6 +464,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[GuidReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -456,6 +475,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -464,6 +484,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "UnitReplace",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -474,6 +495,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -482,6 +504,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[OptionReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -494,6 +517,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -502,6 +526,7 @@ export const DispatchDeltaTransfer = {
                   Value: value[0],
                 },
                 `[OptionValue]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -512,6 +537,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -520,6 +546,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[SumReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -532,6 +559,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -540,6 +568,7 @@ export const DispatchDeltaTransfer = {
                   Left: value[0],
                 },
                 `[SumLeft]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -552,6 +581,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -560,6 +590,7 @@ export const DispatchDeltaTransfer = {
                   Right: value[0],
                 },
                 `[SumRight]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -570,6 +601,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -578,6 +610,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[ArrayReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -590,6 +623,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -601,6 +635,7 @@ export const DispatchDeltaTransfer = {
                   },
                 },
                 `[ArrayValue][${delta.value[0]}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -611,6 +646,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -619,6 +655,7 @@ export const DispatchDeltaTransfer = {
                     Add: value,
                   },
                   "[ArrayAdd]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -632,6 +669,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -640,6 +678,7 @@ export const DispatchDeltaTransfer = {
                   AddAt: { Item1: delta.value[0], Item2: element },
                 },
                 `[ArrayAddAt][${delta.value[0]}]`,
+                delta.isWholeEntityMutation,
               ]),
             );
           }
@@ -648,6 +687,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
               ],
               string
             >([
@@ -656,6 +696,7 @@ export const DispatchDeltaTransfer = {
                 RemoveAt: delta.index,
               },
               `[ArrayRemoveAt]`,
+              delta.isWholeEntityMutation,
             ]);
           }
           if (delta.kind == "ArrayMoveFromTo") {
@@ -663,6 +704,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
               ],
               string
             >([
@@ -671,6 +713,7 @@ export const DispatchDeltaTransfer = {
                 MoveFromTo: { Item1: delta.from, Item2: delta.to },
               },
               `[ArrayMoveFromTo]`,
+              delta.isWholeEntityMutation,
             ]);
           }
           if (delta.kind == "ArrayDuplicateAt") {
@@ -678,6 +721,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
               ],
               string
             >([
@@ -686,6 +730,7 @@ export const DispatchDeltaTransfer = {
                 DuplicateAt: delta.index,
               },
               `[ArrayDuplicateAt]`,
+              delta.isWholeEntityMutation,
             ]);
           }
           if (delta.kind == "SetReplace") {
@@ -695,6 +740,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -703,6 +749,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[SetReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -715,6 +762,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -723,6 +771,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[SetValue][${delta.value[0]}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -733,6 +782,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -741,6 +791,7 @@ export const DispatchDeltaTransfer = {
                     Add: value,
                   },
                   `[SetAdd]`,
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -751,6 +802,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -759,6 +811,7 @@ export const DispatchDeltaTransfer = {
                     Remove: value,
                   },
                   `[SetRemove]`,
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -769,6 +822,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -777,6 +831,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[MapReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -789,6 +844,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -797,6 +853,7 @@ export const DispatchDeltaTransfer = {
                   Key: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[MapKey][${delta.value[0]}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -809,6 +866,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -817,6 +875,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[MapValue][${delta.value[0]}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -835,6 +894,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -843,6 +903,7 @@ export const DispatchDeltaTransfer = {
                     Add: { Item1: key, Item2: value },
                   },
                   `[MapAdd]`,
+                  delta.isWholeEntityMutation,
                 ]),
               ),
             );
@@ -852,6 +913,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
               ],
               string
             >([
@@ -860,6 +922,7 @@ export const DispatchDeltaTransfer = {
                 Remove: delta.index,
               },
               `[MapRemove]`,
+              delta.isWholeEntityMutation,
             ]);
           }
           if (delta.kind == "RecordReplace") {
@@ -869,6 +932,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -877,6 +941,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[RecordReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -889,6 +954,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -897,12 +963,15 @@ export const DispatchDeltaTransfer = {
                     (delta.recordType as RecordType<any>).name
                   }${delta.field[0]}`,
                   [delta.field[0]]: value[0],
-                } as { Discriminator: string } & {
+                } as {
+                  Discriminator: string;
+                } & {
                   [
                     field: string
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[RecordField][${delta.field[0]}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -913,6 +982,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -921,6 +991,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[UnionReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -933,18 +1004,22 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
                 {
                   Discriminator: "UnionCase",
                   [delta.caseName[0]]: value,
-                } as { Discriminator: "UnionCase" } & {
+                } as {
+                  Discriminator: "UnionCase";
+                } & {
                   [
                     caseName: string
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[UnionCase][${delta.caseName[0]}]`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -955,6 +1030,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
                   ],
                   string
                 >([
@@ -963,6 +1039,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[TupleReplace]",
+                  delta.isWholeEntityMutation,
                 ]),
             );
           }
@@ -975,6 +1052,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -983,12 +1061,15 @@ export const DispatchDeltaTransfer = {
                     (delta.tupleType as TupleType<any>).args.length
                   }Item${delta.item[0] + 1}`,
                   [`Item${delta.item[0] + 1}`]: value[0],
-                } as { Discriminator: string } & {
+                } as {
+                  Discriminator: string;
+                } & {
                   [
                     item: string
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -1001,6 +1082,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
                 ],
                 string
               >([
@@ -1009,6 +1091,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.id, Item2: value[0] },
                 },
                 `[TableValue][${delta.id}]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
               ]),
             );
           }
@@ -1019,12 +1102,28 @@ export const DispatchDeltaTransfer = {
                 toRawObject,
                 parseCustomDelta,
               ),
-            )(delta);
+            )(delta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >([
+                {
+                  ...value[0],
+                },
+                value[1],
+                delta.isWholeEntityMutation,
+              ]),
+            );
           }
           return ValueOrErrors.Default.throwOne<
             [
               DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
               DispatchDeltaTransferComparand,
+              DispatchDeltaTransferIsWholeEntityMutation,
             ],
             string
           >(`Error: cannot process delta ${delta}, not currently supported.`);

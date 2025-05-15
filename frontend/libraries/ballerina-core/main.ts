@@ -209,7 +209,7 @@ export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-rend
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/one/coroutines/runner";
 export * from "./src/forms/domains/dispatched-forms/built-ins/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/dispatcher/state";
-
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/injectables/state";
 // import { simpleUpdater, simpleUpdaterWithChildren } from "./src/fun/domains/updater/domains/simpleUpdater/state"
 // import { Updater } from "./src/fun/domains/updater/state"
 

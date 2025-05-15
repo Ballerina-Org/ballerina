@@ -63,7 +63,7 @@ import {
   OneAbstractRendererView,
   ValueOption,
 } from "ballerina-core";
-import { DispatchCategoryView } from "../injected-forms/category";
+import { CategoryAbstractRendererView } from "../injected-forms/category";
 import { Map } from "immutable";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
@@ -684,35 +684,40 @@ export const PersonConcreteRenderers = {
   },
   table: {
     table: (props: any) => () => <>Test</>,
-    finiteTable: () => (props: any) => {
-      return (
-        <table>
-          <thead style={{ border: "1px solid black" }}>
-            <tr style={{ border: "1px solid black" }}>
-              {props.TableHeaders.map((header: any) => (
-                <th style={{ border: "1px solid black" }}>{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {props.TableValues.map(([chunkIndex, key]: [number, string]) => (
+    finiteTable:
+      <
+        Context extends FormLabel,
+        ForeignMutationsExpected,
+      >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
+      (props) => {
+        return (
+          <table>
+            <thead style={{ border: "1px solid black" }}>
               <tr style={{ border: "1px solid black" }}>
-                {props.VisibleColumns.map((header: any) => {
-                  return (
-                    <td style={{ border: "1px solid black" }}>
-                      {props.EmbeddedCellTemplates[header](chunkIndex)(key)({
-                        ...props,
-                        view: unit,
-                      })}
-                    </td>
-                  );
-                })}
+                {props.TableHeaders.map((column: any) => (
+                  <th style={{ border: "1px solid black" }}>{column}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-    },
+            </thead>
+            <tbody>
+              {props.EmbeddedTableData.valueSeq()
+                .toArray()
+                .map((row) => (
+                  <tr style={{ border: "1px solid black" }}>
+                    {props.TableHeaders.map((header: string) => (
+                      <td style={{ border: "1px solid black" }}>
+                        {row.get(header)!({
+                          ...props,
+                          view: unit,
+                        })}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        );
+      },
     streamingTable:
       <
         Context extends FormLabel,
@@ -782,17 +787,14 @@ export const PersonConcreteRenderers = {
                             onClick={() => props.foreignMutations.selectRow(id)}
                           />
                         </td>
-                        {row
-                          .valueSeq()
-                          .toArray()
-                          .map((Cell) => (
-                            <td style={{ border: "1px solid black" }}>
-                              {Cell({
-                                ...props,
-                                view: unit,
-                              })}
-                            </td>
-                          ))}
+                        {props.TableHeaders.map((header: string) => (
+                          <td style={{ border: "1px solid black" }}>
+                            {row.get(header)!({
+                              ...props,
+                              view: unit,
+                            })}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                 </tbody>
@@ -849,7 +851,7 @@ export const PersonConcreteRenderers = {
       <
         Context extends FormLabel,
         ForeignMutationsExpected,
-      >(): DispatchCategoryView<Context, ForeignMutationsExpected> =>
+      >(): CategoryAbstractRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
         return (
           <>
@@ -1840,6 +1842,7 @@ export const PersonConcreteRenderers = {
                 customFormState: props.context.customFormState,
               },
               type: props.context.type,
+              isWholeEntityMutation: false,
             };
             setTimeout(() => {
               props.foreignMutations.onChange(
@@ -1875,6 +1878,7 @@ export const PersonConcreteRenderers = {
               customFormState: props.context.customFormState,
             },
             type: props.context.type,
+            isWholeEntityMutation: false,
           };
           setTimeout(() => {
             props.foreignMutations.onChange(

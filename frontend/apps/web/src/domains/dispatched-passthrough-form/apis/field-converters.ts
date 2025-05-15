@@ -39,32 +39,28 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
       }),
     },
     string: {
-      fromAPIRawValue: (_) => (typeof _ == "string" ? _ : ""),
+      fromAPIRawValue: (_) => _,
       toAPIRawValue: ([_, __]) => _,
     },
     number: {
-      fromAPIRawValue: (_) => (typeof _ == "number" ? _ : 0),
+      fromAPIRawValue: (_) => _,
       toAPIRawValue: ([_, __]) => _,
     },
     boolean: {
-      fromAPIRawValue: (_) => (typeof _ == "boolean" ? _ : false),
+      fromAPIRawValue: (_) => _,
       toAPIRawValue: ([_, __]) => _,
     },
     base64File: {
-      fromAPIRawValue: (_) => (typeof _ == "string" ? _ : ""),
+      fromAPIRawValue: (_) => _,
       toAPIRawValue: ([_, __]) => _,
     },
     secret: {
-      fromAPIRawValue: (_) => (typeof _ == "string" ? _ : ""),
+      fromAPIRawValue: (_) => _,
       toAPIRawValue: ([_, isModified]) => (isModified ? _ : undefined),
     },
     Date: {
       fromAPIRawValue: (_) =>
-        typeof _ == "string"
-          ? new Date(Date.parse(_))
-          : typeof _ == "number"
-            ? new Date(_)
-            : new Date(Date.now()),
+        typeof _ == "string" ? new Date(Date.parse(_)) : _,
       toAPIRawValue: ([_, __]) => _,
     },
     union: {
@@ -87,7 +83,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     },
     SingleSelection: {
       fromAPIRawValue: (_) =>
-        _.IsSome == false
+        _?.IsSome == false
           ? CollectionSelection().Default.right("no selection")
           : CollectionSelection().Default.left(_.Value),
       toAPIRawValue: ([_, __]) =>
@@ -105,14 +101,14 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
       toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
     },
     List: {
-      fromAPIRawValue: (_) => (_ == undefined ? List() : List(_)),
+      fromAPIRawValue: (_) => (Array.isArray(_) ? List(_) : _),
       toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
     },
     Map: {
       fromAPIRawValue: (_) =>
-        _ == undefined
-          ? List()
-          : List(_.map((_: { Key: any; Value: any }) => [_.Key, _.Value])),
+        Array.isArray(_)
+          ? List(_.map((_: { Key: any; Value: any }) => [_.Key, _.Value]))
+          : _,
       toAPIRawValue: ([_, __]) =>
         _.valueSeq()
           .toArray()
@@ -151,7 +147,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     },
     Sum: {
       fromAPIRawValue: (_: any) =>
-        _.IsRight ? Sum.Default.right(_.Value) : Sum.Default.left(_.Value),
+        _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value),
       toAPIRawValue: ([_, __]) => ({
         IsRight: _.kind == "r",
         Value: _.value,
@@ -159,7 +155,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     },
     SumUnitDate: {
       fromAPIRawValue: (_: any) =>
-        _.IsRight ? Sum.Default.right(_.Value) : Sum.Default.left(_.Value),
+        _?.IsRight ? Sum.Default.right(_.Value) : Sum.Default.left(_.Value),
       toAPIRawValue: ([_, __]) => ({
         IsRight: _.kind == "r",
         Value: _.value,

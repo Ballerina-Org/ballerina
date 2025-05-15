@@ -18,6 +18,9 @@ import {
   ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -42,6 +45,8 @@ export const RecordAbstractRenderer = <
     }
   >,
   Layout: PredicateFormLayout,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
     fieldName: string,
@@ -97,6 +102,7 @@ export const RecordAbstractRenderer = <
               kind: "RecordField",
               field: [fieldName, nestedDelta],
               recordType: props.context.type,
+              isWholeEntityMutation: false,
             };
 
             props.foreignMutations.onChange(
@@ -158,10 +164,13 @@ export const RecordAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Record value expected for record but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Record value expected for record but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
 
@@ -237,9 +246,10 @@ export const RecordAbstractRenderer = <
     );
 
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           context={{
             ...props.context,
@@ -253,7 +263,7 @@ export const RecordAbstractRenderer = <
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

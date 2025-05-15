@@ -14,6 +14,9 @@ import {
   replaceWith,
   DispatchCommonFormState,
   DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -49,6 +52,8 @@ export const MapAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const embeddedKeyTemplate = (elementIndex: number) =>
     keyTemplate
@@ -107,6 +112,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
@@ -220,6 +226,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapValue",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
@@ -292,16 +299,20 @@ export const MapAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR: Tuple
-          value expected for map but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Tuple value expected for map but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -320,6 +331,7 @@ export const MapAbstractRenderer = <
                 keyType: (props.context.type as MapType<any>).args[0],
                 valueState: GetDefaultValueFormState(),
                 valueType: (props.context.type as MapType<any>).args[1],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -351,6 +363,7 @@ export const MapAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "MapRemove",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -377,7 +390,7 @@ export const MapAbstractRenderer = <
           embeddedKeyTemplate={embeddedKeyTemplate}
           embeddedValueTemplate={embeddedValueTemplate}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

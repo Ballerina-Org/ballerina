@@ -3,9 +3,12 @@ import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
   FormLabel,
+  IdWrapperProps,
   PredicateValue,
   Value,
   DispatchOnChange,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -14,7 +17,10 @@ import { BoolAbstractRendererState } from "./state";
 export const BoolAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   return Template.Default<
     Context &
       Value<boolean> & {
@@ -35,16 +41,20 @@ export const BoolAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Boolean value expected for boolean but got something else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Boolean expected for boolean but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           foreignMutations={{
@@ -58,12 +68,13 @@ export const BoolAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },
           }}
         />
-      </span>
+      </>
     );
   }).any([]);
 };

@@ -9,7 +9,7 @@ import {
   PredicateValue,
   EnumReference,
   ValueOrErrors,
-  InjectedPrimitives,
+  DispatchInjectedPrimitives,
   BasicFun,
   Guid,
   ApiErrors,
@@ -21,6 +21,7 @@ import {
   MapRepo,
   OneAbstractRendererState,
   ValueOption,
+  DispatchInjectables,
 } from "../../../../../main";
 
 import {
@@ -58,17 +59,25 @@ export type DispatchParsedLaunchers<T> = {
   passthrough: Map<string, DispatchParsedPassthroughLauncher<T>>;
 };
 
+export type IdWrapperProps = {
+  id: string;
+};
+
+export type ErrorRendererProps = {
+  message: string;
+};
+
 export type DispatcherContext<
   T extends { [key in keyof T]: { type: any; state: any } },
 > = {
-  injectedPrimitives: InjectedPrimitives<T> | undefined;
+  injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
   getConcreteRendererKind: (viewName: string) => ValueOrErrors<string, string>;
   getConcreteRenderer: (
-    kind: keyof ConcreteRendererKinds,
+    kind: keyof ConcreteRendererKinds<T>,
     name?: string,
     isNested?: boolean,
   ) => ValueOrErrors<any, string>;
@@ -82,6 +91,8 @@ export type DispatcherContext<
   ) => ValueOrErrors<any, string>;
   forms: Map<string, Renderer<T>>;
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
+  IdProvider: (props: IdWrapperProps) => React.ReactNode;
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
@@ -162,14 +173,16 @@ export type DispatchEntityApis = {
 
 export const parseDispatchFormsToLaunchers =
   <T extends { [key in keyof T]: { type: any; state: any } }>(
-    injectedPrimitives: InjectedPrimitives<T> | undefined,
+    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
     defaultRecordRenderer: any,
     defaultNestedRecordRenderer: any,
-    concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
+    IdProvider: (props: IdWrapperProps) => React.ReactNode,
+    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
     tableApiSources?: DispatchTableApiSources,
     lookupSources?: DispatchLookupSources,
   ) =>
@@ -277,6 +290,8 @@ export const parseDispatchFormsToLaunchers =
                 apiConverters,
                 injectedPrimitives,
               ),
+            IdProvider,
+            ErrorRenderer,
           },
         }),
       )
@@ -289,14 +304,16 @@ export type DispatchFormsParserContext<
 > = {
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
-  concreteRenderers: Record<keyof ConcreteRendererKinds, any>;
+  concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>;
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode;
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   fieldTypeConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   lookupSources?: DispatchLookupSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;
-  injectedPrimitives?: Injectables<T>;
+  injectedPrimitives?: DispatchInjectables<T>;
   tableApiSources?: DispatchTableApiSources;
 };
 export type DispatchFormsParserState<

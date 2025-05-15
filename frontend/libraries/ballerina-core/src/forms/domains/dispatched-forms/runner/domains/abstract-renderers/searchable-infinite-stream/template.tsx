@@ -16,6 +16,9 @@ import {
   Value,
   ValueOption,
   DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  getLeafIdentifierFromIdentifier,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -27,7 +30,10 @@ import {
 export const SearchableInfiniteStreamAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
->() => {
+>(
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+) => {
   const Co = CoTypedFactory<
     Context &
       Value<ValueOption> & {
@@ -116,17 +122,20 @@ export const SearchableInfiniteStreamAbstractRenderer = <
         }`,
       );
       return (
-        <p>
-          {props.context.label && `${props.context.label}: `}RENDER ERROR:
-          Option value expected for searchable infinite stream but got something
-          else
-        </p>
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Option value expected for searchable infinite stream but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
       );
     }
     return (
-      <span
-        className={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-      >
+      <>
+        <IdProvider
+          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
+        />
         <props.view
           {...props}
           context={{
@@ -169,6 +178,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(
                 replaceWith(
@@ -207,12 +217,13 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },
           }}
         />
-      </span>
+      </>
     );
   }).any([
     loaderRunner,

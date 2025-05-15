@@ -43,7 +43,6 @@ export type OneAbstractRendererReadonlyContext =
   > & {
     getApi: BasicFun<Guid, Promise<any>>;
     fromApiParser: (value: any) => ValueOrErrors<ValueRecord, string>;
-    id: Guid;
   };
 
 export type OneAbstractRendererState = {
@@ -78,7 +77,7 @@ export const OneAbstractRendererState = {
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
       getChunkWithParams: getChunk,
-      stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())),
+      stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
     },
   }),
   Updaters: {

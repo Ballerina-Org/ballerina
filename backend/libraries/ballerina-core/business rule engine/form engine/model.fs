@@ -308,7 +308,7 @@ module Model =
          RecordType: ExprType |}
     | Union of
       {| Renderer: Renderer
-         Cases: Map<string, Renderer>
+         Cases: Map<string, NestedRenderer>
          UnionType: ExprType |}
     | Table of
       {| Renderer: string

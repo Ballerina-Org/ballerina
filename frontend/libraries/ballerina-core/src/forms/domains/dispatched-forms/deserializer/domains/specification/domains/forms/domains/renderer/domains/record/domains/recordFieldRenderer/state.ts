@@ -56,7 +56,7 @@ export const RecordFieldRenderer = {
   Deserialize: <T>(
     type: DispatchParsedType<T>,
     serialized: unknown,
-    concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>

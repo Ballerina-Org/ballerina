@@ -47,7 +47,7 @@ export const BaseSumUnitDateRenderer = {
     Deserialize: <T>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds, any>,
+      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(
