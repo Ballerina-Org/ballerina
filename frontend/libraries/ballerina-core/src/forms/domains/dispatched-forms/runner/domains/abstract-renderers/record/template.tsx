@@ -175,10 +175,9 @@ export const RecordAbstractRenderer = <
       );
     }
 
-    const updatedBindings = isInlined ? props.context.bindings : props.context.bindings.set(
-      "local",
-      props.context.value,
-    );
+    const updatedBindings = isInlined
+      ? props.context.bindings
+      : props.context.bindings.set("local", props.context.value);
 
     const calculatedLayout = FormLayout.Operations.ComputeLayout(
       updatedBindings,
