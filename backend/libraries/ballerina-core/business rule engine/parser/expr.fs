@@ -168,15 +168,16 @@ module Expr =
     static member Parse<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
-          Value.Parse json |> state.Map Expr.Value,
-          [ Expr.ParseBinaryOperator json
-            Expr.ParseLambda json
-            Expr.ParseMatchCases json
-            Expr.ParseFieldLookup json
-            Expr.ParseIsCase json
-            Expr.ParseVarLookup json
-            Expr.ParseItemLookup json
-            state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
+          state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}."),
+          [ Value.Parse >> state.Map Expr.Value
+            Expr.ParseBinaryOperator
+            Expr.ParseLambda
+            Expr.ParseMatchCases
+            Expr.ParseFieldLookup
+            Expr.ParseIsCase
+            Expr.ParseVarLookup
+            Expr.ParseItemLookup ]
+          |> List.map (fun f -> f json)
         )
       )
       |> state.MapError(Errors.HighestPriority)
@@ -357,16 +358,17 @@ module Expr =
     static member Parse<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
-          Value.ParseBool json,
-          [ Value.ParseIntForBackwardCompatibility json
-            Value.ParseString json
-            Value.ParseUnit json
-            Value.ParseRecord json
-            Value.ParseCaseCons json
-            Value.ParseTuple json
-            Value.ParseInt json
-            Value.ParseFloat json ]
+          Value.ParseBool,
+          [ Value.ParseIntForBackwardCompatibility
+            Value.ParseString
+            Value.ParseUnit
+            Value.ParseRecord
+            Value.ParseCaseCons
+            Value.ParseTuple
+            Value.ParseInt
+            Value.ParseFloat ]
         )
+        |> NonEmptyList.map (fun f -> f json)
       )
 
     static member ToJson(value: Value) : Sum<JsonValue, Errors> =
