@@ -149,11 +149,9 @@ module ExprParserTests =
       JsonValue.Record
         [| "kind", JsonValue.String "record"
            "fields",
-           JsonValue.Array
-             [| JsonValue.Record [| "name", JsonValue.String "name"; "value", JsonValue.String "Alice" |]
-                JsonValue.Record
-                  [| "name", JsonValue.String "age"
-                     "value", JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "30" |] |] |] |]
+           JsonValue.Record
+             [| "name", JsonValue.String "Alice"
+                "age", JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "30" |] |] |]
 
     let result = parseExpr json
 

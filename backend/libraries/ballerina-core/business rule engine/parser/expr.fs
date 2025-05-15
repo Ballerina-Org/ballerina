@@ -335,24 +335,19 @@ module Expr =
                         return!
                           state {
                             let! fieldsJson = fieldsJson |> sum.TryFindField "fields" |> state.OfSum
-
-                            let! fieldsArray = fieldsJson |> JsonValue.AsArray |> state.OfSum
+                            let! fieldAsRecord = fieldsJson |> JsonValue.AsRecord |> state.OfSum
 
                             let! fieldValues =
-                              fieldsArray
-                              |> Array.map (fun fieldJson ->
+                              fieldAsRecord
+                              |> List.ofArray
+                              |> List.map (fun (name, valueJson) ->
                                 state {
-                                  let! fieldAsRecord = fieldJson |> JsonValue.AsRecord |> state.OfSum
-                                  let! nameJson = fieldAsRecord |> sum.TryFindField "name" |> state.OfSum
-                                  let! valueJson = fieldAsRecord |> sum.TryFindField "value" |> state.OfSum
-                                  let! name = JsonValue.AsString nameJson |> state.OfSum
                                   let! value = Value.Parse valueJson
-                                  name, value
+                                  return name, value
                                 })
-                              |> Array.toList
                               |> state.All
 
-                            return fieldValues |> Map.ofList |> Value.Record
+                            fieldValues |> Map.ofList |> Value.Record
                           }
                       }
                       state {
@@ -441,12 +436,12 @@ module Expr =
             |> List.map (fun (fieldName, fieldValue) ->
               sum {
                 let! jsonValue = Value.ToJson fieldValue
-                return JsonValue.Record [| "name", JsonValue.String fieldName; "value", jsonValue |]
+                fieldName, jsonValue
               })
             |> sum.All
 
           JsonValue.Record
             [| "kind", JsonValue.String "record"
-               "fields", jsonFields |> Array.ofList |> JsonValue.Array |]
+               "fields", jsonFields |> Array.ofList |> JsonValue.Record |]
         | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
       }
