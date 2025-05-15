@@ -31,7 +31,7 @@ module Model =
   and Value =
     | Unit
     | ConstInt of int
-    | ConstFloat of float
+    | ConstFloat of decimal
     | ConstString of string
     | ConstBool of bool
     | ConstGuid of Guid

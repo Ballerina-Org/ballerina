@@ -178,6 +178,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(
                 replaceWith(
@@ -216,6 +217,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(replaceWith(_), delta);
             },

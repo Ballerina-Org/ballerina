@@ -75,6 +75,7 @@ export const DateAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  isWholeEntityMutation: false,
                 };
                 setTimeout(() => {
                   props.foreignMutations.onChange(replaceWith(newValue), delta);

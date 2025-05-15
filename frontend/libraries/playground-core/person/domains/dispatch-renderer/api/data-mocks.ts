@@ -328,6 +328,7 @@ const entityApis: EntityApis = {
         return (id: Guid) => {
           console.log(`get person ${id}`);
           return Promise.resolve({
+            Id: v4(),
             // Job: {
             //   Discriminator: "Developer",
             //   Developer: {

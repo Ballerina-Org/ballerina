@@ -1,11 +1,9 @@
 import { Map } from "immutable";
 import React from "react";
 import {
-  AbstractTableRendererState,
   AsyncState,
   BasicUpdater,
   CommonAbstractRendererReadonlyContext,
-  CommonAbstractRendererState,
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
@@ -16,8 +14,6 @@ import {
   replaceWith,
   Synchronized,
   Template,
-  Unit,
-  unit,
   ValueInfiniteStreamState,
   ValueOption,
   ValueOrErrors,
@@ -155,6 +151,7 @@ export const OneAbstractRenderer = (
         const delta: DispatchDelta = {
           kind: "OptionValue",
           value: nestedDelta,
+          isWholeEntityMutation: true,
         };
 
         props.foreignMutations.onChange(id, delta);
@@ -239,6 +236,7 @@ export const OneAbstractRenderer = (
           const delta: DispatchDelta = {
             kind: "OptionValue",
             value: nestedDelta,
+            isWholeEntityMutation: true,
           };
 
           props.foreignMutations.onChange(id, delta);
@@ -268,6 +266,52 @@ export const OneAbstractRenderer = (
           props.context.value,
         )}`}
       />;
+    }
+
+    const local = props.context.bindings.get("local");
+    if (local == undefined) {
+      console.error(
+        `local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`}
+        />
+      );
+    }
+
+    if (!PredicateValue.Operations.IsRecord(local)) {
+      console.error(
+        `local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`}
+        />
+      );
+    }
+
+    if (!local.fields.has("Id")) {
+      console.error(
+        `local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`}
+        />
+      );
+    }
+
+    const Id = local.fields.get("Id")!; // safe because of above check;
+    if (!PredicateValue.Operations.IsString(Id)) {
+      console.error(
+        `local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`}
+        />
+      );
     }
 
     if (
@@ -381,6 +425,7 @@ export const OneAbstractRenderer = (
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: true,
               };
               props.setState(
                 OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
@@ -402,18 +447,48 @@ export const OneAbstractRenderer = (
   }).any([
     initializeOneRunner,
     oneTableLoaderRunner,
-    oneTableDebouncerRunner.mapContextFromProps((props) => ({
-      ...props.context,
-      onDebounce: () =>
-        props.setState(
-          OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-            ValueInfiniteStreamState.Updaters.Template.reload(
-              props.context.customFormState.getChunkWithParams(
-                props.context.customFormState.searchText.value,
-              )(Map()),
+    oneTableDebouncerRunner.mapContextFromProps((props) => {
+      const local = props.context.bindings.get("local");
+      if (local == undefined) {
+        console.error(
+          `local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`,
+        );
+        return undefined;
+      }
+
+      if (!PredicateValue.Operations.IsRecord(local)) {
+        console.error(
+          `local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`,
+        );
+        return undefined;
+      }
+
+      if (!local.fields.has("Id")) {
+        console.error(
+          `local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`,
+        );
+        return undefined;
+      }
+
+      const Id = local.fields.get("Id")!; // safe because of above check;
+      if (!PredicateValue.Operations.IsString(Id)) {
+        console.error(
+          `local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`,
+        );
+        return undefined;
+      }
+      return {
+        ...props.context,
+        onDebounce: () => {
+          props.setState(
+            OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+              ValueInfiniteStreamState.Updaters.Template.reload(
+                props.context.customFormState.getChunkWithParams(Id)(Map()),
+              ),
             ),
-          ),
-        ),
-    })),
+          );
+        },
+      };
+    }),
   ]);
 };

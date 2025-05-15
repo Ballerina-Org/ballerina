@@ -534,7 +534,7 @@ module Validator =
                 match formCases.Cases |> Map.tryFind typeCase.Key.CaseName with
                 | None ->
                   sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
-                | Some formCase -> Renderer.Validate codegen ctx typeCase.Value.Fields formCase)
+                | Some formCase -> NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase)
               |> sum.All
               |> Sum.map ignore
 
@@ -612,7 +612,7 @@ module Validator =
               |> state.OfSum
 
             do!
-              Renderer.ValidatePredicates
+              NestedRenderer.ValidatePredicates
                 FormConfig.ValidatePredicates
                 ctx
                 globalType

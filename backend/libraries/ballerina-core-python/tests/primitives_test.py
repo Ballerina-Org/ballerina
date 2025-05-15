@@ -1,6 +1,7 @@
 import pytest
 
-from ballerina_core.primitives import Option, Sum
+from ballerina_core.primitives.option import Option
+from ballerina_core.primitives.sum import Sum
 
 
 class TestSum:

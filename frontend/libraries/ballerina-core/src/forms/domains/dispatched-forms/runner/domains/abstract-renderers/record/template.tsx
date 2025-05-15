@@ -47,6 +47,7 @@ export const RecordAbstractRenderer = <
   Layout: PredicateFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  isInlined: boolean,
 ): Template<any, any, any, any> => {
   const embedFieldTemplate = (
     fieldName: string,
@@ -77,7 +78,7 @@ export const RecordAbstractRenderer = <
           ...(_.fieldStates?.get(fieldName) ||
             FieldTemplates.get(fieldName)!.GetDefaultState()),
           disabled: _.disabled,
-          bindings: _.bindings,
+          bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
           extraContext: _.extraContext,
         }),
       )
@@ -102,6 +103,7 @@ export const RecordAbstractRenderer = <
               kind: "RecordField",
               field: [fieldName, nestedDelta],
               recordType: props.context.type,
+              isWholeEntityMutation: false,
             };
 
             props.foreignMutations.onChange(
@@ -173,10 +175,9 @@ export const RecordAbstractRenderer = <
       );
     }
 
-    const updatedBindings = props.context.bindings.set(
-      "local",
-      props.context.value,
-    );
+    const updatedBindings = isInlined
+      ? props.context.bindings
+      : props.context.bindings.set("local", props.context.value);
 
     const calculatedLayout = FormLayout.Operations.ComputeLayout(
       updatedBindings,

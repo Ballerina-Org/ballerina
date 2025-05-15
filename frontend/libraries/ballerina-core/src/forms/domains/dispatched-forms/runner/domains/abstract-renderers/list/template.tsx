@@ -97,6 +97,7 @@ export const ListAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: false,
             };
             props.foreignMutations.onChange(
               Updater((list) =>
@@ -184,6 +185,7 @@ export const ListAbstractRenderer = <
                   elementFormStates: props.context.elementFormStates,
                 },
                 type: (props.context.type as ListType<any>).args[0],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -207,6 +209,7 @@ export const ListAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "ArrayRemoveAt",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -229,6 +232,7 @@ export const ListAbstractRenderer = <
                 kind: "ArrayMoveFromTo",
                 from: index,
                 to: to,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -253,6 +257,7 @@ export const ListAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "ArrayDuplicateAt",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -276,6 +281,7 @@ export const ListAbstractRenderer = <
                 value: [_, GetDefaultElementValue()],
                 elementState: GetDefaultElementState(),
                 elementType: (props.context.type as ListType<any>).args[0],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>

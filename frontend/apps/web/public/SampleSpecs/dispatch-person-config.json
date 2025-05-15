@@ -352,6 +352,7 @@
     },
     "Person": {
       "fields": {
+        "Id": "guid",
         "Job": "Job",
         "Category": "injectedCategory",
         "FullName": {

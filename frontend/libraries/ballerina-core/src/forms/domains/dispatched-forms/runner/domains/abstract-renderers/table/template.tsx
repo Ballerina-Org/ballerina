@@ -71,11 +71,15 @@ export const TableAbstractRenderer = <
             rowState?.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
 
+          const rowValue = _.customFormState.stream.loadedElements
+            .get(chunkIndex)
+            ?.data.get(rowId);
+
           return {
             value,
             ...cellState,
             disabled,
-            bindings: _.bindings,
+            bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
             identifiers: {
               withLauncher: _.identifiers.withLauncher.concat(
@@ -142,6 +146,7 @@ export const TableAbstractRenderer = <
               id: rowId,
               nestedDelta: nestedDelta,
               tableType: props.context.type,
+              isWholeEntityMutation: false,
             };
 
             props.foreignMutations.onChange(id, delta);
@@ -166,7 +171,7 @@ export const TableAbstractRenderer = <
         value,
         ...recordRowState,
         disabled: _.disabled,
-        bindings: _.bindings,
+        bindings: _.bindings.set("local", _.value),
         extraContext: _.extraContext,
         identifiers: {
           withLauncher: _.identifiers.withLauncher.concat(
@@ -217,6 +222,7 @@ export const TableAbstractRenderer = <
             id: props.context.customFormState.selectedDetailRow,
             nestedDelta: nestedDelta,
             tableType: props.context.type,
+            isWholeEntityMutation: false,
           };
 
           props.foreignMutations.onChange(id, delta);
@@ -276,7 +282,10 @@ export const TableAbstractRenderer = <
         />
       );
     }
-
+    // TODO we currently only calculated disabled status on a column basis, predicates will break if we
+    // try to use their local binding (the local is the table).
+    // Later we need to then calculate the disabled on a CELL level, by giving the calculations
+    // the row local binding and calculating per row, not per column.
     const disabledColumnKeys = ValueOrErrors.Operations.All(
       List(
         CellTemplates.map(({ disabled }, fieldName) =>

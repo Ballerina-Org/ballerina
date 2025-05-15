@@ -112,6 +112,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
@@ -225,6 +226,7 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapValue",
               value: [elementIndex, nestedDelta],
+              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
               Updater((elements: ValueTuple) =>
@@ -329,6 +331,7 @@ export const MapAbstractRenderer = <
                 keyType: (props.context.type as MapType<any>).args[0],
                 valueState: GetDefaultValueFormState(),
                 valueType: (props.context.type as MapType<any>).args[1],
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>
@@ -360,6 +363,7 @@ export const MapAbstractRenderer = <
               const delta: DispatchDelta = {
                 kind: "MapRemove",
                 index: _,
+                isWholeEntityMutation: true, // TODO: check
               };
               props.foreignMutations.onChange(
                 Updater((list) =>

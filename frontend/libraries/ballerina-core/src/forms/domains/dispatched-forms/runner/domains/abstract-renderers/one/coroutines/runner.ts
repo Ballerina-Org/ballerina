@@ -20,7 +20,9 @@ import {
   ValueRecord,
   ValueUnit,
   DispatchOnChange,
+  replaceWith,
 } from "../../../../../../../../../main";
+import { Map } from "immutable";
 
 const Co = CoTypedFactory<
   OneAbstractRendererReadonlyContext,
@@ -44,6 +46,38 @@ const intializeOne = Co.GetState().then((current) => {
     return Co.Wait(0);
   }
 
+  /// When initailising, in both stages, inject the id to the get chunk
+
+  const local = current.bindings.get("local");
+  if (local == undefined) {
+    console.error(
+      `local binding is undefined when intialising one\n...${current.identifiers.withLauncher}`,
+    );
+    return Co.Wait(0);
+  }
+
+  if (!PredicateValue.Operations.IsRecord(local)) {
+    console.error(
+      `local binding is not a record when intialising one\n...${current.identifiers.withLauncher}`,
+    );
+    return Co.Wait(0);
+  }
+
+  if (!local.fields.has("Id")) {
+    console.error(
+      `local binding is missing Id (check casing) when intialising one\n...${current.identifiers.withLauncher}`,
+    );
+    return Co.Wait(0);
+  }
+
+  const id = local.fields.get("Id")!; // safe because of above check;
+  if (!PredicateValue.Operations.IsString(id)) {
+    console.error(
+      `local Id is not a string when intialising one\n...${current.identifiers.withLauncher}`,
+    );
+    return Co.Wait(0);
+  }
+
   const hasInitialValue =
     (PredicateValue.Operations.IsOption(current.value) &&
       current.value.isSome) ||
@@ -53,34 +87,59 @@ const intializeOne = Co.GetState().then((current) => {
       PredicateValue.Operations.IsOption(current.value) && current.value.isSome
         ? current.value.value
         : PredicateValue.Default.unit();
+
     return Co.SetState(
-      OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-        Synchronized.Updaters.sync(
-          AsyncState.Updaters.toLoaded(
-            ValueOrErrors.Default.return(initialValue),
+      OneAbstractRendererState.Updaters.Core.customFormState.children
+        .selectedValue(
+          Synchronized.Updaters.sync(
+            AsyncState.Updaters.toLoaded(
+              ValueOrErrors.Default.return(initialValue),
+            ),
+          ),
+        )
+        .then(
+          OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+            replaceWith(
+              ValueInfiniteStreamState.Default(
+                10,
+                current.customFormState.getChunkWithParams(id)(Map()),
+              ),
+            ),
           ),
         ),
-      ),
     );
   }
 
-  return Synchronize<Unit, ValueOrErrors<ValueRecord | ValueUnit, string>>(
-    (_) =>
-      current.getApi(current.id).then((value) => {
-        return current.fromApiParser(value).Then((result) => {
-          return ValueOrErrors.Default.return(result);
-        });
-      }),
-    () => "transient failure",
-    5,
-    150,
-  ).embed(
-    (_) => _.customFormState.selectedValue,
-    (_) =>
-      OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-        _,
+  return Co.Seq([
+    Co.SetState(
+      OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+        replaceWith(
+          ValueInfiniteStreamState.Default(
+            10,
+            current.customFormState.getChunkWithParams(id)(Map()),
+          ),
+        ),
       ),
-  );
+    ),
+    Synchronize<Unit, ValueOrErrors<ValueRecord | ValueUnit, string>>(
+      (_) =>
+        current.getApi(id).then((value) => {
+          return current.fromApiParser(value).Then((result) => {
+            console.debug("result X", current.getApi);
+            return ValueOrErrors.Default.return(result);
+          });
+        }),
+      () => "transient failure",
+      5,
+      150,
+    ).embed(
+      (_) => _.customFormState.selectedValue,
+      (_) =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+          _,
+        ),
+    ),
+  ]);
 });
 
 const debouncer = DebouncerCo.Repeat(

@@ -1842,6 +1842,7 @@ export const PersonConcreteRenderers = {
                 customFormState: props.context.customFormState,
               },
               type: props.context.type,
+              isWholeEntityMutation: false,
             };
             setTimeout(() => {
               props.foreignMutations.onChange(
@@ -1877,6 +1878,7 @@ export const PersonConcreteRenderers = {
               customFormState: props.context.customFormState,
             },
             type: props.context.type,
+            isWholeEntityMutation: false,
           };
           setTimeout(() => {
             props.foreignMutations.onChange(

@@ -64,6 +64,7 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
                   customFormState: props.context.customFormState,
                 },
                 type: props.context.type,
+                isWholeEntityMutation: false,
               };
               props.foreignMutations.onChange(_, delta);
             },
