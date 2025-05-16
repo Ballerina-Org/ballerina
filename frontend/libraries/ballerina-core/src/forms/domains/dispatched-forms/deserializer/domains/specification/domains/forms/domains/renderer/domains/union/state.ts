@@ -65,7 +65,12 @@ export const UnionRenderer = {
                   ).Then((caseType) =>
                     Renderer.Operations.Deserialize(
                       caseType,
-                      caseRenderer,
+                      // TODO likely the cases should be typed as nested renderers to avoid this
+                      typeof caseRenderer === "object" &&
+                        caseRenderer !== null &&
+                        "renderer" in caseRenderer
+                        ? caseRenderer.renderer
+                        : caseRenderer,
                       concreteRenderers,
                       types,
                     ).Then((caseRenderer) =>
