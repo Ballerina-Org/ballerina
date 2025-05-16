@@ -10,25 +10,25 @@ class TestOptionSerializer:
         value = Option.some(42)
         serializer = option_to_json(int_to_json)
         serialized = serializer(value)
-        assert serialized == {"discriminator": "some", "value": 42}
+        assert serialized == {"case": "some", "value": 42}
 
     @staticmethod
     def test_option_to_json_none() -> None:
         value: Option[int] = Option.nothing()
         serializer = option_to_json(int_to_json)
         serialized = serializer(value)
-        assert serialized == {"discriminator": "nothing", "value": None}
+        assert serialized == {"case": "nothing", "value": None}
 
     @staticmethod
     def test_option_from_json_some() -> None:
-        serialized: Json = {"discriminator": "some", "value": 42}
+        serialized: Json = {"case": "some", "value": 42}
         deserializer = option_from_json(int_from_json)
         value = deserializer(serialized)
         assert value == Option.some(42)
 
     @staticmethod
     def test_option_from_json_none() -> None:
-        serialized: Json = {"discriminator": "nothing", "value": None}
+        serialized: Json = {"case": "nothing", "value": None}
         deserializer = option_from_json(int_from_json)
         value = deserializer(serialized)
         assert value == Option.nothing()
