@@ -1,6 +1,5 @@
 from decimal import Decimal
 
-from ballerina_core.parsing.dictionary import dict_from_json, dict_to_json
 from ballerina_core.parsing.list import list_from_json, list_to_json
 from ballerina_core.parsing.parsing_types import Json
 from ballerina_core.parsing.primitives import (
@@ -15,7 +14,6 @@ from ballerina_core.parsing.primitives import (
     str_from_json,
     str_to_json,
 )
-from ballerina_core.parsing.products import tuple1_from_json, tuple1_to_json, tuple2_from_json, tuple2_to_json
 
 
 class TestPrimitivesSerializer:
@@ -84,49 +82,3 @@ class TestListSerializer:
         deserializer = list_from_json(int_from_json)
         value = deserializer(serialized)
         assert value == [1, 2, 3]
-
-
-class TestProductsSerializer:
-    @staticmethod
-    def test_tuple1_to_json() -> None:
-        value = (42,)
-        serializer = tuple1_to_json(int_to_json)
-        serialized = serializer(value)
-        assert serialized == {"Item0": 42}
-
-    @staticmethod
-    def test_tuple1_from_json() -> None:
-        serialized: Json = {"Item0": 42}
-        deserializer = tuple1_from_json(int_from_json)
-        value = deserializer(serialized)
-        assert value == (42,)
-
-    @staticmethod
-    def test_tuple2_to_json() -> None:
-        value = (42, "hello")
-        serializer = tuple2_to_json(int_to_json, str_to_json)
-        serialized = serializer(value)
-        assert serialized == {"Item0": 42, "Item1": "hello"}
-
-    @staticmethod
-    def test_tuple2_from_json() -> None:
-        serialized: Json = {"Item0": 42, "Item1": "hello"}
-        deserializer = tuple2_from_json(int_from_json, str_from_json)
-        value = deserializer(serialized)
-        assert value == (42, "hello")
-
-
-class TestDictionarySerializer:
-    @staticmethod
-    def test_dict_to_json() -> None:
-        value = {"a": 42, "b": 43}
-        serializer = dict_to_json(str_to_json, int_to_json)
-        serialized = serializer(value)
-        assert serialized == {"a": 42, "b": 43}
-
-    @staticmethod
-    def test_dict_from_json() -> None:
-        serialized: Json = {"a": 42, "b": 43}
-        deserializer = dict_from_json(str_from_json, int_from_json)
-        value = deserializer(serialized)
-        assert value == {"a": 42, "b": 43}
