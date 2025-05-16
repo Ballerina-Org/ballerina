@@ -402,3 +402,31 @@ module ExprParserErrorTests =
     | Right errors ->
       Assert.That(errors.Errors.Head.Message, Is.EqualTo "Error: MakeRecord not implemented")
       Assert.That(errors.Errors.Tail, Is.Empty)
+
+  [<Test>]
+  let ``Should return an error for each parser if the kind is invalid`` () =
+    let json = JsonValue.Record [| "kind", JsonValue.String "invalid" |]
+
+    let result = parseExpr json
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right errors -> Assert.That(errors.Errors |> NonEmptyList.ToList |> List.length, Is.GreaterThan 1)
+
+  [<TestCase("int")>]
+  [<TestCase("and")>]
+  [<TestCase("lambda")>]
+  [<TestCase("matchCase")>]
+  [<TestCase("fieldLookup")>]
+  [<TestCase("isCase")>]
+  [<TestCase("record")>]
+  [<TestCase("caseCons")>]
+  [<TestCase("tuple")>]
+  let ``Should only return an error for the specific parser if the kind is invalid`` (kind: string) =
+    let json = JsonValue.Record [| "kind", JsonValue.String kind |]
+
+    let result = parseExpr json
+
+    match result with
+    | Left _ -> Assert.Fail "Expected error but got success"
+    | Right errors -> Assert.That(errors.Errors |> NonEmptyList.ToList |> List.length, Is.EqualTo 1)
