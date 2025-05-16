@@ -56,7 +56,6 @@ export const RecordRenderer = {
       (_.length == 0 || _.every((e) => typeof e == "string")),
     tryAsValidRecordForm: <T>(
       _: unknown,
-      canOmitType: boolean,
     ): ValueOrErrors<SerializedRecordRenderer, string> =>
       !DispatchIsObject(_)
         ? ValueOrErrors.Default.throwOne("record form is not an object")
@@ -75,22 +74,18 @@ export const RecordRenderer = {
               ? ValueOrErrors.Default.throwOne(
                   "record form extends attribute is not an array of strings",
                 )
-              : !canOmitType && !("type" in _)
+              : "type" in _ && typeof _.type != "string"
                 ? ValueOrErrors.Default.throwOne(
-                    "form is missing the required type attribute, only inlined table detail renderers may omit it",
+                    "top level record form type attribute is not a string",
                   )
-                : "type" in _ && typeof _.type != "string"
-                  ? ValueOrErrors.Default.throwOne(
-                      "top level record form type attribute is not a string",
-                    )
-                  : ValueOrErrors.Default.return({
-                      ..._,
-                      type: "type" in _ ? (_.type as string) : undefined,
-                      fields: Map(_.fields as object),
-                      tabs: _.tabs as object,
-                      extends:
-                        "extends" in _ ? (_.extends as string[]) : undefined,
-                    }),
+                : ValueOrErrors.Default.return({
+                    ..._,
+                    type: "type" in _ ? (_.type as string) : undefined,
+                    fields: Map(_.fields as object),
+                    tabs: _.tabs as object,
+                    extends:
+                      "extends" in _ ? (_.extends as string[]) : undefined,
+                  }),
     DeserializeRenderer: <T>(
       type: RecordType<T>,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
@@ -104,74 +99,70 @@ export const RecordRenderer = {
             concreteRenderers,
             types,
             undefined,
-            typeof serialized == "object",
           )
         : ValueOrErrors.Default.return(undefined),
-
     Deserialize: <T>(
       type: RecordType<T>,
       serialized: unknown,
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType: boolean, // Being used now to know if the record is inlined or not, longer term should rename to isInlined
+      isInlined: boolean,
     ): ValueOrErrors<RecordRenderer<T>, string> =>
-      RecordRenderer.Operations.tryAsValidRecordForm(
-        serialized,
-        canOmitType,
-      ).Then((validRecordForm) =>
-        ValueOrErrors.Operations.All(
-          List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(
-            validRecordForm.fields
-              .toArray()
-              .map(([fieldName, recordFieldRenderer]: [string, unknown]) =>
-                MapRepo.Operations.tryFindWithError(
-                  fieldName,
-                  type.fields,
-                  () => `Cannot find field type for ${fieldName} in fields`,
-                ).Then((fieldType) =>
-                  RecordFieldRenderer.Deserialize(
-                    fieldType,
-                    recordFieldRenderer,
-                    concreteRenderers,
-                    types,
+      RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
+        (validRecordForm) =>
+          ValueOrErrors.Operations.All(
+            List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(
+              validRecordForm.fields
+                .toArray()
+                .map(([fieldName, recordFieldRenderer]: [string, unknown]) =>
+                  MapRepo.Operations.tryFindWithError(
                     fieldName,
-                  ).Then((renderer) =>
-                    ValueOrErrors.Default.return([fieldName, renderer]),
-                  ),
-                ),
-              ),
-          ),
-        )
-          .Then((fieldTuples) =>
-            RecordRenderer.Operations.DeserializeRenderer(
-              type,
-              concreteRenderers,
-              types,
-              validRecordForm.renderer,
-            ).Then((renderer) =>
-              FormLayout.Operations.ParseLayout(validRecordForm)
-                .Then((tabs) =>
-                  ValueOrErrors.Default.return(
-                    RecordRenderer.Default(
-                      type,
-                      Map(fieldTuples.toArray()),
-                      tabs,
-                      canOmitType,
-                      validRecordForm.extends,
-                      renderer,
+                    type.fields,
+                    () => `Cannot find field type for ${fieldName} in fields`,
+                  ).Then((fieldType) =>
+                    RecordFieldRenderer.Deserialize(
+                      fieldType,
+                      recordFieldRenderer,
+                      concreteRenderers,
+                      types,
+                      fieldName,
+                    ).Then((renderer) =>
+                      ValueOrErrors.Default.return([fieldName, renderer]),
                     ),
                   ),
-                )
-                .MapErrors((errors) =>
-                  errors.map((error) => `${error}\n...When parsing tabs`),
                 ),
             ),
           )
-          .MapErrors((errors) =>
-            errors.map(
-              (error) => `${error}\n...When parsing as RecordForm renderer`,
+            .Then((fieldTuples) =>
+              RecordRenderer.Operations.DeserializeRenderer(
+                type,
+                concreteRenderers,
+                types,
+                validRecordForm.renderer,
+              ).Then((renderer) =>
+                FormLayout.Operations.ParseLayout(validRecordForm)
+                  .Then((tabs) =>
+                    ValueOrErrors.Default.return(
+                      RecordRenderer.Default(
+                        type,
+                        Map(fieldTuples.toArray()),
+                        tabs,
+                        isInlined,
+                        validRecordForm.extends,
+                        renderer,
+                      ),
+                    ),
+                  )
+                  .MapErrors((errors) =>
+                    errors.map((error) => `${error}\n...When parsing tabs`),
+                  ),
+              ),
+            )
+            .MapErrors((errors) =>
+              errors.map(
+                (error) => `${error}\n...When parsing as RecordForm renderer`,
+              ),
             ),
-          ),
       ),
   },
 };

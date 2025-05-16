@@ -94,7 +94,6 @@ export const Renderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType?: boolean,
     ): ValueOrErrors<Renderer<T>, string> =>
       Renderer.Operations.Deserialize(
         type,
@@ -102,7 +101,6 @@ export const Renderer = {
         concreteRenderers,
         types,
         undefined,
-        canOmitType ?? false,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -112,7 +110,7 @@ export const Renderer = {
       concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
-      canOmitType?: boolean,
+      isInlined?: boolean,
     ): ValueOrErrors<Renderer<T>, string> =>
       type.kind == "lookup"
         ? MapRepo.Operations.tryFindWithError(
@@ -126,7 +124,7 @@ export const Renderer = {
               concreteRenderers,
               types,
               api,
-              canOmitType,
+              isInlined,
             ),
           )
         : typeof serialized == "string"
@@ -207,7 +205,7 @@ export const Renderer = {
                                 serialized,
                                 concreteRenderers,
                                 types,
-                                canOmitType ?? false,
+                                isInlined ?? false,
                               )
                             : type.kind == "union"
                               ? UnionRenderer.Operations.Deserialize(
