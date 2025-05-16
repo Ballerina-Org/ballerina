@@ -168,19 +168,18 @@ module Expr =
     static member Parse<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
-          state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}."),
-          [ Value.Parse >> state.Map Expr.Value
-            Expr.ParseBinaryOperator
-            Expr.ParseLambda
-            Expr.ParseMatchCases
-            Expr.ParseFieldLookup
-            Expr.ParseIsCase
-            Expr.ParseVarLookup
-            Expr.ParseItemLookup ]
-          |> List.map (fun f -> f json)
+          (Value.Parse >> state.Map Expr.Value) json,
+          [ Expr.ParseBinaryOperator json
+            Expr.ParseLambda json
+            Expr.ParseMatchCases json
+            Expr.ParseFieldLookup json
+            Expr.ParseIsCase json
+            Expr.ParseVarLookup json
+            Expr.ParseItemLookup json
+            state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
         )
       )
-      |> state.MapError(Errors.HighestPriority)
+      |> state.MapError Errors.HighestPriority
 
     static member ToJson<'config, 'context>(expr: Expr) : Sum<JsonValue, Errors> =
       let (!) = Expr.ToJson
