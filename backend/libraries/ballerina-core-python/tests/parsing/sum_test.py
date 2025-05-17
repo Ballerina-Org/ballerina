@@ -22,13 +22,13 @@ class TestSumSerializer:
     @staticmethod
     def test_sum_from_json_left() -> None:
         serialized: Json = {"case": "left", "value": int_to_json(42)}
-        deserializer = sum_from_json(int_from_json, string_from_json)
-        value = deserializer(serialized)
+        parser = sum_from_json(int_from_json, string_from_json)
+        value = parser(serialized)
         assert value == Sum[int, str].left(42)
 
     @staticmethod
     def test_sum_from_json_right() -> None:
         serialized: Json = {"case": "right", "value": string_to_json("42")}
-        deserializer = sum_from_json(int_from_json, string_from_json)
-        value = deserializer(serialized)
+        parser = sum_from_json(int_from_json, string_from_json)
+        value = parser(serialized)
         assert value == Sum[int, str].right("42")

@@ -22,13 +22,13 @@ class TestOptionSerializer:
     @staticmethod
     def test_option_from_json_some() -> None:
         serialized: Json = {"case": "some", "value": int_to_json(42)}
-        deserializer = option_from_json(int_from_json)
-        value = deserializer(serialized)
+        parser = option_from_json(int_from_json)
+        value = parser(serialized)
         assert value == Option.some(42)
 
     @staticmethod
     def test_option_from_json_none() -> None:
         serialized: Json = {"case": "nothing", "value": None}
-        deserializer = option_from_json(int_from_json)
-        value = deserializer(serialized)
+        parser = option_from_json(int_from_json)
+        value = parser(serialized)
         assert value == Option.nothing()

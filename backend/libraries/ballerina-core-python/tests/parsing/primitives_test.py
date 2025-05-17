@@ -79,6 +79,6 @@ class TestListSerializer:
     @staticmethod
     def test_list_from_json() -> None:
         serialized: Json = [int_to_json(1), int_to_json(2), int_to_json(3)]
-        deserializer = list_from_json(int_from_json)
-        value = deserializer(serialized)
+        parser = list_from_json(int_from_json)
+        value = parser(serialized)
         assert value == [1, 2, 3]
