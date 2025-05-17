@@ -8,7 +8,7 @@ from ballerina_core.unit import Unit, unit
 _KIND_KEY: str = "kind"
 
 
-def string_to_json(value: str) -> str:
+def string_to_json(value: str) -> Json:
     return value
 
 
