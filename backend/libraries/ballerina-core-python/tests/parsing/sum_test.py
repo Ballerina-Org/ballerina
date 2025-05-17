@@ -1,4 +1,4 @@
-from ballerina_core.parsing.parsing_types import Json
+from ballerina_core.parsing.parsing_types import FromJson, Json
 from ballerina_core.parsing.primitives import int_from_json, int_to_json, string_from_json, string_to_json
 from ballerina_core.parsing.sum import sum_from_json, sum_to_json
 from ballerina_core.sum import Sum
@@ -22,13 +22,13 @@ class TestSumSerializer:
     @staticmethod
     def test_sum_from_json_left() -> None:
         serialized: Json = {"case": "left", "value": int_to_json(42)}
-        parser = sum_from_json(int_from_json, string_from_json)
+        parser: FromJson[Sum[int, str]] = sum_from_json(int_from_json, string_from_json)
         value = parser(serialized)
-        assert value == Sum[int, str].left(42)
+        assert value == Sum.right(Sum[int, str].left(42))
 
     @staticmethod
     def test_sum_from_json_right() -> None:
         serialized: Json = {"case": "right", "value": string_to_json("42")}
-        parser = sum_from_json(int_from_json, string_from_json)
+        parser: FromJson[Sum[int, str]] = sum_from_json(int_from_json, string_from_json)
         value = parser(serialized)
-        assert value == Sum[int, str].right("42")
+        assert value == Sum.right(Sum[int, str].right("42"))

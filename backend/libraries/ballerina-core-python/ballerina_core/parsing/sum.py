@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
+from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
 from ballerina_core.sum import Sum
 
 _SumL = TypeVar("_SumL")
@@ -25,21 +25,21 @@ def sum_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) ->
 
 
 def sum_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
-    def from_json(value: Json) -> Sum[_SumL, _SumR]:
+    def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
         match value:
             case dict():
                 if _CASE_KEY not in value:
-                    raise ValueError(f"Missing {_CASE_KEY}: {value}")
+                    return Sum.left(ParsingError.single(f"Missing {_CASE_KEY}: {value}"))
                 if _VALUE_KEY not in value:
-                    raise ValueError(f"Missing {_VALUE_KEY}: {value}")
+                    return Sum.left(ParsingError.single(f"Missing {_VALUE_KEY}: {value}"))
                 match value[_CASE_KEY]:
                     case discriminator if discriminator == _LEFT_VALUE:
-                        return Sum.left(left_from_json(value[_VALUE_KEY]))
+                        return left_from_json(value[_VALUE_KEY]).map_right(Sum.left)
                     case discriminator if discriminator == _RIGHT_VALUE:
-                        return Sum.right(right_from_json(value[_VALUE_KEY]))
+                        return right_from_json(value[_VALUE_KEY]).map_right(Sum.right)
                     case _:
-                        raise ValueError(f"Invalid {_CASE_KEY}: {value}")
+                        return Sum.left(ParsingError.single(f"Invalid {_CASE_KEY}: {value}"))
             case _:
-                raise ValueError(f"Not a dictionary: {value}")
+                return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
 
-    return from_json
+    return lambda value: from_json(value).map_left(ParsingError.append("Parsing sum:"))
