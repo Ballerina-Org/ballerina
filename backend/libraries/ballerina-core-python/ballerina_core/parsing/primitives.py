@@ -22,15 +22,18 @@ def string_from_json(value: Json) -> Sum[ParsingError, str]:
 
 
 def int_to_json(value: int) -> Json:
-    return {_KIND_KEY: "int", "value": value}
+    return {_KIND_KEY: "int", "value": str(value)}
 
 
 def int_from_json(value: Json) -> Sum[ParsingError, int]:
     match value:
         case {"kind": "int", "value": int_value}:
             match int_value:
-                case int():
-                    return Sum.right(int_value)
+                case str():
+                    try:
+                        return Sum.right(int(int_value))
+                    except ValueError:
+                        return Sum.left(ParsingError.single(f"Not an int: {int_value}"))
                 case _:
                     return Sum.left(ParsingError.single(f"Not an int: {int_value}"))
         case _:
