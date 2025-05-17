@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from ballerina_core.parsing.parsing_types import Json
+from ballerina_core.unit import Unit, unit
 
 _KIND_KEY: str = "kind"
 
@@ -35,14 +36,14 @@ def int_from_json(value: Json) -> int:
             raise ValueError(f"Not an int: {value}")
 
 
-def unit_to_json() -> Json:
+def unit_to_json(_: Unit) -> Json:
     return {_KIND_KEY: "unit"}
 
 
-def unit_from_json(value: Json) -> None:
+def unit_from_json(value: Json) -> Unit:
     match value:
         case {"kind": "unit"}:
-            return None  # noqa:RET501
+            return unit
         case _:
             raise ValueError(f"Not a unit: {value}")
 

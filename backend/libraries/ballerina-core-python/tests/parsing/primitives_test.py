@@ -14,6 +14,7 @@ from ballerina_core.parsing.primitives import (
     unit_from_json,
     unit_to_json,
 )
+from ballerina_core.unit import unit
 
 
 class TestPrimitivesSerializer:
@@ -40,12 +41,12 @@ class TestPrimitivesSerializer:
 
     @staticmethod
     def test_unit_to_json() -> None:
-        assert unit_to_json() == {"kind": "unit"}
+        assert unit_to_json(unit) == {"kind": "unit"}
 
     @staticmethod
     def test_unit_from_json() -> None:
         serialized: Json = {"kind": "unit"}
-        assert unit_from_json(serialized) is None  # type: ignore[func-returns-value]
+        assert unit_from_json(serialized) == unit
 
     @staticmethod
     def test_bool_to_json() -> None:
