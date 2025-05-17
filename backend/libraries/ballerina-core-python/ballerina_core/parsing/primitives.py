@@ -21,15 +21,15 @@ def string_from_json(value: Json) -> str:
 
 
 def int_to_json(value: int) -> Json:
-    return {_KIND_KEY: "int", "value": value}
+    return {_KIND_KEY: "int", "value": str(value)}
 
 
 def int_from_json(value: Json) -> int:
     match value:
         case {"kind": "int", "value": int_value}:
             match int_value:
-                case int():
-                    return int_value
+                case str():
+                    return int(int_value)
                 case _:
                     raise ValueError(f"Not an int: {int_value}")
         case _:

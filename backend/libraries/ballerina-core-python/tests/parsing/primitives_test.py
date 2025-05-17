@@ -21,12 +21,12 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_int_to_json() -> None:
         value = 42
-        assert int_to_json(value) == {"kind": "int", "value": 42}
+        assert int_to_json(value) == {"kind": "int", "value": "42"}
 
     @staticmethod
     def test_int_from_json() -> None:
         value = 42
-        serialized: Json = {"kind": "int", "value": value}
+        serialized: Json = {"kind": "int", "value": "42"}
         assert int_from_json(serialized) == value
 
     @staticmethod
