@@ -10,7 +10,7 @@ class TestOptionSerializer:
         value = Option.some(42)
         serializer = option_to_json(int_to_json)
         serialized = serializer(value)
-        assert serialized == {"case": "some", "value": 42}
+        assert serialized == {"case": "some", "value": int_to_json(42)}
 
     @staticmethod
     def test_option_to_json_none() -> None:
@@ -21,7 +21,7 @@ class TestOptionSerializer:
 
     @staticmethod
     def test_option_from_json_some() -> None:
-        serialized: Json = {"case": "some", "value": 42}
+        serialized: Json = {"case": "some", "value": int_to_json(42)}
         deserializer = option_from_json(int_from_json)
         value = deserializer(serialized)
         assert value == Option.some(42)

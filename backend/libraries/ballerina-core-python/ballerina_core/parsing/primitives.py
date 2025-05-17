@@ -4,6 +4,8 @@ from decimal import Decimal
 
 from ballerina_core.parsing.parsing_types import Json
 
+_KIND_KEY: str = "kind"
+
 
 def string_to_json(value: str) -> str:
     return value
@@ -18,27 +20,31 @@ def string_from_json(value: Json) -> str:
 
 
 def int_to_json(value: int) -> Json:
-    return value
+    return {_KIND_KEY: "int", "value": value}
 
 
 def int_from_json(value: Json) -> int:
     match value:
-        case int():
-            return value
+        case {"kind": "int", "value": int_value}:
+            match int_value:
+                case int():
+                    return int_value
+                case _:
+                    raise ValueError(f"Not an int: {int_value}")
         case _:
             raise ValueError(f"Not an int: {value}")
 
 
 def unit_to_json() -> Json:
-    return None
+    return {_KIND_KEY: "unit"}
 
 
 def unit_from_json(value: Json) -> None:
     match value:
-        case None:
-            return
+        case {"kind": "unit"}:
+            return None  # noqa:RET501
         case _:
-            raise ValueError(f"Not None: {value}")
+            raise ValueError(f"Not a unit: {value}")
 
 
 def bool_to_json(value: bool) -> Json:  # noqa: FBT001
@@ -54,12 +60,16 @@ def bool_from_json(value: Json) -> bool:
 
 
 def float_to_json(value: Decimal) -> Json:
-    return str(value)
+    return {_KIND_KEY: "float", "value": str(value)}
 
 
 def float_from_json(value: Json) -> Decimal:
     match value:
-        case str():
-            return Decimal(value)
+        case {"kind": "float", "value": float_value}:
+            match float_value:
+                case str():
+                    return Decimal(float_value)
+                case _:
+                    raise ValueError(f"Not a float: {float_value}")
         case _:
-            raise ValueError(f"Not a string: {value}")
+            raise ValueError(f"Not a float: {value}")

@@ -20,12 +20,13 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_int_to_json() -> None:
         value = 42
-        assert int_to_json(value) == value
+        assert int_to_json(value) == {"kind": "int", "value": 42}
 
     @staticmethod
     def test_int_from_json() -> None:
-        serialized: Json = 42
-        assert int_from_json(serialized) == serialized
+        value = 42
+        serialized: Json = {"kind": "int", "value": value}
+        assert int_from_json(serialized) == value
 
     @staticmethod
     def test_string_to_json() -> None:
@@ -39,13 +40,12 @@ class TestPrimitivesSerializer:
 
     @staticmethod
     def test_unit_to_json() -> None:
-        value = None
-        assert unit_to_json() == value
+        assert unit_to_json() == {"kind": "unit"}
 
     @staticmethod
     def test_unit_from_json() -> None:
-        serialized: Json = None
-        assert unit_from_json(serialized) == serialized  # type: ignore[func-returns-value]
+        serialized: Json = {"kind": "unit"}
+        assert unit_from_json(serialized) is None  # type: ignore[func-returns-value]
 
     @staticmethod
     def test_bool_to_json() -> None:
@@ -60,11 +60,11 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_float_to_json() -> None:
         value = Decimal("3.14")
-        assert float_to_json(value) == "3.14"
+        assert float_to_json(value) == {"kind": "float", "value": "3.14"}
 
     @staticmethod
     def test_float_from_json() -> None:
-        serialized: Json = "3.14"
+        serialized: Json = {"kind": "float", "value": "3.14"}
         assert float_from_json(serialized) == Decimal("3.14")
 
 
@@ -74,11 +74,11 @@ class TestListSerializer:
         value = [1, 2, 3]
         serializer = list_to_json(int_to_json)
         serialized = serializer(value)
-        assert serialized == [1, 2, 3]
+        assert serialized == [int_to_json(1), int_to_json(2), int_to_json(3)]
 
     @staticmethod
     def test_list_from_json() -> None:
-        serialized: Json = [1, 2, 3]
+        serialized: Json = [int_to_json(1), int_to_json(2), int_to_json(3)]
         deserializer = list_from_json(int_from_json)
         value = deserializer(serialized)
         assert value == [1, 2, 3]
