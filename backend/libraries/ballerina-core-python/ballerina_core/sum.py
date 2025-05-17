@@ -50,3 +50,6 @@ class Sum(Generic[_SumL, _SumR]):
 
     def map_right(self, on_right: Callable[[_SumR], _O], /) -> Sum[_SumL, _O]:
         return self.fold(Sum.left, lambda value: Sum.right(on_right(value)))
+
+    def flat_map(self, on_right: Callable[[_SumR], Sum[_SumL, _O]], /) -> Sum[_SumL, _O]:
+        return self.fold(Sum.left, on_right)

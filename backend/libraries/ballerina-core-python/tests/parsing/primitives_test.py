@@ -14,6 +14,7 @@ from ballerina_core.parsing.primitives import (
     unit_from_json,
     unit_to_json,
 )
+from ballerina_core.sum import Sum
 from ballerina_core.unit import unit
 
 
@@ -27,7 +28,7 @@ class TestPrimitivesSerializer:
     def test_int_from_json() -> None:
         value = 42
         serialized: Json = {"kind": "int", "value": "42"}
-        assert int_from_json(serialized) == value
+        assert int_from_json(serialized) == Sum.right(value)
 
     @staticmethod
     def test_string_to_json() -> None:
@@ -37,7 +38,7 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_string_from_json() -> None:
         serialized: Json = "hello"
-        assert string_from_json(serialized) == serialized
+        assert string_from_json(serialized) == Sum.right(serialized)
 
     @staticmethod
     def test_unit_to_json() -> None:
@@ -46,7 +47,7 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_unit_from_json() -> None:
         serialized: Json = {"kind": "unit"}
-        assert unit_from_json(serialized) == unit
+        assert unit_from_json(serialized) == Sum.right(unit)
 
     @staticmethod
     def test_bool_to_json() -> None:
@@ -56,7 +57,7 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_bool_from_json() -> None:
         serialized: Json = True
-        assert bool_from_json(serialized) == serialized
+        assert bool_from_json(serialized) == Sum.right(serialized)
 
     @staticmethod
     def test_float_to_json() -> None:
@@ -66,7 +67,7 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_float_from_json() -> None:
         serialized: Json = {"kind": "float", "value": "3.14"}
-        assert float_from_json(serialized) == Decimal("3.14")
+        assert float_from_json(serialized) == Sum.right(Decimal("3.14"))
 
 
 class TestListSerializer:
@@ -82,4 +83,4 @@ class TestListSerializer:
         serialized: Json = {"kind": "list", "elements": [int_to_json(1), int_to_json(2), int_to_json(3)]}
         parser = list_from_json(int_from_json)
         value = parser(serialized)
-        assert value == [1, 2, 3]
+        assert value == Sum.right([1, 2, 3])

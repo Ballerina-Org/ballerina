@@ -1,7 +1,8 @@
 from typing import TypeVar
 
 from ballerina_core.option import Option
-from ballerina_core.parsing.parsing_types import FromJson, Json, ToJson
+from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
+from ballerina_core.sum import Sum
 from ballerina_core.unit import Unit, unit
 
 _Option = TypeVar("_Option")
@@ -23,25 +24,23 @@ def option_to_json(some_to_json: ToJson[_Option], none_to_json: ToJson[Unit], /)
 
 
 def option_from_json(some_from_json: FromJson[_Option], none_from_json: FromJson[Unit], /) -> FromJson[Option[_Option]]:
-    def from_json(value: Json) -> Option[_Option]:
+    def from_json(value: Json) -> Sum[ParsingError, Option[_Option]]:  # noqa: PLR0911
         match value:
             case dict():
                 if _CASE_KEY not in value:
-                    raise ValueError(f"Missing case: {value}")
+                    return Sum.left(ParsingError.single(f"Missing case: {value}"))
                 match value[_CASE_KEY]:
                     case discriminator if discriminator == _SOME_VALUE:
                         if _VALUE_KEY not in value:
-                            raise ValueError(f"Missing value: {value}")
-                        return Option.some(some_from_json(value[_VALUE_KEY]))
+                            return Sum.left(ParsingError.single(f"Missing value: {value}"))
+                        return some_from_json(value[_VALUE_KEY]).map_right(Option.some)
                     case discriminator if discriminator == _NONE_VALUE:
                         if _VALUE_KEY not in value:
-                            raise ValueError(f"Missing value: {value}")
-                        if none_from_json(value[_VALUE_KEY]) != unit:
-                            raise ValueError(f"Invalid value: {value}")
-                        return Option.none()
+                            return Sum.left(ParsingError.single(f"Missing value: {value}"))
+                        return none_from_json(value[_VALUE_KEY]).map_right(lambda _: Option.none())
                     case _:
-                        raise ValueError(f"Invalid discriminator: {value}")
+                        return Sum.left(ParsingError.single(f"Invalid discriminator: {value}"))
             case _:
-                raise ValueError(f"Not a dictionary: {value}")
+                return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
 
-    return from_json
+    return lambda value: from_json(value).map_left(ParsingError.append("Parsing option:"))
