@@ -12,7 +12,7 @@ _KIND_KEY: str = "kind"
 
 def list_to_json(item_to_json: ToJson[_A]) -> ToJson[list[_A]]:
     def to_json(value: list[_A]) -> Json:
-        return {_KIND_KEY: "tuple", "elements": [item_to_json(item) for item in value]}
+        return {_KIND_KEY: "list", "elements": [item_to_json(item) for item in value]}
 
     return to_json
 
@@ -20,13 +20,13 @@ def list_to_json(item_to_json: ToJson[_A]) -> ToJson[list[_A]]:
 def list_from_json(item_from_json: FromJson[_A]) -> FromJson[list[_A]]:
     def from_json(value: Json) -> list[_A]:
         match value:
-            case {"kind": "tuple", "elements": tuple_value}:
+            case {"kind": "list", "elements": tuple_value}:
                 match tuple_value:
                     case list():
                         return [item_from_json(item) for item in tuple_value]
                     case _:
                         raise ValueError(f"Not a list: {tuple_value}")
             case _:
-                raise ValueError(f"Not a tuple: {value}")
+                raise ValueError(f"Not a list: {value}")
 
     return from_json
