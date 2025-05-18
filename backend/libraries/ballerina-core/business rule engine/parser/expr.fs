@@ -416,6 +416,20 @@ module Expr =
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
+    static member private ParseList<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
+      state {
+        let! fieldsJson = assertKindIsAndGetFields "list" json
+
+        return!
+          state {
+            let! elementsJson = fieldsJson |> sum.TryFindField "elements" |> state.OfSum
+            let! elementsArray = elementsJson |> JsonValue.AsArray |> state.OfSum
+            let! elements = elementsArray |> Array.toList |> List.map Value.Parse |> state.All
+            Value.List elements
+          }
+          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+      }
+
     static member Parse<'config, 'context>(json: JsonValue) : State<Value, 'config, 'context, Errors> =
       state.Any(
         NonEmptyList.OfList(
@@ -427,7 +441,8 @@ module Expr =
             Value.ParseCaseCons
             Value.ParseTuple
             Value.ParseInt
-            Value.ParseFloat ]
+            Value.ParseFloat
+            Value.ParseList ]
         )
         |> NonEmptyList.map (fun f -> f json)
       )
@@ -480,4 +495,10 @@ module Expr =
             [| "kind", JsonValue.String "record"
                "fields", jsonFields |> Array.ofList |> JsonValue.Record |]
         | Value.Var _ -> return! sum.Throw(Errors.Singleton "Error: Var not implemented")
+        | Value.List elements ->
+          let! jsonElements = elements |> List.map Value.ToJson |> sum.All
+
+          JsonValue.Record
+            [| "kind", JsonValue.String "list"
+               "elements", jsonElements |> Array.ofList |> JsonValue.Array |]
       }
