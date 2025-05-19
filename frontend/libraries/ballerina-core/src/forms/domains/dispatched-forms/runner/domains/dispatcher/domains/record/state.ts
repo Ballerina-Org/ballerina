@@ -57,12 +57,13 @@ export const RecordDispatcher = {
           renderer.fields
             .entrySeq()
             .toArray()
-            .map(([fieldName, fieldRenderer]) =>
-              MapRepo.Operations.tryFindWithError(
+            .map(([fieldName, fieldRenderer]) => {
+              const res = MapRepo.Operations.tryFindWithError(
                 fieldName,
                 type.fields,
                 () => `cannot find field "${fieldName}" in types`,
-              ).Then((fieldType) =>
+              )
+              return res.Then((fieldType) =>
                 RecordFieldDispatcher.Operations.Dispatch(
                   fieldName,
                   fieldRenderer,
@@ -82,7 +83,8 @@ export const RecordDispatcher = {
                       ]),
                     ),
                 ),
-              ),
+              )
+            }
             ),
         ),
       )

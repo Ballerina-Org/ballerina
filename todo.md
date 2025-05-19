@@ -104,9 +104,17 @@
       ✅ use it instead of `Table`
       ✅ use it in the MANYPATCH
       ✅ use it in the sample go-config
+    ❌ overlaps in the name of a form vs an imported renderer should always give an error
+    ❌ Json.FindField should add to the trace
+    ❌ Deprecate `Expr` parser of `IsCase`
+    ❌ `SingleSelection` is deprecated in favor of `Option One`
+    ❌ `MultiSelection` is deprecated in favor of `Option Many`
+    ❌ swap left/right in state.Throw - error goes Left
     ❌ add generics - types, apis, renderers
+      ❌ `Readonly` generic is needed - no PATCH, unifies with argument
     ❌ just like `disabled` and `visible`, add an optional `global` expr to map the readonly context to a field
       ❌ this changes the `globalType` during `ValidatePredicate`
+      ❌ a sort of `mapContext` over `global`
     ❌  | SumRenderer of
         {| Sum: Renderer  ---->  string
           Left: NestedRenderer
