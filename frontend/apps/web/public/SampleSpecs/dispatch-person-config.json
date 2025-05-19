@@ -550,6 +550,9 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User"
+      },
+      "ActiveFriendsApi": {
+        "type": "Friend"
       }
     },
     "entities": {
@@ -579,7 +582,11 @@
       "tabs": {
         "main": {
           "columns": {
-            "main": ["Name", "Surname"]
+            "main": {
+              "groups": {
+                "main": ["Name", "Surname"]
+              }
+            }
           }
         }
       }
@@ -813,7 +820,7 @@
     },
     "developerJob": {
       "type": "DeveloperJob",
-      "renderer": "person",
+      "renderer": "personDetails",
       "fields": {
         "Name": {
           "renderer": "defaultString"
@@ -839,7 +846,7 @@
     },
     "designerJob": {
       "type": "DesignerJob",
-      "renderer": "person",
+      "renderer": "personDetails",
       "fields": {
         "Name": {
           "renderer": "defaultString"
@@ -891,7 +898,7 @@
       }
     },
     "friendsFriendsTable": {
-      "type": "User",
+      "type": "Friend",
       "renderer": "streamingTable",
       "columns": {
         "Name": {
@@ -910,7 +917,7 @@
     },
     "person": {
       "type": "Person",
-      "renderer": "person",
+      "renderer": "personDetails",
       "fields": {
         "Friends": {
           "renderer": {
@@ -988,7 +995,7 @@
                   "Friends": {
                     "label": "Friends",
                     "renderer": "friendsFriendsTable",
-                    "api": "ActiveUsersApi"
+                    "api": "ActiveFriendsApi"
                   }
                 },
                 "tabs": {
@@ -1011,28 +1018,29 @@
           "label": "Job",
           "renderer": {
             "type": "Job",
-            "renderer": "Job",
+            "renderer": "job",
             "cases": {
               "Developer": {
-                "type": "DeveloperJob",
-                "renderer": "person",
-                "fields": {
-                  "Name": {
-                    "renderer": "defaultString"
+                "renderer": {
+                  "type": "DeveloperJob",
+                  "fields": {
+                    "Name": {
+                      "renderer": "defaultString"
+                    },
+                    "Salary": {
+                      "renderer": "defaultNumber"
+                    },
+                    "Language": {
+                      "renderer": "defaultString"
+                    }
                   },
-                  "Salary": {
-                    "renderer": "defaultNumber"
-                  },
-                  "Language": {
-                    "renderer": "defaultString"
-                  }
-                },
-                "tabs": {
-                  "main": {
-                    "columns": {
-                      "main": {
-                        "groups": {
-                          "main": ["Name", "Salary", "Language"]
+                  "tabs": {
+                    "main": {
+                      "columns": {
+                        "main": {
+                          "groups": {
+                            "main": ["Name", "Salary", "Language"]
+                          }
                         }
                       }
                     }

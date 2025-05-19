@@ -6,7 +6,7 @@ module Seq =
   open Ballerina.Collections.Sum
 
   type SeqState<'a, 'c, 's, 'e> =
-    | State of ('c * 's -> Sum<seq<'a> * Option<'s>, 'e>)
+    | State of ('c * 's -> Sum<seq<'a> * Option<'s>, 'e * Option<'s>>)
 
     member this.run(c, s) = let (State p) = this in p (c, s)
 
@@ -14,9 +14,10 @@ module Seq =
       State(fun s0 ->
         match p s0 with
         | Sum.Left(res, u_s) -> Sum.Left(res |> Seq.map f, u_s)
-        | Sum.Right e -> Sum.Right e)
+        | Sum.Right(e, u_s) -> Sum.Right(e, u_s))
 
     static member fromValue(res: 'a) = State(fun _ -> Sum.Left([ res ], None))
+    static member zero() = State(fun _ -> Sum.Left([], None))
 
     static member flatten((State p): SeqState<SeqState<'a, 'c, 's, 'e>, 'c, 's, 'e>) : SeqState<'a, 'c, 's, 'e> =
       State(fun (c, s0) ->
@@ -57,7 +58,7 @@ module Seq =
 
   type SeqStateBuilder() =
     member _.Map f p = SeqState.map f p
-    member _.Zero<'c, 's, 'e>() = SeqState.fromValue<'c, 's, 'e> ()
+    member _.Zero<'a, 'c, 's, 'e>() = SeqState.zero<'a, 'c, 's, 'e> ()
     member _.Return<'a, 'c, 's, 'e>(result: 'a) = SeqState.fromValue<'c, 's, 'e> result
     member _.Yield(result: 'a) = SeqState.fromValue<'c, 's, 'e> result
     member _.Bind(p: SeqState<'a, 'c, 's, 'e>, k: 'a -> SeqState<'b, 'c, 's, 'e>) = SeqState.bind p k
@@ -87,13 +88,13 @@ module Seq =
         | Left(res, u_s) -> Left([ Left res ], u_s)
         | Right err -> Left([ Right err ], None))
 
-    member _.Throw(e: 'e) = State(fun _ -> Sum.Right e)
+    member _.Throw(e: 'e) = State(fun _ -> Sum.Right (e, None))
     member state.Delay p = state.Bind((state.Return()), p)
 
-    member state.For(seq, body: _ -> SeqState<Unit, _, _, _>) =
+    member state.For(seq, body: _ -> SeqState<_, _, _, _>) =
       match seq |> Seq.tryHead with
       | Some first -> state.Combine(body first, state.For(seq |> Seq.tail, body))
-      | None -> state { return () }
+      | None -> state.Zero()
     // member state.All<'a,'c,'s,'e>
     //   (e:{| concat:'e * 'e -> 'e |}, ps:List<State<'a,'c,'s,'e>>) =
     //   match ps with
@@ -119,6 +120,13 @@ module Seq =
     //   when 'b : (static member Concat:'b * 'b -> 'b)>
     //   (ps:seq<State<'a,'c,'s,'b>>) =
     //   state.All({| concat='b.Concat |}, ps |> Seq.toList)
+
+    member state.ToState(State p) =
+      Ballerina.State.WithError.State(fun (c, s) ->
+        match p (c, s) with
+        | Sum.Left(res, u_s) -> Sum.Left(res, u_s)
+        | Sum.Right e -> Sum.Right e)
+
     member state.OfSum s =
       match s with
       | Left res -> state.Return res

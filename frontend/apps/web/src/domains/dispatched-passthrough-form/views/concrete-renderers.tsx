@@ -439,7 +439,7 @@ export const PersonConcreteRenderers = {
       },
   },
   union: {
-    person:
+    personCases:
       <
         UnionAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
@@ -458,7 +458,7 @@ export const PersonConcreteRenderers = {
           </>
         );
       },
-    Job:
+    job:
       <
         UnionAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
@@ -479,7 +479,7 @@ export const PersonConcreteRenderers = {
       },
   },
   record: {
-    person:
+    personDetails:
       <
         Context extends FormLabel,
         ForeignMutationsExpected,
