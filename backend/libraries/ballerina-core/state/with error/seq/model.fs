@@ -88,7 +88,7 @@ module Seq =
         | Left(res, u_s) -> Left([ Left res ], u_s)
         | Right err -> Left([ Right err ], None))
 
-    member _.Throw(e: 'e) = State(fun _ -> Sum.Right (e, None))
+    member _.Throw(e: 'e) = State(fun _ -> Sum.Right(e, None))
     member state.Delay p = state.Bind((state.Return()), p)
 
     member state.For(seq, body: _ -> SeqState<_, _, _, _>) =
