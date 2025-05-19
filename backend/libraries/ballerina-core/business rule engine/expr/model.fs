@@ -92,7 +92,7 @@ module Model =
         $"{{ {fs |> Seq.map (fun f -> f.Key.ToString() + eq + f.Value.ToString())} |> String.Join ';' }}"
       | Value.Tuple vs -> $"( {vs |> Seq.map (fun v -> v.ToString())} |> String.Join ',' )"
       | Value.Var(_, v) -> v.ToString()
-      | Value.List vs -> $"( {vs |> Seq.map (fun v -> v.ToString())} |> String.Join ',' )"
+      | Value.List vs -> $"[ {vs |> Seq.map (fun v -> v.ToString())} |> String.Join ',' ]"
 
     member self.toObject =
       match self with
