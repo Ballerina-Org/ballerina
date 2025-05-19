@@ -62,7 +62,7 @@ export const RecordDispatcher = {
                 fieldName,
                 type.fields,
                 () => `cannot find field "${fieldName}" in types`,
-              )
+              );
               return res.Then((fieldType) =>
                 RecordFieldDispatcher.Operations.Dispatch(
                   fieldName,
@@ -83,9 +83,8 @@ export const RecordDispatcher = {
                       ]),
                     ),
                 ),
-              )
-            }
-            ),
+              );
+            }),
         ),
       )
         .Then((fieldTemplates) =>
