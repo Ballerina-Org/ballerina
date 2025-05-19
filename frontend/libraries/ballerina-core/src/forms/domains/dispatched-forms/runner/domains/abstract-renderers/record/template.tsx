@@ -21,6 +21,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  FieldName,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -41,6 +42,7 @@ export const RecordAbstractRenderer = <
       template: Template<any, any, any, any>;
       visible?: Expr;
       disabled?: Expr;
+      label?: Expr;
       GetDefaultState: () => any;
     }
   >,
@@ -245,6 +247,30 @@ export const RecordAbstractRenderer = <
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
+    const fieldLabels = ValueOrErrors.Operations.All(
+      List(
+        FieldTemplates.map(({ label }, fieldName) =>
+          label == undefined
+            ? ValueOrErrors.Default.return(null)
+            : Expr.Operations.EvaluateAs("label predicate")(updatedBindings)(
+                label,
+              ).Then((value) =>
+                ValueOrErrors.Default.return(
+                  PredicateValue.Operations.IsString(value) && value
+                    ? [fieldName, value]
+                    : null,
+                ),
+              ),
+        ).valueSeq(),
+      ),
+    );
+
+    const fieldLabelsMap = (
+      fieldLabels.kind == "errors"
+        ? Map()
+        : fieldLabels.value.filter((field) => field != null).toMap()
+    ) as Map<FieldName, string | undefined>;
+
     return (
       <>
         <IdProvider
@@ -262,6 +288,7 @@ export const RecordAbstractRenderer = <
           EmbeddedFields={EmbeddedFieldTemplates}
           VisibleFieldKeys={visibleFieldKeysSet}
           DisabledFieldKeys={disabledFieldKeysSet}
+          FieldLabels={fieldLabelsMap}
         />
       </>
     );

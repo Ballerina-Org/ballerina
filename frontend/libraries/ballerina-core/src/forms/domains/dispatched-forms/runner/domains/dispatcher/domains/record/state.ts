@@ -48,6 +48,7 @@ export const RecordDispatcher = {
                 template: Template<any, any, any, any>;
                 visible?: Expr;
                 disabled?: Expr;
+                label?: Expr;
                 GetDefaultState: () => any;
               },
             ],
@@ -62,7 +63,8 @@ export const RecordDispatcher = {
                 fieldName,
                 type.fields,
                 () => `cannot find field "${fieldName}" in types`,
-              )
+              );
+
               return res.Then((fieldType) =>
                 RecordFieldDispatcher.Operations.Dispatch(
                   fieldName,
@@ -78,14 +80,14 @@ export const RecordDispatcher = {
                           template,
                           visible: fieldRenderer.visible,
                           disabled: fieldRenderer.disabled,
+                          label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
                       ]),
                     ),
                 ),
-              )
-            }
-            ),
+              );
+            }),
         ),
       )
         .Then((fieldTemplates) =>
@@ -102,32 +104,32 @@ export const RecordDispatcher = {
                   "internal error: launcherName is required for top level forms",
                 )
               : formName == undefined
-                ? ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
-                    string
-                  >("internal error: formName is required for all forms")
-                : ValueOrErrors.Default.return(
-                    RecordAbstractRenderer(
-                      Map(fieldTemplates),
-                      renderer.tabs,
-                      dispatcherContext.IdProvider,
-                      dispatcherContext.ErrorRenderer,
-                      renderer.isInlined,
-                    )
-                      .mapContext((_: any) => ({
-                        ..._,
-                        type: renderer.type,
-                        ...(!isNested && launcherName
-                          ? {
-                              identifiers: {
-                                withLauncher: `[${launcherName}][${formName}]`,
-                                withoutLauncher: `[${formName}]`,
-                              },
-                            }
-                          : {}),
-                      }))
-                      .withView(concreteRenderer),
-                  ),
+              ? ValueOrErrors.Default.throwOne<
+                  Template<any, any, any, any>,
+                  string
+                >("internal error: formName is required for all forms")
+              : ValueOrErrors.Default.return(
+                  RecordAbstractRenderer(
+                    Map(fieldTemplates),
+                    renderer.tabs,
+                    dispatcherContext.IdProvider,
+                    dispatcherContext.ErrorRenderer,
+                    renderer.isInlined,
+                  )
+                    .mapContext((_: any) => ({
+                      ..._,
+                      type: renderer.type,
+                      ...(!isNested && launcherName
+                        ? {
+                            identifiers: {
+                              withLauncher: `[${launcherName}][${formName}]`,
+                              withoutLauncher: `[${formName}]`,
+                            },
+                          }
+                        : {}),
+                    }))
+                    .withView(concreteRenderer),
+                ),
           ),
         )
         .MapErrors((errors) =>
