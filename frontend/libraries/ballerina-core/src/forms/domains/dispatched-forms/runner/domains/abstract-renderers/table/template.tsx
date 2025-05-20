@@ -21,6 +21,10 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Debounce,
+  Debounced,
+  MapRepo,
+  Value,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -401,6 +405,23 @@ export const TableAbstractRenderer = <
                   replaceWith(Set()),
                 ),
               ),
+            setStreamParam: (param: [string, string | undefined]) => {
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
+                  Debounced.Updaters.Template.value(
+                    Value.Updaters.value(
+                      param[1] == undefined
+                        ? MapRepo.Updaters.remove<string, string>(param[0])
+                        : MapRepo.Updaters.upsert<string, string>(
+                            param[0],
+                            () => param[1]!,
+                            () => param[1]!,
+                          ),
+                    ),
+                  ),
+                ),
+              );
+            },
           }}
           TableHeaders={visibleColumns.value.columns}
           EmbeddedTableData={tableData}

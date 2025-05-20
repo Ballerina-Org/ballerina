@@ -44,7 +44,7 @@ export type AbstractTableRendererState = {
     selectedRows: Set<string>;
     selectedDetailRow: [number, string] | undefined;
     isInitialized: boolean;
-    streamParams: Debounced<Map<string, string>>;
+    streamParams: Debounced<Value<Map<string, string>>>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
       Map<string, string>,
@@ -59,7 +59,7 @@ export const AbstractTableRendererState = {
       isInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      streamParams: Debounced.Default(Map()),
+      streamParams: Debounced.Default(Value.Default(Map())),
       // TODO: replace with su
       getChunkWithParams: undefined as any,
       stream: undefined as any,
@@ -100,7 +100,7 @@ export const AbstractTableRendererState = {
       ): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
-            MapRepo.Updaters.upsert(key, () => "", _),
+            Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
         ),
       loadMore: (): Updater<AbstractTableRendererState> =>
@@ -146,7 +146,7 @@ export type AbstractTableRendererView<
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<PredicateValue>;
     toggleOpen: SimpleCallback<void>;
-    setStreamParam: SimpleCallback<string>;
+    setStreamParam: SimpleCallback<[string, string | undefined]>;
     select: SimpleCallback<ValueOption>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
