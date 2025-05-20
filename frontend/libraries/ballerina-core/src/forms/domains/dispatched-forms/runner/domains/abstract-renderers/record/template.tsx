@@ -247,29 +247,29 @@ export const RecordAbstractRenderer = <
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const fieldLabels = ValueOrErrors.Operations.All(
-      List(
-        FieldTemplates.map(({ label }, fieldName) =>
-          label == undefined
-            ? ValueOrErrors.Default.return(null)
-            : Expr.Operations.EvaluateAs("label predicate")(updatedBindings)(
-                label,
-              ).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsString(value) && value
-                    ? [fieldName, value]
-                    : null,
+    const fieldLabelsOrErrors = ValueOrErrors.Operations.All(
+      List<ValueOrErrors<[FieldName, string] | null, string>>(
+        FieldTemplates.map<ValueOrErrors<[FieldName, string] | null, string>>(
+          ({ label }, fieldName) =>
+            label === undefined
+              ? ValueOrErrors.Default.return(null)
+              : Expr.Operations.EvaluateAs("label predicate")(updatedBindings)(
+                  label,
+                ).Then((value) =>
+                  ValueOrErrors.Default.return(
+                    PredicateValue.Operations.IsString(value) && value
+                      ? [fieldName, value]
+                      : null,
+                  ),
                 ),
-              ),
         ).valueSeq(),
       ),
     );
 
-    const fieldLabelsMap = (
-      fieldLabels.kind == "errors"
+    const fieldLabelsMap: Map<string, string | undefined> =
+      fieldLabelsOrErrors.kind === "errors"
         ? Map()
-        : fieldLabels.value.filter((field) => field != null).toMap()
-    ) as Map<FieldName, string | undefined>;
+        : Map(fieldLabelsOrErrors.value.filter((field) => field !== null));
 
     return (
       <>
