@@ -13,6 +13,7 @@ import {
   View,
   DispatchCommonFormState,
   DispatchOnChange,
+  FieldName,
 } from "../../../../../../../../main";
 
 export type RecordAbstractRendererState = {
@@ -76,5 +77,6 @@ export type RecordAbstractRendererView<Context, ForeignMutationsExpected> =
       >;
       VisibleFieldKeys: Set<string>;
       DisabledFieldKeys: Set<string>;
+      FieldLabels: Map<FieldName, string | undefined>;
     }
   >;

@@ -66,92 +66,92 @@ const getActiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (streamParams: Map<string, string>) =>
-        ([streamPosition]: [ValueStreamPosition]) => {
-          return PromiseRepo.Default.mock(() => ({
-            Values: {
-              [v4()]: {
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
               },
-              [v4()]: {
-                Id: v4(),
-                Name: "John",
-                Surname: "Doe",
-                Birthday: "1990-01-01",
-                Email: "john.doe@example.com",
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: {},
-                  IsSome: false,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
                 },
               },
             },
-            HasMore: true,
-            From: 1,
-            To: 2,
-          })).then((res) => ({
-            from: res.From,
-            to: res.To,
-            hasMoreValues: res.HasMore,
-            data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-              res.Values,
-              fromApiRaw,
-            ),
-          }));
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: "John",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "john.doe@example.com",
+            SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: {},
+              IsSome: false,
+            },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
+              },
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
+                },
+              },
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
         },
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
 };
 
 const getActiveFriends: DispatchTableApiSource = {
@@ -177,60 +177,60 @@ const getActiveFriends: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (streamParams: Map<string, string>) =>
-        ([streamPosition]: [ValueStreamPosition]) => {
-          return PromiseRepo.Default.mock(() => ({
-            Values: {
-              [v4()]: ({
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: faker.datatype.boolean(),
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              }),
-              [v4()]: ({
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: faker.datatype.boolean(),
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              }),
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
             },
-            HasMore: true,
-            From: 1,
-            To: 2,
-          })).then((res) => ({
-            from: res.From,
-            to: res.To,
-            hasMoreValues: res.HasMore,
-            data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-              res.Values,
-              fromApiRaw,
-            ),
-          }));
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
         },
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
 };
 
 const getFriends: DispatchOneSource = {
@@ -256,61 +256,61 @@ const getFriends: DispatchOneSource = {
   },
   getManyUnlinked:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (id: Guid) =>
-        (streamParams: Map<string, string>) =>
-          ([streamPosition]: [ValueStreamPosition]) => {
-            return PromiseRepo.Default.mock(() => ({
-              Values: Range(1, 5)
-                .map((_) => ({
-                  Id: v4(),
-                  Name: faker.person.firstName(),
-                  Surname: faker.person.lastName(),
-                  Birthday: faker.date.birthdate().toISOString(),
-                  Email: faker.internet.email(),
-                  SubscribeToNewsletter: faker.datatype.boolean(),
-                  FavoriteColor: {
-                    Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                    IsSome: true,
-                  },
-                  Friends: {
-                    From: 0,
-                    To: 0,
-                    HasMore: true,
-                    Values: {},
-                  },
-                }))
-                .reduce((acc, curr) => {
-                  acc[curr.Id] = curr;
-                  return acc;
-                }, {} as any),
-              HasMore: false,
-              From: 1,
-              To: 5,
-            })).then((res) => ({
-              hasMoreValues: res.HasMore,
-              to: res.To,
-              from: res.From,
-              data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-                res.Values,
-                fromApiRaw,
-              ),
-            }));
-          },
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
 };
 
 const lookupSources: DispatchLookupSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
-      one: (apiName: string) =>
-        apiName == "BestFriendApi"
-          ? ValueOrErrors.Default.return(getFriends)
-          : ValueOrErrors.Default.throwOne(
-            `can't find api ${apiName} when getting lookup api sources`,
-          ),
-    })
+        one: (apiName: string) =>
+          apiName == "BestFriendApi"
+            ? ValueOrErrors.Default.return(getFriends)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
     : ValueOrErrors.Default.throwOne(
-      `can't find type ${typeName} when getting lookup api source`,
-    );
+        `can't find type ${typeName} when getting lookup api source`,
+      );
 
 const tableApiSources: DispatchTableApiSources = (streamName: string) =>
   streamName == "ActiveUsersApi"
@@ -329,80 +329,80 @@ const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "colors"
     ? ValueOrErrors.Default.return(() =>
-      PromiseRepo.Default.mock(
-        () => colors.map((_) => ({ Value: _ })),
-        undefined,
-        1,
-        0,
-      ),
-    )
-    : enumName == "permissions"
-      ? ValueOrErrors.Default.return(() =>
         PromiseRepo.Default.mock(
-          () => permissions.map((_) => ({ Value: _ })),
+          () => colors.map((_) => ({ Value: _ })),
           undefined,
           1,
           0,
         ),
       )
-      : enumName == "genders"
-        ? ValueOrErrors.Default.return(() =>
+    : enumName == "permissions"
+      ? ValueOrErrors.Default.return(() =>
           PromiseRepo.Default.mock(
-            () => genders.map((_) => ({ Value: _ })),
+            () => permissions.map((_) => ({ Value: _ })),
             undefined,
             1,
             0,
           ),
         )
-        : enumName == "interests"
-          ? ValueOrErrors.Default.return(() =>
+      : enumName == "genders"
+        ? ValueOrErrors.Default.return(() =>
             PromiseRepo.Default.mock(
-              () => interests.map((_) => ({ Value: _ })),
+              () => genders.map((_) => ({ Value: _ })),
               undefined,
               1,
               0,
             ),
           )
-          : enumName == "addressesFields"
-            ? ValueOrErrors.Default.return(() =>
+        : enumName == "interests"
+          ? ValueOrErrors.Default.return(() =>
               PromiseRepo.Default.mock(
-                () =>
-                  [
-                    "AddressesByCity",
-                    "Departments",
-                    "SchoolAddress",
-                    "MainAddress",
-                    "AddressesAndAddressesWithLabel",
-                    "AddressesWithColorLabel",
-                    "AddressesBy",
-                    "Permissions",
-                    "CityByDepartment",
-                    "Holidays",
-                    "FriendsAddresses",
-                  ].map((_) => ({ Value: _ })),
+                () => interests.map((_) => ({ Value: _ })),
                 undefined,
                 1,
                 0,
               ),
             )
+          : enumName == "addressesFields"
+            ? ValueOrErrors.Default.return(() =>
+                PromiseRepo.Default.mock(
+                  () =>
+                    [
+                      "AddressesByCity",
+                      "Departments",
+                      "SchoolAddress",
+                      "MainAddress",
+                      "AddressesAndAddressesWithLabel",
+                      "AddressesWithColorLabel",
+                      "AddressesBy",
+                      "Permissions",
+                      "CityByDepartment",
+                      "Holidays",
+                      "FriendsAddresses",
+                    ].map((_) => ({ Value: _ })),
+                  undefined,
+                  1,
+                  0,
+                ),
+              )
             : ValueOrErrors.Default.throwOne(
-              `Cannot find enum API ${enumName}`,
-            );
+                `Cannot find enum API ${enumName}`,
+              );
 const entityApis: EntityApis = {
   create: (apiName: string) =>
     apiName == "person"
       ? (e: any) =>
-        PromiseRepo.Default.mock(() => {
-          console.log(
-            "person create api post body",
-            JSON.stringify(e, undefined, 2),
-          );
-          return unit;
-        })
+          PromiseRepo.Default.mock(() => {
+            console.log(
+              "person create api post body",
+              JSON.stringify(e, undefined, 2),
+            );
+            return unit;
+          })
       : (e: any) => {
-        alert(`Cannot find entity API ${apiName} for 'create'`);
-        return Promise.reject();
-      },
+          alert(`Cannot find entity API ${apiName} for 'create'`);
+          return Promise.reject();
+        },
   get: (apiName: string) => {
     switch (apiName) {
       case "person":
@@ -536,11 +536,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
                 Item2: {
@@ -561,11 +561,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
                 {
@@ -576,11 +576,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
               ],
@@ -595,11 +595,11 @@ const entityApis: EntityApis = {
                         Math.random() > 0.5
                           ? { IsSome: false, Value: { Value: "" } }
                           : {
-                            IsSome: true,
-                            Value: {
-                              ...City.Default(v4(), faker.location.city()),
+                              IsSome: true,
+                              Value: {
+                                ...City.Default(v4(), faker.location.city()),
+                              },
                             },
-                          },
                     },
                   },
                 },
@@ -619,11 +619,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
               },
@@ -640,11 +640,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
               },
@@ -680,11 +680,11 @@ const entityApis: EntityApis = {
                         Math.random() > 0.5
                           ? { IsSome: false, Value: { Value: "" } }
                           : {
-                            IsSome: true,
-                            Value: {
-                              ...City.Default(v4(), faker.location.city()),
+                              IsSome: true,
+                              Value: {
+                                ...City.Default(v4(), faker.location.city()),
+                              },
                             },
-                          },
                     },
                   },
                 },
@@ -704,11 +704,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
               },
@@ -725,11 +725,11 @@ const entityApis: EntityApis = {
                       Math.random() > 0.5
                         ? { IsSome: false, Value: { Value: "" } }
                         : {
-                          IsSome: true,
-                          Value: {
-                            ...City.Default(v4(), faker.location.city()),
+                            IsSome: true,
+                            Value: {
+                              ...City.Default(v4(), faker.location.city()),
+                            },
                           },
-                        },
                   },
                 },
               },
@@ -856,81 +856,81 @@ const entityApis: EntityApis = {
   default: (apiName: string) =>
     apiName == "person"
       ? (_) =>
-        PromiseRepo.Default.mock(() => {
-          return {
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: false,
-              Values: {},
-            },
-            Category: {
-              kind: "adult",
-              extraSpecial: false,
-            },
-            FullName: {
-              Item1: "",
-              Item2: "",
-            },
-            Birthday: "01/01/2000",
-            SubscribeToNewsletter: false,
-            FavoriteColor: { Value: { Value: null }, IsSome: false },
-            Gender: {
-              IsRight: false,
-              Value: {},
-            },
-            Dependants: [],
-            FriendsByCategory: [],
-            Relatives: [],
-            Interests: [],
-            Departments: [],
-            Emails: [],
-            SchoolAddress: {
-              StreetNumberAndCity: {
-                Item1: faker.location.street(),
-                Item2: Math.floor(Math.random() * 500),
-                Item3:
-                  Math.random() > 0.5
-                    ? { IsSome: false, Value: { Value: "" } }
-                    : {
-                      IsSome: true,
-                      Value: {
-                        ...City.Default(v4(), faker.location.city()),
-                      },
-                    },
+          PromiseRepo.Default.mock(() => {
+            return {
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: false,
+                Values: {},
               },
-            },
-            MainAddress: {
-              IsRight: false,
-              Value: "",
-            },
-            AddressesAndAddressesWithLabel: {
-              Item1: [],
-              Item2: [],
-            },
-            AddressesByCity: [],
-            ImportantDate: {
-              IsRight: false,
-              Value: "",
-            },
-            CutOffDates: [],
-            AddressesBy: {
-              IsRight: false,
-              Value: [],
-            },
-            AddressesWithColorLabel: [],
-            Permissions: [],
-            CityByDepartment: [],
-            ShoeColours: [],
-            FriendsBirthdays: [],
-            Holidays: [],
-            FriendsAddresses: [],
-          };
-        })
+              Category: {
+                kind: "adult",
+                extraSpecial: false,
+              },
+              FullName: {
+                Item1: "",
+                Item2: "",
+              },
+              Birthday: "01/01/2000",
+              SubscribeToNewsletter: false,
+              FavoriteColor: { Value: { Value: null }, IsSome: false },
+              Gender: {
+                IsRight: false,
+                Value: {},
+              },
+              Dependants: [],
+              FriendsByCategory: [],
+              Relatives: [],
+              Interests: [],
+              Departments: [],
+              Emails: [],
+              SchoolAddress: {
+                StreetNumberAndCity: {
+                  Item1: faker.location.street(),
+                  Item2: Math.floor(Math.random() * 500),
+                  Item3:
+                    Math.random() > 0.5
+                      ? { IsSome: false, Value: { Value: "" } }
+                      : {
+                          IsSome: true,
+                          Value: {
+                            ...City.Default(v4(), faker.location.city()),
+                          },
+                        },
+                },
+              },
+              MainAddress: {
+                IsRight: false,
+                Value: "",
+              },
+              AddressesAndAddressesWithLabel: {
+                Item1: [],
+                Item2: [],
+              },
+              AddressesByCity: [],
+              ImportantDate: {
+                IsRight: false,
+                Value: "",
+              },
+              CutOffDates: [],
+              AddressesBy: {
+                IsRight: false,
+                Value: [],
+              },
+              AddressesWithColorLabel: [],
+              Permissions: [],
+              CityByDepartment: [],
+              ShoeColours: [],
+              FriendsBirthdays: [],
+              Holidays: [],
+              FriendsAddresses: [],
+            };
+          })
       : (_) => {
-        alert(`Cannot find entity API ${apiName} for 'default'`);
-        return Promise.reject();
-      },
+          alert(`Cannot find entity API ${apiName} for 'default'`);
+          return Promise.reject();
+        },
 };
 
 export const DispatchPersonFromConfigApis = {

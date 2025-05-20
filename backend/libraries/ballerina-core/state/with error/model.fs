@@ -48,7 +48,7 @@ module WithError =
           | Sum.Right e -> Sum.Right e
         | Sum.Right e -> Sum.Right e)
 
-    static member bind (p: State<'a, 'c, 's, 'e>) (k: 'a -> State<'b, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
+    static member bind (k: 'a -> State<'b, 'c, 's, 'e>) (p: State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
       State.map k p |> State.flatten
 
 
@@ -58,8 +58,8 @@ module WithError =
     member _.Zero<'c, 's, 'e>() = State.fromValue<'c, 's, 'e> ()
     member _.Return<'a, 'c, 's, 'e>(result: 'a) = State.fromValue<'c, 's, 'e> result
     member _.Yield(result: 'a) = State.fromValue<'c, 's, 'e> result
-    member _.Bind(p: State<'a, 'c, 's, 'e>, k: 'a -> State<'b, 'c, 's, 'e>) = State.bind p k
-    member _.Combine(p: State<'b, 'c, 's, 'e>, k: State<'a, 'c, 's, 'e>) = State.bind p (fun _ -> k)
+    member _.Bind(p: State<'a, 'c, 's, 'e>, k: 'a -> State<'b, 'c, 's, 'e>) = State.bind k p
+    member _.Combine(p: State<'b, 'c, 's, 'e>, k: State<'a, 'c, 's, 'e>) = State.bind (fun _ -> k) p
     member state.Repeat(p: State<'a, 'c, 's, 'e>) : State<'a, 'c, 's, 'e> = state.Bind(p, fun _ -> state.Repeat(p))
     member _.GetContext() = State(fun (c, _) -> Sum.Left(c, None))
     member _.GetState() = State(fun (_, s) -> Sum.Left(s, None))
