@@ -5,6 +5,7 @@ import {
   Value,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
@@ -25,7 +26,8 @@ export type BoolAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   Context &
-    Value<boolean> & { commonFormState: DispatchCommonFormState } & {
+    Value<boolean> &
+    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
       disabled: boolean;
     },
   BoolAbstractRendererState,

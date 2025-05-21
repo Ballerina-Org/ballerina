@@ -14,6 +14,7 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   FieldName,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 export type RecordAbstractRendererState = {
@@ -59,7 +60,10 @@ export const RecordAbstractRendererState = {
 };
 export type RecordAbstractRendererView<Context, ForeignMutationsExpected> =
   View<
-    Context & Value<ValueRecord> & RecordAbstractRendererState,
+    Context &
+      Value<ValueRecord> &
+      RecordAbstractRendererState &
+      DomNodeIdReadonlyContext,
     RecordAbstractRendererState,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueRecord>;

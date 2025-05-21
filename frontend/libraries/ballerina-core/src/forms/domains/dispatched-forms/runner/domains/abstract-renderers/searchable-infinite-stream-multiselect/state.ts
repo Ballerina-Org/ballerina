@@ -4,7 +4,11 @@ import { View } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
 import { ValueRecord } from "../../../../../parser/domains/predicates/state";
 import { CollectionReference } from "../../../../../collection/domains/reference/state";
-import { SimpleCallback, DispatchOnChange } from "../../../../../../../../main";
+import {
+  SimpleCallback,
+  DispatchOnChange,
+  DomNodeIdReadonlyContext,
+} from "../../../../../../../../main";
 
 export type InfiniteStreamMultiselectAbstractRendererView<
   Context extends FormLabel,
@@ -12,6 +16,7 @@ export type InfiniteStreamMultiselectAbstractRendererView<
 > = View<
   Context &
     Value<ValueRecord> &
+    DomNodeIdReadonlyContext &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
       isLoading: boolean;

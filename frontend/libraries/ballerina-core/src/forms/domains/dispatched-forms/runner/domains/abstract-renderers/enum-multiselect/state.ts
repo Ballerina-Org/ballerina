@@ -6,6 +6,7 @@ import {
   FormLabel,
   Guid,
   SimpleCallback,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 import { View } from "../../../../../../../template/state";
@@ -20,6 +21,7 @@ export type EnumMultiselectAbstractRendererView<
 > = View<
   Context &
     Value<ValueRecord> &
+    DomNodeIdReadonlyContext &
     EnumAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;

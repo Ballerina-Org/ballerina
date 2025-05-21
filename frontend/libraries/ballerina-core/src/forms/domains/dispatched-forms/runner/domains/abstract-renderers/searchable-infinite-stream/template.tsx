@@ -133,96 +133,96 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-            hasMoreValues: !(
-              props.context.customFormState.stream.loadedElements.last()
-                ?.hasMoreValues == false
-            ),
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            toggleOpen: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children
-                  .status(
-                    replaceWith(
-                      props.context.customFormState.status == "closed"
-                        ? "open"
-                        : "closed",
-                    ),
-                  )
-                  .then(
-                    props.context.customFormState.stream.loadedElements.count() ==
-                      0
-                      ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                          InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
-                        )
-                      : id,
-                  ),
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+              hasMoreValues: !(
+                props.context.customFormState.stream.loadedElements.last()
+                  ?.hasMoreValues == false
               ),
-            clearSelection: () => {
-              const delta: DispatchDelta = {
-                kind: "OptionReplace",
-                replace: PredicateValue.Default.option(
-                  false,
-                  PredicateValue.Default.unit(),
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              toggleOpen: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children
+                    .status(
+                      replaceWith(
+                        props.context.customFormState.status == "closed"
+                          ? "open"
+                          : "closed",
+                      ),
+                    )
+                    .then(
+                      props.context.customFormState.stream.loadedElements.count() ==
+                        0
+                        ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                            InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+                          )
+                        : id,
+                    ),
                 ),
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(
-                replaceWith(
-                  PredicateValue.Default.option(
+              clearSelection: () => {
+                const delta: DispatchDelta = {
+                  kind: "OptionReplace",
+                  replace: PredicateValue.Default.option(
                     false,
                     PredicateValue.Default.unit(),
                   ),
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(
+                  replaceWith(
+                    PredicateValue.Default.option(
+                      false,
+                      PredicateValue.Default.unit(),
+                    ),
+                  ),
+                  delta,
+                );
+              },
+              setSearchText: (_) =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(_),
+                  ),
                 ),
-                delta,
-              );
-            },
-            setSearchText: (_) =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(_),
+              loadMore: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+                  ),
                 ),
-              ),
-            loadMore: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                  InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+              reload: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(""),
+                  ),
                 ),
-              ),
-            reload: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(""),
-                ),
-              ),
-            select: (_) => {
-              const delta: DispatchDelta = {
-                kind: "OptionReplace",
-                replace: _,
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(replaceWith(_), delta);
-            },
-          }}
-        />
+              select: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "OptionReplace",
+                  replace: _,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(replaceWith(_), delta);
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([

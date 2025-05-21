@@ -127,17 +127,19 @@ export const UnionAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={props.context}
-          foreignMutations={{
-            ...props.foreignMutations,
-          }}
-          embeddedCaseTemplate={embeddedCaseTemplate}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+            }}
+            embeddedCaseTemplate={embeddedCaseTemplate}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

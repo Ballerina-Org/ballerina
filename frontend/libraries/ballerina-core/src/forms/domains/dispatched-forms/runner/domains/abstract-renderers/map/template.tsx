@@ -124,13 +124,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                elementUpdater(_.values.get(0)!),
-                                _.values.get(1)!,
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              elementUpdater(_.values.get(0)!),
+                              _.values.get(1)!,
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -238,13 +238,13 @@ export const MapAbstractRenderer = <
                       _ == undefined
                         ? _
                         : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                _.values.get(0)!,
-                                elementUpdater(_.values.get(1)!),
-                              ]),
-                            ),
+                        ? _
+                        : PredicateValue.Default.tuple(
+                            List([
+                              _.values.get(0)!,
+                              elementUpdater(_.values.get(1)!),
+                            ]),
+                          ),
                   ),
                 ),
               ),
@@ -310,86 +310,86 @@ export const MapAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            add: (_) => {
-              const delta: DispatchDelta = {
-                kind: "MapAdd",
-                keyValue: [
-                  GetDefaultKeyFormValue(),
-                  GetDefaultValueFormValue(),
-                ],
-                keyState: GetDefaultKeyFormState(),
-                keyType: (props.context.type as MapType<any>).args[0],
-                valueState: GetDefaultValueFormState(),
-                valueType: (props.context.type as MapType<any>).args[1],
-                isWholeEntityMutation: true, // TODO: check
-              };
-              props.foreignMutations.onChange(
-                Updater((list) =>
-                  PredicateValue.Default.tuple(
-                    ListRepo.Updaters.push<ValueTuple>(
-                      PredicateValue.Default.tuple(
-                        List([
-                          GetDefaultKeyFormValue(),
-                          GetDefaultValueFormValue(),
-                        ]),
-                      ),
-                    )(list.values as List<ValueTuple>),
-                  ),
-                ),
-                delta,
-              );
-              props.setState(
-                MapAbstractRendererState<
-                  KeyFormState,
-                  ValueFormState
-                >().Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
-                  ),
-                ),
-              );
-            },
-            remove: (_) => {
-              const delta: DispatchDelta = {
-                kind: "MapRemove",
-                index: _,
-                isWholeEntityMutation: true, // TODO: check
-              };
-              props.foreignMutations.onChange(
-                Updater((list) =>
-                  PredicateValue.Default.tuple(
-                    ListRepo.Updaters.remove<ValueTuple>(_)(
-                      list.values as List<ValueTuple>,
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              add: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "MapAdd",
+                  keyValue: [
+                    GetDefaultKeyFormValue(),
+                    GetDefaultValueFormValue(),
+                  ],
+                  keyState: GetDefaultKeyFormState(),
+                  keyType: (props.context.type as MapType<any>).args[0],
+                  valueState: GetDefaultValueFormState(),
+                  valueType: (props.context.type as MapType<any>).args[1],
+                  isWholeEntityMutation: true, // TODO: check
+                };
+                props.foreignMutations.onChange(
+                  Updater((list) =>
+                    PredicateValue.Default.tuple(
+                      ListRepo.Updaters.push<ValueTuple>(
+                        PredicateValue.Default.tuple(
+                          List([
+                            GetDefaultKeyFormValue(),
+                            GetDefaultValueFormValue(),
+                          ]),
+                        ),
+                      )(list.values as List<ValueTuple>),
                     ),
                   ),
-                ),
-                delta,
-              );
-              props.setState(
-                MapAbstractRendererState<
-                  KeyFormState,
-                  ValueFormState
-                >().Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
+                  delta,
+                );
+                props.setState(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
                   ),
-                ),
-              );
-            },
-          }}
-          embeddedKeyTemplate={embeddedKeyTemplate}
-          embeddedValueTemplate={embeddedValueTemplate}
-        />
+                );
+              },
+              remove: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "MapRemove",
+                  index: _,
+                  isWholeEntityMutation: true, // TODO: check
+                };
+                props.foreignMutations.onChange(
+                  Updater((list) =>
+                    PredicateValue.Default.tuple(
+                      ListRepo.Updaters.remove<ValueTuple>(_)(
+                        list.values as List<ValueTuple>,
+                      ),
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  MapAbstractRendererState<
+                    KeyFormState,
+                    ValueFormState
+                  >().Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+            }}
+            embeddedKeyTemplate={embeddedKeyTemplate}
+            embeddedValueTemplate={embeddedValueTemplate}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

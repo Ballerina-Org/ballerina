@@ -12,6 +12,7 @@ import {
   simpleUpdaterWithChildren,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -79,6 +80,7 @@ export type SearchableInfiniteStreamAbstractRendererView<
 > = View<
   Context &
     Value<ValueOption> &
+    DomNodeIdReadonlyContext &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
       disabled: boolean;

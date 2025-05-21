@@ -20,6 +20,7 @@ import {
   replaceWith,
   DispatchTableApiSource,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -137,6 +138,7 @@ export type AbstractTableRendererView<
 > = View<
   Context &
     Value<ValueOption> &
+    DomNodeIdReadonlyContext &
     AbstractTableRendererState & {
       hasMoreValues: boolean;
       disabled: boolean;

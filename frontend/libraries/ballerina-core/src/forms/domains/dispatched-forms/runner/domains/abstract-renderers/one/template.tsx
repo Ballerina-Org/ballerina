@@ -321,20 +321,20 @@ export const OneAbstractRenderer = (
     ) {
       return (
         <>
-          <IdProvider
-            id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-          />
-          <props.view
-            {...props}
-            context={{
-              ...props.context,
-              kind: "uninitialized",
-            }}
-            kind="uninitialized"
-            foreignMutations={{
-              kind: "uninitialized",
-            }}
-          />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+            <props.view
+              {...props}
+              context={{
+                ...props.context,
+                domNodeId: props.context.identifiers.withoutLauncher,
+                kind: "uninitialized",
+              }}
+              kind="uninitialized"
+              foreignMutations={{
+                kind: "uninitialized",
+              }}
+            />
+          </IdProvider>
         </>
       );
     }
@@ -354,94 +354,94 @@ export const OneAbstractRenderer = (
 
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          kind="initialized"
-          context={{
-            ...props.context,
-            kind: "initialized",
-            value: syncValue,
-            hasMoreValues: !(
-              props.context.customFormState.stream.loadedElements.last()
-                ?.hasMoreValues == false
-            ),
-          }}
-          // TO DO: Deltas here are on the whole One (selection)
-          foreignMutations={{
-            ...props.foreignMutations,
-            kind: "initialized",
-            onChange: (
-              _: BasicUpdater<ValueRecord | ValueUnit>,
-              nestedDelta: DispatchDelta,
-            ) => {
-              props.foreignMutations.onChange(id, nestedDelta);
-            },
-            toggleOpen: () =>
-              props.setState(
-                OneAbstractRendererState.Updaters.Core.customFormState.children
-                  .status(
-                    replaceWith(
-                      props.context.customFormState.status == "closed"
-                        ? "open"
-                        : "closed",
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            kind="initialized"
+            context={{
+              ...props.context,
+              kind: "initialized",
+              domNodeId: props.context.identifiers.withoutLauncher,
+              value: syncValue,
+              hasMoreValues: !(
+                props.context.customFormState.stream.loadedElements.last()
+                  ?.hasMoreValues == false
+              ),
+            }}
+            // TO DO: Deltas here are on the whole One (selection)
+            foreignMutations={{
+              ...props.foreignMutations,
+              kind: "initialized",
+              onChange: (
+                _: BasicUpdater<ValueRecord | ValueUnit>,
+                nestedDelta: DispatchDelta,
+              ) => {
+                props.foreignMutations.onChange(id, nestedDelta);
+              },
+              toggleOpen: () =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .status(
+                      replaceWith(
+                        props.context.customFormState.status == "closed"
+                          ? "open"
+                          : "closed",
+                      ),
+                    )
+                    .then(
+                      props.context.customFormState.stream.loadedElements.count() ==
+                        0
+                        ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                            ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                          )
+                        : id,
                     ),
-                  )
-                  .then(
-                    props.context.customFormState.stream.loadedElements.count() ==
-                      0
-                      ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                          ValueInfiniteStreamState.Updaters.Template.loadMore(),
-                        )
-                      : id,
-                  ),
-              ),
-            setSearchText: (_) =>
-              props.setState(
-                OneAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(_),
                 ),
-              ),
-            loadMore: () =>
-              props.setState(
-                OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                  ValueInfiniteStreamState.Updaters.Template.loadMore(),
-                ),
-              ),
-            reload: () =>
-              props.setState(
-                OneAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(""),
-                ),
-              ),
-            select: (_) => {
-              const delta: DispatchDelta = {
-                kind: "OptionReplace",
-                replace: _,
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: true,
-              };
-              props.setState(
-                OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-                  Synchronized.Updaters.sync(
-                    AsyncState.Updaters.toLoaded(
-                      ValueOrErrors.Default.return(_),
-                    ),
+              setSearchText: (_) =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(_),
                   ),
                 ),
-              );
-              props.foreignMutations.onChange(id, delta);
-            },
-          }}
-          DetailsRenderer={embeddedDetailsRenderer}
-          PreviewRenderer={embeddedPreviewRenderer}
-        />
+              loadMore: () =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                  ),
+                ),
+              reload: () =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(""),
+                  ),
+                ),
+              select: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "OptionReplace",
+                  replace: _,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: true,
+                };
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+                    Synchronized.Updaters.sync(
+                      AsyncState.Updaters.toLoaded(
+                        ValueOrErrors.Default.return(_),
+                      ),
+                    ),
+                  ),
+                );
+                props.foreignMutations.onChange(id, delta);
+              },
+            }}
+            DetailsRenderer={embeddedDetailsRenderer}
+            PreviewRenderer={embeddedPreviewRenderer}
+          />
+        </IdProvider>
       </>
     );
   }).any([

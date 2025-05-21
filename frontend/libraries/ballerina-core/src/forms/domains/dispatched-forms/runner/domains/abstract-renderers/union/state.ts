@@ -11,6 +11,7 @@ import {
   ValueUnionCase,
   View,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -59,7 +60,8 @@ export type UnionAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   UnionAbstractRendererReadonlyContext &
-    UnionAbstractRendererState<CaseFormState>,
+    UnionAbstractRendererState<CaseFormState> &
+    DomNodeIdReadonlyContext,
   UnionAbstractRendererState<CaseFormState>,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueUnionCase>;

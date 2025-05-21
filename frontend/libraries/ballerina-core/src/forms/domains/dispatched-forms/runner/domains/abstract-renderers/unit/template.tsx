@@ -48,28 +48,31 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          foreignMutations={{
-            ...props.foreignMutations,
-            onChange: (_) => {
-              const delta: DispatchDelta = {
-                kind: "UnitReplace",
-                replace: PredicateValue.Default.unit(),
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(_, delta);
-            },
-          }}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              onChange: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "UnitReplace",
+                  replace: PredicateValue.Default.unit(),
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(_, delta);
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

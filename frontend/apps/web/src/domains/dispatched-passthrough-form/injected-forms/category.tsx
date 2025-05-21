@@ -127,30 +127,33 @@ export const CategoryAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          foreignMutations={{
-            ...props.foreignMutations,
-            setNewValue: (_) => {
-              const delta: DeltaCustom = {
-                kind: "CustomDelta",
-                value: {
-                  kind: "CategoryReplace",
-                  replace: _,
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              setNewValue: (_) => {
+                const delta: DeltaCustom = {
+                  kind: "CustomDelta",
+                  value: {
+                    kind: "CategoryReplace",
+                    replace: _,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type,
                   },
-                  type: props.context.type,
-                },
-              };
-              props.foreignMutations.onChange(replaceWith(_), delta);
-            },
-          }}
-        />
+                };
+                props.foreignMutations.onChange(replaceWith(_), delta);
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   });

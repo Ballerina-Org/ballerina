@@ -32,6 +32,7 @@ import {
   ValueUnit,
   DispatchPrimitiveType,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -116,16 +117,19 @@ export const OneAbstractRendererState = {
   },
 };
 export type OneAbstractRendererView = View<
-  | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
-      value: ValueRecord | ValueUnit;
-    } & OneAbstractRendererState & {
-        hasMoreValues: boolean;
-        disabled: boolean;
-        kind: "initialized";
-      })
-  | {
-      kind: "uninitialized";
-    },
+  (
+    | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
+        value: ValueRecord | ValueUnit;
+      } & OneAbstractRendererState & {
+          hasMoreValues: boolean;
+          disabled: boolean;
+          kind: "initialized";
+        })
+    | {
+        kind: "uninitialized";
+      }
+  ) &
+    DomNodeIdReadonlyContext,
   OneAbstractRendererState,
   | {
       kind: "initialized";

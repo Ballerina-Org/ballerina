@@ -5,6 +5,7 @@ import {
   ValueOption,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { FormLabel } from "../../../../../../../../main";
@@ -40,7 +41,8 @@ export type EnumAbstractRendererView<
 > = View<
   Context &
     Value<ValueOption> &
-    EnumAbstractRendererState & {
+    EnumAbstractRendererState &
+    DomNodeIdReadonlyContext & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
     } & { disabled: boolean },
   EnumAbstractRendererState,

@@ -10,6 +10,7 @@ import {
   ValueTuple,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { FormLabel, View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
@@ -56,7 +57,10 @@ export type TupleAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
 > = View<
-  Context & Value<ValueTuple> & TupleAbstractRendererState<ItemFormState>,
+  Context &
+    Value<ValueTuple> &
+    TupleAbstractRendererState<ItemFormState> &
+    DomNodeIdReadonlyContext,
   TupleAbstractRendererState<ItemFormState>,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueTuple>;
