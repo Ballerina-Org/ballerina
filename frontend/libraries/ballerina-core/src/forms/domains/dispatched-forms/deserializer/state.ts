@@ -93,7 +93,9 @@ export type DispatcherContext<
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   IdProvider: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
-  tableApiSources?: DispatchTableApiSources;
+  tableApiSources?: <
+    FilteringAndSortingState,
+  >() => DispatchTableApiSources<FilteringAndSortingState>;
   lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
     type: DispatchParsedType<T>,
@@ -123,17 +125,17 @@ export type DispatchInfiniteStreamSources = BasicFun<
   >
 >;
 export type DispatchTableApiName = string;
-export type DispatchTableApiSource = {
+export type DispatchTableApiSource<FilteringAndSortingState> = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    BasicFun<FilteringAndSortingState, ValueInfiniteStreamState["getChunk"]>
   >;
 };
 
-export type DispatchTableApiSources = BasicFun<
+export type DispatchTableApiSources<FilteringAndSortingState> = BasicFun<
   string,
-  ValueOrErrors<DispatchTableApiSource, string>
+  ValueOrErrors<DispatchTableApiSource<FilteringAndSortingState>, string>
 >;
 
 export type DispatchApiName = string;
@@ -183,7 +185,9 @@ export const parseDispatchFormsToLaunchers =
     entityApis: DispatchEntityApis,
     IdProvider: (props: IdWrapperProps) => React.ReactNode,
     ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    tableApiSources?: DispatchTableApiSources,
+    tableApiSources?: <
+      FilteringAndSortingState,
+    >() => DispatchTableApiSources<FilteringAndSortingState>,
     lookupSources?: DispatchLookupSources,
   ) =>
   (
@@ -314,7 +318,9 @@ export type DispatchFormsParserContext<
   entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
-  tableApiSources?: DispatchTableApiSources;
+  tableApiSources?: <
+    FilteringAndSortingState,
+  >() => DispatchTableApiSources<FilteringAndSortingState>;
 };
 export type DispatchFormsParserState<
   T extends { [key in keyof T]: { type: any; state: any } },

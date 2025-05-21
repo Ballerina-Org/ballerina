@@ -763,10 +763,6 @@ export const PersonConcreteRenderers = {
                         {header}
                         <button
                           onClick={() => {
-                            props.foreignMutations.setStreamParam([
-                              "sortColumn",
-                              header,
-                            ]);
                             const currentSortColumn =
                               props.context.customFormState.streamParams.value.get(
                                 "sortColumn",
@@ -787,6 +783,10 @@ export const PersonConcreteRenderers = {
                             props.foreignMutations.setStreamParam([
                               "sortDirection",
                               nextDirection,
+                            ]);
+                            props.foreignMutations.setStreamParam([
+                              "sortColumn",
+                              nextDirection ? header : undefined,
                             ]);
                           }}
                         >

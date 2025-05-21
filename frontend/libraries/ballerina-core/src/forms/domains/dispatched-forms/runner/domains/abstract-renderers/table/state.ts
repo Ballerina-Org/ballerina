@@ -20,6 +20,8 @@ import {
   replaceWith,
   DispatchTableApiSource,
   DispatchOnChange,
+  Maybe,
+  Option,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -28,8 +30,8 @@ import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type AbstractTableRendererReadonlyContext = {
-  tableApiSource: DispatchTableApiSource;
+export type AbstractTableRendererReadonlyContext<FilteringAndSortingState> = {
+  tableApiSource: DispatchTableApiSource<FilteringAndSortingState>;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
   type: ParsedType<any>;
   bindings: Bindings;
@@ -38,28 +40,28 @@ export type AbstractTableRendererReadonlyContext = {
   label?: string;
 };
 
-export type AbstractTableRendererState = {
+export type AbstractTableRendererState<FilteringAndSortingState> = {
   commonFormState: DispatchCommonFormState;
   customFormState: {
     selectedRows: Set<string>;
     selectedDetailRow: [number, string] | undefined;
     isInitialized: boolean;
-    streamParams: Debounced<Value<Map<string, string>>>;
+    streamParams: Debounced<Value<Option<FilteringAndSortingState>>>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
-      Map<string, string>,
+      FilteringAndSortingState,
       ValueInfiniteStreamState["getChunk"]
     >;
   };
 };
-export const AbstractTableRendererState = {
-  Default: (): AbstractTableRendererState => ({
+export const AbstractTableRendererState = <FilteringAndSortingState>() => ({
+  Default: (): AbstractTableRendererState<FilteringAndSortingState> => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
       isInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      streamParams: Debounced.Default(Value.Default(Map())),
+      streamParams: Debounced.Default(Value.Default(Option.Default.none())),
       // TODO: replace with su
       getChunkWithParams: undefined as any,
       stream: undefined as any,
@@ -67,44 +69,50 @@ export const AbstractTableRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "getChunkWithParams",
-        ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "stream",
-        ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "streamParams",
-        ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "isInitialized",
-        ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "selectedDetailRow",
-        ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "selectedRows",
-        ),
+      ...simpleUpdaterWithChildren<
+        AbstractTableRendererState<FilteringAndSortingState>
+      >()({
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("getChunkWithParams"),
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("stream"),
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("streamParams"),
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("isInitialized"),
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("selectedDetailRow"),
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["customFormState"]
+        >()("selectedRows"),
       })("customFormState"),
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["commonFormState"]>()(
-          "modifiedByUser",
-        ),
+      ...simpleUpdaterWithChildren<
+        AbstractTableRendererState<FilteringAndSortingState>
+      >()({
+        ...simpleUpdater<
+          AbstractTableRendererState<FilteringAndSortingState>["commonFormState"]
+        >()("modifiedByUser"),
       })("commonFormState"),
     },
     Template: {
-      searchText: (
-        key: string,
-        _: BasicUpdater<string>,
-      ): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
-          Debounced.Updaters.Template.value(
-            Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
-          ),
-        ),
-      loadMore: (): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+      // searchText: (
+      //   key: string,
+      //   _: BasicUpdater<string>,
+      // ): Updater<AbstractTableRendererState<FilteringAndSortingState> =>
+      //   AbstractTableRendererState<FilteringAndSortingState>().Updaters.Core.customFormState.children.streamParams(
+      //     Debounced.Updaters.Template.value(
+      //       Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
+      //     ),
+      //   ),
+      loadMore: (): Updater<
+        AbstractTableRendererState<FilteringAndSortingState>
+      > =>
+        AbstractTableRendererState<FilteringAndSortingState>().Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
         ),
     },
@@ -130,19 +138,20 @@ export const AbstractTableRendererState = {
         }),
       ),
   },
-};
+});
 export type AbstractTableRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  FilteringAndSortingState,
 > = View<
   Context &
     Value<ValueOption> &
-    AbstractTableRendererState & {
+    AbstractTableRendererState<FilteringAndSortingState> & {
       hasMoreValues: boolean;
       disabled: boolean;
       identifiers: { withLauncher: string; withoutLauncher: string };
     },
-  AbstractTableRendererState,
+  AbstractTableRendererState<FilteringAndSortingState>,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<PredicateValue>;
     toggleOpen: SimpleCallback<void>;
