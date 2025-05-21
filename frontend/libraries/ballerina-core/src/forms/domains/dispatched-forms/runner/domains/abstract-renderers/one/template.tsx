@@ -321,7 +321,7 @@ export const OneAbstractRenderer = (
     ) {
       return (
         <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
             <props.view
               {...props}
               context={{

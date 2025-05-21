@@ -104,34 +104,34 @@ export const RecordDispatcher = {
                   "internal error: launcherName is required for top level forms",
                 )
               : formName == undefined
-              ? ValueOrErrors.Default.throwOne<
-                  Template<any, any, any, any>,
-                  string
-                >("internal error: formName is required for all forms")
-              : ValueOrErrors.Default.return(
-                  RecordAbstractRenderer(
-                    Map(fieldTemplates),
-                    renderer.tabs,
-                    dispatcherContext.IdProvider,
-                    dispatcherContext.ErrorRenderer,
-                    renderer.isInlined,
-                  )
-                    .mapContext((_: any) => ({
-                      ..._,
-                      type: renderer.type,
-                      ...(!isNested && launcherName
-                        ? {
-                            identifiers: {
-                              // withLauncher: `[${launcherName}][${formName}]`,
-                              // withoutLauncher: `[${formName}]`,
-                              withLauncher: `[${type.name}]`,
-                              withoutLauncher: `[${type.name}]`,
-                            },
-                          }
-                        : {}),
-                    }))
-                    .withView(concreteRenderer),
-                ),
+                ? ValueOrErrors.Default.throwOne<
+                    Template<any, any, any, any>,
+                    string
+                  >("internal error: formName is required for all forms")
+                : ValueOrErrors.Default.return(
+                    RecordAbstractRenderer(
+                      Map(fieldTemplates),
+                      renderer.tabs,
+                      dispatcherContext.IdProvider,
+                      dispatcherContext.ErrorRenderer,
+                      renderer.isInlined,
+                    )
+                      .mapContext((_: any) => ({
+                        ..._,
+                        type: renderer.type,
+                        ...(!isNested && launcherName
+                          ? {
+                              identifiers: {
+                                // withLauncher: `[${launcherName}][${formName}]`,
+                                // withoutLauncher: `[${formName}]`,
+                                withLauncher: `[${type.name}]`,
+                                withoutLauncher: `[${type.name}]`,
+                              },
+                            }
+                          : {}),
+                      }))
+                      .withView(concreteRenderer),
+                  ),
           ),
         )
         .MapErrors((errors) =>

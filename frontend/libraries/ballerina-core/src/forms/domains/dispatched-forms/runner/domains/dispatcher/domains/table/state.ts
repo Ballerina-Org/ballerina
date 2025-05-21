@@ -23,10 +23,12 @@ export const TableDispatcher = {
       api == undefined
         ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
         : dispatcherContext.tableApiSources == undefined
-        ? ValueOrErrors.Default.throwOne("table api sources are not defined")
-        : Array.isArray(api)
-        ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
-        : dispatcherContext.tableApiSources(api),
+          ? ValueOrErrors.Default.throwOne("table api sources are not defined")
+          : Array.isArray(api)
+            ? ValueOrErrors.Default.throwOne(
+                "lookup api not supported for table",
+              )
+            : dispatcherContext.tableApiSources(api),
     DispatchDetailsRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
