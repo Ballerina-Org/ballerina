@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="state/with error/model.fs" />
     <Compile Include="business rule engine/parser/common.fs" />
     <Compile Include="business rule engine/parser/exprtype.fs" />
     <Compile Include="business rule engine/parser/expr.fs" />
