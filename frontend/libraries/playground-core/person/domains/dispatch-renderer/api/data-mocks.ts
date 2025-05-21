@@ -68,6 +68,7 @@ const getActiveUsers: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug({ streamParams });
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -179,6 +180,7 @@ const getActiveFriends: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug({ streamParams });
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -298,12 +300,59 @@ const getFriends: DispatchOneSource = {
     },
 };
 
+const getLocations: DispatchOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Lat: 12,
+      Long: 23,
+    }));
+  },
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Lat: 245 + _,
+            Long: 453 + _,
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
 const lookupSources: DispatchLookupSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
         one: (apiName: string) =>
           apiName == "BestFriendApi"
             ? ValueOrErrors.Default.return(getFriends)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting lookup api sources`,
+              ),
+      })
+    : typeName == "Person"
+    ? ValueOrErrors.Default.return({
+        one: (apiName: string) =>
+          apiName == "LocationApi"
+            ? ValueOrErrors.Default.return(getLocations)
             : ValueOrErrors.Default.throwOne(
                 `can't find api ${apiName} when getting lookup api sources`,
               ),
@@ -316,15 +365,15 @@ const tableApiSources: DispatchTableApiSources = (streamName: string) =>
   streamName == "ActiveUsersApi"
     ? ValueOrErrors.Default.return(getActiveUsers)
     : streamName == "ActiveFriendsApi"
-      ? ValueOrErrors.Default.return(getActiveFriends)
-      : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
+    ? ValueOrErrors.Default.return(getActiveFriends)
+    : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
 
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
   streamName == "departments"
     ? ValueOrErrors.Default.return(PersonApi.getDepartments())
     : streamName == "cities"
-      ? ValueOrErrors.Default.return(AddressApi.getCities())
-      : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
+    ? ValueOrErrors.Default.return(AddressApi.getCities())
+    : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "colors"
@@ -337,57 +386,55 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
         ),
       )
     : enumName == "permissions"
-      ? ValueOrErrors.Default.return(() =>
-          PromiseRepo.Default.mock(
-            () => permissions.map((_) => ({ Value: _ })),
-            undefined,
-            1,
-            0,
-          ),
-        )
-      : enumName == "genders"
-        ? ValueOrErrors.Default.return(() =>
-            PromiseRepo.Default.mock(
-              () => genders.map((_) => ({ Value: _ })),
-              undefined,
-              1,
-              0,
-            ),
-          )
-        : enumName == "interests"
-          ? ValueOrErrors.Default.return(() =>
-              PromiseRepo.Default.mock(
-                () => interests.map((_) => ({ Value: _ })),
-                undefined,
-                1,
-                0,
-              ),
-            )
-          : enumName == "addressesFields"
-            ? ValueOrErrors.Default.return(() =>
-                PromiseRepo.Default.mock(
-                  () =>
-                    [
-                      "AddressesByCity",
-                      "Departments",
-                      "SchoolAddress",
-                      "MainAddress",
-                      "AddressesAndAddressesWithLabel",
-                      "AddressesWithColorLabel",
-                      "AddressesBy",
-                      "Permissions",
-                      "CityByDepartment",
-                      "Holidays",
-                      "FriendsAddresses",
-                    ].map((_) => ({ Value: _ })),
-                  undefined,
-                  1,
-                  0,
-                ),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `Cannot find enum API ${enumName}`,
-              );
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => permissions.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "genders"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => genders.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "interests"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () => interests.map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : enumName == "addressesFields"
+    ? ValueOrErrors.Default.return(() =>
+        PromiseRepo.Default.mock(
+          () =>
+            [
+              "AddressesByCity",
+              "Departments",
+              "SchoolAddress",
+              "MainAddress",
+              "AddressesAndAddressesWithLabel",
+              "AddressesWithColorLabel",
+              "AddressesBy",
+              "Permissions",
+              "CityByDepartment",
+              "Holidays",
+              "FriendsAddresses",
+            ].map((_) => ({ Value: _ })),
+          undefined,
+          1,
+          0,
+        ),
+      )
+    : ValueOrErrors.Default.throwOne(`Cannot find enum API ${enumName}`);
 const entityApis: EntityApis = {
   create: (apiName: string) =>
     apiName == "person"
@@ -453,6 +500,16 @@ const entityApis: EntityApis = {
             FullName: {
               Item1: faker.person.firstName(),
               Item2: faker.person.lastName(),
+            },
+            Location: {
+              Item1: {
+                IsSome: false,
+                Value: {
+                  Lat: 12,
+                  Long: 23,
+                },
+              },
+              Item2: faker.location.city(),
             },
             Birthday: new Date(
               Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,

@@ -350,6 +350,12 @@
         }
       ]
     },
+    "ComplexLocation": {
+      "fields": {
+        "Lat": "number",
+        "Long": "number"
+      }
+    },
     "Person": {
       "fields": {
         "Id": "guid",
@@ -521,6 +527,22 @@
         "BestFriend": {
           "fun": "One",
           "args": ["User"]
+        },
+        "Location": {
+          "fun": "Tuple",
+          "args": [
+            {
+              "fun": "Sum",
+              "args": [
+                {
+                  "fun": "One",
+                  "args": ["ComplexLocation"]
+                },
+                "unit"
+              ]
+            },
+            "string"
+          ]
         }
       }
     }
@@ -531,6 +553,14 @@
         "one": {
           "BestFriendApi": {
             "type": "User",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      },
+      "Person": {
+        "one": {
+          "LocationApi": {
+            "type": "Location",
             "methods": ["get", "getManyUnlinked"]
           }
         }
@@ -914,6 +944,28 @@
         }
       },
       "visibleColumns": ["Name", "Surname", "FavoriteColor"]
+    },
+    "complexLocation": {
+      "type": "ComplexLocation",
+      "fields": {
+        "Lat": {
+          "renderer": "defaultNumber"
+        },
+        "Long": {
+          "renderer": "defaultNumber"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Lat", "Long"]
+              }
+            }
+          }
+        }
+      }
     },
     "person": {
       "type": "Person",
@@ -1517,6 +1569,30 @@
             }
           },
           "api": ["User", "BestFriendApi"]
+        },
+        "Location": {
+          "label": "Location",
+          "type": "Location",
+          "renderer": "defaultTuple2",
+          "itemRenderers": [
+            {
+              "renderer": "defaultSum",
+              "leftRenderer": {
+                "label": "complex location",
+                "renderer": "partialAdmin",
+                "detailsRenderer": {
+                  "renderer": "complexLocation"
+                },
+                "api": ["Person", "LocationApi"]
+              },
+              "rightRenderer": {
+                "renderer": "defaultUnit"
+              }
+            },
+            {
+              "renderer": "defaultString"
+            }
+          ]
         }
       },
       "tabs": {
@@ -1539,7 +1615,8 @@
                   "FriendsBirthdays",
                   "ShoeColours",
                   "ImportantDate",
-                  "CutOffDates"
+                  "CutOffDates",
+                  "Location"
                 ]
               }
             },
