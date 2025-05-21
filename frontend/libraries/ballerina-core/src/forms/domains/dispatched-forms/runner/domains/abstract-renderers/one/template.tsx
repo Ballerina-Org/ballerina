@@ -92,7 +92,7 @@ export const OneAbstractRenderer = (
         withoutLauncher: _.identifiers.withoutLauncher.concat(`[details]`),
       },
       // this is not correct, type is a lookup -- todo, resolve in the dispatcher
-      type: _.type.args[0] as RecordType<any>,
+      type: _.type.args as RecordType<any>,
     };
   })
     .mapState((_) =>
@@ -174,7 +174,7 @@ export const OneAbstractRenderer = (
           withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
           withoutLauncher: _.identifiers.withoutLauncher.concat(`[preview]`),
         },
-        type: _.type.args[0],
+        type: _.type.args,
       };
     })
       .mapState(
