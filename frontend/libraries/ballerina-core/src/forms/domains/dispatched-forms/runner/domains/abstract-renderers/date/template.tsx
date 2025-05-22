@@ -51,39 +51,45 @@ export const DateAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          foreignMutations={{
-            ...props.foreignMutations,
-            setNewValue: (_) => {
-              props.setState(
-                DateAbstractRendererState.Updaters.Core.customFormState.children.possiblyInvalidInput(
-                  replaceWith(_),
-                ),
-              );
-              const newValue = _ == undefined ? _ : new Date(_);
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              setNewValue: (_) => {
+                props.setState(
+                  DateAbstractRendererState.Updaters.Core.customFormState.children.possiblyInvalidInput(
+                    replaceWith(_),
+                  ),
+                );
+                const newValue = _ == undefined ? _ : new Date(_);
 
-              if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-                const delta: DispatchDelta = {
-                  kind: "TimeReplace",
-                  replace: newValue.toISOString(),
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
-                  },
-                  type: props.context.type,
-                  isWholeEntityMutation: false,
-                };
-                setTimeout(() => {
-                  props.foreignMutations.onChange(replaceWith(newValue), delta);
-                }, 0);
-              }
-            },
-          }}
-        />
+                if (!(newValue == undefined || isNaN(newValue.getTime()))) {
+                  const delta: DispatchDelta = {
+                    kind: "TimeReplace",
+                    replace: newValue.toISOString(),
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type,
+                    isWholeEntityMutation: false,
+                  };
+                  setTimeout(() => {
+                    props.foreignMutations.onChange(
+                      replaceWith(newValue),
+                      delta,
+                    );
+                  }, 0);
+                }
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

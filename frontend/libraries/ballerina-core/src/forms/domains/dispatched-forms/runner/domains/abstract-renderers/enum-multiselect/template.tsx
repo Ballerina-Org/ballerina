@@ -77,70 +77,71 @@ export const EnumMultiselectAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-            selectedIds: props.context.value.fields.keySeq().toArray(),
-            activeOptions: !AsyncState.Operations.hasValue(
-              props.context.customFormState.options.sync,
-            )
-              ? "unloaded"
-              : props.context.customFormState.options.sync.value
-                  .valueSeq()
-                  .toArray(),
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            setNewValue: (_) => {
-              if (
-                !AsyncState.Operations.hasValue(
-                  props.context.customFormState.options.sync,
-                )
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+              selectedIds: props.context.value.fields.keySeq().toArray(),
+              activeOptions: !AsyncState.Operations.hasValue(
+                props.context.customFormState.options.sync,
               )
-                return;
-              const options = props.context.customFormState.options.sync.value;
-              const newSelection = _.flatMap((_) => {
-                const selectedItem = options.get(_);
-                if (selectedItem != undefined) {
-                  const item: [string, ValueRecord] = [_, selectedItem];
-                  return [item];
-                }
-                return [];
-              });
-              const delta: DispatchDelta = {
-                kind: "SetReplace",
-                replace: PredicateValue.Default.record(
-                  OrderedMap(newSelection),
-                ),
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(
-                replaceWith(
-                  PredicateValue.Default.record(OrderedMap(newSelection)),
-                ),
-                delta,
-              );
-            },
-            loadOptions: () => {
-              props.setState((current) => ({
-                ...current,
-                customFormState: {
-                  ...current.customFormState,
-                  shouldLoad: true,
-                },
-              }));
-            },
-          }}
-        />
+                ? "unloaded"
+                : props.context.customFormState.options.sync.value
+                    .valueSeq()
+                    .toArray(),
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              setNewValue: (_) => {
+                if (
+                  !AsyncState.Operations.hasValue(
+                    props.context.customFormState.options.sync,
+                  )
+                )
+                  return;
+                const options =
+                  props.context.customFormState.options.sync.value;
+                const newSelection = _.flatMap((_) => {
+                  const selectedItem = options.get(_);
+                  if (selectedItem != undefined) {
+                    const item: [string, ValueRecord] = [_, selectedItem];
+                    return [item];
+                  }
+                  return [];
+                });
+                const delta: DispatchDelta = {
+                  kind: "SetReplace",
+                  replace: PredicateValue.Default.record(
+                    OrderedMap(newSelection),
+                  ),
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(
+                  replaceWith(
+                    PredicateValue.Default.record(OrderedMap(newSelection)),
+                  ),
+                  delta,
+                );
+              },
+              loadOptions: () => {
+                props.setState((current) => ({
+                  ...current,
+                  customFormState: {
+                    ...current.customFormState,
+                    shouldLoad: true,
+                  },
+                }));
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([

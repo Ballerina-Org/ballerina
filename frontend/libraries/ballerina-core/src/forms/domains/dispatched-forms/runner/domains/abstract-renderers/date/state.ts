@@ -7,6 +7,7 @@ import {
   SimpleCallback,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
@@ -37,6 +38,7 @@ export type DateAbstractRendererView<
 > = View<
   Context &
     Value<Maybe<Date>> &
+    DomNodeIdReadonlyContext &
     DateAbstractRendererState & { disabled: boolean },
   DateAbstractRendererState,
   ForeignMutationsExpected & {

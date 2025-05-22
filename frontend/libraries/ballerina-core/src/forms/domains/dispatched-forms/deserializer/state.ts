@@ -60,7 +60,8 @@ export type DispatchParsedLaunchers<T> = {
 };
 
 export type IdWrapperProps = {
-  id: string;
+  domNodeId: string;
+  children: React.ReactNode;
 };
 
 export type ErrorRendererProps = {

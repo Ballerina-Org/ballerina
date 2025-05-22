@@ -6,6 +6,7 @@ import {
   SimpleCallback,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
@@ -44,7 +45,10 @@ export type ListAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
 > = View<
-  Context & Value<ValueTuple> & ListAbstractRendererState,
+  Context &
+    Value<ValueTuple> &
+    DomNodeIdReadonlyContext &
+    ListAbstractRendererState,
   ListAbstractRendererState,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueTuple>;

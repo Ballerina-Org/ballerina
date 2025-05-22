@@ -14,6 +14,7 @@ import {
   MapRepo,
   BasicUpdater,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 export type MapAbstractRendererState<KeyFormState, ValueFormState> = {
@@ -105,6 +106,7 @@ export type MapAbstractRendererView<
 > = View<
   Context &
     Value<ValueTuple> &
+    DomNodeIdReadonlyContext &
     MapAbstractRendererState<KeyFormState, ValueFormState>,
   MapAbstractRendererState<KeyFormState, ValueFormState>,
   ForeignMutationsExpected & {

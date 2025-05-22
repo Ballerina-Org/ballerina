@@ -81,7 +81,7 @@ export const OneRenderer = {
       serialized.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type.args[0],
+            type.args,
             serialized.previewRenderer,
             concreteRenderers,
             "preview renderer",
@@ -96,7 +96,7 @@ export const OneRenderer = {
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
-            type.args[0],
+            type.args,
             validatedSerialized.detailsRenderer,
             concreteRenderers,
             "details renderer",

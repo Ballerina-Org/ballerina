@@ -98,7 +98,7 @@ export const OneDispatcher = {
                             ..._,
                             getApi,
                             fromApiParser: dispatcherContext.parseFromApiByType(
-                              type.args[0],
+                              type.args,
                             ),
                           }))
                           .withView(concreteRenderer),

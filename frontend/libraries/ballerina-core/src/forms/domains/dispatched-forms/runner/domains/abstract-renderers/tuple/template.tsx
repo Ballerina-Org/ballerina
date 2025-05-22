@@ -184,19 +184,19 @@ export const DispatchTupleAbstractRenderer = <
 
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-          }}
-          embeddedItemTemplates={embeddedItemTemplates}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+            }}
+            embeddedItemTemplates={embeddedItemTemplates}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

@@ -175,10 +175,10 @@ export const TableAbstractRenderer = <
         extraContext: _.extraContext,
         identifiers: {
           withLauncher: _.identifiers.withLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}][details]`,
+            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
           ),
           withoutLauncher: _.identifiers.withoutLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}][details]`,
+            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
           ),
         },
       };
@@ -346,66 +346,66 @@ export const TableAbstractRenderer = <
 
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            loadMore: () =>
-              props.setState(
-                AbstractTableRendererState.Updaters.Template.loadMore(),
-              ),
-            selectDetailView: (rowId: string) => {
-              const chunkIndex =
-                ValueInfiniteStreamState.Operations.getChunkIndexForValue(
-                  props.context.customFormState.stream,
-                  rowId,
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              loadMore: () =>
+                props.setState(
+                  AbstractTableRendererState.Updaters.Template.loadMore(),
+                ),
+              selectDetailView: (rowId: string) => {
+                const chunkIndex =
+                  ValueInfiniteStreamState.Operations.getChunkIndexForValue(
+                    props.context.customFormState.stream,
+                    rowId,
+                  );
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                    chunkIndex.kind == "value"
+                      ? replaceWith<[number, string] | undefined>([
+                          chunkIndex.value,
+                          rowId,
+                        ])
+                      : id,
+                  ),
                 );
-              props.setState(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
-                  chunkIndex.kind == "value"
-                    ? replaceWith<[number, string] | undefined>([
-                        chunkIndex.value,
-                        rowId,
-                      ])
-                    : id,
+              },
+              clearDetailView: () =>
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                    replaceWith<[number, string] | undefined>(undefined),
+                  ),
                 ),
-              );
-            },
-            clearDetailView: () =>
-              props.setState(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
-                  replaceWith<[number, string] | undefined>(undefined),
+              selectRow: (rowId: string) =>
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                    (_) => (_.has(rowId) ? _.remove(rowId) : _.add(rowId)),
+                  ),
                 ),
-              ),
-            selectRow: (rowId: string) =>
-              props.setState(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
-                  (_) => (_.has(rowId) ? _.remove(rowId) : _.add(rowId)),
+              selectAllRows: () =>
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                    replaceWith(Set(tableData.keySeq())),
+                  ),
                 ),
-              ),
-            selectAllRows: () =>
-              props.setState(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
-                  replaceWith(Set(tableData.keySeq())),
+              clearRows: () =>
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                    replaceWith(Set()),
+                  ),
                 ),
-              ),
-            clearRows: () =>
-              props.setState(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
-                  replaceWith(Set()),
-                ),
-              ),
-          }}
-          TableHeaders={visibleColumns.value.columns}
-          EmbeddedTableData={tableData}
-          DetailsRenderer={embedDetailsRenderer}
-        />
+            }}
+            TableHeaders={visibleColumns.value.columns}
+            EmbeddedTableData={tableData}
+            DetailsRenderer={embedDetailsRenderer}
+          />
+        </IdProvider>
       </>
     );
   }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);

@@ -49,7 +49,7 @@ const ShowFormsParsingErrors = (
   </div>
 );
 
-const IdWrapper = ({ id }: IdWrapperProps) => <div className={id} />;
+const IdWrapper = ({ children }: IdWrapperProps) => <>{children}</>;
 
 const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   <div style={{ border: "red" }}>

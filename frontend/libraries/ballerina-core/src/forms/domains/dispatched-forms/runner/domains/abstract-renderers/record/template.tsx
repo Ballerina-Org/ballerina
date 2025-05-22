@@ -273,23 +273,23 @@ export const RecordAbstractRenderer = <
 
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          context={{
-            ...props.context,
-            layout: calculatedLayout.value,
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-          }}
-          setState={props.setState}
-          EmbeddedFields={EmbeddedFieldTemplates}
-          VisibleFieldKeys={visibleFieldKeysSet}
-          DisabledFieldKeys={disabledFieldKeysSet}
-          FieldLabels={fieldLabelsMap}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+              layout: calculatedLayout.value,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+            }}
+            setState={props.setState}
+            EmbeddedFields={EmbeddedFieldTemplates}
+            VisibleFieldKeys={visibleFieldKeysSet}
+            DisabledFieldKeys={disabledFieldKeysSet}
+            FieldLabels={fieldLabelsMap}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

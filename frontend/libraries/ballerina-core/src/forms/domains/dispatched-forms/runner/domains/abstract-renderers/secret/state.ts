@@ -6,6 +6,7 @@ import {
   View,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 export type SecretAbstractRendererState = {
@@ -25,6 +26,7 @@ export type SecretAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   Context &
+    DomNodeIdReadonlyContext &
     Value<string> & { commonFormState: DispatchCommonFormState } & {
       disabled: boolean;
     },

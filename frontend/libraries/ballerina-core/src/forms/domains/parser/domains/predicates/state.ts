@@ -254,6 +254,19 @@ export type ValueUnionCase = {
   caseName: string;
   fields: ValueRecord;
 };
+export const ValueUnionCase = {
+  Default: (caseName: string, fields: ValueRecord): ValueUnionCase => ({
+    kind: "unionCase",
+    caseName,
+    fields,
+  }),
+  Updaters: {
+    case: (caseName: string) => (upd: BasicUpdater<ValueRecord>) =>
+      Updater<ValueUnionCase>((v) =>
+        ValueUnionCase.Default(caseName, upd(v.fields)),
+      ),
+  },
+};
 export type ValuePrimitive = number | string | boolean | Date;
 export type ValueUnit = { kind: "unit" };
 export type ValueTuple = { kind: "tuple"; values: List<PredicateValue> };

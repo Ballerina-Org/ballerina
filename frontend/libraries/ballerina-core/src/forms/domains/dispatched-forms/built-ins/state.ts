@@ -431,17 +431,17 @@ export const dispatchDefaultState =
                 ? ValueOrErrors.Default.throwOne(
                     `cannot find table api source for ${renderer.api}`,
                   )
-                : t.args[0].kind !== "lookup"
+                : t.args.kind !== "lookup"
                   ? ValueOrErrors.Default.throwOne(
-                      `expected lookup type for one but got ${t.args[0]}`,
+                      `expected lookup type for one but got ${t.args}`,
                     )
                   : tableApiSources(renderer.api).Then((tableApiSource) =>
                       MapRepo.Operations.tryFindWithError(
-                        t.args[0].name,
+                        t.args.name,
                         types,
                         () =>
                           `cannot find lookup type ${JSON.stringify(
-                            t.args[0],
+                            t.args,
                           )} in ${JSON.stringify(t)}`,
                       ).Then((lookupType) =>
                         ValueOrErrors.Default.return(
@@ -474,11 +474,11 @@ export const dispatchDefaultState =
                       : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
                           .Then((oneSource) =>
                             MapRepo.Operations.tryFindWithError(
-                              t.args[0].name,
+                              t.args.name,
                               types,
                               () =>
                                 `cannot find lookup type ${JSON.stringify(
-                                  t.args[0],
+                                  t.args,
                                 )} in ${JSON.stringify(t)}`,
                             ).Then((lookupType) =>
                               ValueOrErrors.Default.return(
@@ -1077,7 +1077,7 @@ export const dispatchFromAPIRawValue =
           return ValueOrErrors.Default.return(result);
         }
         return dispatchFromAPIRawValue(
-          t.args[0],
+          t.args,
           types,
           converters,
           injectedPrimitives,

@@ -57,28 +57,31 @@ export const SecretAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          foreignMutations={{
-            ...props.foreignMutations,
-            setNewValue: (_) => {
-              const delta: DispatchDelta = {
-                kind: "StringReplace",
-                replace: _,
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(replaceWith(_), delta);
-            },
-          }}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              setNewValue: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "StringReplace",
+                  replace: _,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(replaceWith(_), delta);
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);

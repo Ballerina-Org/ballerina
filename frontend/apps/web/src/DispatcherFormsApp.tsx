@@ -49,7 +49,9 @@ const ShowFormsParsingErrors = (
   </div>
 );
 
-const IdWrapper = ({ id }: IdWrapperProps) => <div className={id} />;
+const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
+  <div id={domNodeId}>{children}</div>
+);
 
 const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   <div

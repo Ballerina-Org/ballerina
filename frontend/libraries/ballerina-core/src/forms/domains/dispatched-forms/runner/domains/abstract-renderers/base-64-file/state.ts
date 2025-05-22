@@ -5,6 +5,7 @@ import {
   FormLabel,
   SimpleCallback,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
@@ -25,7 +26,8 @@ export type Base64FileAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   Context &
-    Value<string> & { commonFormState: DispatchCommonFormState } & {
+    Value<string> &
+    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
       disabled: boolean;
     },
   Base64FileAbstractRendererState,

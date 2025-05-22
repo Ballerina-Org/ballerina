@@ -8,6 +8,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -64,6 +65,7 @@ export type SumAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   SumAbstractRendererReadonlyContext &
+    DomNodeIdReadonlyContext &
     Value<ValueSum> &
     SumAbstractRendererState<LeftFormState, RightFormState>,
   SumAbstractRendererState<LeftFormState, RightFormState>,

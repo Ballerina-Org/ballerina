@@ -74,85 +74,85 @@ export const EnumAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-            activeOptions: !AsyncState.Operations.hasValue(
-              props.context.customFormState.options.sync,
-            )
-              ? "unloaded"
-              : props.context.customFormState.options.sync.value
-                  .valueSeq()
-                  .toArray(),
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            setNewValue: (_) => {
-              if (
-                !AsyncState.Operations.hasValue(
-                  props.context.customFormState.options.sync,
-                )
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+              activeOptions: !AsyncState.Operations.hasValue(
+                props.context.customFormState.options.sync,
               )
-                return;
-              const newSelection =
-                props.context.customFormState.options.sync.value.get(_);
-              if (newSelection == undefined) {
-                const delta: DispatchDelta = {
-                  kind: "OptionReplace",
-                  replace: PredicateValue.Default.option(
-                    false,
-                    PredicateValue.Default.unit(),
-                  ),
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
-                  },
-                  type: props.context.type,
-                  isWholeEntityMutation: false,
-                };
-                return props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.option(
+                ? "unloaded"
+                : props.context.customFormState.options.sync.value
+                    .valueSeq()
+                    .toArray(),
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              setNewValue: (_) => {
+                if (
+                  !AsyncState.Operations.hasValue(
+                    props.context.customFormState.options.sync,
+                  )
+                )
+                  return;
+                const newSelection =
+                  props.context.customFormState.options.sync.value.get(_);
+                if (newSelection == undefined) {
+                  const delta: DispatchDelta = {
+                    kind: "OptionReplace",
+                    replace: PredicateValue.Default.option(
                       false,
                       PredicateValue.Default.unit(),
                     ),
-                  ),
-                  delta,
-                );
-              } else {
-                const delta: DispatchDelta = {
-                  kind: "OptionReplace",
-                  replace: PredicateValue.Default.option(true, newSelection),
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type,
+                    isWholeEntityMutation: false,
+                  };
+                  return props.foreignMutations.onChange(
+                    replaceWith(
+                      PredicateValue.Default.option(
+                        false,
+                        PredicateValue.Default.unit(),
+                      ),
+                    ),
+                    delta,
+                  );
+                } else {
+                  const delta: DispatchDelta = {
+                    kind: "OptionReplace",
+                    replace: PredicateValue.Default.option(true, newSelection),
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type,
+                    isWholeEntityMutation: false,
+                  };
+                  return props.foreignMutations.onChange(
+                    replaceWith(
+                      PredicateValue.Default.option(true, newSelection),
+                    ),
+                    delta,
+                  );
+                }
+              },
+              loadOptions: () => {
+                props.setState((current) => ({
+                  ...current,
+                  customFormState: {
+                    ...current.customFormState,
+                    shouldLoad: true,
                   },
-                  type: props.context.type,
-                  isWholeEntityMutation: false,
-                };
-                return props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.option(true, newSelection),
-                  ),
-                  delta,
-                );
-              }
-            },
-            loadOptions: () => {
-              props.setState((current) => ({
-                ...current,
-                customFormState: {
-                  ...current.customFormState,
-                  shouldLoad: true,
-                },
-              }));
-            },
-          }}
-        />
+                }));
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([

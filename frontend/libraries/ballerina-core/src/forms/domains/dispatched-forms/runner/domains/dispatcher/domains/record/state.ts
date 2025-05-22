@@ -122,8 +122,10 @@ export const RecordDispatcher = {
                         ...(!isNested && launcherName
                           ? {
                               identifiers: {
-                                withLauncher: `[${launcherName}][${formName}]`,
-                                withoutLauncher: `[${formName}]`,
+                                // withLauncher: `[${launcherName}][${formName}]`,
+                                // withoutLauncher: `[${formName}]`,
+                                withLauncher: `[${type.name}]`,
+                                withoutLauncher: `[${type.name}]`,
                               },
                             }
                           : {}),

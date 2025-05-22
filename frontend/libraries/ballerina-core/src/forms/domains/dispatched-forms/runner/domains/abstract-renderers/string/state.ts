@@ -6,6 +6,7 @@ import {
   View,
   DispatchCommonFormState,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 export type StringAbstractRendererState = {
@@ -25,7 +26,8 @@ export type StringAbstractRendererView<
   ForeignMutationsExpected,
 > = View<
   Context &
-    Value<string> & {
+    Value<string> &
+    DomNodeIdReadonlyContext & {
       commonFormState: DispatchCommonFormState;
       customFormState: Unit;
     } & { disabled: boolean },

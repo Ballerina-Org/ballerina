@@ -128,108 +128,108 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{
-            ...props.context,
-            hasMoreValues: !(
-              props.context.customFormState.stream.loadedElements.last()
-                ?.hasMoreValues == false
-            ),
-            isLoading: AsyncState.Operations.isLoading(
-              props.context.customFormState.stream.loadingMore,
-            ),
-            availableOptions:
-              props.context.customFormState.stream.loadedElements
-                .valueSeq()
-                .flatMap((chunk) => chunk.data.valueSeq())
-                .toArray(),
-          }}
-          foreignMutations={{
-            ...props.foreignMutations,
-            toggleOpen: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children
-                  .status(
-                    replaceWith(
-                      props.context.customFormState.status == "closed"
-                        ? "open"
-                        : "closed",
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+              hasMoreValues: !(
+                props.context.customFormState.stream.loadedElements.last()
+                  ?.hasMoreValues == false
+              ),
+              isLoading: AsyncState.Operations.isLoading(
+                props.context.customFormState.stream.loadingMore,
+              ),
+              availableOptions:
+                props.context.customFormState.stream.loadedElements
+                  .valueSeq()
+                  .flatMap((chunk) => chunk.data.valueSeq())
+                  .toArray(),
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+              toggleOpen: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children
+                    .status(
+                      replaceWith(
+                        props.context.customFormState.status == "closed"
+                          ? "open"
+                          : "closed",
+                      ),
+                    )
+                    .then(
+                      props.context.customFormState.stream.loadedElements.count() ==
+                        0
+                        ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                            InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+                          )
+                        : id,
                     ),
-                  )
-                  .then(
-                    props.context.customFormState.stream.loadedElements.count() ==
-                      0
-                      ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                          InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
-                        )
-                      : id,
+                ),
+              clearSelection: () => {
+                const delta: DispatchDelta = {
+                  kind: "SetReplace",
+                  replace: PredicateValue.Default.record(OrderedMap()),
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(
+                  ValueRecord.Updaters.clear(),
+                  delta,
+                );
+              },
+              setSearchText: (_) =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(_),
                   ),
-              ),
-            clearSelection: () => {
-              const delta: DispatchDelta = {
-                kind: "SetReplace",
-                replace: PredicateValue.Default.record(OrderedMap()),
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(
-                ValueRecord.Updaters.clear(),
-                delta,
-              );
-            },
-            setSearchText: (_) =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(_),
                 ),
-              ),
-            loadMore: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                  InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+              loadMore: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+                  ),
                 ),
-              ),
-            reload: () =>
-              props.setState(
-                SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
-                  replaceWith(""),
+              reload: () =>
+                props.setState(
+                  SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
+                    replaceWith(""),
+                  ),
                 ),
-              ),
-            toggleSelection: (elementRecord: ValueRecord) => {
-              const updater = props.context.value.fields.has(
-                elementRecord.fields.get("Id")! as string,
-              )
-                ? ValueRecord.Updaters.remove(
-                    elementRecord.fields.get("Id")! as string,
-                  )
-                : ValueRecord.Updaters.set(
-                    elementRecord.fields.get("Id")! as string,
-                    elementRecord,
-                  );
+              toggleSelection: (elementRecord: ValueRecord) => {
+                const updater = props.context.value.fields.has(
+                  elementRecord.fields.get("Id")! as string,
+                )
+                  ? ValueRecord.Updaters.remove(
+                      elementRecord.fields.get("Id")! as string,
+                    )
+                  : ValueRecord.Updaters.set(
+                      elementRecord.fields.get("Id")! as string,
+                      elementRecord,
+                    );
 
-              const delta: DispatchDelta = {
-                kind: "SetReplace",
-                // Maybe unsafe - check
-                replace: updater(props.context.value),
-                state: {
-                  commonFormState: props.context.commonFormState,
-                  customFormState: props.context.customFormState,
-                },
-                type: props.context.type,
-                isWholeEntityMutation: false,
-              };
-              props.foreignMutations.onChange(updater, delta);
-            },
-          }}
-        />
+                const delta: DispatchDelta = {
+                  kind: "SetReplace",
+                  // Maybe unsafe - check
+                  replace: updater(props.context.value),
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
+                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.foreignMutations.onChange(updater, delta);
+              },
+            }}
+          />
+        </IdProvider>
       </>
     );
   }).any([

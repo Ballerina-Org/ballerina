@@ -13,6 +13,10 @@ export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
   return matches[matches.length - 1][1];
 };
 
+export type DomNodeIdReadonlyContext = {
+  domNodeId: string;
+};
+
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,

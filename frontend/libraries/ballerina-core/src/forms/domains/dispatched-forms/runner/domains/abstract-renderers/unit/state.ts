@@ -5,6 +5,7 @@ import {
   Unit,
   View,
   DispatchOnChange,
+  DomNodeIdReadonlyContext,
 } from "../../../../../../../../main";
 
 export type UnitAbstractRendererState = {
@@ -25,7 +26,7 @@ export const UnitAbstractRendererState = {
 };
 
 export type UnitAbstractRendererView<Context extends FormLabel> = View<
-  Context & UnitAbstractRendererState,
+  Context & UnitAbstractRendererState & DomNodeIdReadonlyContext,
   UnitAbstractRendererState,
   { onChange: DispatchOnChange<Unit> }
 >;

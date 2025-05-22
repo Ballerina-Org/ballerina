@@ -220,18 +220,20 @@ export const SumAbstractRenderer = <
 
     return (
       <>
-        <IdProvider
-          id={`${props.context.identifiers.withLauncher} ${props.context.identifiers.withoutLauncher}`}
-        />
-        <props.view
-          {...props}
-          context={{ ...props.context }}
-          foreignMutations={{
-            ...props.foreignMutations,
-          }}
-          embeddedLeftTemplate={embeddedLeftTemplate}
-          embeddedRightTemplate={embeddedRightTemplate}
-        />
+        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              domNodeId: props.context.identifiers.withoutLauncher,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+            }}
+            embeddedLeftTemplate={embeddedLeftTemplate}
+            embeddedRightTemplate={embeddedRightTemplate}
+          />
+        </IdProvider>
       </>
     );
   }).any([]);
