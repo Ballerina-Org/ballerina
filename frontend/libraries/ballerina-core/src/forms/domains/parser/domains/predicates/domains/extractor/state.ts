@@ -20,6 +20,7 @@ export const PredicateValueExtractor = {
       lookupName: string,
       typesMap: Map<string, DispatchParsedType<any>>,
       t: DispatchParsedType<any>,
+      debugPath: string[],
     ): TypeInstancesExtractor => {
       const self = PredicateValueExtractor.Operations.ExtractPredicateValue;
       switch (t.kind) {
@@ -37,7 +38,7 @@ export const PredicateValueExtractor = {
 
           return t.name === lookupName
             ? (v) => ValueOrErrors.Default.return([v])
-            : self(lookupName, typesMap, lookupType);
+            : self(lookupName, typesMap, lookupType, debugPath);
         }
         case "primitive":
           return (_) => ValueOrErrors.Default.return([]);
@@ -54,13 +55,13 @@ export const PredicateValueExtractor = {
         // }
         case "record": {
           const traverseRecordFields = t.fields.map((f) =>
-            self(lookupName, typesMap, f),
+            self(lookupName, typesMap, f, debugPath.concat(f.name.toString())),
           );
           return (v: PredicateValue): ExtractedTypeInstances =>
             !PredicateValue.Operations.IsRecord(v)
               ? ValueOrErrors.Default.throwOne(
                   Errors.Default.singleton([
-                    "not a ValueRecord",
+                    "not a ValueRecord: " + debugPath.join("."),
                     JSON.stringify(v),
                   ]),
                 )
@@ -80,7 +81,12 @@ export const PredicateValueExtractor = {
                 );
         }
         case "singleSelection": {
-          const traverseSingleSelection = self(lookupName, typesMap, t.args[0]);
+          const traverseSingleSelection = self(
+            lookupName,
+            typesMap,
+            t.args[0],
+            debugPath.concat(t.args[0].name.toString()),
+          );
           return (v) =>
             !PredicateValue.Operations.IsOption(v)
               ? ValueOrErrors.Default.throwOne(
@@ -99,6 +105,7 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
+            debugPath.concat(t.args[0].name.toString()),
           );
           return (v: PredicateValue) =>
             !PredicateValue.Operations.IsRecord(v)
@@ -122,8 +129,18 @@ export const PredicateValueExtractor = {
                 );
         }
         case "map": {
-          const traverseKey = self(lookupName, typesMap, t.args[0]);
-          const traverseValue = self(lookupName, typesMap, t.args[1]);
+          const traverseKey = self(
+            lookupName,
+            typesMap,
+            t.args[0],
+            debugPath.concat(t.args[0].name.toString()),
+          );
+          const traverseValue = self(
+            lookupName,
+            typesMap,
+            t.args[1],
+            debugPath.concat(t.args[1].name.toString()),
+          );
           return (v: PredicateValue) =>
             !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
@@ -167,8 +184,18 @@ export const PredicateValueExtractor = {
                 );
         }
         case "sum": {
-          const traverseLeftValue = self(lookupName, typesMap, t.args[0]);
-          const traverseRightValue = self(lookupName, typesMap, t.args[1]);
+          const traverseLeftValue = self(
+            lookupName,
+            typesMap,
+            t.args[0],
+            debugPath.concat(t.args[0].name.toString()),
+          );
+          const traverseRightValue = self(
+            lookupName,
+            typesMap,
+            t.args[1],
+            debugPath.concat(t.args[1].name.toString()),
+          );
           return (v) =>
             !PredicateValue.Operations.IsSum(v)
               ? ValueOrErrors.Default.throwOne(
@@ -177,22 +204,19 @@ export const PredicateValueExtractor = {
                     JSON.stringify(v),
                   ]),
                 )
-              : ValueOrErrors.Operations.All(
-                  List(
-                    [traverseLeftValue, traverseRightValue].map(
-                      (traverseField) => traverseField(v),
-                    ),
-                  ),
-                ).Map((listFailingChecks) =>
-                  listFailingChecks.reduce(
-                    (acc, curr) => [...acc, ...curr],
-                    [] as Array<PredicateValue>,
-                  ),
+              : (v.value.kind === "l" ? traverseLeftValue : traverseRightValue)(
+                  v.value.value,
                 );
+          //  .Map((listFailingChecks) =>
+          //   listFailingChecks.reduce(
+          //     (acc, curr) => [...acc, ...curr],
+          //     [] as Array<PredicateValue>,
+          //   ),
+          // );
         }
         case "tuple": {
           const traverseTupleFields = t.args.map((f) =>
-            self(lookupName, typesMap, f),
+            self(lookupName, typesMap, f, debugPath.concat(f.name.toString())),
           );
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
@@ -217,34 +241,44 @@ export const PredicateValueExtractor = {
         }
         case "union": {
           const traverseCases: Map<string, TypeInstancesExtractor> = t.args
-            .map((f) => self(lookupName, typesMap, f))
+            .map((f) =>
+              self(
+                lookupName,
+                typesMap,
+                f,
+                debugPath.concat(f.name.toString()),
+              ),
+            )
             .toMap();
           return (v): ExtractedTypeInstances =>
-            !PredicateValue.Operations.IsUnionCase(v)
-              ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton([
-                    "not a ValueUnion (from union)",
-                    JSON.stringify(v),
-                  ]),
-                )
-              : MapRepo.Operations.tryFindWithError<
-                  string,
-                  TypeInstancesExtractor,
-                  Errors<string[]>
-                >(v.caseName, traverseCases, () =>
-                  Errors.Default.singleton([
-                    `unexpected union case ${v.caseName}`,
-                    JSON.stringify(v),
-                  ]),
-                ).Then((traverseCase: TypeInstancesExtractor) =>
-                  traverseCase(v.fields),
-                );
+            PredicateValue.Operations.IsPrimitive(v)
+              ? ValueOrErrors.Default.return([])
+              : !PredicateValue.Operations.IsUnionCase(v)
+                ? ValueOrErrors.Default.throwOne(
+                    Errors.Default.singleton([
+                      "not a ValueUnion (from union)" + debugPath.join("."),
+                      JSON.stringify(v),
+                    ]),
+                  )
+                : MapRepo.Operations.tryFindWithError<
+                    string,
+                    TypeInstancesExtractor,
+                    Errors<string[]>
+                  >(v.caseName, traverseCases, () =>
+                    Errors.Default.singleton([
+                      `unexpected union case ${v.caseName}`,
+                      JSON.stringify(v),
+                    ]),
+                  ).Then((traverseCase: TypeInstancesExtractor) =>
+                    traverseCase(v.fields),
+                  );
         }
         case "one": {
           const traverseValue: TypeInstancesExtractor = self(
             lookupName,
             typesMap,
             t.args,
+            debugPath.concat(t.args.name.toString()),
           );
           return (v): ExtractedTypeInstances =>
             PredicateValue.Operations.IsOption(v)
@@ -263,7 +297,12 @@ export const PredicateValueExtractor = {
                   );
         }
         case "list": {
-          const traverseListField = self(lookupName, typesMap, t.args[0]);
+          const traverseListField = self(
+            lookupName,
+            typesMap,
+            t.args[0],
+            debugPath.concat(t.args[0].name.toString()),
+          );
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
               ? ValueOrErrors.Default.throwOne(
