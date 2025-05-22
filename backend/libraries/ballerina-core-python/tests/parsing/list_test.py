@@ -16,3 +16,10 @@ def test_list_from_json() -> None:
     parser = list_from_json(int_from_json)
     value = parser(serialized)
     assert value == Sum.right([1, 2, 3])
+
+
+def test_should_convert_list_to_and_from_json() -> None:
+    value = [1, 2, 3]
+    serializer = list_to_json(int_to_json)
+    parser = list_from_json(int_from_json)
+    assert parser(serializer(value)) == Sum.right(value)
