@@ -96,8 +96,8 @@ export const PredicateValueExtractor = {
                   ]),
                 )
               : !v.isSome
-              ? ValueOrErrors.Default.return([])
-              : traverseSingleSelection(v.value);
+                ? ValueOrErrors.Default.return([])
+                : traverseSingleSelection(v.value);
         }
         case "multiSelection": {
           // multi selection only has 1 arg type, which is the same for all the selcted elements
@@ -254,24 +254,24 @@ export const PredicateValueExtractor = {
             PredicateValue.Operations.IsPrimitive(v)
               ? ValueOrErrors.Default.return([])
               : !PredicateValue.Operations.IsUnionCase(v)
-              ? ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton([
-                    "not a ValueUnion (from union)" + debugPath.join("."),
-                    JSON.stringify(v),
-                  ]),
-                )
-              : MapRepo.Operations.tryFindWithError<
-                  string,
-                  TypeInstancesExtractor,
-                  Errors<string[]>
-                >(v.caseName, traverseCases, () =>
-                  Errors.Default.singleton([
-                    `unexpected union case ${v.caseName}`,
-                    JSON.stringify(v),
-                  ]),
-                ).Then((traverseCase: TypeInstancesExtractor) =>
-                  traverseCase(v.fields),
-                );
+                ? ValueOrErrors.Default.throwOne(
+                    Errors.Default.singleton([
+                      "not a ValueUnion (from union)" + debugPath.join("."),
+                      JSON.stringify(v),
+                    ]),
+                  )
+                : MapRepo.Operations.tryFindWithError<
+                    string,
+                    TypeInstancesExtractor,
+                    Errors<string[]>
+                  >(v.caseName, traverseCases, () =>
+                    Errors.Default.singleton([
+                      `unexpected union case ${v.caseName}`,
+                      JSON.stringify(v),
+                    ]),
+                  ).Then((traverseCase: TypeInstancesExtractor) =>
+                    traverseCase(v.fields),
+                  );
         }
         case "one": {
           const traverseValue: TypeInstancesExtractor = self(
@@ -286,15 +286,15 @@ export const PredicateValueExtractor = {
                 ? traverseValue(v.value)
                 : ValueOrErrors.Default.return([])
               : PredicateValue.Operations.IsSum(v)
-              ? v.value.kind == "r"
-                ? traverseValue(v.value.value)
-                : ValueOrErrors.Default.return([])
-              : ValueOrErrors.Default.throwOne(
-                  Errors.Default.singleton([
-                    "not a One/Option or One/Sum (from one)",
-                    JSON.stringify(v),
-                  ]),
-                );
+                ? v.value.kind == "r"
+                  ? traverseValue(v.value.value)
+                  : ValueOrErrors.Default.return([])
+                : ValueOrErrors.Default.throwOne(
+                    Errors.Default.singleton([
+                      "not a One/Option or One/Sum (from one)",
+                      JSON.stringify(v),
+                    ]),
+                  );
         }
         case "list": {
           const traverseListField = self(
