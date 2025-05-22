@@ -15,7 +15,7 @@ let ``Should correctly map state`` () =
   let withInnerState: State<int, unit, InnerState, Errors> =
     State.State(fun (_, s) -> Sum.Left(1, Some { s with age = s.age + 1 }))
 
-  let withOuterState =
+  let withOuterState: State<int, unit, OuterState, Errors> =
     withInnerState
     |> State.mapState (fun output -> output.inner) (fun inner outer -> { outer with inner = inner })
 
