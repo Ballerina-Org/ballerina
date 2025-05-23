@@ -131,7 +131,7 @@ module Runner =
         let! enumType = ExprType.Parse ParsedFormsContext.ContextActions enumTypeJson
         let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
         let! ctx = state.GetState()
-        let! enumType = ExprType.ResolveLookup ctx enumType |> state.OfSum
+        let! enumType = ExprType.ResolveLookup ctx.Types enumType |> state.OfSum
         let! fields = ExprType.GetFields enumType |> state.OfSum
 
         match fields with
@@ -367,7 +367,7 @@ module Runner =
 
     static member ParseTypes
       (typesJson: seq<string * JsonValue>)
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<Unit, CodeGenConfig, Map<string, TypeBinding>, Errors> =
       state {
 
         let! typesJson =
@@ -378,13 +378,11 @@ module Runner =
 
               do!
                 state.SetState(
-                  ParsedFormsContext.Updaters.Types(
-                    Map.add
-                      name
-                      { Type = ExprType.UnitType
-                        TypeId = typeId
-                        Const = false }
-                  )
+                  Map.add
+                    name
+                    { Type = ExprType.UnitType
+                      TypeId = typeId
+                      Const = false }
                 )
 
               return name, typeId, json
@@ -428,7 +426,7 @@ module Runner =
                             extends
                             |> Seq.map (fun extendsJson ->
                               state {
-                                let! parsed = ExprType.Parse ParsedFormsContext.ContextActions extendsJson
+                                let! parsed = ExprType.Parse TypeContext.ContextActions extendsJson
                                 return! ExprType.ResolveLookup s parsed |> state.OfSum
                               })
                             |> state.All
@@ -437,7 +435,7 @@ module Runner =
                             fields
                             |> Seq.map (fun (fieldName, fieldType) ->
                               state {
-                                let! fieldType = ExprType.Parse ParsedFormsContext.ContextActions fieldType
+                                let! fieldType = ExprType.Parse TypeContext.ContextActions fieldType
                                 return fieldName, fieldType
                               }
                               |> state.MapError(
@@ -461,13 +459,11 @@ module Runner =
 
                           do!
                             state.SetState(
-                              ParsedFormsContext.Updaters.Types(
-                                Map.add
-                                  typeName
-                                  { Type = exprType
-                                    TypeId = typeId
-                                    Const = isConst }
-                              )
+                              Map.add
+                                typeName
+                                { Type = exprType
+                                  TypeId = typeId
+                                  Const = isConst }
                             )
 
                           return ()
@@ -477,17 +473,15 @@ module Runner =
                     [ state {
                         let typeId: TypeId = { TypeName = typeName }
 
-                        let! parsedType = ExprType.Parse ParsedFormsContext.ContextActions typeJson
+                        let! parsedType = ExprType.Parse TypeContext.ContextActions typeJson
 
                         do!
                           state.SetState(
-                            ParsedFormsContext.Updaters.Types(
-                              Map.add
-                                typeName
-                                { Type = parsedType
-                                  TypeId = typeId
-                                  Const = false }
-                            )
+                            Map.add
+                              typeName
+                              { Type = parsedType
+                                TypeId = typeId
+                                Const = false }
                           )
                       }
                       state.Throw(
@@ -626,7 +620,12 @@ module Runner =
         let! topLevel = jsons |> List.map ParsedFormsContext.ExtractTopLevel |> state.All
         let! topLevel = TopLevel.MergeMany topLevel |> state.OfSum
 
-        do! ParsedFormsContext.ParseTypes topLevel.Types
+        do!
+          State.mapState
+            (fun context -> context.Types)
+            (fun types -> ParsedFormsContext.Updaters.Types(fun _ -> types))
+            (ParsedFormsContext.ParseTypes topLevel.Types)
+
         let! c = state.GetContext()
 
         for g in c.Generic do

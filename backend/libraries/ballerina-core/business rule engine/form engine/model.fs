@@ -4,7 +4,6 @@ module Model =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
-  open FSharp.Data
 
   type CodeGenConfig =
     { Int: CodegenConfigTypeDef

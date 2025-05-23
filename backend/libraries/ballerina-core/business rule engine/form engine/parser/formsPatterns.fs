@@ -8,9 +8,16 @@ module FormsPatterns =
   open Ballerina.State.WithError
   open Ballerina.Errors
 
+  module TypeContext =
+    let ContextActions: ContextActions<Map<string, TypeBinding>> =
+      { TryFindType = fun ctx name -> ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name }
+
+    let TryFindType ctx name =
+      ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name
+
   type ParsedFormsContext with
     static member ContextActions: ContextActions<ParsedFormsContext> =
-      { TryFindType = fun ctx name -> ctx.TryFindType name }
+      { TryFindType = fun ctx -> TypeContext.ContextActions.TryFindType ctx.Types }
 
     member ctx.TryFindEnum name =
       ctx.Apis.Enums |> Map.tryFindWithError name "enum" name
@@ -42,8 +49,7 @@ module FormsPatterns =
     member ctx.TryFindEntityApi name =
       ctx.Apis.Entities |> Map.tryFindWithError name "entity api" name
 
-    member ctx.TryFindType name =
-      ctx.Types |> Map.tryFindWithError name "type" name
+    member ctx.TryFindType name = TypeContext.TryFindType ctx.Types name
 
     member ctx.TryFindForm name =
       ctx.Forms |> Map.tryFindWithError name "form" name
@@ -52,10 +58,10 @@ module FormsPatterns =
       ctx.Launchers |> Map.tryFindWithError name "launcher" name
 
   type ExprType with
-    static member Find (ctx: ParsedFormsContext) (typeId: TypeId) : Sum<ExprType, Errors> =
-      sum { return! ctx.TryFindType typeId.TypeName |> Sum.map (fun tb -> tb.Type) }
+    static member Find (ctx: Map<string, TypeBinding>) (typeId: TypeId) : Sum<ExprType, Errors> =
+      sum { return! TypeContext.TryFindType ctx typeId.TypeName |> Sum.map (fun tb -> tb.Type) }
 
-    static member ResolveLookup (ctx: ParsedFormsContext) (t: ExprType) : Sum<ExprType, Errors> =
+    static member ResolveLookup (ctx: Map<string, TypeBinding>) (t: ExprType) : Sum<ExprType, Errors> =
       sum {
         match t with
         | ExprType.LookupType l -> return! ExprType.Find ctx l
