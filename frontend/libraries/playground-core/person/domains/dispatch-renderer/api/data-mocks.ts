@@ -263,7 +263,11 @@ const getFriends: DispatchOneSource = {
         Values: Range(1, 5)
           .map((_) => ({
             Id: v4(),
-            Name: faker.person.firstName(),
+            Name:
+              faker.person.firstName() +
+              (streamParams.has("search")
+                ? ` ${streamParams.get("search")}`
+                : ""),
             Surname: faker.person.lastName(),
             Birthday: faker.date.birthdate().toISOString(),
             Email: faker.internet.email(),

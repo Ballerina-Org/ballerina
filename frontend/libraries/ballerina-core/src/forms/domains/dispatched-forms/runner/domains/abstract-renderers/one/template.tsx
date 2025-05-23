@@ -483,7 +483,11 @@ export const OneAbstractRenderer = (
           props.setState(
             OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
               ValueInfiniteStreamState.Updaters.Template.reload(
-                props.context.customFormState.getChunkWithParams(Id)(Map()),
+                props.context.customFormState.getChunkWithParams(Id)(
+                  Map([
+                    ["search", props.context.customFormState.searchText.value],
+                  ]),
+                ),
               ),
             ),
           );
