@@ -8,13 +8,6 @@ module FormsPatterns =
   open Ballerina.State.WithError
   open Ballerina.Errors
 
-  module TypeContext =
-    let ContextActions: ContextActions<TypeContext> =
-      { TryFindType = fun ctx name -> ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name }
-
-    let TryFindType ctx name =
-      ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name
-
   type ParsedFormsContext with
     static member ContextActions: ContextActions<ParsedFormsContext> =
       { TryFindType = fun ctx -> TypeContext.ContextActions.TryFindType ctx.Types }
