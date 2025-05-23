@@ -365,7 +365,9 @@ module Runner =
       }
       |> state.MapError(Errors.Map(String.appendNewline $$"""...when parsing APIs"""))
 
-    static member ParseTypes(typesJson: seq<string * JsonValue>) : State<Unit, Unit, TypeContext, Errors> =
+    static member ParseTypes<'context>
+      (typesJson: seq<string * JsonValue>)
+      : State<Unit, 'context, TypeContext, Errors> =
       state {
 
         let! typesJson =
@@ -622,7 +624,7 @@ module Runner =
           State.mapState
             (fun context -> context.Types)
             (fun types -> ParsedFormsContext.Updaters.Types(fun _ -> types))
-            (State.mapContext (fun _ -> ()) (ParsedFormsContext.ParseTypes topLevel.Types))
+            (ParsedFormsContext.ParseTypes topLevel.Types)
 
         let! c = state.GetContext()
 
