@@ -101,7 +101,9 @@ const intializeOne = Co.GetState().then((current) => {
           OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
             replaceWith(
               ValueInfiniteStreamState.Default(
-                10,
+                // TODO: add to config
+                100,
+                //TODO: need params
                 current.customFormState.getChunkWithParams(id)(Map()),
               ),
             ),
@@ -115,7 +117,8 @@ const intializeOne = Co.GetState().then((current) => {
       OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
         replaceWith(
           ValueInfiniteStreamState.Default(
-            10,
+            // TODO:
+            100,
             current.customFormState.getChunkWithParams(id)(Map()),
           ),
         ),
