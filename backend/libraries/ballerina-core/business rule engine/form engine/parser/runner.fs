@@ -365,9 +365,7 @@ module Runner =
       }
       |> state.MapError(Errors.Map(String.appendNewline $$"""...when parsing APIs"""))
 
-    static member ParseTypes
-      (typesJson: seq<string * JsonValue>)
-      : State<Unit, CodeGenConfig, Map<string, TypeBinding>, Errors> =
+    static member ParseTypes(typesJson: seq<string * JsonValue>) : State<Unit, CodeGenConfig, TypeContext, Errors> =
       state {
 
         let! typesJson =

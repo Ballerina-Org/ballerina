@@ -9,7 +9,7 @@ module FormsPatterns =
   open Ballerina.Errors
 
   module TypeContext =
-    let ContextActions: ContextActions<Map<string, TypeBinding>> =
+    let ContextActions: ContextActions<TypeContext> =
       { TryFindType = fun ctx name -> ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name }
 
     let TryFindType ctx name =
@@ -58,10 +58,10 @@ module FormsPatterns =
       ctx.Launchers |> Map.tryFindWithError name "launcher" name
 
   type ExprType with
-    static member Find (ctx: Map<string, TypeBinding>) (typeId: TypeId) : Sum<ExprType, Errors> =
+    static member Find (ctx: TypeContext) (typeId: TypeId) : Sum<ExprType, Errors> =
       sum { return! TypeContext.TryFindType ctx typeId.TypeName |> Sum.map (fun tb -> tb.Type) }
 
-    static member ResolveLookup (ctx: Map<string, TypeBinding>) (t: ExprType) : Sum<ExprType, Errors> =
+    static member ResolveLookup (ctx: TypeContext) (t: ExprType) : Sum<ExprType, Errors> =
       sum {
         match t with
         | ExprType.LookupType l -> return! ExprType.Find ctx l

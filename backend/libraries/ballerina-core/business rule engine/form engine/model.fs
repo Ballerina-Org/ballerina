@@ -466,8 +466,10 @@ module Model =
       StreamIdFieldName: string
       StreamDisplayValueFieldName: string }
 
+  type TypeContext = Map<string, TypeBinding>
+
   type ParsedFormsContext =
-    { Types: Map<string, TypeBinding>
+    { Types: TypeContext
       Apis: FormApis
       Forms: Map<string, FormConfig>
       GenericRenderers:
