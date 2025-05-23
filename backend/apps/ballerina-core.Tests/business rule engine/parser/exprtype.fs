@@ -55,6 +55,12 @@ let ``Should parse int`` () =
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
 
 [<Test>]
+let ``Should parse float`` () =
+  let json = JsonValue.String "float"
+  let result = parseExprType json
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.FloatType, None)
+
+[<Test>]
 let ``Should parse date`` () =
   let json = JsonValue.String "Date"
   let result = parseExprType json
