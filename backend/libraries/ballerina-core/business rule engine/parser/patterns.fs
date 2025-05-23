@@ -14,7 +14,7 @@ module Patterns =
     let ContextActions: ContextActions<TypeContext> =
       { TryFindType = fun ctx name -> ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name }
 
-    let TryFindType (ctx: TypeContext) (name: string) =
+    let TryFindType (ctx: TypeContext) (name: string) : Sum<TypeBinding, Errors> =
       ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name
 
   type SumBuilder with
