@@ -108,6 +108,15 @@ module ExprType =
                 state {
                   do!
                     json
+                    |> JsonValue.AsEnum(Set.singleton "float")
+                    |> state.OfSum
+                    |> state.Map ignore
+
+                  return ExprType.PrimitiveType PrimitiveType.FloatType
+                }
+                state {
+                  do!
+                    json
                     |> JsonValue.AsEnum(Set.singleton "boolean")
                     |> state.OfSum
                     |> state.Map ignore
