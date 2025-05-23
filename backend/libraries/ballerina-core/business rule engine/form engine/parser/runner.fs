@@ -16,7 +16,6 @@ module Runner =
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
-  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
@@ -368,133 +367,7 @@ module Runner =
     static member ParseTypes<'context>
       (typesJson: seq<string * JsonValue>)
       : State<Unit, 'context, TypeContext, Errors> =
-      state {
-
-        let! typesJson =
-          typesJson
-          |> Seq.map (fun (name, json) ->
-            state {
-              let typeId: TypeId = { TypeName = name }
-
-              do!
-                state.SetState(
-                  Map.add
-                    name
-                    { Type = ExprType.UnitType
-                      TypeId = typeId
-                      Const = false }
-                )
-
-              return name, typeId, json
-            })
-          |> state.All
-
-        for typeName, typeId, typeJson in typesJson do
-          return!
-            state {
-              let! typeJsonArgs = typeJson |> JsonValue.AsRecord |> state.OfSum
-
-              return!
-                state.Any(
-                  NonEmptyList.OfList(
-                    state {
-                      let extendsJson =
-                        typeJsonArgs
-                        |> sum.TryFindField "extends"
-                        |> Sum.toOption
-                        |> Option.defaultWith (fun () -> JsonValue.Array [||])
-
-                      let isConstJson =
-                        typeJsonArgs
-                        |> sum.TryFindField "const"
-                        |> Sum.toOption
-                        |> Option.defaultWith (fun () -> JsonValue.Boolean false)
-
-                      let! fieldsJson = typeJsonArgs |> sum.TryFindField "fields" |> state.OfSum
-
-                      return!
-                        state {
-                          let! extends, fields, isConst =
-                            state.All3
-                              (extendsJson |> JsonValue.AsArray |> state.OfSum)
-                              (fieldsJson |> JsonValue.AsRecord |> state.OfSum)
-                              (isConstJson |> JsonValue.AsBoolean |> state.OfSum)
-
-                          let! s = state.GetState()
-
-                          let! extendedTypes =
-                            extends
-                            |> Seq.map (fun extendsJson ->
-                              state {
-                                let! parsed = ExprType.Parse TypeContext.ContextActions extendsJson
-                                return! ExprType.ResolveLookup s parsed |> state.OfSum
-                              })
-                            |> state.All
-
-                          let! fields =
-                            fields
-                            |> Seq.map (fun (fieldName, fieldType) ->
-                              state {
-                                let! fieldType = ExprType.Parse TypeContext.ContextActions fieldType
-                                return fieldName, fieldType
-                              }
-                              |> state.MapError(
-                                Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")
-                              ))
-                            |> Seq.toList
-                            |> state.All
-
-                          let fields = fields |> Map.ofList
-
-                          let! exprType =
-                            extendedTypes
-                            |> Seq.fold
-                              (fun (t1: Sum<ExprType, Errors>) t2 ->
-                                sum {
-                                  let! t1 = t1
-                                  return! ExprType.Extend t1 t2
-                                })
-                              (Left(ExprType.RecordType fields))
-                            |> state.OfSum
-
-                          do!
-                            state.SetState(
-                              Map.add
-                                typeName
-                                { Type = exprType
-                                  TypeId = typeId
-                                  Const = isConst }
-                            )
-
-                          return ()
-                        }
-                        |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                    },
-                    [ state {
-                        let typeId: TypeId = { TypeName = typeName }
-
-                        let! parsedType = ExprType.Parse TypeContext.ContextActions typeJson
-
-                        do!
-                          state.SetState(
-                            Map.add
-                              typeName
-                              { Type = parsedType
-                                TypeId = typeId
-                                Const = false }
-                          )
-                      }
-                      state.Throw(
-                        Errors.Singleton
-                          $"...unexpected json shape for a type body {typeJson.ToFSharpString.ReasonablyClamped}"
-                        |> Errors.WithPriority ErrorPriority.High
-                      ) ]
-                  )
-                )
-            }
-            |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing type {typeName}"))
-      }
-      |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing types"))
+      ExprType.ParseTypes<'context> typesJson
 
     static member ParseForms
       (formsJson: (string * JsonValue)[])
