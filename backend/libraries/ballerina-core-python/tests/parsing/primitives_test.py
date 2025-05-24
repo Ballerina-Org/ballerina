@@ -1,6 +1,5 @@
 from decimal import Decimal
 
-from ballerina_core.parsing.list import list_from_json, list_to_json
 from ballerina_core.parsing.parsing_types import Json
 from ballerina_core.parsing.primitives import (
     bool_from_json,
@@ -68,19 +67,3 @@ class TestPrimitivesSerializer:
     def test_float_from_json() -> None:
         serialized: Json = {"kind": "float", "value": "3.14"}
         assert float_from_json(serialized) == Sum.right(Decimal("3.14"))
-
-
-class TestListSerializer:
-    @staticmethod
-    def test_list_to_json() -> None:
-        value = [1, 2, 3]
-        serializer = list_to_json(int_to_json)
-        serialized = serializer(value)
-        assert serialized == {"kind": "list", "elements": [int_to_json(1), int_to_json(2), int_to_json(3)]}
-
-    @staticmethod
-    def test_list_from_json() -> None:
-        serialized: Json = {"kind": "list", "elements": [int_to_json(1), int_to_json(2), int_to_json(3)]}
-        parser = list_from_json(int_from_json)
-        value = parser(serialized)
-        assert value == Sum.right([1, 2, 3])
