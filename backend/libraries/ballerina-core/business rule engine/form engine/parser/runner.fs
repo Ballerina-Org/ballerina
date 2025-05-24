@@ -496,8 +496,8 @@ module Runner =
 
         do!
           State.mapState
-            (fun context -> context.Types)
-            (fun types -> ParsedFormsContext.Updaters.Types(fun _ -> types))
+            (fun outerState -> outerState.Types)
+            (fun innerState -> ParsedFormsContext.Updaters.Types(fun _ -> innerState))
             (ParsedFormsContext.ParseTypes topLevel.Types)
 
         let! c = state.GetContext()
