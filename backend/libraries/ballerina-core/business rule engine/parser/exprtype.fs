@@ -17,7 +17,7 @@ module ExprType =
 
   type ExprType with
     static member ParseUnionCase<'config, 'context>
-      (contextActions: ContextActions<'context>)
+      (contextActions: ContextOperations<'context>)
       (json: JsonValue)
       : State<UnionCase, 'config, 'context, Errors> =
       let (!) = ExprType.Parse contextActions
@@ -61,7 +61,7 @@ module ExprType =
       }
 
     static member Parse<'config, 'context>
-      (contextActions: ContextActions<'context>)
+      (contextActions: ContextOperations<'context>)
       (json: JsonValue)
       : State<ExprType, 'config, 'context, Errors> =
       let (!) = ExprType.Parse contextActions
@@ -433,7 +433,7 @@ module ExprType =
                             extends
                             |> Seq.map (fun extendsJson ->
                               state {
-                                let! parsed = ExprType.Parse TypeContext.ContextActions extendsJson
+                                let! parsed = ExprType.Parse TypeContext.ContextOperations extendsJson
                                 return! ExprType.ResolveLookup s parsed |> state.OfSum
                               })
                             |> state.All
@@ -442,7 +442,7 @@ module ExprType =
                             fields
                             |> Seq.map (fun (fieldName, fieldType) ->
                               state {
-                                let! fieldType = ExprType.Parse TypeContext.ContextActions fieldType
+                                let! fieldType = ExprType.Parse TypeContext.ContextOperations fieldType
                                 return fieldName, fieldType
                               }
                               |> state.MapError(
@@ -480,7 +480,7 @@ module ExprType =
                     [ state {
                         let typeId: TypeId = { TypeName = typeName }
 
-                        let! parsedType = ExprType.Parse TypeContext.ContextActions typeJson
+                        let! parsedType = ExprType.Parse TypeContext.ContextOperations typeJson
 
                         do!
                           state.SetState(

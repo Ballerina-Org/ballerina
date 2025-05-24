@@ -9,8 +9,8 @@ module FormsPatterns =
   open Ballerina.Errors
 
   type ParsedFormsContext with
-    static member ContextActions: ContextActions<ParsedFormsContext> =
-      { TryFindType = fun ctx -> TypeContext.ContextActions.TryFindType ctx.Types }
+    static member ContextOperations: ContextOperations<ParsedFormsContext> =
+      { TryFindType = fun ctx -> TypeContext.ContextOperations.TryFindType ctx.Types }
 
     member ctx.TryFindEnum name =
       ctx.Apis.Enums |> Map.tryFindWithError name "enum" name

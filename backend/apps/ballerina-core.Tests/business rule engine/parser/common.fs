@@ -10,5 +10,5 @@ let assertSuccess<'T, 'E> (result: Sum<'T, 'E>) (expected: 'T) =
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail($"Expected success but got error: {err}")
 
-let contextActions: ContextActions<unit> =
+let contextActions: ContextOperations<unit> =
   { TryFindType = fun _ _ -> sum.Throw(Errors.Singleton "Type lookup not expected") }

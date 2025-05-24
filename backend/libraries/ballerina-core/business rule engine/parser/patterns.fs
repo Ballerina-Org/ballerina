@@ -7,11 +7,11 @@ module Patterns =
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Types.Model
 
-  type ContextActions<'context> =
+  type ContextOperations<'context> =
     { TryFindType: 'context -> string -> Sum<TypeBinding, Errors> }
 
   module TypeContext =
-    let ContextActions: ContextActions<TypeContext> =
+    let ContextOperations: ContextOperations<TypeContext> =
       { TryFindType = fun ctx name -> ctx |> Map.tryFindWithError<string, TypeBinding> name "type" name }
 
     let TryFindType (ctx: TypeContext) (name: string) : Sum<TypeBinding, Errors> =
