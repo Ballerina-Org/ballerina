@@ -288,7 +288,10 @@ export const TableLayout = {
               `Invalid visible columns: ${JSON.stringify(result)}`,
             );
           }
-          console.debug(`Computed visible columns ${JSON.stringify(Array.from(result.fields.keys()))}`, result);
+          console.debug(
+            `Computed visible columns ${JSON.stringify(Array.from(result.fields.keys()))}`,
+            result,
+          );
           return ValueOrErrors.Default.return({
             columns: Array.from(result.fields.keys()),
           });
