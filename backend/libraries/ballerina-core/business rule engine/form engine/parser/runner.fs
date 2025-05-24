@@ -16,6 +16,7 @@ module Runner =
   open Ballerina.Errors
   open Ballerina.Core.Json
   open Ballerina.Core.String
+  open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
 
