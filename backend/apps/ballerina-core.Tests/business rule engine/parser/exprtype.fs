@@ -49,8 +49,14 @@ let ``Should parse string`` () =
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.StringType, None)
 
 [<Test>]
-let ``Should parse int`` () =
+let ``Should parse int (backward compatibility)`` () =
   let json = JsonValue.String "number"
+  let result = parseExprType json
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
+
+[<Test>]
+let ``Should parse int`` () =
+  let json = JsonValue.String "int"
   let result = parseExprType json
   assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
 
