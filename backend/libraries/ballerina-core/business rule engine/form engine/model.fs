@@ -4,7 +4,6 @@ module Model =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
-  open FSharp.Data
 
   type CodeGenConfig =
     { Int: CodegenConfigTypeDef
@@ -468,7 +467,7 @@ module Model =
       StreamDisplayValueFieldName: string }
 
   type ParsedFormsContext =
-    { Types: Map<string, TypeBinding>
+    { Types: TypeContext
       Apis: FormApis
       Forms: Map<string, FormConfig>
       GenericRenderers:

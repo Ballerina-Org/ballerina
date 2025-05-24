@@ -4,8 +4,6 @@ namespace Ballerina.DSL.Expr.Types
 
 module Model =
   open System
-  open Ballerina.Fun
-  open Ballerina.Collections.Option
   open Ballerina.Collections.Map
   open Ballerina.Collections.Sum
   open Ballerina.Errors
@@ -17,6 +15,8 @@ module Model =
     { TypeId: TypeId
       Type: ExprType
       Const: bool }
+
+  and TypeContext = Map<string, TypeBinding>
 
   and TypeBindings = Map<TypeId, ExprType>
   and TypeId = { TypeName: string }

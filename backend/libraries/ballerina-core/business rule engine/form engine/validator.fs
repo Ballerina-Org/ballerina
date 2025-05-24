@@ -328,7 +328,7 @@ module Validator =
         | RecordType fields ->
           match fields |> Map.tryFind fc.FieldName with
           | Some fieldType ->
-            let! fieldType = ExprType.ResolveLookup ctx fieldType
+            let! fieldType = ExprType.ResolveLookup ctx.Types fieldType
 
             do!
               ExprType.Unify
@@ -893,8 +893,8 @@ module Validator =
   type EnumApi with
     static member Validate valueFieldName (ctx: ParsedFormsContext) (enumApi: EnumApi) : Sum<Unit, Errors> =
       sum {
-        let! enumType = ExprType.Find ctx enumApi.TypeId
-        let! enumType = ExprType.ResolveLookup ctx enumType
+        let! enumType = ExprType.Find ctx.Types enumApi.TypeId
+        let! enumType = ExprType.ResolveLookup ctx.Types enumType
         let! fields = ExprType.GetFields enumType
 
         let error =
@@ -905,7 +905,7 @@ module Validator =
 
         match fields with
         | [ (value, valuesType) ] when value = valueFieldName ->
-          let! valuesType = ExprType.ResolveLookup ctx valuesType
+          let! valuesType = ExprType.ResolveLookup ctx.Types valuesType
           let! cases = ExprType.GetCases valuesType
 
           if cases |> Map.values |> Seq.exists (fun case -> case.Fields.IsUnitType |> not) then
@@ -923,8 +923,8 @@ module Validator =
       (streamApi: StreamApi)
       : Sum<Unit, Errors> =
       sum {
-        let! streamType = ExprType.Find ctx streamApi.TypeId
-        let! streamType = ExprType.ResolveLookup ctx streamType
+        let! streamType = ExprType.Find ctx.Types streamApi.TypeId
+        let! streamType = ExprType.ResolveLookup ctx.Types streamType
         let! fields = ExprType.GetFields streamType
 
         let error =
@@ -950,8 +950,8 @@ module Validator =
       (tableApi: TableApi)
       : Sum<Unit, Errors> =
       sum {
-        let! tableType = ExprType.Find ctx tableApi.TypeId
-        let! tableType = ExprType.ResolveLookup ctx tableType
+        let! tableType = ExprType.Find ctx.Types tableApi.TypeId
+        let! tableType = ExprType.ResolveLookup ctx.Types tableType
         let! fields = ExprType.GetFields tableType
 
         let error =
