@@ -98,7 +98,10 @@ export const MultiSelectionDispatcher = {
                               `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
                           ),
                         )
-                  : ValueOrErrors.Default.throwOne(
+                  : ValueOrErrors.Default.throwOne<
+                                  Template<any, any, any, any>,
+                                  string
+                                >(
                       `could not resolve multi selection concrete renderer for ${viewKind}`,
                     ),
             ),
