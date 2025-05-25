@@ -683,7 +683,7 @@ export const dispatchDefaultValue =
       if (t.kind == "multiSelection")
         return renderer.kind == "enumRenderer" ||
           renderer.kind == "streamRenderer"
-          ? ValueOrErrors.Default.return(PredicateValue.Default.record(Map()))
+          ? ValueOrErrors.Default.return(PredicateValue.Default.record(OrderedMap()))
           : ValueOrErrors.Default.throwOne(
               `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultValue for multiSelection`,
             );
@@ -784,7 +784,7 @@ export const dispatchDefaultValue =
               ),
             ).Then((res) =>
               ValueOrErrors.Default.return(
-                PredicateValue.Default.record(Map(res)),
+                PredicateValue.Default.record(OrderedMap(res)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -903,7 +903,7 @@ export const dispatchFromAPIRawValue =
         const result = converters["SingleSelection"].fromAPIRawValue(raw);
         const isSome = result.kind == "l";
         const value = isSome
-          ? PredicateValue.Default.record(Map(result.value))
+          ? PredicateValue.Default.record(OrderedMap(result.value))
           : PredicateValue.Default.unit();
 
         return ValueOrErrors.Default.return(
@@ -912,9 +912,9 @@ export const dispatchFromAPIRawValue =
       }
       if (t.kind == "multiSelection") {
         const result = converters["MultiSelection"].fromAPIRawValue(raw);
-        const values = result.map((_) => PredicateValue.Default.record(Map(_)));
+        const values = result.map((_) => PredicateValue.Default.record(OrderedMap(_)));
         return ValueOrErrors.Default.return(
-          PredicateValue.Default.record(Map(values)),
+          PredicateValue.Default.record(OrderedMap(values)),
         );
       }
       if (t.kind == "list") {
@@ -1095,7 +1095,7 @@ export const dispatchFromAPIRawValue =
             `object expected but got ${JSON.stringify(raw)}`,
           );
         }
-        let result: Map<string, PredicateValue> = Map();
+        let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
         t.fields.forEach((fieldType, fieldName) => {
           const fieldValue = raw[fieldName];

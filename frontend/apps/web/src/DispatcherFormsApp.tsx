@@ -24,7 +24,7 @@ import {
   InjectedPrimitive,
   DispatchInjectedPrimitive,
 } from "ballerina-core";
-import { Set, Map } from "immutable";
+import { Set, Map, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
@@ -366,7 +366,7 @@ export const DispatcherFormsApp = (props: {}) => {
                         entity: config,
                         config: Sum.Default.left(
                           ValueOrErrors.Default.return(
-                            PredicateValue.Default.record(Map()),
+                            PredicateValue.Default.record(OrderedMap()),
                           ),
                         ),
                         onEntityChange: onPersonConfigChange,

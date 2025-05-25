@@ -121,11 +121,11 @@ export const AbstractTableRendererState = {
           const parsedRow = fromApiRaw(_);
           if (parsedRow.kind == "errors") {
             console.error(parsedRow.errors.toJS());
-            return [key, PredicateValue.Default.record(Map())];
+            return [key, PredicateValue.Default.record(OrderedMap())];
           }
           if (!PredicateValue.Operations.IsRecord(parsedRow.value)) {
             console.error("Expected a record");
-            return [key, PredicateValue.Default.record(Map())];
+            return [key, PredicateValue.Default.record(OrderedMap())];
           }
           return [key, parsedRow.value];
         }),
