@@ -99,9 +99,9 @@ export const MultiSelectionDispatcher = {
                           ),
                         )
                   : ValueOrErrors.Default.throwOne<
-                                  Template<any, any, any, any>,
-                                  string
-                                >(
+                      Template<any, any, any, any>,
+                      string
+                    >(
                       `could not resolve multi selection concrete renderer for ${viewKind}`,
                     ),
             ),
