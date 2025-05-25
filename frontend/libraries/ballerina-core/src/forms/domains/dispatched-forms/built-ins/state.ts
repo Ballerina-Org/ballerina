@@ -683,7 +683,9 @@ export const dispatchDefaultValue =
       if (t.kind == "multiSelection")
         return renderer.kind == "enumRenderer" ||
           renderer.kind == "streamRenderer"
-          ? ValueOrErrors.Default.return(PredicateValue.Default.record(OrderedMap()))
+          ? ValueOrErrors.Default.return(
+              PredicateValue.Default.record(OrderedMap()),
+            )
           : ValueOrErrors.Default.throwOne(
               `received non multiSelection renderer kind "${renderer.kind}" when resolving defaultValue for multiSelection`,
             );
@@ -912,7 +914,9 @@ export const dispatchFromAPIRawValue =
       }
       if (t.kind == "multiSelection") {
         const result = converters["MultiSelection"].fromAPIRawValue(raw);
-        const values = result.map((_) => PredicateValue.Default.record(OrderedMap(_)));
+        const values = result.map((_) =>
+          PredicateValue.Default.record(OrderedMap(_)),
+        );
         return ValueOrErrors.Default.return(
           PredicateValue.Default.record(OrderedMap(values)),
         );
