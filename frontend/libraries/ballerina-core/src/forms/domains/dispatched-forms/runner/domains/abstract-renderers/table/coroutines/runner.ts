@@ -10,7 +10,6 @@ import {
   Value,
 } from "../../../../../../../../../main";
 import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
-import { ValueRecord } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
 
 const Co = CoTypedFactory<

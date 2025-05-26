@@ -38,7 +38,7 @@ const DebouncerCo = CoTypedFactory<
 
 const DebouncedCo = CoTypedFactory<
   { onDebounce: SimpleCallback<void> },
-  Value<string>
+  Value<Map<string, string>>
 >();
 
 const intializeOne = Co.GetState().then((current) => {
@@ -146,16 +146,19 @@ const intializeOne = Co.GetState().then((current) => {
 
 const debouncer = DebouncerCo.Repeat(
   DebouncerCo.Seq([
-    Debounce<Value<string>, { onDebounce: SimpleCallback<void> }>(
+    Debounce<Value<Map<string, string>>, { onDebounce: SimpleCallback<void> }>(
       DebouncedCo.GetState()
         .then((current) => DebouncedCo.Do(() => current.onDebounce()))
         //.SetState(SearchNow.Updaters.reloadsRequested(_ => _ + 1))
         .then((_) => DebouncedCo.Return("success")),
       250,
     ).embed(
-      (_) => ({ ..._, ..._.customFormState.searchText }),
+      (_) => ({
+        ..._.customFormState.streamParams,
+        onDebounce: _.onDebounce,
+      }),
       OneAbstractRendererState.Updaters.Core.customFormState.children
-        .searchText,
+        .streamParams,
     ),
     DebouncerCo.Wait(0),
   ]),
@@ -176,7 +179,7 @@ export const oneTableDebouncerRunner = DebouncerCo.Template<{
   interval: 15,
   runFilter: (props) =>
     Debounced.Operations.shouldCoroutineRun(
-      props.context.customFormState.searchText,
+      props.context.customFormState.streamParams,
     ),
 });
 

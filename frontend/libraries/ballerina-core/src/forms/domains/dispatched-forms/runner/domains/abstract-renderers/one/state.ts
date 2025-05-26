@@ -33,9 +33,11 @@ import {
   DispatchPrimitiveType,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  MapRepo,
+  BasicFun2,
+  Value,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
-import { Value } from "../../../../../../../value/state";
 
 export type OneAbstractRendererReadonlyContext =
   CommonAbstractRendererReadonlyContext<
@@ -54,7 +56,7 @@ export type OneAbstractRendererState = {
       Unit,
       ValueOrErrors<ValueRecord | ValueUnit, string>
     >;
-    searchText: Debounced<Value<string>>;
+    streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
@@ -75,7 +77,7 @@ export const OneAbstractRendererState = {
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
       selectedValue: Synchronized.Default(unit),
-      searchText: Debounced.Default(Value.Default("")),
+      streamParams: Debounced.Default(Value.Default(Map())),
       status: "closed",
       getChunkWithParams: getChunk,
       stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
@@ -94,7 +96,7 @@ export const OneAbstractRendererState = {
           "stream",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "searchText",
+          "streamParams",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "detailsState",
@@ -107,11 +109,14 @@ export const OneAbstractRendererState = {
       })("commonFormState"),
     },
     Template: {
-      searchText: (
+      streamParam: (
+        key: string,
         _: BasicUpdater<string>,
       ): Updater<OneAbstractRendererState> =>
-        OneAbstractRendererState.Updaters.Core.customFormState.children.searchText(
-          Debounced.Updaters.Template.value(Value.Updaters.value(_)),
+        OneAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
+          Debounced.Updaters.Template.value(
+            Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
+          ),
         ),
     },
   },
@@ -136,7 +141,7 @@ export type OneAbstractRendererView = View<
       onChange: DispatchOnChange<ValueRecord | ValueUnit>;
       toggleOpen: SimpleCallback<void>;
       // clearSelection: SimpleCallback<void>;
-      setSearchText: SimpleCallback<string>;
+      setStreamParam: BasicFun2<string, string, void>;
       select: SimpleCallback<ValueRecord | ValueUnit>;
       loadMore: SimpleCallback<void>;
       reload: SimpleCallback<void>;

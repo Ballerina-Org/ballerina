@@ -23,6 +23,9 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Debounced,
+  MapRepo,
+  Value,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererReadonlyContext,
@@ -397,9 +400,10 @@ export const OneAbstractRenderer = (
                         : id,
                     ),
                 ),
-              setSearchText: (_) =>
+              setStreamParam: (key: string, _) =>
                 props.setState(
-                  OneAbstractRendererState.Updaters.Template.searchText(
+                  OneAbstractRendererState.Updaters.Template.streamParam(
+                    key,
                     replaceWith(_),
                   ),
                 ),
@@ -411,8 +415,10 @@ export const OneAbstractRenderer = (
                 ),
               reload: () =>
                 props.setState(
-                  OneAbstractRendererState.Updaters.Template.searchText(
-                    replaceWith(""),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
+                    Debounced.Updaters.Template.value(
+                      Value.Updaters.value(replaceWith(Map())),
+                    ),
                   ),
                 ),
               select: (_) => {
@@ -484,9 +490,7 @@ export const OneAbstractRenderer = (
             OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
               ValueInfiniteStreamState.Updaters.Template.reload(
                 props.context.customFormState.getChunkWithParams(Id)(
-                  Map([
-                    ["search", props.context.customFormState.searchText.value],
-                  ]),
+                  props.context.customFormState.streamParams.value,
                 ),
               ),
             ),
