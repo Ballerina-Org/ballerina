@@ -209,12 +209,12 @@ export type ValueRecord = {
 };
 export const ValueRecord = {
   Default: {
-    empty: (): ValueRecord => ({ kind: "record", fields: Map() }),
+    empty: (): ValueRecord => ({ kind: "record", fields: OrderedMap() }),
     fromJSON: (json: object): ValueRecord => ({
       kind: "record",
       fields: OrderedMap({ ...json }), // TODO - check this works ok
     }),
-    fromMap: (map: Map<string, PredicateValue>): ValueRecord => ({
+    fromMap: (map: OrderedMap<string, PredicateValue>): ValueRecord => ({
       kind: "record",
       fields: OrderedMap(map),
     }),
@@ -239,7 +239,7 @@ export const ValueRecord = {
       return ValueRecord.Updaters.fields(MapRepo.Updaters.remove(key));
     },
     clear: (): BasicUpdater<ValueRecord> => {
-      return ValueRecord.Updaters.fields(replaceWith(Map()));
+      return ValueRecord.Updaters.fields(replaceWith(OrderedMap()));
     },
   },
 };

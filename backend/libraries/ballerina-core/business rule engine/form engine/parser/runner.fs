@@ -128,10 +128,10 @@ module Runner =
       : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
 
       state {
-        let! enumType = ExprType.Parse ParsedFormsContext.ContextActions enumTypeJson
+        let! enumType = ExprType.Parse ParsedFormsContext.ContextOperations enumTypeJson
         let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
         let! ctx = state.GetState()
-        let! enumType = ExprType.ResolveLookup ctx enumType |> state.OfSum
+        let! enumType = ExprType.ResolveLookup ctx.Types enumType |> state.OfSum
         let! fields = ExprType.GetFields enumType |> state.OfSum
 
         match fields with
@@ -162,7 +162,7 @@ module Runner =
       (streamTypeJson: JsonValue)
       : State<StreamApi, CodeGenConfig, ParsedFormsContext, Errors> =
       state {
-        let! streamType = ExprType.Parse ParsedFormsContext.ContextActions streamTypeJson
+        let! streamType = ExprType.Parse ParsedFormsContext.ContextOperations streamTypeJson
         let! streamTypeId = streamType |> ExprType.AsLookupId |> state.OfSum
 
         return
@@ -206,7 +206,7 @@ module Runner =
 
         let! typeJson = (tableTypeFieldJsons |> state.TryFindField "type")
 
-        let! tableType = ExprType.Parse ParsedFormsContext.ContextActions typeJson
+        let! tableType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
 
         let tableApi =
@@ -230,7 +230,7 @@ module Runner =
             (tableTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! tableType = ExprType.Parse ParsedFormsContext.ContextActions typeJson
+        let! tableType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -257,7 +257,7 @@ module Runner =
             (entityTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! entityType = ExprType.Parse ParsedFormsContext.ContextActions typeJson
+        let! entityType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
         let! entityTypeId = entityType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -365,142 +365,10 @@ module Runner =
       }
       |> state.MapError(Errors.Map(String.appendNewline $$"""...when parsing APIs"""))
 
-    static member ParseTypes
+    static member ParseTypes<'context>
       (typesJson: seq<string * JsonValue>)
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
-      state {
-
-        let! typesJson =
-          typesJson
-          |> Seq.map (fun (name, json) ->
-            state {
-              let typeId: TypeId = { TypeName = name }
-
-              do!
-                state.SetState(
-                  ParsedFormsContext.Updaters.Types(
-                    Map.add
-                      name
-                      { Type = ExprType.UnitType
-                        TypeId = typeId
-                        Const = false }
-                  )
-                )
-
-              return name, typeId, json
-            })
-          |> state.All
-
-        for typeName, typeId, typeJson in typesJson do
-          return!
-            state {
-              let! typeJsonArgs = typeJson |> JsonValue.AsRecord |> state.OfSum
-
-              return!
-                state.Any(
-                  NonEmptyList.OfList(
-                    state {
-                      let extendsJson =
-                        typeJsonArgs
-                        |> sum.TryFindField "extends"
-                        |> Sum.toOption
-                        |> Option.defaultWith (fun () -> JsonValue.Array [||])
-
-                      let isConstJson =
-                        typeJsonArgs
-                        |> sum.TryFindField "const"
-                        |> Sum.toOption
-                        |> Option.defaultWith (fun () -> JsonValue.Boolean false)
-
-                      let! fieldsJson = typeJsonArgs |> sum.TryFindField "fields" |> state.OfSum
-
-                      return!
-                        state {
-                          let! extends, fields, isConst =
-                            state.All3
-                              (extendsJson |> JsonValue.AsArray |> state.OfSum)
-                              (fieldsJson |> JsonValue.AsRecord |> state.OfSum)
-                              (isConstJson |> JsonValue.AsBoolean |> state.OfSum)
-
-                          let! s = state.GetState()
-
-                          let! extendedTypes =
-                            extends
-                            |> Seq.map (fun extendsJson ->
-                              state {
-                                let! parsed = ExprType.Parse ParsedFormsContext.ContextActions extendsJson
-                                return! ExprType.ResolveLookup s parsed |> state.OfSum
-                              })
-                            |> state.All
-
-                          let! fields =
-                            fields
-                            |> Seq.map (fun (fieldName, fieldType) ->
-                              state {
-                                let! fieldType = ExprType.Parse ParsedFormsContext.ContextActions fieldType
-                                return fieldName, fieldType
-                              }
-                              |> state.MapError(
-                                Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")
-                              ))
-                            |> Seq.toList
-                            |> state.All
-
-                          let fields = fields |> Map.ofList
-
-                          let! exprType =
-                            extendedTypes
-                            |> Seq.fold
-                              (fun (t1: Sum<ExprType, Errors>) t2 ->
-                                sum {
-                                  let! t1 = t1
-                                  return! ExprType.Extend t1 t2
-                                })
-                              (Left(ExprType.RecordType fields))
-                            |> state.OfSum
-
-                          do!
-                            state.SetState(
-                              ParsedFormsContext.Updaters.Types(
-                                Map.add
-                                  typeName
-                                  { Type = exprType
-                                    TypeId = typeId
-                                    Const = isConst }
-                              )
-                            )
-
-                          return ()
-                        }
-                        |> state.MapError(Errors.WithPriority ErrorPriority.High)
-                    },
-                    [ state {
-                        let typeId: TypeId = { TypeName = typeName }
-
-                        let! parsedType = ExprType.Parse ParsedFormsContext.ContextActions typeJson
-
-                        do!
-                          state.SetState(
-                            ParsedFormsContext.Updaters.Types(
-                              Map.add
-                                typeName
-                                { Type = parsedType
-                                  TypeId = typeId
-                                  Const = false }
-                            )
-                          )
-                      }
-                      state.Throw(
-                        Errors.Singleton
-                          $"...unexpected json shape for a type body {typeJson.ToFSharpString.ReasonablyClamped}"
-                        |> Errors.WithPriority ErrorPriority.High
-                      ) ]
-                  )
-                )
-            }
-            |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing type {typeName}"))
-      }
-      |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing types"))
+      : State<Unit, 'context, TypeContext, Errors> =
+      ExprType.ParseTypes<'context> typesJson
 
     static member ParseForms
       (formsJson: (string * JsonValue)[])
@@ -626,7 +494,12 @@ module Runner =
         let! topLevel = jsons |> List.map ParsedFormsContext.ExtractTopLevel |> state.All
         let! topLevel = TopLevel.MergeMany topLevel |> state.OfSum
 
-        do! ParsedFormsContext.ParseTypes topLevel.Types
+        do!
+          State.mapState
+            (fun outerState -> outerState.Types)
+            (fun innerState -> ParsedFormsContext.Updaters.Types(fun _ -> innerState))
+            (ParsedFormsContext.ParseTypes topLevel.Types)
+
         let! c = state.GetContext()
 
         for g in c.Generic do
@@ -637,7 +510,7 @@ module Runner =
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot parse generic type {tstring}")
             |> state.OfSum
 
-          let! t = ExprType.Parse ParsedFormsContext.ContextActions tjson
+          let! t = ExprType.Parse ParsedFormsContext.ContextOperations tjson
 
           do!
             state.SetState(

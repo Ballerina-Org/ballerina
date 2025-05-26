@@ -22,7 +22,7 @@ import {
   ErrorRendererProps,
   DispatchInjectedPrimitive,
 } from "ballerina-core";
-import { Set, Map } from "immutable";
+import { Set, Map, OrderedMap } from "immutable";
 import {
   DispatchPersonFromConfigApis,
   UsersSetupFromConfigApis,
@@ -258,7 +258,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                       entity: entity,
                       config: Sum.Default.left(
                         ValueOrErrors.Default.return(
-                          PredicateValue.Default.record(Map()),
+                          PredicateValue.Default.record(OrderedMap()),
                         ),
                       ),
                       onEntityChange: onEntityChange,
