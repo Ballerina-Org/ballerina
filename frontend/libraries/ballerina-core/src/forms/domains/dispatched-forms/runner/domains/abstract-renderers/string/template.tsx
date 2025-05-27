@@ -70,7 +70,7 @@ export const StringAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind:
                     props.context.type.kind == "primitive" &&
-                    props.context.type.typeName == "string"
+                    props.context.type.name == "string"
                       ? "StringReplace"
                       : "GuidReplace",
                   replace: _,
