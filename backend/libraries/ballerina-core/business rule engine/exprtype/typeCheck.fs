@@ -34,6 +34,9 @@ module TypeCheck =
         }
 
       let rec eval (vars: VarTypes) (e: Expr) : Sum<Option<TypeName> * ExprType * VarTypes, Errors> =
+        let notImplementedError exprName =
+          sum.Throw(Errors.Singleton $"Error: not implemented Expr type checker for expression {exprName}")
+
         let result =
           match e with
           | Expr.Exists(varName, entityDescriptor, condition) ->
@@ -251,11 +254,14 @@ module TypeCheck =
                     |> Errors.Singleton
                   )
             }
-          | e ->
-            sum.Throw(
-              $"Error: not implemented Expr type checker for {e.ToString()}"
-              |> Errors.Singleton
-            )
+          | Expr.SumBy(_, _, _) -> notImplementedError "SumBy"
+          | Expr.Binary(_, _, _) -> notImplementedError "Binary"
+          | Expr.Unary(_, _) -> notImplementedError "Unary"
+          | Expr.Apply(_, _) -> notImplementedError "Apply"
+          | Expr.MakeRecord _ -> notImplementedError "MakeRecord"
+          | Expr.MakeTuple _ -> notImplementedError "MakeTuple"
+          | Expr.MakeSet _ -> notImplementedError "MakeSet"
+          | Expr.MakeCase(_, _) -> notImplementedError "MakeCase"
 
         sum {
           let! _, t, vars = result
