@@ -152,9 +152,7 @@ export type OneAbstractRendererView = View<
   | {
       kind: "initialized";
       DetailsRenderer: Template<any, any, any, any>;
-      PreviewRenderer?: (
-        value: ValueRecord,
-      ) => Template<any, any, any, any>;
+      PreviewRenderer?: (value: ValueRecord) => Template<any, any, any, any>;
     }
   | {
       kind: "uninitialized";
