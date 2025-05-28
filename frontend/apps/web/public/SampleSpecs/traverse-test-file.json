@@ -173,8 +173,7 @@
           "visible": true
         },
         "Town": {
-          "renderer": "defaultString",
-          "visible": true
+          "renderer": "defaultString"
         },
         "Category": {
           "renderer": "defaultCategory"
@@ -187,7 +186,13 @@
         },
         "TupleExample": {
           "renderer": "defaultTuple3",
-          "visible": true,
+          "visible": {
+            "kind": "fieldLookup",
+            "operands": [
+              { "kind": "varLookup", "varName": "root" },
+              "SubscribeToNewsletter"
+            ]
+          },
           "itemRenderers": [
             { "renderer": "defaultCategory" },
             { "renderer": "defaultCategory" },

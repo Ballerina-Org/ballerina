@@ -135,7 +135,7 @@ export const Dispatcher = {
                 ? MapRepo.Operations.tryFindWithError(
                     renderer.renderer,
                     dispatcherContext.forms,
-                    () => `cannot find form xx ${renderer.renderer}`,
+                    () => `cannot find form ${renderer.renderer}`,
                   )
                     .Then((formRenderer) =>
                       Dispatcher.Operations.Dispatch(
