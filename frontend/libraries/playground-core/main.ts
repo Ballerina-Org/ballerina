@@ -28,3 +28,5 @@ export * from "./integrated-form/data-mocks";
 export * from "./user-setup/apis/data-mocks";
 
 export * from "./person/domains/dispatch-renderer/api/data-mocks";
+
+export * from "./person/domains/traversal-test/api/data-mocks";

@@ -81,211 +81,204 @@ export const Dispatcher = {
             ),
           )
         : type.kind == "lookup"
-          ? DispatchParsedType.Operations.ResolveLookupType(
-              type.name,
-              dispatcherContext.types,
-            ).Then((lookupType) =>
+        ? DispatchParsedType.Operations.ResolveLookupType(
+            type.name,
+            dispatcherContext.types,
+          ).Then((lookupType) =>
+            Dispatcher.Operations.Dispatch(
+              lookupType,
+              renderer,
+              dispatcherContext,
+              isNested,
+              formName,
+              launcherName,
+              api,
+            ).Then((template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
+            ),
+          )
+        : renderer.kind == "recordRenderer" && type.kind == "record"
+        ? RecordDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+            isNested,
+            formName,
+            launcherName,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "lookupRenderer" && type.kind == "primitive"
+        ? PrimitiveDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "lookupRenderer" //check if case is needed
+        ? MapRepo.Operations.tryFindWithError(
+            renderer.renderer,
+            dispatcherContext.forms,
+            () => `cannot find form xx ${renderer.renderer}`,
+          )
+            .Then((formRenderer) =>
               Dispatcher.Operations.Dispatch(
-                lookupType,
-                renderer,
+                type,
+                formRenderer,
                 dispatcherContext,
-                isNested,
-                formName,
+                true,
+                renderer.renderer,
                 launcherName,
-                api,
-              ).Then((template) =>
-                ValueOrErrors.Default.return(
-                  template.mapContext((_: any) => ({
-                    ..._,
-                    type: renderer.type,
-                  })),
-                ),
+                api ?? renderer.api,
               ),
             )
-          : renderer.kind == "recordRenderer" && type.kind == "record"
-            ? RecordDispatcher.Operations.Dispatch(
-                type,
-                renderer,
-                dispatcherContext,
-                isNested,
-                formName,
-                launcherName,
-              ).Then((template) =>
-                ValueOrErrors.Default.return(
-                  template.mapContext((_: any) => ({
-                    ..._,
-                    type: renderer.type,
-                  })),
-                ),
-              )
-            : renderer.kind == "lookupRenderer" && type.kind == "primitive"
-              ? PrimitiveDispatcher.Operations.Dispatch(
-                  type,
-                  renderer,
-                  dispatcherContext,
-                ).Then((template) =>
-                  ValueOrErrors.Default.return(
-                    template.mapContext((_: any) => ({
-                      ..._,
-                      type: renderer.type,
-                    })),
-                  ),
-                )
-              : renderer.kind == "lookupRenderer" //check if case is needed
-                ? MapRepo.Operations.tryFindWithError(
-                    renderer.renderer,
-                    dispatcherContext.forms,
-                    () => `cannot find form ${renderer.renderer}`,
-                  )
-                    .Then((formRenderer) =>
-                      Dispatcher.Operations.Dispatch(
-                        type,
-                        formRenderer,
-                        dispatcherContext,
-                        true,
-                        renderer.renderer,
-                        launcherName,
-                        api ?? renderer.api,
-                      ),
-                    )
-                    .Then((template) =>
-                      ValueOrErrors.Default.return(
-                        template.mapContext((_: any) => ({
-                          ..._,
-                          type: renderer.type,
-                        })),
-                      ),
-                    )
-                : renderer.kind == "listRenderer" && type.kind == "list"
-                  ? ListDispatcher.Operations.Dispatch(
-                      type,
-                      renderer,
-                      dispatcherContext,
-                    ).Then((template) =>
-                      ValueOrErrors.Default.return(
-                        template.mapContext((_: any) => ({
-                          ..._,
-                          type: renderer.type,
-                        })),
-                      ),
-                    )
-                  : renderer.kind == "mapRenderer" && type.kind == "map"
-                    ? MapDispatcher.Operations.Dispatch(
-                        type,
-                        renderer,
-                        dispatcherContext,
-                      ).Then((template) =>
-                        ValueOrErrors.Default.return(
-                          template.mapContext((_: any) => ({
-                            ..._,
-                            type: renderer.type,
-                          })),
-                        ),
-                      )
-                    : type.kind == "multiSelection" &&
-                        (renderer.kind == "enumRenderer" ||
-                          renderer.kind == "streamRenderer")
-                      ? MultiSelectionDispatcher.Operations.Dispatch(
-                          renderer,
-                          dispatcherContext,
-                        ).Then((template) =>
-                          ValueOrErrors.Default.return(
-                            template.mapContext((_: any) => ({
-                              ..._,
-                              type: renderer.type,
-                            })),
-                          ),
-                        )
-                      : type.kind == "one" && renderer.kind == "oneRenderer"
-                        ? OneDispatcher.Operations.Dispatch(
-                            type,
-                            renderer,
-                            dispatcherContext,
-                          ).Then((template) =>
-                            ValueOrErrors.Default.return(
-                              template.mapContext((_: any) => ({
-                                ..._,
-                                type: renderer.type,
-                              })),
-                            ),
-                          )
-                        : type.kind == "singleSelection" &&
-                            (renderer.kind == "enumRenderer" ||
-                              renderer.kind == "streamRenderer")
-                          ? SingleSelectionDispatcher.Operations.Dispatch(
-                              renderer,
-                              dispatcherContext,
-                            ).Then((template) =>
-                              ValueOrErrors.Default.return(
-                                template.mapContext((_: any) => ({
-                                  ..._,
-                                  type: renderer.type,
-                                })),
-                              ),
-                            )
-                          : type.kind == "sum" &&
-                              (renderer.kind == "sumRenderer" ||
-                                renderer.kind == "sumUnitDateRenderer")
-                            ? SumDispatcher.Operations.Dispatch(
-                                renderer,
-                                dispatcherContext,
-                              ).Then((template) =>
-                                ValueOrErrors.Default.return(
-                                  template.mapContext((_: any) => ({
-                                    ..._,
-                                    type: renderer.type,
-                                  })),
-                                ),
-                              )
-                            : type.kind == "table" &&
-                                renderer.kind == "tableRenderer"
-                              ? TableDispatcher.Operations.Dispatch(
-                                  type,
-                                  renderer,
-                                  dispatcherContext,
-                                  api,
-                                  isNested,
-                                  formName,
-                                  launcherName,
-                                ).Then((template) =>
-                                  ValueOrErrors.Default.return(
-                                    template.mapContext((_: any) => ({
-                                      ..._,
-                                      type: renderer.type,
-                                    })),
-                                  ),
-                                )
-                              : type.kind == "tuple" &&
-                                  renderer.kind == "tupleRenderer"
-                                ? TupleDispatcher.Operations.Dispatch(
-                                    type,
-                                    renderer,
-                                    dispatcherContext,
-                                  ).Then((template) =>
-                                    ValueOrErrors.Default.return(
-                                      template.mapContext((_: any) => ({
-                                        ..._,
-                                        type: renderer.type,
-                                      })),
-                                    ),
-                                  )
-                                : type.kind == "union" &&
-                                    renderer.kind == "unionRenderer"
-                                  ? UnionDispatcher.Operations.Dispatch(
-                                      type,
-                                      renderer,
-                                      dispatcherContext,
-                                      isNested,
-                                    ).Then((template) =>
-                                      ValueOrErrors.Default.return(
-                                        template.mapContext((_: any) => ({
-                                          ..._,
-                                          type: renderer.type,
-                                        })),
-                                      ),
-                                    )
-                                  : ValueOrErrors.Default.throwOne(
-                                      `non matching renderer ${renderer.kind} and type ${type.kind}`,
-                                    ),
+            .Then((template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
+            )
+        : renderer.kind == "listRenderer" && type.kind == "list"
+        ? ListDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : renderer.kind == "mapRenderer" && type.kind == "map"
+        ? MapDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "multiSelection" &&
+          (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer")
+        ? MultiSelectionDispatcher.Operations.Dispatch(
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "one" && renderer.kind == "oneRenderer"
+        ? OneDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "singleSelection" &&
+          (renderer.kind == "enumRenderer" || renderer.kind == "streamRenderer")
+        ? SingleSelectionDispatcher.Operations.Dispatch(
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "sum" &&
+          (renderer.kind == "sumRenderer" ||
+            renderer.kind == "sumUnitDateRenderer")
+        ? SumDispatcher.Operations.Dispatch(renderer, dispatcherContext).Then(
+            (template) =>
+              ValueOrErrors.Default.return(
+                template.mapContext((_: any) => ({
+                  ..._,
+                  type: renderer.type,
+                })),
+              ),
+          )
+        : type.kind == "table" && renderer.kind == "tableRenderer"
+        ? TableDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+            api,
+            isNested,
+            formName,
+            launcherName,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "tuple" && renderer.kind == "tupleRenderer"
+        ? TupleDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : type.kind == "union" && renderer.kind == "unionRenderer"
+        ? UnionDispatcher.Operations.Dispatch(
+            type,
+            renderer,
+            dispatcherContext,
+            isNested,
+          ).Then((template) =>
+            ValueOrErrors.Default.return(
+              template.mapContext((_: any) => ({
+                ..._,
+                type: renderer.type,
+              })),
+            ),
+          )
+        : ValueOrErrors.Default.throwOne(
+            `non matching renderer ${renderer.kind} and type ${type.kind}`,
+          ),
   },
 };

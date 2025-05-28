@@ -1,0 +1,220 @@
+{
+  "types": {
+    "GlobalConfiguration": {
+      "extends": [],
+      "fields": {}
+    },
+    "ERPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "ERPSAP",
+          "fields": {
+            "Value": "SAPConfig"
+          }
+        },
+        {
+          "caseName": "ERPBC",
+          "fields": {}
+        },
+        {
+          "caseName": "ERPFAndO",
+          "fields": {}
+        }
+      ]
+    },
+    "SAPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "SAPS2",
+          "fields": {
+            "S2OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS3",
+          "fields": {
+            "S3OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS4",
+          "fields": {
+            "S4OnlyField": "boolean"
+          }
+        }
+      ]
+    },
+    "CollectionReference": {
+      "extends": [],
+      "fields": {
+        "DisplayValue": "string",
+        "Id": "guid"
+      }
+    },
+    "CityRef": {
+      "extends": ["CollectionReference"],
+      "fields": {}
+    },
+    "Address": {
+      "fields": {
+        "Street": "string",
+        "Town": "string",
+        "Number": "number"
+      }
+    },
+    "ColorsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Red",
+          "fields": {}
+        },
+        {
+          "caseName": "Green",
+          "fields": {}
+        },
+        {
+          "caseName": "Blue",
+          "fields": {}
+        }
+      ]
+    },
+    "ColorRef": {
+      "fields": {
+        "Value": "ColorsEnum"
+      }
+    },
+    "InterestsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Soccer",
+          "fields": {}
+        },
+        {
+          "caseName": "Hockey",
+          "fields": {}
+        },
+        {
+          "caseName": "BoardGames",
+          "fields": {}
+        },
+        {
+          "caseName": "HegelianPhilosophy",
+          "fields": {}
+        }
+      ]
+    },
+    "InterestRef": {
+      "fields": {
+        "Value": "InterestsEnum"
+      }
+    },
+    "DepartmentRef": {
+      "extends": ["CollectionReference"],
+      "fields": {}
+    },
+    "Person": {
+      "fields": {
+        "Name": "string",
+        "Birthday": "Date",
+        "SubscribeToNewsletter": "boolean",
+        "SchoolAddress": "Address"
+      }
+    }
+  },
+  "apis": {
+    "enumOptions": {
+      "colors": "ColorRef",
+      "interests": "InterestRef"
+    },
+    "searchableStreams": {
+      "cities": "CityRef",
+      "departments": "DepartmentRef"
+    },
+    "entities": {
+      "person": {
+        "type": "Person",
+        "methods": ["create", "get", "update", "default"]
+      },
+      "globalConfiguration": {
+        "type": "GlobalConfiguration",
+        "methods": ["get"]
+      }
+    }
+  },
+  "forms": {
+    "address": {
+      "type": "Address",
+      "renderer": "address",
+      "fields": {
+        "Street": {
+          "renderer": "defaultString",
+          "visible": true
+        },
+        "Town": {
+          "renderer": "defaultString",
+          "visible": true
+        },
+        "Number": { "renderer": "defaultNumber" }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Town", "Number"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "person": {
+      "type": "Person",
+      "renderer": "personDetails",
+      "fields": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Birthday": {
+          "renderer": "defaultDate",
+          "tooltip": "happy Birthday!"
+        },
+        "SubscribeToNewsletter": {
+          "label": "subscribe to newsletter",
+          "renderer": "defaultBoolean"
+        },
+        "SchoolAddress": {
+          "label": "school address",
+          "renderer": "address"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "demographics": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "SubscribeToNewsletter",
+                  "Birthday",
+                  "SchoolAddress"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "person-transparent": {
+      "kind": "passthrough",
+      "form": "person",
+      "configType": "GlobalConfiguration"
+    }
+  }
+}

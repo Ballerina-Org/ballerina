@@ -227,6 +227,25 @@ export const FormLayout = {
       ).Then((calculatedTabs) =>
         ValueOrErrors.Default.return(OrderedMap(calculatedTabs)),
       ),
+    ComputeVisibleFieldsForRecord: (
+      bindings: Bindings,
+      formLayout: PredicateFormLayout,
+    ): ValueOrErrors<Array<FieldName>, string> =>
+      FormLayout.Operations.ComputeLayout(bindings, formLayout).Then(
+        (recordLayout) =>
+          ValueOrErrors.Default.return(
+            recordLayout
+              .valueSeq()
+              .flatMap((tab) =>
+                tab.columns
+                  .valueSeq()
+                  .flatMap((column) =>
+                    column.groups.valueSeq().flatMap((group) => group),
+                  ),
+              )
+              .toArray(),
+          ),
+      ),
   },
 };
 
@@ -289,7 +308,9 @@ export const TableLayout = {
             );
           }
           console.debug(
-            `Computed visible columns ${JSON.stringify(Array.from(result.fields.keys()))}`,
+            `Computed visible columns ${JSON.stringify(
+              Array.from(result.fields.keys()),
+            )}`,
             result,
           );
           return ValueOrErrors.Default.return({

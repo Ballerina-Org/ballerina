@@ -5,6 +5,6 @@ import "./src/index.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App app="dispatcher-forms" />
+    <App app="traversal-dispatch-test" />
   </React.StrictMode>,
 );
