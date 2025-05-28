@@ -15,6 +15,7 @@
     <Compile Include="business rule engine/parser/common.fs" />
     <Compile Include="business rule engine/parser/exprtype.fs" />
     <Compile Include="business rule engine/parser/expr.fs" />
+    <Compile Include="business rule engine/expr/model.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
