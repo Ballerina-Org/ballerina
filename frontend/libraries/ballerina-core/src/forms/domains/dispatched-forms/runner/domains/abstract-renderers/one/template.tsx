@@ -161,90 +161,94 @@ export const OneAbstractRenderer = (
       },
     }));
 
-  const embeddedPreviewRenderer = (value: ValueRecord) =>
-    PreviewRenderer?.mapContext<
-      OneAbstractRendererReadonlyContext & OneAbstractRendererState
-    >((_) => {
-      const state = RecordAbstractRendererState.Default.zero();
-      return {
-        ..._,
-        ...state,
-        value,
-        disabled: _.disabled,
-        bindings: _.bindings,
-        extraContext: _.extraContext,
-        identifiers: {
-          withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
-          withoutLauncher: _.identifiers.withoutLauncher.concat(`[preview]`),
-        },
-        type: _.type.args,
-      };
-    })
-      .mapState(
-        OneAbstractRendererState.Updaters.Core.customFormState.children
-          .detailsState,
-      )
-      .mapForeignMutationsFromProps<{
-        onChange: DispatchOnChange<PredicateValue>;
-      }>((props) => ({
-        onChange: (
-          _: BasicUpdater<ValueRecord>,
-          nestedDelta: DispatchDelta,
-        ) => {
-          props.setState(
-            OneAbstractRendererState.Updaters.Core.commonFormState.children
-              .modifiedByUser(replaceWith(true))
-              .then(
-                OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                  RecordAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
+  const embeddedPreviewRenderer = PreviewRenderer
+    ? (value: ValueRecord) =>
+        PreviewRenderer.mapContext<
+          OneAbstractRendererReadonlyContext & OneAbstractRendererState
+        >((_) => {
+          const state = RecordAbstractRendererState.Default.zero();
+          return {
+            ..._,
+            ...state,
+            value,
+            disabled: _.disabled,
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
+              withoutLauncher:
+                _.identifiers.withoutLauncher.concat(`[preview]`),
+            },
+            type: _.type.args,
+          };
+        })
+          .mapState(
+            OneAbstractRendererState.Updaters.Core.customFormState.children
+              .detailsState,
+          )
+          .mapForeignMutationsFromProps<{
+            onChange: DispatchOnChange<PredicateValue>;
+          }>((props) => ({
+            onChange: (
+              _: BasicUpdater<ValueRecord>,
+              nestedDelta: DispatchDelta,
+            ) => {
+              props.setState(
+                OneAbstractRendererState.Updaters.Core.commonFormState.children
+                  .modifiedByUser(replaceWith(true))
+                  .then(
+                    OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                      RecordAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              )
-              .then((__) => {
-                if (
-                  __.customFormState.selectedValue.sync.kind != "loaded" ||
-                  __.customFormState.selectedValue.sync.value.kind ==
-                    "errors" ||
-                  !PredicateValue.Operations.IsRecord(
-                    __.customFormState.selectedValue.sync.value.value,
                   )
-                ) {
-                  return __;
-                }
-                return {
-                  ...__,
-                  customFormState: {
-                    ...__.customFormState,
-                    selectedValue: {
-                      ...__.customFormState.selectedValue,
-                      sync: {
-                        ...__.customFormState.selectedValue.sync,
-                        value: {
-                          ...__.customFormState.selectedValue.sync.value,
-                          value: _(
-                            __.customFormState.selectedValue.sync.value.value,
-                          ),
+                  .then((__) => {
+                    if (
+                      __.customFormState.selectedValue.sync.kind != "loaded" ||
+                      __.customFormState.selectedValue.sync.value.kind ==
+                        "errors" ||
+                      !PredicateValue.Operations.IsRecord(
+                        __.customFormState.selectedValue.sync.value.value,
+                      )
+                    ) {
+                      return __;
+                    }
+                    return {
+                      ...__,
+                      customFormState: {
+                        ...__.customFormState,
+                        selectedValue: {
+                          ...__.customFormState.selectedValue,
+                          sync: {
+                            ...__.customFormState.selectedValue.sync,
+                            value: {
+                              ...__.customFormState.selectedValue.sync.value,
+                              value: _(
+                                __.customFormState.selectedValue.sync.value
+                                  .value,
+                              ),
+                            },
+                          },
                         },
                       },
-                    },
-                  },
-                };
-              }),
-          );
+                    };
+                  }),
+              );
 
-          // TODO, must return the ID in the delta,
-          const delta: DispatchDelta = {
-            kind: "OptionValue",
-            value: nestedDelta,
-            isWholeEntityMutation: true,
-          };
+              // TODO, must return the ID in the delta,
+              const delta: DispatchDelta = {
+                kind: "OptionValue",
+                value: nestedDelta,
+                isWholeEntityMutation: true,
+              };
 
-          props.foreignMutations.onChange(id, delta);
-        },
-      }));
+              props.foreignMutations.onChange(id, delta);
+            },
+          }))
+    : undefined;
 
   return Template.Default<
     OneAbstractRendererReadonlyContext,
