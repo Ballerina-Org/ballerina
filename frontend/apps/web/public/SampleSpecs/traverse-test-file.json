@@ -126,7 +126,11 @@
         "SchoolAddress": "Address",
         "CategorySum": {
           "fun": "Sum",
-          "args": ["injectedCategory", "injectedCategory"]
+          "args": ["unit", "injectedCategory"]
+        },
+        "Relatives": {
+          "fun": "Tuple",
+          "args": ["injectedCategory", "injectedCategory", "injectedCategory"]
         }
       }
     }
@@ -206,8 +210,17 @@
         "CategorySum": {
           "label": "category or string",
           "renderer": "defaultSum",
-          "leftRenderer": { "renderer": "defaultCategory" },
+          "leftRenderer": { "renderer": "defaultUnit" },
           "rightRenderer": { "renderer": "defaultCategory" }
+        },
+        "Relatives": {
+          "label": "relatives",
+          "renderer": "defaultTuple3",
+          "itemRenderers": [
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" }
+          ]
         }
       },
       "tabs": {
@@ -221,7 +234,8 @@
                   "SubscribeToNewsletter",
                   "Birthday",
                   "SchoolAddress",
-                  "CategorySum"
+                  "CategorySum",
+                  "Relatives"
                 ]
               }
             }

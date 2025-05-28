@@ -344,8 +344,72 @@ export const RendererTraversal = {
         }
       }
 
-      
+      if (type.kind == "tuple" && renderer.kind == "tupleRenderer") {
+        return ValueOrErrors.Operations.All(
+          List(
+            renderer.itemRenderers.map((itemRenderer, index) => {
+              return rec(
+                type.args[index],
+                itemRenderer.renderer,
+                traversalContext,
+              ).Then((itemTraversal) => {
+                return ValueOrErrors.Default.return({
+                  index: index,
+                  itemTraversal: itemTraversal,
+                });
+              });
+            }),
+          ),
+        ).Then((itemTraversals) => {
+          if (
+            itemTraversals.every((i) => i.itemTraversal.kind == "l") &&
+            traverseNode.kind == "l"
+          ) {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
 
+          return ValueOrErrors.Default.return(
+            Option.Default.some((evalContext: EvalContext<T, Res>) => {
+              const iterator = evalContext.traversalIterator;
+              if (!PredicateValue.Operations.IsTuple(iterator)) {
+                return ValueOrErrors.Default.throwOne(
+                  `Error: traversal iterator is not a tuple, got ${evalContext.traversalIterator}`,
+                );
+              }
+              return ValueOrErrors.Operations.All(
+                itemTraversals.flatMap((i) =>
+                  i.itemTraversal.kind == "r"
+                    ? [
+                        i.itemTraversal.value({
+                          ...evalContext,
+                          traversalIterator: iterator.values.get(i.index)!,
+                        }),
+                      ]
+                    : [],
+                ),
+              ).Then((itemResults) => {
+                return traverseNode.kind == "r"
+                  ? traverseNode
+                      .value(evalContext)
+                      .Then((nodeResult: Res) =>
+                        ValueOrErrors.Default.return(
+                          itemResults.reduce(
+                            (acc, res) => traversalContext.joinRes([acc, res]),
+                            nodeResult,
+                          ),
+                        ),
+                      )
+                  : ValueOrErrors.Default.return(
+                      itemResults.reduce(
+                        (acc, res) => traversalContext.joinRes([acc, res]),
+                        traversalContext.zeroRes(unit),
+                      ),
+                    );
+              });
+            }),
+          );
+        });
+      }
 
       return ValueOrErrors.Default.return(Option.Default.none());
     },

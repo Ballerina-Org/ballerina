@@ -31,8 +31,7 @@ function App(props: {
   if (props.app == "dispatcher-forms") return DispatcherFormsApp({});
   if (props.app == "dispatcher-forms-tables")
     return DispatcherFormsAppTables({});
-  if (props.app == "traversal-dispatch-test")
-    return TraversalDispatchTest({});
+  if (props.app == "traversal-dispatch-test") return TraversalDispatchTest({});
 
   const [uncle, setUncle] = useState(Uncle.Default());
   const [parent, setParent] = useState(Parent.Default());
