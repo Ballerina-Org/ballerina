@@ -169,6 +169,7 @@
       "renderer": "address",
       "fields": {
         "Street": {
+          "label": "street",
           "renderer": "defaultString",
           "visible": true
         },
@@ -187,10 +188,16 @@
         "TupleExample": {
           "renderer": "defaultTuple3",
           "visible": {
-            "kind": "fieldLookup",
+            "kind": "equals",
             "operands": [
-              { "kind": "varLookup", "varName": "root" },
-              "SubscribeToNewsletter"
+              {
+                "kind": "fieldLookup",
+                "operands": [
+                  { "kind": "varLookup", "varName": "local" },
+                  "Street"
+                ]
+              },
+              "Bahnhofstrasse"
             ]
           },
           "itemRenderers": [
@@ -206,6 +213,7 @@
             "main": {
               "groups": {
                 "main": [
+                  "Street",
                   "Town",
                   "Number",
                   "Category",
