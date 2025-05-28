@@ -437,6 +437,27 @@ const entityApis: EntityApis = {
                   ...City.Default(v4(), faker.location.city()),
                 },
               },
+              SumExample: {
+                Value: {
+                  kind: "child",
+                  extraSpecial: true,
+                },
+                IsRight: true,
+              },
+              TupleExample: {
+                Item1: {
+                  kind: "child",
+                  extraSpecial: true,
+                },
+                Item2: {
+                  kind: "child",
+                  extraSpecial: true,
+                },
+                Item3: {
+                  kind: "child",
+                  extraSpecial: true,
+                },
+              },
             },
           });
         };

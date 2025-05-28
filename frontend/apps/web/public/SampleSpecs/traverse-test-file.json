@@ -62,7 +62,15 @@
         "Street": "string",
         "Town": "string",
         "Number": "number",
-        "Category": "injectedCategory"
+        "Category": "injectedCategory",
+        "SumExample": {
+          "fun": "Sum",
+          "args": ["unit", "injectedCategory"]
+        },
+        "TupleExample": {
+          "fun": "Tuple",
+          "args": ["injectedCategory", "injectedCategory", "injectedCategory"]
+        }
       }
     },
     "ColorsEnum": {
@@ -171,14 +179,34 @@
         "Category": {
           "renderer": "defaultCategory"
         },
-        "Number": { "renderer": "defaultNumber" }
+        "Number": { "renderer": "defaultNumber" },
+        "SumExample": {
+          "renderer": "defaultSum",
+          "leftRenderer": { "renderer": "defaultUnit" },
+          "rightRenderer": { "renderer": "defaultCategory" }
+        },
+        "TupleExample": {
+          "renderer": "defaultTuple3",
+          "visible": true,
+          "itemRenderers": [
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" },
+            { "renderer": "defaultCategory" }
+          ]
+        }
       },
       "tabs": {
         "main": {
           "columns": {
             "main": {
               "groups": {
-                "main": ["Town", "Number", "Category"]
+                "main": [
+                  "Town",
+                  "Number",
+                  "Category",
+                  "SumExample",
+                  "TupleExample"
+                ]
               }
             }
           }
