@@ -246,8 +246,9 @@ export const TraversalDispatchTest = (props: {}) => {
                   .value.dispatcherContext.forms,
               primitiveRendererNamesByType,
               joinRes: ([a, b]) => a.concat(b),
+              zeroRes: () => [],
               traverseSingleType: (t) =>
-                t.kind == "primitive" && t.name == "string"
+                t.kind == "primitive" && t.name == "injectedCategory"
                   ? Option.Default.some(
                       (ctx: EvalContext<any, Array<PredicateValue>>) =>
                         ValueOrErrors.Default.return([ctx.traversalIterator]),
@@ -296,7 +297,6 @@ export const TraversalDispatchTest = (props: {}) => {
     });
 
     console.debug("stringFields", JSON.stringify(stringFields, null, 2));
-    console.debug("stringFields2", JSON.stringify(stringFields));
 
     // return (
     //   <div>

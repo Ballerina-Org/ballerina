@@ -61,7 +61,8 @@
       "fields": {
         "Street": "string",
         "Town": "string",
-        "Number": "number"
+        "Number": "number",
+        "Category": "injectedCategory"
       }
     },
     "ColorsEnum": {
@@ -119,9 +120,14 @@
     "Person": {
       "fields": {
         "Name": "string",
+        "Category": "injectedCategory",
         "Birthday": "Date",
         "SubscribeToNewsletter": "boolean",
-        "SchoolAddress": "Address"
+        "SchoolAddress": "Address",
+        "CategorySum": {
+          "fun": "Sum",
+          "args": ["injectedCategory", "injectedCategory"]
+        }
       }
     }
   },
@@ -158,6 +164,9 @@
           "renderer": "defaultString",
           "visible": true
         },
+        "Category": {
+          "renderer": "defaultCategory"
+        },
         "Number": { "renderer": "defaultNumber" }
       },
       "tabs": {
@@ -165,7 +174,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["Town", "Number"]
+                "main": ["Town", "Number", "Category"]
               }
             }
           }
@@ -179,6 +188,9 @@
         "Name": {
           "renderer": "defaultString"
         },
+        "Category": {
+          "renderer": "defaultCategory"
+        },
         "Birthday": {
           "renderer": "defaultDate",
           "tooltip": "happy Birthday!"
@@ -190,6 +202,12 @@
         "SchoolAddress": {
           "label": "school address",
           "renderer": "address"
+        },
+        "CategorySum": {
+          "label": "category or string",
+          "renderer": "defaultSum",
+          "leftRenderer": { "renderer": "defaultCategory" },
+          "rightRenderer": { "renderer": "defaultCategory" }
         }
       },
       "tabs": {
@@ -199,9 +217,11 @@
               "groups": {
                 "main": [
                   "Name",
+                  "Category",
                   "SubscribeToNewsletter",
                   "Birthday",
-                  "SchoolAddress"
+                  "SchoolAddress",
+                  "CategorySum"
                 ]
               }
             }

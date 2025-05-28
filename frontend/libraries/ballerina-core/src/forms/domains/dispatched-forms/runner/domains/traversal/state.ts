@@ -10,6 +10,8 @@ import {
   Updater,
   BasicUpdater,
   FormLayout,
+  Unit,
+  unit,
 } from "ballerina-core";
 import { List, Map, Set } from "immutable";
 
@@ -25,6 +27,7 @@ export type TraversalContext<T, Res> = {
   forms: Map<string, Renderer<T>>;
   primitiveRendererNamesByType: Map<string, Set<string>>;
   joinRes: BasicFun<[Res, Res], Res>;
+  zeroRes: BasicFun<Unit, Res>;
   traverseSingleType: Traversal<T, Res>;
 };
 
@@ -48,7 +51,6 @@ export const RendererTraversal = {
       renderer: Renderer<T>,
       traversalContext: TraversalContext<T, Res>,
     ): ValueOrErrors<Option<ValueTraversal<T, Res>>, string> => {
-      console.debug("running traversal", type, renderer);
       const rec = RendererTraversal.Operations.Run<T, Res>;
 
       const mapEvalContext = (
@@ -61,19 +63,10 @@ export const RendererTraversal = {
         );
 
       const traverseNode = traversalContext.traverseSingleType(type);
-      console.debug("traverseNode", traverseNode);
+
       if (type.kind == "primitive") {
         return ValueOrErrors.Default.return(traverseNode);
       }
-      //   if(type.kind == "lookup"){
-      //     MapRepo.Operations.tryFindWithError(
-      //       type.name,
-      //       traversalContext.types,
-      //       () => `Error: cannot find type ${type.name} in types`,
-      //     ).Then((resolvedType) => {
-      //       return rec(resolvedType, renderer, traversalContext);
-      //     });
-      //   }
 
       if (
         (type.kind == "lookup" || type.kind == "record") &&
@@ -170,7 +163,6 @@ export const RendererTraversal = {
                 return visibleFieldsRes;
               }
               const visibleFields = visibleFieldsRes.value;
-              console.debug("visibleFields", visibleFields);
               const traversalIteratorFields =
                 evalContext.traversalIterator.fields;
               return ValueOrErrors.Operations.All(
@@ -193,14 +185,7 @@ export const RendererTraversal = {
                       return [];
                     }
                   }
-                  console.debug("f", f.fieldName, [
-                    f.fieldTraversal.value({
-                      ...evalContext,
-                      traversalIterator: traversalIteratorFields.get(
-                        f.fieldName,
-                      )!,
-                    }),
-                  ]);
+
                   return [
                     f.fieldTraversal.value({
                       ...evalContext,
@@ -225,7 +210,7 @@ export const RendererTraversal = {
                   : ValueOrErrors.Default.return(
                       fieldResults.reduce(
                         (acc, res) => traversalContext.joinRes([acc, res]),
-                        [] as Res,
+                        traversalContext.zeroRes(unit),
                       ),
                     );
               });
@@ -233,53 +218,136 @@ export const RendererTraversal = {
           );
         });
       }
-      return null!;
+      if (
+        type.kind == "sum" &&
+        (renderer.kind == "sumRenderer" ||
+          renderer.kind == "sumUnitDateRenderer")
+      ) {
+        // this will be removed when sums become proper partials
+        if (renderer.kind == "sumUnitDateRenderer") {
+          if (traverseNode.kind == "l") {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
+          return ValueOrErrors.Default.return(
+            Option.Default.some((evalContext: EvalContext<T, Res>) =>
+              traverseNode.value(evalContext),
+            ),
+          );
+        }
+        if (renderer.kind == "sumRenderer") {
+          const res: ValueOrErrors<
+            Option<ValueTraversal<T, Res>>,
+            string
+          > = rec(type.args[0], renderer, traversalContext).Then(
+            (leftTraversal) =>
+              rec(type.args[1], renderer, traversalContext).Then(
+                (rightTraversal) => {
+                  if (
+                    leftTraversal.kind == "l" &&
+                    rightTraversal.kind == "l" &&
+                    traverseNode.kind == "l"
+                  ) {
+                    return ValueOrErrors.Default.return(Option.Default.none());
+                  }
+                  return ValueOrErrors.Default.return(
+                    Option.Default.some<ValueTraversal<T, Res>>(
+                      (evalContext: EvalContext<T, Res>) => {
+                        const iterator = evalContext.traversalIterator;
+                        if (!PredicateValue.Operations.IsSum(iterator)) {
+                          return ValueOrErrors.Default.throwOne(
+                            `Error: traversal iterator is not a sum, got ${evalContext.traversalIterator}`,
+                          );
+                        }
+
+                        const isRight = iterator.value.kind == "r";
+
+                        if (isRight && rightTraversal.kind == "r") {
+                          if (traverseNode.kind == "r") {
+                            return traverseNode
+                              .value(evalContext)
+                              .Then((nodeResult: Res) => {
+                                return rightTraversal
+                                  .value({
+                                    ...evalContext,
+                                    traversalIterator: iterator.value.value,
+                                  })
+                                  .Then((rightRes) => {
+                                    return ValueOrErrors.Default.return<
+                                      Res,
+                                      string
+                                    >(
+                                      traversalContext.joinRes([
+                                        nodeResult,
+                                        rightRes,
+                                      ]),
+                                    );
+                                  });
+                              });
+                          }
+                          return rightTraversal
+                            .value({
+                              ...evalContext,
+                              traversalIterator: iterator.value.value,
+                            })
+                            .Then((rightRes) => {
+                              return ValueOrErrors.Default.return<Res, string>(
+                                rightRes,
+                              );
+                            });
+                        }
+
+                        if (!isRight && leftTraversal.kind == "r") {
+                          if (traverseNode.kind == "r") {
+                            return traverseNode
+                              .value(evalContext)
+                              .Then((nodeResult: Res) => {
+                                return leftTraversal
+                                  .value({
+                                    ...evalContext,
+                                    traversalIterator: iterator.value.value,
+                                  })
+                                  .Then((leftRes) => {
+                                    return ValueOrErrors.Default.return<
+                                      Res,
+                                      string
+                                    >(
+                                      traversalContext.joinRes([
+                                        nodeResult,
+                                        leftRes,
+                                      ]),
+                                    );
+                                  });
+                              });
+                          }
+                          return leftTraversal
+                            .value({
+                              ...evalContext,
+                              traversalIterator: iterator.value.value,
+                            })
+                            .Then((leftRes) => {
+                              return ValueOrErrors.Default.return<Res, string>(
+                                leftRes,
+                              );
+                            });
+                        }
+
+                        return ValueOrErrors.Default.return<Res, string>(
+                          traversalContext.zeroRes(unit),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+          );
+          return res;
+        }
+      }
+
+      
+
+
+      return ValueOrErrors.Default.return(Option.Default.none());
     },
   },
 };
-
-//   const testInvocation = RendererTraversal.Operations.Run<
-//     any,
-//     Array<PredicateValue>
-//   >(null!, null!, {
-//     types: null!,
-//     forms: null!,
-//     primitiveRendererNamesByType: null!,
-//     joinRes: null!, // basically append or concat the arrays of the individual traversals
-//     traverseSingleType: (t) =>
-//       t.kind == "lookup" && t.name == "Evidence"
-//         ? Option.Default.some((ctx: EvalContext<any, Array<PredicateValue>>) =>
-//             ValueOrErrors.Default.return([ctx.traversalIterator]),
-//           )
-//         : Option.Default.none(),
-//   });
-
-// return ValueOrErrors.Operations.All(
-//     fieldTraversals.flatMap((f) => {
-//       console.debug("f", f);
-//       // should be a map and instead of flatmap and [] a VoE.default.return([]) then an All on this and then a flatmap, everything is returned in a VoE, we do an all and then get a
-//       if (f.fieldTraversal.kind == "l") return [];
-//       if (f.visibility != undefined) {
-//         const visible = Expr.Operations.Evaluate(
-//           Map([
-//             ["global", evalContext.global],
-//             ["local", evalContext.local],
-//             ["root", evalContext.root],
-//           ]),
-//         )(f.visibility);
-//         console.debug("visible", visible);
-//         if (visible.kind == "value" && !visible.value) {
-//           console.debug("visible is false", f.fieldName);
-//           return [];
-//         }
-//       }
-//       return [
-//         f.fieldTraversal.value({
-//           ...evalContext,
-//           traversalIterator: traversalIteratorFields.get(
-//             f.fieldName,
-//           )!,
-//         }),
-//       ];
-//     }),
-//   )

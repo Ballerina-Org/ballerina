@@ -389,6 +389,10 @@ const entityApis: EntityApis = {
           return Promise.resolve({
             Id: v4(),
             Name: faker.person.firstName(),
+            Category: {
+              kind: "adult",
+              extraSpecial: false,
+            },
             Surname: faker.person.lastName(),
             Birthday: new Date(
               Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
@@ -398,61 +402,21 @@ const entityApis: EntityApis = {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
             },
-            Gender: {
+            CategorySum: {
+              Value: {
+                kind: "child",
+                extraSpecial: true,
+              },
               IsRight: true,
-              Value: { IsSome: true, Value: { Value: "M" } },
             },
-            Dependants: [
-              {
-                Key: "Steve",
-                Value: {
-                  kind: ["child", "adult", "senior"][
-                    Math.round(Math.random() * 10) % 3
-                  ],
-                  extraSpecial: false,
-                },
-              },
-              {
-                Key: "Alice",
-                Value: {
-                  kind: ["child", "adult", "senior"][
-                    Math.round(Math.random() * 10) % 3
-                  ],
-                  extraSpecial: false,
-                },
-              },
-            ],
-            FriendsByCategory: [],
-            Relatives: [
-              {
-                kind: ["child", "adult", "senior"][
-                  Math.round(Math.random() * 10) % 3
-                ],
-                extraSpecial: false,
-              },
-              {
-                kind: ["child", "adult", "senior"][
-                  Math.round(Math.random() * 10) % 3
-                ],
-                extraSpecial: false,
-              },
-              {
-                kind: ["child", "adult", "senior"][
-                  Math.round(Math.random() * 10) % 3
-                ],
-                extraSpecial: false,
-              },
-            ],
-            Interests: [{ Value: interests[1] }, { Value: interests[2] }],
-            Departments: [
-              { Id: v4(), DisplayValue: "Department 1" },
-              { Id: v4(), DisplayValue: "Department 2" },
-            ],
-            Emails: ["john@doe.it", "johnthedon@doe.com"],
             SchoolAddress: {
               Street: faker.location.street(),
               Number: Math.floor(Math.random() * 500),
               Town: faker.location.city(),
+              Category: {
+                kind: "senior",
+                extraSpecial: false,
+              },
               City: {
                 IsSome: true,
                 Value: {
