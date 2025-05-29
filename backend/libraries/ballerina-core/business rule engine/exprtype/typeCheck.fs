@@ -1,9 +1,6 @@
 namespace Ballerina.DSL.Expr.Types
 
 module TypeCheck =
-
-  open System
-  open Ballerina.Fun
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
