@@ -50,3 +50,31 @@ let ``Should typecheck bool returning binary expressions`` (testCase: BoolReturn
     Assert.That(value, Is.EqualTo expected)
     Assert.That(varTypes, Is.Empty)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+[<Test>]
+let ``Should typecheck tuple`` () =
+  let expr = Expr.Value(Value.Tuple [ Value.ConstBool true; Value.ConstInt 42 ])
+
+  let expected =
+    ExprType.TupleType
+      [ ExprType.PrimitiveType PrimitiveType.BoolType
+        ExprType.PrimitiveType PrimitiveType.IntType ]
+
+  match typeCheck expr with
+  | Left(value, varTypes) ->
+    Assert.That(value, Is.EqualTo expected)
+    Assert.That(varTypes, Is.Empty)
+  | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+[<Test>]
+let ``Should typecheck tuple projection (with 1-based indexing)`` () =
+  let expr =
+    Expr.Project(Expr.Value(Value.Tuple [ Value.ConstBool true; Value.ConstInt 42 ]), 1)
+
+  let expected = ExprType.PrimitiveType PrimitiveType.BoolType
+
+  match typeCheck expr with
+  | Left(value, varTypes) ->
+    Assert.That(value, Is.EqualTo expected)
+    Assert.That(varTypes, Is.Empty)
+  | Right err -> Assert.Fail $"Expected success but got error: {err}"

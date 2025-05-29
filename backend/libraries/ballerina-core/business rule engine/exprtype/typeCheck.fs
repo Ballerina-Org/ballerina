@@ -188,6 +188,10 @@ module TypeCheck =
               | Value.ConstInt _ -> return None, PrimitiveType PrimitiveType.IntType, vars
               | Value.ConstBool _ -> return None, PrimitiveType PrimitiveType.BoolType, vars
               | Value.ConstString _ -> return None, PrimitiveType PrimitiveType.StringType, vars
+              | Value.Tuple elts ->
+                let! evaluatedElts = elts |> List.map Expr.Value |> List.map (eval vars) |> sum.All
+                let eltTypes = evaluatedElts |> List.map (fun (_, eltType, _) -> eltType)
+                None, ExprType.TupleType eltTypes, vars
               | _ ->
                 return!
                   sum.Throw(
