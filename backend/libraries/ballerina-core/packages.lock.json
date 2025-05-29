@@ -232,6 +232,16 @@
         }
       }
     },
+    "net9.0/osx-arm64": {
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "Vg8eB5Tawm1IFqj4TVK1czJX89rhFxJo9ELqc/Eiq0eXy13RK00eubyU6TJE6y+GQXjyV5gSfiewDUZjQgSE0w==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      }
+    },
     "net9.0/osx-x64": {
       "System.Text.Encodings.Web": {
         "type": "Transitive",
