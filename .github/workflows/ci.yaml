@@ -60,40 +60,6 @@ jobs:
       - run: go build ./...
       - name: Check go.mod is up to date
         run: go mod tidy -diff
-  publish-ballerina-core:
-    if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      - frontend
-      - ballerina-core
-      - ballerina-go
-      - ballerina-core-tests
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    defaults:
-      run:
-        working-directory: backend/libraries/ballerina-core
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-dotnet@v4.3.1
-      - run: dotnet restore
-      - name: Pack NuGet package
-        run: |
-          dotnet pack --configuration Release \
-            /p:PackageVersion=${{ github.ref_name }} \
-            --output ./nupkg
-      - name: Publish to NuGet.org
-        run: |
-          dotnet nuget push ./nupkg/*.nupkg \
-            --api-key "${{ secrets.NUGET_API_KEY }}" \
-            --source "https://api.nuget.org/v3/index.json" \
-            --skip-duplicate
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_NAME=${{ github.ref_name }}
-          gh release create "$TAG_NAME" -n "Release $TAG_NAME of the Ballerina 🩰 runtime."
 
   ballerina-python:
     runs-on: ubuntu-latest
