@@ -1,9 +1,6 @@
 namespace Ballerina.DSL.Expr.Types
 
 module TypeCheck =
-
-  open System
-  open Ballerina.Fun
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
@@ -34,6 +31,9 @@ module TypeCheck =
         }
 
       let rec eval (vars: VarTypes) (e: Expr) : Sum<Option<TypeName> * ExprType * VarTypes, Errors> =
+        let notImplementedError exprName =
+          sum.Throw(Errors.Singleton $"Error: not implemented Expr type checker for expression {exprName}")
+
         let result =
           match e with
           | Expr.Exists(varName, entityDescriptor, condition) ->
@@ -185,6 +185,10 @@ module TypeCheck =
               | Value.ConstInt _ -> return None, PrimitiveType PrimitiveType.IntType, vars
               | Value.ConstBool _ -> return None, PrimitiveType PrimitiveType.BoolType, vars
               | Value.ConstString _ -> return None, PrimitiveType PrimitiveType.StringType, vars
+              | Value.Tuple items ->
+                let! evaluatedItems = items |> List.map Expr.Value |> List.map (eval vars) |> sum.All
+                let itemTypes = evaluatedItems |> List.map (fun (_, itemType, _) -> itemType)
+                None, ExprType.TupleType itemTypes, vars
               | _ ->
                 return!
                   sum.Throw(
@@ -192,43 +196,51 @@ module TypeCheck =
                     |> Errors.Singleton
                   )
             }
-          | Expr.Binary(Or, e1, e2) ->
-            sum {
-              let! _, t1, vars' = eval vars e1
-              let! _, t2, vars'' = eval vars' e2
+          | Expr.Binary(op, e1, e2) ->
+            match op with
+            | Or ->
+              sum {
+                let! _, t1, vars' = eval vars e1
+                let! _, t2, vars'' = eval vars' e2
 
-              match t1, t2 with
-              | PrimitiveType BoolType, PrimitiveType BoolType -> return None, PrimitiveType BoolType, vars''
-              | _ -> return! sum.Throw($$"""Error: invalid type of expression {{e}}""" |> Errors.Singleton)
-            }
-          | Expr.Binary(Equals, e1, e2) ->
-            sum {
-              let! _, t1, vars' = eval vars e1
-              let! _, t2, vars'' = eval vars' e2
+                match t1, t2 with
+                | PrimitiveType BoolType, PrimitiveType BoolType -> return None, PrimitiveType BoolType, vars''
+                | _ -> return! sum.Throw($$"""Error: invalid type of expression {{e}}""" |> Errors.Singleton)
+              }
+            | Equals ->
+              sum {
+                let! _, t1, vars' = eval vars e1
+                let! _, t2, vars'' = eval vars' e2
 
-              if t1 = t2 then
-                return None, PrimitiveType BoolType, vars''
-              else
-                return!
-                  sum.Throw(
-                    $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
-                    |> Errors.Singleton
-                  )
-            }
-          | Expr.Binary(Plus, e1, e2) ->
-            sum {
-              let! _, t1, vars' = eval vars e1
-              let! _, t2, vars'' = eval vars' e2
+                if t1 = t2 then
+                  return None, PrimitiveType BoolType, vars''
+                else
+                  return!
+                    sum.Throw(
+                      $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
+                      |> Errors.Singleton
+                    )
+              }
+            | Plus ->
+              sum {
+                let! _, t1, vars' = eval vars e1
+                let! _, t2, vars'' = eval vars' e2
 
-              match t1, t2 with
-              | PrimitiveType IntType, PrimitiveType IntType -> return None, PrimitiveType IntType, vars''
-              | _ ->
-                return!
-                  sum.Throw(
-                    $"not implemented type checker for binary expression {e.ToString()}"
-                    |> Errors.Singleton
-                  )
-            }
+                match t1, t2 with
+                | PrimitiveType IntType, PrimitiveType IntType -> return None, PrimitiveType IntType, vars''
+                | _ ->
+                  return!
+                    sum.Throw(
+                      $"not implemented type checker for binary expression {e.ToString()}"
+                      |> Errors.Singleton
+                    )
+              }
+            | And -> notImplementedError "Binary op: And"
+            | Minus -> notImplementedError "Binary op: Minus"
+            | Times -> notImplementedError "Binary op: Times"
+            | GreaterThan -> notImplementedError "Binary op: GreaterThan"
+            | GreaterThanEquals -> notImplementedError "Binary op: GreaterThanEquals"
+            | DividedBy -> notImplementedError "Binary op: DividedBy"
           | Expr.Project(e, i) ->
             sum {
               let! _, t, vars' = eval vars e
@@ -251,11 +263,13 @@ module TypeCheck =
                     |> Errors.Singleton
                   )
             }
-          | e ->
-            sum.Throw(
-              $"Error: not implemented Expr type checker for {e.ToString()}"
-              |> Errors.Singleton
-            )
+          | Expr.SumBy(_, _, _) -> notImplementedError "SumBy"
+          | Expr.Unary(_, _) -> notImplementedError "Unary"
+          | Expr.Apply(_, _) -> notImplementedError "Apply"
+          | Expr.MakeRecord _ -> notImplementedError "MakeRecord"
+          | Expr.MakeTuple _ -> notImplementedError "MakeTuple"
+          | Expr.MakeSet _ -> notImplementedError "MakeSet"
+          | Expr.MakeCase(_, _) -> notImplementedError "MakeCase"
 
         sum {
           let! _, t, vars = result
