@@ -466,8 +466,77 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              moveTo: (id: string, to: number) => {},
-              duplicate: (id: string) => {},
+              moveTo: (k: string, to: number) => {
+                const delta: DispatchDelta = {
+                  kind: "TableMoveTo",
+                  id: k,
+                  to,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(
+                  Updater((table) => {
+                    const element = table.data.get(k)!;
+                    if (!element) {
+                      return table;
+                    }
+                    const [targetId, _] = table.data.entrySeq().get(to)!;
+                    return PredicateValue.Default.table(
+                      table.from,
+                      table.to,
+                      OrderedMapRepo.Updaters.remove<string, ValueRecord>(
+                        k,
+                      ).then(
+                        OrderedMapRepo.Updaters.insertAt(
+                          [k, element],
+                          targetId,
+                          "after",
+                        ),
+                      )(table.data),
+                      table.hasMoreValues,
+                    );
+                  }),
+                  delta,
+                );
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              duplicate: (id: string) => {
+                const delta: DispatchDelta = {
+                  kind: "TableDuplicate",
+                  id,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(
+                  Updater((table) => {
+                    const element = table.data.get(id)!;
+                    return PredicateValue.Default.table(
+                      table.from,
+                      table.to + 1,
+                      OrderedMapRepo.Updaters.insertAt<string, ValueRecord>(
+                        [id, element],
+                        id,
+                        "after",
+                      )(table.data),
+                      table.hasMoreValues,
+                    );
+                  }),
+                  delta,
+                );
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
             }}
             TableHeaders={visibleColumns.value.columns}
             EmbeddedTableData={tableData}

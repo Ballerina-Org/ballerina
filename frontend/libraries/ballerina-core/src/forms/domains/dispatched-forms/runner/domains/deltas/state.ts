@@ -205,7 +205,7 @@ export type DispatchDeltaTable =
   | {
       kind: "TableMoveTo";
       id: string;
-      position: number;
+      to: number;
       type: DispatchParsedType<any>;
     }
   | {
@@ -321,7 +321,9 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
       };
     }
   | { Discriminator: "TableAdd" }
-  | { Discriminator: "TableRemove"; Remove: string };
+  | { Discriminator: "TableRemove"; Remove: string }
+  | { Discriminator: "TableDuplicate"; Dup: string }
+  | { Discriminator: "TableMoveTo"; Move: string; To: number };
 
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferPrimitive
@@ -1149,6 +1151,41 @@ export const DispatchDeltaTransfer = {
                 Remove: delta.id,
               },
               `[TableRemove][${delta.id}]`,
+              delta.isWholeEntityMutation,
+            ]);
+          }
+          if (delta.kind == "TableDuplicate") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableDuplicate",
+                Dup: delta.id,
+              },
+              `[TableDuplicate][${delta.id}]`,
+              delta.isWholeEntityMutation,
+            ]);
+          }
+          if (delta.kind == "TableMoveTo") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableMoveTo",
+                Move: delta.id,
+                To: delta.to,
+              },
+              `[TableMoveTo][${delta.id}][${delta.to}]`,
               delta.isWholeEntityMutation,
             ]);
           }

@@ -755,7 +755,11 @@ export const PersonConcreteRenderers = {
               <table>
                 <thead style={{ border: "1px solid black" }}>
                   <tr style={{ border: "1px solid black" }}>
-                    <th onClick={() => props.foreignMutations.add()}></th>
+                    <th>
+                      <button onClick={() => props.foreignMutations.add()}>
+                        {"➕"}
+                      </button>
+                    </th>
                     <th>
                       <input
                         type="checkbox"
@@ -799,6 +803,23 @@ export const PersonConcreteRenderers = {
                         >
                           {"❌"}
                         </button>
+                        <button
+                          onClick={() => props.foreignMutations.duplicate(id)}
+                        >
+                          {"👥"}
+                        </button>
+                        <select
+                          onChange={(_) =>
+                            props.foreignMutations.moveTo(
+                              id,
+                              Number(_.currentTarget.value),
+                            )
+                          }
+                        >
+                          {props.EmbeddedTableData.entrySeq().map((_, idx) => (
+                            <option key={_[0]}>{idx}</option>
+                          ))}
+                        </select>
                         <td style={{ border: "1px solid black" }}>
                           <input
                             type="checkbox"
