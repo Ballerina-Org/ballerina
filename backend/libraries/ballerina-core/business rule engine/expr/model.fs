@@ -88,11 +88,20 @@ module Model =
       | Value.ConstString v -> v.ToString()
       | Value.Lambda(v, b) -> $"fun {v.VarName} -> {b.ToString()}"
       | Value.Record fs ->
-        let eq = "=" in
-        $"{{ {fs |> Seq.map (fun f -> f.Key.ToString() + eq + f.Value.ToString())} |> String.Join ';' }}"
-      | Value.Tuple vs -> $"( {vs |> Seq.map (fun v -> v.ToString())} |> String.Join ',' )"
+        let formattedFields =
+          fs
+          |> Map.toSeq
+          |> Seq.sortBy (fun (fieldName, _) -> fieldName)
+          |> Seq.map (fun (fieldName, expr) -> $"{fieldName} = {expr.ToString()}")
+
+        $"""{{ {String.Join("; ", formattedFields)} }}"""
+      | Value.Tuple vs ->
+        let formattedValues = vs |> Seq.map (fun v -> v.ToString())
+        $"""({String.Join(", ", formattedValues)})"""
       | Value.Var(_, v) -> v.ToString()
-      | Value.List vs -> $"[ {vs |> Seq.map (fun v -> v.ToString())} |> String.Join ',' ]"
+      | Value.List vs ->
+        let formattedValues = vs |> Seq.map (fun v -> v.ToString())
+        $"""[{String.Join(", ", formattedValues)}]"""
 
     member self.toObject =
       match self with
@@ -113,10 +122,15 @@ module Model =
       | Value v -> v.ToString()
       | Apply(f, a) -> $"({f.ToString()})({a.ToString()})"
       | MakeRecord fs ->
-        let eq = "=" in
-        $"{{ {fs |> Seq.map (fun f -> f.Key.ToString() + eq + f.Value.ToString())} |> String.Join ';' }}"
-      | MakeTuple fs -> $"({fs |> Seq.map (fun f -> f.ToString())} |> String.Join ',')"
-      | MakeSet fs -> $"{{ {fs |> Seq.map (fun f -> f.ToString())} |> String.Join ';' }}"
+        let formattedFields =
+          fs
+          |> Map.toSeq
+          |> Seq.sortBy (fun (fieldName, _) -> fieldName)
+          |> Seq.map (fun (fieldName, expr) -> $"{fieldName} = {expr.ToString()}")
+
+        $"""{{ {String.Join("; ", formattedFields)} }}"""
+      | MakeTuple fs -> $"""({String.Join(", ", fs |> Seq.map (fun f -> f.ToString()))})"""
+      | MakeSet fs -> $"""{{{String.Join("; ", fs |> Seq.map (fun f -> f.ToString()))}}}"""
       | RecordFieldLookup(e, f) -> $"{e.ToString()}.{f}"
       | MakeCase(c, e) -> $"{c.ToString()}({e.ToString()})"
       | Project(e, f) -> $"{e.ToString()}.π{f}"
@@ -124,11 +138,11 @@ module Model =
       | Exists(v, t, e) -> $"Exists{v.VarName.ToString()} in {t.EntityName} | {e.ToString()}"
       | SumBy(v, t, e) -> $"SumBy{v.VarName.ToString()} in {t.EntityName} | {e.ToString()}"
       | MatchCase(e, cases) ->
-        let bar = "|"
-        let arr = "->"
-
         let cases =
-          cases |> Seq.map (fun f -> bar + f.Key.ToString() + arr + f.Value.ToString())
+          cases
+          |> Map.toSeq
+          |> Seq.sortBy (fun (caseName, _) -> caseName)
+          |> Seq.map (fun (caseName, (varName, expr)) -> $"| {caseName}({varName.VarName}) -> {expr.ToString()}")
 
         let casesJoined = String.Join(' ', cases)
         $"match {e.ToString()} with {casesJoined}"
