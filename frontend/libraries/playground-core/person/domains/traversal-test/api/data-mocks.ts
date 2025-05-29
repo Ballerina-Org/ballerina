@@ -31,35 +31,41 @@ const getActiveUsers: DispatchTableApiSource = {
       Id: id,
       Name: "Jane Doe",
       Surname: "Doe",
-      Birthday: "1990-01-01",
-      Email: "jane.doe@example.com",
-      SubscribeToNewsletter: true,
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
+      Category: {
+        kind: ["child", "adult", "senior"][
+          Math.round(Math.random() * 10) % 3
+        ],
+        extraSpecial: false,
       },
-      City: {
-        IsSome: true,
-        Value: {
-          ...City.Default(v4(), faker.location.city()),
-        },
-      },
-      StreetNumberAndCity: {
-        Item1: faker.location.street(),
-        Item2: 100,
-        Item3: {
-          IsSome: true,
-          Value: {
-            ...City.Default(v4(), faker.location.city()),
-          },
-        },
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
+      // Birthday: "1990-01-01",
+      // Email: "jane.doe@example.com",
+      // SubscribeToNewsletter: true,
+      // FavoriteColor: {
+      //   Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+      //   IsSome: true,
+      // },
+      // City: {
+      //   IsSome: true,
+      //   Value: {
+      //     ...City.Default(v4(), faker.location.city()),
+      //   },
+      // },
+      // StreetNumberAndCity: {
+      //   Item1: faker.location.street(),
+      //   Item2: 100,
+      //   Item3: {
+      //     IsSome: true,
+      //     Value: {
+      //       ...City.Default(v4(), faker.location.city()),
+      //     },
+      //   },
+      // },
+      // Friends: {
+      //   From: 0,
+      //   To: 0,
+      //   HasMore: true,
+      //   Values: {},
+      // },
     }));
   },
   getMany:
@@ -72,68 +78,22 @@ const getActiveUsers: DispatchTableApiSource = {
             Id: v4(),
             Name: faker.person.firstName(),
             Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: true,
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
-            },
-            City: {
-              IsSome: true,
-              Value: {
-                ...City.Default(v4(), faker.location.city()),
-              },
-            },
-            StreetNumberAndCity: {
-              Item1: faker.location.street(),
-              Item2: 100,
-              Item3: {
-                IsSome: true,
-                Value: {
-                  ...City.Default(v4(), faker.location.city()),
-                },
-              },
-            },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
+            Category: {
+              kind: ["child", "adult", "senior"][
+                Math.round(Math.random() * 10) % 3
+              ],
+              extraSpecial: false,
             },
           },
           [v4()]: {
             Id: v4(),
             Name: "John",
             Surname: "Doe",
-            Birthday: "1990-01-01",
-            Email: "john.doe@example.com",
-            SubscribeToNewsletter: true,
-            FavoriteColor: {
-              Value: {},
-              IsSome: false,
-            },
-            City: {
-              IsSome: true,
-              Value: {
-                ...City.Default(v4(), faker.location.city()),
-              },
-            },
-            StreetNumberAndCity: {
-              Item1: faker.location.street(),
-              Item2: 100,
-              Item3: {
-                IsSome: true,
-                Value: {
-                  ...City.Default(v4(), faker.location.city()),
-                },
-              },
-            },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
+            Category: {
+              kind: ["child", "adult", "senior"][
+                Math.round(Math.random() * 10) % 3
+              ],
+              extraSpecial: false,
             },
           },
         },
@@ -400,6 +360,35 @@ const entityApis: EntityApis = {
                   extraSpecial: false,
                 },
               },
+            },
+            Friends: {
+              Values: {
+                [v4()]: {
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Category: {
+                    kind: ["child", "adult", "senior"][
+                      Math.round(Math.random() * 10) % 3
+                    ],
+                    extraSpecial: false,
+                  },
+                },
+                [v4()]: {
+                  Id: v4(),
+                  Name: "John",
+                  Surname: "Doe",
+                  Category: {
+                    kind: ["child", "adult", "senior"][
+                      Math.round(Math.random() * 10) % 3
+                    ],
+                    extraSpecial: false,
+                  },
+                },
+              },
+              HasMore: true,
+              From: 1,
+              To: 2,
             },
             Name: faker.person.firstName(),
             Category: {

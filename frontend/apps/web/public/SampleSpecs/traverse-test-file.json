@@ -53,6 +53,14 @@
         "Id": "guid"
       }
     },
+    "User": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Category": "injectedCategory"
+      }
+    },
     "CityRef": {
       "extends": ["CollectionReference"],
       "fields": {}
@@ -165,6 +173,10 @@
     "Person": {
       "fields": {
         "Job": "Job",
+        "Friends": {
+          "fun": "Table",
+          "args": ["User"]
+        },
         "Name": "string",
         "Category": "injectedCategory",
         "Birthday": "Date",
@@ -198,6 +210,11 @@
       "globalConfiguration": {
         "type": "GlobalConfiguration",
         "methods": ["get"]
+      }
+    },
+    "tables": {
+      "ActiveUsersApi": {
+        "type": "User"
       }
     }
   },
@@ -318,7 +335,13 @@
           "columns": {
             "main": {
               "groups": {
-                "main": ["Name", "Salary", "DesignTool", "Certifications", "Category"]
+                "main": [
+                  "Name",
+                  "Salary",
+                  "DesignTool",
+                  "Certifications",
+                  "Category"
+                ]
               }
             }
           }
@@ -366,6 +389,55 @@
       "type": "Person",
       "renderer": "personDetails",
       "fields": {
+        "Friends": {
+          "renderer": {
+            "type": "User",
+            "renderer": "streamingTable",
+            "columns": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Category": {
+                "renderer": "defaultCategory"
+              }
+            },
+            "visibleColumns": [
+              "Name",
+              "Category"
+            ],
+            "detailsRenderer": {
+              "renderer": {
+                "type": "User",
+                "renderer": "userDetails",
+                "fields": {
+                  "Name": {
+                    "label": "First Name",
+                    "renderer": "defaultString"
+                  },
+                  "Surname": {
+                    "label": "Last Name",
+                    "renderer": "defaultString"
+                  },
+                  "Category": {
+                    "renderer": "defaultCategory"
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": ["Name", "Surname", "Category"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": "ActiveUsersApi"
+        },
         "Job": {
           "label": "Job",
           "renderer": "job"
@@ -411,6 +483,7 @@
               "groups": {
                 "main": [
                   "Job",
+                  "Friends",
                   "Name",
                   "Category",
                   "SubscribeToNewsletter",

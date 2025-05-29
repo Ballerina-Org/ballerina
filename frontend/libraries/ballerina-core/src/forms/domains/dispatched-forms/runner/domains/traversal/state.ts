@@ -12,6 +12,7 @@ import {
   FormLayout,
   Unit,
   unit,
+  TableLayout,
 } from "ballerina-core";
 import { List, Map, Set } from "immutable";
 
@@ -68,8 +69,12 @@ export const RendererTraversal = {
         return ValueOrErrors.Default.return(traverseNode);
       }
 
+      // TODO -- later when we only resolve lookups at the last moment, we can remove the other type checks
       if (
-        (type.kind == "lookup" || type.kind == "record" || type.kind == "union") &&
+        (type.kind == "lookup" ||
+          type.kind == "record" ||
+          type.kind == "union" ||
+          type.kind == "table") &&
         renderer.kind == "lookupRenderer"
       ) {
         if (traversalContext.primitiveRendererNamesByType.has(type.name)) {
@@ -147,7 +152,11 @@ export const RendererTraversal = {
                 )
               )
                 return ValueOrErrors.Default.throwOne(
-                  `Error: traversal iterator is not a record, got ${JSON.stringify(evalContext.traversalIterator, undefined, 2)}`,
+                  `Error: traversal iterator is not a record, got ${JSON.stringify(
+                    evalContext.traversalIterator,
+                    undefined,
+                    2,
+                  )}`,
                 );
               const visibleFieldsRes =
                 FormLayout.Operations.ComputeVisibleFieldsForRecord(
@@ -408,32 +417,18 @@ export const RendererTraversal = {
       }
 
       if (type.kind == "union" && renderer.kind == "unionRenderer") {
-        // rec on all cases, like fields,
-        // if all are l, return l
-        // check the actual case inside the iterator, then similar to sum
         return ValueOrErrors.Operations.All(
-          List<
-            ValueOrErrors<
-              {
-                caseName: string;
-                caseTraversal: Option<ValueTraversal<T, Res>>;
-              },
-              string
-            >
-          >(
+          List(
             renderer.cases
-              .map((caseRenderer, caseName) => {
-                return rec(
-                  caseRenderer.type,
-                  caseRenderer,
-                  traversalContext,
-                ).Then((caseTraversal) => {
-                  return ValueOrErrors.Default.return({
-                    caseName: caseName,
-                    caseTraversal: caseTraversal,
-                  });
-                });
-              })
+              .map((caseRenderer, caseName) =>
+                rec(caseRenderer.type, caseRenderer, traversalContext).Then(
+                  (caseTraversal) =>
+                    ValueOrErrors.Default.return({
+                      caseName: caseName,
+                      caseTraversal: caseTraversal,
+                    }),
+                ),
+              )
               .valueSeq(),
           ),
         ).Then((caseTraversals) => {
@@ -482,6 +477,102 @@ export const RendererTraversal = {
                     return ValueOrErrors.Default.return(nodeResult);
                   })
                 : ValueOrErrors.Default.return(traversalContext.zeroRes(unit));
+            }),
+          );
+        });
+      }
+      if (type.kind == "table" && renderer.kind == "tableRenderer") {
+        return ValueOrErrors.Operations.All(
+          List(
+            renderer.columns
+              .map((column, columnName) => {
+                return rec(
+                  column.renderer.type,
+                  column.renderer,
+                  traversalContext,
+                ).Then((columnTraversal) => {
+                  return ValueOrErrors.Default.return({
+                    columnName: columnName,
+                    columnTraversal: columnTraversal,
+                  });
+                });
+              })
+              .valueSeq(),
+          ),
+        ).Then((columnTraversals) => {
+          if (
+            columnTraversals.every((c) => c.columnTraversal.kind == "l") &&
+            traverseNode.kind == "l"
+          ) {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
+          return ValueOrErrors.Default.return(
+            Option.Default.some((evalContext: EvalContext<T, Res>) => {
+              const iterator = evalContext.traversalIterator;
+              if (!PredicateValue.Operations.IsTable(iterator)) {
+                return ValueOrErrors.Default.throwOne(
+                  `Error: traversal iterator is not a table, got ${evalContext.traversalIterator}`,
+                );
+              }
+              return TableLayout.Operations.ComputeLayout(
+                Map([
+                  ["global", evalContext.global],
+                  ["local", evalContext.local],
+                  ["root", evalContext.root],
+                ]),
+                renderer.visibleColumns,
+              ).Then((visibleColumns) => {
+                // Note: we do not allow visiblity predicates on individual column cells
+                return ValueOrErrors.Operations.All<Res, string>(
+                  columnTraversals.flatMap((c) => {
+                    const colTraversal = c.columnTraversal;
+                    if (
+                      colTraversal.kind == "l" ||
+                      !visibleColumns.columns.includes(c.columnName)
+                    ) {
+                      return [];
+                    }
+                    return iterator.data.valueSeq().flatMap((row) => {
+                      // TODO make this monadic
+                      const columnValue = row.fields.get(c.columnName);
+                      if (!columnValue) {
+                        return [
+                          ValueOrErrors.Default.throwOne(
+                            `Error: cannot find column ${
+                              c.columnName
+                            } in row ${JSON.stringify(row)}`,
+                          ),
+                        ];
+                      }
+                      return [
+                        colTraversal.value({
+                          ...evalContext,
+                          traversalIterator: columnValue,
+                        }),
+                      ];
+                    });
+                  }),
+                ).Then((columnResults) => {
+                  return traverseNode.kind == "r"
+                    ? traverseNode
+                        .value(evalContext)
+                        .Then((nodeResult: Res) =>
+                          ValueOrErrors.Default.return(
+                            columnResults.reduce(
+                              (acc, res) =>
+                                traversalContext.joinRes([acc, res]),
+                              nodeResult,
+                            ),
+                          ),
+                        )
+                    : ValueOrErrors.Default.return(
+                        columnResults.reduce(
+                          (acc, res) => traversalContext.joinRes([acc, res]),
+                          traversalContext.zeroRes(unit),
+                        ),
+                      );
+                });
+              });
             }),
           );
         });
