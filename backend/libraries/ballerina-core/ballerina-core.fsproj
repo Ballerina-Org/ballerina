@@ -3,7 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <RuntimeIdentifiers>linux-x64;osx-x64;linux-arm64;win-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>linux-x64;osx-x64;osx-arm64;osx-arm64;linux-arm64;win-x64</RuntimeIdentifiers>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
