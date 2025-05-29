@@ -417,19 +417,7 @@ export const TableAbstractRenderer = <
                   type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(
-                  Updater((table) =>
-                    PredicateValue.Default.table(
-                      table.from,
-                      table.to + 1,
-                      OrderedMapRepo.Updaters.append([
-                        ["id", ValueRecord.Default.empty()],
-                      ])(table.data),
-                      table.hasMoreValues,
-                    ),
-                  ),
-                  delta,
-                );
+                props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -438,26 +426,14 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              remove: (id: string) => {
+              remove: (k: string) => {
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
-                  id,
+                  id: k,
                   type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(
-                  Updater((table) =>
-                    PredicateValue.Default.table(
-                      table.from,
-                      table.to - 1,
-                      OrderedMapRepo.Updaters.remove<string, ValueRecord>(id)(
-                        table.data,
-                      ),
-                      table.hasMoreValues,
-                    ),
-                  ),
-                  delta,
-                );
+                props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -474,30 +450,7 @@ export const TableAbstractRenderer = <
                   type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(
-                  Updater((table) => {
-                    const element = table.data.get(k)!;
-                    if (!element) {
-                      return table;
-                    }
-                    const [targetId, _] = table.data.entrySeq().get(to)!;
-                    return PredicateValue.Default.table(
-                      table.from,
-                      table.to,
-                      OrderedMapRepo.Updaters.remove<string, ValueRecord>(
-                        k,
-                      ).then(
-                        OrderedMapRepo.Updaters.insertAt(
-                          [k, element],
-                          targetId,
-                          "after",
-                        ),
-                      )(table.data),
-                      table.hasMoreValues,
-                    );
-                  }),
-                  delta,
-                );
+                props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -506,29 +459,14 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              duplicate: (id: string) => {
+              duplicate: (k: string) => {
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
-                  id,
+                  id: k,
                   type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(
-                  Updater((table) => {
-                    const element = table.data.get(id)!;
-                    return PredicateValue.Default.table(
-                      table.from,
-                      table.to + 1,
-                      OrderedMapRepo.Updaters.insertAt<string, ValueRecord>(
-                        [id, element],
-                        id,
-                        "after",
-                      )(table.data),
-                      table.hasMoreValues,
-                    );
-                  }),
-                  delta,
-                );
+                props.foreignMutations.onChange(id, delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(

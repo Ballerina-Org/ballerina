@@ -781,7 +781,7 @@ export const PersonConcreteRenderers = {
                 <tbody>
                   {props.EmbeddedTableData.entrySeq()
                     .toArray()
-                    .map(([id, row]) => (
+                    .map(([id, row], idx) => (
                       <tr style={{ border: "1px solid black" }}>
                         <button
                           onClick={() =>
@@ -816,9 +816,13 @@ export const PersonConcreteRenderers = {
                             )
                           }
                         >
-                          {props.EmbeddedTableData.entrySeq().map((_, idx) => (
-                            <option key={_[0]}>{idx}</option>
-                          ))}
+                          {props.EmbeddedTableData.entrySeq().map(
+                            (_, optIdx) => (
+                              <option key={_[0]} selected={optIdx === idx}>
+                                {optIdx}
+                              </option>
+                            ),
+                          )}
                         </select>
                         <td style={{ border: "1px solid black" }}>
                           <input
