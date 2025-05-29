@@ -8,12 +8,12 @@ open Ballerina.DSL.Expr.Types.TypeCheck
 open Ballerina.DSL.Model
 open Ballerina.Errors
 
-let private typeCheck (expr: Expr) : Sum<ExprType * VarTypes, Errors> =
-  let schema: Schema =
-    { tryFindEntity = fun _ -> None
-      tryFindField = fun _ -> None }
+let summySchema: Schema =
+  { tryFindEntity = fun _ -> None
+    tryFindField = fun _ -> None }
 
-  Expr.typeCheck Map.empty schema Map.empty expr
+let private typeCheck (expr: Expr) : Sum<ExprType * VarTypes, Errors> =
+  Expr.typeCheck Map.empty summySchema Map.empty expr
 
 type ValuePrimitiveTypeCheckTestCase = { expr: Expr; expected: ExprType }
 
@@ -78,3 +78,29 @@ let ``Should typecheck tuple projection (with 1-based indexing)`` () =
     Assert.That(value, Is.EqualTo expected)
     Assert.That(varTypes, Is.Empty)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+[<Test>]
+let ``Should typecheck var lookup`` () =
+  let expr = Expr.VarLookup { VarName = "x" }
+
+  let expected = ExprType.PrimitiveType PrimitiveType.BoolType
+
+  let inputVarTypes =
+    Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.BoolType ]
+
+
+  match Expr.typeCheck Map.empty summySchema inputVarTypes expr with
+  | Left(value, varTypes) ->
+    Assert.That(value, Is.EqualTo expected)
+    Assert.That(varTypes, Is.EqualTo inputVarTypes)
+  | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+[<Test>]
+let ``Should typecheck var lookup should fail if not in seen variables`` () =
+  let expr = Expr.VarLookup { VarName = "x" }
+
+  let vars = Map.empty
+
+  match Expr.typeCheck Map.empty summySchema vars expr with
+  | Left _ -> Assert.Fail $"Expected error but got success"
+  | Right err -> Assert.That(err.ToString(), Contains.Substring "x")
