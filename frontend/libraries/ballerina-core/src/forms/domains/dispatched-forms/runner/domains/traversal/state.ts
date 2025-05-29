@@ -69,7 +69,7 @@ export const RendererTraversal = {
       }
 
       if (
-        (type.kind == "lookup" || type.kind == "record") &&
+        (type.kind == "lookup" || type.kind == "record" || type.kind == "union") &&
         renderer.kind == "lookupRenderer"
       ) {
         if (traversalContext.primitiveRendererNamesByType.has(type.name)) {
@@ -147,7 +147,7 @@ export const RendererTraversal = {
                 )
               )
                 return ValueOrErrors.Default.throwOne(
-                  `Error: traversal iterator is not a record, got ${evalContext.traversalIterator}`,
+                  `Error: traversal iterator is not a record, got ${JSON.stringify(evalContext.traversalIterator, undefined, 2)}`,
                 );
               const visibleFieldsRes =
                 FormLayout.Operations.ComputeVisibleFieldsForRecord(
@@ -235,10 +235,7 @@ export const RendererTraversal = {
           );
         }
         if (renderer.kind == "sumRenderer") {
-          const res: ValueOrErrors<
-            Option<ValueTraversal<T, Res>>,
-            string
-          > = rec(type.args[0], renderer, traversalContext).Then(
+          return rec(type.args[0], renderer, traversalContext).Then(
             (leftTraversal) =>
               rec(type.args[1], renderer, traversalContext).Then(
                 (rightTraversal) => {
@@ -340,7 +337,6 @@ export const RendererTraversal = {
                 },
               ),
           );
-          return res;
         }
       }
 
@@ -411,7 +407,99 @@ export const RendererTraversal = {
         });
       }
 
+      if (type.kind == "union" && renderer.kind == "unionRenderer") {
+        // rec on all cases, like fields,
+        // if all are l, return l
+        // check the actual case inside the iterator, then similar to sum
+        return ValueOrErrors.Operations.All(
+          List<
+            ValueOrErrors<
+              {
+                caseName: string;
+                caseTraversal: Option<ValueTraversal<T, Res>>;
+              },
+              string
+            >
+          >(
+            renderer.cases
+              .map((caseRenderer, caseName) => {
+                return rec(
+                  caseRenderer.type,
+                  caseRenderer,
+                  traversalContext,
+                ).Then((caseTraversal) => {
+                  return ValueOrErrors.Default.return({
+                    caseName: caseName,
+                    caseTraversal: caseTraversal,
+                  });
+                });
+              })
+              .valueSeq(),
+          ),
+        ).Then((caseTraversals) => {
+          if (
+            caseTraversals.every((c) => c.caseTraversal.kind == "l") &&
+            traverseNode.kind == "l"
+          ) {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
+          return ValueOrErrors.Default.return(
+            Option.Default.some((evalContext: EvalContext<T, Res>) => {
+              const iterator = evalContext.traversalIterator;
+              if (!PredicateValue.Operations.IsUnionCase(iterator)) {
+                return ValueOrErrors.Default.throwOne(
+                  `Error: traversal iterator is not a union case, got ${evalContext.traversalIterator}`,
+                );
+              }
+              const caseName = iterator.caseName;
+              const caseTraversal = caseTraversals.find(
+                (c) => c.caseName == caseName,
+              )?.caseTraversal;
+              if (!caseTraversal) {
+                return ValueOrErrors.Default.throwOne(
+                  `Error: cannot find case traversal for case ${caseName}`,
+                );
+              }
+              return caseTraversal.kind == "r"
+                ? caseTraversal
+                    .value({
+                      ...evalContext,
+                      traversalIterator: iterator.fields,
+                    })
+                    .Then((caseRes) => {
+                      return traverseNode.kind == "r"
+                        ? traverseNode
+                            .value(evalContext)
+                            .Then((nodeResult: Res) => {
+                              return ValueOrErrors.Default.return(
+                                traversalContext.joinRes([nodeResult, caseRes]),
+                              );
+                            })
+                        : ValueOrErrors.Default.return(caseRes);
+                    })
+                : traverseNode.kind == "r"
+                ? traverseNode.value(evalContext).Then((nodeResult: Res) => {
+                    return ValueOrErrors.Default.return(nodeResult);
+                  })
+                : ValueOrErrors.Default.return(traversalContext.zeroRes(unit));
+            }),
+          );
+        });
+      }
+
       return ValueOrErrors.Default.return(Option.Default.none());
     },
   },
 };
+
+// TODO:
+// Tables -- can also be a lookup
+// One
+// List
+// Map
+// SingleSelection
+// MultiSelection
+// Option
+
+// Done
+// Union -- can also be a lookup
