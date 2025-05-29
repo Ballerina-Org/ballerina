@@ -6,9 +6,3 @@ updates:
       interval: weekly
     reviewers:
       - giuseppemag
-  - package-ecosystem: "nuget"
-    schedule:
-      interval: weekly
-    directory: backend
-    reviewers:
-      - giuseppemag
