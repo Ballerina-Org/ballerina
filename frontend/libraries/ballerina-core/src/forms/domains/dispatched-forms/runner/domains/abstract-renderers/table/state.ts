@@ -21,6 +21,7 @@ import {
   DispatchTableApiSource,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  DispatchParsedType,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -32,7 +33,7 @@ import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-da
 export type AbstractTableRendererReadonlyContext = {
   tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-  type: ParsedType<any>;
+  type: DispatchParsedType<any>;
   bindings: Bindings;
   value: ValueTable;
   identifiers: { withLauncher: string; withoutLauncher: string };
@@ -157,6 +158,10 @@ export type AbstractTableRendererView<
     selectRow: SimpleCallback<string>;
     selectAllRows: SimpleCallback<void>;
     clearRows: SimpleCallback<void>;
+    add: SimpleCallback<void>;
+    remove: SimpleCallback<string>;
+    moveTo: (key: string, to: number) => void;
+    duplicate: SimpleCallback<string>;
   },
   {
     TableHeaders: string[];

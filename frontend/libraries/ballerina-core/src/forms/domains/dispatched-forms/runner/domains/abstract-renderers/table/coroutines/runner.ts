@@ -73,7 +73,7 @@ const intialiseTable = Co.GetState().then((current) => {
   );
 });
 
-export const TableRunner = Co.Template<Unit>(intialiseTable, {
+export const TableRunner = Co.Template<any>(intialiseTable, {
   interval: 15,
   runFilter: (props) => {
     return !props.context.customFormState.isInitialized;

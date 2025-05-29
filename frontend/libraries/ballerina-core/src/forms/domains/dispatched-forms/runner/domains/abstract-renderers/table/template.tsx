@@ -21,6 +21,11 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  TableType,
+  ValueTable,
+  Updater,
+  OrderedMapRepo,
+  unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -29,9 +34,13 @@ import { TableRunner } from "./coroutines/runner";
 const EmbeddedValueInfiniteStreamTemplate =
   ValueInfiniteStreamTemplate.mapContext<
     AbstractTableRendererReadonlyContext & AbstractTableRendererState
-  >((_) => _.customFormState.stream).mapState<AbstractTableRendererState>(
-    AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
-  );
+  >((_) => _.customFormState.stream)
+    .mapState<AbstractTableRendererState>(
+      AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
+    )
+    .mapForeignMutationsFromProps<any>((props) => ({
+      ...props.foreignMutations,
+    }));
 
 export const TableAbstractRenderer = <
   Context extends FormLabel & {
@@ -236,7 +245,9 @@ export const TableAbstractRenderer = <
   return Template.Default<
     AbstractTableRendererReadonlyContext & AbstractTableRendererState,
     AbstractTableRendererState,
-    any,
+    ForeignMutationsExpected & {
+      onChange: DispatchOnChange<ValueTable>;
+    },
     any
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
@@ -400,6 +411,63 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
+              add: () => {
+                const delta: DispatchDelta = {
+                  kind: "TableAdd",
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(
+                  Updater((table) =>
+                    PredicateValue.Default.table(
+                      table.from,
+                      table.to + 1,
+                      OrderedMapRepo.Updaters.append([
+                        ["id", ValueRecord.Default.empty()],
+                      ])(table.data),
+                      table.hasMoreValues,
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              remove: (id: string) => {
+                const delta: DispatchDelta = {
+                  kind: "TableRemove",
+                  id,
+                  type: (props.context.type as TableType<any>).args[0],
+                  isWholeEntityMutation: true,
+                };
+                props.foreignMutations.onChange(
+                  Updater((table) =>
+                    PredicateValue.Default.table(
+                      table.from,
+                      table.to - 1,
+                      OrderedMapRepo.Updaters.remove<string, ValueRecord>(id)(
+                        table.data,
+                      ),
+                      table.hasMoreValues,
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              moveTo: (id: string, to: number) => {},
+              duplicate: (id: string) => {},
             }}
             TableHeaders={visibleColumns.value.columns}
             EmbeddedTableData={tableData}
