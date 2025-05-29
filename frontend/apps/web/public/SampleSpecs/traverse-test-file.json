@@ -172,6 +172,7 @@
     },
     "Person": {
       "fields": {
+        "Id": "guid",
         "Job": "Job",
         "Friends": {
           "fun": "Table",
@@ -189,11 +190,29 @@
         "Relatives": {
           "fun": "Tuple",
           "args": ["string", "string", "injectedCategory"]
+        },
+        "BestFriend": {
+          "fun": "One",
+          "args": ["User"]
+        },
+        "RelativesList": {
+          "fun": "List",
+          "args": ["injectedCategory"]
         }
       }
     }
   },
   "apis": {
+    "lookups": {
+      "User": {
+        "one": {
+          "BestFriendApi": {
+            "type": "User",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      }
+    },
     "enumOptions": {
       "colors": "ColorRef",
       "interests": "InterestRef"
@@ -385,50 +404,73 @@
         "Designer": "designerJob"
       }
     },
+    "friends": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Category": {
+          "renderer": "defaultCategory"
+        }
+      },
+      "visibleColumns": ["Name", "Category"],
+      "detailsRenderer": {
+        "renderer": {
+          "type": "User",
+          "renderer": "userDetails",
+          "fields": {
+            "Name": {
+              "label": "First Name",
+              "renderer": "defaultString"
+            },
+            "Surname": {
+              "label": "Last Name",
+              "renderer": "defaultString"
+            },
+            "Category": {
+              "renderer": "defaultCategory"
+            }
+          },
+          "tabs": {
+            "main": {
+              "columns": {
+                "main": {
+                  "groups": {
+                    "main": ["Name", "Surname", "Category"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "person": {
       "type": "Person",
       "renderer": "personDetails",
       "fields": {
-        "Friends": {
-          "renderer": {
-            "type": "User",
-            "renderer": "streamingTable",
-            "columns": {
-              "Name": {
-                "renderer": "defaultString"
-              },
-              "Category": {
-                "renderer": "defaultCategory"
-              }
-            },
-            "visibleColumns": [
-              "Name",
-              "Category"
-            ],
-            "detailsRenderer": {
-              "renderer": {
-                "type": "User",
-                "renderer": "userDetails",
-                "fields": {
-                  "Name": {
-                    "label": "First Name",
-                    "renderer": "defaultString"
-                  },
-                  "Surname": {
-                    "label": "Last Name",
-                    "renderer": "defaultString"
-                  },
-                  "Category": {
-                    "renderer": "defaultCategory"
-                  }
+        "BestFriend": {
+          "label": "Best Friend",
+          "renderer": "bestFriend",
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
                 },
-                "tabs": {
-                  "main": {
-                    "columns": {
-                      "main": {
-                        "groups": {
-                          "main": ["Name", "Surname", "Category"]
-                        }
+                "Category": {
+                  "renderer": "defaultCategory"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Category"]
                       }
                     }
                   }
@@ -436,6 +478,37 @@
               }
             }
           },
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Category": {
+                  "renderer": "defaultCategory"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Category"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "BestFriendApi"]
+        },
+        "Friends": {
+          "renderer": "friends",
           "api": "ActiveUsersApi"
         },
         "Job": {
@@ -474,6 +547,11 @@
             { "renderer": "defaultString" },
             { "renderer": "defaultCategory" }
           ]
+        },
+        "RelativesList": {
+          "label": "relatives list",
+          "renderer": "defaultList",
+          "elementRenderer": { "renderer": "defaultCategory" }
         }
       },
       "tabs": {
@@ -482,15 +560,8 @@
             "demographics": {
               "groups": {
                 "main": [
-                  "Job",
-                  "Friends",
-                  "Name",
-                  "Category",
-                  "SubscribeToNewsletter",
-                  "Birthday",
-                  "SchoolAddress",
-                  "CategorySum",
-                  "Relatives"
+                  "BestFriend",
+                  "RelativesList"
                 ]
               }
             }

@@ -481,6 +481,7 @@ export const RendererTraversal = {
           );
         });
       }
+      // TODO -- add recursion for the detailsRenderer
       if (type.kind == "table" && renderer.kind == "tableRenderer") {
         return ValueOrErrors.Operations.All(
           List(
@@ -577,6 +578,132 @@ export const RendererTraversal = {
           );
         });
       }
+      // TODO -- should we also look at the previewRenderer?
+      if (type.kind == "one" && renderer.kind == "oneRenderer") {
+        return rec(
+          renderer.detailsRenderer.renderer.type,
+          renderer.detailsRenderer.renderer,
+          traversalContext,
+        ).Then((itemTraversal) => {
+          if (itemTraversal.kind == "l" && traverseNode.kind == "l") {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
+          return ValueOrErrors.Default.return(
+            Option.Default.some<ValueTraversal<T, Res>>(
+              (evalContext: EvalContext<T, Res>) => {
+                const iterator = evalContext.traversalIterator;
+
+                // Handle partial ones
+                if (PredicateValue.Operations.IsUnit(iterator)) {
+                  return traverseNode.kind == "r"
+                    ? traverseNode.value(evalContext)
+                    : ValueOrErrors.Default.return(
+                        traversalContext.zeroRes(unit),
+                      );
+                }
+                if (!PredicateValue.Operations.IsOption(iterator)) {
+                  return ValueOrErrors.Default.throwOne<Res, string>(
+                    `Error: traversal iterator for one is not an option, got ${iterator}`,
+                  );
+                }
+                const isSome =
+                  PredicateValue.Operations.IsOption(iterator) &&
+                  iterator.isSome;
+
+                if (!isSome) {
+                  return traverseNode.kind == "r"
+                    ? traverseNode.value(evalContext)
+                    : ValueOrErrors.Default.return(
+                        traversalContext.zeroRes(unit),
+                      );
+                }
+
+                return traverseNode.kind == "r"
+                  ? traverseNode.value(evalContext).Then((nodeResult: Res) => {
+                      return itemTraversal.kind == "r"
+                        ? itemTraversal
+                            .value({
+                              ...evalContext,
+                              traversalIterator: iterator.value,
+                            })
+                            .Then((itemResult: Res) => {
+                              return ValueOrErrors.Default.return(
+                                traversalContext.joinRes([
+                                  nodeResult,
+                                  itemResult,
+                                ]),
+                              );
+                            })
+                        : ValueOrErrors.Default.return(nodeResult);
+                    })
+                  : itemTraversal.kind == "r"
+                  ? itemTraversal.value({
+                      ...evalContext,
+                      traversalIterator: iterator.value,
+                    })
+                  : ValueOrErrors.Default.return(
+                      traversalContext.zeroRes(unit),
+                    );
+              },
+            ),
+          );
+        });
+      }
+
+      if (type.kind == "list" && renderer.kind == "listRenderer") {
+        return rec(type.args[0], renderer, traversalContext).Then(
+          (elementTraversal) => {
+            if (elementTraversal.kind == "l" && traverseNode.kind == "l") {
+              return ValueOrErrors.Default.return(Option.Default.none());
+            }
+            return ValueOrErrors.Default.return(
+              Option.Default.some((evalContext: EvalContext<T, Res>) => {
+                const iterator = evalContext.traversalIterator;
+                if (!PredicateValue.Operations.IsTuple(iterator)) {
+                  return ValueOrErrors.Default.throwOne<Res, string>(
+                    `Error: traversal iterator for list is not a list, got ${JSON.stringify(
+                      iterator,
+                      null,
+                      2,
+                    )}`,
+                  );
+                }
+                return ValueOrErrors.Operations.All<Res, string>(
+                  iterator.values.map((value) =>
+                    elementTraversal.kind == "r"
+                      ? elementTraversal.value({
+                          ...evalContext,
+                          traversalIterator: value,
+                        })
+                      : ValueOrErrors.Default.return(
+                          traversalContext.zeroRes(unit),
+                        ),
+                  ),
+                ).Then((elementResults) =>
+                  traverseNode.kind == "r"
+                    ? traverseNode
+                        .value(evalContext)
+                        .Then((nodeResult: Res) =>
+                          ValueOrErrors.Default.return(
+                            elementResults.reduce(
+                              (acc, res) =>
+                                traversalContext.joinRes([acc, res]),
+                              nodeResult,
+                            ),
+                          ),
+                        )
+                    : ValueOrErrors.Default.return(
+                        elementResults.reduce(
+                          (acc, res) => traversalContext.joinRes([acc, res]),
+                          traversalContext.zeroRes(unit),
+                        ),
+                      ),
+                );
+              }),
+            );
+          },
+        );
+      }
 
       return ValueOrErrors.Default.return(Option.Default.none());
     },
@@ -584,13 +711,12 @@ export const RendererTraversal = {
 };
 
 // TODO:
-// Tables -- can also be a lookup
-// One
 // List
 // Map
 // SingleSelection
 // MultiSelection
-// Option
 
 // Done
 // Union -- can also be a lookup
+// Tables -- can also be a lookup
+// One

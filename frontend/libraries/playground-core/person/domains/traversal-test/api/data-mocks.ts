@@ -200,6 +200,12 @@ const getFriends: DispatchOneSource = {
       Birthday: "1990-01-01",
       Email: "tim.pool@example.com",
       SubscribeToNewsletter: true,
+      Category: {
+        kind: ["child", "adult", "senior"][
+          Math.round(Math.random() * 10) % 3
+        ],
+        extraSpecial: false,
+      },
       FavoriteColor: {
         Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
         IsSome: true,
@@ -229,6 +235,12 @@ const getFriends: DispatchOneSource = {
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
               IsSome: true,
+            },
+            Category: {
+              kind: ["child", "adult", "senior"][
+                Math.round(Math.random() * 10) % 3
+              ],
+              extraSpecial: false,
             },
             Friends: {
               From: 0,
@@ -361,6 +373,21 @@ const entityApis: EntityApis = {
                 },
               },
             },
+            BestFriend: {
+              isRight: true,
+              right: {
+                Id: v4(),
+                Name: "John",
+                Surname: "Doe",
+                Birthday: "1990-01-01",
+                Email: "john.doe@example.com",
+                SubscribeToNewsletter: true,
+                Category: {
+                  kind: "senior",
+                  extraSpecial: false,
+                },
+              },
+            },
             Friends: {
               Values: {
                 [v4()]: {
@@ -455,6 +482,20 @@ const entityApis: EntityApis = {
                 },
               },
             },
+            RelativesList: [
+              {
+                kind: "senior",
+                extraSpecial: true,
+              },
+              {
+                kind: "senior",
+                extraSpecial: true,
+              },
+              {
+                kind: "child",
+                extraSpecial: true,
+              },
+            ],
           });
         };
       case "person-config":
