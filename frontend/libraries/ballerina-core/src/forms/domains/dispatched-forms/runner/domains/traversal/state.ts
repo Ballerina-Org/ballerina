@@ -661,7 +661,7 @@ export const RendererTraversal = {
                 const iterator = evalContext.traversalIterator;
                 if (!PredicateValue.Operations.IsTuple(iterator)) {
                   return ValueOrErrors.Default.throwOne<Res, string>(
-                    `Error: traversal iterator for list is not a list, got ${JSON.stringify(
+                    `Error: traversal iterator for list is not a tuple, got ${JSON.stringify(
                       iterator,
                       null,
                       2,
@@ -705,13 +705,124 @@ export const RendererTraversal = {
         );
       }
 
+      if (type.kind == "map" && renderer.kind == "mapRenderer") {
+        return rec(
+          type.args[0],
+          renderer.keyRenderer.renderer,
+          traversalContext,
+        ).Then((keyTraversal) => {
+          return rec(
+            type.args[1],
+            renderer.valueRenderer.renderer,
+            traversalContext,
+          ).Then((valueTraversal) => {
+            if (
+              keyTraversal.kind == "l" &&
+              valueTraversal.kind == "l" &&
+              traverseNode.kind == "l"
+            ) {
+              return ValueOrErrors.Default.return(Option.Default.none());
+            }
+            return ValueOrErrors.Default.return(
+              Option.Default.some<ValueTraversal<T, Res>>(
+                (evalContext: EvalContext<T, Res>) => {
+                  if (keyTraversal.kind == "l" && valueTraversal.kind == "l") {
+                    return traverseNode.kind == "r"
+                      ? traverseNode.value(evalContext)
+                      : ValueOrErrors.Default.return<Res, string>(
+                          traversalContext.zeroRes(unit),
+                        );
+                  }
+
+                  const iterator = evalContext.traversalIterator;
+                  if (!PredicateValue.Operations.IsTuple(iterator)) {
+                    return ValueOrErrors.Default.throwOne<Res, string>(
+                      `Error: traversal iterator for map is not a tuple, got ${JSON.stringify(
+                        iterator,
+                        null,
+                        2,
+                      )}`,
+                    );
+                  }
+
+                  return ValueOrErrors.Operations.All<Res, string>(
+                    iterator.values.map((value) => {
+                      if (!PredicateValue.Operations.IsTuple(value)) {
+                        return ValueOrErrors.Default.throwOne<Res, string>(
+                          `Error: traversal iterator for map keyValue is not a tuple, got ${JSON.stringify(
+                            value,
+                            null,
+                            2,
+                          )}`,
+                        );
+                      }
+                      const keyRes =
+                        keyTraversal.kind == "r"
+                          ? keyTraversal.value({
+                              ...evalContext,
+                              traversalIterator: value.values.get(0)!,
+                            })
+                          : ValueOrErrors.Default.return(
+                              traversalContext.zeroRes(unit),
+                            );
+
+                      const valueRes =
+                        valueTraversal.kind == "r"
+                          ? valueTraversal.value({
+                              ...evalContext,
+                              traversalIterator: value.values.get(1)!,
+                            })
+                          : ValueOrErrors.Default.return(
+                              traversalContext.zeroRes(unit),
+                            );
+
+                      if (keyRes.kind == "errors") {
+                        return keyRes as ValueOrErrors<Res, string>;
+                      }
+                      if (valueRes.kind == "errors") {
+                        return valueRes as ValueOrErrors<Res, string>;
+                      }
+
+                      return ValueOrErrors.Default.return<Res, string>(
+                        traversalContext.joinRes([
+                          keyRes.value,
+                          valueRes.value,
+                        ]),
+                      );
+                    }),
+                  ).Then((keyValueResults) => {
+                    return traverseNode.kind == "r"
+                      ? traverseNode
+                          .value(evalContext)
+                          .Then((nodeResult: Res) => {
+                            return ValueOrErrors.Default.return<Res, string>(
+                              keyValueResults.reduce(
+                                (acc, res) =>
+                                  traversalContext.joinRes([acc, res]),
+                                nodeResult,
+                              ),
+                            );
+                          })
+                      : ValueOrErrors.Default.return<Res, string>(
+                          keyValueResults.reduce(
+                            (acc, res) => traversalContext.joinRes([acc, res]),
+                            traversalContext.zeroRes(unit),
+                          ),
+                        );
+                  });
+                },
+              ),
+            );
+          });
+        });
+      }
+
       return ValueOrErrors.Default.return(Option.Default.none());
     },
   },
 };
 
 // TODO:
-// List
 // Map
 // SingleSelection
 // MultiSelection
@@ -720,3 +831,4 @@ export const RendererTraversal = {
 // Union -- can also be a lookup
 // Tables -- can also be a lookup
 // One
+// List

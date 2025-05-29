@@ -198,6 +198,14 @@
         "RelativesList": {
           "fun": "List",
           "args": ["injectedCategory"]
+        },
+        "Dependants": {
+          "fun": "Map",
+          "args": ["string", "injectedCategory"]
+        },
+        "FriendsByCategory": {
+          "fun": "Map",
+          "args": ["injectedCategory", "string"]
         }
       }
     }
@@ -552,6 +560,33 @@
           "label": "relatives list",
           "renderer": "defaultList",
           "elementRenderer": { "renderer": "defaultCategory" }
+        },
+        "Dependants": {
+          "label": "Dependants",
+          "renderer": "defaultMap",
+          "tooltip": "someone who depends on you",
+          "keyRenderer": {
+            "label": "Name",
+            "tooltip": "their Name",
+            "renderer": "defaultString"
+          },
+          "valueRenderer": {
+            "label": "Category",
+            "tooltip": "their Category",
+            "renderer": "defaultCategory"
+          }
+        },
+        "FriendsByCategory": {
+          "label": "Friends by Category",
+          "renderer": "defaultMap",
+          "keyRenderer": {
+            "label": "Category",
+            "renderer": "defaultCategory"
+          },
+          "valueRenderer": {
+            "label": "Name",
+            "renderer": "defaultString"
+          }
         }
       },
       "tabs": {
@@ -559,10 +594,7 @@
           "columns": {
             "demographics": {
               "groups": {
-                "main": [
-                  "BestFriend",
-                  "RelativesList"
-                ]
+                "main": ["BestFriend", "Dependants", "FriendsByCategory"]
               }
             }
           }

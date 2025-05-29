@@ -32,9 +32,7 @@ const getActiveUsers: DispatchTableApiSource = {
       Name: "Jane Doe",
       Surname: "Doe",
       Category: {
-        kind: ["child", "adult", "senior"][
-          Math.round(Math.random() * 10) % 3
-        ],
+        kind: ["child", "adult", "senior"][Math.round(Math.random() * 10) % 3],
         extraSpecial: false,
       },
       // Birthday: "1990-01-01",
@@ -201,9 +199,7 @@ const getFriends: DispatchOneSource = {
       Email: "tim.pool@example.com",
       SubscribeToNewsletter: true,
       Category: {
-        kind: ["child", "adult", "senior"][
-          Math.round(Math.random() * 10) % 3
-        ],
+        kind: ["child", "adult", "senior"][Math.round(Math.random() * 10) % 3],
         extraSpecial: false,
       },
       FavoriteColor: {
@@ -494,6 +490,35 @@ const entityApis: EntityApis = {
               {
                 kind: "child",
                 extraSpecial: true,
+              },
+            ],
+            Dependants: [
+              {
+                Key: "Steve",
+                Value: {
+                  kind: ["child", "adult", "senior"][
+                    Math.round(Math.random() * 10) % 3
+                  ],
+                  extraSpecial: false,
+                },
+              },
+              {
+                Key: "Alice",
+                Value: {
+                  kind: ["child", "adult", "senior"][
+                    Math.round(Math.random() * 10) % 3
+                  ],
+                  extraSpecial: false,
+                },
+              },
+            ],
+            FriendsByCategory: [
+              {
+                Key: {
+                  kind: "child",
+                  extraSpecial: false,
+                },
+                Value: "John",
               },
             ],
           });
