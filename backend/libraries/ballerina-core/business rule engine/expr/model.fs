@@ -95,9 +95,13 @@ module Model =
           |> Seq.map (fun (fieldName, expr) -> $"{fieldName} = {expr.ToString()}")
 
         $"""{{ {String.Join("; ", formattedFields)} }}"""
-      | Value.Tuple vs -> $"""({String.Join(", ", vs |> Seq.map (fun v -> v.ToString()))})"""
+      | Value.Tuple vs ->
+        let formattedValues = vs |> Seq.map (fun v -> v.ToString())
+        $"""({String.Join(", ", formattedValues)})"""
       | Value.Var(_, v) -> v.ToString()
-      | Value.List vs -> $"""[{String.Join(", ", vs |> Seq.map (fun v -> v.ToString()))}]"""
+      | Value.List vs ->
+        let formattedValues = vs |> Seq.map (fun v -> v.ToString())
+        $"""[{String.Join(", ", formattedValues)}]"""
 
     member self.toObject =
       match self with
