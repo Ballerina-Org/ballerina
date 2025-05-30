@@ -178,6 +178,18 @@ export const InfiniteMultiselectDropdownForm = <
                 replaceWith(""),
               ),
             ),
+          select: (_) => {
+            const delta: Delta = {
+              kind: "RecordReplace",
+              replace: _,
+              state: {
+                commonFormState: props.context.commonFormState,
+                customFormState: props.context.customFormState,
+              },
+              type: props.context.type,
+            };
+            props.foreignMutations.onChange(replaceWith(_), delta);
+          },
           toggleSelection: (elementRecord: ValueRecord) => {
             const updater = props.context.value.fields.has(
               elementRecord.fields.get("Id")! as string,
