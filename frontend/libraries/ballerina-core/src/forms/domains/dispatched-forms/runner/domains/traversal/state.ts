@@ -65,7 +65,11 @@ export const RendererTraversal = {
 
       const traverseNode = traversalContext.traverseSingleType(type);
 
-      if (type.kind == "primitive" || type.kind == "singleSelection" || type.kind == "multiSelection") {
+      if (
+        type.kind == "primitive" ||
+        type.kind == "singleSelection" ||
+        type.kind == "multiSelection"
+      ) {
         return ValueOrErrors.Default.return(traverseNode);
       }
 
@@ -473,10 +477,12 @@ export const RendererTraversal = {
                         : ValueOrErrors.Default.return(caseRes);
                     })
                 : traverseNode.kind == "r"
-                ? traverseNode.value(evalContext).Then((nodeResult: Res) => {
-                    return ValueOrErrors.Default.return(nodeResult);
-                  })
-                : ValueOrErrors.Default.return(traversalContext.zeroRes(unit));
+                  ? traverseNode.value(evalContext).Then((nodeResult: Res) => {
+                      return ValueOrErrors.Default.return(nodeResult);
+                    })
+                  : ValueOrErrors.Default.return(
+                      traversalContext.zeroRes(unit),
+                    );
             }),
           );
         });
@@ -637,13 +643,13 @@ export const RendererTraversal = {
                         : ValueOrErrors.Default.return(nodeResult);
                     })
                   : itemTraversal.kind == "r"
-                  ? itemTraversal.value({
-                      ...evalContext,
-                      traversalIterator: iterator.value,
-                    })
-                  : ValueOrErrors.Default.return(
-                      traversalContext.zeroRes(unit),
-                    );
+                    ? itemTraversal.value({
+                        ...evalContext,
+                        traversalIterator: iterator.value,
+                      })
+                    : ValueOrErrors.Default.return(
+                        traversalContext.zeroRes(unit),
+                      );
               },
             ),
           );
