@@ -320,7 +320,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
         Item2: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
       };
     }
-  | { Discriminator: "TableAdd"; Add: {} }
+  | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
   | { Discriminator: "TableMoveFromTo"; MoveFromTo: [string, string] };
@@ -1131,10 +1131,9 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableAdd",
-                Add: {},
+                Discriminator: "TableAddEmpty",
               },
-              `[TableAdd]`,
+              `[TableAddEmpty]`,
               delta.isWholeEntityMutation,
             ]);
           }
