@@ -160,7 +160,7 @@ export type AbstractTableRendererView<
     clearRows: SimpleCallback<void>;
     add: SimpleCallback<void>;
     remove: SimpleCallback<string>;
-    moveTo: (key: string, to: number) => void;
+    moveTo: (key: string, to: string) => void;
     duplicate: SimpleCallback<string>;
   },
   {

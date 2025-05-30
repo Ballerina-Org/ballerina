@@ -85,7 +85,7 @@ func NewDeltaTableRemoveAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, del
 }
 func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {
 	return DeltaTable[a, deltaA]{
-		Discriminator: TableRemoveAt,
+		Discriminator: TableMoveFromTo,
 		MoveFromTo:    NewTuple2(from, to),
 	}
 }

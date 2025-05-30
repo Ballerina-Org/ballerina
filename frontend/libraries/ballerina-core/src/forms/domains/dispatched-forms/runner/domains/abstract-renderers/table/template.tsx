@@ -442,7 +442,7 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              moveTo: (k: string, to: number) => {
+              moveTo: (k: string, to: string) => {
                 const delta: DispatchDelta = {
                   kind: "TableMoveTo",
                   id: k,
