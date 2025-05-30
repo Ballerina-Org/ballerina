@@ -178,9 +178,9 @@ export const InfiniteMultiselectDropdownForm = <
                 replaceWith(""),
               ),
             ),
-          select: (_) => {
+          replace: (_) => {
             const delta: Delta = {
-              kind: "RecordReplace",
+              kind: "SetReplace",
               replace: _,
               state: {
                 commonFormState: props.context.commonFormState,
