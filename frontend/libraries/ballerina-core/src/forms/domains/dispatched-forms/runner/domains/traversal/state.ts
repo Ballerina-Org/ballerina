@@ -65,7 +65,7 @@ export const RendererTraversal = {
 
       const traverseNode = traversalContext.traverseSingleType(type);
 
-      if (type.kind == "primitive") {
+      if (type.kind == "primitive" || type.kind == "singleSelection" || type.kind == "multiSelection") {
         return ValueOrErrors.Default.return(traverseNode);
       }
 
@@ -481,7 +481,7 @@ export const RendererTraversal = {
           );
         });
       }
-      // TODO -- add recursion for the detailsRenderer
+      // TODO -- add recursion for the detailsRenderer, but requires state
       if (type.kind == "table" && renderer.kind == "tableRenderer") {
         return ValueOrErrors.Operations.All(
           List(
@@ -578,7 +578,7 @@ export const RendererTraversal = {
           );
         });
       }
-      // TODO -- should we also look at the previewRenderer?
+      // TODO -- should we also look at the previewRenderer? Woud also requite state
       if (type.kind == "one" && renderer.kind == "oneRenderer") {
         return rec(
           renderer.detailsRenderer.renderer.type,
@@ -821,14 +821,3 @@ export const RendererTraversal = {
     },
   },
 };
-
-// TODO:
-// Map
-// SingleSelection
-// MultiSelection
-
-// Done
-// Union -- can also be a lookup
-// Tables -- can also be a lookup
-// One
-// List
