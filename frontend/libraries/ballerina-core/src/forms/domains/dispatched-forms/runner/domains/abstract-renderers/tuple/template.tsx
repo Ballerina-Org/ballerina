@@ -67,6 +67,7 @@ export const DispatchTupleAbstractRenderer = <
           bindings: Bindings;
           identifiers: { withLauncher: string; withoutLauncher: string };
         } => ({
+          ..._,
           ...(_.itemFormStates.get(itemIndex) ||
             ItemFormStates.get(itemIndex)!()),
           value: _.value.values.get(itemIndex)!,
