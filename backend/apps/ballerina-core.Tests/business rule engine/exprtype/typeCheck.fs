@@ -5,15 +5,9 @@ open NUnit.Framework
 open Ballerina.DSL.Expr.Types.Model
 open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Expr.Types.TypeCheck
-open Ballerina.DSL.Model
 open Ballerina.Errors
 
-let summySchema: Schema =
-  { tryFindEntity = fun _ -> None
-    tryFindField = fun _ -> None }
-
-let private typeCheck (expr: Expr) : Sum<ExprType * VarTypes, Errors> =
-  Expr.typeCheck Map.empty summySchema Map.empty expr
+let private typeCheck (expr: Expr) : Sum<ExprType * VarTypes, Errors> = Expr.typeCheck Map.empty Map.empty expr
 
 type ValuePrimitiveTypeCheckTestCase = { expr: Expr; expected: ExprType }
 
@@ -89,10 +83,10 @@ let ``Should typecheck var lookup`` () =
     Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.BoolType ]
 
 
-  match Expr.typeCheck Map.empty summySchema inputVarTypes expr with
+  match Expr.typeCheck Map.empty inputVarTypes expr with
   | Left(value, varTypes) ->
     Assert.That(value, Is.EqualTo expected)
-    Assert.That(varTypes, Is.EqualTo inputVarTypes)
+    Assert.That(varTypes, Is.EqualTo<VarTypes> inputVarTypes)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -101,6 +95,6 @@ let ``Should typecheck var lookup should fail if not in seen variables`` () =
 
   let vars = Map.empty
 
-  match Expr.typeCheck Map.empty summySchema vars expr with
+  match Expr.typeCheck Map.empty vars expr with
   | Left _ -> Assert.Fail $"Expected error but got success"
   | Right err -> Assert.That(err.ToString(), Contains.Substring "x")
