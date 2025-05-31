@@ -159,21 +159,6 @@ module Expr =
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
-    static member private ParseIsCase<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
-      state {
-        let! fieldsJson = assertKindIsAndGetFields "isCase" json
-
-        return!
-          state {
-            let! operandsJson = fieldsJson |> sum.TryFindField "operands" |> state.OfSum
-            let! firstJson, caseNameJson = JsonValue.AsPair operandsJson |> state.OfSum
-            let! caseName = JsonValue.AsString caseNameJson |> state.OfSum
-            let! first = Expr.Parse firstJson
-            return Expr.IsCase(caseName, first)
-          }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
-      }
-
     static member private ParseVarLookup<'config, 'context>(json: JsonValue) : State<Expr, 'config, 'context, Errors> =
       state {
         let! fieldsJson = assertKindIsAndGetFields "varLookup" json
@@ -210,7 +195,6 @@ module Expr =
             Expr.ParseLambda json
             Expr.ParseMatchCases json
             Expr.ParseFieldLookup json
-            Expr.ParseIsCase json
             Expr.ParseVarLookup json
             Expr.ParseItemLookup json
             state.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
@@ -277,12 +261,6 @@ module Expr =
           JsonValue.Record
             [| "kind", JsonValue.String "fieldLookup"
                "operands", JsonValue.Array [| jsonExpr; JsonValue.String fieldName |] |]
-        | Expr.IsCase(caseName, expr) ->
-          let! jsonExpr = !expr
-
-          JsonValue.Record
-            [| "kind", JsonValue.String "isCase"
-               "operands", JsonValue.Array [| jsonExpr; JsonValue.String caseName |] |]
         | Expr.Project(expr, index) ->
           let! jsonExpr = !expr
 
@@ -293,10 +271,7 @@ module Expr =
         | Expr.MakeTuple _ -> return! sum.Throw(Errors.Singleton "Error: MakeTuple not implemented")
         | Expr.MakeSet _ -> return! sum.Throw(Errors.Singleton "Error: MakeSet not implemented")
         | Expr.MakeCase _ -> return! sum.Throw(Errors.Singleton "Error: MakeCase not implemented")
-        | Expr.Exists _ -> return! sum.Throw(Errors.Singleton "Error: Exists not implemented")
-        | Expr.SumBy _ -> return! sum.Throw(Errors.Singleton "Error: SumBy not implemented")
         | Expr.Unary _ -> return! sum.Throw(Errors.Singleton "Error: Unary not implemented")
-        | Expr.FieldLookup _ -> return! sum.Throw(Errors.Singleton "Error: FieldLookup not implemented")
 
       }
       |> sum.MapError Errors.HighestPriority

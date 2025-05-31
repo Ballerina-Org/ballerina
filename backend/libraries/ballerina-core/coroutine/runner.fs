@@ -3,6 +3,7 @@ namespace Ballerina.Coroutines
 module Runner =
   open System
   open System.Threading
+  open Ballerina.Coroutines.Model
 
   let runLoop init getSnapshot updateState updateEvents log releaseSnapshot =
     let mutable initialEvals = init ()
@@ -28,7 +29,7 @@ module Runner =
       let state, context, events, dataSource = getSnapshot ()
 
       let (evals', u_s, u_e) =
-        Coroutine<Unit, 'c, 's, 'e>.evalMany (active) (state, context, events, dT)
+        Coroutine<Unit, 'c, 's, 'event, 'err>.evalMany (active) (state, context, events, dT)
 
       match u_e with
       | Some u_e ->

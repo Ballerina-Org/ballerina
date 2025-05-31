@@ -6,18 +6,12 @@ module TypeCheck =
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Unification
   open Ballerina.Errors
-  open Ballerina.DSL.Model
   open Ballerina.Core.Object
 
   type TypeName = string
 
   type Expr with
-    static member typeCheck
-      (typeBindings: TypeBindings)
-      (schema: Schema)
-      (vars: VarTypes)
-      (e: Expr)
-      : Sum<ExprType * VarTypes, Errors> =
+    static member typeCheck (typeBindings: TypeBindings) (vars: VarTypes) (e: Expr) : Sum<ExprType * VarTypes, Errors> =
       let lookup t =
         sum {
           match t with
@@ -36,11 +30,6 @@ module TypeCheck =
 
         let result =
           match e with
-          | Expr.Exists(varName, entityDescriptor, condition) ->
-            sum {
-              let vars' = vars |> Map.add varName (ExprType.SchemaLookupType entityDescriptor)
-              return! eval vars' condition
-            }
           | Expr.VarLookup v ->
             sum {
               let! varType = vars |> Map.tryFindWithError v "var" v.VarName
@@ -69,26 +58,6 @@ module TypeCheck =
                 return!
                   sum.Throw(
                     $$"""Error: cannot access field {{field}} on value {{e.ToString()}} because it's not a record"""
-                    |> Errors.Singleton
-                  )
-            }
-          | Expr.IsCase(caseName, e) ->
-            sum {
-              let! _, eType, vars' = eval vars e
-
-              match eType with
-              | UnionType cases ->
-                let! _ =
-                  cases
-                  |> Map.tryFind { CaseName = caseName }
-                  |> Sum.fromOption (fun () ->
-                    $$"""Error: invalid case name {{caseName}} on {{eType}}""" |> Errors.Singleton)
-
-                return None, ExprType.PrimitiveType PrimitiveType.BoolType, vars'
-              | t ->
-                return!
-                  sum.Throw(
-                    sprintf "Error: unexpected case check on type %A when typechecking expression %A" t e
                     |> Errors.Singleton
                   )
             }
@@ -157,25 +126,6 @@ module TypeCheck =
                 return!
                   sum.Throw(
                     sprintf "Error: unexpected matchCase on type %A when typechecking expression %A" t e
-                    |> Errors.Singleton
-                  )
-            }
-          | Expr.FieldLookup(e, field) ->
-            sum {
-              let! _, eType, vars' = eval vars e
-
-              match eType with
-              | SchemaLookupType _ ->
-                let! fieldDescriptor =
-                  schema.tryFindField field
-                  |> Sum.fromOption (fun () ->
-                    (sprintf "Error: cannot find field '%s'" field.FieldName) |> Errors.Singleton)
-
-                return None, fieldDescriptor.Type(), vars'
-              | t ->
-                return!
-                  sum.Throw(
-                    sprintf "Error: unexpected lookup on type %A when typechecking expression %A" t e
                     |> Errors.Singleton
                   )
             }
@@ -263,7 +213,6 @@ module TypeCheck =
                     |> Errors.Singleton
                   )
             }
-          | Expr.SumBy(_, _, _) -> notImplementedError "SumBy"
           | Expr.Unary(_, _) -> notImplementedError "Unary"
           | Expr.Apply(_, _) -> notImplementedError "Apply"
           | Expr.MakeRecord _ -> notImplementedError "MakeRecord"

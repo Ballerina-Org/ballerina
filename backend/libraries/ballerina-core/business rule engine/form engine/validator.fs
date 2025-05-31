@@ -6,7 +6,6 @@ module Validator =
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.FormEngine.Parser.FormsPatterns
-  open Ballerina.DSL.Model
   open Ballerina.Collections.Tuple
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
@@ -355,10 +354,6 @@ module Validator =
       (fc: FieldConfig)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
-        let schema =
-          { tryFindEntity = fun _ -> None
-            tryFindField = fun _ -> None }
-
         let vars =
           [ ("global", globalType); ("root", rootType) ]
           @ (if includeLocalTypeInScope then
@@ -369,11 +364,7 @@ module Validator =
           |> Map.ofSeq
 
         let! visibleExprType, _ =
-          Expr.typeCheck
-            (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq)
-            schema
-            vars
-            fc.Visible
+          Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars fc.Visible
           |> state.OfSum
         // do System.Console.WriteLine $"{fc.Visible.ToFSharpString}"
         // do System.Console.WriteLine $"{visibleExprType}"
@@ -389,11 +380,7 @@ module Validator =
         match fc.Disabled with
         | Some disabled ->
           let! disabledExprType, _ =
-            Expr.typeCheck
-              (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq)
-              schema
-              vars
-              disabled
+            Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars disabled
             |> state.OfSum
 
           do!
@@ -429,21 +416,13 @@ module Validator =
             for group in col.FormGroups |> Map.values do
               match group with
               | FormGroup.Computed e ->
-                let schema =
-                  { tryFindEntity = fun _ -> None
-                    tryFindField = fun _ -> None }
-
                 let vars =
                   [ ("global", globalType); ("root", rootType); ("local", localType) ]
                   |> Seq.map (VarName.Create <*> id)
                   |> Map.ofSeq
 
                 let! eType, _ =
-                  Expr.typeCheck
-                    (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq)
-                    schema
-                    vars
-                    e
+                  Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars e
                   |> state.OfSum
 
                 let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
@@ -650,17 +629,12 @@ module Validator =
           match table.VisibleColumns with
           | Inlined _ -> return ()
           | Computed visibleExpr ->
-            let schema =
-              { tryFindEntity = fun _ -> None
-                tryFindField = fun _ -> None }
-
             let vars =
               [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
 
             let! eType, _ =
               Expr.typeCheck
                 (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq)
-                schema
                 vars
                 visibleExpr
               |> state.OfSum

@@ -111,19 +111,6 @@ module ExprParserTests =
     assertSuccess result (Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName"))
 
   [<Test>]
-  let ``Should parse isCase`` () =
-    let json =
-      JsonValue.Record
-        [| "kind", JsonValue.String "isCase"
-           "operands", JsonValue.Array [| JsonValue.String "value"; JsonValue.String "caseName" |] |]
-
-    let result = parseExpr json
-
-    assertSuccess result (Expr.IsCase("caseName", Expr.Value(Value.ConstString "value")))
-
-
-
-  [<Test>]
   let ``Should parse varLookup`` () =
     let json =
       JsonValue.Record [| "kind", JsonValue.String "varLookup"; "varName", JsonValue.String "x" |]
@@ -284,13 +271,6 @@ module ExprToAndFromJsonTests =
     assertSuccess result expr
 
   [<Test>]
-  let ``Should convert isCase to and from Json`` () =
-    let expr = Expr.IsCase("caseName", Expr.Value(Value.ConstString "value"))
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
-
-    assertSuccess result expr
-
-  [<Test>]
   let ``Should convert record to and from Json`` () =
     let expr =
       Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
@@ -346,15 +326,6 @@ module ExprToAndFromJsonRecursiveExpressions =
         Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstString "record1"), Expr.Value(Value.ConstString "record2")),
         "fieldName"
       )
-
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
-
-    assertSuccess result expr
-
-  [<Test>]
-  let ``Should convert nested isCase to and from Json`` () =
-    let expr =
-      Expr.IsCase("caseName", Expr.Project(Expr.Value(Value.ConstString "array"), 2))
 
     let result = expr |> Expr.ToJson |> Sum.bind parseExpr
 
@@ -436,7 +407,6 @@ module ExprParserErrorTests =
   [<TestCase("lambda")>]
   [<TestCase("matchCase")>]
   [<TestCase("fieldLookup")>]
-  [<TestCase("isCase")>]
   [<TestCase("record")>]
   [<TestCase("caseCons")>]
   [<TestCase("tuple")>]

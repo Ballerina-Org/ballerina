@@ -1,7 +1,5 @@
 namespace Ballerina.DSL.Expr.Types
 
-#nowarn FS0060
-
 module Model =
   open System
   open Ballerina.Collections.Map
@@ -29,13 +27,21 @@ module Model =
     | StringType
     | BoolType
     | GuidType
-    | RefType of EntityDescriptorId
+
+    override t.ToString() : string =
+      match t with
+      | PrimitiveType.BoolType -> "Bool"
+      | PrimitiveType.DateOnlyType -> "DateOnly"
+      | PrimitiveType.DateTimeType -> "DateTime"
+      | PrimitiveType.FloatType -> "Float"
+      | PrimitiveType.GuidType -> "Guid"
+      | PrimitiveType.IntType -> "Int"
+      | PrimitiveType.StringType -> "String"
 
   and ExprType =
     | UnitType
     | CustomType of string
     | VarType of VarName
-    | SchemaLookupType of EntityDescriptorId
     | LookupType of TypeId
     | PrimitiveType of PrimitiveType
     | RecordType of Map<string, ExprType>
@@ -49,41 +55,14 @@ module Model =
     | ListType of ExprType
     | TableType of ExprType
     | SetType of ExprType
+    | ArrowType of ExprType * ExprType
 
-  and UnionCase = { CaseName: string; Fields: ExprType }
-  and CaseName = { CaseName: string }
-  and VarTypes = Map<VarName, ExprType>
-
-  type TypeBinding with
-    static member Create(name, exprType) =
-      { TypeBinding.TypeId = name
-        TypeBinding.Type = exprType
-        Const = false }
-
-  type TypeId with
-    static member Create name = { TypeName = name }
-
-
-  type PrimitiveType with
-    override t.ToString() : string =
-      match t with
-      | PrimitiveType.BoolType -> "Bool"
-      | PrimitiveType.DateOnlyType -> "DateOnly"
-      | PrimitiveType.DateTimeType -> "DateTime"
-      | PrimitiveType.FloatType -> "Float"
-      | PrimitiveType.GuidType -> "Guid"
-      | PrimitiveType.IntType -> "Int"
-      | PrimitiveType.RefType e -> $"Ref<{e}>"
-      | PrimitiveType.StringType -> "String"
-
-  type ExprType with
     override t.ToString() : string =
       let (!) (t: ExprType) = t.ToString()
 
       match t with
       | ExprType.CustomType l -> l
       | ExprType.LookupType l -> l.TypeName
-      | ExprType.SchemaLookupType l -> l.EntityName
       | ExprType.PrimitiveType p -> p.ToString()
       | ExprType.UnitType -> "()"
       | ExprType.VarType v -> v.VarName
@@ -106,7 +85,24 @@ module Model =
         $"{{ {fs
               |> Seq.map ((fun kv -> kv.Key, kv.Value) >> printField)
               |> fun s -> String.Join(';', s)} }}"
+      | ExprType.ArrowType(l, r) -> $"({!l}) -> {!r}"
 
+
+
+  and UnionCase = { CaseName: string; Fields: ExprType }
+  and CaseName = { CaseName: string }
+  and VarTypes = Map<VarName, ExprType>
+
+  type TypeBinding with
+    static member Create(name, exprType) =
+      { TypeBinding.TypeId = name
+        TypeBinding.Type = exprType
+        Const = false }
+
+  type TypeId with
+    static member Create name = { TypeName = name }
+
+  type ExprType with
     static member Extend t1 t2 =
       match t1, t2 with
       | RecordType fields1, RecordType fields2 when
@@ -136,12 +132,12 @@ module Model =
       | ExprType.LookupType t -> Set.singleton t
       | ExprType.MapType(k, v) -> !k + !v
       | ExprType.SumType(l, r) -> !l + !r
-      | ExprType.SchemaLookupType _
       | ExprType.PrimitiveType _ -> Set.empty
       | ExprType.UnionType cs ->
         let cs = cs |> Map.values |> List.ofSeq
         cs |> Seq.map (fun c -> !c.Fields) |> Seq.fold (+) Set.empty
       | ExprType.RecordType fs -> fs |> Map.values |> Seq.map (!) |> Seq.fold (+) Set.empty
+      | ExprType.ArrowType(l, r) -> !l + !r
 
     static member Substitute (tvars: TypeVarBindings) (t: ExprType) : ExprType =
       let (!) = ExprType.Substitute tvars
@@ -150,7 +146,6 @@ module Model =
       match t with
       | ExprType.CustomType _
       | ExprType.LookupType _
-      | ExprType.SchemaLookupType _
       | ExprType.PrimitiveType _
       | ExprType.UnitType -> t
       | ExprType.VarType v ->
@@ -168,3 +163,4 @@ module Model =
       | ExprType.TupleType ts -> ExprType.TupleType(!!ts)
       | ExprType.UnionType cs -> ExprType.UnionType(cs |> Map.map (fun _ c -> { c with Fields = !c.Fields }))
       | ExprType.RecordType fs -> ExprType.RecordType(fs |> Map.map (fun _ -> (!)))
+      | ExprType.ArrowType(l, r) -> ExprType.ArrowType(!l, !r)

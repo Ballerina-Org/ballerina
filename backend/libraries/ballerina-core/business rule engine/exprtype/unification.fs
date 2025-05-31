@@ -1,7 +1,5 @@
 namespace Ballerina.DSL.Expr.Types
 
-#nowarn FS0060
-
 module Unification =
   open System
   open Ballerina.Fun
