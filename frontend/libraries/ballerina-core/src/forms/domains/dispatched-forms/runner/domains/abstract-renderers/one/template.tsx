@@ -85,6 +85,7 @@ export const OneAbstractRenderer = (
       _.customFormState?.detailsState ??
       RecordAbstractRendererState.Default.zero();
     return {
+      ..._,
       value,
       ...state,
       disabled: _.disabled,
