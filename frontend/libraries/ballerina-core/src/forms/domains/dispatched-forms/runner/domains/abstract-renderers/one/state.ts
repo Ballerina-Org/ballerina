@@ -121,7 +121,7 @@ export const OneAbstractRendererState = {
     },
   },
 };
-export type OneAbstractRendererView = View<
+export type OneAbstractRendererView<Context> = View<
   (
     | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
         value: ValueRecord | ValueUnit;
@@ -134,7 +134,8 @@ export type OneAbstractRendererView = View<
         kind: "uninitialized";
       }
   ) &
-    DomNodeIdReadonlyContext,
+    DomNodeIdReadonlyContext &
+    Context,
   OneAbstractRendererState,
   | {
       kind: "initialized";

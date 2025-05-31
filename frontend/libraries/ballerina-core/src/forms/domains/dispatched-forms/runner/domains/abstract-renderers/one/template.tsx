@@ -38,7 +38,7 @@ import {
   oneTableLoaderRunner,
 } from "./coroutines/runner";
 
-export const OneAbstractRenderer = (
+export const OneAbstractRenderer = <Context,>(
   DetailsRenderer: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
@@ -257,7 +257,7 @@ export const OneAbstractRenderer = (
     {
       onChange: DispatchOnChange<ValueOption>;
     },
-    OneAbstractRendererView
+    OneAbstractRendererView<Context>
   >((props) => {
     const value = props.context.value;
     if (
