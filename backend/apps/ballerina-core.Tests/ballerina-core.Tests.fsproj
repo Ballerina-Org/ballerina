@@ -1,32 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ballerina_core.Tests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarnOn>1182,3387,3389</WarnOn>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="state/with error/model.fs" />
-    <Compile Include="business rule engine/parser/common.fs" />
-    <Compile Include="business rule engine/parser/exprtype.fs" />
-    <Compile Include="business rule engine/parser/expr.fs" />
-    <Compile Include="business rule engine/exprtype/typeCheck.fs" />
-    <Compile Include="business rule engine/expr/model.fs" />
+    <Compile Include="State/WithError/Model.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/Common.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/ExprType.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/Expr.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/TypeCheck.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/Unification.fs" />
+    <Compile Include="BusinessRuleEngine/Expr/Model.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.2" />
-    <PackageReference Update="FSharp.Core" Version="9.0.202" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="NUnit" Version="4.2.2" />
-    <PackageReference Include="NUnit.Analyzers" Version="4.4.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <!--
+    https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+    <PackageReference Update="FSharp.Core" Version="9.0.300" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.8.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

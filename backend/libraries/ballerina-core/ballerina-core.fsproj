@@ -1,13 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <RuntimeIdentifiers>linux-x64;osx-x64;osx-arm64;osx-arm64;linux-arm64;win-x64</RuntimeIdentifiers>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode>true</RestoreLockedMode>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarnOn>1182,3387,3389</WarnOn>
 
     <!-- NuGet package metadata -->
     <PackageId>Ballerina.Core</PackageId>
@@ -22,52 +15,49 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="core/object/model.fs" />
-    <Compile Include="core/string/model.fs" />
-    <Compile Include="core/string-builder/model.fs" />
-    <Compile Include="range/model.fs" />
-    <Compile Include="updater/model.fs" />
-    <Compile Include="queries/quotationToLinq.fs" />
-    <Compile Include="crud/model.fs" />
-    <Compile Include="collections/tuple/model.fs" />
-    <Compile Include="collections/non-empty list/model.fs" />
-    <Compile Include="collections/sum/model.fs" />
-    <Compile Include="collections/option/model.fs" />
-    <Compile Include="collections/map/model.fs" />
-    <Compile Include="state/model.fs" />
-    <Compile Include="state/with error/model.fs" />
-    <Compile Include="state/with error/seq/model.fs" />
-    <Compile Include="coroutine/model.fs" />
-    <Compile Include="coroutine/runner.fs" />
-    <Compile Include="errors/model.fs" />
-    <Compile Include="core/json/model.fs" />
-    <Compile Include="business rule engine/expr/model.fs" />
-    <Compile Include="business rule engine/expr/patterns.fs" />
-    <Compile Include="business rule engine/exprtype/model.fs" />
-    <Compile Include="business rule engine/exprtype/patterns.fs" />
-    <Compile Include="business rule engine/model.fs" />
-    <Compile Include="business rule engine/exprtype/unification.fs" />
-    <Compile Include="business rule engine/exprtype/typeCheck.fs" />
-    <Compile Include="business rule engine/expr/eval.fs" />
-    <Compile Include="business rule engine/expr/execute.fs" />
-    <Compile Include="business rule engine/rule/variableRestrictionPredicate.fs" />
-    <Compile Include="business rule engine/rule/preprocess.fs" />
-    <Compile Include="business rule engine/rule/execute.fs" />
-    <Compile Include="business rule engine/parser/patterns.fs" />
-    <Compile Include="business rule engine/parser/expr.fs" />
-    <Compile Include="business rule engine/parser/exprtype.fs" />
-    <Compile Include="business rule engine/form engine/model.fs" />
-    <Compile Include="business rule engine/form engine/parser/model.fs" />
-    <Compile Include="business rule engine/form engine/parser/formsPatterns.fs" />
-    <Compile Include="business rule engine/form engine/parser/renderers.fs" />
-    <Compile Include="business rule engine/form engine/parser/runner.fs" />
-    <Compile Include="business rule engine/form engine/validator.fs" />
+    <Compile Include="Core/Object/Model.fs" />
+    <Compile Include="Core/String/Model.fs" />
+    <Compile Include="Core/StringBuilder/Model.fs" />
+    <Compile Include="Range/Model.fs" />
+    <Compile Include="Updater/Model.fs" />
+    <Compile Include="Queries/QuotationToLinq.fs" />
+    <Compile Include="Crud/Model.fs" />
+    <Compile Include="Collections/Tuple/Model.fs" />
+    <Compile Include="Collections/NonEmptyList/Model.fs" />
+    <Compile Include="Collections/Sum/Model.fs" />
+    <Compile Include="Collections/Option/Model.fs" />
+    <Compile Include="Collections/Map/Model.fs" />
+    <Compile Include="State/Model.fs" />
+    <Compile Include="State/WithError/Model.fs" />
+    <Compile Include="State/WithError/Seq/Model.fs" />
+    <Compile Include="Coroutine/Model.fs" />
+    <Compile Include="Coroutine/Runner.fs" />
+    <Compile Include="Errors/Model.fs" />
+    <Compile Include="Core/Json/Model.fs" />
+    <Compile Include="BusinessRuleEngine/Expr/Model.fs" />
+    <Compile Include="BusinessRuleEngine/Expr/Patterns.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/Model.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/Patterns.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/Unification.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/TypeCheck.fs" />
+    <Compile Include="BusinessRuleEngine/Expr/Eval.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/Patterns.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/Expr.fs" />
+    <Compile Include="BusinessRuleEngine/Parser/ExprType.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Model.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Parser/Model.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Parser/FormsPatterns.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Parser/Renderers.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Parser/Runner.fs" />
+    <Compile Include="BusinessRuleEngine/FormEngine/Validator.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
-    <PackageReference Update="FSharp.Core" Version="9.0.202" />
-    <PackageReference Include="FSharp.Data" Version="6.4.1" />
+    <!--
+    https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+    <PackageReference Update="FSharp.Core" Version="9.0.300" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+    <PackageReference Include="FSharp.Data" Version="6.6.0" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
   </ItemGroup>
 
