@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <!-- Common F# settings -->
+        <TargetFramework>net9.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RuntimeIdentifiers>linux-x64;osx-x64;osx-arm64;linux-arm64;win-x64</RuntimeIdentifiers>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <RestoreLockedMode>true</RestoreLockedMode>
+        <WarnOn>1182,3387,3389</WarnOn>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- TODO: enable -->
+        <!-- <WarningLevel>5</WarningLevel> -->
+    </PropertyGroup>
+</Project> 
