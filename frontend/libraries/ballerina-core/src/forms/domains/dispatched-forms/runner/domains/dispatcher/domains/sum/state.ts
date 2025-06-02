@@ -11,9 +11,9 @@ import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specifi
 
 export const SumDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       (renderer.kind == "sumRenderer"
         ? NestedDispatcher.Operations.DispatchAs(

@@ -16,9 +16,9 @@ import { StreamRenderer } from "../../../../../deserializer/domains/specificatio
 
 export const SingleSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.renderer.kind != "lookupRenderer"
         ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(

@@ -19,9 +19,10 @@ import {
 
 export const DispatchFormRunnerTemplate = <
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 >() =>
   Template.Default<
-    DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,
+    DispatchFormRunnerContext<T, TableParams> & DispatchFormRunnerState<T>,
     DispatchFormRunnerState<T>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {

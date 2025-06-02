@@ -10,9 +10,9 @@ import { Dispatcher } from "../../state";
 
 export const LookupDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       renderer: LookupRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       renderers: Map<string, Renderer<T>>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       MapRepo.Operations.tryFindWithError(

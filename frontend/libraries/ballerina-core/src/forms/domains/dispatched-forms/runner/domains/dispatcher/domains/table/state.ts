@@ -14,12 +14,12 @@ import { DispatcherContext } from "../../../../../deserializer/state";
 import { List, Map } from "immutable";
 import { TableRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/state";
 
-export const TableDispatcher = {
+export const TableDispatcher = <TableParams>() => ({
   Operations: {
     GetApi: (
       api: string | string[] | undefined,
-      dispatcherContext: DispatcherContext<any>,
-    ): ValueOrErrors<DispatchTableApiSource, string> =>
+      dispatcherContext: DispatcherContext<any, TableParams>,
+    ): ValueOrErrors<DispatchTableApiSource<TableParams>, string> =>
       api == undefined
         ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
         : dispatcherContext.tableApiSources == undefined
@@ -33,7 +33,7 @@ export const TableDispatcher = {
       T extends { [key in keyof T]: { type: any; state: any } },
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -46,7 +46,7 @@ export const TableDispatcher = {
     Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
       type: TableType<T>,
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       api: string | string[] | undefined,
       isNested: boolean,
       launcherName?: string,
@@ -120,7 +120,7 @@ export const TableDispatcher = {
                         ),
                     ),
                   ).Then((cellTemplates) =>
-                    TableDispatcher.Operations.DispatchDetailsRenderer(
+                    TableDispatcher<TableParams>().Operations.DispatchDetailsRenderer(
                       renderer,
                       dispatcherContext,
                     ).Then((detailsRenderer) =>
@@ -138,12 +138,12 @@ export const TableDispatcher = {
                               isNested,
                             )
                             .Then((concreteRenderer) =>
-                              TableDispatcher.Operations.GetApi(
+                              TableDispatcher<TableParams>().Operations.GetApi(
                                 renderer.api ?? api,
                                 dispatcherContext,
                               ).Then((tableApiSource) =>
                                 ValueOrErrors.Default.return(
-                                  TableAbstractRenderer(
+                                  TableAbstractRenderer<TableParams>()(
                                     Map(cellTemplates),
                                     detailsRenderer,
                                     renderer.visibleColumns,
@@ -187,4 +187,4 @@ export const TableDispatcher = {
               ),
             ),
   },
-};
+});

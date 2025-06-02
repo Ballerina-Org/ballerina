@@ -13,10 +13,10 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const TupleDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       type: TupleType<T>,
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(

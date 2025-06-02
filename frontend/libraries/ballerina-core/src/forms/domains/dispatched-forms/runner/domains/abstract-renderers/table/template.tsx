@@ -33,7 +33,7 @@ import { TableRunner } from "./coroutines/runner";
 
 function EmbeddedValueInfiniteStreamTemplate<TableParams>() {
   return ValueInfiniteStreamTemplate.mapContext<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState<TableParams>
+    AbstractTableRendererReadonlyContext<TableParams> & AbstractTableRendererState<TableParams>
   >((_) => _.customFormState.stream)
     .mapState<AbstractTableRendererState<TableParams>>(
       AbstractTableRendererState<TableParams>().Updaters.Core.customFormState.children.stream,
@@ -43,7 +43,7 @@ function EmbeddedValueInfiniteStreamTemplate<TableParams>() {
     }));
 }
 
-function TableAbstractRenderer<TableParams>() {
+export function TableAbstractRenderer<TableParams>() {
   return <
   Context extends FormLabel & {
     bindings: Bindings;
@@ -245,7 +245,7 @@ function TableAbstractRenderer<TableParams>() {
   );
 
   return Template.Default<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState<TableParams>,
+    AbstractTableRendererReadonlyContext<TableParams> & AbstractTableRendererState<TableParams>,
     AbstractTableRendererState<TableParams>,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueTable>;
@@ -485,5 +485,5 @@ function TableAbstractRenderer<TableParams>() {
         </IdProvider>
       </>
     );
-  }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate<TableParams>()]);
+  }).any([TableRunner<TableParams>(), EmbeddedValueInfiniteStreamTemplate<TableParams>()]);
 }}

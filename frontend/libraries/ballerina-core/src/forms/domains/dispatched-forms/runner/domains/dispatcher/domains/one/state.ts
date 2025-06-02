@@ -16,9 +16,10 @@ export const OneDispatcher = {
   Operations: {
     DispatchPreviewRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
+      TableParams,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -28,9 +29,9 @@ export const OneDispatcher = {
             "previewRenderer",
             "previewRenderer",
           ),
-    GetApi: (
+    GetApi: <TableParams>(
       api: string | string[],
-      dispatcherContext: DispatcherContext<any>,
+      dispatcherContext: DispatcherContext<any, TableParams>,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
         ? ValueOrErrors.Default.throwOne(
@@ -57,10 +58,10 @@ export const OneDispatcher = {
           : ValueOrErrors.Default.throwOne(
               `api must be a string or an array of strings`,
             ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       type: OneType<T>,
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       OneDispatcher.Operations.DispatchPreviewRenderer(
         renderer,

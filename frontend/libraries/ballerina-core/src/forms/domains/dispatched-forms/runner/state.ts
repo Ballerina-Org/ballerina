@@ -40,16 +40,17 @@ export type DispatchFormRunnerStatus<
 
 export type DispatchFormRunnerContext<
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 > = {
   extraContext: any;
   launcherRef: LauncherRef;
   showFormParsingErrors: BasicFun<
-    DispatchSpecificationDeserializationResult<T>,
+    DispatchSpecificationDeserializationResult<T, TableParams>,
     JSX.Element
   >;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
-} & DispatchFormsParserState<T>;
+} & DispatchFormsParserState<T, TableParams>;
 
 export type DispatchFormRunnerState<
   T extends { [key in keyof T]: { type: any; state: any } },

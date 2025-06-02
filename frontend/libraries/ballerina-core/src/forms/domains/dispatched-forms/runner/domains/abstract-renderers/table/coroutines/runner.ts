@@ -12,17 +12,17 @@ import {
 import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
 
-const Co = CoTypedFactory<
-  AbstractTableRendererReadonlyContext,
-  AbstractTableRendererState
+const Co = <TableParams>() => CoTypedFactory<
+  AbstractTableRendererReadonlyContext<TableParams>,
+  AbstractTableRendererState<TableParams>
 >();
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
-const intialiseTable = Co.GetState().then((current) => {
+const initializeTable = <TableParams>() => Co<TableParams>().GetState().then((current) => {
   if (current.value == undefined) {
-    return Co.Wait(0);
+    return Co<TableParams>().Wait(0);
   }
   const initialData = current.value.data;
   const hasMoreValues = current.value.hasMoreValues;
@@ -32,14 +32,14 @@ const intialiseTable = Co.GetState().then((current) => {
     current.fromTableApiParser,
   );
 
-  return Co.SetState(
-    replaceWith(AbstractTableRendererState.Default()).then(
-      AbstractTableRendererState.Updaters.Core.customFormState.children
+  return Co<TableParams>().SetState(
+    replaceWith(AbstractTableRendererState<TableParams>().Default()).then(
+      AbstractTableRendererState<TableParams>().Updaters.Core.customFormState.children
         .stream(
           replaceWith(
             ValueInfiniteStreamState.Default(
               DEFAULT_CHUNK_SIZE,
-              getChunkWithParams(Map<string, string>()),
+              getChunkWithParams(tableParams, Map<string, string>()), // FIXME: Nick
               initialData.size == 0 && hasMoreValues ? "loadMore" : false,
             ),
           )
@@ -60,12 +60,12 @@ const intialiseTable = Co.GetState().then((current) => {
             ),
         )
         .then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
+          AbstractTableRendererState<TableParams>().Updaters.Core.customFormState.children.getChunkWithParams(
             replaceWith(getChunkWithParams),
           ),
         )
         .then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
+          AbstractTableRendererState<TableParams>().Updaters.Core.customFormState.children.isInitialized(
             replaceWith(true),
           ),
         ),
@@ -73,7 +73,7 @@ const intialiseTable = Co.GetState().then((current) => {
   );
 });
 
-export const TableRunner = Co.Template<any>(intialiseTable, {
+export const TableRunner = <TableParams>() => Co<TableParams>().Template<any>(initializeTable<TableParams>(), {
   interval: 15,
   runFilter: (props) => {
     return !props.context.customFormState.isInitialized;

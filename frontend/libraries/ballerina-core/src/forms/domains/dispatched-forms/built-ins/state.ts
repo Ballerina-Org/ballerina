@@ -201,14 +201,14 @@ export const tryGetConcreteRenderer =
   };
 
 export const dispatchDefaultState =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Renderer<T>>,
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
-    tableApiSources: DispatchTableApiSources | undefined,
+    tableApiSources: DispatchTableApiSources<TableParams> | undefined,
   ) =>
   (
     t: DispatchParsedType<T>,
@@ -576,7 +576,7 @@ export const dispatchDefaultState =
 
       if (t.kind == "table") {
         return renderer.kind == "tableRenderer"
-          ? ValueOrErrors.Default.return(AbstractTableRendererState.Default())
+          ? ValueOrErrors.Default.return(AbstractTableRendererState<TableParams>().Default())
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultState for table`,
             );

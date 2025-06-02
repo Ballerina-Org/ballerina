@@ -16,9 +16,10 @@ export const RecordDispatcher = {
   Operations: {
     GetRecordConcreteRenderer: <
       T extends { [key in keyof T]: { type: any; state: any } },
+      TableParams,
     >(
       renderer: Renderer<T> | undefined,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       isNested: boolean,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer != undefined && renderer.kind != "lookupRenderer"
@@ -31,10 +32,10 @@ export const RecordDispatcher = {
             renderer?.renderer,
             isNested,
           ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       type: RecordType<T>,
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       isNested: boolean,
       formName?: string,
       launcherName?: string,

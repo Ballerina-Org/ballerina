@@ -70,6 +70,7 @@ export type ErrorRendererProps = {
 
 export type DispatcherContext<
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
@@ -94,7 +95,7 @@ export type DispatcherContext<
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   IdProvider: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
-  tableApiSources?: DispatchTableApiSources;
+  tableApiSources?: DispatchTableApiSources<TableParams>;
   lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
     type: DispatchParsedType<T>,
@@ -103,10 +104,11 @@ export type DispatcherContext<
 
 export type DispatchSpecificationDeserializationResult<
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 > = ValueOrErrors<
   {
     launchers: DispatchParsedLaunchers<T>;
-    dispatcherContext: DispatcherContext<T>;
+    dispatcherContext: DispatcherContext<T, TableParams>;
   },
   string
 >;
@@ -124,17 +126,17 @@ export type DispatchInfiniteStreamSources = BasicFun<
   >
 >;
 export type DispatchTableApiName = string;
-export type DispatchTableApiSource = {
+export type DispatchTableApiSource<TableParams> = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    BasicFun<TableParams, BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>>
   >;
 };
 
-export type DispatchTableApiSources = BasicFun<
+export type DispatchTableApiSources<TableParams> = BasicFun<
   string,
-  ValueOrErrors<DispatchTableApiSource, string>
+  ValueOrErrors<DispatchTableApiSource<TableParams>, string>
 >;
 
 export type DispatchApiName = string;
@@ -173,7 +175,7 @@ export type DispatchEntityApis = {
 };
 
 export const parseDispatchFormsToLaunchers =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
     defaultRecordRenderer: any,
@@ -184,12 +186,12 @@ export const parseDispatchFormsToLaunchers =
     entityApis: DispatchEntityApis,
     IdProvider: (props: IdWrapperProps) => React.ReactNode,
     ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    tableApiSources?: DispatchTableApiSources,
+    tableApiSources?: DispatchTableApiSources<TableParams>,
     lookupSources?: DispatchLookupSources,
   ) =>
   (
     specification: Specification<T>,
-  ): DispatchSpecificationDeserializationResult<T> =>
+  ): DispatchSpecificationDeserializationResult<T, TableParams> =>
     ValueOrErrors.Operations.All(
       List<
         ValueOrErrors<[string, DispatchParsedPassthroughLauncher<T>], string>
@@ -302,6 +304,7 @@ export const parseDispatchFormsToLaunchers =
 
 export type DispatchFormsParserContext<
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 > = {
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
@@ -315,25 +318,27 @@ export type DispatchFormsParserContext<
   entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
-  tableApiSources?: DispatchTableApiSources;
+  tableApiSources?: DispatchTableApiSources<TableParams>;
 };
 export type DispatchFormsParserState<
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 > = {
   deserializedSpecification: Synchronized<
     Unit,
-    DispatchSpecificationDeserializationResult<T>
+    DispatchSpecificationDeserializationResult<T, TableParams>
   >;
 };
 export const DispatchFormsParserState = <
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 >() => {
   return {
-    Default: (): DispatchFormsParserState<T> => ({
+    Default: (): DispatchFormsParserState<T, TableParams> => ({
       deserializedSpecification: Synchronized.Default(unit),
     }),
     Updaters: {
-      ...simpleUpdater<DispatchFormsParserState<T>>()(
+      ...simpleUpdater<DispatchFormsParserState<T, TableParams>>()(
         "deserializedSpecification",
       ),
     },

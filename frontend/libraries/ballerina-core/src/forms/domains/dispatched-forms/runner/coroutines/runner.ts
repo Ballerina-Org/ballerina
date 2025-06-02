@@ -13,9 +13,10 @@ import { Dispatcher } from "../../../../../../main";
 
 export const DispatchFormRunner = <
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormRunnerContext<T>,
+    DispatchFormRunnerContext<T, TableParams>,
     DispatchFormRunnerState<T>
   >();
 

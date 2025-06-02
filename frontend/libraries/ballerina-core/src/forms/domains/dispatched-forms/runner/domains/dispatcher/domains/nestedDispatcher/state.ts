@@ -5,9 +5,9 @@ import { Dispatcher } from "../../state";
 
 export const NestedDispatcher = {
   Operations: {
-    DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       as: string,
       formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -18,9 +18,9 @@ export const NestedDispatcher = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }, TableParams>(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, TableParams>,
       formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(

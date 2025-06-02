@@ -30,8 +30,8 @@ import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type AbstractTableRendererReadonlyContext = {
-  tableApiSource: DispatchTableApiSource;
+export type AbstractTableRendererReadonlyContext<TableParams> = {
+  tableApiSource: DispatchTableApiSource<TableParams>;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
   type: DispatchParsedType<any>;
   bindings: Bindings;

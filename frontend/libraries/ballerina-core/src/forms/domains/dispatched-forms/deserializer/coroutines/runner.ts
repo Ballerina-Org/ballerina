@@ -17,15 +17,16 @@ import {
 
 export const LoadAndDeserializeSpecification = <
   T extends { [key in keyof T]: { type: any; state: any } },
+  TableParams,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormsParserContext<T>,
-    DispatchFormsParserState<T>
+    DispatchFormsParserContext<T, TableParams>,
+    DispatchFormsParserState<T, TableParams>
   >();
 
   return Co.Template<Unit>(
     Co.GetState().then((current) =>
-      Synchronize<Unit, DispatchSpecificationDeserializationResult<T>>(
+      Synchronize<Unit, DispatchSpecificationDeserializationResult<T, TableParams>>(
         async () => {
           const serializedSpecifications = await current
             .getFormsConfig()
@@ -98,7 +99,7 @@ export const LoadAndDeserializeSpecification = <
         50,
       ).embed(
         (_) => _.deserializedSpecification,
-        DispatchFormsParserState<T>().Updaters.deserializedSpecification,
+        DispatchFormsParserState<T, TableParams>().Updaters.deserializedSpecification,
       ),
     ),
     {
