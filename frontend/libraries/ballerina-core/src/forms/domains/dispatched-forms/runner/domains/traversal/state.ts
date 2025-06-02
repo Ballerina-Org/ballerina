@@ -248,107 +248,112 @@ export const RendererTraversal = {
           );
         }
         if (renderer.kind == "sumRenderer") {
-          return rec(type.args[0], renderer.leftRenderer.renderer, traversalContext).Then(
-            (leftTraversal) =>
-              rec(type.args[1], renderer.rightRenderer.renderer, traversalContext).Then(
-                (rightTraversal) => {
-                  if (
-                    leftTraversal.kind == "l" &&
-                    rightTraversal.kind == "l" &&
-                    traverseNode.kind == "l"
-                  ) {
-                    return ValueOrErrors.Default.return(Option.Default.none());
-                  }
-                  return ValueOrErrors.Default.return(
-                    Option.Default.some<ValueTraversal<T, Res>>(
-                      (evalContext: EvalContext<T, Res>) => {
-                        const iterator = evalContext.traversalIterator;
-                        if (!PredicateValue.Operations.IsSum(iterator)) {
-                          return ValueOrErrors.Default.throwOne(
-                            `Error: traversal iterator is not a sum, got ${evalContext.traversalIterator}`,
+          return rec(
+            type.args[0],
+            renderer.leftRenderer.renderer,
+            traversalContext,
+          ).Then((leftTraversal) =>
+            rec(
+              type.args[1],
+              renderer.rightRenderer.renderer,
+              traversalContext,
+            ).Then((rightTraversal) => {
+              if (
+                leftTraversal.kind == "l" &&
+                rightTraversal.kind == "l" &&
+                traverseNode.kind == "l"
+              ) {
+                return ValueOrErrors.Default.return(Option.Default.none());
+              }
+              return ValueOrErrors.Default.return(
+                Option.Default.some<ValueTraversal<T, Res>>(
+                  (evalContext: EvalContext<T, Res>) => {
+                    const iterator = evalContext.traversalIterator;
+                    if (!PredicateValue.Operations.IsSum(iterator)) {
+                      return ValueOrErrors.Default.throwOne(
+                        `Error: traversal iterator is not a sum, got ${evalContext.traversalIterator}`,
+                      );
+                    }
+
+                    const isRight = iterator.value.kind == "r";
+
+                    if (isRight && rightTraversal.kind == "r") {
+                      if (traverseNode.kind == "r") {
+                        return traverseNode
+                          .value(evalContext)
+                          .Then((nodeResult: Res) => {
+                            return rightTraversal
+                              .value({
+                                ...evalContext,
+                                traversalIterator: iterator.value.value,
+                              })
+                              .Then((rightRes) => {
+                                return ValueOrErrors.Default.return<
+                                  Res,
+                                  string
+                                >(
+                                  traversalContext.joinRes([
+                                    nodeResult,
+                                    rightRes,
+                                  ]),
+                                );
+                              });
+                          });
+                      }
+                      return rightTraversal
+                        .value({
+                          ...evalContext,
+                          traversalIterator: iterator.value.value,
+                        })
+                        .Then((rightRes) => {
+                          return ValueOrErrors.Default.return<Res, string>(
+                            rightRes,
                           );
-                        }
+                        });
+                    }
 
-                        const isRight = iterator.value.kind == "r";
-
-                        if (isRight && rightTraversal.kind == "r") {
-                          if (traverseNode.kind == "r") {
-                            return traverseNode
-                              .value(evalContext)
-                              .Then((nodeResult: Res) => {
-                                return rightTraversal
-                                  .value({
-                                    ...evalContext,
-                                    traversalIterator: iterator.value.value,
-                                  })
-                                  .Then((rightRes) => {
-                                    return ValueOrErrors.Default.return<
-                                      Res,
-                                      string
-                                    >(
-                                      traversalContext.joinRes([
-                                        nodeResult,
-                                        rightRes,
-                                      ]),
-                                    );
-                                  });
+                    if (!isRight && leftTraversal.kind == "r") {
+                      if (traverseNode.kind == "r") {
+                        return traverseNode
+                          .value(evalContext)
+                          .Then((nodeResult: Res) => {
+                            return leftTraversal
+                              .value({
+                                ...evalContext,
+                                traversalIterator: iterator.value.value,
+                              })
+                              .Then((leftRes) => {
+                                return ValueOrErrors.Default.return<
+                                  Res,
+                                  string
+                                >(
+                                  traversalContext.joinRes([
+                                    nodeResult,
+                                    leftRes,
+                                  ]),
+                                );
                               });
-                          }
-                          return rightTraversal
-                            .value({
-                              ...evalContext,
-                              traversalIterator: iterator.value.value,
-                            })
-                            .Then((rightRes) => {
-                              return ValueOrErrors.Default.return<Res, string>(
-                                rightRes,
-                              );
-                            });
-                        }
+                          });
+                      }
+                      return leftTraversal
+                        .value({
+                          ...evalContext,
+                          traversalIterator: iterator.value.value,
+                        })
+                        .Then((leftRes) => {
+                          return ValueOrErrors.Default.return<Res, string>(
+                            leftRes,
+                          );
+                        });
+                    }
 
-                        if (!isRight && leftTraversal.kind == "r") {
-                          if (traverseNode.kind == "r") {
-                            return traverseNode
-                              .value(evalContext)
-                              .Then((nodeResult: Res) => {
-                                return leftTraversal
-                                  .value({
-                                    ...evalContext,
-                                    traversalIterator: iterator.value.value,
-                                  })
-                                  .Then((leftRes) => {
-                                    return ValueOrErrors.Default.return<
-                                      Res,
-                                      string
-                                    >(
-                                      traversalContext.joinRes([
-                                        nodeResult,
-                                        leftRes,
-                                      ]),
-                                    );
-                                  });
-                              });
-                          }
-                          return leftTraversal
-                            .value({
-                              ...evalContext,
-                              traversalIterator: iterator.value.value,
-                            })
-                            .Then((leftRes) => {
-                              return ValueOrErrors.Default.return<Res, string>(
-                                leftRes,
-                              );
-                            });
-                        }
-
-                        return ValueOrErrors.Default.return<Res, string>(
-                          traversalContext.zeroRes(unit),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+                    return ValueOrErrors.Default.return<Res, string>(
+                      traversalContext.zeroRes(unit),
+                    );
+                  },
+                ),
+              );
+            }),
           );
         }
       }
@@ -657,58 +662,59 @@ export const RendererTraversal = {
       }
 
       if (type.kind == "list" && renderer.kind == "listRenderer") {
-        return rec(type.args[0], renderer.elementRenderer.renderer, traversalContext).Then(
-          (elementTraversal) => {
-            if (elementTraversal.kind == "l" && traverseNode.kind == "l") {
-              return ValueOrErrors.Default.return(Option.Default.none());
-            }
-            return ValueOrErrors.Default.return(
-              Option.Default.some((evalContext: EvalContext<T, Res>) => {
-                const iterator = evalContext.traversalIterator;
-                if (!PredicateValue.Operations.IsTuple(iterator)) {
-                  return ValueOrErrors.Default.throwOne<Res, string>(
-                    `Error: traversal iterator for list is not a tuple, got ${JSON.stringify(
-                      iterator,
-                      null,
-                      2,
-                    )}`,
-                  );
-                }
-                return ValueOrErrors.Operations.All<Res, string>(
-                  iterator.values.map((value) =>
-                    elementTraversal.kind == "r"
-                      ? elementTraversal.value({
-                          ...evalContext,
-                          traversalIterator: value,
-                        })
-                      : ValueOrErrors.Default.return(
-                          traversalContext.zeroRes(unit),
-                        ),
-                  ),
-                ).Then((elementResults) =>
-                  traverseNode.kind == "r"
-                    ? traverseNode
-                        .value(evalContext)
-                        .Then((nodeResult: Res) =>
-                          ValueOrErrors.Default.return(
-                            elementResults.reduce(
-                              (acc, res) =>
-                                traversalContext.joinRes([acc, res]),
-                              nodeResult,
-                            ),
-                          ),
-                        )
-                    : ValueOrErrors.Default.return(
-                        elementResults.reduce(
-                          (acc, res) => traversalContext.joinRes([acc, res]),
-                          traversalContext.zeroRes(unit),
-                        ),
-                      ),
+        return rec(
+          type.args[0],
+          renderer.elementRenderer.renderer,
+          traversalContext,
+        ).Then((elementTraversal) => {
+          if (elementTraversal.kind == "l" && traverseNode.kind == "l") {
+            return ValueOrErrors.Default.return(Option.Default.none());
+          }
+          return ValueOrErrors.Default.return(
+            Option.Default.some((evalContext: EvalContext<T, Res>) => {
+              const iterator = evalContext.traversalIterator;
+              if (!PredicateValue.Operations.IsTuple(iterator)) {
+                return ValueOrErrors.Default.throwOne<Res, string>(
+                  `Error: traversal iterator for list is not a tuple, got ${JSON.stringify(
+                    iterator,
+                    null,
+                    2,
+                  )}`,
                 );
-              }),
-            );
-          },
-        );
+              }
+              return ValueOrErrors.Operations.All<Res, string>(
+                iterator.values.map((value) =>
+                  elementTraversal.kind == "r"
+                    ? elementTraversal.value({
+                        ...evalContext,
+                        traversalIterator: value,
+                      })
+                    : ValueOrErrors.Default.return(
+                        traversalContext.zeroRes(unit),
+                      ),
+                ),
+              ).Then((elementResults) =>
+                traverseNode.kind == "r"
+                  ? traverseNode
+                      .value(evalContext)
+                      .Then((nodeResult: Res) =>
+                        ValueOrErrors.Default.return(
+                          elementResults.reduce(
+                            (acc, res) => traversalContext.joinRes([acc, res]),
+                            nodeResult,
+                          ),
+                        ),
+                      )
+                  : ValueOrErrors.Default.return(
+                      elementResults.reduce(
+                        (acc, res) => traversalContext.joinRes([acc, res]),
+                        traversalContext.zeroRes(unit),
+                      ),
+                    ),
+              );
+            }),
+          );
+        });
       }
 
       if (type.kind == "map" && renderer.kind == "mapRenderer") {
