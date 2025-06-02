@@ -248,9 +248,9 @@ export const RendererTraversal = {
           );
         }
         if (renderer.kind == "sumRenderer") {
-          return rec(type.args[0], renderer, traversalContext).Then(
+          return rec(type.args[0], renderer.leftRenderer.renderer, traversalContext).Then(
             (leftTraversal) =>
-              rec(type.args[1], renderer, traversalContext).Then(
+              rec(type.args[1], renderer.rightRenderer.renderer, traversalContext).Then(
                 (rightTraversal) => {
                   if (
                     leftTraversal.kind == "l" &&
@@ -657,7 +657,7 @@ export const RendererTraversal = {
       }
 
       if (type.kind == "list" && renderer.kind == "listRenderer") {
-        return rec(type.args[0], renderer, traversalContext).Then(
+        return rec(type.args[0], renderer.elementRenderer.renderer, traversalContext).Then(
           (elementTraversal) => {
             if (elementTraversal.kind == "l" && traverseNode.kind == "l") {
               return ValueOrErrors.Default.return(Option.Default.none());
