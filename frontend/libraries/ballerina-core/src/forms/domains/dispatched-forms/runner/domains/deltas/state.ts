@@ -298,7 +298,7 @@ export type DispatchDeltaTransferMap<DispatchDeltaTransferCustom> =
   | { Discriminator: "MapAdd"; Add: DispatchTransferTuple2<any, any> }
   | { Discriminator: "MapRemove"; Remove: number };
 export type DispatchDeltaTransferRecord<DispatchDeltaTransferCustom> =
-  | { Discriminator: "RecordReplace"; Replace: any }
+  | { Discriminator: string; Replace: any }
   | ({ Discriminator: "RecordField" } & {
       [field: string]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     });
@@ -952,6 +952,19 @@ export const DispatchDeltaTransfer = {
             ]);
           }
           if (delta.kind == "RecordReplace") {
+            if (delta.type.kind != "lookup") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >(
+                `Error: cannot process non look up record delta ${delta}, not currently supported.`,
+              );
+            }
+            const lookupName = delta.type.name;
             return toRawObject(delta.replace, delta.type, delta.state).Then(
               (value) =>
                 ValueOrErrors.Default.return<
@@ -963,10 +976,10 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "RecordReplace",
+                    Discriminator: `${lookupName}Replace`,
                     Replace: value,
                   },
-                  "[RecordReplace]",
+                  `[${lookupName}Replace]`,
                   delta.isWholeEntityMutation,
                 ]),
             );
