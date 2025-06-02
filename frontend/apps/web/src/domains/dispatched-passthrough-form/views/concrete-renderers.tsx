@@ -74,7 +74,7 @@ export const PersonConcreteRenderers = {
       <
         OneAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
-      >(): OneAbstractRendererView =>
+      >(): OneAbstractRendererView<any> =>
       (props) => {
         const fm = props.foreignMutations;
         const ctx = props.context;
@@ -181,7 +181,7 @@ export const PersonConcreteRenderers = {
       <
         OneAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
-      >(): OneAbstractRendererView =>
+      >(): OneAbstractRendererView<any> =>
       (props) => {
         const fm = props.foreignMutations;
         const ctx = props.context;
@@ -353,7 +353,7 @@ export const PersonConcreteRenderers = {
       <
         OneAbstractRendererReadonlyContext,
         ForeignMutationsExpected,
-      >(): OneAbstractRendererView =>
+      >(): OneAbstractRendererView<any> =>
       (props) => {
         const fm = props.foreignMutations;
         const ctx = props.context;
