@@ -325,7 +325,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
   | {
       Discriminator: "TableMoveFromTo";
-      MoveFromTo: { Item1: string; Item2: string };
+      MoveFromTo: [string, string];
     };
 
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
@@ -1198,7 +1198,7 @@ export const DispatchDeltaTransfer = {
             >([
               {
                 Discriminator: "TableMoveFromTo",
-                MoveFromTo: { Item1: delta.id, Item2: delta.to },
+                MoveFromTo: [delta.id, delta.to],
               },
               `[TableMoveFromTo][${delta.id}][${delta.to}]`,
               delta.isWholeEntityMutation,
