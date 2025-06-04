@@ -846,12 +846,17 @@ module Renderers =
         let! disabledJson = sum.TryFindField "disabled" fields |> state.OfSum |> state.Catch
         let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse fields rendererJson
-        let! visible = visibleJson |> Sum.toOption |> Option.map Expr.Parse |> state.RunOption
+
+        let! visible =
+          visibleJson
+          |> Sum.toOption
+          |> Option.map (Expr.Parse >> state.OfSum)
+          |> state.RunOption
 
         let visible =
           visible |> Option.defaultWith (fun () -> Expr.Value(Value.ConstBool true))
 
-        let! disabled = disabledJson |> Option.map (Expr.Parse) |> state.RunOption
+        let! disabled = disabledJson |> Option.map (Expr.Parse >> state.OfSum) |> state.RunOption
 
         let fc =
           { FieldName = fieldName
@@ -1130,7 +1135,7 @@ module Renderers =
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         })
         (state {
-          let! expr = json |> Expr.Parse
+          let! expr = json |> Expr.Parse |> state.OfSum
           return FormGroup.Computed expr
         })
       |> state.WithErrorContext $"...when parsing group {groupName}"

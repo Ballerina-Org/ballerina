@@ -4,6 +4,7 @@ module Patterns =
   open Model
   open Ballerina.Collections.Sum
   open Ballerina.Errors
+  open Ballerina.Collections.NonEmptyList
 
   type ExprType with
     static member GetFields(t: ExprType) : Sum<List<string * ExprType>, Errors> =
@@ -68,3 +69,11 @@ module Patterns =
         | ExprType.UnitType -> return ()
         | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a lookup.""")
       }
+
+    static member CreateEnum(cases: NonEmptyList<string>) : Map<CaseName, UnionCase> =
+      let createEnumCase (caseName: string) : Model.CaseName * Model.UnionCase =
+        { CaseName = caseName },
+        { CaseName = caseName
+          Fields = ExprType.UnitType }
+
+      cases |> NonEmptyList.map createEnumCase |> NonEmptyList.ToList |> Map.ofList

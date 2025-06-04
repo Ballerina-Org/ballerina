@@ -8,28 +8,25 @@ open Common
 open Ballerina.Collections.Sum
 open Ballerina.Collections.NonEmptyList
 
-let private parseExpr json =
-  (Expr.Parse json).run ((), ()) |> Sum.map2 fst fst
-
 module ExprParserTests =
   [<Test>]
   let ``Should parse unit`` () =
     let json = JsonValue.Record [| "kind", JsonValue.String "unit" |]
-    let result = parseExpr json
+    let result = Expr.Parse json
     assertSuccess result (Expr.Value(Value.Unit))
 
   [<Test>]
   let ``Should parse boolean`` () =
     let json = JsonValue.Boolean true
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.Value(Value.ConstBool true))
 
   [<Test>]
   let ``Should parse string`` () =
     let json = JsonValue.String "string"
-    let result = parseExpr json
+    let result = Expr.Parse json
     assertSuccess result (Expr.Value(Value.ConstString "string"))
 
   [<Test>]
@@ -37,14 +34,14 @@ module ExprParserTests =
     let json =
       JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "1" |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
     assertSuccess result (Expr.Value(Value.ConstInt 1))
 
   [<Test>]
   let ``Should parse int (backward compatibility)`` () =
     let json = JsonValue.Number 2m
 
-    let result = parseExpr json
+    let result = Expr.Parse json
     assertSuccess result (Expr.Value(Value.ConstInt 2))
 
   [<Test>]
@@ -54,7 +51,7 @@ module ExprParserTests =
         [| "kind", JsonValue.String "and"
            "operands", JsonValue.Array [| JsonValue.Boolean true; JsonValue.Boolean false |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess
       result
@@ -68,7 +65,7 @@ module ExprParserTests =
            "parameter", JsonValue.String "x"
            "body", JsonValue.Boolean true |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.Value(Value.Lambda({ VarName = "x" }, Expr.Value(Value.ConstBool true))))
 
@@ -90,7 +87,7 @@ module ExprParserTests =
                           "body", JsonValue.Boolean true |] |] |] |]
 
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess
       result
@@ -106,7 +103,7 @@ module ExprParserTests =
         [| "kind", JsonValue.String "fieldLookup"
            "operands", JsonValue.Array [| JsonValue.String "record"; JsonValue.String "fieldName" |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName"))
 
@@ -115,7 +112,7 @@ module ExprParserTests =
     let json =
       JsonValue.Record [| "kind", JsonValue.String "varLookup"; "varName", JsonValue.String "x" |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.VarLookup { VarName = "x" })
 
@@ -126,7 +123,7 @@ module ExprParserTests =
         [| "kind", JsonValue.String "itemLookup"
            "operands", JsonValue.Array [| JsonValue.String "array"; JsonValue.Number 2m |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.Project(Expr.Value(Value.ConstString "array"), 2))
 
@@ -140,7 +137,7 @@ module ExprParserTests =
              [| "name", JsonValue.String "Alice"
                 "age", JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String "30" |] |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     let expectedExpr =
       Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
@@ -155,7 +152,7 @@ module ExprParserTests =
            "case", JsonValue.String "caseName"
            "value", JsonValue.Boolean true |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     let expectedExpr = Expr.Value(Value.CaseCons("caseName", Value.ConstBool true))
 
@@ -168,7 +165,7 @@ module ExprParserTests =
         [| "kind", JsonValue.String "tuple"
            "elements", JsonValue.Array [| JsonValue.String "a"; JsonValue.String "b" |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     let expectedExpr =
       Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
@@ -182,7 +179,7 @@ module ExprParserTests =
         [| "kind", JsonValue.String "list"
            "elements", JsonValue.Array [| JsonValue.String "a"; JsonValue.String "b" |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     assertSuccess result (Expr.Value(Value.List [ Value.ConstString "a"; Value.ConstString "b" ]))
 
@@ -191,28 +188,28 @@ module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert unit to and from Json`` () =
     let expr = Expr.Value(Value.Unit)
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert boolean to and from Json`` () =
     let expr = Expr.Value(Value.ConstBool true)
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert string to and from Json`` () =
     let expr = Expr.Value(Value.ConstString "string")
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert int to and from Json`` () =
     let expr = Expr.Value(Value.ConstInt 42)
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -221,21 +218,21 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.Binary(BinaryOperator.Or, Expr.Value(Value.ConstBool true), Expr.Value(Value.ConstBool false))
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert varLookup to and from Json`` () =
     let expr = Expr.VarLookup { VarName = "x" }
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert projection to and from Json`` () =
     let expr = Expr.Project(Expr.Value(Value.ConstString "array"), 2)
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -245,7 +242,7 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.Value(Value.Lambda({ VarName = "x" }, Expr.Value(Value.ConstBool true)))
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -257,7 +254,7 @@ module ExprToAndFromJsonTests =
         Map.ofList [ ("case1", ({ VarName = "x" }, Expr.Value(Value.ConstBool true))) ]
       )
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -266,7 +263,7 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.RecordFieldLookup(Expr.Value(Value.ConstString "record"), "fieldName")
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -275,14 +272,14 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.Value(Value.Record(Map.ofList [ ("name", Value.ConstString "Alice"); ("age", Value.ConstInt 30) ]))
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert caseCons to and from Json`` () =
     let expr = Expr.Value(Value.CaseCons("caseName", Value.ConstInt 30))
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -290,7 +287,7 @@ module ExprToAndFromJsonTests =
   let ``Should convert tuple to and from Json`` () =
     let expr = Expr.Value(Value.Tuple [ Value.ConstString "a"; Value.ConstString "b" ])
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -298,7 +295,7 @@ module ExprToAndFromJsonTests =
   let ``Should convert list to and from Json`` () =
     let expr = Expr.Value(Value.List [ Value.ConstString "a"; Value.ConstString "b" ])
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -315,7 +312,7 @@ module ExprToAndFromJsonRecursiveExpressions =
               Expr.Binary(BinaryOperator.And, Expr.Value(Value.ConstBool true), Expr.VarLookup { VarName = "x" }))) ]
       )
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -327,7 +324,7 @@ module ExprToAndFromJsonRecursiveExpressions =
         "fieldName"
       )
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -344,7 +341,7 @@ module ExprToAndFromJsonRecursiveExpressions =
         Expr.Value(Value.ConstBool true)
       )
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -361,7 +358,7 @@ module ExprToAndFromJsonRecursiveExpressions =
         )
       )
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     assertSuccess result expr
 
@@ -373,7 +370,7 @@ module ExprParserErrorTests =
         [| "kind", JsonValue.String "invalidOperator"
            "operands", JsonValue.Array [| JsonValue.Boolean true; JsonValue.Boolean false |] |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     match result with
     | Left _ -> Assert.Fail "Expected error but got success"
@@ -384,7 +381,7 @@ module ExprParserErrorTests =
     let expr =
       Expr.MakeRecord(Map.ofList [ ("fieldName", Expr.Value(Value.ConstString "value")) ])
 
-    let result = expr |> Expr.ToJson |> Sum.bind parseExpr
+    let result = expr |> Expr.ToJson |> Sum.bind Expr.Parse
 
     match result with
     | Left _ -> Assert.Fail "Expected error but got success"
@@ -396,7 +393,7 @@ module ExprParserErrorTests =
   let ``Should return an error for each parser if the kind is invalid`` () =
     let json = JsonValue.Record [| "kind", JsonValue.String "invalid" |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     match result with
     | Left _ -> Assert.Fail "Expected error but got success"
@@ -413,7 +410,7 @@ module ExprParserErrorTests =
   let ``Should only return an error for the specific parser if the kind is invalid`` (kind: string) =
     let json = JsonValue.Record [| "kind", JsonValue.String kind |]
 
-    let result = parseExpr json
+    let result = Expr.Parse json
 
     match result with
     | Left _ -> Assert.Fail "Expected error but got success"
