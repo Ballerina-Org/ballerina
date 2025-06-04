@@ -39,7 +39,7 @@ const intialiseTable = Co.GetState().then((current) => {
           replaceWith(
             ValueInfiniteStreamState.Default(
               DEFAULT_CHUNK_SIZE,
-              getChunkWithParams(Map<string, string>()),
+              getChunkWithParams({ foo: "bar" }), // FIXME: Nick
               initialData.size == 0 && hasMoreValues ? "loadMore" : false,
             ),
           )

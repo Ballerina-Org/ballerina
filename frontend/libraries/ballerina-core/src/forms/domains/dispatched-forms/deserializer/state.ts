@@ -22,6 +22,7 @@ import {
   OneAbstractRendererState,
   ValueOption,
   DispatchInjectables,
+  TableParams,
 } from "../../../../../main";
 
 import {
@@ -128,7 +129,7 @@ export type DispatchTableApiSource = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    BasicFun<TableParams, ValueInfiniteStreamState["getChunk"]>
   >;
 };
 

@@ -30,6 +30,10 @@ import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
+export type TableParams = {
+  foo: string;  // FIXME: Nick
+};
+
 export type AbstractTableRendererReadonlyContext = {
   tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
@@ -49,7 +53,7 @@ export type AbstractTableRendererState = {
     streamParams: Debounced<Map<string, string>>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
-      Map<string, string>,
+      TableParams,
       ValueInfiniteStreamState["getChunk"]
     >;
   };

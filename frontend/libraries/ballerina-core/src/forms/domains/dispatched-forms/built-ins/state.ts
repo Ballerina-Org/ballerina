@@ -423,41 +423,9 @@ export const dispatchDefaultState =
               `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
             )
           : typeof renderer.api == "string"
-            ? tableApiSources == undefined
-              ? ValueOrErrors.Default.throwOne(
-                  `table api sources referenced but no table api sources are provided`,
+            ? ValueOrErrors.Default.throwOne(
+                `string value not valid for a one renderer: ${renderer.api}`,
                 )
-              : tableApiSources(renderer.api) == undefined
-                ? ValueOrErrors.Default.throwOne(
-                    `cannot find table api source for ${renderer.api}`,
-                  )
-                : t.args.kind !== "lookup"
-                  ? ValueOrErrors.Default.throwOne(
-                      `expected lookup type for one but got ${t.args}`,
-                    )
-                  : tableApiSources(renderer.api).Then((tableApiSource) =>
-                      MapRepo.Operations.tryFindWithError(
-                        t.args.name,
-                        types,
-                        () =>
-                          `cannot find lookup type ${JSON.stringify(
-                            t.args,
-                          )} in ${JSON.stringify(t)}`,
-                      ).Then((lookupType) =>
-                        ValueOrErrors.Default.return(
-                          OneAbstractRendererState.Default((_: string) =>
-                            tableApiSource.getMany(
-                              dispatchFromAPIRawValue(
-                                lookupType,
-                                types,
-                                converters,
-                                injectedPrimitives,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
             : lookupSources == undefined
               ? ValueOrErrors.Default.throwOne(
                   `lookup sources referenced but no lookup sources are provided`,
