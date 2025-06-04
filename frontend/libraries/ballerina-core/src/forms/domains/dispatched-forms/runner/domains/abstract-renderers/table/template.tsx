@@ -413,7 +413,7 @@ export const TableAbstractRenderer = <
                 ),
               add: () => {
                 const delta: DispatchDelta = {
-                  kind: "TableAdd",
+                  kind: "TableAddEmpty",
                   type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
