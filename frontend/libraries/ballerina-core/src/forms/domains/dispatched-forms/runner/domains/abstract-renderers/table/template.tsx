@@ -29,7 +29,7 @@ import {
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
-import { TableRunner } from "./coroutines/runner";
+import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
 
 const EmbeddedValueInfiniteStreamTemplate =
   ValueInfiniteStreamTemplate.mapContext<
@@ -267,7 +267,7 @@ export const TableAbstractRenderer = <
       );
     }
 
-    if (!props.context.customFormState.isInitialized) {
+    if (!props.context.customFormState.initializationStatus) {
       return <></>;
     }
 
@@ -477,5 +477,9 @@ export const TableAbstractRenderer = <
         </IdProvider>
       </>
     );
-  }).any([TableRunner, EmbeddedValueInfiniteStreamTemplate]);
+  }).any([
+    TableRunner,
+    TableReinitialiseRunner,
+    EmbeddedValueInfiniteStreamTemplate,
+  ]);
 };

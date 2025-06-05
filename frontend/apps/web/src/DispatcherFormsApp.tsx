@@ -39,6 +39,7 @@ import {
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
+import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
@@ -371,6 +372,7 @@ export const DispatcherFormsApp = (props: {}) => {
                         ),
                         onEntityChange: onPersonConfigChange,
                       },
+                      remoteEntityVersionIdentifier: v4(),
                       showFormParsingErrors: ShowFormsParsingErrors,
                       extraContext: {},
                     }}
@@ -407,6 +409,7 @@ export const DispatcherFormsApp = (props: {}) => {
                       config,
                       onEntityChange: onPersonEntityChange,
                     },
+                    remoteEntityVersionIdentifier: v4(),
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),
