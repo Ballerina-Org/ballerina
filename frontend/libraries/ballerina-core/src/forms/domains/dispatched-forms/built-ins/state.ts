@@ -1528,8 +1528,6 @@ export const dispatchToAPIRawValue =
           );
         }
 
-        console.debug({ raw });
-
         return ValueOrErrors.Default.return(
           converters["Table"].toAPIRawValue([
             raw,
