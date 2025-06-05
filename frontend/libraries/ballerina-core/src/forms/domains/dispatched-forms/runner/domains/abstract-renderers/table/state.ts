@@ -50,7 +50,7 @@ export type AbstractTableRendererState = {
     selectedRows: Set<string>;
     selectedDetailRow: [number, string] | undefined;
     isInitialized: boolean;
-    streamParams: Debounced<Map<string, string>>;
+    streamParams: Debounced<TableParams>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
       TableParams,
@@ -65,7 +65,7 @@ export const AbstractTableRendererState = {
       isInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      streamParams: Debounced.Default(Map()),
+      streamParams: Debounced.Default({foo: "bar"}),
       // TODO: replace with su
       getChunkWithParams: undefined as any,
       stream: undefined as any,
@@ -106,7 +106,9 @@ export const AbstractTableRendererState = {
       ): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
-            MapRepo.Updaters.upsert(key, () => "", _),
+            (current) => ({
+              foo: _(current.foo),
+            }),
           ),
         ),
       loadMore: (): Updater<AbstractTableRendererState> =>

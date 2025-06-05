@@ -15,6 +15,7 @@ import {
   DispatchTableApiSources,
   DispatchOneSource,
   DispatchLookupSources,
+  TableParams,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
 import { City } from "../../address/state";
@@ -66,7 +67,7 @@ const getActiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
+    (streamParams: TableParams) =>
     ([streamPosition]: [ValueStreamPosition]) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
@@ -177,7 +178,7 @@ const getActiveFriends: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
+    (streamParams: TableParams) =>
     ([streamPosition]: [ValueStreamPosition]) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
