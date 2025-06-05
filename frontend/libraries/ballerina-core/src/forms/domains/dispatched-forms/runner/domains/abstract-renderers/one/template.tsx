@@ -153,9 +153,9 @@ export const OneAbstractRenderer = <Context,>(
 
         // TODO, must return the ID in the delta,
         const delta: DispatchDelta = {
-          kind: "OptionValue",
-          value: nestedDelta,
-          isWholeEntityMutation: true,
+          kind: "OneValue",
+          nestedDelta,
+          isWholeEntityMutation: false,
         };
 
         props.foreignMutations.onChange(id, delta);
@@ -241,9 +241,9 @@ export const OneAbstractRenderer = <Context,>(
 
               // TODO, must return the ID in the delta,
               const delta: DispatchDelta = {
-                kind: "OptionValue",
-                value: nestedDelta,
-                isWholeEntityMutation: true,
+                kind: "OneValue",
+                nestedDelta,
+                isWholeEntityMutation: false,
               };
 
               props.foreignMutations.onChange(id, delta);
@@ -426,14 +426,48 @@ export const OneAbstractRenderer = <Context,>(
                     ),
                   ),
                 ),
+              clear: () => {
+                const delta: DispatchDelta = {
+                  kind: "OneReplace",
+                  replace: PredicateValue.Default.unit(),
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+                    Synchronized.Updaters.sync(
+                      AsyncState.Updaters.toLoaded(
+                        ValueOrErrors.Default.return(
+                          PredicateValue.Default.unit(),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+                props.foreignMutations.onChange(id, delta);
+              },
               select: (_) => {
                 const delta: DispatchDelta = {
-                  kind: "OptionReplace",
+                  kind: "OneReplace",
                   replace: _,
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
-                  },
+                  type: props.context.type,
+                  isWholeEntityMutation: false,
+                };
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+                    Synchronized.Updaters.sync(
+                      AsyncState.Updaters.toLoaded(
+                        ValueOrErrors.Default.return(_),
+                      ),
+                    ),
+                  ),
+                );
+                props.foreignMutations.onChange(id, delta);
+              },
+              create: (_) => {
+                const delta: DispatchDelta = {
+                  kind: "OneCreateValue",
+                  value: _,
                   type: props.context.type,
                   isWholeEntityMutation: true,
                 };
@@ -441,7 +475,28 @@ export const OneAbstractRenderer = <Context,>(
                   OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
                     Synchronized.Updaters.sync(
                       AsyncState.Updaters.toLoaded(
-                        ValueOrErrors.Default.return(_),
+                        ValueOrErrors.Default.return<
+                          ValueRecord | ValueUnit,
+                          string
+                        >(_),
+                      ),
+                    ),
+                  ),
+                );
+                props.foreignMutations.onChange(id, delta);
+              },
+              delete: () => {
+                const delta: DispatchDelta = {
+                  kind: "OneDeleteValue",
+                  isWholeEntityMutation: true,
+                };
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
+                    Synchronized.Updaters.sync(
+                      AsyncState.Updaters.toLoaded(
+                        ValueOrErrors.Default.return(
+                          PredicateValue.Default.unit(),
+                        ),
                       ),
                     ),
                   ),

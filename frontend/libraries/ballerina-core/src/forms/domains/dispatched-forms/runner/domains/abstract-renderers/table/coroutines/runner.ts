@@ -73,6 +73,10 @@ const intialiseTable = Co.GetState().then((current) => {
   );
 });
 
+const reinitialise = Co.GetState().then((current) => {
+  return Co.Wait(0);
+});
+
 export const TableRunner = Co.Template<any>(intialiseTable, {
   interval: 15,
   runFilter: (props) => {

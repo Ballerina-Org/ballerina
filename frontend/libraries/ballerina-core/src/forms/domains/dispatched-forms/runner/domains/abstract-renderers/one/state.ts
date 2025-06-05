@@ -144,6 +144,9 @@ export type OneAbstractRendererView<Context> = View<
       // clearSelection: SimpleCallback<void>;
       setStreamParam: BasicFun2<string, string, void>;
       select: SimpleCallback<ValueRecord | ValueUnit>;
+      create: SimpleCallback<ValueRecord>;
+      delete: SimpleCallback<void>;
+      clear: SimpleCallback<void>;
       loadMore: SimpleCallback<void>;
       reload: SimpleCallback<void>;
     }
