@@ -36,6 +36,7 @@ import {
   MapRepo,
   BasicFun2,
   Value,
+  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -46,6 +47,7 @@ export type OneAbstractRendererReadonlyContext =
   > & {
     getApi: BasicFun<Guid, Promise<any>>;
     fromApiParser: (value: any) => ValueOrErrors<ValueRecord, string>;
+    remoteEntityVersionIdentifier: string;
   };
 
 export type OneAbstractRendererState = {
@@ -63,6 +65,9 @@ export type OneAbstractRendererState = {
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >;
+    initializationStatus: "not initialized" | "initialized" | "reinitializing";
+    previousRemoteEntityVersionIdentifier: string;
+    shouldUpdate: boolean;
   };
 };
 
@@ -81,6 +86,9 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
+      initializationStatus: "not initialized",
+      previousRemoteEntityVersionIdentifier: "",
+      shouldUpdate: false,
     },
   }),
   Updaters: {
@@ -101,6 +109,15 @@ export const OneAbstractRendererState = {
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "detailsState",
         ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "previousRemoteEntityVersionIdentifier",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "shouldUpdate",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "initializationStatus",
+        ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
         ...simpleUpdater<OneAbstractRendererState["commonFormState"]>()(
@@ -117,6 +134,10 @@ export const OneAbstractRendererState = {
           Debounced.Updaters.Template.value(
             Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
+        ),
+      shouldUpdate: (_: boolean) =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldUpdate(
+          replaceWith(_),
         ),
     },
   },

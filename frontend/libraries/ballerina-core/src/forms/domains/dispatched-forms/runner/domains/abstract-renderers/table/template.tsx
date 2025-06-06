@@ -23,9 +23,6 @@ import {
   getLeafIdentifierFromIdentifier,
   TableType,
   ValueTable,
-  Updater,
-  OrderedMapRepo,
-  unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";

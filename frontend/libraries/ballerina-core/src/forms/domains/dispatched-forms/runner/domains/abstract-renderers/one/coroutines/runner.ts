@@ -78,6 +78,25 @@ const intializeOne = Co.GetState().then((current) => {
     return Co.Wait(0);
   }
 
+  const initializationCompletedCo = Co.SetState(
+    OneAbstractRendererState.Updaters.Core.customFormState.children
+      .initializationStatus(
+        replaceWith<
+          OneAbstractRendererState["customFormState"]["initializationStatus"]
+        >("initialized"),
+      )
+      .then(
+        OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+          replaceWith(current.remoteEntityVersionIdentifier),
+        ),
+      )
+      .then(
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldUpdate(
+          replaceWith(false),
+        ),
+      ),
+  );
+
   const hasInitialValue =
     (PredicateValue.Operations.IsOption(current.value) &&
       current.value.isSome) ||
@@ -88,28 +107,31 @@ const intializeOne = Co.GetState().then((current) => {
         ? current.value.value
         : PredicateValue.Default.unit();
 
-    return Co.SetState(
-      OneAbstractRendererState.Updaters.Core.customFormState.children
-        .selectedValue(
-          Synchronized.Updaters.sync(
-            AsyncState.Updaters.toLoaded(
-              ValueOrErrors.Default.return(initialValue),
+    return Co.Seq([
+      Co.SetState(
+        OneAbstractRendererState.Updaters.Core.customFormState.children
+          .selectedValue(
+            Synchronized.Updaters.sync(
+              AsyncState.Updaters.toLoaded(
+                ValueOrErrors.Default.return(initialValue),
+              ),
             ),
-          ),
-        )
-        .then(
-          OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-            replaceWith(
-              ValueInfiniteStreamState.Default(
-                // TODO: add to config
-                100,
-                //TODO: need params
-                current.customFormState.getChunkWithParams(id)(Map()),
+          )
+          .then(
+            OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+              replaceWith(
+                ValueInfiniteStreamState.Default(
+                  100,
+                  current.customFormState.getChunkWithParams(id)(
+                    current.customFormState.streamParams.value,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-    );
+      ),
+      initializationCompletedCo,
+    ]);
   }
 
   return Co.Seq([
@@ -117,9 +139,10 @@ const intializeOne = Co.GetState().then((current) => {
       OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
         replaceWith(
           ValueInfiniteStreamState.Default(
-            // TODO:
             100,
-            current.customFormState.getChunkWithParams(id)(Map()),
+            current.customFormState.getChunkWithParams(id)(
+              current.customFormState.streamParams.value,
+            ),
           ),
         ),
       ),
@@ -141,6 +164,7 @@ const intializeOne = Co.GetState().then((current) => {
           _,
         ),
     ),
+    initializationCompletedCo,
   ]);
 });
 
@@ -164,15 +188,34 @@ const debouncer = DebouncerCo.Repeat(
   ]),
 );
 
+const reinitialize = Co.GetState().then((_) => {
+  return Co.SetState(
+    OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+      replaceWith<
+        OneAbstractRendererState["customFormState"]["initializationStatus"]
+      >("reinitializing"),
+    ),
+  );
+});
+
+export const reinitializeOneRunner = Co.Template<any>(reinitialize, {
+  interval: 15,
+  runFilter: (props) =>
+    props.context.customFormState.initializationStatus === "initialized" &&
+    props.context.customFormState.shouldUpdate &&
+    props.context.remoteEntityVersionIdentifier !==
+      props.context.customFormState.previousRemoteEntityVersionIdentifier,
+});
+
 export const initializeOneRunner = Co.Template<{
   onChange: DispatchOnChange<ValueOption>;
 }>(intializeOne, {
   interval: 15,
   runFilter: (props) =>
-    !AsyncState.Operations.hasValue(
-      props.context.customFormState.selectedValue.sync,
-    ),
+    props.context.customFormState.initializationStatus === "not initialized" ||
+    props.context.customFormState.initializationStatus === "reinitializing",
 });
+
 export const oneTableDebouncerRunner = DebouncerCo.Template<{
   onChange: DispatchOnChange<ValueOption>;
 }>(debouncer, {

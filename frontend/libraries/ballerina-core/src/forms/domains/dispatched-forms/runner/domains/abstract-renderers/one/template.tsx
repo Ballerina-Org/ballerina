@@ -36,6 +36,7 @@ import {
   initializeOneRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
+  reinitializeOneRunner,
 } from "./coroutines/runner";
 
 export const OneAbstractRenderer = <Context,>(
@@ -452,13 +453,19 @@ export const OneAbstractRenderer = <Context,>(
                   isWholeEntityMutation: false,
                 };
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-                    Synchronized.Updaters.sync(
-                      AsyncState.Updaters.toLoaded(
-                        ValueOrErrors.Default.return(_),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return(_),
+                        ),
+                      ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                        true,
                       ),
                     ),
-                  ),
                 );
                 props.foreignMutations.onChange(id, delta);
               },
@@ -467,7 +474,7 @@ export const OneAbstractRenderer = <Context,>(
                   kind: "OneCreateValue",
                   value: _,
                   type: props.context.type,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
@@ -510,6 +517,7 @@ export const OneAbstractRenderer = <Context,>(
     );
   }).any([
     initializeOneRunner,
+    reinitializeOneRunner,
     oneTableLoaderRunner,
     oneTableDebouncerRunner.mapContextFromProps((props) => {
       const local = props.context.bindings.get("local");
