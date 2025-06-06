@@ -740,6 +740,8 @@ export const PersonConcreteRenderers = {
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
         return (
+          <>
+          <h3>{props.context.label}</h3>
           <div
             style={{
               display: "flex",
@@ -890,6 +892,7 @@ export const PersonConcreteRenderers = {
               )}
             </div>
           </div>
+          </>
         );
       },
   },

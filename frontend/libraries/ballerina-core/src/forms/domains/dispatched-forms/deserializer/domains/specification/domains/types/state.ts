@@ -46,6 +46,11 @@ export type SerializedKeyOfType<T> = {
   args?: Array<string>;
 };
 
+export type ValidatedSerializedKeyOfType<T> = {
+  fun: "KeyOf";
+  args: Array<string>;
+};
+
 export type SerializedLookupType = string;
 
 export type SerializedType<T> =
@@ -168,9 +173,7 @@ export const SerializedType = {
     Array.isArray(_.args) &&
     _.args.length == 1,
   isUnit: <T>(_: SerializedType<T>): _ is string => _ == "unit",
-  isKeyOf: <T>(
-    _: SerializedType<T>,
-  ): _ is { fun: "KeyOf"; args: Array<string> } =>
+  isKeyOf: <T>(_: SerializedType<T>): _ is ValidatedSerializedKeyOfType<T> =>
     typeof _ == "object" &&
     "fun" in _ &&
     _.fun == "KeyOf" &&
@@ -433,11 +436,7 @@ export const DispatchParsedType = {
         : false,
     ParseRawKeyOf: <T>(
       typeName: DispatchTypeName,
-      rawType: {
-        // TODO: put in a type
-        fun: "KeyOf";
-        args: Array<string>;
-      },
+      rawType: ValidatedSerializedKeyOfType<T>,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       alreadyParsedTypes: Map<
@@ -541,7 +540,6 @@ export const DispatchParsedType = {
       ],
       string
     > => {
-      //  if the type has already been parsed because it was extended by another type
       if (alreadyParsedTypes.has(typeName)) {
         const parsedType = alreadyParsedTypes.get(typeName)!;
         if (parsedType.kind == "errors") {
@@ -564,8 +562,6 @@ export const DispatchParsedType = {
         );
       }
 
-      // if its extended, check if the extended type has already been parsed
-      // TODO Add MAP ERRORS for extended types actions
       return (
         SerializedType.isExtendedType(rawType)
           ? ValueOrErrors.Operations.All(
@@ -623,17 +619,23 @@ export const DispatchParsedType = {
                       );
                 }),
               ),
-            ).Then((parsedExtendedRecordTypes) =>
-              ValueOrErrors.Default.return<
-                Map<DispatchTypeName, RecordType<T>>,
-                string
-              >(
-                parsedExtendedRecordTypes.reduce(
-                  (acc, type) => acc.set(type[0], type[1]),
-                  Map<DispatchTypeName, RecordType<T>>(),
-                ),
-              ),
             )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When parsing extended types`,
+                ),
+              )
+              .Then((parsedExtendedRecordTypes) =>
+                ValueOrErrors.Default.return<
+                  Map<DispatchTypeName, RecordType<T>>,
+                  string
+                >(
+                  parsedExtendedRecordTypes.reduce(
+                    (acc, type) => acc.set(type[0], type[1]),
+                    Map<DispatchTypeName, RecordType<T>>(),
+                  ),
+                ),
+              )
           : ValueOrErrors.Default.return<
               Map<DispatchTypeName, RecordType<T>>,
               string
@@ -710,17 +712,7 @@ export const DispatchParsedType = {
             ),
           ),
       );
-
-      // if yes, merge at end,
-      // id not, parse it first then merge at end
     },
-    // extend types in line
-    // same for keyof types, should be able to depend on the recursive type extension
-    // same for union types
-    // consider after, some kind of 'look up' to avoid repeated parsing
-    // consider a type merging operation
-    // Test iwth doubly, triply extended types
-    // remove the extends field from the record type
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,
