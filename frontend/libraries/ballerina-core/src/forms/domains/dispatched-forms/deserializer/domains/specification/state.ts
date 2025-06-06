@@ -98,27 +98,70 @@ export const Specification = {
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<DispatchParsedType<T>, string>>(
           Object.entries(serializedTypes)
-            // Skip keyof and union types in first pass as they depend on other types, which may be extended
-            .filter(
-              ([_, rawType]) =>
-                !SerializedType.isKeyOf(rawType) &&
-                !SerializedType.isUnion(rawType),
-            )
-            .map(
-              ([rawTypeName, rawType]: [
-                rawTypeName: string,
-                rawType: SerializedType<T>,
-              ]) =>
-                DispatchParsedType.Operations.ParseRawType(
-                  rawTypeName,
-                  rawType,
-                  Set(Object.keys(serializedTypes)),
-                  serializedTypes,
-                  injectedPrimitives,
-                ),
-            ),
+            .reduce((acc, [rawTypeName, rawType]) => {
+              const res = DispatchParsedType.Operations.ParseRawType(
+                rawTypeName,
+                rawType,
+                Set(Object.keys(serializedTypes)),
+                serializedTypes,
+                acc,
+                injectedPrimitives,
+              );
+              if (res.kind == "errors") {
+                return acc.set(rawTypeName, res);
+              }
+              return res.value[1].set(
+                rawTypeName,
+                ValueOrErrors.Default.return<
+                  DispatchParsedType<T>,
+                  string
+                >(res.value[0]),
+              );
+            }, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>())
+            .valueSeq()
+            .toList(),
         ),
       )
+        // .Then((parsedTypes) => parsedTypes.valueSeq().toList())),
+        // .reduce(
+        //   (acc, [rawTypeName, rawType]) =>
+        //     acc.set(
+        //       rawTypeName,
+        //       DispatchParsedType.Operations.ParseRawType(
+        //         rawTypeName,
+        //         rawType,
+        //         Set(Object.keys(serializedTypes)),
+        //         serializedTypes,
+        //         acc,
+        //         injectedPrimitives,
+        //       ),
+        //     ),
+        //   Map<
+        //     DispatchTypeName,
+        //     ValueOrErrors<DispatchParsedType<T>, string>
+        //   >(),
+        // )
+
+        // Skip keyof and union types in first pass as they depend on other types, which may be extended
+        // .filter(
+        //   ([_, rawType]) =>
+        //     !SerializedType.isKeyOf(rawType) &&
+        //     !SerializedType.isUnion(rawType),
+        // )
+        // .map(
+        //   ([rawTypeName, rawType]: [
+        //     rawTypeName: string,
+        //     rawType: SerializedType<T>,
+        //   ]) =>
+        //     DispatchParsedType.Operations.ParseRawType(
+        //       rawTypeName,
+        //       rawType,
+        //       Set(Object.keys(serializedTypes)),
+        //       serializedTypes,
+        //       injectedPrimitives,
+        //     ),
+        // ),
+
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing unextended types`),
         )

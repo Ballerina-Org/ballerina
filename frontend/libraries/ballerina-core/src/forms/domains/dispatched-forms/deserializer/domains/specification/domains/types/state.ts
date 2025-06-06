@@ -73,8 +73,8 @@ export const SerializedType = {
     typeof type == "object" &&
     "extends" in type &&
     Array.isArray(type.extends) &&
-    type.extends.length == 1 &&
-    DispatchisString(type.extends[0]),
+    type.extends.length > 0 &&
+    type.extends.every(DispatchisString),
   hasFields: <T>(type: SerializedType<T>): type is { fields: any } =>
     typeof type == "object" && "fields" in type,
   isPrimitive: <T>(
@@ -401,40 +401,33 @@ export const DispatchParsedType = {
       fst.kind == "record" && snd.kind == "record"
         ? fst.name == snd.name
         : fst.kind == "table" && snd.kind == "table"
-          ? fst.name == snd.name
-          : fst.kind == "one" && snd.kind == "one"
-            ? fst.name == snd.name
-            : fst.kind == "lookup" && snd.kind == "lookup"
-              ? fst.name == snd.name
-              : fst.kind == "primitive" && snd.kind == "primitive"
-                ? fst.name == snd.name
-                : fst.kind == "list" && snd.kind == "list"
-                  ? fst.name == snd.name
-                  : fst.kind == "singleSelection" &&
-                      snd.kind == "singleSelection"
-                    ? fst.name == snd.name
-                    : fst.kind == "multiSelection" &&
-                        snd.kind == "multiSelection"
-                      ? fst.name == snd.name
-                      : fst.kind == "map" && snd.kind == "map"
-                        ? fst.name == snd.name
-                        : fst.kind == "sum" && snd.kind == "sum"
-                          ? fst.name == snd.name
-                          : fst.kind == "tuple" && snd.kind == "tuple"
-                            ? fst.name == snd.name &&
-                              fst.args.length == snd.args.length &&
-                              fst.args.every((v, i) =>
-                                DispatchParsedType.Operations.Equals(
-                                  v,
-                                  snd.args[i],
-                                ),
-                              )
-                            : fst.kind == "union" && snd.kind == "union"
-                              ? fst.args.size == snd.args.size &&
-                                fst.args.every(
-                                  (v, i) => v.name == snd.args.get(i)!.name,
-                                )
-                              : false,
+        ? fst.name == snd.name
+        : fst.kind == "one" && snd.kind == "one"
+        ? fst.name == snd.name
+        : fst.kind == "lookup" && snd.kind == "lookup"
+        ? fst.name == snd.name
+        : fst.kind == "primitive" && snd.kind == "primitive"
+        ? fst.name == snd.name
+        : fst.kind == "list" && snd.kind == "list"
+        ? fst.name == snd.name
+        : fst.kind == "singleSelection" && snd.kind == "singleSelection"
+        ? fst.name == snd.name
+        : fst.kind == "multiSelection" && snd.kind == "multiSelection"
+        ? fst.name == snd.name
+        : fst.kind == "map" && snd.kind == "map"
+        ? fst.name == snd.name
+        : fst.kind == "sum" && snd.kind == "sum"
+        ? fst.name == snd.name
+        : fst.kind == "tuple" && snd.kind == "tuple"
+        ? fst.name == snd.name &&
+          fst.args.length == snd.args.length &&
+          fst.args.every((v, i) =>
+            DispatchParsedType.Operations.Equals(v, snd.args[i]),
+          )
+        : fst.kind == "union" && snd.kind == "union"
+        ? fst.args.size == snd.args.size &&
+          fst.args.every((v, i) => v.name == snd.args.get(i)!.name)
+        : false,
     ParseRawKeyOf: <T>(
       fieldName: DispatchTypeName,
       rawType: SerializedType<T>,
@@ -492,63 +485,142 @@ export const DispatchParsedType = {
       rawType: unknown,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
+      parsedTypes: Map<
+        DispatchTypeName,
+        ValueOrErrors<DispatchParsedType<T>, string>
+      >,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
-    ): ValueOrErrors<RecordType<T>, string> => {
+    ): ValueOrErrors<
+      [
+        RecordType<T>,
+        Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>,
+      ],
+      string
+    > => {
+      //  if the type has already been parsed because it was extended by another type
+      if (parsedTypes.has(typeName)) {
+        return parsedTypes.get(typeName)!.Then((parsedType) => {
+          if (parsedType.kind == "record") {
+            return ValueOrErrors.Default.return(parsedType);
+          } else {
+            return ValueOrErrors.Default.throwOne(
+              `Error: ${JSON.stringify(parsedType)} is not a valid record`,
+            );
+          }
+        });
+      }
+
       if (!SerializedType.isRecord(rawType)) {
         return ValueOrErrors.Default.throwOne(
           `Error: ${JSON.stringify(rawType)} is not a valid record`,
         );
       }
-      return ValueOrErrors.Operations.All(
-        List(
-          Object.entries(rawType.fields).map(([fieldName, fieldType]) =>
-            DispatchParsedType.Operations.ParseRawType(
-              fieldName,
-              fieldType as SerializedType<T>,
-              typeNames,
-              serializedTypes,
-              injectedPrimitives,
-            ).Then((parsedField) =>
-              ValueOrErrors.Default.return([fieldName, parsedField] as const),
-            ),
-          ),
-        ),
-      )
-        .Then((parsedFields) =>
-          ValueOrErrors.Default.return(
-            Map(
-              parsedFields.map(([fieldName, parsedField]) => [
+
+      // if its extended, check if the extended type has already been parsed
+
+      return (
+        SerializedType.isExtendedType(rawType)
+          ? ValueOrErrors.Operations.All(
+              List<ValueOrErrors<DispatchParsedType<T>, string>>(
+                rawType.extends.map((extendedTypeName) => {
+                  if (parsedTypes.has(extendedTypeName)) {
+                    return parsedTypes
+                      .get(extendedTypeName)!
+                      .Then((parsedType) => {
+                        if (parsedType.kind == "record") {
+                          return ValueOrErrors.Default.return(parsedType);
+                        } else {
+                          return ValueOrErrors.Default.throwOne(
+                            `Error: ${JSON.stringify(
+                              parsedType,
+                            )} is not a valid record`,
+                          );
+                        }
+                      });
+                  }
+                  return serializedTypes[extendedTypeName] == undefined
+                    ? ValueOrErrors.Default.throwOne(
+                        `Error: cannot find extended type ${extendedTypeName} in types`,
+                      )
+                    : DispatchParsedType.Operations.ParseRawType(
+                        extendedTypeName,
+                        serializedTypes[extendedTypeName],
+                        typeNames,
+                        serializedTypes,
+                        parsedTypes,
+                        injectedPrimitives,
+                      );
+                }),
+              ),
+            )
+          : ValueOrErrors.Default.return(List())
+      ).Then((parsedExtendedTypes) => {
+        return ValueOrErrors.Operations.All(
+          List(
+            Object.entries(rawType.fields).map(([fieldName, fieldType]) =>
+              DispatchParsedType.Operations.ParseRawType(
                 fieldName,
-                parsedField,
-              ]),
+                fieldType as SerializedType<T>,
+                typeNames,
+                serializedTypes,
+                parsedTypes,
+                injectedPrimitives,
+              ).Then((parsedField) =>
+                ValueOrErrors.Default.return([fieldName, parsedField] as const),
+              ),
             ),
           ),
         )
-        .Then((parsedField) =>
-          ValueOrErrors.Default.return<RecordType<T>, string>(
-            DispatchParsedType.Default.record(
-              typeName,
-              parsedField,
-              typeName,
-              rawType.extends ?? [],
+          .Then((parsedFields) =>
+            ValueOrErrors.Default.return(
+              Map(
+                parsedFields.map(([fieldName, parsedField]) => [
+                  fieldName,
+                  parsedField,
+                ]),
+              ),
             ),
-          ),
-        );
+          )
+          .Then((parsedField) =>
+            ValueOrErrors.Default.return<RecordType<T>, string>(
+              DispatchParsedType.Default.record(
+                typeName,
+                parsedField,
+                typeName,
+                rawType.extends ?? [],
+              ),
+            ),
+          );
+      });
+
+      // if yes, merge at end,
+      // id not, parse it first then merge at end
     },
+    // extend types in line
+    // same for keyof types, should be able to depend on the recursive type extension
+    // same for union types
+    // consider after, some kind of 'look up' to avoid repeated parsing
+    // consider a type merging operation
+    // Test iwth doubly, triply extended types
+    // remove the extends field from the record type
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
+      parsedTypes: Map<
+        DispatchTypeName,
+        ValueOrErrors<DispatchParsedType<T>, string>
+      >,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
-    ): ValueOrErrors<DispatchParsedType<T>, string> => {
-      const result: ValueOrErrors<DispatchParsedType<T>, string> = (() => {
+    ): ValueOrErrors<[DispatchParsedType<T>, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>], string> => {
+      const result: ValueOrErrors<[DispatchParsedType<T>, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>], string> = (() => {
         if (SerializedType.isPrimitive(rawType, injectedPrimitives))
           return ValueOrErrors.Default.return(
-            DispatchParsedType.Default.primitive(
+            [DispatchParsedType.Default.primitive(
               rawType == "guid" ? "string" : rawType,
               typeName,
-            ),
+            ), parsedTypes],
           );
         if (SerializedType.isSingleSelection(rawType))
           return DispatchParsedType.Operations.ParseRawType(
@@ -556,14 +628,15 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.singleSelection(
+              [DispatchParsedType.Default.singleSelection(
                 typeName,
-                [parsedArgs],
+                [parsedArgs[0]],
                 typeName,
-              ),
+              ), parsedTypes],
             ),
           );
         if (SerializedType.isMultiSelection(rawType))
@@ -572,14 +645,15 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.multiSelection(
+              [DispatchParsedType.Default.multiSelection(
                 typeName,
-                [parsedArgs],
+                [parsedArgs[0]],
                 typeName,
-              ),
+              ), parsedTypes],
             ),
           );
         if (SerializedType.isList(rawType))
@@ -588,10 +662,11 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.list(typeName, [parsedArgs], typeName),
+              [DispatchParsedType.Default.list(typeName, [parsedArgs[0]], typeName), parsedTypes],
             ),
           );
         if (SerializedType.isTuple(rawType))
@@ -603,17 +678,18 @@ export const DispatchParsedType = {
                   arg,
                   typeNames,
                   serializedTypes,
+                  parsedTypes,
                   injectedPrimitives,
                 ),
               ),
             ),
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.tuple(
+              [DispatchParsedType.Default.tuple(
                 typeName,
-                parsedArgs.toArray(),
+                parsedArgs.map(([parsedArg]) => parsedArg).toArray(),
                 typeName,
-              ),
+              ), parsedTypes],
             ),
           );
         if (SerializedType.isMap(rawType))
@@ -622,6 +698,7 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArgs0) =>
             DispatchParsedType.Operations.ParseRawType(
@@ -629,14 +706,14 @@ export const DispatchParsedType = {
               rawType.args[1],
               typeNames,
               serializedTypes,
+              parsedTypes,
               injectedPrimitives,
             ).Then((parsedArgs1) =>
-              ValueOrErrors.Default.return(
-                DispatchParsedType.Default.map(
+              ValueOrErrors.Default.return([DispatchParsedType.Default.map(
                   typeName,
-                  [parsedArgs0, parsedArgs1],
+                  [parsedArgs0[0], parsedArgs1[0]],
                   typeName,
-                ),
+                ), parsedTypes],
               ),
             ),
           );
@@ -646,6 +723,7 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArgs0) =>
             DispatchParsedType.Operations.ParseRawType(
@@ -653,14 +731,15 @@ export const DispatchParsedType = {
               rawType.args[1],
               typeNames,
               serializedTypes,
+              parsedTypes,
               injectedPrimitives,
             ).Then((parsedArgs1) =>
               ValueOrErrors.Default.return(
-                DispatchParsedType.Default.sum(
+                [DispatchParsedType.Default.sum(
                   typeName,
-                  [parsedArgs0, parsedArgs1],
+                  [parsedArgs0[0], parsedArgs1[0]],
                   typeName,
-                ),
+                ), parsedTypes],
               ),
             ),
           );
@@ -670,6 +749,7 @@ export const DispatchParsedType = {
             rawType,
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           );
         if (SerializedType.isTable(rawType)) {
@@ -678,20 +758,21 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.table(typeName, [parsedArg], typeName),
+              [DispatchParsedType.Default.table(typeName, [parsedArg[0]], typeName), parsedTypes],
             ),
           );
         }
         if (SerializedType.isLookup(rawType, typeNames))
           return ValueOrErrors.Default.return(
-            DispatchParsedType.Default.lookup(rawType),
+            [DispatchParsedType.Default.lookup(rawType), parsedTypes],
           );
         if (SerializedType.isUnit(rawType)) {
           return ValueOrErrors.Default.return(
-            DispatchParsedType.Default.primitive("unit", typeName),
+            [DispatchParsedType.Default.primitive("unit", typeName), parsedTypes],
           );
         }
         if (SerializedType.isUnion(rawType))
@@ -711,11 +792,12 @@ export const DispatchParsedType = {
                         unionCase.fields,
                         typeNames,
                         serializedTypes,
+                        parsedTypes,
                         injectedPrimitives,
                       ).Then((parsedType) =>
                         ValueOrErrors.Default.return([
                           unionCase.caseName,
-                          parsedType,
+                          parsedType[0],
                         ]),
                       )
                   : DispatchParsedType.Operations.ParseRawType(
@@ -725,22 +807,23 @@ export const DispatchParsedType = {
                         : unionCase,
                       typeNames,
                       serializedTypes,
+                      parsedTypes,
                       injectedPrimitives,
                     ).Then((parsedType) =>
                       ValueOrErrors.Default.return([
                         unionCase.caseName,
-                        parsedType,
+                        parsedType[0],
                       ]),
                     ),
               ),
             ),
           ).Then((parsedUnionCases) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.union(
+              [DispatchParsedType.Default.union(
                 typeName,
                 Map(parsedUnionCases),
                 typeName,
-              ),
+              ), parsedTypes],
             ),
           );
         if (SerializedType.isOne(rawType))
@@ -749,10 +832,11 @@ export const DispatchParsedType = {
             rawType.args[0],
             typeNames,
             serializedTypes,
+            parsedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
             ValueOrErrors.Default.return(
-              DispatchParsedType.Default.one(typeName, parsedArg, typeName),
+              [DispatchParsedType.Default.one(typeName, parsedArg[0], typeName), parsedTypes],
             ),
           );
         return ValueOrErrors.Default.throwOne(
