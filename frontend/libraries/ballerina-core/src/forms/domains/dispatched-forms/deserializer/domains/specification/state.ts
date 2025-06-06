@@ -17,7 +17,11 @@ import {
   MapRepo,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
-import { DispatchParsedType, SerializedType } from "./domains/types/state";
+import {
+  DispatchParsedType,
+  RecordType,
+  SerializedType,
+} from "./domains/types/state";
 import {
   ConcreteRendererKinds,
   DispatchApiConverters,
@@ -96,7 +100,7 @@ export const Specification = {
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
       ValueOrErrors.Operations.All(
-        List<ValueOrErrors<DispatchParsedType<T>, string>>(
+        List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
             .reduce((acc, [rawTypeName, rawType]) => {
               const res = DispatchParsedType.Operations.ParseRawType(
@@ -112,133 +116,22 @@ export const Specification = {
               }
               return res.value[1].set(
                 rawTypeName,
-                ValueOrErrors.Default.return<
-                  DispatchParsedType<T>,
-                  string
-                >(res.value[0]),
+                ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
+                  res.value[0],
+                ),
               );
             }, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>())
-            .valueSeq()
-            .toList(),
-        ),
-      )
-        // .Then((parsedTypes) => parsedTypes.valueSeq().toList())),
-        // .reduce(
-        //   (acc, [rawTypeName, rawType]) =>
-        //     acc.set(
-        //       rawTypeName,
-        //       DispatchParsedType.Operations.ParseRawType(
-        //         rawTypeName,
-        //         rawType,
-        //         Set(Object.keys(serializedTypes)),
-        //         serializedTypes,
-        //         acc,
-        //         injectedPrimitives,
-        //       ),
-        //     ),
-        //   Map<
-        //     DispatchTypeName,
-        //     ValueOrErrors<DispatchParsedType<T>, string>
-        //   >(),
-        // )
-
-        // Skip keyof and union types in first pass as they depend on other types, which may be extended
-        // .filter(
-        //   ([_, rawType]) =>
-        //     !SerializedType.isKeyOf(rawType) &&
-        //     !SerializedType.isUnion(rawType),
-        // )
-        // .map(
-        //   ([rawTypeName, rawType]: [
-        //     rawTypeName: string,
-        //     rawType: SerializedType<T>,
-        //   ]) =>
-        //     DispatchParsedType.Operations.ParseRawType(
-        //       rawTypeName,
-        //       rawType,
-        //       Set(Object.keys(serializedTypes)),
-        //       serializedTypes,
-        //       injectedPrimitives,
-        //     ),
-        // ),
-
-        .MapErrors((errors) =>
-          errors.map((error) => `${error}\n...When parsing unextended types`),
-        )
-        .Then((unextendedTypes) =>
-          DispatchParsedType.Operations.ExtendDispatchParsedTypes(
-            unextendedTypes.reduce(
-              (acc, type) => acc.set(type.typeName, type),
-              Map<DispatchTypeName, DispatchParsedType<T>>(),
-            ),
-          ),
-        )
-        .MapErrors((errors) =>
-          errors.map((error) => `${error}\n...When extending types`),
-        )
-        .Then((extendedTypes) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<DispatchParsedType<T>, string>>(
-              Object.entries(serializedTypes)
-                .filter(([_, rawType]) => SerializedType.isKeyOf(rawType))
-                .map(
-                  ([rawTypeName, rawType]: [
-                    rawTypeName: string,
-                    rawType: SerializedType<T>,
-                  ]) =>
-                    DispatchParsedType.Operations.ParseRawKeyOf(
-                      rawTypeName,
-                      rawType,
-                      extendedTypes,
-                    ),
-                ),
-            ),
-          )
-            .MapErrors((errors) =>
-              errors.map((error) => `${error}\n...When parsing keyOf types`),
-            )
-            .Then((parsedKeyOfTypes) =>
-              ValueOrErrors.Default.return(
-                extendedTypes.merge(
-                  parsedKeyOfTypes.reduce(
-                    (acc, type) => acc.set(type.typeName, type),
-                    Map<DispatchTypeName, DispatchParsedType<T>>(),
-                  ),
-                ),
-              ),
-            )
-            .Then((parsedAndExtendedTypes) =>
-              ValueOrErrors.Operations.All(
-                List<ValueOrErrors<DispatchParsedType<T>, string>>(
-                  Object.entries(serializedTypes)
-                    // Skip keyof and union types in first pass as they depend on other types, which may be extended
-                    .filter(([_, rawType]) => SerializedType.isUnion(rawType))
-                    .map(
-                      ([rawTypeName, rawType]: [
-                        rawTypeName: string,
-                        rawType: SerializedType<T>,
-                      ]) =>
-                        DispatchParsedType.Operations.ParseRawType(
-                          rawTypeName,
-                          rawType,
-                          Set(Object.keys(serializedTypes)),
-                          serializedTypes,
-                          injectedPrimitives,
-                        ),
-                    ),
-                ),
-              ).Then((parsedUnionTypes) =>
-                ValueOrErrors.Default.return(
-                  parsedAndExtendedTypes.merge(
-                    parsedUnionTypes.reduce(
-                      (acc, type) => acc.set(type.typeName, type),
-                      Map<DispatchTypeName, DispatchParsedType<T>>(),
-                    ),
-                  ),
-                ),
+            .entrySeq()
+            .map(([name, type]) =>
+              type.Then((type) =>
+                ValueOrErrors.Default.return<
+                  [string, DispatchParsedType<T>],
+                  string
+                >([name, type]),
               ),
             ),
         ),
+      ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes))),
     DeserializeForms: <T>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
