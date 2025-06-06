@@ -90,7 +90,7 @@ const intializeOne = Co.GetState().then((current) => {
         OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
           replaceWith(current.remoteEntityVersionIdentifier),
         ),
-        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldUpdate(
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
           replaceWith(false),
         ),
         current.customFormState.initializationStatus == "reinitializing" &&
@@ -207,7 +207,7 @@ export const reinitializeOneRunner = Co.Template<any>(reinitialize, {
   interval: 15,
   runFilter: (props) =>
     props.context.customFormState.initializationStatus === "initialized" &&
-    props.context.customFormState.shouldUpdate &&
+    props.context.customFormState.shouldReinitialize &&
     props.context.remoteEntityVersionIdentifier !==
       props.context.customFormState.previousRemoteEntityVersionIdentifier,
 });

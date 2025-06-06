@@ -67,7 +67,7 @@ export type OneAbstractRendererState = {
     >;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
     previousRemoteEntityVersionIdentifier: string;
-    shouldUpdate: boolean;
+    shouldReinitialize: boolean;
   };
 };
 
@@ -88,7 +88,7 @@ export const OneAbstractRendererState = {
       stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
       initializationStatus: "not initialized",
       previousRemoteEntityVersionIdentifier: "",
-      shouldUpdate: false,
+      shouldReinitialize: false,
     },
   }),
   Updaters: {
@@ -113,7 +113,7 @@ export const OneAbstractRendererState = {
           "previousRemoteEntityVersionIdentifier",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "shouldUpdate",
+          "shouldReinitialize",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "initializationStatus",
@@ -135,8 +135,8 @@ export const OneAbstractRendererState = {
             Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
         ),
-      shouldUpdate: (_: boolean) =>
-        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldUpdate(
+      shouldReinitialize: (_: boolean) =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
           replaceWith(_),
         ),
     },

@@ -418,7 +418,7 @@ export const TableAbstractRenderer = <
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -428,7 +428,7 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
                   id: k,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
@@ -437,7 +437,7 @@ export const TableAbstractRenderer = <
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -448,7 +448,7 @@ export const TableAbstractRenderer = <
                   kind: "TableMoveTo",
                   id: k,
                   to,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
@@ -457,7 +457,7 @@ export const TableAbstractRenderer = <
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -467,7 +467,7 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
                   id: k,
-                  isWholeEntityMutation: true,
+                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
@@ -476,7 +476,7 @@ export const TableAbstractRenderer = <
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),

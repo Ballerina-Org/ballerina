@@ -444,7 +444,7 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     )
                     .then(
-                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
                         true,
                       ),
                     ),
@@ -468,7 +468,7 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     )
                     .then(
-                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
                         true,
                       ),
                     ),
@@ -495,7 +495,7 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     )
                     .then(
-                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
                         true,
                       ),
                     ),
@@ -519,7 +519,7 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     )
                     .then(
-                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
                         true,
                       ),
                     ),
