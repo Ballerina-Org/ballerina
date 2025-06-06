@@ -23,10 +23,6 @@ export type ValueOrErrors<v, e> = (
     this: ValueOrErrors<a, e>,
     k: BasicFun<a, ValueOrErrors<b, e>>,
   ) => ValueOrErrors<b, e>;
-  Catch: <a, e, e2>(
-    this: ValueOrErrors<a, e>,
-    f: BasicFun<List<e>, ValueOrErrors<a, e2>>,
-  ) => ValueOrErrors<a, e2>;
 };
 
 const operations = {
@@ -64,15 +60,6 @@ const operations = {
     k: BasicFun<a, ValueOrErrors<b, e>>,
   ): ValueOrErrors<b, e> {
     return this.Map(k).Flatten();
-  },
-  Catch: function <a, e, e2>(
-    this: ValueOrErrors<a, e>,
-    f: BasicFun<List<e>, ValueOrErrors<a, e2>>,
-  ): ValueOrErrors<a, e2> {
-    if (this.kind == "errors") {
-      return f(this.errors);
-    }
-    return this;
   },
 };
 
@@ -122,15 +109,13 @@ export const ValueOrErrors = {
       ValueOrErrors<ValueOrErrors<a, e>, e>,
       ValueOrErrors<a, e>
     > =>
-      Fun((_) => {
-        if (_.kind == "errors") {
-          return _;
-        } else if (_.value.kind == "errors") {
-          return ValueOrErrors.Default.throw(_.value.errors);
-        } else {
-          return _.value;
-        }
-      }),
+      Fun((_) =>
+        _.kind == "errors"
+          ? _
+          : _.value.kind == "errors"
+            ? ValueOrErrors.Default.throw(_.value.errors)
+            : _.value,
+      ),
     Then: <a, b, e>(
       k: BasicFun<a, ValueOrErrors<b, e>>,
     ): Fun<ValueOrErrors<a, e>, ValueOrErrors<b, e>> =>
