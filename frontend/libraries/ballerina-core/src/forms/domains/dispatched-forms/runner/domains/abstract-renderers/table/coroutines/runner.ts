@@ -64,7 +64,9 @@ const intialiseTable = Co.GetState().then((current) => {
           AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
             replaceWith(getChunkWithParams),
           ),
-          AbstractTableRendererState.Updaters.Template.shouldReinitialize(false),
+          AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+            false,
+          ),
           AbstractTableRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
             replaceWith(current.remoteEntityVersionIdentifier),
           ),
