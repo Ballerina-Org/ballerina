@@ -58,11 +58,20 @@
         "Id": "string"
       }
     },
-    "User": {
-      "extends": ["Identifiable"],
+    "Named": {
       "fields": {
-        "Name": "string",
-        "Surname": "string",
+        "Name": "string"
+      }
+    },
+    "FullNamed": {
+      "extends": ["Named"],
+      "fields": {
+        "Surname": "string"
+      }
+    },
+    "User": {
+      "extends": ["FullNamed", "Identifiable"],
+      "fields": {
         "Birthday": "Date",
         "Email": "string",
         "SubscribeToNewsletter": "boolean",
@@ -926,6 +935,7 @@
       "renderer": "personDetails",
       "fields": {
         "Friends": {
+          "label": "Friends",
           "renderer": {
             "type": "User",
             "renderer": "streamingTable",
@@ -1021,6 +1031,7 @@
           "api": "ActiveUsersApi"
         },
         "Children": {
+          "label": "Children",
           "renderer": {
             "type": "User",
             "renderer": "streamingTable",
