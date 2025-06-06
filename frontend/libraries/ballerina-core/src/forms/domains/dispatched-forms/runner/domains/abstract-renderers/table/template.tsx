@@ -154,7 +154,6 @@ export const TableAbstractRenderer = <
               kind: "TableValue",
               id: rowId,
               nestedDelta: nestedDelta,
-              tableType: props.context.type,
               isWholeEntityMutation: false,
             };
 
@@ -230,7 +229,6 @@ export const TableAbstractRenderer = <
             kind: "TableValue",
             id: props.context.customFormState.selectedDetailRow,
             nestedDelta: nestedDelta,
-            tableType: props.context.type,
             isWholeEntityMutation: false,
           };
 
@@ -414,7 +412,6 @@ export const TableAbstractRenderer = <
               add: () => {
                 const delta: DispatchDelta = {
                   kind: "TableAddEmpty",
-                  type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
@@ -430,7 +427,6 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
                   id: k,
-                  type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
@@ -447,7 +443,6 @@ export const TableAbstractRenderer = <
                   kind: "TableMoveTo",
                   id: k,
                   to,
-                  type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
@@ -463,7 +458,6 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
                   id: k,
-                  type: (props.context.type as TableType<any>).args[0],
                   isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
