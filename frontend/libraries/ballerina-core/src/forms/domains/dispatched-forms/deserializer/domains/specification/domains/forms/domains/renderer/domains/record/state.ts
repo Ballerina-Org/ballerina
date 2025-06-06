@@ -11,7 +11,6 @@ import {
 import { RecordType } from "../../../../../../../../../../../../../main";
 import {
   RecordFieldRenderer,
-  SerializedRecordFieldRenderer,
 } from "./domains/recordFieldRenderer/state";
 import { Renderer } from "../../state";
 
@@ -30,7 +29,6 @@ export type RecordRenderer<T> = {
   type: RecordType<T>;
   tabs: PredicateFormLayout;
   isInlined: boolean;
-  extendsForms?: string[];
 };
 
 export const RecordRenderer = {
@@ -39,14 +37,12 @@ export const RecordRenderer = {
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
     isInlined: boolean,
-    extendsForms?: string[],
     renderer?: Renderer<T>,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
     tabs,
-    extendsForms,
     renderer,
     isInlined,
   }),
@@ -148,7 +144,6 @@ export const RecordRenderer = {
                         Map(fieldTuples.toArray()),
                         tabs,
                         isInlined,
-                        validRecordForm.extends,
                         renderer,
                       ),
                     ),
