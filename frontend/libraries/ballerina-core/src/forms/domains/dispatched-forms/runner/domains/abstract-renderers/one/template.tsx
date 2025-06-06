@@ -167,7 +167,9 @@ export const OneAbstractRenderer = <Context,>(
         PreviewRenderer.mapContext<
           OneAbstractRendererReadonlyContext & OneAbstractRendererState
         >((_) => {
-          const state = RecordAbstractRendererState.Default.zero();
+          const state =
+            _.customFormState?.detailsState ??
+            RecordAbstractRendererState.Default.zero();
           return {
             ..._,
             ...state,
