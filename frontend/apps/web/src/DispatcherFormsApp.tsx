@@ -18,10 +18,8 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
-  id,
   IdWrapperProps,
   ErrorRendererProps,
-  InjectedPrimitive,
   DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
@@ -102,6 +100,9 @@ export const DispatcherFormsApp = (props: {}) => {
 
   // TODO replace with delta transfer
   const [entityPath, setEntityPath] = useState<any>(null);
+
+  const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] =
+    useState(v4());
 
   const parseCustomDelta =
     <T,>(
@@ -196,6 +197,7 @@ export const DispatcherFormsApp = (props: {}) => {
           parseCustomDelta,
         )(delta),
       );
+      setRemoteEntityVersionIdentifier(v4());
     }
   };
 
@@ -372,7 +374,7 @@ export const DispatcherFormsApp = (props: {}) => {
                         ),
                         onEntityChange: onPersonConfigChange,
                       },
-                      remoteEntityVersionIdentifier: v4(),
+                      remoteEntityVersionIdentifier,
                       showFormParsingErrors: ShowFormsParsingErrors,
                       extraContext: {},
                     }}
@@ -409,7 +411,7 @@ export const DispatcherFormsApp = (props: {}) => {
                       config,
                       onEntityChange: onPersonEntityChange,
                     },
-                    remoteEntityVersionIdentifier: v4(),
+                    remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),

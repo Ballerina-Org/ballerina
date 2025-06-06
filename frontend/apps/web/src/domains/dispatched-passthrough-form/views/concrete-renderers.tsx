@@ -584,7 +584,6 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): RecordAbstractRendererView<{ layout: FormLayout }, Unit> =>
       (props) => {
-        console.debug("friendsDetails", props);
         return (
           <>
             {props.context.layout.valueSeq().map((tab) =>

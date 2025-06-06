@@ -54,6 +54,7 @@ export type AbstractTableRendererState = {
       ValueInfiniteStreamState["getChunk"]
     >;
     previousRemoteEntityVersionIdentifier: string;
+    shouldUpdate: boolean;
   };
 };
 export const AbstractTableRendererState = {
@@ -68,6 +69,7 @@ export const AbstractTableRendererState = {
       getChunkWithParams: undefined as any,
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
+      shouldUpdate: false,
     },
   }),
   Updaters: {
@@ -94,6 +96,9 @@ export const AbstractTableRendererState = {
         ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
           "previousRemoteEntityVersionIdentifier",
         ),
+        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+          "shouldUpdate",
+        ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
         ...simpleUpdater<AbstractTableRendererState["commonFormState"]>()(
@@ -114,6 +119,10 @@ export const AbstractTableRendererState = {
       loadMore: (): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
+        ),
+      shouldUpdate: (_: boolean) =>
+        AbstractTableRendererState.Updaters.Core.customFormState.children.shouldUpdate(
+          replaceWith(_),
         ),
     },
   },

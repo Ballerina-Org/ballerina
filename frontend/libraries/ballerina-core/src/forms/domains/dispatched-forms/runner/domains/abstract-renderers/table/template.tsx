@@ -267,7 +267,7 @@ export const TableAbstractRenderer = <
       );
     }
 
-    if (!props.context.customFormState.initializationStatus) {
+    if (props.context.customFormState.initializationStatus !== "initialized") {
       return <></>;
     }
 
@@ -420,6 +420,10 @@ export const TableAbstractRenderer = <
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                      true,
+                    ),
                   ),
                 );
               },
@@ -434,6 +438,10 @@ export const TableAbstractRenderer = <
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
+                    ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                      true,
                     ),
                   ),
                 );
@@ -451,6 +459,10 @@ export const TableAbstractRenderer = <
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                      true,
+                    ),
                   ),
                 );
               },
@@ -465,6 +477,10 @@ export const TableAbstractRenderer = <
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
+                    ),
+                  ).then(
+                    AbstractTableRendererState.Updaters.Template.shouldUpdate(
+                      true,
                     ),
                   ),
                 );

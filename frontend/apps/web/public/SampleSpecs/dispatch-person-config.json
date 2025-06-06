@@ -69,6 +69,10 @@
           "fun": "Table",
           "args": ["Friend"]
         },
+        "Children": {
+          "fun": "Table",
+          "args": ["Child"]
+        },
         "City": {
           "fun": "SingleSelection",
           "args": ["CityRef"]
@@ -87,6 +91,20 @@
       }
     },
     "Friend": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        }
+      }
+    },
+    "Child": {
       "fields": {
         "Id": "string",
         "Name": "string",
@@ -518,6 +536,10 @@
           "fun": "Table",
           "args": ["User"]
         },
+        "Children": {
+          "fun": "Table",
+          "args": ["User"]
+        },
         "BestFriend": {
           "fun": "One",
           "args": ["User"]
@@ -553,6 +575,9 @@
       },
       "ActiveFriendsApi": {
         "type": "Friend"
+      },
+      "ChildrenApi": {
+        "type": "User"
       }
     },
     "entities": {
@@ -1013,6 +1038,101 @@
             }
           },
           "api": "ActiveUsersApi"
+        },
+        "Children": {
+          "renderer": {
+            "type": "User",
+            "renderer": "streamingTable",
+            "columns": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Surname": {
+                "renderer": "defaultString",
+                "disabled": true
+              },
+              "FavoriteColor": {
+                "renderer": "defaultEnum",
+                "options": "colors"
+              },
+              "City": {
+                "renderer": "defaultInfiniteStream",
+                "stream": "cities"
+              },
+              "StreetNumberAndCity": {
+                "renderer": "defaultTuple3",
+                "itemRenderers": [
+                  {
+                    "renderer": "defaultString"
+                  },
+                  {
+                    "renderer": "defaultNumber"
+                  },
+                  {
+                    "renderer": "defaultInfiniteStream",
+                    "stream": "cities"
+                  }
+                ]
+              }
+            },
+            "visibleColumns": [
+              "Name",
+              "Surname",
+              "FavoriteColor",
+              "City",
+              "StreetNumberAndCity"
+            ],
+            "detailsRenderer": {
+              "renderer": {
+                "type": "User",
+                "renderer": "userDetails",
+                "fields": {
+                  "Name": {
+                    "label": "First Name",
+                    "renderer": "defaultString"
+                  },
+                  "Surname": {
+                    "label": "Last Name",
+                    "renderer": "defaultString"
+                  },
+                  "Birthday": {
+                    "label": "Birthday",
+                    "renderer": "defaultDate"
+                  },
+                  "Email": {
+                    "label": "Email",
+                    "renderer": "defaultString"
+                  },
+                  "SubscribeToNewsletter": {
+                    "label": "Subscribe to Newsletter",
+                    "renderer": "defaultBoolean"
+                  },
+                  "FavoriteColor": {
+                    "label": "Favorite Color",
+                    "renderer": "defaultEnum",
+                    "options": "colors"
+                  },
+                  "Friends": {
+                    "label": "Friends",
+                    "renderer": "friendsFriendsTable",
+                    "api": "ActiveFriendsApi"
+                  }
+                },
+                "tabs": {
+                  "main": {
+                    "columns": {
+                      "main": {
+                        "groups": {
+                          "main": ["Name", "Surname", "Friends"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": "ChildrenApi"
         },
         "Job": {
           "label": "Job",
@@ -1527,6 +1647,7 @@
                 "main": [
                   "BestFriend",
                   "Friends",
+                  "Children",
                   "Job",
                   "Category",
                   "FullName",

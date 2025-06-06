@@ -64,6 +64,7 @@ const intialiseTable = Co.GetState().then((current) => {
           AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
             replaceWith(getChunkWithParams),
           ),
+          AbstractTableRendererState.Updaters.Template.shouldUpdate(false),
           AbstractTableRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
             replaceWith(current.remoteEntityVersionIdentifier),
           ),
@@ -77,7 +78,7 @@ const intialiseTable = Co.GetState().then((current) => {
   );
 });
 
-const reinitialise = Co.GetState().then((current) => {
+const reinitialise = Co.GetState().then((_) => {
   return Co.SetState(
     AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
       replaceWith<
@@ -91,6 +92,7 @@ export const TableReinitialiseRunner = Co.Template<any>(reinitialise, {
   interval: 15,
   runFilter: (props) =>
     props.context.customFormState.initializationStatus === "initialized" &&
+    props.context.customFormState.shouldUpdate &&
     props.context.remoteEntityVersionIdentifier !==
       props.context.customFormState.previousRemoteEntityVersionIdentifier,
 });
