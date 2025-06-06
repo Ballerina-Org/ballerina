@@ -53,9 +53,14 @@
         }
       ]
     },
-    "User": {
+    "Identifiable": {
       "fields": {
-        "Id": "string",
+        "Id": "string"
+      }
+    },
+    "User": {
+      "extends": ["Identifiable"],
+      "fields": {
         "Name": "string",
         "Surname": "string",
         "Birthday": "Date",
@@ -140,46 +145,22 @@
         }
       ]
     },
+    "AddressFields": {
+      "fields": {
+        "Departments": "boolean",
+        "SchoolAddress": "boolean",
+        "MainAddress": "boolean",
+        "AddressesAndAddressesWithLabel": "boolean",
+        "AddressesWithColorLabel": "boolean",
+        "AddressesBy": "boolean",
+        "Permissions": "boolean",
+        "CityByDepartment": "boolean",
+        "Holidays": "boolean"
+      }
+    },
     "AddressesFieldsEnum": {
-      "fun": "Union",
-      "args": [
-        {
-          "caseName": "Departments",
-          "fields": {}
-        },
-        {
-          "caseName": "SchoolAddress",
-          "fields": {}
-        },
-        {
-          "caseName": "MainAddress",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesAndAddressesWithLabel",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesWithColorLabel",
-          "fields": {}
-        },
-        {
-          "caseName": "AddressesBy",
-          "fields": {}
-        },
-        {
-          "caseName": "Permissions",
-          "fields": {}
-        },
-        {
-          "caseName": "CityByDepartment",
-          "fields": {}
-        },
-        {
-          "caseName": "Holidays",
-          "fields": {}
-        }
-      ]
+      "fun": "KeyOf",
+      "args": ["AddressFields"]
     },
     "AddressesFieldRef": {
       "fields": {
