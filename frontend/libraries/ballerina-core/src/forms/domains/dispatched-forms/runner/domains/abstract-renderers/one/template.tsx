@@ -151,7 +151,6 @@ export const OneAbstractRenderer = <Context,>(
             }),
         );
 
-        // TODO, must return the ID in the delta,
         const delta: DispatchDelta = {
           kind: "OneValue",
           nestedDelta,
@@ -239,7 +238,6 @@ export const OneAbstractRenderer = <Context,>(
                   }),
               );
 
-              // TODO, must return the ID in the delta,
               const delta: DispatchDelta = {
                 kind: "OneValue",
                 nestedDelta,
