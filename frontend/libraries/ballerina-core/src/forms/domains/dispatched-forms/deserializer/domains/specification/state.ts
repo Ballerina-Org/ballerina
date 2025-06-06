@@ -111,15 +111,14 @@ export const Specification = {
                 acc,
                 injectedPrimitives,
               );
-              if (res.kind == "errors") {
-                return acc.set(rawTypeName, res);
-              }
-              return res.value[1].set(
-                rawTypeName,
-                ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
-                  res.value[0],
-                ),
-              );
+              return res.kind == "errors"
+                ? acc.set(rawTypeName, res)
+                : res.value[1].set(
+                    rawTypeName,
+                    ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
+                      res.value[0],
+                    ),
+                  );
             }, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>())
             .entrySeq()
             .map(([name, type]) =>
