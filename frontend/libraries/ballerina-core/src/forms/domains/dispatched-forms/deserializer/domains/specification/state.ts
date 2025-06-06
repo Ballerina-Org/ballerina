@@ -194,172 +194,181 @@ export const Specification = {
               `the formsConfig does not contain an Api Converter for all injected primitives`,
             )
           : !Specification.Operations.hasTypes(serializedSpecifications)
-          ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
-              "types are missing from the specification",
-            )
-          : Specification.Operations.DeserializeSpecTypes(
-              serializedSpecifications.types,
-              injectedPrimitives,
-            )
-              .Then((allTypes) =>
-                !Specification.Operations.hasForms(serializedSpecifications)
-                  ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
-                      "forms are missing from the specification",
-                    )
-                  : Specification.Operations.DeserializeForms<T>(
-                      serializedSpecifications.forms,
-                      allTypes,
-                      concreteRenderers,
-                    ).Then((forms) =>
-                      !Specification.Operations.hasApis(
-                        serializedSpecifications,
+            ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
+                "types are missing from the specification",
+              )
+            : Specification.Operations.DeserializeSpecTypes(
+                serializedSpecifications.types,
+                injectedPrimitives,
+              )
+                .Then((allTypes) =>
+                  !Specification.Operations.hasForms(serializedSpecifications)
+                    ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
+                        "forms are missing from the specification",
                       )
-                        ? ValueOrErrors.Default.throwOne<
-                            Specification<T>,
-                            string
-                          >("apis are missing from the specification")
-                        : // TODO move all apis serialization to the apis state file
-                          EnumApis.Operations.Deserialize(
-                            serializedSpecifications.apis.enumOptions,
-                          ).Then((enums) =>
-                            StreamApis.Operations.Deserialize(
-                              serializedSpecifications.apis.searchableStreams,
-                            ).Then((streams) =>
-                              TableApis.Operations.Deserialize(
-                                serializedSpecifications.apis.tables,
-                              ).Then((tables) =>
-                                LookupApis.Operations.Deserialize(
-                                  serializedSpecifications.apis.lookups,
-                                ).Then((lookups) => {
-                                  let entities: Map<string, EntityApi> = Map();
-                                  Object.entries(
-                                    serializedSpecifications.apis.entities,
-                                  ).forEach(
-                                    ([entityApiName, entityApi]: [
-                                      entiyApiName: string,
-                                      entityApi: SerializedEntityApi,
-                                    ]) => {
-                                      entities = entities.set(entityApiName, {
-                                        type: entityApi.type,
-                                        methods: {
-                                          create:
-                                            entityApi.methods.includes(
-                                              "create",
+                    : Specification.Operations.DeserializeForms<T>(
+                        serializedSpecifications.forms,
+                        allTypes,
+                        concreteRenderers,
+                      ).Then((forms) =>
+                        !Specification.Operations.hasApis(
+                          serializedSpecifications,
+                        )
+                          ? ValueOrErrors.Default.throwOne<
+                              Specification<T>,
+                              string
+                            >("apis are missing from the specification")
+                          : // TODO move all apis serialization to the apis state file
+                            EnumApis.Operations.Deserialize(
+                              serializedSpecifications.apis.enumOptions,
+                            ).Then((enums) =>
+                              StreamApis.Operations.Deserialize(
+                                serializedSpecifications.apis.searchableStreams,
+                              ).Then((streams) =>
+                                TableApis.Operations.Deserialize(
+                                  serializedSpecifications.apis.tables,
+                                ).Then((tables) =>
+                                  LookupApis.Operations.Deserialize(
+                                    serializedSpecifications.apis.lookups,
+                                  ).Then((lookups) => {
+                                    let entities: Map<string, EntityApi> =
+                                      Map();
+                                    Object.entries(
+                                      serializedSpecifications.apis.entities,
+                                    ).forEach(
+                                      ([entityApiName, entityApi]: [
+                                        entiyApiName: string,
+                                        entityApi: SerializedEntityApi,
+                                      ]) => {
+                                        entities = entities.set(entityApiName, {
+                                          type: entityApi.type,
+                                          methods: {
+                                            create:
+                                              entityApi.methods.includes(
+                                                "create",
+                                              ),
+                                            get: entityApi.methods.includes(
+                                              "get",
                                             ),
-                                          get: entityApi.methods.includes(
-                                            "get",
-                                          ),
-                                          update:
-                                            entityApi.methods.includes(
-                                              "update",
-                                            ),
-                                          default:
-                                            entityApi.methods.includes(
-                                              "default",
-                                            ),
-                                        },
-                                      });
-                                    },
-                                  );
-
-                                  let launchers: Specification<T>["launchers"] =
-                                    {
-                                      create: Map<string, CreateLauncher>(),
-                                      edit: Map<string, EditLauncher>(),
-                                      passthrough: Map<
-                                        string,
-                                        PassthroughLauncher
-                                      >(),
-                                    };
-
-                                  if (
-                                    !Specification.Operations.hasLaunchers(
-                                      serializedSpecifications,
-                                    )
-                                  )
-                                    return ValueOrErrors.Default.throwOne<
-                                      Specification<T>,
-                                      string
-                                    >(
-                                      "launchers are missing from the specification",
+                                            update:
+                                              entityApi.methods.includes(
+                                                "update",
+                                              ),
+                                            default:
+                                              entityApi.methods.includes(
+                                                "default",
+                                              ),
+                                          },
+                                        });
+                                      },
                                     );
 
-                                  Object.keys(
-                                    serializedSpecifications["launchers"],
-                                  ).forEach((launcherName: any) => {
-                                    const launcher: Launcher =
-                                      serializedSpecifications.launchers[
-                                        launcherName
-                                      ]["kind"] == "create" ||
-                                      serializedSpecifications.launchers[
-                                        launcherName
-                                      ]["kind"] == "edit"
-                                        ? {
-                                            name: launcherName,
-                                            kind: serializedSpecifications
-                                              .launchers[launcherName]["kind"],
-                                            form: serializedSpecifications
-                                              .launchers[launcherName]["form"],
-                                            api: serializedSpecifications
-                                              .launchers[launcherName]["api"],
-                                            configApi:
-                                              serializedSpecifications
-                                                .launchers[launcherName][
-                                                "configApi"
-                                              ],
-                                          }
-                                        : {
-                                            name: launcherName,
-                                            kind: serializedSpecifications
-                                              .launchers[launcherName]["kind"],
-                                            form: serializedSpecifications
-                                              .launchers[launcherName]["form"],
-                                            configType:
-                                              serializedSpecifications
-                                                .launchers[launcherName][
-                                                "configType"
-                                              ],
-                                          };
-                                    if (launcher.kind == "create")
-                                      launchers.create = launchers.create.set(
-                                        launcherName,
-                                        launcher,
+                                    let launchers: Specification<T>["launchers"] =
+                                      {
+                                        create: Map<string, CreateLauncher>(),
+                                        edit: Map<string, EditLauncher>(),
+                                        passthrough: Map<
+                                          string,
+                                          PassthroughLauncher
+                                        >(),
+                                      };
+
+                                    if (
+                                      !Specification.Operations.hasLaunchers(
+                                        serializedSpecifications,
+                                      )
+                                    )
+                                      return ValueOrErrors.Default.throwOne<
+                                        Specification<T>,
+                                        string
+                                      >(
+                                        "launchers are missing from the specification",
                                       );
-                                    else if (launcher.kind == "edit")
-                                      launchers.edit = launchers.edit.set(
-                                        launcherName,
-                                        launcher,
-                                      );
-                                    else if (launcher.kind == "passthrough")
-                                      launchers.passthrough =
-                                        launchers.passthrough.set(
+
+                                    Object.keys(
+                                      serializedSpecifications["launchers"],
+                                    ).forEach((launcherName: any) => {
+                                      const launcher: Launcher =
+                                        serializedSpecifications.launchers[
+                                          launcherName
+                                        ]["kind"] == "create" ||
+                                        serializedSpecifications.launchers[
+                                          launcherName
+                                        ]["kind"] == "edit"
+                                          ? {
+                                              name: launcherName,
+                                              kind: serializedSpecifications
+                                                .launchers[launcherName][
+                                                "kind"
+                                              ],
+                                              form: serializedSpecifications
+                                                .launchers[launcherName][
+                                                "form"
+                                              ],
+                                              api: serializedSpecifications
+                                                .launchers[launcherName]["api"],
+                                              configApi:
+                                                serializedSpecifications
+                                                  .launchers[launcherName][
+                                                  "configApi"
+                                                ],
+                                            }
+                                          : {
+                                              name: launcherName,
+                                              kind: serializedSpecifications
+                                                .launchers[launcherName][
+                                                "kind"
+                                              ],
+                                              form: serializedSpecifications
+                                                .launchers[launcherName][
+                                                "form"
+                                              ],
+                                              configType:
+                                                serializedSpecifications
+                                                  .launchers[launcherName][
+                                                  "configType"
+                                                ],
+                                            };
+                                      if (launcher.kind == "create")
+                                        launchers.create = launchers.create.set(
                                           launcherName,
                                           launcher,
                                         );
-                                  });
+                                      else if (launcher.kind == "edit")
+                                        launchers.edit = launchers.edit.set(
+                                          launcherName,
+                                          launcher,
+                                        );
+                                      else if (launcher.kind == "passthrough")
+                                        launchers.passthrough =
+                                          launchers.passthrough.set(
+                                            launcherName,
+                                            launcher,
+                                          );
+                                    });
 
-                                  return ValueOrErrors.Default.return({
-                                    types: allTypes,
-                                    forms,
-                                    apis: {
-                                      enums,
-                                      streams,
-                                      entities,
-                                      tables,
-                                      lookups,
-                                    },
-                                    launchers,
-                                  });
-                                }),
+                                    return ValueOrErrors.Default.return({
+                                      types: allTypes,
+                                      forms,
+                                      apis: {
+                                        enums,
+                                        streams,
+                                        entities,
+                                        tables,
+                                        lookups,
+                                      },
+                                      launchers,
+                                    });
+                                  }),
+                                ),
                               ),
                             ),
-                          ),
-                    ),
-              )
-              .MapErrors((errors) =>
-                errors.map(
-                  (error) => `${error}\n...When deserializing specification`,
+                      ),
+                )
+                .MapErrors((errors) =>
+                  errors.map(
+                    (error) => `${error}\n...When deserializing specification`,
+                  ),
                 ),
-              ),
   },
 };
