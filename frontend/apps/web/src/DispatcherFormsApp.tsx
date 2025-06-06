@@ -103,6 +103,10 @@ export const DispatcherFormsApp = (props: {}) => {
 
   const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] =
     useState(v4());
+  const [
+    remoteConfigEntityVersionIdentifier,
+    setRemoteConfigEntityVersionIdentifier,
+  ] = useState(v4());
 
   const parseCustomDelta =
     <T,>(
@@ -165,6 +169,7 @@ export const DispatcherFormsApp = (props: {}) => {
           parseCustomDelta,
         )(delta),
       );
+      setRemoteConfigEntityVersionIdentifier(v4());
     }
   };
 
@@ -374,7 +379,8 @@ export const DispatcherFormsApp = (props: {}) => {
                         ),
                         onEntityChange: onPersonConfigChange,
                       },
-                      remoteEntityVersionIdentifier,
+                      remoteEntityVersionIdentifier:
+                        remoteConfigEntityVersionIdentifier,
                       showFormParsingErrors: ShowFormsParsingErrors,
                       extraContext: {},
                     }}
