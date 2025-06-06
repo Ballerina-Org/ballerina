@@ -433,15 +433,21 @@ export const OneAbstractRenderer = <Context,>(
                   isWholeEntityMutation: false,
                 };
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-                    Synchronized.Updaters.sync(
-                      AsyncState.Updaters.toLoaded(
-                        ValueOrErrors.Default.return(
-                          PredicateValue.Default.unit(),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return(
+                            PredicateValue.Default.unit(),
+                          ),
                         ),
                       ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                        true,
+                      ),
                     ),
-                  ),
                 );
                 props.foreignMutations.onChange(id, delta);
               },
@@ -477,16 +483,22 @@ export const OneAbstractRenderer = <Context,>(
                   isWholeEntityMutation: false,
                 };
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-                    Synchronized.Updaters.sync(
-                      AsyncState.Updaters.toLoaded(
-                        ValueOrErrors.Default.return<
-                          ValueRecord | ValueUnit,
-                          string
-                        >(_),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return<
+                            ValueRecord | ValueUnit,
+                            string
+                          >(_),
+                        ),
+                      ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                        true,
                       ),
                     ),
-                  ),
                 );
                 props.foreignMutations.onChange(id, delta);
               },
@@ -496,15 +508,21 @@ export const OneAbstractRenderer = <Context,>(
                   isWholeEntityMutation: true,
                 };
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.selectedValue(
-                    Synchronized.Updaters.sync(
-                      AsyncState.Updaters.toLoaded(
-                        ValueOrErrors.Default.return(
-                          PredicateValue.Default.unit(),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return(
+                            PredicateValue.Default.unit(),
+                          ),
                         ),
                       ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldUpdate(
+                        true,
+                      ),
                     ),
-                  ),
                 );
                 props.foreignMutations.onChange(id, delta);
               },

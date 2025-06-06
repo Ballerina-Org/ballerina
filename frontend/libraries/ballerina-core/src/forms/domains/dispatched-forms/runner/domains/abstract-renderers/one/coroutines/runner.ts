@@ -21,6 +21,7 @@ import {
   ValueUnit,
   DispatchOnChange,
   replaceWith,
+  id as idUpdater,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -85,16 +86,20 @@ const intializeOne = Co.GetState().then((current) => {
           OneAbstractRendererState["customFormState"]["initializationStatus"]
         >("initialized"),
       )
-      .then(
+      .thenMany([
         OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
           replaceWith(current.remoteEntityVersionIdentifier),
         ),
-      )
-      .then(
         OneAbstractRendererState.Updaters.Core.customFormState.children.shouldUpdate(
           replaceWith(false),
         ),
-      ),
+        current.customFormState.initializationStatus == "reinitializing" &&
+        current.customFormState.status == "open"
+          ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+              ValueInfiniteStreamState.Updaters.Template.loadMore(),
+            )
+          : idUpdater,
+      ]),
   );
 
   const hasInitialValue =
