@@ -4,6 +4,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar, assert_never
 
+from ballerina_core.fun import identity
+
 _Option = TypeVar("_Option")
 _Some = TypeVar("_Some")
 
@@ -43,5 +45,13 @@ class Option(Generic[_Option]):
     def map(self, on_some: Callable[[_Option], _O], /) -> Option[_O]:
         return self.fold(lambda value: Option.some(on_some(value)), Option.none)
 
+    @staticmethod
+    def lift(on_some: Callable[[_Option], _O], /) -> Callable[[Option[_Option]], Option[_O]]:
+        return lambda option: option.map(on_some)
+
     def flat_map(self, on_some: Callable[[_Option], Option[_O]], /) -> Option[_O]:
         return self.fold(on_some, Option.none)
+
+    @staticmethod
+    def flatten(to_flatten: Option[Option[_Option]], /) -> Option[_Option]:
+        return to_flatten.flat_map(identity)
