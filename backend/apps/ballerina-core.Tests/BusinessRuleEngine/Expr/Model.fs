@@ -4,7 +4,12 @@ open NUnit.Framework
 open Ballerina.DSL.Expr.Model
 open System
 
-type TestCase = { expr: Expr; expected: string }
+type ExprExtension = unit
+type ValueExtension = unit
+
+type TestCase =
+  { expr: Expr<ExprExtension, ValueExtension>
+    expected: string }
 
 let testCases =
   [ { expr = Expr.Value Value.Unit

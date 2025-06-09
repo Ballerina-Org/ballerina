@@ -1,10 +1,10 @@
 namespace Ballerina.DSL.Expr.Types
 
 module Patterns =
-  open Model
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Expr.Model
 
   type ExprType with
     static member GetFields(t: ExprType) : Sum<List<string * ExprType>, Errors> =
@@ -35,7 +35,7 @@ module Patterns =
         | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a Table.""")
       }
 
-    static member AsLookupId(t: ExprType) : Sum<TypeId, Errors> =
+    static member AsLookupId(t: ExprType) : Sum<ExprTypeId, Errors> =
       sum {
         match t with
         | ExprType.LookupType l -> return l
@@ -71,7 +71,7 @@ module Patterns =
       }
 
     static member CreateEnum(cases: NonEmptyList<string>) : Map<CaseName, UnionCase> =
-      let createEnumCase (caseName: string) : Model.CaseName * Model.UnionCase =
+      let createEnumCase (caseName: string) : CaseName * UnionCase =
         { CaseName = caseName },
         { CaseName = caseName
           Fields = ExprType.UnitType }

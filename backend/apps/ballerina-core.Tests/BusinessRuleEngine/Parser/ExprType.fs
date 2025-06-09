@@ -1,5 +1,6 @@
 module Ballerina.Core.Tests.BusinessRuleEngine.Parser.ExprType
 
+open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Expr.Types.Model
 open Ballerina.DSL.Parser.ExprType
 open FSharp.Data

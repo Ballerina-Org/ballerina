@@ -3,13 +3,14 @@ namespace Ballerina.DSL.FormEngine.Parser
 module FormsPatterns =
   open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.FormEngine.Model
+  open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
 
-  type ParsedFormsContext with
-    static member ContextOperations: ContextOperations<ParsedFormsContext> =
+  type ParsedFormsContext<'ExprExtension, 'ValueExtension> with
+    static member ContextOperations: ContextOperations<ParsedFormsContext<'ExprExtension, 'ValueExtension>> =
       { TryFindType = fun ctx -> TypeContext.ContextOperations.TryFindType ctx.Types }
 
     member ctx.TryFindEnum name =
@@ -51,29 +52,33 @@ module FormsPatterns =
       ctx.Launchers |> Map.tryFindWithError name "launcher" name
 
   type StateBuilder with
-    member state.TryFindType name =
+    member state.TryFindType<'c, 'ExprExtension, 'ValueExtension>
+      name
+      : State<TypeBinding, 'c, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
-        let! (s: ParsedFormsContext) = state.GetState()
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         return! s.TryFindType name |> state.OfSum
       }
 
-    member state.TryFindForm name =
+    member state.TryFindForm<'c, 'ExprExtension, 'ValueExtension>
+      name
+      : State<_, 'c, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
-        let! (s: ParsedFormsContext) = state.GetState()
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         return! s.TryFindForm name |> state.OfSum
       }
 
-  type FormBody with
+  type FormBody<'ExprExtension, 'ValueExtension> with
     static member TryGetFields fb =
       match fb with
       | FormBody.Record fs -> state { return fs }
       | FormBody.Union _
       | FormBody.Table _ -> state.Throw(Errors.Singleton $"Error: expected fields in form body, found cases.")
 
-  type NestedRenderer with
+  type NestedRenderer<'ExprExtension, 'ValueExtension> with
     member self.Type = self.Renderer.Type
 
-  and Renderer with
+  and Renderer<'ExprExtension, 'ValueExtension> with
     member self.Type =
       match self with
       | Multiple r -> r.First.NestedRenderer.Type
@@ -99,7 +104,7 @@ module FormsPatterns =
   //         Fields = c.Type })
   //   )
 
-  and FormBody with
+  and FormBody<'ExprExtension, 'ValueExtension> with
     member self.Type =
       match self with
       | FormBody.Record f -> f.RecordType

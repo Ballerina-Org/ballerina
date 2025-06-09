@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Parser
 module ExprType =
   open Patterns
 
+  open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Patterns
   open System
@@ -394,7 +395,7 @@ module ExprType =
           typesJson
           |> Seq.map (fun (name, json) ->
             state {
-              let typeId: TypeId = { TypeName = name }
+              let typeId: ExprTypeId = { TypeName = name }
 
               do!
                 state.SetState(
@@ -491,7 +492,7 @@ module ExprType =
                         |> state.MapError(Errors.WithPriority ErrorPriority.High)
                     },
                     [ state {
-                        let typeId: TypeId = { TypeName = typeName }
+                        let typeId: ExprTypeId = { TypeName = typeName }
 
                         let! parsedType = ExprType.Parse TypeContext.ContextOperations typeJson
 

@@ -7,9 +7,15 @@ open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Expr.Types.TypeCheck
 open Ballerina.Errors
 
-let private typeCheck (expr: Expr) : Sum<ExprType, Errors> = Expr.typeCheck Map.empty Map.empty expr
+type ExprExtension = unit
+type ValueExtension = unit
 
-type ValuePrimitiveTypeCheckTestCase = { expr: Expr; expected: ExprType }
+let private typeCheck (expr: Expr<ExprExtension, ValueExtension>) : Sum<ExprType, Errors> =
+  Expr.typeCheck Map.empty Map.empty expr
+
+type ValuePrimitiveTypeCheckTestCase =
+  { expr: Expr<ExprExtension, ValueExtension>
+    expected: ExprType }
 
 let valuePrimitiveTypeCheckTestCases =
   [ { expr = Expr.Value(Value.ConstInt 42)
@@ -27,7 +33,9 @@ let ``Should typecheck values primitives`` (testCase: ValuePrimitiveTypeCheckTes
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 
-type BoolReturningBinaryExpressionTestCase = { expr: Expr; expected: ExprType }
+type BoolReturningBinaryExpressionTestCase =
+  { expr: Expr<ExprExtension, ValueExtension>
+    expected: ExprType }
 
 let boolReturningBinaryExpressionTestCases =
   [ { expr = Expr.Binary(Or, Expr.Value(Value.ConstBool true), Expr.Value(Value.ConstBool false))
@@ -75,7 +83,7 @@ let ``Should typecheck var lookup`` () =
     Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.BoolType ]
 
 
-  match Expr.typeCheck Map.empty inputVarTypes expr with
+  match Expr<ExprExtension, ValueExtension>.typeCheck Map.empty inputVarTypes expr with
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 

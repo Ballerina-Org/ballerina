@@ -5,6 +5,7 @@ module Patterns =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
+  open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
 
   type ContextOperations<'context> =
@@ -29,7 +30,7 @@ module Patterns =
       fields |> sum.TryFindField name |> state.OfSum
 
   type ExprType with
-    static member Find (ctx: TypeContext) (typeId: TypeId) : Sum<ExprType, Errors> =
+    static member Find (ctx: TypeContext) (typeId: ExprTypeId) : Sum<ExprType, Errors> =
       sum { return! TypeContext.TryFindType ctx typeId.TypeName |> Sum.map (fun tb -> tb.Type) }
 
     static member ResolveLookup (ctx: TypeContext) (t: ExprType) : Sum<ExprType, Errors> =

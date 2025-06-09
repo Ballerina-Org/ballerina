@@ -3,6 +3,7 @@ namespace Ballerina.DSL.FormEngine.Parser
 module Runner =
   open Model
   open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Parser.ExprType
   open Renderers
 
@@ -21,7 +22,10 @@ module Runner =
   open Ballerina.Collections.NonEmptyList
 
   type FormLauncher with
-    static member Parse (launcherName: string) (json: JsonValue) : State<_, CodeGenConfig, ParsedFormsContext, Errors> =
+    static member Parse<'ExprExtension, 'ValueExtension>
+      (launcherName: string)
+      (json: JsonValue)
+      : State<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! launcherFields = JsonValue.AsRecord json |> state.OfSum
 
@@ -32,7 +36,7 @@ module Runner =
         let! (kind, formName) =
           state.All2 (JsonValue.AsString kindJson |> state.OfSum) (JsonValue.AsString formNameJson |> state.OfSum)
 
-        let! (s: ParsedFormsContext) = state.GetState()
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! form = s.TryFindForm formName |> state.OfSum
 
         if kind = "create" || kind = "edit" then
@@ -57,12 +61,15 @@ module Runner =
                FormLauncherMode.Edit
                  { EntityApi = api
                    ConfigEntityApi = configApi }),
-            form |> FormConfig.Id
+            form |> FormConfig<'ExprExtension, 'ValueExtension>.Id
         elif kind = "passthrough" then
           let! configTypeJson = launcherFields |> state.TryFindField "configType"
           let! configTypeName = configTypeJson |> JsonValue.AsString |> state.OfSum
           let! configType = state.TryFindType configTypeName
-          return FormLauncherMode.Passthrough {| ConfigType = configType.TypeId |}, form |> FormConfig.Id
+
+          return
+            FormLauncherMode.Passthrough {| ConfigType = configType.TypeId |},
+            form |> FormConfig<'ExprExtension, 'ValueExtension>.Id
         elif kind = "passthrough-table" then
           let! configTypeJson = launcherFields |> state.TryFindField "configType"
           let! configTypeName = configTypeJson |> JsonValue.AsString |> state.OfSum
@@ -75,7 +82,7 @@ module Runner =
             FormLauncherMode.PassthroughTable
               {| ConfigType = configType.TypeId
                  TableApi = api |> TableApi.Id |},
-            form |> FormConfig.Id
+            form |> FormConfig<'ExprExtension, 'ValueExtension>.Id
         else
           return!
             $"Error: invalid launcher mode {kind}: it should be either 'create' or 'edit'."
@@ -85,17 +92,17 @@ module Runner =
       |> state.WithErrorContext $"...when parsing launcher {launcherName}"
 
 
-  type FormConfig with
+  type FormConfig<'ExprExtension, 'ValueExtension> with
     static member PreParse
       (_: string)
       (json: JsonValue)
-      : State<TypeBinding, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<TypeBinding, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
         let! typeJson = (fields |> state.TryFindField "type")
         let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
-        let! (s: ParsedFormsContext) = state.GetState()
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! typeBinding = s.TryFindType typeName |> state.OfSum
 
         return typeBinding
@@ -104,13 +111,20 @@ module Runner =
     static member Parse
       (formName: string)
       (json: JsonValue)
-      : State<{| TypeId: TypeId; Body: FormBody |}, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<
+          {| TypeId: ExprTypeId
+             Body: FormBody<'ExprExtension, 'ValueExtension> |},
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
       state {
         let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
         let! typeJson = (fields |> state.TryFindField "type")
         let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
-        let! (s: ParsedFormsContext) = state.GetState()
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! typeBinding = s.TryFindType typeName |> state.OfSum
         let! body = FormBody.Parse fields typeBinding.TypeId
 
@@ -121,16 +135,16 @@ module Runner =
       |> state.WithErrorContext $"...when parsing form {formName}"
 
   type EnumApi with
-    static member Parse
+    static member Parse<'ExprExtension, 'ValueExtension>
       valueFieldName
       (enumName: string)
       (enumTypeJson: JsonValue)
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
 
       state {
         let! enumType = ExprType.Parse ParsedFormsContext.ContextOperations enumTypeJson
         let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
-        let! ctx = state.GetState()
+        let! (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! enumType = ExprType.ResolveLookup ctx.Types enumType |> state.OfSum
         let! fields = ExprType.GetFields enumType |> state.OfSum
 
@@ -160,7 +174,7 @@ module Runner =
     static member Parse
       (streamName: string)
       (streamTypeJson: JsonValue)
-      : State<StreamApi, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<StreamApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! streamType = ExprType.Parse ParsedFormsContext.ContextOperations streamTypeJson
         let! streamTypeId = streamType |> ExprType.AsLookupId |> state.OfSum
@@ -172,7 +186,9 @@ module Runner =
       |> state.WithErrorContext $"...when parsing stream {streamName}"
 
   type CrudMethod with
-    static member Parse(crudMethodJson: JsonValue) : State<CrudMethod, CodeGenConfig, ParsedFormsContext, Errors> =
+    static member Parse
+      (crudMethodJson: JsonValue)
+      : State<CrudMethod, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       let crudCase name value =
         state {
           do!
@@ -200,7 +216,7 @@ module Runner =
     static member Parse
       (tableName: string)
       (tableTypeJson: JsonValue)
-      : State<TableApi, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<TableApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -220,7 +236,7 @@ module Runner =
     static member ParseAsMany
       (tableName: string)
       (tableTypeJson: JsonValue)
-      : State<TableApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<TableApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -247,7 +263,7 @@ module Runner =
     static member Parse
       (entityName: string)
       (entityTypeJson: JsonValue)
-      : State<EntityApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<EntityApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! entityTypeFieldJsons = entityTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -274,7 +290,7 @@ module Runner =
     static member Parse
       (parentEntityName: string)
       (lookupApiJson: JsonValue)
-      : State<LookupApi, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<LookupApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! lookupApiFields = lookupApiJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -333,11 +349,11 @@ module Runner =
         return lookupApi
       }
 
-  type ParsedFormsContext with
+  type ParsedFormsContext<'ExprExtension, 'ValueExtension> with
     static member ParseApis
       enumValueFieldName
       (topLevel: TopLevel)
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let enums, streams, entities, tables, lookups =
           topLevel.Enums, topLevel.Streams, topLevel.Entities, topLevel.Tables, topLevel.Lookups
@@ -372,7 +388,7 @@ module Runner =
 
     static member ParseForms
       (formsJson: (string * JsonValue)[])
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         for formName, formJson in formsJson do
           let! formType = FormConfig.PreParse formName formJson
@@ -419,7 +435,7 @@ module Runner =
 
     static member ParseLaunchers
       (launchersJson: (string * JsonValue)[])
-      : State<Unit, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         for launcherName, launcherJson in launchersJson do
           let! (mode, formId) = FormLauncher.Parse launcherName launcherJson
@@ -486,7 +502,7 @@ module Runner =
     static member Parse
       generatedLanguageSpecificConfig
       (jsons: List<JsonValue>)
-      : State<TopLevel, CodeGenConfig, ParsedFormsContext, Errors> =
+      : State<TopLevel, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         // let! ctx = state.GetState()
         // do System.Console.WriteLine ctx.Types.ToFSharpString

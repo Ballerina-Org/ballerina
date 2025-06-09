@@ -13,8 +13,12 @@ module TypeCheck =
   let private notImplementedError exprName =
     sum.Throw(Errors.Singleton $"Error: not implemented Expr type checker for expression {exprName}")
 
-  type Expr with
-    static member typeCheck (typeBindings: TypeBindings) (vars: VarTypes) (e: Expr) : Sum<ExprType, Errors> =
+  type Expr<'ExprExtension, 'ValueExtension> with
+    static member typeCheck
+      (typeBindings: TypeBindings)
+      (vars: VarTypes)
+      (e: Expr<'ExprExtension, 'ValueExtension>)
+      : Sum<ExprType, Errors> =
       let lookup (t: ExprType) : Sum<Option<TypeName> * ExprType, Errors> =
         sum {
           match t with
@@ -36,7 +40,7 @@ module TypeCheck =
 
       let rec typeCheckRecordFieldLookup
         (vars: VarTypes)
-        (e: Expr)
+        (e: Expr<'ExprExtension, 'ValueExtension>)
         (field: string)
         : Sum<Option<TypeName> * ExprType, Errors> =
         let (!) = eval vars
@@ -69,8 +73,8 @@ module TypeCheck =
 
       and typeCheckMatchCase
         (vars: VarTypes)
-        (e: Expr)
-        (caseHandlers: Map<string, VarName * Expr>)
+        (e: Expr<'ExprExtension, 'ValueExtension>)
+        (caseHandlers: Map<string, VarName * Expr<'ExprExtension, 'ValueExtension>>)
         : Sum<Option<TypeName> * ExprType, Errors> =
         let (!) = eval vars
 
@@ -141,7 +145,10 @@ module TypeCheck =
               )
         }
 
-      and typeCheckValue (vars: VarTypes) (v: Value) : Sum<Option<TypeName> * ExprType, Errors> =
+      and typeCheckValue
+        (vars: VarTypes)
+        (v: Value<'ExprExtension, 'ValueExtension>)
+        : Sum<Option<TypeName> * ExprType, Errors> =
         let (!) = eval vars
 
         sum {
@@ -164,8 +171,8 @@ module TypeCheck =
       and typeCheckBinaryOperator
         (vars: VarTypes)
         (op: BinaryOperator)
-        (e1: Expr)
-        (e2: Expr)
+        (e1: Expr<'ExprExtension, 'ValueExtension>)
+        (e2: Expr<'ExprExtension, 'ValueExtension>)
         : Sum<Option<TypeName> * ExprType, Errors> =
         let (!) = eval vars
 
@@ -210,7 +217,11 @@ module TypeCheck =
           | DividedBy -> return! notImplementedError "Binary op: DividedBy"
         }
 
-      and typeCheckProject (vars: VarTypes) (e: Expr) (i: int) : Sum<Option<TypeName> * ExprType, Errors> =
+      and typeCheckProject
+        (vars: VarTypes)
+        (e: Expr<'ExprExtension, 'ValueExtension>)
+        (i: int)
+        : Sum<Option<TypeName> * ExprType, Errors> =
         let (!) = eval vars
 
         sum {
@@ -235,7 +246,7 @@ module TypeCheck =
               )
         }
 
-      and eval (vars: VarTypes) (e: Expr) : Sum<Option<TypeName> * ExprType, Errors> =
+      and eval (vars: VarTypes) (e: Expr<'ExprExtension, 'ValueExtension>) : Sum<Option<TypeName> * ExprType, Errors> =
 
         let result =
           match e with
@@ -251,6 +262,11 @@ module TypeCheck =
           | Expr.MakeTuple _ -> notImplementedError "MakeTuple"
           | Expr.MakeSet _ -> notImplementedError "MakeSet"
           | Expr.MakeCase(_, _) -> notImplementedError "MakeCase"
+          | Expr.GenericApply(_, _) -> notImplementedError "GenericApply"
+          | Expr.Let(_, _, _) -> notImplementedError "Let"
+          | Expr.LetType(_, _, _) -> notImplementedError "Let type"
+          | Expr.Annotate(_, _) -> notImplementedError "Annotate"
+          | Expr.Extension _ -> notImplementedError "Extension"
 
         sum {
           let! _, t = result

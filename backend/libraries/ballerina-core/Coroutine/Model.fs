@@ -31,6 +31,7 @@ module Model =
     | Do of ('c -> 'a)
     | Await of Task<'a>
     // | Awaiting of Guid * Async<'a> * Task<'a>
+    | MapContext of (Updater<'c> * Coroutine<'a, 's, 'c, 'event, 'err>)
     | Then of (Coroutine<Coroutine<'a, 's, 'c, 'event, 'err>, 's, 'c, 'event, 'err>)
     | Combine of (Coroutine<Unit, 's, 'c, 'event, 'err> * Coroutine<'a, 's, 'c, 'event, 'err>)
     | Repeat of Coroutine<'a, 's, 'c, 'event, 'err>
@@ -67,6 +68,7 @@ module Model =
       // Then(p', k >> (Coroutine.map f))
       | Combine(p, k) -> Combine(p, k |> Coroutine.map f)
       | Repeat(p) -> Repeat(p |> Coroutine.map f)
+      | MapContext(u_c, p) -> MapContext(u_c, p |> Coroutine.map f)
 
   type Coroutine<'a, 's, 'c, 'event, 'err> with
     static member bind(p: Coroutine<'a, 's, 'c, 'event, 'err>, k: 'a -> Coroutine<'b, 's, 'c, 'event, 'err>) =
@@ -129,6 +131,9 @@ module Model =
     member _.Repeat(p: Coroutine<'a, 's, 'c, 'event, 'err>) : Coroutine<'a, 's, 'c, 'event, 'err> =
       Co(fun _ -> Left(CoroutineResult.Repeat(p), None, None))
 
+    member _.mapContext (f) p =
+      Co(fun _ -> Left(CoroutineResult.MapContext(f, p), None, None))
+
     member _.GetContext() =
       Co(fun (_, c, _, _) -> Left(CoroutineResult.Return(c), None, None))
 
@@ -142,6 +147,13 @@ module Model =
       co.YieldAfter(
         Co(fun _ -> Left(CoroutineResult.Return(), None, Some(fun es -> let (id, e) = new_event in es |> Map.add id e)))
       )
+
+    member co.ofSum(p: Sum<'a, 'err>) =
+      co {
+        match p with
+        | Sum.Left res -> return res
+        | Sum.Right err -> return! co.Throw err
+      }
 
     member co.ReturnFrom(p: Coroutine<'a, 's, 'c, 'event, 'err>) =
       co {
@@ -191,13 +203,14 @@ module Model =
       ((Co p): Coroutine<'a, 's, 'c, 'event, 'err>)
       (ctx: 's * 'c * Map<Guid, 'event> * DeltaT)
       : EvaluatedCoroutine<'a, 's, 'c, 'event, 'err> =
-      let (_, c, es, dt) = ctx
+      let (s, c, es, dt) = ctx
 
       match p ctx with
       | Right err -> Error err
       | Left(step, u_s, u_e) ->
 
         match step with
+        | MapContext(u_c, p') -> Coroutine.eval p' (s, c |> u_c, es, dt)
         | Then(p_p) ->
           match Coroutine.eval p_p ctx with
           | Error err -> Error err
@@ -413,3 +426,30 @@ module Model =
           u_e <- u_e >>? u_e'
 
       evaluated, u_s, u_e
+
+    static member evalSynchronously<'a>
+      (onSpawnedError: unit -> 'err)
+      ((s, c, events, dt): 's * 'c * Map<Guid, 'event> * DeltaT)
+      ((Co p): Coroutine<'a, 's, 'c, 'event, 'err>)
+      : Sum<'a * 's * Map<Guid, 'event>, 'err> =
+      let step = Coroutine.eval (Co p) (s, c, events, dt)
+
+      match step with
+      | EvaluatedCoroutine.Done(result, u_s, u_e) ->
+        let s = s |> (u_s |> Option.defaultValue id)
+        let events = events |> (u_e |> Option.defaultValue id)
+        Sum.Left(result, s, events)
+      | EvaluatedCoroutine.Error err -> Sum.Right err
+      | EvaluatedCoroutine.Spawned _ -> Sum.Right(onSpawnedError ())
+      | EvaluatedCoroutine.Active(p, u_s, u_e)
+      | EvaluatedCoroutine.Listening(p, u_s, u_e) ->
+        let s = s |> (u_s |> Option.defaultValue id)
+        let events = events |> (u_e |> Option.defaultValue id)
+        Coroutine.evalSynchronously onSpawnedError (s, c, events, dt) p
+      | EvaluatedCoroutine.Waiting(p, u_s, u_e)
+      | EvaluatedCoroutine.WaitingOrListening(p, u_s, u_e) ->
+        let now = System.DateTime.Now
+        do Task.Delay(p.Until - now).Wait()
+        let s = s |> (u_s |> Option.defaultValue id)
+        let events = events |> (u_e |> Option.defaultValue id)
+        Coroutine.evalSynchronously onSpawnedError (s, c, events, dt) p.P

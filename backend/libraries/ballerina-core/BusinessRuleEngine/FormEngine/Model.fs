@@ -190,9 +190,9 @@ module Model =
   and FormLauncherMode =
     | Create of FormLauncherApis
     | Edit of FormLauncherApis
-    | Passthrough of {| ConfigType: TypeId |}
+    | Passthrough of {| ConfigType: ExprTypeId |}
     | PassthroughTable of
-      {| ConfigType: TypeId
+      {| ConfigType: ExprTypeId
          TableApi: TableApiId |}
 
 
@@ -200,8 +200,8 @@ module Model =
 
   and EnumApi =
     { EnumName: string
-      TypeId: TypeId
-      UnderlyingEnum: TypeId }
+      TypeId: ExprTypeId
+      UnderlyingEnum: ExprTypeId }
 
     static member Id(e: EnumApi) = { EnumName = e.EnumName }
 
@@ -210,37 +210,37 @@ module Model =
         TypeId = t
         UnderlyingEnum = c }
 
-    static member Type(a: EnumApi) : TypeId = a.TypeId
+    static member Type(a: EnumApi) : ExprTypeId = a.TypeId
 
   and StreamApiId = { StreamName: string }
 
   and StreamApi =
     { StreamName: string
-      TypeId: TypeId }
+      TypeId: ExprTypeId }
 
     static member Id(e: StreamApi) = { StreamName = e.StreamName }
 
     static member Create(n, t) : StreamApi = { StreamName = n; TypeId = t }
 
-    static member Type(a: StreamApi) : TypeId = a.TypeId
+    static member Type(a: StreamApi) : ExprTypeId = a.TypeId
 
   and EntityApiId = { EntityName: string }
 
   and EntityApi =
     { EntityName: string
-      TypeId: TypeId }
+      TypeId: ExprTypeId }
 
     static member Id(e: EntityApi) = { EntityName = e.EntityName }
 
     static member Create(n, t) : EntityApi = { EntityName = n; TypeId = t }
 
-    static member Type(a: EntityApi) : TypeId = a.TypeId
+    static member Type(a: EntityApi) : ExprTypeId = a.TypeId
 
   and TableApiId = { TableName: string }
 
   and TableApi =
     { TableName: string
-      TypeId: TypeId }
+      TypeId: ExprTypeId }
 
     static member Id(e: TableApi) = { TableName = e.TableName }
 
@@ -288,131 +288,133 @@ module Model =
 
   and FormConfigId = { FormName: string; FormId: Guid }
 
-  and FormConfig =
+  and FormConfig<'ExprExtension, 'ValueExtension> =
     { FormName: string
       FormId: Guid
-      Body: FormBody
+      Body: FormBody<'ExprExtension, 'ValueExtension>
       ContainerRenderer: Option<string> }
 
-    static member Name f = f.FormName
+    static member Name(f: FormConfig<'ExprExtension, 'ValueExtension>) = f.FormName
 
-    static member Id f =
+    static member Id(f: FormConfig<'ExprExtension, 'ValueExtension>) =
       { FormName = f.FormName
         FormId = f.FormId }
 
-  and FormBody =
+  and FormBody<'ExprExtension, 'ValueExtension> =
     | Record of
       {| Renderer: Option<string>
-         Fields: FormFields
+         Fields: FormFields<'ExprExtension, 'ValueExtension>
          RecordType: ExprType |}
     | Union of
-      {| Renderer: Renderer
-         Cases: Map<string, NestedRenderer>
+      {| Renderer: Renderer<'ExprExtension, 'ValueExtension>
+         Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>>
          UnionType: ExprType |}
     | Table of
       {| Renderer: string
-         Details: Option<NestedRenderer>
+         Details: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          //  Preview: Option<FormBody>
-         Columns: Map<string, Column>
-         VisibleColumns: FormGroup
+         Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
+         VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
          RowType: ExprType |}
 
-    static member FormDeclarationType(self: FormBody) =
+    static member FormDeclarationType(self: FormBody<'ExprExtension, 'ValueExtension>) =
       match self with
       | Record f -> f.RecordType
       | Union c -> c.UnionType
       | Table t -> t.RowType
 
-    static member ProcessedType(self: FormBody) =
+    static member ProcessedType(self: FormBody<'ExprExtension, 'ValueExtension>) =
       match self with
       | Record f -> f.RecordType
       | Union c -> c.UnionType
       | Table t -> t.RowType |> ExprType.TableType
 
-  and Column =
-    { FieldConfig: FieldConfig
+  and Column<'ExprExtension, 'ValueExtension> =
+    { FieldConfig: FieldConfig<'ExprExtension, 'ValueExtension>
       IsFilterable: bool
       IsSortable: bool }
 
-  and FormFields =
-    { Fields: Map<string, FieldConfig>
-      Tabs: FormTabs }
+  and FormFields<'ExprExtension, 'ValueExtension> =
+    { Fields: Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>
+      Tabs: FormTabs<'ExprExtension, 'ValueExtension> }
 
-  and FormTabs = { FormTabs: Map<string, FormColumns> }
+  and FormTabs<'ExprExtension, 'ValueExtension> =
+    { FormTabs: Map<string, FormColumns<'ExprExtension, 'ValueExtension>> }
 
-  and FormColumns =
-    { FormColumns: Map<string, FormGroups> }
+  and FormColumns<'ExprExtension, 'ValueExtension> =
+    { FormColumns: Map<string, FormGroups<'ExprExtension, 'ValueExtension>> }
 
-  and FormGroups = { FormGroups: Map<string, FormGroup> }
+  and FormGroups<'ExprExtension, 'ValueExtension> =
+    { FormGroups: Map<string, FormGroup<'ExprExtension, 'ValueExtension>> }
 
-  and FormGroup =
-    | Computed of Expr
+  and FormGroup<'ExprExtension, 'ValueExtension> =
+    | Computed of Expr<'ExprExtension, 'ValueExtension>
     | Inlined of List<FieldConfigId>
 
   and FieldConfigId = { FieldName: string; FieldId: Guid }
 
-  and FieldConfig =
+  and FieldConfig<'ExprExtension, 'ValueExtension> =
     { FieldName: string
       FieldId: Guid
       Label: Option<string>
       Tooltip: Option<string>
       Details: Option<string>
-      Renderer: Renderer
-      Visible: Expr
-      Disabled: Option<Expr> }
+      Renderer: Renderer<'ExprExtension, 'ValueExtension>
+      Visible: Expr<'ExprExtension, 'ValueExtension>
+      Disabled: Option<Expr<'ExprExtension, 'ValueExtension>> }
 
-    static member Id(f: FieldConfig) : FieldConfigId =
+    static member Id(f: FieldConfig<'ExprExtension, 'ValueExtension>) : FieldConfigId =
       { FieldName = f.FieldName
         FieldId = f.FieldId }
 
-    static member Name(f: FieldConfig) = f.FieldName
+    static member Name(f: FieldConfig<'ExprExtension, 'ValueExtension>) = f.FieldName
 
-  and Renderer =
+  and Renderer<'ExprExtension, 'ValueExtension> =
     | Multiple of
       {| First:
            {| Name: string
-              NestedRenderer: NestedRenderer |}
-         Rest: Map<string, NestedRenderer> |}
+              NestedRenderer: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+         Rest: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> |}
     | PrimitiveRenderer of PrimitiveRenderer
     | MapRenderer of
-      {| Map: Renderer
-         Key: NestedRenderer
-         Value: NestedRenderer |}
+      {| Map: Renderer<'ExprExtension, 'ValueExtension>
+         Key: NestedRenderer<'ExprExtension, 'ValueExtension>
+         Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | TupleRenderer of
-      {| Tuple: Renderer
-         Elements: List<NestedRenderer> |}
+      {| Tuple: Renderer<'ExprExtension, 'ValueExtension>
+         Elements: List<NestedRenderer<'ExprExtension, 'ValueExtension>> |}
     | OptionRenderer of
-      {| Option: Renderer
-         Some: NestedRenderer
-         None: NestedRenderer |}
+      {| Option: Renderer<'ExprExtension, 'ValueExtension>
+         Some: NestedRenderer<'ExprExtension, 'ValueExtension>
+         None: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | ListRenderer of
-      {| List: Renderer
-         Element: NestedRenderer |}
+      {| List: Renderer<'ExprExtension, 'ValueExtension>
+         Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | OneRenderer of
-      {| One: Renderer
-         Details: NestedRenderer
-         Preview: Option<NestedRenderer>
-         OneApiId: Choice<TableApiId, TypeId * string> |}
+      {| One: Renderer<'ExprExtension, 'ValueExtension>
+         Details: NestedRenderer<'ExprExtension, 'ValueExtension>
+         Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
+         OneApiId: Choice<TableApiId, ExprTypeId * string> |}
     | ManyRenderer of
-      {| Many: Renderer
-         Details: NestedRenderer
-         Preview: Option<NestedRenderer>
-         ManyApiId: TypeId * string |}
+      {| Many: Renderer<'ExprExtension, 'ValueExtension>
+         Details: NestedRenderer<'ExprExtension, 'ValueExtension>
+         Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
+         ManyApiId: ExprTypeId * string |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer
     //      Children: RendererChildren |}
     | SumRenderer of
-      {| Sum: Renderer
-         Left: NestedRenderer
-         Right: NestedRenderer |}
-    | EnumRenderer of EnumApiId * Renderer
-    | StreamRenderer of StreamRendererApi * Renderer
+      {| Sum: Renderer<'ExprExtension, 'ValueExtension>
+         Left: NestedRenderer<'ExprExtension, 'ValueExtension>
+         Right: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+    | EnumRenderer of EnumApiId * Renderer<'ExprExtension, 'ValueExtension>
+    | StreamRenderer of StreamRendererApi * Renderer<'ExprExtension, 'ValueExtension>
     | FormRenderer of FormConfigId * ExprType //* RendererChildren
     | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
     // | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
     | InlineFormRenderer of
-      {| Body: FormBody
+      {| Body: FormBody<'ExprExtension, 'ValueExtension>
          ContainerRenderer: Option<string> |}
   // | UnionRenderer of
   //   {| Union: Renderer
@@ -422,13 +424,15 @@ module Model =
 
   and StreamRendererApi =
     | Stream of StreamApiId
-    | LookupStream of {| Type: TypeId; Stream: StreamApiId |}
+    | LookupStream of
+      {| Type: ExprTypeId
+         Stream: StreamApiId |}
 
-  and NestedRenderer =
+  and NestedRenderer<'ExprExtension, 'ValueExtension> =
     { Label: Option<string>
       Tooltip: Option<string>
       Details: Option<string>
-      Renderer: Renderer }
+      Renderer: Renderer<'ExprExtension, 'ValueExtension> }
 
   and PrimitiveRendererId =
     { PrimitiveRendererName: string
@@ -466,10 +470,10 @@ module Model =
       StreamIdFieldName: string
       StreamDisplayValueFieldName: string }
 
-  type ParsedFormsContext =
+  type ParsedFormsContext<'ExprExtension, 'ValueExtension> =
     { Types: TypeContext
       Apis: FormApis
-      Forms: Map<string, FormConfig>
+      Forms: Map<string, FormConfig<'ExprExtension, 'ValueExtension>>
       GenericRenderers:
         List<
           {| Type: ExprType
@@ -477,7 +481,7 @@ module Model =
          >
       Launchers: Map<string, FormLauncher> }
 
-    static member Empty: ParsedFormsContext =
+    static member Empty: ParsedFormsContext<'ExprExtension, 'ValueExtension> =
       { Types = Map.empty
         Apis = FormApis.Empty
         Forms = Map.empty
@@ -487,26 +491,26 @@ module Model =
     static member Updaters =
       {| Types =
           fun u ->
-            fun s ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.Types = u (s.Types) }
          Apis =
           fun u ->
-            fun s ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.Apis = u (s.Apis) }
          Forms =
           fun u ->
-            fun s ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.Forms = u (s.Forms) }
          GenericRenderers =
           fun u ->
-            fun s ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.GenericRenderers = u (s.GenericRenderers) }
          Launchers =
           fun u ->
-            fun s ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.Launchers = u (s.Launchers) } |}

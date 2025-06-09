@@ -44,6 +44,7 @@
     <Compile Include="BusinessRuleEngine/Parser/Patterns.fs" />
     <Compile Include="BusinessRuleEngine/Parser/Expr.fs" />
     <Compile Include="BusinessRuleEngine/Parser/ExprType.fs" />
+    <Compile Include="BusinessRuleEngine/Expr/Extension.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Model.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/Model.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/FormsPatterns.fs" />

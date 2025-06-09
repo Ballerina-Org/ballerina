@@ -16,21 +16,21 @@ module Validator =
   open Ballerina.State.WithError
   open Ballerina.Errors
 
-  type NestedRenderer with
+  type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formType: ExprType)
-      (fr: NestedRenderer)
+      (fr: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       Renderer.Validate codegen ctx formType fr.Renderer
 
-  and Renderer with
+  and Renderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formType: ExprType)
-      (fr: Renderer)
+      (fr: Renderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       let (!) = Renderer.Validate codegen ctx formType
 
@@ -178,6 +178,7 @@ module Validator =
           return fr.Type
         | Renderer.TupleRenderer t ->
           do! t.Elements |> Seq.map (fun e -> !e.Renderer) |> sum.All |> Sum.map ignore
+
           return fr.Type
       // | Renderer.UnionRenderer r ->
 
@@ -190,27 +191,27 @@ module Validator =
       //   return fr.Type
       }
 
-  and NestedRenderer with
+  and NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member ValidatePredicates
       validateFormConfigPredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
-      (r: NestedRenderer)
+      (r: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         do! Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType r.Renderer
       }
 
-  and Renderer with
+  and Renderer<'ExprExtension, 'ValueExtension> with
     static member ValidatePredicates
       validateFormConfigPredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
-      (r: Renderer)
+      (r: Renderer<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       let (!) =
         Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
@@ -311,12 +312,12 @@ module Validator =
       //     |> state.Map ignore
       }
 
-  and FieldConfig with
+  and FieldConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formType: ExprType)
-      (fc: FieldConfig)
+      (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
       sum {
         let! rendererType =
@@ -346,12 +347,12 @@ module Validator =
       |> sum.WithErrorContext $"...when validating field {fc.FieldName}"
 
     static member ValidatePredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
       (includeLocalTypeInScope: bool)
-      (fc: FieldConfig)
+      (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let vars =
@@ -397,13 +398,13 @@ module Validator =
       }
       |> state.WithErrorContext $"...when validating field predicates for {fc.FieldName}"
 
-  and FormFields with
+  and FormFields<'ExprExtension, 'ValueExtension> with
     static member ValidatePredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
-      (formFields: FormFields)
+      (formFields: FormFields<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         for f in formFields.Fields do
@@ -472,9 +473,9 @@ module Validator =
 
     static member Validate
       (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (rootType: ExprType)
-      (body: FormFields)
+      (body: FormFields<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
       sum.All(
         body.Fields
@@ -484,12 +485,12 @@ module Validator =
       )
       |> Sum.map ignore
 
-  and FormBody with
+  and FormBody<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (localType: ExprType)
-      (body: FormBody)
+      (body: FormBody<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       sum {
         match localType, body with
@@ -571,11 +572,11 @@ module Validator =
       }
 
     static member ValidatePredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
-      (body: FormBody)
+      (body: FormBody<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         match body with
@@ -684,11 +685,11 @@ module Validator =
 
       }
 
-  and FormConfig with
+  and FormConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
       (config: CodeGenConfig)
-      (ctx: ParsedFormsContext)
-      (formConfig: FormConfig)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
       sum {
         let formType = formConfig.Body |> FormBody.FormDeclarationType
@@ -709,10 +710,10 @@ module Validator =
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
 
     static member ValidatePredicates
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (globalType: ExprType)
       (rootType: ExprType)
-      (formConfig: FormConfig)
+      (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         let! s = state.GetState()
@@ -739,7 +740,7 @@ module Validator =
 
   and FormLauncher with
     static member Validate
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formLauncher: FormLauncher)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
@@ -850,7 +851,7 @@ module Validator =
       |> state.WithErrorContext $"...when validating launcher {formLauncher.LauncherName}"
 
   type FormApis with
-    static member inline private extractTypes<'k, 'v when 'v: (static member Type: 'v -> TypeId) and 'k: comparison>
+    static member inline private extractTypes<'k, 'v when 'v: (static member Type: 'v -> ExprTypeId) and 'k: comparison>
       (m: Map<'k, 'v>)
       =
       m
@@ -858,14 +859,18 @@ module Validator =
       |> Seq.map (fun e -> e |> 'v.Type |> Set.singleton)
       |> Seq.fold (+) Set.empty
 
-    static member GetTypesFreeVars(fa: FormApis) : Set<TypeId> =
+    static member GetTypesFreeVars(fa: FormApis) : Set<ExprTypeId> =
 
       FormApis.extractTypes fa.Enums
       + FormApis.extractTypes fa.Streams
       + FormApis.extractTypes (fa.Entities |> Map.map (fun _ -> fst))
 
   type EnumApi with
-    static member Validate valueFieldName (ctx: ParsedFormsContext) (enumApi: EnumApi) : Sum<Unit, Errors> =
+    static member Validate<'ExprExtension, 'ValueExtension>
+      valueFieldName
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (enumApi: EnumApi)
+      : Sum<Unit, Errors> =
       sum {
         let! enumType = ExprType.Find ctx.Types enumApi.TypeId
         let! enumType = ExprType.ResolveLookup ctx.Types enumType
@@ -891,9 +896,9 @@ module Validator =
       |> sum.WithErrorContext $"...when validating enum {enumApi.EnumName}"
 
   type StreamApi with
-    static member Validate
+    static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (streamApi: StreamApi)
       : Sum<Unit, Errors> =
       sum {
@@ -918,9 +923,9 @@ module Validator =
       |> sum.WithErrorContext $"...when validating stream {streamApi.StreamName}"
 
   type TableApi with
-    static member Validate
+    static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (tableApi: TableApi)
       : Sum<Unit, Errors> =
       sum {
@@ -944,9 +949,9 @@ module Validator =
       |> sum.WithErrorContext $"...when validating table {tableApi.TableName}"
 
   type LookupApi with
-    static member Validate
+    static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (lookupApi: LookupApi)
       : Sum<Unit, Errors> =
       sum {
@@ -984,10 +989,10 @@ module Validator =
         return ()
       }
 
-  type ParsedFormsContext with
+  type ParsedFormsContext<'ExprExtension, 'ValueExtension> with
     static member Validate
       codegenTargetConfig
-      (ctx: ParsedFormsContext)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         do!
