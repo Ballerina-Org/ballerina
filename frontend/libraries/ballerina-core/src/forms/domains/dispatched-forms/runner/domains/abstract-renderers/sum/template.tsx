@@ -123,6 +123,7 @@ export const SumAbstractRenderer = <
 
   const embeddedRightTemplate = rightTemplate
     ?.mapContext((_: any): any => ({
+      ..._,
       ..._.customFormState.right,
       disabled: _.disabled,
       value: _.value.value.value,
