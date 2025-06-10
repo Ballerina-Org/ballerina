@@ -428,7 +428,7 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
                   id: k,
-                  isWholeEntityMutation: false,
+                  isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
@@ -448,7 +448,7 @@ export const TableAbstractRenderer = <
                   kind: "TableMoveTo",
                   id: k,
                   to,
-                  isWholeEntityMutation: false,
+                  isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
@@ -467,7 +467,7 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
                   id: k,
-                  isWholeEntityMutation: false,
+                  isWholeEntityMutation: true,
                 };
                 props.foreignMutations.onChange(id, delta);
                 props.setState(
