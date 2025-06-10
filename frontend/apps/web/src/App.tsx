@@ -16,11 +16,13 @@ import { DataDrivenFieldsApp } from "./DataDrivenFieldsApp";
 import { DispatcherFormsApp } from "./DispatcherFormsApp";
 import { DispatcherFormsAppTables } from "./DispatcherFormsAppTables.";
 import { TraversalDispatchTest } from "./TraversalDispatchTest";
+import { IDEApp } from "./IDE"
 
 function App(props: {
   app:
     | "regular"
-    | "forms"
+    | "forms" 
+    | "ide"
     | "data-driven-fields"
     | "dispatcher-forms"
     | "dispatcher-forms-tables"
@@ -32,6 +34,7 @@ function App(props: {
   if (props.app == "dispatcher-forms-tables")
     return DispatcherFormsAppTables({});
   if (props.app == "traversal-dispatch-test") return TraversalDispatchTest({});
+  if (props.app == "ide") return IDEApp({});
 
   const [uncle, setUncle] = useState(Uncle.Default());
   const [parent, setParent] = useState(Parent.Default());
