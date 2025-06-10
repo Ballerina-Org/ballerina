@@ -7,6 +7,11 @@ export const IDEApp = (props: {}) => {
   "age": 30,
   "active": true,
   "fun": "extend",
+  "nested": {
+    "value": 42,
+    "args": [1, 2, 3],
+    "fun": "args"
+  },
   "tags": ["json", "monarch", "test"],
   "nullValue": null
 }`);
