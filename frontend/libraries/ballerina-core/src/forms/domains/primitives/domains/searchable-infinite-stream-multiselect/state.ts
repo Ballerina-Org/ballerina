@@ -1,5 +1,4 @@
-import { OrderedMap } from "immutable";
-import { Guid, SimpleCallback, ValueRecord } from "../../../../../../main";
+import { SimpleCallback, ValueRecord } from "../../../../../../main";
 import { View } from "../../../../../template/state";
 import { Value } from "../../../../../value/state";
 import { CollectionReference } from "../../../collection/domains/reference/state";
@@ -26,7 +25,6 @@ export type InfiniteStreamMultiselectView<
     toggleOpen: SimpleCallback<void>;
     clearSelection: SimpleCallback<void>;
     setSearchText: SimpleCallback<string>;
-    replace: SimpleCallback<ValueRecord>;
     toggleSelection: SimpleCallback<ValueRecord>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;

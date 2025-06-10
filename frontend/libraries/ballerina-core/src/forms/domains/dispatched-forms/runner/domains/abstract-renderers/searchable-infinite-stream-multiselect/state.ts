@@ -29,6 +29,7 @@ export type InfiniteStreamMultiselectAbstractRendererView<
     toggleOpen: SimpleCallback<void>;
     clearSelection: SimpleCallback<void>;
     setSearchText: SimpleCallback<string>;
+    replace: SimpleCallback<ValueRecord>;
     toggleSelection: SimpleCallback<ValueRecord>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;

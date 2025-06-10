@@ -1,4 +1,4 @@
-import { Map, OrderedMap } from "immutable";
+import { OrderedMap } from "immutable";
 import {
   SimpleCallback,
   Debounce,
@@ -12,7 +12,6 @@ import {
   PredicateValue,
   Delta,
   ParsedType,
-  ParsedApplicationType,
 } from "../../../../../../main";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import { Debounced } from "../../../../../debounced/state";
@@ -178,18 +177,6 @@ export const InfiniteMultiselectDropdownForm = <
                 replaceWith(""),
               ),
             ),
-          replace: (_) => {
-            const delta: Delta = {
-              kind: "SetReplace",
-              replace: _,
-              state: {
-                commonFormState: props.context.commonFormState,
-                customFormState: props.context.customFormState,
-              },
-              type: props.context.type,
-            };
-            props.foreignMutations.onChange(replaceWith(_), delta);
-          },
           toggleSelection: (elementRecord: ValueRecord) => {
             // TODO - updater logic is using old value rather than inside an updater
             const updater = props.context.value.fields.has(
