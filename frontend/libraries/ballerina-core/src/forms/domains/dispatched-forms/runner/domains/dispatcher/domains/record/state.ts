@@ -48,7 +48,7 @@ export const RecordDispatcher = {
                 template: Template<any, any, any, any>;
                 visible?: Expr;
                 disabled?: Expr;
-                label?: Expr;
+                label?: string;
                 GetDefaultState: () => any;
               },
             ],

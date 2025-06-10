@@ -109,6 +109,7 @@ export const TableDispatcher = {
                                         {
                                           template,
                                           disabled: columnRenderer.disabled,
+                                          label: columnRenderer.label,
                                           GetDefaultState: () => defaultState,
                                           GetDefaultValue: () => defaultValue,
                                         },

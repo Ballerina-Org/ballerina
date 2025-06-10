@@ -50,6 +50,7 @@ export const TableAbstractRenderer = <
     string,
     {
       template: Template<any, any, any, any>;
+      label?: string;
       disabled?: Expr;
       GetDefaultValue: () => any;
       GetDefaultState: () => any;
@@ -236,6 +237,8 @@ export const TableAbstractRenderer = <
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
   );
+
+  const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
   return Template.Default<
     AbstractTableRendererReadonlyContext & AbstractTableRendererState,
@@ -484,6 +487,7 @@ export const TableAbstractRenderer = <
               },
             }}
             TableHeaders={visibleColumns.value.columns}
+            ColumnLabels={ColumnLabels}
             EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
           />
