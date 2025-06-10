@@ -36,6 +36,7 @@ import {
   MapRepo,
   BasicFun2,
   Value,
+  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -46,6 +47,7 @@ export type OneAbstractRendererReadonlyContext =
   > & {
     getApi: BasicFun<Guid, Promise<any>>;
     fromApiParser: (value: any) => ValueOrErrors<ValueRecord, string>;
+    remoteEntityVersionIdentifier: string;
   };
 
 export type OneAbstractRendererState = {
@@ -63,6 +65,9 @@ export type OneAbstractRendererState = {
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >;
+    initializationStatus: "not initialized" | "initialized" | "reinitializing";
+    previousRemoteEntityVersionIdentifier: string;
+    shouldReinitialize: boolean;
   };
 };
 
@@ -81,6 +86,9 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
+      initializationStatus: "not initialized",
+      previousRemoteEntityVersionIdentifier: "",
+      shouldReinitialize: false,
     },
   }),
   Updaters: {
@@ -101,6 +109,15 @@ export const OneAbstractRendererState = {
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "detailsState",
         ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "previousRemoteEntityVersionIdentifier",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "shouldReinitialize",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "initializationStatus",
+        ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
         ...simpleUpdater<OneAbstractRendererState["commonFormState"]>()(
@@ -118,10 +135,14 @@ export const OneAbstractRendererState = {
             Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
         ),
+      shouldReinitialize: (_: boolean) =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+          replaceWith(_),
+        ),
     },
   },
 };
-export type OneAbstractRendererView = View<
+export type OneAbstractRendererView<Context> = View<
   (
     | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
         value: ValueRecord | ValueUnit;
@@ -134,7 +155,8 @@ export type OneAbstractRendererView = View<
         kind: "uninitialized";
       }
   ) &
-    DomNodeIdReadonlyContext,
+    DomNodeIdReadonlyContext &
+    Context,
   OneAbstractRendererState,
   | {
       kind: "initialized";
@@ -143,6 +165,9 @@ export type OneAbstractRendererView = View<
       // clearSelection: SimpleCallback<void>;
       setStreamParam: BasicFun2<string, string, void>;
       select: SimpleCallback<ValueRecord | ValueUnit>;
+      create: SimpleCallback<ValueRecord>;
+      delete: SimpleCallback<void>;
+      clear: SimpleCallback<void>;
       loadMore: SimpleCallback<void>;
       reload: SimpleCallback<void>;
     }

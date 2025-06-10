@@ -47,6 +47,7 @@ export type DispatchFormRunnerContext<
     DispatchSpecificationDeserializationResult<T>,
     JSX.Element
   >;
+  remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
 } & DispatchFormsParserState<T>;

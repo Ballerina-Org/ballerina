@@ -11,6 +11,7 @@ import {
 } from "../../../../../../../../../main";
 import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
+import { v4 } from "uuid";
 
 const Co = CoTypedFactory<
   AbstractTableRendererReadonlyContext,
@@ -59,23 +60,52 @@ const intialiseTable = Co.GetState().then((current) => {
               ),
             ),
         )
-        .then(
+        .thenMany([
           AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
             replaceWith(getChunkWithParams),
           ),
-        )
-        .then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children.isInitialized(
-            replaceWith(true),
+          AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+            false,
           ),
-        ),
+          AbstractTableRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+            replaceWith(current.remoteEntityVersionIdentifier),
+          ),
+          AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
+            replaceWith<
+              AbstractTableRendererState["customFormState"]["initializationStatus"]
+            >("initialized"),
+          ),
+        ]),
     ),
   );
+});
+
+const reinitialise = Co.GetState().then((_) => {
+  return Co.SetState(
+    AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
+      replaceWith<
+        AbstractTableRendererState["customFormState"]["initializationStatus"]
+      >("reinitializing"),
+    ),
+  );
+});
+
+export const TableReinitialiseRunner = Co.Template<any>(reinitialise, {
+  interval: 15,
+  runFilter: (props) =>
+    props.context.customFormState.initializationStatus === "initialized" &&
+    props.context.customFormState.shouldReinitialize &&
+    props.context.remoteEntityVersionIdentifier !==
+      props.context.customFormState.previousRemoteEntityVersionIdentifier,
 });
 
 export const TableRunner = Co.Template<any>(intialiseTable, {
   interval: 15,
   runFilter: (props) => {
-    return !props.context.customFormState.isInitialized;
+    return (
+      props.context.customFormState.initializationStatus ===
+        "not initialized" ||
+      props.context.customFormState.initializationStatus === "reinitializing"
+    );
   },
 });

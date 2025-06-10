@@ -53,6 +53,14 @@
         "Id": "guid"
       }
     },
+    "User": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Category": "injectedCategory"
+      }
+    },
     "CityRef": {
       "extends": ["CollectionReference"],
       "fields": {}
@@ -125,8 +133,51 @@
       "extends": ["CollectionReference"],
       "fields": {}
     },
+    "BaseJob": {
+      "fields": {
+        "Name": "string",
+        "Salary": "number"
+      }
+    },
+    "DeveloperJob": {
+      "extends": ["BaseJob"],
+      "fields": {
+        "Language": "string",
+        "Category": "injectedCategory"
+      }
+    },
+    "DesignerJob": {
+      "extends": ["BaseJob"],
+      "fields": {
+        "DesignTool": "string",
+        "Certifications": {
+          "fun": "List",
+          "args": ["string"]
+        },
+        "Category": "injectedCategory"
+      }
+    },
+    "Job": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Developer",
+          "fields": "DeveloperJob"
+        },
+        {
+          "caseName": "Designer",
+          "fields": "DesignerJob"
+        }
+      ]
+    },
     "Person": {
       "fields": {
+        "Id": "guid",
+        "Job": "Job",
+        "Friends": {
+          "fun": "Table",
+          "args": ["User"]
+        },
         "Name": "string",
         "Category": "injectedCategory",
         "Birthday": "Date",
@@ -138,12 +189,38 @@
         },
         "Relatives": {
           "fun": "Tuple",
-          "args": ["injectedCategory", "injectedCategory", "injectedCategory"]
+          "args": ["string", "string", "injectedCategory"]
+        },
+        "BestFriend": {
+          "fun": "One",
+          "args": ["User"]
+        },
+        "RelativesList": {
+          "fun": "List",
+          "args": ["injectedCategory"]
+        },
+        "Dependants": {
+          "fun": "Map",
+          "args": ["string", "injectedCategory"]
+        },
+        "FriendsByCategory": {
+          "fun": "Map",
+          "args": ["injectedCategory", "string"]
         }
       }
     }
   },
   "apis": {
+    "lookups": {
+      "User": {
+        "one": {
+          "BestFriendApi": {
+            "type": "User",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      }
+    },
     "enumOptions": {
       "colors": "ColorRef",
       "interests": "InterestRef"
@@ -160,6 +237,11 @@
       "globalConfiguration": {
         "type": "GlobalConfiguration",
         "methods": ["get"]
+      }
+    },
+    "tables": {
+      "ActiveUsersApi": {
+        "type": "User"
       }
     }
   },
@@ -226,10 +308,221 @@
         }
       }
     },
+    "developerJob": {
+      "type": "DeveloperJob",
+      "renderer": "personDetails",
+      "fields": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Salary": {
+          "renderer": "defaultNumber"
+        },
+        "Language": {
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Name", "Salary", "Language"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "designerJob": {
+      "type": "DesignerJob",
+      "renderer": "personDetails",
+      "fields": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Salary": {
+          "renderer": "defaultNumber"
+        },
+        "DesignTool": {
+          "renderer": "defaultString"
+        },
+        "Certifications": {
+          "renderer": "defaultList",
+          "elementRenderer": {
+            "renderer": "defaultString"
+          }
+        },
+        "Category": {
+          "renderer": "defaultCategory"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "Name",
+                  "Salary",
+                  "DesignTool",
+                  "Certifications",
+                  "Category"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "job": {
+      "type": "Job",
+      "renderer": "job",
+      "cases": {
+        "Developer": {
+          "renderer": {
+            "type": "DeveloperJob",
+            "fields": {
+              "Name": {
+                "renderer": "defaultString"
+              },
+              "Salary": {
+                "renderer": "defaultNumber"
+              },
+              "Language": {
+                "renderer": "defaultString"
+              },
+              "Category": {
+                "renderer": "defaultCategory"
+              }
+            },
+            "tabs": {
+              "main": {
+                "columns": {
+                  "main": {
+                    "groups": {
+                      "main": ["Name", "Salary", "Language", "Category"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Designer": "designerJob"
+      }
+    },
+    "friends": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "Name": {
+          "renderer": "defaultString"
+        },
+        "Category": {
+          "renderer": "defaultCategory"
+        }
+      },
+      "visibleColumns": ["Name", "Category"],
+      "detailsRenderer": {
+        "renderer": {
+          "type": "User",
+          "renderer": "userDetails",
+          "fields": {
+            "Name": {
+              "label": "First Name",
+              "renderer": "defaultString"
+            },
+            "Surname": {
+              "label": "Last Name",
+              "renderer": "defaultString"
+            },
+            "Category": {
+              "renderer": "defaultCategory"
+            }
+          },
+          "tabs": {
+            "main": {
+              "columns": {
+                "main": {
+                  "groups": {
+                    "main": ["Name", "Surname", "Category"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "person": {
       "type": "Person",
       "renderer": "personDetails",
       "fields": {
+        "BestFriend": {
+          "label": "Best Friend",
+          "renderer": "bestFriend",
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Category": {
+                  "renderer": "defaultCategory"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Category"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Category": {
+                  "renderer": "defaultCategory"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Category"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "BestFriendApi"]
+        },
+        "Friends": {
+          "renderer": "friends",
+          "api": "ActiveUsersApi"
+        },
+        "Job": {
+          "label": "Job",
+          "renderer": "job"
+        },
         "Name": {
           "renderer": "defaultString"
         },
@@ -258,10 +551,42 @@
           "label": "relatives",
           "renderer": "defaultTuple3",
           "itemRenderers": [
-            { "renderer": "defaultCategory" },
-            { "renderer": "defaultCategory" },
+            { "renderer": "defaultString" },
+            { "renderer": "defaultString" },
             { "renderer": "defaultCategory" }
           ]
+        },
+        "RelativesList": {
+          "label": "relatives list",
+          "renderer": "defaultList",
+          "elementRenderer": { "renderer": "defaultCategory" }
+        },
+        "Dependants": {
+          "label": "Dependants",
+          "renderer": "defaultMap",
+          "tooltip": "someone who depends on you",
+          "keyRenderer": {
+            "label": "Name",
+            "tooltip": "their Name",
+            "renderer": "defaultString"
+          },
+          "valueRenderer": {
+            "label": "Category",
+            "tooltip": "their Category",
+            "renderer": "defaultCategory"
+          }
+        },
+        "FriendsByCategory": {
+          "label": "Friends by Category",
+          "renderer": "defaultMap",
+          "keyRenderer": {
+            "label": "Category",
+            "renderer": "defaultCategory"
+          },
+          "valueRenderer": {
+            "label": "Name",
+            "renderer": "defaultString"
+          }
         }
       },
       "tabs": {
@@ -269,15 +594,7 @@
           "columns": {
             "demographics": {
               "groups": {
-                "main": [
-                  "Name",
-                  "Category",
-                  "SubscribeToNewsletter",
-                  "Birthday",
-                  "SchoolAddress",
-                  "CategorySum",
-                  "Relatives"
-                ]
+                "main": ["BestFriend", "Dependants", "FriendsByCategory"]
               }
             }
           }

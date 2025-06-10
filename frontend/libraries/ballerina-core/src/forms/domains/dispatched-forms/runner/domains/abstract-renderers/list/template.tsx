@@ -57,6 +57,7 @@ export const ListAbstractRenderer = <
               identifiers: { withLauncher: string; withoutLauncher: string };
             },
         ): Value<ValueTuple> & any => ({
+          ..._,
           disabled: _.disabled,
           value: _.value.values?.get(elementIndex) || GetDefaultElementValue(),
           ...(_.elementFormStates?.get(elementIndex) ||

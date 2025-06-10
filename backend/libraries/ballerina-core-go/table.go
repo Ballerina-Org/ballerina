@@ -41,9 +41,10 @@ const (
 	TableMoveFromTo  DeltaTableEffectsEnum = "TableMoveFromTo"
 	TableDuplicateAt DeltaTableEffectsEnum = "TableDuplicateAt"
 	TableAdd         DeltaTableEffectsEnum = "TableAdd"
+	TableAddEmpty    DeltaTableEffectsEnum = "TableAddEmpty"
 )
 
-var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableReplace, TableValue, TableAddAt, TableRemoveAt, TableMoveFromTo, TableDuplicateAt, TableAdd}
+var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableReplace, TableValue, TableAddAt, TableRemoveAt, TableMoveFromTo, TableDuplicateAt, TableAdd, TableAddEmpty}
 
 func DefaultDeltaTableEffectsEnum() DeltaTableEffectsEnum { return AllDeltaTableEffectsEnumCases[0] }
 
@@ -85,7 +86,7 @@ func NewDeltaTableRemoveAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, del
 }
 func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {
 	return DeltaTable[a, deltaA]{
-		Discriminator: TableRemoveAt,
+		Discriminator: TableMoveFromTo,
 		MoveFromTo:    NewTuple2(from, to),
 	}
 }
@@ -101,6 +102,11 @@ func NewDeltaTableAdd[a any, deltaA any](newElement a) DeltaTable[a, deltaA] {
 		Add:           newElement,
 	}
 }
+func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		Discriminator: TableAddEmpty,
+	}
+}
 
 func MatchDeltaTable[a any, deltaA any, Result any](
 	onReplace func(Table[a]) (Result, error),
@@ -110,6 +116,7 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
+	onAddEmpty func() (Result, error),
 ) func(DeltaTable[a, deltaA]) (Result, error) {
 	return func(delta DeltaTable[a, deltaA]) (Result, error) {
 		var result Result
@@ -128,6 +135,8 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 			return onDuplicateAt(delta.DuplicateAt)
 		case "TableAdd":
 			return onAdd(delta.Add)
+		case "TableAddEmpty":
+			return onAddEmpty()
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaTable")
 	}

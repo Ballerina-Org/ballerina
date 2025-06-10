@@ -18,10 +18,8 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
-  id,
   IdWrapperProps,
   ErrorRendererProps,
-  InjectedPrimitive,
   DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
@@ -39,6 +37,7 @@ import {
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
+import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
@@ -102,6 +101,13 @@ export const DispatcherFormsApp = (props: {}) => {
   // TODO replace with delta transfer
   const [entityPath, setEntityPath] = useState<any>(null);
 
+  const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] =
+    useState(v4());
+  const [
+    remoteConfigEntityVersionIdentifier,
+    setRemoteConfigEntityVersionIdentifier,
+  ] = useState(v4());
+
   const parseCustomDelta =
     <T,>(
       toRawObject: (
@@ -163,6 +169,7 @@ export const DispatcherFormsApp = (props: {}) => {
           parseCustomDelta,
         )(delta),
       );
+      setRemoteConfigEntityVersionIdentifier(v4());
     }
   };
 
@@ -195,6 +202,7 @@ export const DispatcherFormsApp = (props: {}) => {
           parseCustomDelta,
         )(delta),
       );
+      setRemoteEntityVersionIdentifier(v4());
     }
   };
 
@@ -371,6 +379,8 @@ export const DispatcherFormsApp = (props: {}) => {
                         ),
                         onEntityChange: onPersonConfigChange,
                       },
+                      remoteEntityVersionIdentifier:
+                        remoteConfigEntityVersionIdentifier,
                       showFormParsingErrors: ShowFormsParsingErrors,
                       extraContext: {},
                     }}
@@ -407,6 +417,7 @@ export const DispatcherFormsApp = (props: {}) => {
                       config,
                       onEntityChange: onPersonEntityChange,
                     },
+                    remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),

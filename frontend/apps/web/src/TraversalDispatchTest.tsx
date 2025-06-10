@@ -289,14 +289,14 @@ export const TraversalDispatchTest = (props: {}) => {
     personEntity.kind == "l" &&
     personEntity.value.kind == "value"
   ) {
-    const stringFields = traversalResult.value.value({
+    const travRes = traversalResult.value.value({
       global: PredicateValue.Default.record(OrderedMap()),
       root: personEntity.value.value,
       local: personEntity.value.value,
       traversalIterator: personEntity.value.value,
     });
 
-    console.debug("stringFields", JSON.stringify(stringFields, null, 2));
+    console.debug("travRes", JSON.stringify(travRes, null, 2));
 
     // return (
     //   <div>

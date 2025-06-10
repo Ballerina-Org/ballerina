@@ -1,4 +1,9 @@
-import { PredicateValue, ValueOrErrors } from "../../../../../../../main";
+import {
+  PredicateValue,
+  unit,
+  Unit,
+  ValueOrErrors,
+} from "../../../../../../../main";
 import {
   DispatchParsedType,
   RecordType,
@@ -18,6 +23,7 @@ export type DispatchDelta = (
   | DispatchDeltaCustom
   | DispatchDeltaUnit
   | DispatchDeltaTable
+  | DispatchDeltaOne
 ) & {
   isWholeEntityMutation: boolean;
 };
@@ -191,27 +197,40 @@ export type DispatchDeltaTable =
       kind: "TableValue";
       id: string;
       nestedDelta: DispatchDelta;
-      tableType: DispatchParsedType<any>;
     }
   | {
-      kind: "TableAdd";
-      type: DispatchParsedType<any>;
+      kind: "TableAddEmpty";
     }
   | {
       kind: "TableRemove";
       id: string;
-      type: DispatchParsedType<any>;
     }
   | {
       kind: "TableMoveTo";
       id: string;
-      to: number;
-      type: DispatchParsedType<any>;
+      to: string;
     }
   | {
       kind: "TableDuplicate";
       id: string;
+    };
+export type DispatchDeltaOne =
+  | {
+      kind: "OneReplace";
+      replace: PredicateValue;
       type: DispatchParsedType<any>;
+    }
+  | {
+      kind: "OneValue";
+      nestedDelta: DispatchDelta;
+    }
+  | {
+      kind: "OneCreateValue";
+      value: PredicateValue;
+      type: DispatchParsedType<any>;
+    }
+  | {
+      kind: "OneDeleteValue";
     };
 
 export type DispatchDeltaCustom = {
@@ -298,7 +317,7 @@ export type DispatchDeltaTransferMap<DispatchDeltaTransferCustom> =
   | { Discriminator: "MapAdd"; Add: DispatchTransferTuple2<any, any> }
   | { Discriminator: "MapRemove"; Remove: number };
 export type DispatchDeltaTransferRecord<DispatchDeltaTransferCustom> =
-  | { Discriminator: "RecordReplace"; Replace: any }
+  | { Discriminator: string; Replace: any }
   | ({ Discriminator: "RecordField" } & {
       [field: string]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     });
@@ -320,10 +339,24 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
         Item2: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
       };
     }
-  | { Discriminator: "TableAdd" }
-  | { Discriminator: "TableRemove"; Remove: string }
-  | { Discriminator: "TableDuplicate"; Dup: string }
-  | { Discriminator: "TableMoveTo"; Move: string; To: number };
+  | { Discriminator: "TableAddEmpty" }
+  | { Discriminator: "TableRemoveAt"; RemoveAt: string }
+  | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
+  | {
+      Discriminator: "TableMoveFromTo";
+      MoveFromTo: [string, string];
+    };
+export type DispatchDeltaTransferOne<DispatchDeltaTransferCustom> =
+  | {
+      Discriminator: "OneValue";
+      Value: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
+    }
+  | { Discriminator: "OneReplace"; Replace: any }
+  | { Discriminator: "OneCreateValue"; CreateValue: any }
+  | {
+      Discriminator: "OneDeleteValue";
+      DeleteValue: Unit;
+    };
 
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferPrimitive
@@ -337,6 +370,7 @@ export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferUnion<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferTuple<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferTable<DispatchDeltaTransferCustom>
+  | DispatchDeltaTransferOne<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferCustom;
 
 export type DispatchDeltaTransferComparand = string;
@@ -952,6 +986,19 @@ export const DispatchDeltaTransfer = {
             ]);
           }
           if (delta.kind == "RecordReplace") {
+            if (delta.type.kind != "lookup") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >(
+                `Error: cannot process non look up record delta ${delta}, not currently supported.`,
+              );
+            }
+            const lookupName = delta.type.name;
             return toRawObject(delta.replace, delta.type, delta.state).Then(
               (value) =>
                 ValueOrErrors.Default.return<
@@ -963,10 +1010,10 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "RecordReplace",
+                    Discriminator: `${lookupName}Replace`,
                     Replace: value,
                   },
-                  "[RecordReplace]",
+                  `[${lookupName}Replace]`,
                   delta.isWholeEntityMutation,
                 ]),
             );
@@ -1121,7 +1168,7 @@ export const DispatchDeltaTransfer = {
               ]),
             );
           }
-          if (delta.kind == "TableAdd") {
+          if (delta.kind == "TableAddEmpty") {
             return ValueOrErrors.Default.return<
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
@@ -1131,9 +1178,9 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableAdd",
+                Discriminator: "TableAddEmpty",
               },
-              `[TableAdd]`,
+              `[TableAddEmpty]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1147,10 +1194,10 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableRemove",
-                Remove: delta.id,
+                Discriminator: "TableRemoveAt",
+                RemoveAt: delta.id,
               },
-              `[TableRemove][${delta.id}]`,
+              `[TableRemoveAt][${delta.id}]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1164,10 +1211,10 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableDuplicate",
-                Dup: delta.id,
+                Discriminator: "TableDuplicateAt",
+                DuplicateAt: delta.id,
               },
-              `[TableDuplicate][${delta.id}]`,
+              `[TableDuplicateAt][${delta.id}]`,
               delta.isWholeEntityMutation,
             ]);
           }
@@ -1181,11 +1228,118 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "TableMoveTo",
-                Move: delta.id,
-                To: delta.to,
+                Discriminator: "TableMoveFromTo",
+                MoveFromTo: [delta.id, delta.to],
               },
-              `[TableMoveTo][${delta.id}][${delta.to}]`,
+              `[TableMoveFromTo][${delta.id}][${delta.to}]`,
+              delta.isWholeEntityMutation,
+            ]);
+          }
+          if (delta.kind == "OneValue") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "OneValue",
+                  Value: value[0],
+                },
+                `[OneValue]${value[1]}`,
+                delta.isWholeEntityMutation || value[2],
+              ]),
+            );
+          }
+          if (delta.kind == "OneReplace") {
+            if (delta.type.kind != "one") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >(
+                `Error: one expected but received ${JSON.stringify(
+                  delta.type,
+                )} in OneReplace.`,
+              );
+            }
+            return toRawObject(delta.replace, delta.type.args, unit).Then(
+              (value) =>
+                ValueOrErrors.Default.return<
+                  [
+                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                    DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
+                  ],
+                  string
+                >([
+                  {
+                    Discriminator: "OneReplace",
+                    Replace: value,
+                  },
+                  `[OneReplace]`,
+                  delta.isWholeEntityMutation,
+                ]),
+            );
+          }
+          if (delta.kind == "OneCreateValue") {
+            if (delta.type.kind != "one") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  DispatchDeltaTransferIsWholeEntityMutation,
+                ],
+                string
+              >(
+                `Error: one expected but received ${JSON.stringify(
+                  delta.type,
+                )} in OneCreateValue.`,
+              );
+            }
+
+            return toRawObject(delta.value, delta.type.args, unit).Then(
+              (value) =>
+                ValueOrErrors.Default.return<
+                  [
+                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                    DispatchDeltaTransferComparand,
+                    DispatchDeltaTransferIsWholeEntityMutation,
+                  ],
+                  string
+                >([
+                  {
+                    Discriminator: "OneCreateValue",
+                    CreateValue: value,
+                  },
+                  `[OneCreateValue]`,
+                  delta.isWholeEntityMutation,
+                ]),
+            );
+          }
+          if (delta.kind == "OneDeleteValue") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                DispatchDeltaTransferIsWholeEntityMutation,
+              ],
+              string
+            >([
+              {
+                Discriminator: "OneDeleteValue",
+                DeleteValue: unit,
+              },
+              `[OneDeleteValue]`,
               delta.isWholeEntityMutation,
             ]);
           }

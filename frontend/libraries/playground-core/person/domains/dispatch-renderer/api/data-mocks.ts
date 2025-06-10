@@ -233,6 +233,133 @@ const getActiveFriends: DispatchTableApiSource = {
     },
 };
 
+const getChildren: DispatchTableApiSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(() => ({
+      Id: id,
+      Name: "Jane",
+      Surname: "Doe",
+      Birthday: "1990-01-01",
+      Email: "jane.doe@example.com",
+      SubscribeToNewsletter: true,
+      FavoriteColor: {
+        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+        IsSome: true,
+      },
+      City: {
+        IsSome: true,
+        Value: {
+          ...City.Default(v4(), faker.location.city()),
+        },
+      },
+      StreetNumberAndCity: {
+        Item1: faker.location.street(),
+        Item2: 100,
+        Item3: {
+          IsSome: true,
+          Value: {
+            ...City.Default(v4(), faker.location.city()),
+          },
+        },
+      },
+      Friends: {
+        From: 0,
+        To: 0,
+        HasMore: true,
+        Values: {},
+      },
+    }));
+  },
+  getMany:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: {
+          [v4()]: {
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
+              },
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
+                },
+              },
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
+          [v4()]: {
+            Id: v4(),
+            Name: "John",
+            Surname: "Doe",
+            Birthday: "1990-01-01",
+            Email: "john.doe@example.com",
+            SubscribeToNewsletter: true,
+            FavoriteColor: {
+              Value: {},
+              IsSome: false,
+            },
+            City: {
+              IsSome: true,
+              Value: {
+                ...City.Default(v4(), faker.location.city()),
+              },
+            },
+            StreetNumberAndCity: {
+              Item1: faker.location.street(),
+              Item2: 100,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  ...City.Default(v4(), faker.location.city()),
+                },
+              },
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          },
+        },
+        HasMore: true,
+        From: 1,
+        To: 2,
+      })).then((res) => ({
+        from: res.From,
+        to: res.To,
+        hasMoreValues: res.HasMore,
+        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
 const getFriends: DispatchOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(() => ({
@@ -317,7 +444,9 @@ const tableApiSources: DispatchTableApiSources = (streamName: string) =>
     ? ValueOrErrors.Default.return(getActiveUsers)
     : streamName == "ActiveFriendsApi"
       ? ValueOrErrors.Default.return(getActiveFriends)
-      : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
+      : streamName == "ChildrenApi"
+        ? ValueOrErrors.Default.return(getChildren)
+        : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
 
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
   streamName == "departments"
@@ -430,6 +559,12 @@ const entityApis: EntityApis = {
               },
             },
             Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+            Children: {
               From: 0,
               To: 0,
               HasMore: true,

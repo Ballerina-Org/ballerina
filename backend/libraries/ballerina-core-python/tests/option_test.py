@@ -51,3 +51,15 @@ def test_flat_map_with_none() -> None:
     option: Option[int] = Option.none()
     result = option.flat_map(lambda x: Option.some(x * 2))
     assert result == Option.none()
+
+
+def test_flatten_with_some() -> None:
+    option: Option[Option[int]] = Option.some(Option.some(42))
+    result = Option.flatten(option)
+    assert result == Option.some(42)
+
+
+def test_flatten_with_none() -> None:
+    option: Option[Option[int]] = Option.none()
+    result = Option.flatten(option)
+    assert result == Option.none()

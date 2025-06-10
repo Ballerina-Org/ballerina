@@ -55,6 +55,7 @@ export const SumAbstractRenderer = <
         PredicateValue
       > &
         LeftFormState => ({
+        ..._,
         ..._.customFormState.left,
         disabled: _.disabled,
         value: _.value.value.value,

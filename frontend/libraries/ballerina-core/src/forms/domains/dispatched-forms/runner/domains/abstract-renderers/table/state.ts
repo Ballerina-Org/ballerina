@@ -38,6 +38,7 @@ export type AbstractTableRendererReadonlyContext = {
   value: ValueTable;
   identifiers: { withLauncher: string; withoutLauncher: string };
   label?: string;
+  remoteEntityVersionIdentifier: string;
 };
 
 export type AbstractTableRendererState = {
@@ -45,26 +46,30 @@ export type AbstractTableRendererState = {
   customFormState: {
     selectedRows: Set<string>;
     selectedDetailRow: [number, string] | undefined;
-    isInitialized: boolean;
+    initializationStatus: "not initialized" | "initialized" | "reinitializing";
     streamParams: Debounced<Map<string, string>>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
       Map<string, string>,
       ValueInfiniteStreamState["getChunk"]
     >;
+    previousRemoteEntityVersionIdentifier: string;
+    shouldReinitialize: boolean;
   };
 };
 export const AbstractTableRendererState = {
   Default: (): AbstractTableRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {
-      isInitialized: false,
+      initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
       // TODO: replace with su
       getChunkWithParams: undefined as any,
       stream: undefined as any,
+      previousRemoteEntityVersionIdentifier: "",
+      shouldReinitialize: false,
     },
   }),
   Updaters: {
@@ -80,13 +85,19 @@ export const AbstractTableRendererState = {
           "streamParams",
         ),
         ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
-          "isInitialized",
+          "initializationStatus",
         ),
         ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
           "selectedDetailRow",
         ),
         ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
           "selectedRows",
+        ),
+        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+          "previousRemoteEntityVersionIdentifier",
+        ),
+        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+          "shouldReinitialize",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
@@ -108,6 +119,10 @@ export const AbstractTableRendererState = {
       loadMore: (): Updater<AbstractTableRendererState> =>
         AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
+        ),
+      shouldReinitialize: (_: boolean) =>
+        AbstractTableRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+          replaceWith(_),
         ),
     },
   },
@@ -160,7 +175,7 @@ export type AbstractTableRendererView<
     clearRows: SimpleCallback<void>;
     add: SimpleCallback<void>;
     remove: SimpleCallback<string>;
-    moveTo: (key: string, to: number) => void;
+    moveTo: (key: string, to: string) => void;
     duplicate: SimpleCallback<string>;
   },
   {

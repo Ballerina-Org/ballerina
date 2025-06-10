@@ -191,6 +191,7 @@ export const InfiniteMultiselectDropdownForm = <
             props.foreignMutations.onChange(replaceWith(_), delta);
           },
           toggleSelection: (elementRecord: ValueRecord) => {
+            // TODO - updater logic is using old value rather than inside an updater
             const updater = props.context.value.fields.has(
               elementRecord.fields.get("Id")! as string,
             )
@@ -204,7 +205,7 @@ export const InfiniteMultiselectDropdownForm = <
 
             const delta: Delta = {
               kind: "SetReplace",
-              // Maybe unsafe - check
+              // TODO: Maybe unsafe - check
               replace: updater(props.context.value),
               state: {
                 commonFormState: props.context.commonFormState,

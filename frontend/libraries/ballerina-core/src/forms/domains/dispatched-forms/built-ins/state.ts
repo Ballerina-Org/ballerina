@@ -1488,6 +1488,54 @@ export const dispatchToAPIRawValue =
         );
       }
 
+      if (t.kind == "one") {
+        if (!PredicateValue.Operations.IsOption(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `Option expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+
+        if (!raw.isSome) {
+          return ValueOrErrors.Default.return(
+            converters["One"].toAPIRawValue([
+              raw,
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          );
+        }
+
+        return dispatchToAPIRawValue(
+          t.args,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.value, formState?.commonFormState?.modifiedByUser ?? false).Then(
+          (value) => {
+            return ValueOrErrors.Default.return(
+              converters["One"].toAPIRawValue([
+                PredicateValue.Default.option(true, value),
+                formState?.commonFormState?.modifiedByUser ?? false,
+              ]),
+            );
+          },
+        );
+      }
+
+      if (t.kind == "table") {
+        if (!PredicateValue.Operations.IsTable(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `Table expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+
+        return ValueOrErrors.Default.return(
+          converters["Table"].toAPIRawValue([
+            raw,
+            formState?.commonFormState?.modifiedByUser ?? false,
+          ]),
+        );
+      }
+
       return ValueOrErrors.Default.throwOne(
         `Unsupported type ${JSON.stringify(t)}`,
       );

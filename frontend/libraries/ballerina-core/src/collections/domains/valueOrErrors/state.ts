@@ -109,15 +109,13 @@ export const ValueOrErrors = {
       ValueOrErrors<ValueOrErrors<a, e>, e>,
       ValueOrErrors<a, e>
     > =>
-      Fun((_) => {
-        if (_.kind == "errors") {
-          return _;
-        } else if (_.value.kind == "errors") {
-          return ValueOrErrors.Default.throw(_.value.errors);
-        } else {
-          return _.value;
-        }
-      }),
+      Fun((_) =>
+        _.kind == "errors"
+          ? _
+          : _.value.kind == "errors"
+            ? ValueOrErrors.Default.throw(_.value.errors)
+            : _.value,
+      ),
     Then: <a, b, e>(
       k: BasicFun<a, ValueOrErrors<b, e>>,
     ): Fun<ValueOrErrors<a, e>, ValueOrErrors<b, e>> =>

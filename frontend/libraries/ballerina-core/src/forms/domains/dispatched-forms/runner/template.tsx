@@ -59,6 +59,8 @@ export const DispatchFormRunnerTemplate = <
           value: entity.value.value,
           bindings,
           extraContext: props.context.extraContext,
+          remoteEntityVersionIdentifier:
+            props.context.remoteEntityVersionIdentifier,
         }}
         setState={(_: BasicUpdater<any>) =>
           props.setState(DispatchFormRunnerState().Updaters.formState(_))

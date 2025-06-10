@@ -173,7 +173,12 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           to: _.To,
         };
       },
-      toAPIRawValue: ([_, __]) => _,
+      toAPIRawValue: ([_, __]) => ({
+        From: 0,
+        To: 0,
+        HasMore: false,
+        Values: [],
+      }),
     },
     One: {
       fromAPIRawValue: (_) =>
