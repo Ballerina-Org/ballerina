@@ -147,7 +147,9 @@ export const RecordAbstractRenderer = <
       embedFieldTemplate(fieldName, fieldTemplate.template),
   );
 
-  const FieldLabels = FieldTemplates.map((fieldTemplate) => fieldTemplate.label);
+  const FieldLabels = FieldTemplates.map(
+    (fieldTemplate) => fieldTemplate.label,
+  );
 
   return Template.Default<
     Context & Value<ValueRecord>,
