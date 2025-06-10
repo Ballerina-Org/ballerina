@@ -9,9 +9,7 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { RecordType } from "../../../../../../../../../../../../../main";
-import {
-  RecordFieldRenderer,
-} from "./domains/recordFieldRenderer/state";
+import { RecordFieldRenderer } from "./domains/recordFieldRenderer/state";
 import { Renderer } from "../../state";
 
 export type SerializedRecordRenderer = {

@@ -527,7 +527,7 @@ export const DispatchParsedType = {
               ]),
         )
         .MapErrors((errors) =>
-          errors.map((error) => `${error}\n...When parsing keyOf types`),
+          errors.map((error) => `${error}\n...When parsing keyOf type`),
         ),
     ParseRecord: <T>(
       typeName: DispatchTypeName,
@@ -546,7 +546,7 @@ export const DispatchParsedType = {
       ],
       string
     > =>
-      // may have already been parsed because it was extended by another type
+      // will already been parsed if it was extended by another type which was already parsed
       alreadyParsedTypes.has(typeName)
         ? alreadyParsedTypes
             .get(typeName)!
