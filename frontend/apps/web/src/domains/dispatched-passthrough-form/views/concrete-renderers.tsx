@@ -1386,7 +1386,7 @@ export const PersonConcreteRenderers = {
                       PredicateValue.Default.record(
                         OrderedMap(
                           props.context.availableOptions
-                            .splice(0, 2)
+                            .slice(0, 2)
                             .map((opt) => [
                               opt.Id,
                               ValueRecord.Default.fromJSON(opt),
