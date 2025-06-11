@@ -709,8 +709,10 @@ export const PersonConcreteRenderers = {
           <table>
             <thead style={{ border: "1px solid black" }}>
               <tr style={{ border: "1px solid black" }}>
-                {props.TableHeaders.map((column: any) => (
-                  <th style={{ border: "1px solid black" }}>{column}</th>
+                {props.TableHeaders.map((header: string) => (
+                  <th style={{ border: "1px solid black" }}>
+                    {props.ColumnLabels.get(header) ?? "no label specified"}
+                  </th>
                 ))}
               </tr>
             </thead>

@@ -19,7 +19,6 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
-  FieldName,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -40,7 +39,7 @@ export const RecordAbstractRenderer = <
       template: Template<any, any, any, any>;
       visible?: Expr;
       disabled?: Expr;
-      label?: Expr;
+      label?: string;
       GetDefaultState: () => any;
     }
   >,
@@ -148,6 +147,10 @@ export const RecordAbstractRenderer = <
       embedFieldTemplate(fieldName, fieldTemplate.template),
   );
 
+  const FieldLabels = FieldTemplates.map(
+    (fieldTemplate) => fieldTemplate.label,
+  );
+
   return Template.Default<
     Context & Value<ValueRecord>,
     RecordAbstractRendererState,
@@ -245,30 +248,6 @@ export const RecordAbstractRenderer = <
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const fieldLabelsOrErrors = ValueOrErrors.Operations.All(
-      List<ValueOrErrors<[FieldName, string] | null, string>>(
-        FieldTemplates.map<ValueOrErrors<[FieldName, string] | null, string>>(
-          ({ label }, fieldName) =>
-            label === undefined
-              ? ValueOrErrors.Default.return(null)
-              : Expr.Operations.EvaluateAs("label predicate")(updatedBindings)(
-                  label,
-                ).Then((value) =>
-                  ValueOrErrors.Default.return(
-                    PredicateValue.Operations.IsString(value) && value
-                      ? [fieldName, value]
-                      : null,
-                  ),
-                ),
-        ).valueSeq(),
-      ),
-    );
-
-    const fieldLabelsMap: Map<string, string | undefined> =
-      fieldLabelsOrErrors.kind === "errors"
-        ? Map()
-        : Map(fieldLabelsOrErrors.value.filter((field) => field !== null));
-
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -285,7 +264,7 @@ export const RecordAbstractRenderer = <
             EmbeddedFields={EmbeddedFieldTemplates}
             VisibleFieldKeys={visibleFieldKeysSet}
             DisabledFieldKeys={disabledFieldKeysSet}
-            FieldLabels={fieldLabelsMap}
+            FieldLabels={FieldLabels}
           />
         </IdProvider>
       </>

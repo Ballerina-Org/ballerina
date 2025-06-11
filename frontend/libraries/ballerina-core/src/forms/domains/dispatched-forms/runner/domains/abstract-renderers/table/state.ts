@@ -180,6 +180,7 @@ export type AbstractTableRendererView<
   },
   {
     TableHeaders: string[];
+    ColumnLabels: Map<string, string | undefined>;
     EmbeddedTableData: OrderedMap<
       string,
       OrderedMap<

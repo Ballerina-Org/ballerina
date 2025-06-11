@@ -641,9 +641,11 @@
             "renderer": "streamingTable",
             "columns": {
               "Name": {
+                "label": "First Name",
                 "renderer": "defaultString"
               },
               "Surname": {
+                "label": "Last Name",
                 "renderer": "defaultString",
                 "disabled": true
               },
@@ -896,9 +898,11 @@
       "renderer": "streamingTable",
       "columns": {
         "Name": {
+          "label": "First Name",
           "renderer": "defaultString"
         },
         "Surname": {
+          "label": "Last Name",
           "renderer": "defaultString",
           "disabled": true
         },
@@ -917,9 +921,11 @@
       "renderer": "streamingTable",
       "columns": {
         "Name": {
+          "label": "First Name",
           "renderer": "defaultString"
         },
         "Surname": {
+          "label": "Last Name",
           "renderer": "defaultString",
           "disabled": true
         },
@@ -941,9 +947,11 @@
             "renderer": "streamingTable",
             "columns": {
               "Name": {
+                "label": "First Name",
                 "renderer": "defaultString"
               },
               "Surname": {
+                "label": "Last Name",
                 "renderer": "defaultString",
                 "disabled": true
               },
@@ -952,10 +960,12 @@
                 "options": "colors"
               },
               "City": {
+                "label": "City",
                 "renderer": "defaultInfiniteStream",
                 "stream": "cities"
               },
               "StreetNumberAndCity": {
+                "label": "Street Number and City",
                 "renderer": "defaultTuple3",
                 "itemRenderers": [
                   {
