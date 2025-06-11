@@ -83,6 +83,7 @@ export const TableAbstractRenderer = <
             ?.data.get(rowId);
 
           return {
+            ..._,
             value,
             ...cellState,
             disabled,
