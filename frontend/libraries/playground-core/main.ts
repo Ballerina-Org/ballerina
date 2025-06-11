@@ -1,3 +1,8 @@
+export * from "./ide/state";
+export * from "./ide/template";
+export * from "./ide/domains/raw-json-editor/state";
+export * from "./ide/domains/raw-json-editor/template";
+
 export * from "./uncle/state";
 export * from "./uncle/template";
 

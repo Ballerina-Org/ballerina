@@ -1,8 +1,27 @@
 ﻿import { useEffect, useState } from "react";
+import {DispatchSpecificationDeserializationResult, ValueOrErrors} from "ballerina-core";
+import {PersonFormInjectedTypes} from "./domains/person-from-config/injected-forms/category.tsx";
+import {IDETemplate, IDE} from "playground-core";
+import {IDELayout} from "./domains/ide/views/ide-layout.tsx";
+import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
+const ShowParsingJsonErrors = (
+    parsed: ValueOrErrors<any, string>,
+) => (
+    <div style={{ display: "flex", border: "red" }}>
+        {parsed.kind == "errors" &&
+            JSON.stringify(parsed.errors)}
+    </div>
+);
+
+
 
 export const IDEApp = (props: {}) => {
-    const [text, setText] = useState(`
-{
+    
+    const [ide, setIDE] = 
+        useState(IDE.Default(
+            [
+                // { kind: "unknown", value: SPEC },
+                { kind: "unknown", value: `{
   "name": "Alice",
   "age": 30,
   "active": true,
@@ -14,7 +33,23 @@ export const IDEApp = (props: {}) => {
   },
   "tags": ["json", "monarch", "test"],
   "nullValue": null
-}`);
+}` }
+             ]
+        ));
+//     const [text, setText] = useState(`
+// {
+//   "name": "Alice",
+//   "age": 30,
+//   "active": true,
+//   "fun": "extend",
+//   "nested": {
+//     "value": 42,
+//     "args": [1, 2, 3],
+//     "fun": "args"
+//   },
+//   "tags": ["json", "monarch", "test"],
+//   "nullValue": null
+// }`);
     function escapeHtml(str: string): string {
         const map: Record<string, string> = {
             '&': '&amp;',
@@ -60,14 +95,12 @@ export const IDEApp = (props: {}) => {
     }, []);
     return (
         <div className="IDE">
-            <div className="editor-wrapper">
-                <pre className="editor-highlighted" id="highlighted"></pre>
-                <textarea
-                    className="editor-input"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    id="editor">
-                </textarea>
-            </div>
+
+            <IDETemplate
+                context={ide}
+                setState={setIDE}
+                foreignMutations={{}}
+                view={IDELayout}
+            />
         </div>)
 }

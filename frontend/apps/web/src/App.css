@@ -170,15 +170,15 @@
 /* ----- IDE ----- */
 
 .IDE {
-  width: 1100px;
-  height: 600px;
+  width: 1300px;
+  height: 100%;
 }
 
 .editor-wrapper {
   position: relative;
   width: 100%;
-  max-width: 700px;
-  height: 300px;
+  /*max-width: 700px;*/
+  height: 1000px;
   font-family: monospace;
   font-size: 14px;
   line-height: 1.5;
@@ -189,7 +189,7 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  
+  height: 1000px;
   text-align: left !important;
   text-justify: none !important;
 
