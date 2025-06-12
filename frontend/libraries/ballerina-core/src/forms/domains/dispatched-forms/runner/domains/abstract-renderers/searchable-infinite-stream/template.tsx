@@ -159,8 +159,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     .then(
                       props.context.customFormState.stream.loadedElements.count() ==
                         0
-                        ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                            InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
+                        ? SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
+                            replaceWith(""),
                           )
                         : id,
                     ),
