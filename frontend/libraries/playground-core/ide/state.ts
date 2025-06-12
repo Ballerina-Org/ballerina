@@ -1,10 +1,18 @@
 ﻿import { replaceWith, Updater, simpleUpdater, BasicFun, BasicUpdater, Fun } from "ballerina-core";
 import { Template, View, Value } from "ballerina-core";
 import { Unit, Debounced, Synchronized, ValidationResult, ForeignMutationsInput } from "ballerina-core";
-import {RawJsonEditor, RawJsonEditorForeignMutationsExpected, JsonParseState } from "./domains/raw-json-editor/state";
+import {
+    RawJsonEditor,
+    RawJsonEditorForeignMutationsExpected,
+    JsonParseState,
+    RawJsonEditorView
+} from "./domains/raw-json-editor/state";
+import {Child1ForeignMutationsExpected, Child1View} from "../parent/domains/child1/state";
+import {ParentReadonlyContext, ParentWritableState} from "../parent/state";
 
 export type IDE = {
     rawEditor: RawJsonEditor,
+    tabs: string [],
     availableSpecs: Debounced<Synchronized<Value<JsonParseState []>, ValidationResult>>,
     //status: DocumentStatus
 };
@@ -12,12 +20,14 @@ export type IDE = {
 const CoreUpdaters = {
     ...simpleUpdater<IDE>()("rawEditor"),
     ...simpleUpdater<IDE>()("availableSpecs"),
+    ...simpleUpdater<IDE>()("tabs"),
 };
 
 export const IDE = {
     Default: (specs: JsonParseState []): IDE => ({
         rawEditor: RawJsonEditor.Default(specs[0] ?? { kind: "unparsed", raw: `{ name: "Papi"}`}),
-        availableSpecs:Debounced.Default(Synchronized.Default(Value.Default(specs)))
+        availableSpecs:Debounced.Default(Synchronized.Default(Value.Default(specs))),
+        tabs: ["Editor", "Specs", "Runner"],
     }),
     Updaters: {
         Core: CoreUpdaters,
@@ -35,14 +45,8 @@ export const IDE = {
     }),
 };
 
-export type IDEReadonlyContext = IDE;
+export type IDEReadonlyContext = {};
 export type IDEWritableState = IDE;
-
-// export type _IDEViewProps = {
-//     context: IDEReadonlyContext;
-//     setState: BasicFun<BasicUpdater<IDE>, void>;
-//     foreignMutations: IDEForeignMutationsExpected;
-// };
 
 export type IDEForeignMutationsExpected = RawJsonEditorForeignMutationsExpected
 
@@ -51,9 +55,15 @@ export type IDEForeignMutationsExposed = ReturnType<
 >;
 
 export type IDEView = View<
-    IDEReadonlyContext,
+    IDEReadonlyContext & IDEWritableState,
     IDEWritableState,
     IDEForeignMutationsExpected,
     {
+        RawJsonEditor: Template<
+            IDEReadonlyContext & IDEWritableState,
+            IDEWritableState,
+            RawJsonEditorForeignMutationsExpected,
+            RawJsonEditorView
+        >;
     }
 >;

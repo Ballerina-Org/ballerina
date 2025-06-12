@@ -95,7 +95,7 @@ export const IDEApp = (props: {}) => {
     }, []);
     return (
         <div className="IDE">
-
+            <h1>IDE.tsx</h1>
             <IDETemplate
                 context={ide}
                 setState={setIDE}

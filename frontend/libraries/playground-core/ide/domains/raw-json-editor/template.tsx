@@ -15,6 +15,6 @@ export const RawJsonEditorTemplate = Template.Default<
     RawJsonEditorForeignMutationsExpected,
     RawJsonEditorView
 >((props) => <props.view {...props} />).any([
-    RawJsonEditorDebouncerRunner.mapContext((_) => ({ ..._, events: [] })),
-    RawJsonEditorDebouncerRunnerBackend.mapContext((_) => ({ ..._, events: [] })),
+    RawJsonEditorDebouncerRunner, //.mapContext((_) => ({ ..._, events: [] })),
+    RawJsonEditorDebouncerRunnerBackend, //.mapContext((_) => ({ ..._, events: [] })),
 ]);

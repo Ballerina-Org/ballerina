@@ -1,6 +1,15 @@
-﻿import {replaceWith, Updater, simpleUpdater, BasicFun, BasicUpdater, Fun, Option} from "ballerina-core";
-import { Template, View } from "ballerina-core";
-import { Unit, Debounced, Value, Synchronized, ValidationResult, ForeignMutationsInput } from "ballerina-core";
+﻿import {
+    replaceWith,
+    simpleUpdater,
+    BasicFun,
+    BasicUpdater,
+    Fun,
+    Option,
+    FormParsingResult,
+    AsyncState
+} from "ballerina-core";
+import { View } from "ballerina-core";
+import { Unit, Debounced, Value, Synchronized, ForeignMutationsInput } from "ballerina-core";
 
 export type JsonParseState<T = unknown> =
     | { kind: "unparsed"; raw: string }
@@ -35,12 +44,17 @@ export type ParsingError = { success: true; value: any } | { success: false; err
 export type RawJsonEditor<T = unknown> = {
     inputString: Debounced<Synchronized<Value<string>, ParsingError>>,
     inputJSON: Debounced<Synchronized<Value<JsonParseState<T>>, ParsingError>>,
+    ss: AsyncState<ParsingError>
+    messages: string []
     //status: DocumentStatus
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<RawJsonEditor>()("inputString"),
+    ...simpleUpdater<RawJsonEditor>()("messages"),
+    ...simpleUpdater<RawJsonEditor>()("ss"),
 };
+
 const DocumentStatus = {
     Default: (): DocumentStatus => ({
         lifecycle: { kind: "EditorEmpty" },
@@ -77,6 +91,8 @@ export const RawJsonEditor = {
         return {
             inputString: Debounced.Default(Synchronized.Default(Value.Default(inputString))),
             inputJSON: Debounced.Default(Synchronized.Default(Value.Default(json))),
+            ss: AsyncState.Default.unloaded(),
+            messages: [],
             //status: DocumentStatus.Default(),
         }},
     Updaters: {
@@ -109,17 +125,24 @@ export const RawJsonEditor = {
             }
         },
         tryParseJsonAsPromise: (input: Value<string>): Promise<{ success: true; value: any } | { success: false; error: string }> => {
-            
+                console.log("frontend validation")
                 return new Promise((resolve, reject) => {
                     const result = RawJsonEditor.Operations.tryParseJson(input);
-                    result.success ? resolve(result.value) : reject(result.error)
+                    switch(result.success) {
+                        case true:
+                            const t = CoreUpdaters.messages(replaceWith(["ok"]))
+                            break;
+                        case false:
+                            CoreUpdaters.messages(replaceWith(["not-ok"]))
+                            break
+                    }
                 });
         }
     },
     ForeignMutations: (
         _: ForeignMutationsInput<RawJsonEditorReadonlyContext, RawJsonEditorWritableState>,
     ) => ({
-        loadSpec: (spec: string) => 
+        _loadSpec: (spec: string) => 
             //todo: check if current spec is saved
             _.setState(RawJsonEditor.Updaters.Template.inputString(replaceWith(spec)))
     }),
@@ -141,7 +164,7 @@ export type RawJsonEditorForeignMutationsExposed = ReturnType<
 >;
 
 export type RawJsonEditorView = View<
-    RawJsonEditorReadonlyContext,
+    RawJsonEditorReadonlyContext & RawJsonEditorWritableState,
     RawJsonEditorWritableState,
     RawJsonEditorForeignMutationsExpected,
     {
