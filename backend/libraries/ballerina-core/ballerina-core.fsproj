@@ -51,6 +51,7 @@
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/Renderers.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/Runner.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Validator.fs" />
+    <Compile Include="IDE\Validator.fs" />
   </ItemGroup>
 
   <ItemGroup>

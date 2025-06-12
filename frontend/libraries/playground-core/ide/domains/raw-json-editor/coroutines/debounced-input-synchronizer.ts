@@ -10,9 +10,9 @@ const JsonValidationInterval = 2000; // frontend
 const JsonValidationIntervalBackend = 1000; // backend
 
 export const debouncedInputBackendValidator = Co.Repeat(
-    Debounce<Synchronized<Value<string>, ParsingError>>(
-        Synchronize<Value<string>, ParsingError>(
-            (value: Value<string>) => PromiseRepo.Default.mock((_) => ({ success: false, error: "backend not yet there"})),
+    Debounce<Synchronized<Value<string>, boolean>>(
+        Synchronize<Value<string>, boolean>(
+            (value: Value<string>) => PromiseRepo.Default.mock((_) => true),
             (_: any) => (_ in apiResultStatuses ? _ : "permanent failure"),
             5,
             150,
@@ -25,16 +25,14 @@ export const debouncedInputBackendValidator = Co.Repeat(
 type ParsingError = { success: true; value: any } | { success: false; error: string }
 
 export const debouncedInputValidator = Co.Repeat(
-    Co.Seq([
-        Debounce<Synchronized<Value<string>, ParsingError>>(
-            Synchronize<Value<string>, ParsingError>(
+
+        Debounce<Synchronized<Value<string>, boolean>>(
+            Synchronize<Value<string>, boolean>(
                 RawJsonEditor.Operations.tryParseJsonAsPromise,
                 (_: any) => (_ in apiResultStatuses ? _ : "permanent failure"),
                 5,
-                JsonValidationInterval,
-            ),//.embed( d => d.value, RawJsonEditor.Updaters.Core.ss),
-            500,
+                150,
+            ),
+            JsonValidationInterval
         ).embed((ide) => ide.inputString, RawJsonEditor.Updaters.Core.inputString),
-        //Co.GetState().then((current) => )
-    ])
 );
