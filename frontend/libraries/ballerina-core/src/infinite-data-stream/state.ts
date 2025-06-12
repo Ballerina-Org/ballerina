@@ -157,13 +157,9 @@ export const InfiniteStreamState = <Element extends Identifiable>() => ({
     },
     Template: {
       loadInitial: (): Updater<InfiniteStreamState<Element>> =>
-        InfiniteStreamState<Element>()
-          .Updaters.Core.position(
-            StreamPosition.Updaters.Template.loadInitial(),
-          )
-          .then(
-            InfiniteStreamState<Element>().Updaters.Core.clearLoadedElements(),
-          ),
+        InfiniteStreamState<Element>().Updaters.Core.position(
+          StreamPosition.Updaters.Template.loadInitial(),
+        ),
       reload: (
         getChunk: InfiniteStreamState<Element>["getChunk"],
       ): Updater<InfiniteStreamState<Element>> =>
