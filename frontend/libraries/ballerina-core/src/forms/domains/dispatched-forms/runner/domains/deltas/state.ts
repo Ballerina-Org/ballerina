@@ -1010,7 +1010,7 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: `${lookupName}Replace`,
+                    Discriminator: "Replace",
                     Replace: value,
                   },
                   `[${lookupName}Replace]`,
@@ -1032,9 +1032,7 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: `${
-                    (delta.recordType as RecordType<any>).name
-                  }${delta.field[0]}`,
+                  Discriminator: delta.field[0],
                   [delta.field[0]]: value[0],
                 } as {
                   Discriminator: string;

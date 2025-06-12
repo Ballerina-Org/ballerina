@@ -29,6 +29,14 @@ export const StreamPosition = {
   }),
   Updaters: {
     Template: {
+      loadInitial: (): Updater<StreamPosition> =>
+        StreamPosition.Updaters.Core.lastModifiedTime(
+          replaceWith(Date.now()),
+        ).then(
+          StreamPosition.Updaters.Core.shouldLoad(
+            replaceWith<StreamPosition["shouldLoad"]>("loadMore"),
+          ),
+        ),
       changeChunkSize: (chunkSize: number): Updater<StreamPosition> =>
         StreamPosition.Updaters.Core.chunkSize(replaceWith(chunkSize)).then(
           StreamPosition.Updaters.Template.reload(),
@@ -148,6 +156,10 @@ export const InfiniteStreamState = <Element extends Identifiable>() => ({
         ),
     },
     Template: {
+      loadInitial: (): Updater<InfiniteStreamState<Element>> =>
+        InfiniteStreamState<Element>().Updaters.Core.position(
+          StreamPosition.Updaters.Template.loadInitial(),
+        ),
       reload: (
         getChunk: InfiniteStreamState<Element>["getChunk"],
       ): Updater<InfiniteStreamState<Element>> =>
