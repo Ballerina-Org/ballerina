@@ -29,7 +29,7 @@ export const StreamPosition = {
   }),
   Updaters: {
     Template: {
-      initialLoad: (): Updater<StreamPosition> =>
+      loadInitial: (): Updater<StreamPosition> =>
         StreamPosition.Updaters.Core.lastModifiedTime(
           replaceWith(Date.now()),
         ).then(
@@ -156,10 +156,10 @@ export const InfiniteStreamState = <Element extends Identifiable>() => ({
         ),
     },
     Template: {
-      initialLoad: (): Updater<InfiniteStreamState<Element>> =>
+      loadInitial: (): Updater<InfiniteStreamState<Element>> =>
         InfiniteStreamState<Element>()
           .Updaters.Core.position(
-            StreamPosition.Updaters.Template.initialLoad(),
+            StreamPosition.Updaters.Template.loadInitial(),
           )
           .then(
             InfiniteStreamState<Element>().Updaters.Core.clearLoadedElements(),

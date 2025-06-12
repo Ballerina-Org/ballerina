@@ -163,7 +163,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                       props.context.customFormState.stream.loadedElements.count() ==
                         0
                         ? SearchableInfiniteStreamAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                            InfiniteStreamState<CollectionReference>().Updaters.Template.initialLoad(),
+                            InfiniteStreamState<CollectionReference>().Updaters.Template.loadInitial(),
                           )
                         : id,
                     ),
