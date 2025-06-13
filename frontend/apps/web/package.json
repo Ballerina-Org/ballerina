@@ -8,10 +8,13 @@
     "build": "NODE_ENV=production rspack build"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@faker-js/faker": "^8.4.1",
     "ballerina-core": "*",
     "i18next": "^23.11.5",
     "immutable": "^5.0.0-beta.5",
+    "lucide-react": "^0.515.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.4",
@@ -25,11 +28,11 @@
     "@types/react-dom": "^18.2.18",
     "@types/react-grid-layout": "^1.3.3",
     "@types/uuid": "^9.0.8",
-    "react-data-debugger": "1.1.0",
     "ballerina-core": "*",
     "create-domain": "*",
     "link": "^2.1.0",
     "playground-core": "*",
+    "react-data-debugger": "1.1.0",
     "react-refresh": "^0.14.0",
     "typescript": "^5.4.5"
   }

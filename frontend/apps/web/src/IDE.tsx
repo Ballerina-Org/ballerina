@@ -2,7 +2,7 @@
 import {IDETemplate, IDE} from "playground-core";
 import {IDELayout} from "./domains/ide/views/ide-layout.tsx";
 import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
-
+import "./IDE.css"
 export const IDEApp = (props: {}) => {
     
     const [ide, setIDE] = 
@@ -55,7 +55,8 @@ export const IDEApp = (props: {}) => {
         { regex: /[{}\[\],:]/g, className: "token-punct" },                    
 
         { regex: /\b(args|fun)\b/g, className: "token-keyword" },
-        { regex: /\b(extend)\b/g, className: "token-keyword2" }
+        { regex: /\b(types)\b/g, className: "token-keyword2" },
+        { regex: /\b(fields|extends|caseName|Value)\b/g, className: "token-keyword3" }
     ];
     
     useEffect(() => {
@@ -72,7 +73,6 @@ export const IDEApp = (props: {}) => {
     
     return (
         <div className="IDE">
-            <h1>IDE.tsx</h1>
             <IDETemplate
                 context={ide}
                 setState={setIDE}

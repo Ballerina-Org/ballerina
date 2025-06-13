@@ -1,16 +1,16 @@
 ﻿import {RawJsonEditor, RawJsonEditorView} from "playground-core";
 import {replaceWith, AsyncState} from "ballerina-core";
-
+import { Play, AlertTriangle, CheckCircle, Server, User, Loader } from "lucide-react";
 export const RawEditorArea: RawJsonEditorView = (props) => (
     <>
-        <p>Messages:</p>
-        <>{props.context.messages.map( msg => <p>{msg}</p>)}</>
-        <p>Backend Spec validation in progress {AsyncState.Operations.isLoading(props.context.specName.sync)}:</p>
         <div>
             {(() => {
                 switch(props.context.specName.sync.kind) {
                     case "loading":
-                        return <p>Validating backend specification...</p>;
+                        return <div>
+                            <Loader size={10} />
+                            <span>Backend validation</span>
+                        </div>;
                     case "error":
                         return <p>Validation failed!: </p>;
                     case "loaded":
@@ -24,6 +24,7 @@ export const RawEditorArea: RawJsonEditorView = (props) => (
         <div className="editor-wrapper">
             <pre className="editor-highlighted" id="highlighted"></pre>
             <textarea
+                spellCheck={false}
                 className="editor-input"
                 value={props.context.inputString.value}
                 onChange={(e) => {
