@@ -86,7 +86,7 @@ export const TableAbstractRenderer = <
             ..._,
             value,
             ...cellState,
-            disabled,
+            disabled: disabled || _.disabled,
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
             identifiers: {
