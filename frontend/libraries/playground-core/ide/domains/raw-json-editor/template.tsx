@@ -6,8 +6,6 @@ import {
     RawJsonEditorWritableState,
 } from "./state";
 
-import {ValidateSpecification} from "./coroutines/runner";
-
 export const RawJsonEditorTemplate = Template.Default<
     RawJsonEditorReadonlyContext,
     RawJsonEditorWritableState,
@@ -15,6 +13,5 @@ export const RawJsonEditorTemplate = Template.Default<
     RawJsonEditorView
 >((props) => <props.view {...props} />).any([
     //RawJsonEditorDebouncerRunner, //.mapContext((_) => ({ ..._, events: [] })),
-    //RawJsonEditorDebouncerRunnerBackend, //.mapContext((_) => ({ ..._, events: [] })),
-    ValidateSpecification,
+    //ValidateSpecification,
 ]);

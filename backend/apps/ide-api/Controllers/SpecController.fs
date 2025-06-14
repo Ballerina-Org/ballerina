@@ -4,17 +4,30 @@ open Microsoft.AspNetCore.Mvc
 open Microsoft.Extensions.Logging
 
 open Ballerina.IDE
+open Ballerina.Collections.Sum
 
-type SpecRequest = { specBody: string }
-type SpecValidationResult = { specName: string; isValid: bool }
+open System
+
+type SpecRequest = { SpecBody: string }
+type SpecValidationResult = { IsValid: bool; Errors: string }
 
 [<ApiController>]
 [<Route("[controller]")>]
 type SpecController (_logger : ILogger<SpecController>) =
     inherit ControllerBase()
 
+    let createResponseBody (sum: Sum<unit, _>) =
+      {
+        IsValid = sum.IsLeft
+        Errors = 
+          match sum with
+          | Left _ -> String.Empty
+          | Right msg -> msg
+      }
+
     [<HttpPost("validate")>]
     member _.Validate([<FromBody>] req: SpecRequest) =
-        let res = Validator.parseAndValidate req.specBody
-        { isValid = res.IsLeft; specName = "" }
+        req.SpecBody
+        |> Validator.parseAndValidate 
+        |> createResponseBody
         |> ActionResult<SpecValidationResult> 

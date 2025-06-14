@@ -14,6 +14,7 @@
     "ballerina-core": "*",
     "i18next": "^23.11.5",
     "immutable": "^5.0.0-beta.5",
+    "json-edit-react": "^1.27.0",
     "lucide-react": "^0.515.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

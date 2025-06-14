@@ -5,10 +5,10 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 
-
 module Program =
     let exitCode = 0
     let corsPolicyName = "AllowIDEFrontend"
+    
     [<EntryPoint>]
     let main args =
 

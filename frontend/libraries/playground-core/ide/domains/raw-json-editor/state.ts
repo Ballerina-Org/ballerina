@@ -1,129 +1,86 @@
-﻿import {
-    replaceWith,
-    simpleUpdater,
-    BasicFun,
-    BasicUpdater,
-    Fun,
-    Option,
-    FormParsingResult,
-    AsyncState
-} from "ballerina-core";
+﻿import {simpleUpdater, Option} from "ballerina-core";
 
 import { View } from "ballerina-core";
-import { Unit, Debounced, Value, Synchronized, ForeignMutationsInput } from "ballerina-core";
+import { Unit, Value, ForeignMutationsInput } from "ballerina-core";
+import {EditorStep, } from "../../state";
 
-export type JsonParseState<T = unknown> =
+export type SpecValidationResult = { isValid: boolean; errors: string }
+
+export type JsonValue<T = unknown> = 
     | { kind: "unparsed"; raw: string }
     | { kind: "parsed"; value: T }
     | { kind: "unknown"; value: any };
 
-//
-// type JsonParseStatus =
-//     | { kind: "Ok" }
-//     | { kind: "Error"; errors: string[] }
-//
-// type JsonValidationStatus =
-//     | { kind: "Valid" }
-//     | { kind: "Invalid"; errors: string[] }
-//
-// type SpecDocumentLoaded = { kind: "SpecLoaded" }
-// type SpecDocumentDirty = { kind: "SpecLoaded"; reason?: string }
-//
-// type DocumentLifecycle =
-//     | { kind : "EditorEmpty" }
-//     | SpecDocumentLoaded
-//     | SpecDocumentDirty
-//
-// type DocumentStatus = {
-//     lifecycle: DocumentLifecycle
-//     lastModified: Option<Date>
-//     jsonParse: JsonParseStatus
-//     jsonValidation: JsonValidationStatus
-// }
-
-export type ParsingError = { success: true; value: any } | { success: false; error: string }
+export const JsonValue = {
+    Default: {
+        unparsed: (raw: string): JsonValue => ({ kind: "unparsed", raw }),
+        parsed: <T>(value: T): JsonValue<T> => ({ kind: "parsed", value }),
+        unknown: (value: any): JsonValue => ({ kind: "unknown", value }),
+    }
+}
 
 export type RawJsonEditor<T = unknown> = {
-    inputString: Debounced<Synchronized<Value<string>, boolean>>,
-    inputJSON: Debounced<Synchronized<Value<JsonParseState<T>>, boolean>>,
-    specName: Synchronized<Value<string>, boolean>,
-    messages: string []
-    //status: DocumentStatus
+    inputString: Value<string>,
+    validatedSpec: Option<string>,
+    errors: Option<string>,
+    step: EditorStep,
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<RawJsonEditor>()("inputString"),
-    ...simpleUpdater<RawJsonEditor>()("messages"),
-    ...simpleUpdater<RawJsonEditor>()("specName"),
-
+    ...simpleUpdater<RawJsonEditor>()("validatedSpec"),
+    ...simpleUpdater<RawJsonEditor>()("errors"),
+    ...simpleUpdater<RawJsonEditor>()("step"),
 };
 
 export const RawJsonEditor = {
-    Default: <T>(json: JsonParseState<T>): RawJsonEditor<T> => {
-        let inputString: string;
-            switch (json.kind) {
-                case "unparsed":
-                    inputString = json.raw;
-                    break;
-    
-                case "parsed":
-                    inputString = JSON.stringify(json.value);
-                    break;
-    
-                case "unknown":
-                    inputString = json.value;
-                    break;
-            }
-        return {
-            inputString: Debounced.Default(Synchronized.Default(Value.Default(inputString))),
-            inputJSON: Debounced.Default(Synchronized.Default(Value.Default(json))),
-            specName: Synchronized.Default (Value.Default("defaultSpecName")),
+    Default: <T>(json: Option<JsonValue<T>>): RawJsonEditor<T> => {
+        let inputString = `{}`;
 
-            messages: [],
-            //status: DocumentStatus.Default(),
+        switch (json.kind) {
+            case "l": break;
+            case "r":
+                switch (json.value.kind) {
+                    case "unparsed":
+                        inputString = json.value.raw;
+                        break;
+
+                    case "parsed":
+                        inputString = JSON.stringify(json.value.value);
+                        break;
+
+                    case "unknown":
+                        inputString = json.value.value;
+                        break;
+                }
+                break;
+        }
+
+        return {
+            inputString: Value.Default(inputString), 
+            validatedSpec: Option.Default.none(),
+            errors: Option.Default.none(),
+            step: { kind: "editing" },
         }},
     Updaters: {
         Core: CoreUpdaters,
         Template: {
-            inputString: Fun(Value.Updaters.value<string>).then(
-                Fun(Synchronized.Updaters.value<Value<string>, boolean>).then(
-                    Fun(
-                        Debounced.Updaters.Template.value<
-                            Synchronized<Value<string>, boolean>
-                        >,
-                    ).then(CoreUpdaters.inputString),
-                ),
-            )
+            inputString: CoreUpdaters.inputString,
         },
+        
+        
         Coroutine: {
         },
     },
     Operations: {
-        tryParseJson: (input: Value<string>): { success: true; value: any } | { success: false; error: string } => {
-            try {
-                return { success: true, value: JSON.parse(input.value) };
-            } catch (e: any) {
-                return {
-                    success: false,
-                    error: e && e.message
-                        ? `Wrong JSON: ${e.message}`
-                        : "Unknown JSON error."
-                };
-            }
-        },
-        tryParseJsonAsPromise: (input: Value<string>): Promise<boolean> => {
-                console.log("frontend validation")
-                return new Promise((resolve, reject) => {
-                    const result = RawJsonEditor.Operations.tryParseJson(input);
-                    switch(result.success) {
-                        case true:
-                            resolve(result.value);
-                            break;
-                        case false:
-                            reject(result.error);
-                            break
-                    }
-                });
+        tryParse: (input: Value<string>): Promise<any> => {
+            return new Promise((resolve, reject) => {
+                try {
+                    resolve(JSON.parse(input.value))
+                } catch (e: any) {
+                    reject(e);
+                }
+            });
         }
     },
     ForeignMutations: (
@@ -137,9 +94,9 @@ export type RawJsonEditorWritableState = RawJsonEditor;
 
 export type RawJsonEditorForeignMutationsExpected = Unit
 
-export type RawJsonEditorForeignMutationsExposed = ReturnType<
-    typeof RawJsonEditor.ForeignMutations
->;
+// export type RawJsonEditorForeignMutationsExposed = ReturnType<
+//     typeof RawJsonEditor.ForeignMutations
+// >;
 
 export type RawJsonEditorView = View<
     RawJsonEditorReadonlyContext & RawJsonEditorWritableState,

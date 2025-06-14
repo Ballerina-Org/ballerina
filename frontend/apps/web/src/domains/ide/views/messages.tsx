@@ -12,7 +12,7 @@ const iconButton = css`
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #2563eb;
+  background: #083d34;
   color: white;
   border: none;
   border-radius: 8px;
@@ -34,7 +34,7 @@ const messageLayout = css`
 
 const messageBox = (variant: "error" | "success") => css`
   background: ${variant === "error" ? "#fee2e2" : "#dcfce7"};
-  border-left: 5px solid ${variant === "error" ? "#ef4444" : "#22c55e"};
+  border-right: 5px solid ${variant === "error" ? "#ef4444" : "#22c55e"};
   border-radius: 10px;
   padding: 16px 24px;
   margin-bottom: 16px;
@@ -72,17 +72,20 @@ export const ActionsAndMessages: React.FC<{
                 <Play size={18} /> Run
             </button>
             <button css={iconButton} onClick={onSave}>
-                <CheckCircle size={18} /> Save
-            </button>
-            <button css={iconButton} onClick={onFormat}>
-                <User size={18} /> Format
+                <CheckCircle size={18}  /> Save
             </button>
         </div>
         <div css={messageLayout}>
-            <div>
+            <div
+                css={css`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;  // right-align all children in this column
+  `}
+            >
                 {clientErrors.map((msg, i) => (
                     <div key={`client-error-${i}`} css={messageBox("error")}>
-                        <User size={20} />
+                        <User size={60} />
                         <span>{msg}</span>
                     </div>
                 ))}

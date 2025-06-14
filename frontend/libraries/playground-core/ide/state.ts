@@ -1,33 +1,46 @@
-﻿import { replaceWith, Updater, simpleUpdater, BasicFun, BasicUpdater, Fun } from "ballerina-core";
+﻿import { simpleUpdater, Option} from "ballerina-core";
 import { Template, View, Value } from "ballerina-core";
-import { Unit, Debounced, Synchronized, ValidationResult, ForeignMutationsInput } from "ballerina-core";
+import { Debounced, Synchronized, ValidationResult, ForeignMutationsInput } from "ballerina-core";
 import {
     RawJsonEditor,
     RawJsonEditorForeignMutationsExpected,
-    JsonParseState,
+    JsonValue,
     RawJsonEditorView
 } from "./domains/raw-json-editor/state";
-import {Child1ForeignMutationsExpected, Child1View} from "../parent/domains/child1/state";
-import {ParentReadonlyContext, ParentWritableState} from "../parent/state";
+
+export type EditorStep =
+    | { kind : "editing" }
+    | { kind : "validating" }
+    | { kind : "parsing" }
+    | { kind : "running" }
+
+export const EditorStep = {
+    editing: (): EditorStep => ({ kind: "editing" }),
+    validating: (): EditorStep => ({ kind: "validating" }),
+    parsing: (): EditorStep => ({ kind: "parsing" }),
+    running: (): EditorStep => ({ kind: "running" }),
+}
 
 export type IDE = {
     rawEditor: RawJsonEditor,
     tabs: string [],
-    availableSpecs: Debounced<Synchronized<Value<JsonParseState []>, ValidationResult>>,
-    //status: DocumentStatus
+    availableSpecs: Debounced<Synchronized<Value<JsonValue []>, ValidationResult>>,
+
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<IDE>()("rawEditor"),
     ...simpleUpdater<IDE>()("availableSpecs"),
     ...simpleUpdater<IDE>()("tabs"),
+
 };
 
 export const IDE = {
-    Default: (specs: JsonParseState []): IDE => ({
-        rawEditor: RawJsonEditor.Default(specs[0] ?? { kind: "unparsed", raw: `{ name: "Papi"}`}),
-        availableSpecs:Debounced.Default(Synchronized.Default(Value.Default(specs))),
-        tabs: ["Editor", "Specs", "Runner"],
+    Default: (specs: JsonValue []): IDE => ({
+        rawEditor: RawJsonEditor.Default(Option.Default.none()),
+        availableSpecs:Debounced.Default(Synchronized.Default(Value.Default([]))),
+        tabs: [ "tab1", "tab2", "tab3" ],   
+
     }),
     Updaters: {
         Core: CoreUpdaters,
@@ -50,9 +63,9 @@ export type IDEWritableState = IDE;
 
 export type IDEForeignMutationsExpected = RawJsonEditorForeignMutationsExpected
 
-export type IDEForeignMutationsExposed = ReturnType<
-    typeof IDE.ForeignMutations
->;
+// export type IDEForeignMutationsExposed = ReturnType<
+//     typeof IDE.ForeignMutations
+// >;
 
 export type IDEView = View<
     IDEReadonlyContext & IDEWritableState,

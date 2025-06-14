@@ -6,7 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Spec.fs" />
         <Compile Include="Controllers\SpecController.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
@@ -16,6 +15,7 @@
         <Link>.dockerignore</Link>
       </Content>
       <Content Include="Dockerfile" />
+      <Content Include="todo.md" />
     </ItemGroup>
 
     <ItemGroup>

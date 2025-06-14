@@ -6,13 +6,13 @@ import { Value, PromiseRepo } from "ballerina-core";
 import { IDE } from "../state";
 import { ValidationResult } from "ballerina-core";
 import { Co } from "./builder";
-import { JsonParseState } from "../domains/raw-json-editor/state";
+import { JsonValue } from "../domains/raw-json-editor/state";
 
 const SubscriptionInterval = 1000;
 
 export const specsSubscription = Co.Repeat(
-    Debounce<Synchronized<Value<JsonParseState []>, ValidationResult>>(
-        Synchronize<Value<JsonParseState []>, ValidationResult>(
+    Debounce<Synchronized<Value<JsonValue []>, ValidationResult>>(
+        Synchronize<Value<JsonValue []>, ValidationResult>(
             (_) => PromiseRepo.Default.mock((_) =>  {
                 return "valid"}),
             (_: any) => (_ in apiResultStatuses ? _ : "permanent failure"),

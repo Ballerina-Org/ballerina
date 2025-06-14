@@ -1,29 +1,13 @@
 ﻿import { useEffect, useState } from "react";
-import {IDETemplate, IDE} from "playground-core";
+import {IDETemplate, IDE, RawJsonEditor} from "playground-core";
 import {IDELayout} from "./domains/ide/views/ide-layout.tsx";
-import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
 import "./IDE.css"
+import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
+import {replaceWith} from "ballerina-core";
+
 export const IDEApp = (props: {}) => {
     
-    const [ide, setIDE] = 
-        useState(IDE.Default(
-            [
-                { kind: "unknown", value:JSON.stringify(SPEC) },
-                { kind: "unknown", value: `{
-  "name": "Alice",
-  "age": 30,
-  "active": true,
-  "fun": "extend",
-  "nested": {
-    "value": 42,
-    "args": [1, 2, 3],
-    "fun": "args"
-  },
-  "tags": ["json", "monarch", "test"],
-  "nullValue": null
-}` }
-             ]
-        ));
+    const [ide, setIDE] = useState(IDE.Default([]));
 
     function escapeHtml(str: string): string {
         const map: Record<string, string> = {
@@ -59,16 +43,19 @@ export const IDEApp = (props: {}) => {
         { regex: /\b(fields|extends|caseName|Value)\b/g, className: "token-keyword3" }
     ];
     
+    // useEffect(() => {
+    //     const editor = document.getElementById('editor') as HTMLTextAreaElement;
+    //     const highlighted = document.getElementById('highlighted') as HTMLPreElement;
+    //     editor.addEventListener('input', () => update(highlighted, editor));
+    //     editor.addEventListener('scroll', () => {
+    //         highlighted.scrollTop = editor.scrollTop;
+    //         highlighted.scrollLeft = editor.scrollLeft;
+    //     });
+    //
+    //     update(highlighted, editor)
+    // }, []);
     useEffect(() => {
-        const editor = document.getElementById('editor') as HTMLTextAreaElement;
-        const highlighted = document.getElementById('highlighted') as HTMLPreElement;
-        editor.addEventListener('input', () => update(highlighted, editor));
-        editor.addEventListener('scroll', () => {
-            highlighted.scrollTop = editor.scrollTop;
-            highlighted.scrollLeft = editor.scrollLeft;
-        });
-
-        update(highlighted, editor)
+        setIDE(IDE.Updaters.Core.rawEditor(RawJsonEditor.Updaters.Core.inputString(replaceWith({value: JSON.stringify(SPEC)}))))
     }, []);
     
     return (

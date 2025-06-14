@@ -20,6 +20,7 @@ import {
 export const DispatchFormRunnerTemplate = <
   T extends { [key in keyof T]: { type: any; state: any } },
 >() =>
+    
   Template.Default<
     DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,
     DispatchFormRunnerState<T>,
@@ -27,7 +28,7 @@ export const DispatchFormRunnerTemplate = <
   >((props) => {
     const entity = props.context.launcherRef.entity;
     const config = props.context.launcherRef.config;
-
+    
     if (entity.kind == "r" || config.kind == "r") {
       return <></>;
     }

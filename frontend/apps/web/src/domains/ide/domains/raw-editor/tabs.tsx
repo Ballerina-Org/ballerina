@@ -7,24 +7,26 @@ const color = 'white'
 export const HorizontalButtonContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div
         css={css`
-      display: flex;
-      flex-direction: row;
-      gap: 16px;           // space between buttons
-      align-items: center; // vertically align buttons
-      width: fit-content;  // container fits buttons (optional)
-      margin: 0 auto;      // center horizontally (optional)
-    `}
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            align-items: center;
+            width: fit-content;
+            margin: 0 auto;
+        `}
     >
+
         {children}
     </div>
 );
-export const Tab:React.FC<{ name: string}> = props=> {
+export const Tab:React.FC<{ name: string, active?: boolean, size?: number }> = props=> {
     return (
         <div
             css={css`
-        padding: 12px;
-        background-color: hotpink;
-        font-size: 12px;
+        padding: ${props.size ??12}px;
+        background-color:  ${props.active ? "#083d34" : "#46ae80"};
+                color: ${props.active ? "white" : "black"};
+        font-size: ${props.size ??12}px;
         border-radius: 4px;
         &:hover {
           color: ${color};
