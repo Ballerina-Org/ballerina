@@ -52,7 +52,6 @@ const layout = css`
 export const ActionsAndMessages: React.FC<{
     onRun?: () => void;
     onSave?: () => void;
-    onFormat?: () => void;
     clientErrors?: string[];
     serverErrors?: string[];
     clientSuccess?: string[];
@@ -60,7 +59,6 @@ export const ActionsAndMessages: React.FC<{
 }> = ({
           onRun,
           onSave,
-          onFormat,
           clientErrors = [],
           serverErrors = [],
           clientSuccess = [],

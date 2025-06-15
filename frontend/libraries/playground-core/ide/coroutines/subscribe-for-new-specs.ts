@@ -6,7 +6,7 @@ import { Value, PromiseRepo } from "ballerina-core";
 import { IDE } from "../state";
 import { ValidationResult } from "ballerina-core";
 import { Co } from "./builder";
-import { JsonValue } from "../domains/raw-json-editor/state";
+import { JsonValue } from "../domains/spec-editor/state";
 
 const SubscriptionInterval = 1000;
 

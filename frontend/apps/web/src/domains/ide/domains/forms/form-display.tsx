@@ -48,6 +48,7 @@ export const FormDisplayTemplate = (props: {spec: Option<string>, step: EditorSt
     const [personEntity, setPersonEntity] = useState<
         Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
     >(Sum.Default.right("not initialized"));
+    
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
         DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
     );
@@ -205,19 +206,14 @@ export const FormDisplayTemplate = (props: {spec: Option<string>, step: EditorSt
         <InstantiedPersonFormsParserTemplate
             context={{
                 ...specificationDeserializer,
-                ...specificationDeserializer,
-                defaultRecordConcreteRenderer:
-                DispatchPersonContainerFormView,
+                defaultRecordConcreteRenderer: DispatchPersonContainerFormView,
                 fieldTypeConverters: DispatchFieldTypeConverters,
-                defaultNestedRecordConcreteRenderer:
-                DispatchPersonNestedContainerFormView,
+                defaultNestedRecordConcreteRenderer: DispatchPersonNestedContainerFormView,
                 concreteRenderers: PersonConcreteRenderers,
-                infiniteStreamSources:
-                DispatchPersonFromConfigApis.streamApis,
+                infiniteStreamSources:  DispatchPersonFromConfigApis.streamApis,
                 enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
                 entityApis: DispatchPersonFromConfigApis.entityApis,
-                tableApiSources:
-                DispatchPersonFromConfigApis.tableApiSources,
+                tableApiSources: DispatchPersonFromConfigApis.tableApiSources,
                 lookupSources: DispatchPersonFromConfigApis.lookupSources,
                 getFormsConfig: () => PromiseRepo.Default.mock(() => JSON.parse(props.spec.value as string)),
                 IdWrapper,

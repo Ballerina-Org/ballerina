@@ -9,10 +9,9 @@ export const TmpJsonEditor: RawJsonEditorView = (props) => (
             data={JSON.parse(props.context.inputString.value)}
             theme={githubLightTheme}
             onDelete={ x =>
-            {   const value = JSON.stringify(x.newData)
-                
+            {   
+                const value = JSON.stringify(x.newData)
                 props.setState(RawJsonEditor.Updaters.Template.inputString(replaceWith({ value: value })));
-                
             }}
             onEditEvent={ x => props.setState(RawJsonEditor.Updaters.Core.step(replaceWith(EditorStep.editing())))}
             onChange={x => x.newValue}

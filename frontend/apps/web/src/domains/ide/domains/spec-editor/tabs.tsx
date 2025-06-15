@@ -15,7 +15,6 @@ export const HorizontalButtonContainer: React.FC<{ children: React.ReactNode }> 
             margin: 0 auto;
         `}
     >
-
         {children}
     </div>
 );

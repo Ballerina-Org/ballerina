@@ -1,7 +1,8 @@
 export * from "./ide/state";
 export * from "./ide/template";
-export * from "./ide/domains/raw-json-editor/state";
-export * from "./ide/domains/raw-json-editor/template";
+export * from "./ide/domains/spec-editor/state";
+export * from "./ide/domains/spec-editor/template";
+export * from "./ide/coroutines/run-editor";
 
 export * from "./uncle/state";
 export * from "./uncle/template";

@@ -1,8 +1,7 @@
 ﻿import {Template} from "ballerina-core";
 import {IDE, IDEForeignMutationsExpected, IDEReadonlyContext, IDEView, IDEWritableState} from "./state";
-import {SpecsSubscriptionDebouncerRunner} from "./coroutines/runner";
-import {RawJsonEditorTemplate} from "./domains/raw-json-editor/template";
-
+import {RunEditor, SpecsSubscriptionDebouncerRunner} from "./coroutines/runner";
+import {RawJsonEditorTemplate} from "./domains/spec-editor/template";
 
 export const ChildTemplateEmbedded = RawJsonEditorTemplate.mapContext<
     IDEReadonlyContext & IDEWritableState
@@ -19,5 +18,6 @@ export const IDETemplate = Template.Default<
             RawJsonEditor={ChildTemplateEmbedded}
         />
   ).any([
-    SpecsSubscriptionDebouncerRunner //.mapContext((_) => ({ ..._, events: [] })),
+      RunEditor,
+      SpecsSubscriptionDebouncerRunner //.mapContext((_) => ({ ..._, events: [] })),
 ]);

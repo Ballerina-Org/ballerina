@@ -8,7 +8,7 @@ import { Co } from "./builder";
 
 const JsonValidationInterval = 2000;
 
-//
+// TODO: this is only for a raw editor that is tmp repalced with json-react-editor
 // export const debouncedInputValidator = Co.Repeat(
 //
 //         Debounce<Synchronized<Value<string>, SpecValidationResult>>(

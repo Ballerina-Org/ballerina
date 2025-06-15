@@ -6,39 +6,42 @@ import {
     RawJsonEditorForeignMutationsExpected,
     JsonValue,
     RawJsonEditorView
-} from "./domains/raw-json-editor/state";
+} from "./domains/spec-editor/state";
 
 export type EditorStep =
     | { kind : "editing" }
     | { kind : "validating" }
     | { kind : "parsing" }
     | { kind : "running" }
+    | { kind : "output" };
 
 export const EditorStep = {
     editing: (): EditorStep => ({ kind: "editing" }),
     validating: (): EditorStep => ({ kind: "validating" }),
     parsing: (): EditorStep => ({ kind: "parsing" }),
     running: (): EditorStep => ({ kind: "running" }),
+    output: (): EditorStep => ({ kind: "output" }),
 }
 
 export type IDE = {
     rawEditor: RawJsonEditor,
     tabs: string [],
-    availableSpecs: Debounced<Synchronized<Value<JsonValue []>, ValidationResult>>,
-
+    shouldRun: boolean,
+    availableSpecs: Debounced<Synchronized<Value<JsonValue []>, ValidationResult>>
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<IDE>()("rawEditor"),
     ...simpleUpdater<IDE>()("availableSpecs"),
     ...simpleUpdater<IDE>()("tabs"),
-
+    ...simpleUpdater<IDE>()("shouldRun"),
 };
 
 export const IDE = {
     Default: (specs: JsonValue []): IDE => ({
         rawEditor: RawJsonEditor.Default(Option.Default.none()),
         availableSpecs:Debounced.Default(Synchronized.Default(Value.Default([]))),
+        shouldRun: false,
         tabs: [ "tab1", "tab2", "tab3" ],   
 
     }),

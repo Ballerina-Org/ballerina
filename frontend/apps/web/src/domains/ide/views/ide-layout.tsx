@@ -1,16 +1,13 @@
 ﻿/** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react'
-import {EditorStep, IDE, IDEView, RawJsonEditor} from "playground-core";
-import {RawEditor} from "../domains/raw-editor/raw-editor";
-import {TmpJsonEditor} from "../domains/raw-editor/json-editor";
+import {IDE, IDEView} from "playground-core";
+import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useEffect, useRef} from "react";
-import {HorizontalButtonContainer, Tab} from "../domains/raw-editor/tabs.tsx";
+import {HorizontalButtonContainer, Tab} from "../domains/spec-editor/tabs.tsx";
 import {ActionsAndMessages} from "./messages.tsx";
 import {FormDisplayTemplate} from "../domains/forms/form-display.tsx";
-import {Debounced, Option, replaceWith, Synchronized, Value} from "ballerina-core";
-import {IDEApi} from "playground-core/ide/apis/spec.ts"; //TODO: dont do it on a presentation level
-
+import {replaceWith} from "ballerina-core";
 
 export const HeaderColumnsLayout: React.FC<{
     header: React.ReactNode;
@@ -134,7 +131,6 @@ export const HeaderColumnsLayout: React.FC<{
 export const IDELayout: IDEView = (props) => (
     <HeaderColumnsLayout 
         left={<><props.RawJsonEditor{...props} view={TmpJsonEditor} /> </>}
-        
         header={
             <div
                 css={css`
@@ -182,52 +178,9 @@ export const IDELayout: IDEView = (props) => (
             </div>}
         right={<>
             <ActionsAndMessages
-                onRun={() => {
-                    props.setState(
-                        IDE.Updaters.Core.rawEditor(
-                            RawJsonEditor.Updaters.Core.step(
-                                replaceWith(EditorStep.validating())
-                            )
-                        ).then( _ => {
-                            IDEApi.validateSpec(props.context.rawEditor.inputString)
-                                .then(validation => {
-                                    switch(validation.isValid) {
-                                        case true:
-                                            props.setState(
-                                                IDE.Updaters.Core.rawEditor(
-                                                    RawJsonEditor.Updaters.Core.validatedSpec(
-                                                        replaceWith(
-                                                            Option.Default.some(props.context.rawEditor.inputString.value)
-                                                        )
-                                                    ).then(
-                                                        RawJsonEditor.Updaters.Core.step(replaceWith(EditorStep.running()))
-
-                                                    )
-                                                )
-                                            );
-                                            break;
-                                        case false: {
-                                            props.setState(
-                                                IDE.Updaters.Core.rawEditor(
-                                                    RawJsonEditor.Updaters.Core.validatedSpec(
-                                                        replaceWith(Option.Default.none())
-                                                    ).then(RawJsonEditor.Updaters.Core.errors(replaceWith(Option.Default.some(validation.errors))))
-                                                ));
-
-                                            break;
-                                        }
-                                    }
-                                })
-                            return _;
-                        })
-                    );
-                  
-                            
-
-                }}
+                onRun={() => props.setState(IDE.Updaters.Core.shouldRun(replaceWith(true))) }
                 onSave={() => alert("Saved!")}
-                onFormat={() => alert("Formatted!")}
-                
+   
                 clientErrors={props.context.rawEditor.errors.kind == "r" ? [props.context.rawEditor.errors.value]:[]}
                 serverErrors={[]}
                 clientSuccess={[]}

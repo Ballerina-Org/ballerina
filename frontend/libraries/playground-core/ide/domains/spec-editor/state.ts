@@ -1,8 +1,9 @@
-﻿import {simpleUpdater, Option} from "ballerina-core";
+﻿import {simpleUpdater, Option, replaceWith, BasicUpdater} from "ballerina-core";
 
 import { View } from "ballerina-core";
 import { Unit, Value, ForeignMutationsInput } from "ballerina-core";
-import {EditorStep, } from "../../state";
+import {EditorStep, IDE,} from "../../state";
+import {IDEApi} from "../../apis/spec";
 
 export type SpecValidationResult = { isValid: boolean; errors: string }
 
@@ -67,8 +68,6 @@ export const RawJsonEditor = {
         Template: {
             inputString: CoreUpdaters.inputString,
         },
-        
-        
         Coroutine: {
         },
     },
@@ -81,7 +80,7 @@ export const RawJsonEditor = {
                     reject(e);
                 }
             });
-        }
+        },
     },
     ForeignMutations: (
         _: ForeignMutationsInput<RawJsonEditorReadonlyContext, RawJsonEditorWritableState>,
