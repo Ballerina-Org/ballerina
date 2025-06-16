@@ -1,5 +1,5 @@
 ﻿import { Value } from "ballerina-core";
-import {SpecValidationResult} from "../domains/raw-json-editor/state";
+import {SpecValidationResult} from "../domains/spec-editor/state";
 
 export const IDEApi = {
     async validateSpec(spec: Value<string>): Promise<SpecValidationResult> {

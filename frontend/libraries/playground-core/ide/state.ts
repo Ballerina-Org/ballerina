@@ -1,49 +1,34 @@
-﻿import { simpleUpdater, Option} from "ballerina-core";
-import { Template, View, Value } from "ballerina-core";
-import { Debounced, Synchronized, ValidationResult, ForeignMutationsInput } from "ballerina-core";
+﻿import {simpleUpdater, Option, SmallIdentifiable, Vector2} from "ballerina-core";
+import { Template, View } from "ballerina-core";
+import { ForeignMutationsInput } from "ballerina-core";
 import {
-    RawJsonEditor,
+    SpecEditor,
     RawJsonEditorForeignMutationsExpected,
     JsonValue,
     RawJsonEditorView
 } from "./domains/spec-editor/state";
+import {LayoutActions} from "./domains/layout/domains/actions/state";
+import {Layout} from "./domains/layout/state";
+import {SpecRunner} from "./domains/spec-runner/state";
 
-export type EditorStep =
-    | { kind : "editing" }
-    | { kind : "validating" }
-    | { kind : "parsing" }
-    | { kind : "running" }
-    | { kind : "output" };
-
-export const EditorStep = {
-    editing: (): EditorStep => ({ kind: "editing" }),
-    validating: (): EditorStep => ({ kind: "validating" }),
-    parsing: (): EditorStep => ({ kind: "parsing" }),
-    running: (): EditorStep => ({ kind: "running" }),
-    output: (): EditorStep => ({ kind: "output" }),
-}
 
 export type IDE = {
-    rawEditor: RawJsonEditor,
-    tabs: string [],
-    shouldRun: boolean,
-    availableSpecs: Debounced<Synchronized<Value<JsonValue []>, ValidationResult>>
+    editor: SpecEditor,
+    runner: SpecRunner,
+    layout: Layout
 };
 
 const CoreUpdaters = {
-    ...simpleUpdater<IDE>()("rawEditor"),
-    ...simpleUpdater<IDE>()("availableSpecs"),
-    ...simpleUpdater<IDE>()("tabs"),
-    ...simpleUpdater<IDE>()("shouldRun"),
+    ...simpleUpdater<IDE>()("editor"),
+    ...simpleUpdater<IDE>()("layout"),
+    ...simpleUpdater<IDE>()("runner"),
 };
 
 export const IDE = {
     Default: (specs: JsonValue []): IDE => ({
-        rawEditor: RawJsonEditor.Default(Option.Default.none()),
-        availableSpecs:Debounced.Default(Synchronized.Default(Value.Default([]))),
-        shouldRun: false,
-        tabs: [ "tab1", "tab2", "tab3" ],   
-
+        editor: SpecEditor.Default(Option.Default.none()),
+        layout: Layout.Default(),
+        runner: SpecRunner.Default(),
     }),
     Updaters: {
         Core: CoreUpdaters,
@@ -65,10 +50,6 @@ export type IDEReadonlyContext = {};
 export type IDEWritableState = IDE;
 
 export type IDEForeignMutationsExpected = RawJsonEditorForeignMutationsExpected
-
-// export type IDEForeignMutationsExposed = ReturnType<
-//     typeof IDE.ForeignMutations
-// >;
 
 export type IDEView = View<
     IDEReadonlyContext & IDEWritableState,

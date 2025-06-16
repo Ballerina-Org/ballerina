@@ -1,6 +1,4 @@
-﻿/** @jsxImportSource @emotion/react */
-
-import { css } from '@emotion/react';
+﻿import { css } from '@emotion/react';
 
 export const style = {
     stepColor: css`

@@ -2,7 +2,11 @@ export * from "./ide/state";
 export * from "./ide/template";
 export * from "./ide/domains/spec-editor/state";
 export * from "./ide/domains/spec-editor/template";
-export * from "./ide/coroutines/run-editor";
+export * from "./ide/domains/spec-runner/state";
+export * from "./ide/domains/spec-runner/state";
+export * from "./ide/domains/layout/domains/actions/state";
+export * from "./ide/domains/layout/domains/indicators/state";
+export * from "./ide/domains/spec-runner/state";
 
 export * from "./uncle/state";
 export * from "./uncle/template";

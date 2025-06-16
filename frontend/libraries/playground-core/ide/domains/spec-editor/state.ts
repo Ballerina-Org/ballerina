@@ -2,9 +2,21 @@
 
 import { View } from "ballerina-core";
 import { Unit, Value, ForeignMutationsInput } from "ballerina-core";
-import {EditorStep, IDE,} from "../../state";
+import {IDE,} from "../../state";
 import {IDEApi} from "../../apis/spec";
 
+export type SpecEditorIndicator =
+    | { kind : "idle" }
+    | { kind : "editing" }
+    | { kind : "locked" };
+
+export const SpecEditorIndicator = {
+    Default: {
+        idle: (): SpecEditorIndicator => ({ kind: "idle" }),
+        editing: (): SpecEditorIndicator => ({ kind: "editing" }),
+        locked: (): SpecEditorIndicator => ({ kind: "locked" }),
+    }
+}
 export type SpecValidationResult = { isValid: boolean; errors: string }
 
 export type JsonValue<T = unknown> = 
@@ -20,22 +32,18 @@ export const JsonValue = {
     }
 }
 
-export type RawJsonEditor<T = unknown> = {
-    inputString: Value<string>,
-    validatedSpec: Option<string>,
-    errors: Option<string>,
-    step: EditorStep,
+export type SpecEditor<T = unknown> = {
+    input: Value<string>, 
+    indicator: SpecEditorIndicator,
 };
 
 const CoreUpdaters = {
-    ...simpleUpdater<RawJsonEditor>()("inputString"),
-    ...simpleUpdater<RawJsonEditor>()("validatedSpec"),
-    ...simpleUpdater<RawJsonEditor>()("errors"),
-    ...simpleUpdater<RawJsonEditor>()("step"),
+    ...simpleUpdater<SpecEditor>()("input"),
+    ...simpleUpdater<SpecEditor>()("indicator"),
 };
 
-export const RawJsonEditor = {
-    Default: <T>(json: Option<JsonValue<T>>): RawJsonEditor<T> => {
+export const SpecEditor = {
+    Default: <T>(json: Option<JsonValue<T>>): SpecEditor<T> => {
         let inputString = `{}`;
 
         switch (json.kind) {
@@ -58,29 +66,18 @@ export const RawJsonEditor = {
         }
 
         return {
-            inputString: Value.Default(inputString), 
-            validatedSpec: Option.Default.none(),
-            errors: Option.Default.none(),
-            step: { kind: "editing" },
+            input: Value.Default(inputString), 
+            indicator: SpecEditorIndicator.Default.idle()
         }},
     Updaters: {
         Core: CoreUpdaters,
         Template: {
-            inputString: CoreUpdaters.inputString,
+            inputString: CoreUpdaters.input,
         },
         Coroutine: {
         },
     },
     Operations: {
-        tryParse: (input: Value<string>): Promise<any> => {
-            return new Promise((resolve, reject) => {
-                try {
-                    resolve(JSON.parse(input.value))
-                } catch (e: any) {
-                    reject(e);
-                }
-            });
-        },
     },
     ForeignMutations: (
         _: ForeignMutationsInput<RawJsonEditorReadonlyContext, RawJsonEditorWritableState>,
@@ -89,13 +86,9 @@ export const RawJsonEditor = {
 };
 
 export type RawJsonEditorReadonlyContext = Unit;
-export type RawJsonEditorWritableState = RawJsonEditor;
+export type RawJsonEditorWritableState = SpecEditor;
 
 export type RawJsonEditorForeignMutationsExpected = Unit
-
-// export type RawJsonEditorForeignMutationsExposed = ReturnType<
-//     typeof RawJsonEditor.ForeignMutations
-// >;
 
 export type RawJsonEditorView = View<
     RawJsonEditorReadonlyContext & RawJsonEditorWritableState,

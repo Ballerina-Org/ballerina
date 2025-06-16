@@ -12,6 +12,8 @@
 
 ❌ continue with own raw json editor (react json-editor should be only tmp)
 
+❌ use axios instead of plain fetch
+
 ## milestones
 ### [15/6]
 

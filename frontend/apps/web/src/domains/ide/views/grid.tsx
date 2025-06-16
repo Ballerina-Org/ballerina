@@ -1,13 +1,7 @@
 ﻿/** @jsxImportSource @emotion/react */
-import { css } from '@emotion/react'
-import {IDE, IDEView} from "playground-core";
-import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useEffect, useRef} from "react";
-import {HorizontalButtonContainer, Tab} from "../domains/spec-editor/tabs.tsx";
-import {ActionsAndMessages} from "./messages.tsx";
-import {FormDisplayTemplate} from "../domains/forms/form-display.tsx";
-import {replaceWith} from "ballerina-core";
+import { style } from "./grid.styled";
 
 export const Grid: React.FC<{
     header: React.ReactNode;
@@ -57,72 +51,18 @@ export const Grid: React.FC<{
     }, []);
 
     return (
-        <div
-            css={css`
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        width: 100vw;
-      `}
-        >
-            <div
-                css={css`
-          height: 100px;
-          flex-shrink: 0;
-          width: 100%;
-          background: #f1f5f9;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-bottom: 1px solid #e5e7eb;
-        `}
-            >
-                {header}
-            </div>
-            <div
-                css={css`
-          flex: 1;
-          display: flex;
-          flex-direction: row;
-          width: 100%;
-        position: relative;
-        z-index: 10;
-        pointer-events: auto;
-          min-height: 0;
-        `}
-            >
+        <div css={style.parent}>
+            <div css={style.header}>{header}</div>
+            <div css={style.divider}>
                 <div
                     ref={leftRef}
-                    css={css`
-            flex: 1;
-            overflow: auto;
-            border-right: 1px solid #e5e7eb;
-            //padding: 1rem;
-            min-width: 100px;
-          `}
-                >
-                    {left}
-                </div>
+                    css={style.dividerLeft}
+                >{left}</div>
                 <div
                     ref={dividerRef}
-                    css={css`
-                        width: 3px;  
-                        min-width: 3px;
-                        background: lightgray;
-                        cursor: col-resize;
-                        //user-select: none;
-                        //background: red; /* debug */
-                        z-index: 10;
-          `}
+                    css={style.dividerMain}
                 ></div>
-                <div
-                    css={css`
-            flex: 1;
-            overflow: auto;
-          `}
-                >
-                    {right}
-                </div>
+                <div css={style.dividerRight}>{right}</div>
             </div>
         </div>
     );
