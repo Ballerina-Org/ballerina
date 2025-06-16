@@ -15,6 +15,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -111,13 +112,14 @@ export const EnumAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
                   };
                   return props.foreignMutations.onChange(
-                    replaceWith(
-                      PredicateValue.Default.option(
-                        false,
-                        PredicateValue.Default.unit(),
+                    Option.Default.some(
+                      replaceWith(
+                        PredicateValue.Default.option(
+                          false,
+                          PredicateValue.Default.unit(),
+                        ),
                       ),
                     ),
                     delta,
@@ -131,11 +133,12 @@ export const EnumAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
                   };
                   return props.foreignMutations.onChange(
-                    replaceWith(
-                      PredicateValue.Default.option(true, newSelection),
+                    Option.Default.some(
+                      replaceWith(
+                        PredicateValue.Default.option(true, newSelection),
+                      ),
                     ),
                     delta,
                   );

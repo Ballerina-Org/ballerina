@@ -10,6 +10,7 @@ import {
   Template,
   Unit,
   ValueUnit,
+  Option,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -66,9 +67,13 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(_, delta);
+                props.foreignMutations.onChange(
+                  _.kind == "l"
+                    ? Option.Default.none()
+                    : Option.Default.some(_.value),
+                  delta,
+                );
               },
             }}
           />

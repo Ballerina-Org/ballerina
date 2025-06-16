@@ -8,7 +8,6 @@ import {
   DispatchDelta,
   FormLabel,
   IdWrapperProps,
-  MapRepo,
   PredicateValue,
   replaceWith,
   Template,
@@ -18,6 +17,7 @@ import {
   DispatchOnChange,
   getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
+  Option,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -110,20 +110,23 @@ export const DispatchTupleAbstractRenderer = <
               kind: "TupleCase",
               item: [itemIndex, nestedDelta],
               tupleType: props.context.type,
-              isWholeEntityMutation: false,
             };
             props.foreignMutations.onChange(
-              Updater((tuple) =>
-                tuple.values.has(itemIndex)
-                  ? PredicateValue.Default.tuple(
-                      tuple.values.update(
-                        itemIndex,
-                        PredicateValue.Default.unit(),
-                        elementUpdater,
-                      ),
-                    )
-                  : tuple,
-              ),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((tuple) =>
+                      tuple.values.has(itemIndex)
+                        ? PredicateValue.Default.tuple(
+                            tuple.values.update(
+                              itemIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : tuple,
+                    ),
+                  ),
               delta,
             );
 

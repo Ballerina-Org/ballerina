@@ -160,9 +160,7 @@ export type OneAbstractRendererView<Context> = View<
   OneAbstractRendererState,
   | {
       kind: "initialized";
-      onChange: DispatchOnChange<ValueRecord | ValueUnit>;
       toggleOpen: SimpleCallback<void>;
-      // clearSelection: SimpleCallback<void>;
       setStreamParam: BasicFun2<string, string, void>;
       select: SimpleCallback<ValueRecord | ValueUnit>;
       create: SimpleCallback<ValueRecord>;

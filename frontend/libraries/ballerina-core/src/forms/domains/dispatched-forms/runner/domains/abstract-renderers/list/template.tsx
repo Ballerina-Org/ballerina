@@ -13,6 +13,8 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  id,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
@@ -98,20 +100,23 @@ export const ListAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: false,
             };
             props.foreignMutations.onChange(
-              Updater((list) =>
-                list.values.has(elementIndex)
-                  ? PredicateValue.Default.tuple(
-                      list.values.update(
-                        elementIndex,
-                        PredicateValue.Default.unit(),
-                        elementUpdater,
-                      ),
-                    )
-                  : list,
-              ),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((list) =>
+                      list.values.has(elementIndex)
+                        ? PredicateValue.Default.tuple(
+                            list.values.update(
+                              elementIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : list,
+                    ),
+                  ),
               delta,
             );
             props.setState(
@@ -185,14 +190,15 @@ export const ListAbstractRenderer = <
                     elementFormStates: props.context.elementFormStates,
                   },
                   type: (props.context.type as ListType<any>).args[0],
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.push<PredicateValue>(
-                        GetDefaultElementValue(),
-                      )(list.values),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.push<PredicateValue>(
+                          GetDefaultElementValue(),
+                        )(list.values),
+                      ),
                     ),
                   ),
                   delta,
@@ -209,12 +215,15 @@ export const ListAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "ArrayRemoveAt",
                   index: _,
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.remove<PredicateValue>(_)(list.values),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.remove<PredicateValue>(_)(
+                          list.values,
+                        ),
+                      ),
                     ),
                   ),
                   delta,
@@ -232,15 +241,16 @@ export const ListAbstractRenderer = <
                   kind: "ArrayMoveFromTo",
                   from: index,
                   to: to,
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.move<PredicateValue>(
-                        index,
-                        to,
-                      )(list.values),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.move<PredicateValue>(
+                          index,
+                          to,
+                        )(list.values),
+                      ),
                     ),
                   ),
                   delta,
@@ -257,13 +267,14 @@ export const ListAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "ArrayDuplicateAt",
                   index: _,
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.duplicate<PredicateValue>(_)(
-                        list.values,
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.duplicate<PredicateValue>(_)(
+                          list.values,
+                        ),
                       ),
                     ),
                   ),
@@ -283,15 +294,16 @@ export const ListAbstractRenderer = <
                   value: [_, GetDefaultElementValue()],
                   elementState: GetDefaultElementState(),
                   elementType: (props.context.type as ListType<any>).args[0],
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.insert<PredicateValue>(
-                        _,
-                        GetDefaultElementValue(),
-                      )(list.values),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.insert<PredicateValue>(
+                          _,
+                          GetDefaultElementValue(),
+                        )(list.values),
+                      ),
                     ),
                   ),
                   delta,

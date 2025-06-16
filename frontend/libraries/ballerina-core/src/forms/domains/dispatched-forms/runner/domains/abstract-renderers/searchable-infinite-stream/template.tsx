@@ -19,6 +19,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -177,13 +178,14 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.option(
-                      false,
-                      PredicateValue.Default.unit(),
+                  Option.Default.some(
+                    replaceWith(
+                      PredicateValue.Default.option(
+                        false,
+                        PredicateValue.Default.unit(),
+                      ),
                     ),
                   ),
                   delta,
@@ -216,9 +218,11 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />

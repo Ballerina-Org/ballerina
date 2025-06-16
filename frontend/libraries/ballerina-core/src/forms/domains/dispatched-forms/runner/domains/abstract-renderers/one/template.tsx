@@ -24,8 +24,8 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Debounced,
-  MapRepo,
   Value,
+  Option,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererReadonlyContext,
@@ -155,10 +155,9 @@ export const OneAbstractRenderer = <Context,>(
         const delta: DispatchDelta = {
           kind: "OneValue",
           nestedDelta,
-          isWholeEntityMutation: false,
         };
-
-        props.foreignMutations.onChange(id, delta);
+        // TODO: The embedded details rendere will take an optional delta that can override this
+        props.foreignMutations.onChange(Option.Default.none(), delta);
       },
     }));
 
@@ -244,10 +243,9 @@ export const OneAbstractRenderer = <Context,>(
               const delta: DispatchDelta = {
                 kind: "OneValue",
                 nestedDelta,
-                isWholeEntityMutation: false,
               };
 
-              props.foreignMutations.onChange(id, delta);
+              props.foreignMutations.onChange(Option.Default.none(), delta);
             },
           }))
     : undefined;
@@ -381,12 +379,6 @@ export const OneAbstractRenderer = <Context,>(
             foreignMutations={{
               ...props.foreignMutations,
               kind: "initialized",
-              onChange: (
-                _: BasicUpdater<ValueRecord | ValueUnit>,
-                nestedDelta: DispatchDelta,
-              ) => {
-                props.foreignMutations.onChange(id, nestedDelta);
-              },
               toggleOpen: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -432,7 +424,6 @@ export const OneAbstractRenderer = <Context,>(
                   kind: "OneReplace",
                   replace: PredicateValue.Default.unit(),
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -451,14 +442,13 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     ),
                 );
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
               },
               select: (_) => {
                 const delta: DispatchDelta = {
                   kind: "OneReplace",
                   replace: _,
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -475,14 +465,13 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     ),
                 );
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
               },
               create: (_) => {
                 const delta: DispatchDelta = {
                   kind: "OneCreateValue",
                   value: _,
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -502,12 +491,11 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     ),
                 );
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
               },
               delete: () => {
                 const delta: DispatchDelta = {
                   kind: "OneDeleteValue",
-                  isWholeEntityMutation: true,
                 };
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -526,7 +514,7 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     ),
                 );
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
               },
             }}
             DetailsRenderer={embeddedDetailsRenderer}

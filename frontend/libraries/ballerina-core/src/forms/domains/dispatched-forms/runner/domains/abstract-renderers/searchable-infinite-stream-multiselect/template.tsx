@@ -22,6 +22,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -177,10 +178,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(
-                  ValueRecord.Updaters.clear(),
+                  Option.Default.some(ValueRecord.Updaters.clear()),
                   delta,
                 );
               },
@@ -211,9 +211,11 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
               toggleSelection: (elementRecord: ValueRecord) => {
                 const updater = props.context.value.fields.has(
@@ -236,9 +238,11 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(updater, delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(updater),
+                  delta,
+                );
               },
             }}
           />

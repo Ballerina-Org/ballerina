@@ -12,6 +12,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -86,15 +87,16 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumLeft",
             value: nestedDelta,
-            isWholeEntityMutation: false,
           };
           props.foreignMutations.onChange(
-            (_) => ({
-              ..._,
-              value: Sum.Updaters.left<PredicateValue, PredicateValue>(
-                elementUpdater,
-              )(_.value),
-            }),
+            elementUpdater.kind == "l"
+              ? Option.Default.none()
+              : Option.Default.some((_) => ({
+                  ..._,
+                  value: Sum.Updaters.left<PredicateValue, PredicateValue>(
+                    elementUpdater.value,
+                  )(_.value),
+                })),
             delta,
           );
           props.setState(
@@ -153,15 +155,16 @@ export const SumAbstractRenderer = <
           const delta: DispatchDelta = {
             kind: "SumRight",
             value: nestedDelta,
-            isWholeEntityMutation: false,
           };
           props.foreignMutations.onChange(
-            (_) => ({
-              ..._,
-              value: Sum.Updaters.right<PredicateValue, PredicateValue>(
-                elementUpdater,
-              )(_.value),
-            }),
+            elementUpdater.kind == "l"
+              ? Option.Default.none()
+              : Option.Default.some((_) => ({
+                  ..._,
+                  value: Sum.Updaters.right<PredicateValue, PredicateValue>(
+                    elementUpdater.value,
+                  )(_.value),
+                })),
             delta,
           );
           props.setState(

@@ -19,6 +19,8 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  ValueUpdater,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -97,25 +99,28 @@ export const RecordAbstractRenderer = <
         ): {
           onChange: DispatchOnChange<PredicateValue>;
         } => ({
-          onChange: (elementUpdater: any, nestedDelta: DispatchDelta) => {
+          onChange: (
+            elementUpdater: ValueUpdater<PredicateValue>,
+            nestedDelta: DispatchDelta,
+          ) => {
             const delta: DispatchDelta = {
               kind: "RecordField",
               field: [fieldName, nestedDelta],
               recordType: props.context.type,
-              isWholeEntityMutation: false,
             };
 
             props.foreignMutations.onChange(
-              (current: ValueRecord): ValueRecord =>
-                PredicateValue.Operations.IsRecord(current)
-                  ? PredicateValue.Default.record(
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some((current: ValueRecord) =>
+                    PredicateValue.Default.record(
                       current.fields.update(
                         fieldName,
                         PredicateValue.Default.unit(),
-                        elementUpdater,
+                        elementUpdater.value,
                       ),
-                    )
-                  : current,
+                    ),
+                  ),
               delta,
             );
 

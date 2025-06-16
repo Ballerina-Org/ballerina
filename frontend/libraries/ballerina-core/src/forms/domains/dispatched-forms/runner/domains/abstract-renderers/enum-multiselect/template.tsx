@@ -10,6 +10,7 @@ import {
   DispatchOnChange,
   getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
+  Option,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -121,11 +122,12 @@ export const EnumMultiselectAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
                 props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.record(OrderedMap(newSelection)),
+                  Option.Default.some(
+                    replaceWith(
+                      PredicateValue.Default.record(OrderedMap(newSelection)),
+                    ),
                   ),
                   delta,
                 );

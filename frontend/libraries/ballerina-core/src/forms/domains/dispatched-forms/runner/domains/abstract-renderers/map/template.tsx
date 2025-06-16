@@ -17,6 +17,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -112,28 +113,31 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
-              Updater((elements: ValueTuple) =>
-                PredicateValue.Default.tuple(
-                  elements.values.update(
-                    elementIndex,
-                    PredicateValue.Default.unit(),
-                    (_) =>
-                      _ == undefined
-                        ? _
-                        : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                elementUpdater(_.values.get(0)!),
-                                _.values.get(1)!,
-                              ]),
-                            ),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((elements: ValueTuple) =>
+                      PredicateValue.Default.tuple(
+                        elements.values.update(
+                          elementIndex,
+                          PredicateValue.Default.unit(),
+                          (_) =>
+                            _ == undefined
+                              ? _
+                              : !PredicateValue.Operations.IsTuple(_)
+                                ? _
+                                : PredicateValue.Default.tuple(
+                                    List([
+                                      elementUpdater.value(_.values.get(0)!),
+                                      _.values.get(1)!,
+                                    ]),
+                                  ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
               delta,
             );
             props.setState(
@@ -226,28 +230,31 @@ export const MapAbstractRenderer = <
             const delta: DispatchDelta = {
               kind: "MapValue",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: true,
             };
             props.foreignMutations.onChange(
-              Updater((elements: ValueTuple) =>
-                PredicateValue.Default.tuple(
-                  elements.values.update(
-                    elementIndex,
-                    GetDefaultValueFormValue(),
-                    (_) =>
-                      _ == undefined
-                        ? _
-                        : !PredicateValue.Operations.IsTuple(_)
-                          ? _
-                          : PredicateValue.Default.tuple(
-                              List([
-                                _.values.get(0)!,
-                                elementUpdater(_.values.get(1)!),
-                              ]),
-                            ),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((elements: ValueTuple) =>
+                      PredicateValue.Default.tuple(
+                        elements.values.update(
+                          elementIndex,
+                          GetDefaultValueFormValue(),
+                          (_) =>
+                            _ == undefined
+                              ? _
+                              : !PredicateValue.Operations.IsTuple(_)
+                                ? _
+                                : PredicateValue.Default.tuple(
+                                    List([
+                                      _.values.get(0)!,
+                                      elementUpdater.value(_.values.get(1)!),
+                                    ]),
+                                  ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
               delta,
             );
             props.setState(
@@ -330,19 +337,20 @@ export const MapAbstractRenderer = <
                   keyType: (props.context.type as MapType<any>).args[0],
                   valueState: GetDefaultValueFormState(),
                   valueType: (props.context.type as MapType<any>).args[1],
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.push<ValueTuple>(
-                        PredicateValue.Default.tuple(
-                          List([
-                            GetDefaultKeyFormValue(),
-                            GetDefaultValueFormValue(),
-                          ]),
-                        ),
-                      )(list.values as List<ValueTuple>),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.push<ValueTuple>(
+                          PredicateValue.Default.tuple(
+                            List([
+                              GetDefaultKeyFormValue(),
+                              GetDefaultValueFormValue(),
+                            ]),
+                          ),
+                        )(list.values as List<ValueTuple>),
+                      ),
                     ),
                   ),
                   delta,
@@ -362,13 +370,14 @@ export const MapAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "MapRemove",
                   index: _,
-                  isWholeEntityMutation: true, // TODO: check
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.remove<ValueTuple>(_)(
-                        list.values as List<ValueTuple>,
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.remove<ValueTuple>(_)(
+                          list.values as List<ValueTuple>,
+                        ),
                       ),
                     ),
                   ),

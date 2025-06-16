@@ -7,6 +7,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -71,9 +72,11 @@ export const Base64FileAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />

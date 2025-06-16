@@ -21,8 +21,8 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
-  TableType,
   ValueTable,
+  Option,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -148,15 +148,13 @@ export const TableAbstractRenderer = <
                 ),
             );
 
-            // TODO, check the nesting
             const delta: DispatchDelta = {
               kind: "TableValue",
               id: rowId,
               nestedDelta: nestedDelta,
-              isWholeEntityMutation: false,
             };
 
-            props.foreignMutations.onChange(id, delta);
+            props.foreignMutations.onChange(Option.Default.none(), delta);
           },
         }));
 
@@ -228,10 +226,9 @@ export const TableAbstractRenderer = <
             kind: "TableValue",
             id: props.context.customFormState.selectedDetailRow,
             nestedDelta: nestedDelta,
-            isWholeEntityMutation: false,
           };
 
-          props.foreignMutations.onChange(id, delta);
+          props.foreignMutations.onChange(Option.Default.none(), delta);
         },
       }));
 
@@ -413,9 +410,8 @@ export const TableAbstractRenderer = <
               add: () => {
                 const delta: DispatchDelta = {
                   kind: "TableAddEmpty",
-                  isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -432,9 +428,8 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableRemove",
                   id: k,
-                  isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -452,9 +447,8 @@ export const TableAbstractRenderer = <
                   kind: "TableMoveTo",
                   id: k,
                   to,
-                  isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -471,9 +465,8 @@ export const TableAbstractRenderer = <
                 const delta: DispatchDelta = {
                   kind: "TableDuplicate",
                   id: k,
-                  isWholeEntityMutation: true,
                 };
-                props.foreignMutations.onChange(id, delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(

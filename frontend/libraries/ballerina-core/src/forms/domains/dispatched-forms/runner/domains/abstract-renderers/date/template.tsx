@@ -9,6 +9,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
@@ -77,11 +78,10 @@ export const DateAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
                   };
                   setTimeout(() => {
                     props.foreignMutations.onChange(
-                      replaceWith(newValue),
+                      Option.Default.some(replaceWith(newValue)),
                       delta,
                     );
                   }, 0);

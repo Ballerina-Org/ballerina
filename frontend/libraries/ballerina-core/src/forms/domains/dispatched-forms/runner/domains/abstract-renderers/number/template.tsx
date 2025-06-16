@@ -9,6 +9,7 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererState,
@@ -72,9 +73,11 @@ export const NumberAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />

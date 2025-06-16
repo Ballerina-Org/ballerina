@@ -29,6 +29,7 @@ import {
   ValueOption,
   BasicUpdater,
   DispatchDelta,
+  Option,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -62,9 +63,11 @@ const simpleMapKeyToIdentifer = (key: any): string => {
   return JSON.stringify(key);
 };
 
-export type DispatchOnChange<Entity> = (
-  updater: BasicUpdater<Entity>,
-  delta: DispatchDelta,
+export type ValueUpdater<Value> = Option<BasicUpdater<Value>>;
+
+export type DispatchOnChange<Value, Flags = Unit> = (
+  updater: ValueUpdater<Value>,
+  delta: DispatchDelta<Flags>,
 ) => void;
 
 type ApiConverter<T> = {

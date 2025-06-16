@@ -12,6 +12,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -88,10 +89,12 @@ export const UnionAbstractRenderer = <
           ...props.foreignMutations,
           onChange: (elementUpdater: any, path: any) => {
             props.foreignMutations.onChange(
-              (_) => ({
-                ..._,
-                fields: elementUpdater(_.fields),
-              }),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some((_) => ({
+                    ..._,
+                    fields: elementUpdater(_.fields),
+                  })),
               path,
             );
             props.setState((_) => ({ ..._, modifiedByUser: true }));
