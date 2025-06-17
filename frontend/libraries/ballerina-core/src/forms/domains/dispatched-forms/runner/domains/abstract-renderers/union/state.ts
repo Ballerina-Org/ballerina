@@ -12,6 +12,7 @@ import {
   View,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  Unit,
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -58,25 +59,25 @@ export const UnionAbstractRendererState = <
 export type UnionAbstractRendererView<
   CaseFormState extends { commonFormState: DispatchCommonFormState },
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   UnionAbstractRendererReadonlyContext &
     UnionAbstractRendererState<CaseFormState> &
     DomNodeIdReadonlyContext,
   UnionAbstractRendererState<CaseFormState>,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueUnionCase>;
+    onChange: DispatchOnChange<ValueUnionCase, Flags>;
   },
   {
-    embeddedCaseTemplate: BasicFun<
-      string,
-      Template<
-        UnionAbstractRendererReadonlyContext &
-          UnionAbstractRendererState<CaseFormState>,
+    embeddedCaseTemplate: (caseName: string) => (
+      flags: Flags | undefined,
+    ) => Template<
+      UnionAbstractRendererReadonlyContext &
         UnionAbstractRendererState<CaseFormState>,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueUnionCase>;
-        }
-      >
+      UnionAbstractRendererState<CaseFormState>,
+      ForeignMutationsExpected & {
+        onChange: DispatchOnChange<ValueUnionCase, Flags>;
+      }
     >;
   }
 >;

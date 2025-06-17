@@ -10,6 +10,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -18,6 +19,7 @@ import { BoolAbstractRendererState } from "./state";
 export const BoolAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -30,8 +32,8 @@ export const BoolAbstractRenderer = <
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
     BoolAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<boolean> },
-    BoolAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<boolean, Flags> },
+    BoolAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
       console.error(
@@ -62,18 +64,19 @@ export const BoolAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "BoolReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },

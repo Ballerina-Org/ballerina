@@ -15,6 +15,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   id,
+  Unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { Value } from "../../../../../../../value/state";
@@ -32,6 +33,7 @@ export const ListAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   GetDefaultElementState: () => any,
   GetDefaultElementValue: () => PredicateValue,
@@ -41,13 +43,13 @@ export const ListAbstractRenderer = <
       any & { bindings: Bindings; extraContext: any },
     any,
     {
-      onChange: DispatchOnChange<PredicateValue>;
+      onChange: DispatchOnChange<PredicateValue, Flags>;
     }
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedElementTemplate = (elementIndex: number) =>
+  const embeddedElementTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
     elementTemplate
       .mapContext(
         (
@@ -88,18 +90,19 @@ export const ListAbstractRenderer = <
       )
       .mapForeignMutationsFromProps<
         ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
+          onChange: DispatchOnChange<ValueTuple, Flags>;
         }
       >(
         (
           props,
         ): {
-          onChange: DispatchOnChange<PredicateValue>;
+          onChange: DispatchOnChange<PredicateValue, Flags>;
         } => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
+              flags,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -148,9 +151,9 @@ export const ListAbstractRenderer = <
     Context & Value<ValueTuple> & { disabled: boolean },
     ListAbstractRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTuple>;
+      onChange: DispatchOnChange<ValueTuple, Flags>;
     },
-    ListAbstractRendererView<Context, ForeignMutationsExpected>
+    ListAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -181,8 +184,8 @@ export const ListAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              add: (_) => {
-                const delta: DispatchDelta = {
+              add: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayAdd",
                   value: GetDefaultElementValue(),
                   state: {
@@ -190,6 +193,7 @@ export const ListAbstractRenderer = <
                     elementFormStates: props.context.elementFormStates,
                   },
                   type: (props.context.type as ListType<any>).args[0],
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -211,10 +215,11 @@ export const ListAbstractRenderer = <
                   ),
                 );
               },
-              remove: (_) => {
-                const delta: DispatchDelta = {
+              remove: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayRemoveAt",
                   index: _,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -236,11 +241,12 @@ export const ListAbstractRenderer = <
                   ),
                 );
               },
-              move: (index, to) => {
-                const delta: DispatchDelta = {
+              move: (index, to, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayMoveFromTo",
                   from: index,
                   to: to,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -263,10 +269,11 @@ export const ListAbstractRenderer = <
                   ),
                 );
               },
-              duplicate: (_) => {
-                const delta: DispatchDelta = {
+              duplicate: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayDuplicateAt",
                   index: _,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -288,12 +295,13 @@ export const ListAbstractRenderer = <
                   ),
                 );
               },
-              insert: (_) => {
-                const delta: DispatchDelta = {
+              insert: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayAddAt",
                   value: [_, GetDefaultElementValue()],
                   elementState: GetDefaultElementState(),
                   elementType: (props.context.type as ListType<any>).args[0],
+                  flags
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(

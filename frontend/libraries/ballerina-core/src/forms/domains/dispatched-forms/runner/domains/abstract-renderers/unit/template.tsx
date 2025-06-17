@@ -11,10 +11,12 @@ import {
   Unit,
   ValueUnit,
   Option,
+  replaceWith,
+  unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const UnitAbstractRenderer = <Context extends FormLabel>(
+export const UnitAbstractRenderer = <Context extends FormLabel, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
@@ -26,8 +28,8 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
       identifiers: { withLauncher: string; withoutLauncher: string };
     },
     UnitAbstractRendererState,
-    { onChange: DispatchOnChange<Unit> },
-    UnitAbstractRendererView<Context>
+    { onChange: DispatchOnChange<ValueUnit, Flags> },
+    UnitAbstractRendererView<Context, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
@@ -58,8 +60,8 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              onChange: (_) => {
-                const delta: DispatchDelta = {
+              set: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "UnitReplace",
                   replace: PredicateValue.Default.unit(),
                   state: {
@@ -67,11 +69,12 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  _.kind == "l"
-                    ? Option.Default.none()
-                    : Option.Default.some(_.value),
+                  Option.Default.some(
+                    replaceWith(PredicateValue.Default.unit()),
+                  ),
                   delta,
                 );
               },

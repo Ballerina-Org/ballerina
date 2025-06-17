@@ -10,6 +10,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
@@ -17,6 +18,7 @@ import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
 export const DateAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -29,8 +31,8 @@ export const DateAbstractRenderer = <
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
     DateAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<Date> },
-    DateAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<Date, Flags> },
+    DateAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(
@@ -61,16 +63,16 @@ export const DateAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
+              setNewValue: (value, flags) => {
                 props.setState(
                   DateAbstractRendererState.Updaters.Core.customFormState.children.possiblyInvalidInput(
-                    replaceWith(_),
+                    replaceWith(value),
                   ),
                 );
-                const newValue = _ == undefined ? _ : new Date(_);
+                const newValue = value == undefined ? value : new Date(value);
 
                 if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-                  const delta: DispatchDelta = {
+                  const delta: DispatchDelta<Flags> = {
                     kind: "TimeReplace",
                     replace: newValue.toISOString(),
                     state: {
@@ -78,6 +80,7 @@ export const DateAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
+                    flags,
                   };
                   setTimeout(() => {
                     props.foreignMutations.onChange(

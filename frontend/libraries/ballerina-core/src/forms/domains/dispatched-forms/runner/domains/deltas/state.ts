@@ -6,7 +6,6 @@ import {
 } from "../../../../../../../main";
 import {
   DispatchParsedType,
-  RecordType,
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 
@@ -30,35 +29,35 @@ export type DispatchDeltaPrimitive<T = Unit> =
       replace: number;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "StringReplace";
       replace: string;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "BoolReplace";
       replace: boolean;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TimeReplace";
       replace: string;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "GuidReplace";
       replace: string;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     };
 
 export type DispatchDeltaUnit<T = Unit> = {
@@ -66,7 +65,7 @@ export type DispatchDeltaUnit<T = Unit> = {
   replace: PredicateValue;
   state: any;
   type: DispatchParsedType<any>;
-  flags?: T;
+  flags: T | undefined;
 };
 export type DispatchDeltaOption<T = Unit> =
   | {
@@ -74,73 +73,73 @@ export type DispatchDeltaOption<T = Unit> =
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "OptionValue"; value: DispatchDelta<T>; flags?: T };
+  | { kind: "OptionValue"; value: DispatchDelta<T>; flags: T | undefined };
 export type DispatchDeltaSum<T = Unit> =
   | {
       kind: "SumReplace";
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "SumLeft"; value: DispatchDelta<T>; flags?: T }
-  | { kind: "SumRight"; value: DispatchDelta<T>; flags?: T };
+  | { kind: "SumLeft"; value: DispatchDelta<T>; flags: T | undefined }
+  | { kind: "SumRight"; value: DispatchDelta<T>; flags: T | undefined };
 export type DispatchDeltaList<T = Unit> =
   | {
       kind: "ArrayReplace";
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "ArrayValue"; value: [number, DispatchDelta<T>]; flags?: T }
+  | { kind: "ArrayValue"; value: [number, DispatchDelta<T>]; flags: T | undefined }
   | {
       kind: "ArrayAdd";
       value: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T extends Unit ? never : T;
+      flags: T | undefined;
     }
   | {
       kind: "ArrayAddAt";
       value: [number, PredicateValue];
       elementState: any;
       elementType: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "ArrayRemoveAt"; index: number; flags?: T }
-  | { kind: "ArrayMoveFromTo"; from: number; to: number; flags?: T }
-  | { kind: "ArrayDuplicateAt"; index: number; flags?: T };
+  | { kind: "ArrayRemoveAt"; index: number; flags: T | undefined }
+  | { kind: "ArrayMoveFromTo"; from: number; to: number; flags: T | undefined }
+  | { kind: "ArrayDuplicateAt"; index: number; flags: T | undefined };
 export type DispatchDeltaSet<T = Unit> =
   | {
       kind: "SetReplace";
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "SetValue";
       value: [PredicateValue, DispatchDelta<T>];
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "SetAdd";
       value: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "SetRemove";
       value: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     };
 export type DispatchDeltaMap<T = Unit> =
   | {
@@ -148,17 +147,17 @@ export type DispatchDeltaMap<T = Unit> =
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "MapKey";
       value: [number, DispatchDelta<T>];
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "MapValue";
       value: [number, DispatchDelta<T>];
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "MapAdd";
@@ -167,29 +166,29 @@ export type DispatchDeltaMap<T = Unit> =
       keyType: DispatchParsedType<any>;
       valueState: any;
       valueType: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "MapRemove"; index: number; flags?: T };
+  | { kind: "MapRemove"; index: number; flags: T | undefined };
 export type DispatchDeltaRecord<T = Unit> =
   | {
       kind: "RecordReplace";
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "RecordField";
       field: [string, DispatchDelta<T>];
       recordType: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "RecordAdd";
       field: [string, PredicateValue];
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     };
 export type DispatchDeltaUnion<T = Unit> =
   | {
@@ -197,71 +196,71 @@ export type DispatchDeltaUnion<T = Unit> =
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
-  | { kind: "UnionCase"; caseName: [string, DispatchDelta<T>]; flags?: T };
+  | { kind: "UnionCase"; caseName: [string, DispatchDelta<T>]; flags: T | undefined };
 export type DispatchDeltaTuple<T = Unit> =
   | {
       kind: "TupleReplace";
       replace: PredicateValue;
       state: any;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TupleCase";
       item: [number, DispatchDelta<T>];
       tupleType: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     };
 export type DispatchDeltaTable<T = Unit> =
   | {
       kind: "TableValue";
       id: string;
       nestedDelta: DispatchDelta<T>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TableAddEmpty";
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TableRemove";
       id: string;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TableMoveTo";
       id: string;
       to: string;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "TableDuplicate";
       id: string;
-      flags?: T;
+      flags: T | undefined;
     };
 export type DispatchDeltaOne<T = Unit> =
   | {
       kind: "OneReplace";
       replace: PredicateValue;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "OneValue";
       nestedDelta: DispatchDelta<T>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "OneCreateValue";
       value: PredicateValue;
       type: DispatchParsedType<any>;
-      flags?: T;
+      flags: T | undefined;
     }
   | {
       kind: "OneDeleteValue";
-      flags?: T;
+      flags: T | undefined;
     };
 
 export type DispatchDeltaCustom<T = Unit> = {
@@ -270,7 +269,7 @@ export type DispatchDeltaCustom<T = Unit> = {
     kind: string;
     [key: string]: any;
   };
-  flags?: T;
+  flags: T | undefined;
 };
 
 export type DispatchTransferTuple2<a, b> = { Item1: a; Item2: b };

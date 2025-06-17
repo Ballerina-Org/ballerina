@@ -15,6 +15,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import React from "react";
@@ -24,6 +25,7 @@ export const StringAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -35,8 +37,8 @@ export const StringAbstractRenderer = <
         type: DispatchParsedType<any>;
       },
     StringAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    StringAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<string, Flags> },
+    StringAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -67,22 +69,23 @@ export const StringAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind:
                     props.context.type.kind == "primitive" &&
                     props.context.type.name == "string"
                       ? "StringReplace"
                       : "GuidReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },

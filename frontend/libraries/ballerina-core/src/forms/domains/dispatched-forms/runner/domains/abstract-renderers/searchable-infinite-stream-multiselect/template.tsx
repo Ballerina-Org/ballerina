@@ -23,6 +23,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -31,6 +32,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -68,7 +70,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     ]),
   );
   const debouncerRunner = DebouncerCo.Template<
-    ForeignMutationsExpected & { onChange: DispatchOnChange<ValueRecord> }
+    ForeignMutationsExpected & {
+      onChange: DispatchOnChange<ValueRecord, Flags>;
+    }
   >(debouncer, {
     interval: 15,
     runFilter: (props) =>
@@ -77,7 +81,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ),
   });
   const loaderRunner = Co.Template<
-    ForeignMutationsExpected & { onChange: DispatchOnChange<ValueRecord> }
+    ForeignMutationsExpected & {
+      onChange: DispatchOnChange<ValueRecord, Flags>;
+    }
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
       (_) => _.customFormState.stream,
@@ -102,11 +108,12 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       },
     SearchableInfiniteStreamAbstractRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
+      onChange: DispatchOnChange<ValueRecord, Flags>;
     },
     InfiniteStreamMultiselectAbstractRendererView<
       Context,
-      ForeignMutationsExpected
+      ForeignMutationsExpected,
+      Flags
     >
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
@@ -169,8 +176,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                         : id,
                     ),
                 ),
-              clearSelection: () => {
-                const delta: DispatchDelta = {
+              clearSelection: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "SetReplace",
                   replace: PredicateValue.Default.record(OrderedMap()),
                   state: {
@@ -178,16 +185,17 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(ValueRecord.Updaters.clear()),
                   delta,
                 );
               },
-              setSearchText: (_) =>
+              setSearchText: (value) =>
                 props.setState(
                   SearchableInfiniteStreamAbstractRendererState.Updaters.Template.searchText(
-                    replaceWith(_),
+                    replaceWith(value),
                   ),
                 ),
               loadMore: () =>
@@ -202,47 +210,61 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     replaceWith(""),
                   ),
                 ),
-              replace: (_: ValueRecord) => {
-                const delta: DispatchDelta = {
+              replace: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "SetReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },
-              toggleSelection: (elementRecord: ValueRecord) => {
-                const updater = props.context.value.fields.has(
+              toggleSelection: (elementRecord: ValueRecord, flags) => {
+                props.context.value.fields.has(
                   elementRecord.fields.get("Id")! as string,
                 )
-                  ? ValueRecord.Updaters.remove(
-                      elementRecord.fields.get("Id")! as string,
+                  ? props.foreignMutations.onChange(
+                      Option.Default.some(
+                        ValueRecord.Updaters.remove(
+                          elementRecord.fields.get("Id")! as string,
+                        ),
+                      ),
+                      {
+                        kind: "SetRemove",
+                        value: elementRecord,
+                        state: {
+                          commonFormState: props.context.commonFormState,
+                          customFormState: props.context.customFormState,
+                        },
+                        type: props.context.type,
+                        flags,
+                      },
                     )
-                  : ValueRecord.Updaters.set(
-                      elementRecord.fields.get("Id")! as string,
-                      elementRecord,
+                  : props.foreignMutations.onChange(
+                      Option.Default.some(
+                        ValueRecord.Updaters.set(
+                          elementRecord.fields.get("Id")! as string,
+                          elementRecord,
+                        ),
+                      ),
+                      {
+                        kind: "SetAdd",
+                        value: elementRecord,
+                        state: {
+                          commonFormState: props.context.commonFormState,
+                          customFormState: props.context.customFormState,
+                        },
+                        type: props.context.type,
+                        flags,
+                      },
                     );
-
-                const delta: DispatchDelta = {
-                  kind: "SetReplace",
-                  // Maybe unsafe - check
-                  replace: updater(props.context.value),
-                  state: {
-                    commonFormState: props.context.commonFormState,
-                    customFormState: props.context.customFormState,
-                  },
-                  type: props.context.type,
-                };
-                props.foreignMutations.onChange(
-                  Option.Default.some(updater),
-                  delta,
-                );
               },
             }}
           />

@@ -1,10 +1,9 @@
-import { List, Map } from "immutable";
+import { Map } from "immutable";
 import {
   BasicFun,
   Bindings,
   FormLabel,
   DispatchCommonFormState,
-  SimpleCallback,
   simpleUpdater,
   Template,
   Unit,
@@ -15,6 +14,8 @@ import {
   BasicUpdater,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
 export type MapAbstractRendererState<KeyFormState, ValueFormState> = {
@@ -103,6 +104,7 @@ export type MapAbstractRendererView<
   ValueFormState,
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueTuple> &
@@ -110,40 +112,38 @@ export type MapAbstractRendererView<
     MapAbstractRendererState<KeyFormState, ValueFormState>,
   MapAbstractRendererState<KeyFormState, ValueFormState>,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple>;
-    add: SimpleCallback<Unit>;
-    remove: SimpleCallback<number>;
+    onChange: DispatchOnChange<ValueTuple, Flags>;
+    add: VoidCallbackWithOptionalFlags<Flags>;
+    remove: ValueCallbackWithOptionalFlags<number, Flags>;
   },
   {
-    embeddedKeyTemplate: BasicFun<
-      number,
-      Template<
-        Context &
-          Value<ValueTuple> &
-          MapAbstractRendererState<KeyFormState, ValueFormState> & {
-            bindings: Bindings;
-            extraContext: any;
-          },
-        MapAbstractRendererState<KeyFormState, ValueFormState>,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >
+    embeddedKeyTemplate: (elementIndex: number) => (
+      flags: Flags | undefined,
+    ) => Template<
+      Context &
+        Value<ValueTuple> &
+        MapAbstractRendererState<KeyFormState, ValueFormState> & {
+          bindings: Bindings;
+          extraContext: any;
+        },
+      MapAbstractRendererState<KeyFormState, ValueFormState>,
+      ForeignMutationsExpected & {
+        onChange: DispatchOnChange<ValueTuple, Flags>;
+      }
     >;
-    embeddedValueTemplate: BasicFun<
-      number,
-      Template<
-        Context &
-          Value<ValueTuple> &
-          MapAbstractRendererState<KeyFormState, ValueFormState> & {
-            bindings: Bindings;
-            extraContext: any;
-          },
-        MapAbstractRendererState<KeyFormState, ValueFormState>,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >
+    embeddedValueTemplate: (elementIndex: number) => (
+      flags: Flags | undefined,
+    ) => Template<
+      Context &
+        Value<ValueTuple> &
+        MapAbstractRendererState<KeyFormState, ValueFormState> & {
+          bindings: Bindings;
+          extraContext: any;
+        },
+      MapAbstractRendererState<KeyFormState, ValueFormState>,
+      ForeignMutationsExpected & {
+        onChange: DispatchOnChange<ValueTuple, Flags>;
+      }
     >;
   }
 >;

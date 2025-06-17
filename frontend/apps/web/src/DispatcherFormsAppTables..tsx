@@ -263,6 +263,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                       ),
                       onEntityChange: onEntityChange,
                     },
+                    remoteEntityVersionIdentifier: "",
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),

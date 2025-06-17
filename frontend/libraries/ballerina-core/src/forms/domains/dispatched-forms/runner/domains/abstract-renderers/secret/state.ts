@@ -7,6 +7,7 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
 export type SecretAbstractRendererState = {
@@ -24,6 +25,7 @@ export const SecretAbstractRendererState = {
 export type SecretAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     DomNodeIdReadonlyContext &
@@ -32,7 +34,7 @@ export type SecretAbstractRendererView<
     },
   SecretAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string>;
-    setNewValue: SimpleCallback<string>;
+    onChange: DispatchOnChange<string, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
   }
 >;

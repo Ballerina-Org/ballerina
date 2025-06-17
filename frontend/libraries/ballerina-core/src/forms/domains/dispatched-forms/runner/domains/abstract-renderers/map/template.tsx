@@ -18,6 +18,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../../../../main";
 import {
@@ -34,6 +35,7 @@ export const MapAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   GetDefaultKeyFormState: () => KeyFormState,
   GetDefaultKeyFormValue: () => PredicateValue,
@@ -43,20 +45,20 @@ export const MapAbstractRenderer = <
     Value<PredicateValue> & KeyFormState & { bindings: Bindings },
     KeyFormState,
     {
-      onChange: DispatchOnChange<PredicateValue>;
+      onChange: DispatchOnChange<PredicateValue, Flags>;
     }
   >,
   valueTemplate: Template<
     Value<PredicateValue> & ValueFormState & { bindings: Bindings },
     ValueFormState,
     {
-      onChange: DispatchOnChange<PredicateValue>;
+      onChange: DispatchOnChange<PredicateValue, Flags>;
     }
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedKeyTemplate = (elementIndex: number) =>
+  const embeddedKeyTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
     keyTemplate
       .mapContext(
         (
@@ -101,18 +103,19 @@ export const MapAbstractRenderer = <
       )
       .mapForeignMutationsFromProps<
         ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
+          onChange: DispatchOnChange<ValueTuple, Flags>;
         }
       >(
         (
           props,
         ): {
-          onChange: DispatchOnChange<PredicateValue>;
+          onChange: DispatchOnChange<PredicateValue, Flags>;
         } => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
+              flags,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -169,7 +172,7 @@ export const MapAbstractRenderer = <
         }),
       );
 
-  const embeddedValueTemplate = (elementIndex: number) =>
+  const embeddedValueTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
     valueTemplate
       .mapContext(
         (
@@ -218,18 +221,19 @@ export const MapAbstractRenderer = <
       )
       .mapForeignMutationsFromProps<
         ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
+          onChange: DispatchOnChange<ValueTuple, Flags>;
         }
       >(
         (
           props,
         ): {
-          onChange: DispatchOnChange<PredicateValue>;
+          onChange: DispatchOnChange<PredicateValue, Flags>;
         } => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "MapValue",
               value: [elementIndex, nestedDelta],
+              flags,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -289,12 +293,13 @@ export const MapAbstractRenderer = <
   return Template.Default<
     Context & Value<ValueTuple> & { disabled: boolean },
     MapAbstractRendererState<KeyFormState, ValueFormState>,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<ValueTuple> },
+    ForeignMutationsExpected & { onChange: DispatchOnChange<ValueTuple, Flags> },
     MapAbstractRendererView<
       KeyFormState,
       ValueFormState,
       Context,
-      ForeignMutationsExpected
+      ForeignMutationsExpected,
+      Flags
     >
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
@@ -326,8 +331,8 @@ export const MapAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              add: (_) => {
-                const delta: DispatchDelta = {
+              add: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "MapAdd",
                   keyValue: [
                     GetDefaultKeyFormValue(),
@@ -337,6 +342,7 @@ export const MapAbstractRenderer = <
                   keyType: (props.context.type as MapType<any>).args[0],
                   valueState: GetDefaultValueFormState(),
                   valueType: (props.context.type as MapType<any>).args[1],
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -366,16 +372,17 @@ export const MapAbstractRenderer = <
                   ),
                 );
               },
-              remove: (_) => {
-                const delta: DispatchDelta = {
+              remove: (index, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "MapRemove",
-                  index: _,
+                  index,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
                     Updater((list) =>
                       PredicateValue.Default.tuple(
-                        ListRepo.Updaters.remove<ValueTuple>(_)(
+                        ListRepo.Updaters.remove<ValueTuple>(index)(
                           list.values as List<ValueTuple>,
                         ),
                       ),

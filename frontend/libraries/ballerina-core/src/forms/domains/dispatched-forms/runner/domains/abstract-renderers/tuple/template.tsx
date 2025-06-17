@@ -18,6 +18,7 @@ import {
   getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -29,6 +30,7 @@ export const DispatchTupleAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   ItemFormStates: Map<number, () => ItemFormState>,
   itemTemplates: Map<
@@ -42,14 +44,14 @@ export const DispatchTupleAbstractRenderer = <
       },
       any,
       {
-        onChange: DispatchOnChange<PredicateValue>;
+        onChange: DispatchOnChange<PredicateValue, Flags>;
       }
     >
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedItemTemplates = (itemIndex: number) =>
+  const embeddedItemTemplates = (itemIndex: number) => (flags: Flags | undefined) =>
     itemTemplates
       .get(itemIndex)!
       .mapContext(
@@ -97,19 +99,20 @@ export const DispatchTupleAbstractRenderer = <
       )
       .mapForeignMutationsFromProps<
         ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
+          onChange: DispatchOnChange<ValueTuple, Flags>;
         }
       >(
         (
           props,
         ): {
-          onChange: DispatchOnChange<PredicateValue>;
+          onChange: DispatchOnChange<PredicateValue, Flags>;
         } => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "TupleCase",
               item: [itemIndex, nestedDelta],
               tupleType: props.context.type,
+              flags,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -163,9 +166,14 @@ export const DispatchTupleAbstractRenderer = <
       },
     TupleAbstractRendererState<ItemFormState>,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTuple>;
+      onChange: DispatchOnChange<ValueTuple, Flags>;
     },
-    TupleAbstractRendererView<ItemFormState, Context, ForeignMutationsExpected>
+    TupleAbstractRendererView<
+      ItemFormState,
+      Context,
+      ForeignMutationsExpected,
+      Flags
+    >
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

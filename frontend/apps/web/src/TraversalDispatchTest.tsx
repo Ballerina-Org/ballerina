@@ -386,6 +386,7 @@ export const TraversalDispatchTest = (props: {}) => {
                       onEntityChange: onPersonEntityChange,
                     },
                     showFormParsingErrors: ShowFormsParsingErrors,
+                    remoteEntityVersionIdentifier: "",
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },

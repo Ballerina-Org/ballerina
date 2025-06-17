@@ -10,6 +10,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererState,
@@ -20,6 +21,7 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 export const NumberAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -32,8 +34,8 @@ export const NumberAbstractRenderer = <
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
     NumberAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<number> },
-    NumberAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<number, Flags> },
+    NumberAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
@@ -64,18 +66,19 @@ export const NumberAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "NumberReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },

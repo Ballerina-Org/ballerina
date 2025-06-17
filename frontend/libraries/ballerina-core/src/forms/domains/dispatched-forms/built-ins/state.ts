@@ -63,10 +63,17 @@ const simpleMapKeyToIdentifer = (key: any): string => {
   return JSON.stringify(key);
 };
 
-export type ValueUpdater<Value> = Option<BasicUpdater<Value>>;
+export type VoidCallbackWithOptionalFlags<Flags = Unit> = (
+  flags: Flags | undefined,
+) => void;
+
+export type ValueCallbackWithOptionalFlags<Value, Flags = Unit> = (
+  value: Value,
+  flags: Flags | undefined,
+) => void;
 
 export type DispatchOnChange<Value, Flags = Unit> = (
-  updater: ValueUpdater<Value>,
+  updater: Option<BasicUpdater<Value>>,
   delta: DispatchDelta<Flags>,
 ) => void;
 

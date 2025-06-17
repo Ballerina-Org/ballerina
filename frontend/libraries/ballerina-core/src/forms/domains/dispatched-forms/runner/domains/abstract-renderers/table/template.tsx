@@ -23,6 +23,7 @@ import {
   getLeafIdentifierFromIdentifier,
   ValueTable,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -45,6 +46,7 @@ export const TableAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   CellTemplates: Map<
     string,
@@ -67,6 +69,7 @@ export const TableAbstractRenderer = <
     (rowId: string) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
+    (flags: Flags | undefined) =>
       cellTemplate
         // TODO, more helpful typing
         .mapContext<any>((_: any) => {
@@ -110,11 +113,11 @@ export const TableAbstractRenderer = <
           ),
         )
         .mapForeignMutationsFromProps<{
-          onChange: DispatchOnChange<PredicateValue>;
+          onChange: DispatchOnChange<PredicateValue, Flags>;
         }>((props) => ({
           onChange: (
             _: BasicUpdater<PredicateValue>,
-            nestedDelta: DispatchDelta,
+            nestedDelta: DispatchDelta<Flags>,
           ) => {
             props.setState(
               AbstractTableRendererState.Updaters.Core.customFormState.children
@@ -148,89 +151,93 @@ export const TableAbstractRenderer = <
                 ),
             );
 
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "TableValue",
               id: rowId,
               nestedDelta: nestedDelta,
+              flags,
             };
 
             props.foreignMutations.onChange(Option.Default.none(), delta);
           },
         }));
 
-  const embedDetailsRenderer: Template<any, any, any, any> | undefined =
-    DetailsRenderer?.mapContext<any>((_: any) => {
-      const value = _.customFormState.stream.loadedElements
-        .get(_.customFormState.selectedDetailRow[0])
-        ?.data.get(_.customFormState.selectedDetailRow[1]);
+  const embedDetailsRenderer = DetailsRenderer
+    ? (flags: Flags | undefined) =>
+        DetailsRenderer.mapContext<any>((_: any) => {
+          const value = _.customFormState.stream.loadedElements
+            .get(_.customFormState.selectedDetailRow[0])
+            ?.data.get(_.customFormState.selectedDetailRow[1]);
 
-      const rowState = _.customFormState.stream.chunkStates
-        .get(_.customFormState.selectedDetailRow[0])
-        ?.get(_.customFormState.selectedDetailRow[1]);
+          const rowState = _.customFormState.stream.chunkStates
+            .get(_.customFormState.selectedDetailRow[0])
+            ?.get(_.customFormState.selectedDetailRow[1]);
 
-      const recordRowState = rowState
-        ? RecordAbstractRendererState.Default.fieldState(rowState)
-        : RecordAbstractRendererState.Default.fieldState(Map());
+          const recordRowState = rowState
+            ? RecordAbstractRendererState.Default.fieldState(rowState)
+            : RecordAbstractRendererState.Default.fieldState(Map());
 
-      return {
-        value,
-        ...recordRowState,
-        disabled: _.disabled,
-        bindings: _.bindings.set("local", value),
-        extraContext: _.extraContext,
-        identifiers: {
-          withLauncher: _.identifiers.withLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-          ),
-          withoutLauncher: _.identifiers.withoutLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-          ),
-        },
-      };
-    })
-      .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
-        return AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-          ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
-            props.context.customFormState.selectedDetailRow[0],
-            props.context.customFormState.selectedDetailRow[1],
-          )((__) => {
-            const temp = RecordAbstractRendererState.Default.fieldState(__);
-            const updated = updater(temp);
-            const newState = updated.fieldStates;
-            return newState;
-          }),
-        );
-      })
-      .mapForeignMutationsFromProps<{
-        onChange: DispatchOnChange<PredicateValue>;
-      }>((props) => ({
-        onChange: (
-          _: BasicUpdater<ValueRecord>,
-          nestedDelta: DispatchDelta,
-        ) => {
-          props.setState(
-            AbstractTableRendererState.Updaters.Core.commonFormState.children
-              .modifiedByUser(replaceWith(true))
-              .then(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-                  ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
-                    props.context.customFormState.selectedDetailRow[0],
-                    props.context.customFormState.selectedDetailRow[1],
-                  )(_),
-                ),
+          return {
+            value,
+            ...recordRowState,
+            disabled: _.disabled,
+            bindings: _.bindings.set("local", value),
+            extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
               ),
-          );
-
-          // TODO, different delta for details
-          const delta: DispatchDelta = {
-            kind: "TableValue",
-            id: props.context.customFormState.selectedDetailRow,
-            nestedDelta: nestedDelta,
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
+              ),
+            },
           };
+        })
+          .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
+            return AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+              ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
+                props.context.customFormState.selectedDetailRow[0],
+                props.context.customFormState.selectedDetailRow[1],
+              )((__) => {
+                const temp = RecordAbstractRendererState.Default.fieldState(__);
+                const updated = updater(temp);
+                const newState = updated.fieldStates;
+                return newState;
+              }),
+            );
+          })
+          .mapForeignMutationsFromProps<{
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          }>((props) => ({
+            onChange: (
+              _: BasicUpdater<ValueRecord>,
+              nestedDelta: DispatchDelta<Flags>,
+            ) => {
+              props.setState(
+                AbstractTableRendererState.Updaters.Core.commonFormState.children
+                  .modifiedByUser(replaceWith(true))
+                  .then(
+                    AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                      ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
+                        props.context.customFormState.selectedDetailRow[0],
+                        props.context.customFormState.selectedDetailRow[1],
+                      )(_),
+                    ),
+                  ),
+              );
 
-          props.foreignMutations.onChange(Option.Default.none(), delta);
-        },
-      }));
+              // TODO, different delta for details
+              const delta: DispatchDelta<Flags> = {
+                kind: "TableValue",
+                id: props.context.customFormState.selectedDetailRow,
+                nestedDelta: nestedDelta,
+                flags,
+              };
+
+              props.foreignMutations.onChange(Option.Default.none(), delta);
+            },
+          }))
+    : undefined;
 
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
@@ -242,7 +249,7 @@ export const TableAbstractRenderer = <
     AbstractTableRendererReadonlyContext & AbstractTableRendererState,
     AbstractTableRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTable>;
+      onChange: DispatchOnChange<ValueTable, Flags>;
     },
     any
   >((props) => {
@@ -407,9 +414,10 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
-              add: () => {
-                const delta: DispatchDelta = {
+              add: (flags: Flags | undefined) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "TableAddEmpty",
+                  flags,
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
@@ -424,10 +432,11 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              remove: (k: string) => {
-                const delta: DispatchDelta = {
+              remove: (k: string, flags: Flags | undefined) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "TableRemove",
                   id: k,
+                  flags,
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
@@ -442,11 +451,12 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              moveTo: (k: string, to: string) => {
-                const delta: DispatchDelta = {
+              moveTo: (k: string, to: string, flags: Flags | undefined) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "TableMoveTo",
                   id: k,
                   to,
+                  flags,
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
@@ -461,10 +471,11 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              duplicate: (k: string) => {
-                const delta: DispatchDelta = {
+              duplicate: (k: string, flags: Flags | undefined) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "TableDuplicate",
                   id: k,
+                  flags,
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(

@@ -8,6 +8,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -19,6 +20,7 @@ import {
 export const Base64FileAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -31,8 +33,8 @@ export const Base64FileAbstractRenderer = <
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
     Base64FileAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    Base64FileAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<string, Flags> },
+    Base64FileAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -63,18 +65,19 @@ export const Base64FileAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "StringReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },

@@ -11,6 +11,7 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  Unit,
 } from "../../../../../../../../main";
 import { FormLabel, View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
@@ -56,6 +57,7 @@ export type TupleAbstractRendererView<
   ItemFormState extends { commonFormState: DispatchCommonFormState },
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueTuple> &
@@ -63,23 +65,22 @@ export type TupleAbstractRendererView<
     DomNodeIdReadonlyContext,
   TupleAbstractRendererState<ItemFormState>,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple>;
+    onChange: DispatchOnChange<ValueTuple, Flags>;
   },
   {
-    embeddedItemTemplates: BasicFun<
-      number,
-      Template<
-        Context &
-          Value<ValueTuple> &
-          TupleAbstractRendererState<ItemFormState> & {
-            bindings: Bindings;
-            extraContext: any;
-          },
-        TupleAbstractRendererState<ItemFormState>,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >
+    embeddedItemTemplates: (itemIndex: number) => (
+      flags: Flags | undefined,
+    ) => Template<
+      Context &
+        Value<ValueTuple> &
+        TupleAbstractRendererState<ItemFormState> & {
+          bindings: Bindings;
+          extraContext: any;
+        },
+      TupleAbstractRendererState<ItemFormState>,
+      ForeignMutationsExpected & {
+        onChange: DispatchOnChange<ValueTuple, Flags>;
+      }
     >;
   }
 >;

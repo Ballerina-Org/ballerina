@@ -4,8 +4,8 @@ import {
   simpleUpdater,
   Unit,
   View,
-  DispatchOnChange,
   DomNodeIdReadonlyContext,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
 export type UnitAbstractRendererState = {
@@ -25,8 +25,11 @@ export const UnitAbstractRendererState = {
   },
 };
 
-export type UnitAbstractRendererView<Context extends FormLabel> = View<
+export type UnitAbstractRendererView<
+  Context extends FormLabel,
+  Flags = Unit,
+> = View<
   Context & UnitAbstractRendererState & DomNodeIdReadonlyContext,
   UnitAbstractRendererState,
-  { onChange: DispatchOnChange<Unit> }
+  { set: VoidCallbackWithOptionalFlags<Flags> }
 >;

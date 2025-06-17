@@ -255,6 +255,7 @@ export const parseDispatchFormsToLaunchers =
             passthrough: Map(passthroughLaunchers),
           },
           dispatcherContext: {
+            specApis: specification.apis,
             forms: specification.forms,
             injectedPrimitives,
             apiConverters,

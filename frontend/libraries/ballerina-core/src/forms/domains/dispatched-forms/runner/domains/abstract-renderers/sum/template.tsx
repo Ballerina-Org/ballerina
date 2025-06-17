@@ -13,6 +13,8 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -26,6 +28,7 @@ export const SumAbstractRenderer = <
   LeftFormState extends CommonAbstractRendererState,
   RightFormState extends CommonAbstractRendererState,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -34,7 +37,7 @@ export const SumAbstractRenderer = <
       LeftFormState & { disabled: boolean; extraContext: any },
     LeftFormState,
     {
-      onChange: DispatchOnChange<PredicateValue>;
+      onChange: DispatchOnChange<PredicateValue, Flags>;
     }
   >,
   rightTemplate?: Template<
@@ -42,12 +45,13 @@ export const SumAbstractRenderer = <
       RightFormState & { disabled: boolean; extraContext: any },
     RightFormState,
     {
-      onChange: DispatchOnChange<PredicateValue>;
+      onChange: DispatchOnChange<PredicateValue, Flags>;
     }
   >,
 ) => {
-  const embeddedLeftTemplate = leftTemplate
-    ?.mapContext(
+  const embeddedLeftTemplate = leftTemplate ?
+  (flags: Flags | undefined) => leftTemplate
+    .mapContext(
       (
         _: SumAbstractRendererReadonlyContext &
           SumAbstractRendererState<LeftFormState, RightFormState>,
@@ -69,24 +73,25 @@ export const SumAbstractRenderer = <
         type: _.type.args[0],
       }),
     )
-    ?.mapState(
+    .mapState(
       SumAbstractRendererState<LeftFormState, RightFormState>().Updaters.Core
         .customFormState.children.left,
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum>;
+        onChange: DispatchOnChange<ValueSum, Flags>;
       }
     >(
       (
         props,
       ): {
-        onChange: DispatchOnChange<PredicateValue>;
+        onChange: DispatchOnChange<PredicateValue, Flags>;
       } => ({
         onChange: (elementUpdater, nestedDelta) => {
-          const delta: DispatchDelta = {
+          const delta: DispatchDelta<Flags> = {
             kind: "SumLeft",
             value: nestedDelta,
+            flags: flags,
           };
           props.foreignMutations.onChange(
             elementUpdater.kind == "l"
@@ -121,10 +126,10 @@ export const SumAbstractRenderer = <
           );
         },
       }),
-    );
+    ) : undefined
 
-  const embeddedRightTemplate = rightTemplate
-    ?.mapContext((_: any): any => ({
+  const embeddedRightTemplate = rightTemplate ? (flags: Flags | undefined) => rightTemplate
+    .mapContext((_: any): any => ({
       ..._,
       ..._.customFormState.right,
       disabled: _.disabled,
@@ -142,19 +147,20 @@ export const SumAbstractRenderer = <
     )
     .mapForeignMutationsFromProps<
       ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum>;
+        onChange: DispatchOnChange<ValueSum, Flags>;
       }
     >(
       (
         props,
       ): ForeignMutationsExpected & {
-        onChange: DispatchOnChange<PredicateValue>;
+        onChange: DispatchOnChange<PredicateValue, Flags>;
       } => ({
         ...props.foreignMutations,
         onChange: (elementUpdater, nestedDelta) => {
-          const delta: DispatchDelta = {
+          const delta: DispatchDelta<Flags> = {
             kind: "SumRight",
             value: nestedDelta,
+            flags,
           };
           props.foreignMutations.onChange(
             elementUpdater.kind == "l"
@@ -189,19 +195,20 @@ export const SumAbstractRenderer = <
           );
         },
       }),
-    );
+    ) : undefined
 
   return Template.Default<
     SumAbstractRendererReadonlyContext,
     SumAbstractRendererState<LeftFormState, RightFormState>,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueSum>;
+      onChange: DispatchOnChange<ValueSum, Flags>;
     },
     SumAbstractRendererView<
       LeftFormState,
       RightFormState,
       SumAbstractRendererReadonlyContext,
-      ForeignMutationsExpected
+      ForeignMutationsExpected,
+      Flags
     >
   >((props) => {
     if (!PredicateValue.Operations.IsSum(props.context.value)) {

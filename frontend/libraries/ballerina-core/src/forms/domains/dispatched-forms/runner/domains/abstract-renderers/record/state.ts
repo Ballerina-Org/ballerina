@@ -15,6 +15,7 @@ import {
   DispatchOnChange,
   FieldName,
   DomNodeIdReadonlyContext,
+  Unit,
 } from "../../../../../../../../main";
 
 export type RecordAbstractRendererState = {
@@ -58,7 +59,11 @@ export const RecordAbstractRendererState = {
     },
   },
 };
-export type RecordAbstractRendererView<Context, ForeignMutationsExpected> =
+export type RecordAbstractRendererView<
+  Context,
+  ForeignMutationsExpected,
+  Flags = Unit,
+> =
   View<
     Context &
       Value<ValueRecord> &
@@ -66,16 +71,16 @@ export type RecordAbstractRendererView<Context, ForeignMutationsExpected> =
       DomNodeIdReadonlyContext,
     RecordAbstractRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
+      onChange: DispatchOnChange<ValueRecord, Flags>;
     },
     {
       EmbeddedFields: Map<
         string,
-        Template<
+        (flags: Flags | undefined) => Template<
           Context & Value<PredicateValue> & any,
           any,
           ForeignMutationsExpected & {
-            onChange: DispatchOnChange<ValueRecord>;
+            onChange: DispatchOnChange<ValueRecord, Flags>;
           }
         >
       >;

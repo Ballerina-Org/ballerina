@@ -3,9 +3,9 @@ import { View } from "../../../../../../../template/state";
 import {
   DispatchCommonFormState,
   FormLabel,
-  SimpleCallback,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
@@ -24,7 +24,8 @@ export const Base64FileAbstractRendererState = {
 export type Base64FileAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
-> = View<
+  Flags = Unit,
+> = View< 
   Context &
     Value<string> &
     DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
@@ -32,7 +33,7 @@ export type Base64FileAbstractRendererView<
     },
   Base64FileAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string>;
-    setNewValue: SimpleCallback<string>;
+    onChange: DispatchOnChange<string, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
   }
 >;

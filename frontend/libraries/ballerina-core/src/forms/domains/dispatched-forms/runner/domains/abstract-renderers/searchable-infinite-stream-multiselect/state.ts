@@ -8,11 +8,15 @@ import {
   SimpleCallback,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  VoidCallbackWithOptionalFlags,
+  Unit,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
 export type InfiniteStreamMultiselectAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueRecord> &
@@ -25,12 +29,12 @@ export type InfiniteStreamMultiselectAbstractRendererView<
     },
   SearchableInfiniteStreamAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueRecord>;
+    onChange: DispatchOnChange<ValueRecord, Flags>;
     toggleOpen: SimpleCallback<void>;
-    clearSelection: SimpleCallback<void>;
+    clearSelection: VoidCallbackWithOptionalFlags<Flags>;
     setSearchText: SimpleCallback<string>;
-    replace: SimpleCallback<ValueRecord>;
-    toggleSelection: SimpleCallback<ValueRecord>;
+    replace: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+    toggleSelection: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
   }

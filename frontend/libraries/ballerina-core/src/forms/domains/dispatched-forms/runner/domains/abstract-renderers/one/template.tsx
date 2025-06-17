@@ -26,6 +26,8 @@ import {
   Debounced,
   Value,
   Option,
+  Unit,
+  unit,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererReadonlyContext,
@@ -39,7 +41,21 @@ import {
   reinitializeOneRunner,
 } from "./coroutines/runner";
 
-export const OneAbstractRenderer = <Context,>(
+/*
+ * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
+ * This means the one is inside a Sum<unit, One> (or inverse) renderer.
+ * Clear and delete are used to set the sum to a left of unit or delete the referenced entity in the one.
+ * The sum defines the 'optionality', so when clearing, no delta is needed (the sum will return a delta indicated clearing)
+ * and the sum exclusibely controls the updating on the entity value, so no updater is needed.
+ * When deleting, the delta is needed to delete the referenced entity in the one and will be nested in the sum's delta, but again
+ * no updater is needed.
+ * The set and create callbacks are used when the one is inside a Sum whose current value is unit.
+ * If the one is not in a Sum<unit, One> (or inverse), then the set and create callbacks are not used.
+ * The updater is always needed because we need to know the value of the new selection / creation.
+ * The actual implementation and passing down of the callbacks is done in the concrete sum renderer.
+ */
+
+export const OneAbstractRenderer = <Context, Flags = Unit>(
   DetailsRenderer: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
@@ -63,106 +79,128 @@ export const OneAbstractRenderer = <Context,>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedDetailsRenderer = DetailsRenderer.mapContext<
-    OneAbstractRendererReadonlyContext & OneAbstractRendererState
-  >((_) => {
-    if (!AsyncState.Operations.hasValue(_.customFormState.selectedValue.sync)) {
-      return undefined;
-    }
-    if (_.customFormState.selectedValue.sync.value.kind == "errors") {
-      console.error(
-        _.customFormState.selectedValue.sync.value.errors
-          .join("\n")
-          .concat(`\n...When parsing the "one" field value\n...`),
-      );
-      return undefined;
-    }
-    if (PredicateValue.Operations.IsUnit(_.value)) {
-      return undefined;
-    }
+  const typedInitializeOneRunner = initializeOneRunner<Flags>();
+  const typedReinitializeOneRunner = reinitializeOneRunner<Flags>();
+  const typedOneTableLoaderRunner = oneTableLoaderRunner<Flags>();
+  const typedOneTableDebouncerRunner = oneTableDebouncerRunner<Flags>();
 
-    const value = _.customFormState.selectedValue.sync.value.value;
-    const state =
-      _.customFormState?.detailsState ??
-      RecordAbstractRendererState.Default.zero();
-    return {
-      ..._,
-      value,
-      ...state,
-      disabled: _.disabled,
-      bindings: _.bindings,
-      extraContext: _.extraContext,
-      identifiers: {
-        withLauncher: _.identifiers.withLauncher.concat(`[details]`),
-        withoutLauncher: _.identifiers.withoutLauncher.concat(`[details]`),
-      },
-      // this is not correct, type is a lookup -- todo, resolve in the dispatcher
-      type: _.type.args as RecordType<any>,
-    };
-  })
-    .mapState((_) =>
-      OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-        _,
-      ),
-    )
-    .mapForeignMutationsFromProps<{
-      onChange: DispatchOnChange<PredicateValue>;
-    }>((props) => ({
-      onChange: (_: BasicUpdater<ValueRecord>, nestedDelta: DispatchDelta) => {
-        props.setState(
-          OneAbstractRendererState.Updaters.Core.commonFormState.children
-            .modifiedByUser(replaceWith(true))
-            .then(
-              OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                RecordAbstractRendererState.Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
+  const embeddedDetailsRenderer = (flags: Flags | undefined) =>
+    DetailsRenderer.mapContext<
+      OneAbstractRendererReadonlyContext & OneAbstractRendererState
+    >((_) => {
+      if (
+        !AsyncState.Operations.hasValue(_.customFormState.selectedValue.sync)
+      ) {
+        return undefined;
+      }
+      if (_.customFormState.selectedValue.sync.value.kind == "errors") {
+        console.error(
+          _.customFormState.selectedValue.sync.value.errors
+            .join("\n")
+            .concat(`\n...When parsing the "one" field value\n...`),
+        );
+        return undefined;
+      }
+      if (PredicateValue.Operations.IsUnit(_.value)) {
+        return undefined;
+      }
+
+      const value = _.customFormState.selectedValue.sync.value.value;
+      const state =
+        _.customFormState?.detailsState ??
+        RecordAbstractRendererState.Default.zero();
+      return {
+        ..._,
+        value,
+        ...state,
+        disabled: _.disabled,
+        bindings: _.bindings,
+        extraContext: _.extraContext,
+        identifiers: {
+          withLauncher: _.identifiers.withLauncher.concat(`[details]`),
+          withoutLauncher: _.identifiers.withoutLauncher.concat(`[details]`),
+        },
+        // this is not correct, type is a lookup -- todo, resolve in the dispatcher
+        type: _.type.args as RecordType<any>,
+      };
+    })
+      .mapState((_) =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+          _,
+        ),
+      )
+      .mapForeignMutationsFromProps<{
+        onChange: DispatchOnChange<Option<ValueRecord>, Flags>;
+      }>((props) => ({
+        onChange: (
+          _: Option<BasicUpdater<ValueRecord>>,
+          nestedDelta: DispatchDelta<Flags>,
+        ) => {
+          props.setState(
+            OneAbstractRendererState.Updaters.Core.commonFormState.children
+              .modifiedByUser(replaceWith(true))
+              .then(
+                OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                  RecordAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
                   ),
                 ),
-              ),
-            )
-            .then((__) => {
-              if (
-                __.customFormState.selectedValue.sync.kind != "loaded" ||
-                __.customFormState.selectedValue.sync.value.kind == "errors" ||
-                !PredicateValue.Operations.IsRecord(
-                  __.customFormState.selectedValue.sync.value.value,
-                )
-              ) {
-                return __;
-              }
-              return {
-                ...__,
-                customFormState: {
-                  ...__.customFormState,
-                  selectedValue: {
-                    ...__.customFormState.selectedValue,
-                    sync: {
-                      ...__.customFormState.selectedValue.sync,
-                      value: {
-                        ...__.customFormState.selectedValue.sync.value,
-                        value: _(
-                          __.customFormState.selectedValue.sync.value.value,
-                        ),
+              )
+              .then((__) => {
+                if (
+                  __.customFormState.selectedValue.sync.kind != "loaded" ||
+                  __.customFormState.selectedValue.sync.value.kind ==
+                    "errors" ||
+                  !PredicateValue.Operations.IsRecord(
+                    __.customFormState.selectedValue.sync.value.value,
+                  ) ||
+                  _.kind == "l"
+                ) {
+                  return __;
+                }
+                return {
+                  ...__,
+                  customFormState: {
+                    ...__.customFormState,
+                    selectedValue: {
+                      ...__.customFormState.selectedValue,
+                      sync: {
+                        ...__.customFormState.selectedValue.sync,
+                        value: {
+                          ...__.customFormState.selectedValue.sync.value,
+                          value: _.value(
+                            __.customFormState.selectedValue.sync.value.value,
+                          ),
+                        },
                       },
                     },
                   },
-                },
-              };
-            }),
-        );
+                };
+              }),
+          );
 
-        const delta: DispatchDelta = {
-          kind: "OneValue",
-          nestedDelta,
-        };
-        // TODO: The embedded details rendere will take an optional delta that can override this
-        props.foreignMutations.onChange(Option.Default.none(), delta);
-      },
-    }));
+          const delta: DispatchDelta<Flags> = {
+            kind: "OneValue",
+            nestedDelta,
+            flags,
+          };
+
+          // The Option component of the one is a lazy load signal. Either the value is provided initially,
+          // or it is loaded lazily. Here we always update a some, because if the detail renderer is displayed,
+          // we must already have a value, and the option is a some.
+          props.foreignMutations.onChange(
+            _.kind == "l"
+              ? Option.Default.none()
+              : Option.Default.some(Option.Updaters.some(_.value)),
+            delta,
+          );
+        },
+      }));
 
   const embeddedPreviewRenderer = PreviewRenderer
-    ? (value: ValueRecord) =>
+    ? (value: ValueRecord) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
           OneAbstractRendererReadonlyContext & OneAbstractRendererState
         >((_) => {
@@ -189,11 +227,11 @@ export const OneAbstractRenderer = <Context,>(
               .detailsState,
           )
           .mapForeignMutationsFromProps<{
-            onChange: DispatchOnChange<PredicateValue>;
+            onChange: DispatchOnChange<PredicateValue, Flags>;
           }>((props) => ({
             onChange: (
               _: BasicUpdater<ValueRecord>,
-              nestedDelta: DispatchDelta,
+              nestedDelta: DispatchDelta<Flags>,
             ) => {
               props.setState(
                 OneAbstractRendererState.Updaters.Core.commonFormState.children
@@ -240,9 +278,10 @@ export const OneAbstractRenderer = <Context,>(
                   }),
               );
 
-              const delta: DispatchDelta = {
+              const delta: DispatchDelta<Flags> = {
                 kind: "OneValue",
                 nestedDelta,
+                flags,
               };
 
               props.foreignMutations.onChange(Option.Default.none(), delta);
@@ -254,9 +293,20 @@ export const OneAbstractRenderer = <Context,>(
     OneAbstractRendererReadonlyContext,
     OneAbstractRendererState,
     {
-      onChange: DispatchOnChange<ValueOption>;
+      onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+      // See comment at top of file
+      clear?: () => void;
+      delete?: (delta: DispatchDelta<Flags>) => void;
+      select?: (
+        updater: BasicUpdater<ValueOption | ValueUnit>,
+        delta: DispatchDelta<Flags>,
+      ) => void;
+      create?: (
+        updater: BasicUpdater<ValueOption | ValueUnit>,
+        delta: DispatchDelta<Flags>,
+      ) => void;
     },
-    OneAbstractRendererView<Context>
+    OneAbstractRendererView<Context, Flags>
   >((props) => {
     const value = props.context.value;
     if (
@@ -375,7 +425,6 @@ export const OneAbstractRenderer = <Context,>(
                   ?.hasMoreValues == false
               ),
             }}
-            // TO DO: Deltas here are on the whole One (selection)
             foreignMutations={{
               ...props.foreignMutations,
               kind: "initialized",
@@ -419,60 +468,11 @@ export const OneAbstractRenderer = <Context,>(
                     ),
                   ),
                 ),
-              clear: () => {
-                const delta: DispatchDelta = {
-                  kind: "OneReplace",
-                  replace: PredicateValue.Default.unit(),
-                  type: props.context.type,
-                };
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children
-                    .selectedValue(
-                      Synchronized.Updaters.sync(
-                        AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return(
-                            PredicateValue.Default.unit(),
-                          ),
-                        ),
-                      ),
-                    )
-                    .then(
-                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                        true,
-                      ),
-                    ),
-                );
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-              },
-              select: (_) => {
-                const delta: DispatchDelta = {
-                  kind: "OneReplace",
-                  replace: _,
-                  type: props.context.type,
-                };
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children
-                    .selectedValue(
-                      Synchronized.Updaters.sync(
-                        AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return(_),
-                        ),
-                      ),
-                    )
-                    .then(
-                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                        true,
-                      ),
-                    ),
-                );
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-              },
-              create: (_) => {
-                const delta: DispatchDelta = {
-                  kind: "OneCreateValue",
-                  value: _,
-                  type: props.context.type,
-                };
+              clear: () =>
+                // See comment at top of file
+                // TODO: test the reinitialization behaviour
+                props.foreignMutations.clear &&
+                (props.foreignMutations.clear(),
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
                     .selectedValue(
@@ -481,7 +481,7 @@ export const OneAbstractRenderer = <Context,>(
                           ValueOrErrors.Default.return<
                             ValueRecord | ValueUnit,
                             string
-                          >(_),
+                          >(PredicateValue.Default.unit()),
                         ),
                       ),
                     )
@@ -490,21 +490,60 @@ export const OneAbstractRenderer = <Context,>(
                         true,
                       ),
                     ),
-                );
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-              },
-              delete: () => {
-                const delta: DispatchDelta = {
+                )),
+              delete: (flags) =>
+                props.foreignMutations.delete &&
+                (props.foreignMutations.delete({
                   kind: "OneDeleteValue",
-                };
+                  flags,
+                }),
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
                     .selectedValue(
                       Synchronized.Updaters.sync(
                         AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return(
-                            PredicateValue.Default.unit(),
-                          ),
+                          ValueOrErrors.Default.return<
+                            ValueRecord | ValueUnit,
+                            string
+                          >(PredicateValue.Default.unit()),
+                        ),
+                      ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
+                        true,
+                      ),
+                    ),
+                )),
+              select: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "OneReplace",
+                  replace: value,
+                  flags,
+                  type: props.context.type,
+                };
+
+                const updater = replaceWith<ValueUnit | ValueOption>(
+                  ValueOption.Default.some(value),
+                );
+
+                props.foreignMutations.select &&
+                PredicateValue.Operations.IsUnit(props.context.value)
+                  ? props.foreignMutations.select(updater, delta)
+                  : props.foreignMutations.onChange(
+                      Option.Default.some(updater),
+                      delta,
+                    );
+
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return<
+                            ValueRecord | ValueUnit,
+                            string
+                          >(value),
                         ),
                       ),
                     )
@@ -514,7 +553,45 @@ export const OneAbstractRenderer = <Context,>(
                       ),
                     ),
                 );
-                props.foreignMutations.onChange(Option.Default.none(), delta);
+              },
+              create: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "OneCreateValue",
+                  value,
+                  flags,
+                  type: props.context.type,
+                };
+
+                const updater = replaceWith<ValueUnit | ValueOption>(
+                  ValueOption.Default.some(value),
+                );
+
+                props.foreignMutations.select &&
+                PredicateValue.Operations.IsUnit(props.context.value)
+                  ? props.foreignMutations.select(updater, delta)
+                  : props.foreignMutations.onChange(
+                      Option.Default.some(updater),
+                      delta,
+                    );
+
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .selectedValue(
+                      Synchronized.Updaters.sync(
+                        AsyncState.Updaters.toLoaded(
+                          ValueOrErrors.Default.return<
+                            ValueRecord | ValueUnit,
+                            string
+                          >(value),
+                        ),
+                      ),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
+                        true,
+                      ),
+                    ),
+                );
               },
             }}
             DetailsRenderer={embeddedDetailsRenderer}
@@ -524,10 +601,10 @@ export const OneAbstractRenderer = <Context,>(
       </>
     );
   }).any([
-    initializeOneRunner,
-    reinitializeOneRunner,
-    oneTableLoaderRunner,
-    oneTableDebouncerRunner.mapContextFromProps((props) => {
+    typedInitializeOneRunner,
+    typedReinitializeOneRunner,
+    typedOneTableLoaderRunner,
+    typedOneTableDebouncerRunner.mapContextFromProps((props) => {
       const local = props.context.bindings.get("local");
       if (local == undefined) {
         console.error(

@@ -400,7 +400,7 @@ export const PredicateValue = {
     number: () => 0,
     boolean: () => false,
     date: () => new Date(),
-    unit: (): PredicateValue => ({ kind: "unit" }),
+    unit: (): ValueUnit => ({ kind: "unit" }),
     tuple: (values: List<PredicateValue>): ValueTuple => ({
       kind: "tuple",
       values,
@@ -419,7 +419,7 @@ export const PredicateValue = {
       isSome,
       value,
     }),
-    varLookup: (varName: string): PredicateValue => ({
+    varLookup: (varName: string): ValueVarLookup => ({
       kind: "varLookup",
       varName,
     }),

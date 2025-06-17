@@ -15,6 +15,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -23,6 +24,7 @@ export const SecretAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -35,8 +37,8 @@ export const SecretAbstractRenderer = <
         identifiers: { withLauncher: string; withoutLauncher: string };
       },
     SecretAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    SecretAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & { onChange: DispatchOnChange<string, Flags> },
+    SecretAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -67,8 +69,8 @@ export const SecretAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "StringReplace",
                   replace: _,
                   state: {
@@ -76,6 +78,7 @@ export const SecretAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(_)),

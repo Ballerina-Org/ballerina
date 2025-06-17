@@ -1,11 +1,11 @@
 import { Value } from "../../../../../../../value/state";
 import {
-  PredicateValue,
   SimpleCallback,
   ValueOption,
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { FormLabel } from "../../../../../../../../main";
@@ -38,6 +38,7 @@ export const EnumAbstractRendererState = () => ({
 export type EnumAbstractRendererView<
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueOption> &
@@ -47,8 +48,8 @@ export type EnumAbstractRendererView<
     } & { disabled: boolean },
   EnumAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueOption>;
-    setNewValue: SimpleCallback<Guid>;
+    onChange: DispatchOnChange<ValueOption, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<Guid, Flags>;
     loadOptions: SimpleCallback<void>;
   }
 >;

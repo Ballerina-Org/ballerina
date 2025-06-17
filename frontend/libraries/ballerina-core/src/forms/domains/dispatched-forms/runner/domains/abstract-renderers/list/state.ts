@@ -7,6 +7,8 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
@@ -44,6 +46,7 @@ export const ListAbstractRendererState = {
 export type ListAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueTuple> &
@@ -51,25 +54,24 @@ export type ListAbstractRendererView<
     ListAbstractRendererState,
   ListAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple>;
-    add: SimpleCallback<Unit>;
-    remove: SimpleCallback<number>;
-    move: (elementIndex: number, to: number) => void;
-    duplicate: SimpleCallback<number>;
-    insert: SimpleCallback<number>;
+    onChange: DispatchOnChange<ValueTuple, Flags>;
+    add: VoidCallbackWithOptionalFlags<Flags>;
+    remove: ValueCallbackWithOptionalFlags<number, Flags>;
+    move: (elementIndex: number, to: number, flags: Flags | undefined) => void;
+    duplicate: ValueCallbackWithOptionalFlags<number, Flags>;
+    insert: ValueCallbackWithOptionalFlags<number, Flags>;
   },
   {
-    embeddedElementTemplate: BasicFun<
-      number,
-      Template<
-        Context &
-          Value<ValueTuple> &
-          ListAbstractRendererState & { bindings: Bindings; extraContext: any },
-        ListAbstractRendererState,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >
+    embeddedElementTemplate: (elementIndex: number) => (
+      flags: Flags | undefined,
+    ) => Template<
+      Context &
+        Value<ValueTuple> &
+        ListAbstractRendererState & { bindings: Bindings; extraContext: any },
+      ListAbstractRendererState,
+      ForeignMutationsExpected & {
+        onChange: DispatchOnChange<ValueTuple, Flags>;
+      }
     >;
   }
 >;

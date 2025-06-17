@@ -7,6 +7,8 @@ import {
   Guid,
   SimpleCallback,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  Unit,
 } from "../../../../../../../../main";
 
 import { View } from "../../../../../../../template/state";
@@ -18,6 +20,7 @@ import {
 export type EnumMultiselectAbstractRendererView<
   Context extends FormLabel & DispatchBaseEnumContext,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueRecord> &
@@ -29,8 +32,8 @@ export type EnumMultiselectAbstractRendererView<
     },
   EnumAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueRecord>;
-    setNewValue: SimpleCallback<Array<Guid>>;
+    onChange: DispatchOnChange<ValueRecord, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<Array<Guid>, Flags>;
     loadOptions: SimpleCallback<void>;
   }
 >;

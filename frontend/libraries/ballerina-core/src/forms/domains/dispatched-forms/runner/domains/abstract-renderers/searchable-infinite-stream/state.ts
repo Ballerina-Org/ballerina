@@ -13,6 +13,9 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  Unit,
+  VoidCallbackWithOptionalFlags,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -77,6 +80,7 @@ export const SearchableInfiniteStreamAbstractRendererState = {
 export type SearchableInfiniteStreamAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueOption> &
@@ -87,11 +91,11 @@ export type SearchableInfiniteStreamAbstractRendererView<
     },
   SearchableInfiniteStreamAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueOption>;
+    onChange: DispatchOnChange<ValueOption, Flags>;
     toggleOpen: SimpleCallback<void>;
-    clearSelection: SimpleCallback<void>;
+    clearSelection: VoidCallbackWithOptionalFlags<Flags>;
     setSearchText: SimpleCallback<string>;
-    select: SimpleCallback<ValueOption>;
+    select: ValueCallbackWithOptionalFlags<ValueOption, Flags>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
   }

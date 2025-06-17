@@ -3,9 +3,6 @@ import { Map } from "immutable";
 import {
   BasicFun,
   BasicUpdater,
-  CollectionReference,
-  FormLabel,
-  InfiniteStreamState,
   SimpleCallback,
   Updater,
   ValueOption,
@@ -16,27 +13,22 @@ import {
   ValueInfiniteStreamState,
   CommonAbstractRendererReadonlyContext,
   OneType,
-  DispatchOneSource,
-  DispatchTableApiSource,
-  PredicateValue,
   ValueOrErrors,
   Guid,
-  AsyncState,
   Synchronized,
   Unit,
   unit,
-  CommonAbstractRendererState,
   Template,
   ValueRecord,
   RecordAbstractRendererState,
   ValueUnit,
-  DispatchPrimitiveType,
-  DispatchOnChange,
   DomNodeIdReadonlyContext,
   MapRepo,
   BasicFun2,
   Value,
   replaceWith,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -142,7 +134,7 @@ export const OneAbstractRendererState = {
     },
   },
 };
-export type OneAbstractRendererView<Context> = View<
+export type OneAbstractRendererView<Context, Flags = Unit> = View<
   (
     | (Omit<OneAbstractRendererReadonlyContext, "value"> & {
         value: ValueRecord | ValueUnit;
@@ -162,9 +154,9 @@ export type OneAbstractRendererView<Context> = View<
       kind: "initialized";
       toggleOpen: SimpleCallback<void>;
       setStreamParam: BasicFun2<string, string, void>;
-      select: SimpleCallback<ValueRecord | ValueUnit>;
-      create: SimpleCallback<ValueRecord>;
-      delete: SimpleCallback<void>;
+      select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+      create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+      delete: VoidCallbackWithOptionalFlags<Flags>;
       clear: SimpleCallback<void>;
       loadMore: SimpleCallback<void>;
       reload: SimpleCallback<void>;
@@ -174,8 +166,8 @@ export type OneAbstractRendererView<Context> = View<
     },
   | {
       kind: "initialized";
-      DetailsRenderer: Template<any, any, any, any>;
-      PreviewRenderer?: (value: ValueRecord) => Template<any, any, any, any>;
+      DetailsRenderer: (flags: Flags | undefined) => Template<any, any, any, any>;
+      PreviewRenderer?: (value: ValueRecord) => (flags: Flags | undefined) => Template<any, any, any, any>;
     }
   | {
       kind: "uninitialized";

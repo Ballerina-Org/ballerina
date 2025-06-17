@@ -1,11 +1,11 @@
 import { View } from "../../../../../../../template/state";
 import {
   FormLabel,
-  SimpleCallback,
   Value,
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
@@ -24,6 +24,7 @@ export const BoolAbstractRendererState = {
 export type BoolAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<boolean> &
@@ -32,7 +33,7 @@ export type BoolAbstractRendererView<
     },
   BoolAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<boolean>;
-    setNewValue: SimpleCallback<boolean>;
+    onChange: DispatchOnChange<boolean, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<boolean, Flags>;
   }
 >;

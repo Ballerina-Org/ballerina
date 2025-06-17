@@ -22,6 +22,7 @@ import {
   DispatchOnChange,
   replaceWith,
   id as idUpdater,
+  DispatchDelta,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -203,7 +204,11 @@ const reinitialize = Co.GetState().then((_) => {
   );
 });
 
-export const reinitializeOneRunner = Co.Template<any>(reinitialize, {
+export const reinitializeOneRunner = <Flags>() => Co.Template<{
+  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+  clear?: () => void;
+  delete?: (delta: DispatchDelta<Flags>) => void;
+}>(reinitialize, {
   interval: 15,
   runFilter: (props) =>
     props.context.customFormState.initializationStatus === "initialized" &&
@@ -212,8 +217,10 @@ export const reinitializeOneRunner = Co.Template<any>(reinitialize, {
       props.context.customFormState.previousRemoteEntityVersionIdentifier,
 });
 
-export const initializeOneRunner = Co.Template<{
-  onChange: DispatchOnChange<ValueOption>;
+export const initializeOneRunner = <Flags>() => Co.Template<{
+  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+  clear?: () => void;
+  delete?: (delta: DispatchDelta<Flags>) => void;
 }>(intializeOne, {
   interval: 15,
   runFilter: (props) =>
@@ -221,8 +228,10 @@ export const initializeOneRunner = Co.Template<{
     props.context.customFormState.initializationStatus === "reinitializing",
 });
 
-export const oneTableDebouncerRunner = DebouncerCo.Template<{
-  onChange: DispatchOnChange<ValueOption>;
+export const oneTableDebouncerRunner = <Flags>() => DebouncerCo.Template<{
+  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+  clear?: () => void;
+  delete?: (delta: DispatchDelta<Flags>) => void;
 }>(debouncer, {
   interval: 15,
   runFilter: (props) =>
@@ -231,8 +240,10 @@ export const oneTableDebouncerRunner = DebouncerCo.Template<{
     ),
 });
 
-export const oneTableLoaderRunner = Co.Template<{
-  onChange: DispatchOnChange<ValueOption>;
+export const oneTableLoaderRunner = <Flags>() => Co.Template<{
+  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+  clear?: () => void;
+  delete?: (delta: DispatchDelta<Flags>) => void;
 }>(
   ValueInfiniteStreamLoader.embed(
     (_) => _.customFormState.stream,

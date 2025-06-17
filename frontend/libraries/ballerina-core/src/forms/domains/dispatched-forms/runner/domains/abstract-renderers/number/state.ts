@@ -7,6 +7,7 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
 export type NumberAbstractRendererState = {
@@ -24,6 +25,7 @@ export const NumberAbstractRendererState = {
 export type NumberAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<number> &
@@ -32,7 +34,7 @@ export type NumberAbstractRendererView<
     },
   NumberAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<number>;
-    setNewValue: SimpleCallback<number>;
+    onChange: DispatchOnChange<number, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<number, Flags>;
   }
 >;

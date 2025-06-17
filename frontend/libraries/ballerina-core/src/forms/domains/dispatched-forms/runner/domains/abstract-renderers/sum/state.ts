@@ -9,6 +9,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  Unit,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -63,6 +64,7 @@ export type SumAbstractRendererView<
   RightFormState,
   SumAbstractRendererReadonlyContext,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   SumAbstractRendererReadonlyContext &
     DomNodeIdReadonlyContext &
@@ -70,26 +72,26 @@ export type SumAbstractRendererView<
     SumAbstractRendererState<LeftFormState, RightFormState>,
   SumAbstractRendererState<LeftFormState, RightFormState>,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueSum>;
+    onChange: DispatchOnChange<ValueSum, Flags>;
   },
   {
-    embeddedLeftTemplate?: Template<
+    embeddedLeftTemplate?: (flags: Flags | undefined) => Template<
       SumAbstractRendererReadonlyContext &
         Value<ValueSum> &
         SumAbstractRendererState<LeftFormState, RightFormState>,
       SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum>;
+        onChange: DispatchOnChange<ValueSum, Flags>;
       }
     >;
 
-    embeddedRightTemplate?: Template<
+    embeddedRightTemplate?: (flags: Flags | undefined) => Template<
       SumAbstractRendererReadonlyContext &
         Value<ValueSum> &
         SumAbstractRendererState<LeftFormState, RightFormState>,
       SumAbstractRendererState<LeftFormState, RightFormState>,
       ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum>;
+        onChange: DispatchOnChange<ValueSum, Flags>;
       }
     >;
   }

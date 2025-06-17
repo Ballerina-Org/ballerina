@@ -4,10 +4,11 @@ import {
   simpleUpdater,
   View,
   Value,
-  SimpleCallback,
   DispatchCommonFormState,
   DispatchOnChange,
   DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  Unit,
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
@@ -35,6 +36,7 @@ export const DateAbstractRendererState = {
 export type DateAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<Maybe<Date>> &
@@ -42,7 +44,7 @@ export type DateAbstractRendererView<
     DateAbstractRendererState & { disabled: boolean },
   DateAbstractRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<Date>;
-    setNewValue: SimpleCallback<Maybe<string>>;
+    onChange: DispatchOnChange<Date, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<Maybe<string>, Flags>;
   }
 >;

@@ -10,8 +10,6 @@ import {
   MapRepo,
   ValueOrErrors,
   PredicateValue,
-  TableApiSource,
-  ParsedType,
   ValueRecord,
   DispatchCommonFormState,
   FormLabel,
@@ -22,6 +20,9 @@ import {
   DispatchOnChange,
   DomNodeIdReadonlyContext,
   DispatchParsedType,
+  Unit,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -65,7 +66,7 @@ export const AbstractTableRendererState = {
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
-      // TODO: replace with su
+      // TODO: replace with sum
       getChunkWithParams: undefined as any,
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
@@ -171,6 +172,7 @@ export const AbstractTableRendererState = {
 export type AbstractTableRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<ValueOption> &
@@ -182,10 +184,10 @@ export type AbstractTableRendererView<
     },
   AbstractTableRendererState,
   ForeignMutationsExpected & {
-    onChange: DispatchOnChange<PredicateValue>;
+    onChange: DispatchOnChange<PredicateValue, Flags>;
     toggleOpen: SimpleCallback<void>;
     setStreamParam: SimpleCallback<string>;
-    select: SimpleCallback<ValueOption>;
+    select: ValueCallbackWithOptionalFlags<ValueOption>;
     loadMore: SimpleCallback<void>;
     reload: SimpleCallback<void>;
     selectDetailView: SimpleCallback<string>;
@@ -193,10 +195,10 @@ export type AbstractTableRendererView<
     selectRow: SimpleCallback<string>;
     selectAllRows: SimpleCallback<void>;
     clearRows: SimpleCallback<void>;
-    add: SimpleCallback<void>;
-    remove: SimpleCallback<string>;
-    moveTo: (key: string, to: string) => void;
-    duplicate: SimpleCallback<string>;
+    add: VoidCallbackWithOptionalFlags<void>;
+    remove: ValueCallbackWithOptionalFlags<string>;
+    moveTo: (key: string, to: string, flags: Flags | undefined) => void;
+    duplicate: ValueCallbackWithOptionalFlags<string>;
   },
   {
     TableHeaders: string[];
@@ -205,16 +207,16 @@ export type AbstractTableRendererView<
       string,
       OrderedMap<
         string,
-        Template<
+        (flags: Flags | undefined) => Template<
           any,
           any,
           {
-            onChange: DispatchOnChange<PredicateValue>;
+            onChange: DispatchOnChange<PredicateValue, Flags>;
           },
           any
         >
       >
     >;
-    DetailsRenderer: Template<any, any, any, any>;
+    DetailsRenderer: (flags: Flags | undefined) => Template<any, any, any, any>;
   }
 >;

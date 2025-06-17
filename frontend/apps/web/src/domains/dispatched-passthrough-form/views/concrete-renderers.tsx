@@ -1,34 +1,17 @@
 import {
-  CommonFormState,
   AsyncState,
   FormLabel,
-  BooleanView,
-  NumberView,
-  StringFormView,
-  DateView,
-  EnumView,
-  EnumMultiselectView,
-  SearchableInfiniteStreamView,
-  InfiniteStreamMultiselectView,
   DispatchBaseEnumContext,
-  ListFieldView,
   unit,
-  MapFieldView,
-  Base64FileFormView,
-  SecretFormView,
   PredicateValue,
   ValueRecord,
-  TupleFormView,
   SumFormView,
-  UnitFormView,
   DateFormState,
   UnitFormState,
   replaceWith,
   Maybe,
   SumFormState,
-  id,
   Sum,
-  DateForm,
   Delta,
   ParsedType,
   TupleAbstractRendererView,
@@ -54,19 +37,15 @@ import {
   FormLayout,
   RecordAbstractRendererView,
   AbstractTableRendererView,
-  ValueOrErrors,
-  Template,
   DispatchCommonFormState,
   SumAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   UnionAbstractRendererView,
   OneAbstractRendererView,
-  ValueOption,
+  Option,
 } from "ballerina-core";
 import { CategoryAbstractRendererView } from "../injected-forms/category";
-import { Map, OrderedMap } from "immutable";
-import { useEffect, useState } from "react";
-import { v4 } from "uuid";
+import { OrderedMap } from "immutable";
 
 export const PersonConcreteRenderers = {
   one: {
@@ -109,14 +88,14 @@ export const PersonConcreteRenderers = {
           <>
             <p>one admin renderer</p>
             <p>DetailsRenderer</p>
-            {props.DetailsRenderer({
+            {props.DetailsRenderer(undefined)({
               ...props,
               view: unit,
             })}
             <p>PreviewRenderer</p>
             <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
               {props?.PreviewRenderer &&
-                props?.PreviewRenderer(ctx.value)?.({
+                props?.PreviewRenderer(ctx.value)(undefined)?.({
                   ...props,
                   view: unit,
                 })}
@@ -144,10 +123,10 @@ export const PersonConcreteRenderers = {
                           <li>
                             <button
                               disabled={ctx.disabled}
-                              onClick={() => fm.select(element)}
+                              onClick={() => fm.select(element, undefined)}
                             >
                               <div
-                                onClick={() => fm.select(element)}
+                                onClick={() => fm.select(element, undefined)}
                                 style={{
                                   display: "flex",
                                   flexDirection: "row",
@@ -155,7 +134,7 @@ export const PersonConcreteRenderers = {
                                 }}
                               />
                               {props?.PreviewRenderer &&
-                                props?.PreviewRenderer(element)?.({
+                                props?.PreviewRenderer(element)(undefined)?.({
                                   ...props,
                                   view: unit,
                                 })}
@@ -213,7 +192,7 @@ export const PersonConcreteRenderers = {
             <>
               <p>one admin renderer</p>
               <p>DetailsRenderer</p>
-              {props.DetailsRenderer({
+              {props.DetailsRenderer(undefined)({
                 ...props,
                 view: unit,
               })}
@@ -243,10 +222,10 @@ export const PersonConcreteRenderers = {
                             <li>
                               <button
                                 disabled={ctx.disabled}
-                                onClick={() => fm.select(element)}
+                                onClick={() => fm.select(element, undefined)}
                               >
                                 <div
-                                  onClick={() => fm.select(element)}
+                                  onClick={() => fm.select(element, undefined)}
                                   style={{
                                     display: "flex",
                                     flexDirection: "row",
@@ -254,7 +233,7 @@ export const PersonConcreteRenderers = {
                                   }}
                                 />
                                 {props?.PreviewRenderer &&
-                                  props?.PreviewRenderer(element)?.({
+                                  props?.PreviewRenderer(element)(undefined)?.({
                                     ...props,
                                     view: unit,
                                   })}
@@ -281,14 +260,14 @@ export const PersonConcreteRenderers = {
           <>
             <p>one admin renderer</p>
             <p>DetailsRenderer</p>
-            {props.DetailsRenderer({
+            {props.DetailsRenderer(undefined)({
               ...props,
               view: unit,
             })}
             <p>PreviewRenderer</p>
             <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
               {props?.PreviewRenderer &&
-                props?.PreviewRenderer(ctx.value)?.({
+                props?.PreviewRenderer(ctx.value)(undefined)?.({
                   ...props,
                   view: unit,
                 })}
@@ -316,10 +295,10 @@ export const PersonConcreteRenderers = {
                           <li>
                             <button
                               disabled={ctx.disabled}
-                              onClick={() => fm.select(element)}
+                              onClick={() => fm.select(element, undefined)}
                             >
                               <div
-                                onClick={() => fm.select(element)}
+                                onClick={() => fm.select(element, undefined)}
                                 style={{
                                   display: "flex",
                                   flexDirection: "row",
@@ -327,7 +306,7 @@ export const PersonConcreteRenderers = {
                                 }}
                               />
                               {props?.PreviewRenderer &&
-                                props?.PreviewRenderer(element)?.({
+                                props?.PreviewRenderer(element)(undefined)?.({
                                   ...props,
                                   view: unit,
                                 })}
@@ -386,13 +365,13 @@ export const PersonConcreteRenderers = {
 
         return (
           <>
-            {props.DetailsRenderer({
+            {props.DetailsRenderer(undefined)({
               ...props,
               view: unit,
             })}
             <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
               {props?.PreviewRenderer &&
-                props?.PreviewRenderer(ctx.value)?.({
+                props?.PreviewRenderer(ctx.value)(undefined)?.({
                   ...props,
                   view: unit,
                 })}
@@ -420,10 +399,10 @@ export const PersonConcreteRenderers = {
                           <li>
                             <button
                               disabled={ctx.disabled}
-                              onClick={() => fm.select(element)}
+                              onClick={() => fm.select(element, undefined)}
                             >
                               <div
-                                onClick={() => fm.select(element)}
+                                onClick={() => fm.select(element, undefined)}
                                 style={{
                                   display: "flex",
                                   flexDirection: "row",
@@ -431,7 +410,7 @@ export const PersonConcreteRenderers = {
                                 }}
                               />
                               {props?.PreviewRenderer &&
-                                props?.PreviewRenderer(element)?.({
+                                props?.PreviewRenderer(element)(undefined)?.({
                                   ...props,
                                   view: unit,
                                 })}
@@ -467,7 +446,9 @@ export const PersonConcreteRenderers = {
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
-            {props.embeddedCaseTemplate(props.context.value.caseName)({
+            {props.embeddedCaseTemplate(props.context.value.caseName)(
+              undefined,
+            )({
               ...props,
               view: unit,
             })}
@@ -486,7 +467,9 @@ export const PersonConcreteRenderers = {
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
-            {props.embeddedCaseTemplate(props.context.value.caseName)({
+            {props.embeddedCaseTemplate(props.context.value.caseName)(
+              undefined,
+            )({
               ...props,
               view: unit,
             })}
@@ -518,7 +501,9 @@ export const PersonConcreteRenderers = {
                             <>
                               {/* <>{console.debug("fieldName", fieldName)}</> */}
                               <td style={{ display: "block" }}>
-                                {props.EmbeddedFields.get(fieldName)!({
+                                {props.EmbeddedFields.get(fieldName)!(
+                                  undefined,
+                                )({
                                   ...props,
                                   context: {
                                     ...props.context,
@@ -559,7 +544,7 @@ export const PersonConcreteRenderers = {
                         <>
                           {/* <>{console.debug("fieldName", fieldName)}</> */}
                           <div style={{ display: "block" }}>
-                            {props.EmbeddedFields.get(fieldName)!({
+                            {props.EmbeddedFields.get(fieldName)!(undefined)({
                               ...props,
                               context: {
                                 ...props.context,
@@ -598,7 +583,7 @@ export const PersonConcreteRenderers = {
                         <>
                           {/* <>{console.debug("fieldName", fieldName)}</> */}
                           <div style={{ display: "block" }}>
-                            {props.EmbeddedFields.get(fieldName)!({
+                            {props.EmbeddedFields.get(fieldName)!(undefined)({
                               ...props,
                               context: {
                                 ...props.context,
@@ -637,7 +622,7 @@ export const PersonConcreteRenderers = {
                         <>
                           {/* <>{console.debug("fieldName", fieldName)}</> */}
                           <div style={{ display: "block" }}>
-                            {props.EmbeddedFields.get(fieldName)!({
+                            {props.EmbeddedFields.get(fieldName)!(undefined)({
                               ...props,
                               context: {
                                 ...props.context,
@@ -676,7 +661,7 @@ export const PersonConcreteRenderers = {
                           )
                           .map((fieldName) => (
                             <td style={{ display: "block" }}>
-                              {props.EmbeddedFields.get(fieldName)!({
+                              {props.EmbeddedFields.get(fieldName)!(undefined)({
                                 ...props,
                                 context: {
                                   ...props.context,
@@ -723,7 +708,7 @@ export const PersonConcreteRenderers = {
                   <tr style={{ border: "1px solid black" }}>
                     {props.TableHeaders.map((header: string) => (
                       <td style={{ border: "1px solid black" }}>
-                        {row.get(header)!({
+                        {row.get(header)!(undefined)({
                           ...props,
                           view: unit,
                         })}
@@ -806,12 +791,16 @@ export const PersonConcreteRenderers = {
                               : "🙈"}
                           </button>
                           <button
-                            onClick={() => props.foreignMutations.remove(id)}
+                            onClick={() =>
+                              props.foreignMutations.remove(id, undefined)
+                            }
                           >
                             {"❌"}
                           </button>
                           <button
-                            onClick={() => props.foreignMutations.duplicate(id)}
+                            onClick={() =>
+                              props.foreignMutations.duplicate(id, undefined)
+                            }
                           >
                             {"👥"}
                           </button>
@@ -822,6 +811,7 @@ export const PersonConcreteRenderers = {
                                 props.EmbeddedTableData.keySeq().get(
                                   Number(_.currentTarget.value),
                                 )!,
+                                undefined,
                               )
                             }
                           >
@@ -846,7 +836,7 @@ export const PersonConcreteRenderers = {
                           </td>
                           {props.TableHeaders.map((header: string) => (
                             <td style={{ border: "1px solid black" }}>
-                              {row.get(header)!({
+                              {row.get(header)!(undefined)({
                                 ...props,
                                 view: unit,
                               })}
@@ -878,7 +868,7 @@ export const PersonConcreteRenderers = {
                       }}
                     >
                       <h3>Detail View</h3>
-                      {props.DetailsRenderer({
+                      {props.DetailsRenderer(undefined)({
                         ...props,
                         view: unit,
                       })}
@@ -997,7 +987,10 @@ export const PersonConcreteRenderers = {
             type="checkbox"
             checked={props.context.value}
             onChange={(e) =>
-              props.foreignMutations.setNewValue(e.currentTarget.checked)
+              props.foreignMutations.setNewValue(
+                e.currentTarget.checked,
+                undefined,
+              )
             }
           />
         </>
@@ -1020,7 +1013,10 @@ export const PersonConcreteRenderers = {
             type="checkbox"
             checked={props.context.value}
             onChange={(e) =>
-              props.foreignMutations.setNewValue(e.currentTarget.checked)
+              props.foreignMutations.setNewValue(
+                e.currentTarget.checked,
+                undefined,
+              )
             }
           />
         </>
@@ -1047,6 +1043,7 @@ export const PersonConcreteRenderers = {
             onChange={(e) =>
               props.foreignMutations.setNewValue(
                 ~~parseInt(e.currentTarget.value),
+                undefined,
               )
             }
           />
@@ -1073,7 +1070,10 @@ export const PersonConcreteRenderers = {
               disabled={props.context.disabled}
               value={props.context.value}
               onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.value)
+                props.foreignMutations.setNewValue(
+                  e.currentTarget.value,
+                  undefined,
+                )
               }
             />
           </>
@@ -1104,7 +1104,10 @@ export const PersonConcreteRenderers = {
               type="date"
               value={displayValue}
               onChange={(e) =>
-                props.foreignMutations.setNewValue(e.currentTarget.value)
+                props.foreignMutations.setNewValue(
+                  e.currentTarget.value,
+                  undefined,
+                )
               }
             />
           </>
@@ -1149,7 +1152,10 @@ export const PersonConcreteRenderers = {
               <select
                 value={value as string | undefined}
                 onChange={(e) =>
-                  props.foreignMutations.setNewValue(e.currentTarget.value)
+                  props.foreignMutations.setNewValue(
+                    e.currentTarget.value,
+                    undefined,
+                  )
                 }
               >
                 <>
@@ -1211,6 +1217,7 @@ export const PersonConcreteRenderers = {
                     Array.from(e.currentTarget.options)
                       .filter((_) => _.selected)
                       .map((_) => _.value),
+                    undefined,
                   )
                 }
               >
@@ -1257,7 +1264,7 @@ export const PersonConcreteRenderers = {
           </button>
           <button
             disabled={props.context.disabled}
-            onClick={() => props.foreignMutations.clearSelection()}
+            onClick={() => props.foreignMutations.clearSelection(undefined)}
           >
             ❌
           </button>
@@ -1286,6 +1293,7 @@ export const PersonConcreteRenderers = {
                                 true,
                                 ValueRecord.Default.fromJSON(element),
                               ),
+                              undefined,
                             )
                           }
                         >
@@ -1345,7 +1353,7 @@ export const PersonConcreteRenderers = {
             </button>
             <button
               disabled={props.context.disabled}
-              onClick={() => props.foreignMutations.clearSelection()}
+              onClick={() => props.foreignMutations.clearSelection(undefined)}
             >
               ❌
             </button>
@@ -1369,6 +1377,7 @@ export const PersonConcreteRenderers = {
                           onClick={() =>
                             props.foreignMutations.toggleSelection(
                               ValueRecord.Default.fromJSON(element),
+                              undefined,
                             )
                           }
                         >
@@ -1395,6 +1404,7 @@ export const PersonConcreteRenderers = {
                             ]),
                         ),
                       ),
+                      undefined,
                     )
                   }
                 >
@@ -1449,7 +1459,7 @@ export const PersonConcreteRenderers = {
                       gap: "10px",
                     }}
                   >
-                    {props.embeddedElementTemplate(elementIndex)({
+                    {props.embeddedElementTemplate(elementIndex)(undefined)({
                       ...props,
                       context: {
                         ...props.context,
@@ -1459,7 +1469,7 @@ export const PersonConcreteRenderers = {
                     <div style={{ display: "flex" }}>
                       <button
                         onClick={() =>
-                          props.foreignMutations.remove(elementIndex)
+                          props.foreignMutations.remove(elementIndex, undefined)
                         }
                         disabled={props.context.disabled}
                       >
@@ -1470,6 +1480,7 @@ export const PersonConcreteRenderers = {
                           props.foreignMutations.move(
                             elementIndex,
                             elementIndex - 1,
+                            undefined,
                           )
                         }
                         disabled={props.context.disabled}
@@ -1481,6 +1492,7 @@ export const PersonConcreteRenderers = {
                           props.foreignMutations.move(
                             elementIndex,
                             elementIndex + 1,
+                            undefined,
                           )
                         }
                         disabled={props.context.disabled}
@@ -1489,7 +1501,10 @@ export const PersonConcreteRenderers = {
                       </button>
                       <button
                         onClick={() =>
-                          props.foreignMutations.duplicate(elementIndex)
+                          props.foreignMutations.duplicate(
+                            elementIndex,
+                            undefined,
+                          )
                         }
                         disabled={props.context.disabled}
                       >
@@ -1497,7 +1512,10 @@ export const PersonConcreteRenderers = {
                       </button>
                       <button
                         onClick={() =>
-                          props.foreignMutations.insert(elementIndex + 1)
+                          props.foreignMutations.insert(
+                            elementIndex + 1,
+                            undefined,
+                          )
                         }
                         disabled={props.context.disabled}
                       >
@@ -1538,7 +1556,10 @@ export const PersonConcreteRenderers = {
             type="text"
             value={props.context.value}
             onChange={(e) =>
-              props.foreignMutations.setNewValue(e.currentTarget.value)
+              props.foreignMutations.setNewValue(
+                e.currentTarget.value,
+                undefined,
+              )
             }
           />
         </>
@@ -1562,7 +1583,10 @@ export const PersonConcreteRenderers = {
             type="password"
             value={props.context.value}
             onChange={(e) =>
-              props.foreignMutations.setNewValue(e.currentTarget.value)
+              props.foreignMutations.setNewValue(
+                e.currentTarget.value,
+                undefined,
+              )
             }
           />
         </>
@@ -1595,15 +1619,17 @@ export const PersonConcreteRenderers = {
               return (
                 <li>
                   <button
-                    onClick={() => props.foreignMutations.remove(elementIndex)}
+                    onClick={() =>
+                      props.foreignMutations.remove(elementIndex, undefined)
+                    }
                   >
                     ❌
                   </button>
-                  {props.embeddedKeyTemplate(elementIndex)({
+                  {props.embeddedKeyTemplate(elementIndex)(undefined)({
                     ...props,
                     view: unit,
                   })}
-                  {props.embeddedValueTemplate(elementIndex)({
+                  {props.embeddedValueTemplate(elementIndex)(undefined)({
                     ...props,
                     view: unit,
                   })}
@@ -1639,7 +1665,7 @@ export const PersonConcreteRenderers = {
             {props.context.value.values.map((_, elementIndex) => {
               return (
                 <>
-                  {props.embeddedItemTemplates(elementIndex)({
+                  {props.embeddedItemTemplates(elementIndex)(undefined)({
                     ...props,
                     view: unit,
                   })}
@@ -1664,17 +1690,17 @@ export const PersonConcreteRenderers = {
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
             <div>
-              {props.embeddedItemTemplates(0)({
+              {props.embeddedItemTemplates(0)(undefined)({
                 ...props,
                 view: unit,
               })}
-              {props.embeddedItemTemplates(1)({
+              {props.embeddedItemTemplates(1)(undefined)({
                 ...props,
                 view: unit,
               })}
             </div>
             <div>
-              {props.embeddedItemTemplates(2)({
+              {props.embeddedItemTemplates(2)(undefined)({
                 ...props,
                 view: unit,
               })}
@@ -1700,11 +1726,11 @@ export const PersonConcreteRenderers = {
         return (
           <>
             {props.context.value.value.kind == "l"
-              ? props?.embeddedLeftTemplate?.({
+              ? props?.embeddedLeftTemplate?.(undefined)({
                   ...props,
                   view: unit,
                 })
-              : props?.embeddedRightTemplate?.({
+              : props?.embeddedRightTemplate?.(undefined)({
                   ...props,
                   view: unit,
                 })}
@@ -1725,7 +1751,7 @@ export const PersonConcreteRenderers = {
         return (
           <>
             <h1>HELLO </h1>
-            {props?.embeddedRightTemplate?.({
+            {props?.embeddedRightTemplate?.(undefined)({
               ...props,
               context: {
                 ...props.context,
@@ -1911,7 +1937,7 @@ export const PersonConcreteRenderers = {
           );
           const newValue = _ == undefined ? _ : new Date(_);
           if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Unit> = {
               kind: "SumReplace",
               replace: PredicateValue.Default.sum(Sum.Default.right(newValue)),
               state: {
@@ -1919,12 +1945,14 @@ export const PersonConcreteRenderers = {
                 customFormState: props.context.customFormState,
               },
               type: props.context.type,
-              isWholeEntityMutation: false,
+              flags: undefined,
             };
             setTimeout(() => {
               props.foreignMutations.onChange(
-                replaceWith(
-                  PredicateValue.Default.sum(Sum.Default.right(newValue)),
+                Option.Default.some(
+                  replaceWith(
+                    PredicateValue.Default.sum(Sum.Default.right(newValue)),
+                  ),
                 ),
                 delta,
               );
@@ -1955,13 +1983,15 @@ export const PersonConcreteRenderers = {
               customFormState: props.context.customFormState,
             },
             type: props.context.type,
-            isWholeEntityMutation: false,
+            flags: undefined,
           };
           setTimeout(() => {
             props.foreignMutations.onChange(
-              replaceWith(
-                PredicateValue.Default.sum(
-                  Sum.Default.left(PredicateValue.Default.unit()),
+              Option.Default.some(
+                replaceWith(
+                  PredicateValue.Default.sum(
+                    Sum.Default.left(PredicateValue.Default.unit()),
+                  ),
                 ),
               ),
               delta,

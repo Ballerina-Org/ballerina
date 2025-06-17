@@ -20,7 +20,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
-  ValueUpdater,
+  Unit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -34,6 +34,7 @@ export const RecordAbstractRenderer = <
     identifiers: { withLauncher: string; withoutLauncher: string };
   },
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   FieldTemplates: Map<
     string,
@@ -50,102 +51,107 @@ export const RecordAbstractRenderer = <
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
 ): Template<any, any, any, any> => {
-  const embedFieldTemplate = (
-    fieldName: string,
-    fieldTemplate: Template<any, any, any, any>,
-  ): Template<any, any, any, any> =>
-    fieldTemplate
-      .mapContext(
-        (
-          _: Value<ValueRecord> & {
-            identifiers: { withLauncher: string; withoutLauncher: string };
-            fieldStates: Map<string, any>;
-            disabled: boolean;
-            bindings: Bindings;
-            type: DispatchParsedType<any>;
-            extraContext: any;
-          },
-        ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
-          ..._,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${fieldName}]`,
+  const embedFieldTemplate =
+    (
+      fieldName: string,
+      fieldTemplate: Template<any, any, any, any>,
+    ): ((flags: Flags | undefined) => Template<any, any, any, any>) =>
+    (flags: Flags | undefined) =>
+      fieldTemplate
+        .mapContext(
+          (
+            _: Value<ValueRecord> & {
+              identifiers: { withLauncher: string; withoutLauncher: string };
+              fieldStates: Map<string, any>;
+              disabled: boolean;
+              bindings: Bindings;
+              type: DispatchParsedType<any>;
+              extraContext: any;
+            },
+          ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
+            ..._,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${fieldName}]`,
+              ),
+            },
+            value: _.value.fields.get(fieldName)!,
+            type:
+              _.type.kind === "record"
+                ? _.type.fields.get(fieldName)
+                : undefined,
+            ...(_.fieldStates?.get(fieldName) ||
+              FieldTemplates.get(fieldName)!.GetDefaultState()),
+            disabled: _.disabled,
+            bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
+            extraContext: _.extraContext,
+          }),
+        )
+        .mapState(
+          (_: BasicUpdater<any>): Updater<RecordAbstractRendererState> =>
+            RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+              fieldName,
+              FieldTemplates.get(fieldName)!.GetDefaultState,
+              _,
             ),
-          },
-          value: _.value.fields.get(fieldName)!,
-          type:
-            _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
-          ...(_.fieldStates?.get(fieldName) ||
-            FieldTemplates.get(fieldName)!.GetDefaultState()),
-          disabled: _.disabled,
-          bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
-          extraContext: _.extraContext,
-        }),
-      )
-      .mapState(
-        (_: BasicUpdater<any>): Updater<RecordAbstractRendererState> =>
-          RecordAbstractRendererState.Updaters.Template.upsertFieldState(
-            fieldName,
-            FieldTemplates.get(fieldName)!.GetDefaultState,
-            _,
-          ),
-      )
-      .mapForeignMutationsFromProps<{
-        onChange: DispatchOnChange<ValueRecord>;
-      }>(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue>;
-        } => ({
-          onChange: (
-            elementUpdater: ValueUpdater<PredicateValue>,
-            nestedDelta: DispatchDelta,
-          ) => {
-            const delta: DispatchDelta = {
-              kind: "RecordField",
-              field: [fieldName, nestedDelta],
-              recordType: props.context.type,
-            };
+        )
+        .mapForeignMutationsFromProps<{
+          onChange: DispatchOnChange<ValueRecord, Flags>;
+        }>(
+          (
+            props,
+          ): {
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          } => ({
+            onChange: (
+              elementUpdater: Option<BasicUpdater<PredicateValue>>,
+              nestedDelta: DispatchDelta<Flags>,
+            ) => {
+              const delta: DispatchDelta<Flags> = {
+                kind: "RecordField",
+                field: [fieldName, nestedDelta],
+                recordType: props.context.type,
+                flags,
+              };
 
-            props.foreignMutations.onChange(
-              elementUpdater.kind == "l"
-                ? Option.Default.none()
-                : Option.Default.some((current: ValueRecord) =>
-                    PredicateValue.Default.record(
-                      current.fields.update(
-                        fieldName,
-                        PredicateValue.Default.unit(),
-                        elementUpdater.value,
+              props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some((current: ValueRecord) =>
+                      PredicateValue.Default.record(
+                        current.fields.update(
+                          fieldName,
+                          PredicateValue.Default.unit(),
+                          elementUpdater.value,
+                        ),
                       ),
                     ),
-                  ),
-              delta,
-            );
+                delta,
+              );
 
-            props.setState(
-              RecordAbstractRendererState.Updaters.Core.commonFormState(
-                DispatchCommonFormState.Updaters.modifiedByUser(
-                  replaceWith(true),
+              props.setState(
+                RecordAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ).then(
+                  RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+                    fieldName,
+                    FieldTemplates.get(fieldName)!.GetDefaultState,
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
                 ),
-              ).then(
-                RecordAbstractRendererState.Updaters.Template.upsertFieldState(
-                  fieldName,
-                  FieldTemplates.get(fieldName)!.GetDefaultState,
-                  (_) => ({
-                    ..._,
-                    commonFormState:
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      )(_.commonFormState),
-                  }),
-                ),
-              ),
-            );
-          },
-        }),
-      );
+              );
+            },
+          }),
+        );
 
   const EmbeddedFieldTemplates = FieldTemplates.map(
     (fieldTemplate, fieldName) =>
@@ -160,9 +166,9 @@ export const RecordAbstractRenderer = <
     Context & Value<ValueRecord>,
     RecordAbstractRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
+      onChange: DispatchOnChange<ValueRecord, Flags>;
     },
-    RecordAbstractRendererView<Context, ForeignMutationsExpected>
+    RecordAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

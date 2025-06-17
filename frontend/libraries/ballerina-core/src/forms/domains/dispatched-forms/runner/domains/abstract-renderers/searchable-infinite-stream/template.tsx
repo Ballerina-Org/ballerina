@@ -20,6 +20,7 @@ import {
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  Unit,
 } from "../../../../../../../../main";
 import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -31,6 +32,7 @@ import {
 export const SearchableInfiniteStreamAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -70,7 +72,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
   const debouncerRunner = DebouncerCo.Template<
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
+      onChange: DispatchOnChange<ValueOption, Flags>;
     }
   >(debouncer, {
     interval: 15,
@@ -81,7 +83,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   });
   const loaderRunner = Co.Template<
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
+      onChange: DispatchOnChange<ValueOption, Flags>;
     }
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
@@ -107,11 +109,12 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       },
     SearchableInfiniteStreamAbstractRendererState,
     ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
+      onChange: DispatchOnChange<ValueOption, Flags>;
     },
     SearchableInfiniteStreamAbstractRendererView<
       Context,
-      ForeignMutationsExpected
+      ForeignMutationsExpected,
+      Flags
     >
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
@@ -166,8 +169,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                         : id,
                     ),
                 ),
-              clearSelection: () => {
-                const delta: DispatchDelta = {
+              clearSelection: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
                   replace: PredicateValue.Default.option(
                     false,
@@ -178,6 +181,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -209,18 +213,19 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     replaceWith(""),
                   ),
                 ),
-              select: (_) => {
-                const delta: DispatchDelta = {
+              select: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(_)),
+                  Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },
