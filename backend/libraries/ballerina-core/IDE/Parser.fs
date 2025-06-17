@@ -16,7 +16,17 @@ open Ballerina.DSL.FormEngine.Validator
 open Ballerina.Errors
 open Ballerina.DSL.Expr.Model
 
-module Validator =
+//TODO: most of the code is from a FromEngine, decouple that and unify
+module Parser =
+  let codegenConfigFilePath = Environment.GetEnvironmentVariable("codegenConfigPath")
+  let private codegenConfig = File.ReadAllText codegenConfigFilePath
+  
+  let private CodegenConfig =
+    JsonSerializer.Deserialize<CodeGenConfig>(
+      codegenConfig,
+      JsonFSharpOptions.Default().ToJsonSerializerOptions()
+    )
+    
   let private generatedLanguageSpecificConfig =
     { EnumValueFieldName = "Value"
       StreamIdFieldName = "Id"
@@ -30,20 +40,11 @@ module Validator =
       |> Array.ofList
       |> Array.fold (fun acc e -> $"{acc}\n({e.Priority}): {e.Message}\n") ""
   
-  let parseAndValidate(spec: string) =
+  let parse (spec: string) =
     let json = spec |> JsonValue.Parse
-    
-    let codegenConfigFilePath = Environment.GetEnvironmentVariable("codegenConfigPath")
-    let codegenConfig = File.ReadAllText codegenConfigFilePath
 
-    let codegenConfig =
-      JsonSerializer.Deserialize<CodeGenConfig>(
-        codegenConfig,
-        JsonFSharpOptions.Default().ToJsonSerializerOptions()
-      )
-      
     let injectedTypes: Map<string, TypeBinding> = 
-      codegenConfig.Custom
+      CodegenConfig.Custom
       |> Seq.map (fun c ->
         c.Key,
         (c.Key |> ExprTypeId.Create, ExprType.CustomType c.Key)
@@ -56,12 +57,19 @@ module Validator =
       
     sum {
       let! _mergedJson, parsedForms  =
-        (codegenConfig, initialContext)
+        (CodegenConfig, initialContext)
         |> (ParsedFormsContext.Parse generatedLanguageSpecificConfig [json]).run
         |> sum.MapError foldErrors
+        
+      return _mergedJson, parsedForms 
+    }
+  
+  let validate (spec: string) =
+    sum {
+      let! _mergedJson, parsedForms = parse spec
           
       let! _ =
-        (codegenConfig, { PredicateValidationHistory = Set.empty })
+        (CodegenConfig, { PredicateValidationHistory = Set.empty })
         |> (ParsedFormsContext.Validate generatedLanguageSpecificConfig parsedForms.Value).run //TODO: confirm Options is always Some
         |> sum.MapError foldErrors
       return ()

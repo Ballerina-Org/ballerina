@@ -1,6 +1,5 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {style} from "./ide.styled.ts";
-import {css} from '@emotion/react';
 import {IDE, IDEView, SpecRunner,  SpecRunnerIndicator} from "playground-core";
 import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
@@ -13,6 +12,7 @@ import {replaceWith, ValueOrErrors} from "ballerina-core";
 import {Grid} from "./grid.tsx";
 import {IDEApi} from "playground-core/ide/apis/spec.ts";
 import {Option} from "ballerina-core";
+
 export const IDELayout: IDEView = (props) => (
     <Grid 
         left={<props.RawJsonEditor{...props} view={TmpJsonEditor} />}
@@ -39,30 +39,32 @@ export const IDELayout: IDEView = (props) => (
             <>
                 <Actions
                     onRun={ async () =>{
-                        
                         await IDEApi.validateSpec({value: props.context.editor.input.value})
                             .then(res =>                        
                                 props.setState(
-                                    //TODO: move this to SpecRunner Operations
-                                    IDE.Updaters.Core.runner(
-                                        SpecRunner.Updaters.Core.indicator(
-                                            replaceWith(SpecRunnerIndicator.Default.running())
-                                        )
-                                        .then(SpecRunner.Updaters.Core.lockedSpec(
-                                            replaceWith(res.isValid ? Option.Default.some(props.context.editor.input.value) : Option.Default.none())
-                                        )
-                                        .then(SpecRunner.Updaters.Core.validation(
-                                            replaceWith(
-                                                res.isValid ?
-                                                    Option.Default.some(ValueOrErrors.Default.return(props.context.editor.input.value)):
-                                                    Option.Default.none()
-                                            )
-                                        )))
-                                    )
+                                    SpecRunner.Operations.runEditor(props.context.editor.input.value, res)
                                 )
                             )
                     }}
-                    onSave={() => alert("Saved!")}
+                    onSave={ async () =>
+                        {
+                            const res = await IDEApi.lock(props.context.editor.input);
+                            const test = await IDEApi.entity()
+                            
+                            debugger
+ 
+                            props.setState(
+                                IDE.Updaters.Core.runner(
+                                    SpecRunner.Updaters.Core.indicator(
+                                        replaceWith(SpecRunnerIndicator.Default.locked())
+                                    )
+                                ).then (x =>{
+                                    alert(res);
+                                    return x
+                                })
+                            )
+                        }
+                    }
                 />
                 <Messages
                     indicator={props.context.runner.indicator}

@@ -6,7 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Persistance.fs" />
         <Compile Include="Controllers\SpecController.fs" />
+        <Compile Include="Controllers\EntityController.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 

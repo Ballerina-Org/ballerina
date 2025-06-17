@@ -202,7 +202,7 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
     }, [specificationDeserializer.deserializedSpecification.sync.kind]);
     switch (props.spec.kind) {
         case "l":
-            return <><p>Forms not yet run</p></>;
+            return <p>Forms not yet run</p>;
         case "r": {
             switch (props.spec.value.kind) {
                 case "errors":

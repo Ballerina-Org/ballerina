@@ -12,11 +12,11 @@ export const Actions: React.FC<{
       }) => (
     <div css={style.layout}>
         <div css={style.buttonSection}>
-            <button css={style.iconButton} onClick={onRun}>
-                <Play size={18} /> Run
-            </button>
             <button css={style.iconButton} onClick={onSave}>
                 <CheckCircle size={18}  /> Save
+            </button>
+            <button css={style.iconButton} onClick={onRun}>
+                <Play size={18} /> Run
             </button>
         </div>
     </div>
