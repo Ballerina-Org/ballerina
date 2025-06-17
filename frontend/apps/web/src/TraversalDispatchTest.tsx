@@ -27,6 +27,7 @@ import {
   EvalContext,
   Option,
   ValueTraversal,
+  DispatchOnChange,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import { TraversalPersonApis } from "playground-core";
@@ -176,15 +177,15 @@ export const TraversalDispatchTest = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onPersonEntityChange: DispatchOnChange<PredicateValue> = (
+    updater,
+    delta,
+  ) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(personEntity.value.value);
+    const newEntity = updater.kind == "r" ? updater.value(personEntity.value.value) : personEntity.value.value;
     console.log("patching entity", newEntity);
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),

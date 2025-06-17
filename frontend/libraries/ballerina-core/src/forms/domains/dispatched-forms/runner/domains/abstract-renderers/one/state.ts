@@ -29,6 +29,8 @@ import {
   replaceWith,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
+  DispatchOnChange,
+  Option,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 

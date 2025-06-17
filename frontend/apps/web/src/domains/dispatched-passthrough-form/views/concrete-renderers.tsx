@@ -923,7 +923,9 @@ export const PersonConcreteRenderers = {
                     kind: "child",
                     extraSpecial: false,
                   },
-                })
+                },
+                undefined,
+              )
               }
             >
               child
@@ -941,7 +943,9 @@ export const PersonConcreteRenderers = {
                     kind: "adult",
                     extraSpecial: false,
                   },
-                })
+                },
+                undefined,
+              )
               }
             >
               adult
@@ -959,7 +963,9 @@ export const PersonConcreteRenderers = {
                     kind: "senior",
                     extraSpecial: false,
                   },
-                })
+                },
+                undefined,
+              )
               }
             >
               senior

@@ -16,6 +16,7 @@ import {
   Unit,
   DispatchDelta,
   replaceWith,
+  ValueRecord,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -51,24 +52,19 @@ export const UnionAbstractRenderer = <
             ValueUnionCase
           > & {
             type: DispatchParsedType<any>;
-          } & UnionAbstractRendererState<CaseFormState> => {
-            const context = {
-              ..._,
-              ...(_.caseFormStates.get(caseName)! ??
-                defaultCaseStates.get(caseName)!()),
-              value: _.value.fields,
-              type: _.type.args.get(caseName)!,
-              identifiers: {
-                withLauncher: _.identifiers.withLauncher.concat(
-                  `[${caseName}]`,
-                ),
-                withoutLauncher: _.identifiers.withoutLauncher.concat(
-                  `[${caseName}]`,
-                ),
-              },
-            };
-            return context;
-          },
+          } & UnionAbstractRendererState<CaseFormState> => ({
+            ..._,
+            ...(_.caseFormStates.get(caseName)! ??
+              defaultCaseStates.get(caseName)!()),
+            value: _.value.fields,
+            type: _.type.args.get(caseName)!,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${caseName}]`,
+              ),
+            },
+          }),
         )
         .mapState(
           (
@@ -91,11 +87,11 @@ export const UnionAbstractRenderer = <
           (
             props,
           ): ForeignMutationsExpected & {
-            onChange: DispatchOnChange<ValueUnionCase, Flags>;
+            onChange: DispatchOnChange<ValueRecord, Flags>;
           } => ({
             ...props.foreignMutations,
             onChange: (
-              elementUpdater: Option<BasicUpdater<ValueUnionCase>>,
+              fieldsUpdater: Option<BasicUpdater<ValueRecord>>,
               nestedDelta: DispatchDelta<Flags>,
             ) => {
               const delta: DispatchDelta<Flags> = {
@@ -103,7 +99,13 @@ export const UnionAbstractRenderer = <
                 caseName: [caseName, nestedDelta],
                 flags,
               };
-              props.foreignMutations.onChange(elementUpdater, delta);
+              const caseUpdater =
+                fieldsUpdater.kind == "r"
+                  ? Option.Default.some(
+                      ValueUnionCase.Updaters.fields(fieldsUpdater.value),
+                    )
+                  : Option.Default.none<BasicUpdater<ValueUnionCase>>();
+              props.foreignMutations.onChange(caseUpdater, delta);
               props.setState((_) => ({ ..._, modifiedByUser: true }));
             },
           }),

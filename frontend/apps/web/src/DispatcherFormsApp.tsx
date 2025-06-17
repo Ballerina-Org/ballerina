@@ -21,6 +21,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   DispatchInjectedPrimitive,
+  DispatchOnChange,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
@@ -140,15 +141,17 @@ export const DispatcherFormsApp = (props: {}) => {
       );
     };
 
-  const onPersonConfigChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  console.debug("personEntity", JSON.stringify(personEntity, null, 2));
+
+  const onPersonConfigChange: DispatchOnChange<PredicateValue> = (
+    updater,
+    delta,
+  ) => {
     if (config.kind == "r" || config.value.kind == "errors") {
       return;
     }
 
-    const newConfig = updater(config.value.value);
+    const newConfig = updater.kind == "r" ? updater.value(config.value.value) : config.value.value;
     console.log("patching config", newConfig);
     setConfig(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
@@ -173,15 +176,15 @@ export const DispatcherFormsApp = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onPersonEntityChange: DispatchOnChange<PredicateValue> = (
+    updater,
+    delta,
+  ) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(personEntity.value.value);
+    const newEntity = updater.kind == "r" ? updater.value(personEntity.value.value) : personEntity.value.value;
     console.log("patching entity", newEntity);
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),

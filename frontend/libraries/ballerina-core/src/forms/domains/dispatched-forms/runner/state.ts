@@ -14,27 +14,28 @@ import {
   ValueOrErrors,
   Template,
   unit,
+  DispatchOnChange,
 } from "../../../../../main";
 
-export type LauncherRef = {
+export type LauncherRef<Flags = Unit> = {
   name: string;
   kind: "passthrough";
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-  onEntityChange: (
-    updater: Updater<PredicateValue>,
-    delta: DispatchDelta,
-  ) => void;
+  onEntityChange: DispatchOnChange<PredicateValue, Flags>;
 };
 
 export type DispatchFormRunnerStatus<
   T extends { [key in keyof T]: { type: any; state: any } },
+  Flags = Unit,
 > =
   | { kind: "not initialized" }
   | { kind: "loading" }
   | {
       kind: "loaded";
-      Form: Template<any, any, any, any>;
+      Form: Template<any, any, {
+        onChange: DispatchOnChange<PredicateValue, Flags>;
+      }, any>;
     }
   | { kind: "error"; errors: List<string> };
 

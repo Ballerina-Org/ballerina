@@ -21,6 +21,7 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   DispatchInjectedPrimitive,
+  DispatchOnChange,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import {
@@ -110,15 +111,15 @@ export const DispatcherFormsAppTables = (props: {}) => {
       );
     };
 
-  const onEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onEntityChange: DispatchOnChange<PredicateValue> = (
+    updater,
+    delta,
+  ) => {
     if (entity.kind == "r" || entity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(entity.value.value);
+    const newEntity = updater.kind == "r" ? updater.value(entity.value.value) : entity.value.value;
     console.log("patching entity", newEntity);
     setEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -261,7 +262,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                           PredicateValue.Default.record(OrderedMap()),
                         ),
                       ),
-                      onEntityChange: onEntityChange,
+                      onEntityChange,
                     },
                     remoteEntityVersionIdentifier: "",
                     showFormParsingErrors: ShowFormsParsingErrors,

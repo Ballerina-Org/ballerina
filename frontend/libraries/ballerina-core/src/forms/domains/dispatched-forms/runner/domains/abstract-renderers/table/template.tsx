@@ -116,7 +116,7 @@ export const TableAbstractRenderer = <
           onChange: DispatchOnChange<PredicateValue, Flags>;
         }>((props) => ({
           onChange: (
-            _: BasicUpdater<PredicateValue>,
+            _: Option<BasicUpdater<PredicateValue>>,
             nestedDelta: DispatchDelta<Flags>,
           ) => {
             props.setState(
@@ -146,7 +146,7 @@ export const TableAbstractRenderer = <
                       chunkIndex,
                       rowId,
                       column,
-                    )(_),
+                    )(_.kind == "r" ? _.value : id),
                   ),
                 ),
             );
@@ -210,7 +210,7 @@ export const TableAbstractRenderer = <
             onChange: DispatchOnChange<PredicateValue, Flags>;
           }>((props) => ({
             onChange: (
-              _: BasicUpdater<ValueRecord>,
+              _: Option<BasicUpdater<ValueRecord>>,
               nestedDelta: DispatchDelta<Flags>,
             ) => {
               props.setState(
@@ -221,7 +221,7 @@ export const TableAbstractRenderer = <
                       ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
                         props.context.customFormState.selectedDetailRow[0],
                         props.context.customFormState.selectedDetailRow[1],
-                      )(_),
+                      )(_.kind == "r" ? _.value : id),
                     ),
                   ),
               );

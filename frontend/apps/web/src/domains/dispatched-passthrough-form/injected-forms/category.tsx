@@ -15,6 +15,10 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  DispatchDelta,
+  DispatchOnChange,
+  ValueCallbackWithOptionalFlags,
+  Option,
 } from "ballerina-core";
 
 export type DispatchCategory = {
@@ -77,6 +81,7 @@ export const DispatchCategoryState = {
 export type CategoryAbstractRendererView<
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 > = View<
   Context &
     Value<DispatchCategory> & {
@@ -88,14 +93,15 @@ export type CategoryAbstractRendererView<
     customFormState: DispatchCategoryState["customFormState"];
   },
   ForeignMutationsExpected & {
-    onChange: OnChange<DispatchCategory>;
-    setNewValue: SimpleCallback<DispatchCategory>;
+    onChange: DispatchOnChange<DispatchCategory, Flags>;
+    setNewValue: ValueCallbackWithOptionalFlags<DispatchCategory, Flags>;
   }
 >;
 
 export const CategoryAbstractRenderer = <
   Context extends FormLabel,
   ForeignMutationsExpected,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -111,8 +117,10 @@ export const CategoryAbstractRenderer = <
       commonFormState: CommonFormState;
       customFormState: DispatchCategoryState["customFormState"];
     },
-    ForeignMutationsExpected & { onChange: OnChange<DispatchCategory> },
-    CategoryAbstractRendererView<Context, ForeignMutationsExpected>
+    ForeignMutationsExpected & {
+      onChange: DispatchOnChange<DispatchCategory, Flags>;
+    },
+    CategoryAbstractRendererView<Context, ForeignMutationsExpected, Flags>
   >((props) => {
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (
@@ -136,8 +144,8 @@ export const CategoryAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DeltaCustom = {
+              setNewValue: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "CustomDelta",
                   value: {
                     kind: "CategoryReplace",
@@ -148,8 +156,12 @@ export const CategoryAbstractRenderer = <
                     },
                     type: props.context.type,
                   },
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />

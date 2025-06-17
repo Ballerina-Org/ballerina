@@ -15,10 +15,12 @@ import {
   DispatchDelta,
   PredicateValue,
   Updater,
+  DispatchOnChange,
+  Unit,
 } from "../../../../../main";
 
 export const DispatchFormRunnerTemplate = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends { [key in keyof T]: { type: any; state: any } }
 >() =>
   Template.Default<
     DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,
@@ -67,10 +69,7 @@ export const DispatchFormRunnerTemplate = <
         }
         view={unit}
         foreignMutations={{
-          onChange: (
-            updater: Updater<PredicateValue>,
-            delta: DispatchDelta,
-          ) => {
+          onChange: (updater, delta) => {
             if (props.context.launcherRef.entity.kind == "r") return;
             props.context.launcherRef.onEntityChange(updater, delta);
           },

@@ -265,6 +265,7 @@ export const ValueUnionCase = {
       Updater<ValueUnionCase>((v) =>
         ValueUnionCase.Default(caseName, upd(v.fields)),
       ),
+    ...simpleUpdater<ValueUnionCase>()("fields"),
   },
 };
 export type ValuePrimitive = number | string | boolean | Date;

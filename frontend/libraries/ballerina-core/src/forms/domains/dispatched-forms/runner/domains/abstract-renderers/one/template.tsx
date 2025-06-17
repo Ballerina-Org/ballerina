@@ -230,7 +230,7 @@ export const OneAbstractRenderer = <Context, Flags = Unit>(
             onChange: DispatchOnChange<PredicateValue, Flags>;
           }>((props) => ({
             onChange: (
-              _: BasicUpdater<ValueRecord>,
+              _: Option<BasicUpdater<ValueRecord>>,
               nestedDelta: DispatchDelta<Flags>,
             ) => {
               props.setState(
@@ -252,7 +252,7 @@ export const OneAbstractRenderer = <Context, Flags = Unit>(
                         "errors" ||
                       !PredicateValue.Operations.IsRecord(
                         __.customFormState.selectedValue.sync.value.value,
-                      )
+                      ) || _.kind == "l"
                     ) {
                       return __;
                     }
@@ -266,10 +266,10 @@ export const OneAbstractRenderer = <Context, Flags = Unit>(
                             ...__.customFormState.selectedValue.sync,
                             value: {
                               ...__.customFormState.selectedValue.sync.value,
-                              value: _(
+                              value: _.value(
                                 __.customFormState.selectedValue.sync.value
                                   .value,
-                              ),
+                              )
                             },
                           },
                         },
