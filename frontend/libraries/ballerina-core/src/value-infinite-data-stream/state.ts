@@ -145,7 +145,6 @@ export type ValueInfiniteStreamState = {
   loadedElements: OrderedMap<ValueChunkIndex, ValueChunk>;
   position: ValueStreamPosition;
   getChunk: BasicFun<[ValueStreamPosition], Promise<ValueChunk>>;
-  chunkStates: Map<StateChunkIndex, StateChunk>;
 };
 
 export const ValueInfiniteStreamState = {
@@ -158,7 +157,6 @@ export const ValueInfiniteStreamState = {
     loadedElements: OrderedMap(),
     position: ValueStreamPosition.Default(initialChunkSize, shouldLoad),
     getChunk,
-    chunkStates: Map(),
   }),
   Operations: {
     shouldCoroutineRun: (current: ValueInfiniteStreamState): boolean =>
@@ -194,7 +192,6 @@ export const ValueInfiniteStreamState = {
       ...simpleUpdater<ValueInfiniteStreamState>()("getChunk"),
       ...simpleUpdater<ValueInfiniteStreamState>()("loadingMore"),
       ...simpleUpdater<ValueInfiniteStreamState>()("loadedElements"),
-      ...simpleUpdater<ValueInfiniteStreamState>()("chunkStates"),
       whenNotAlreadyLoading: (
         _: BasicUpdater<ValueInfiniteStreamState>,
       ): Updater<ValueInfiniteStreamState> => {
@@ -268,45 +265,6 @@ export const ValueInfiniteStreamState = {
                 chunkValueKey,
                 chunkValueItemKey,
                 valueUpdater,
-              ),
-            ),
-          ),
-      updateChunkStateValue:
-        (chunkIndex: number, chunkStateValueKey: string) =>
-        (
-          stateUpdater: BasicUpdater<StateChunkValue>,
-        ): Updater<ValueInfiniteStreamState> =>
-          ValueInfiniteStreamState.Updaters.Core.chunkStates(
-            MapRepo.Updaters.upsert(
-              chunkIndex,
-              () => StateChunk.Default({ [chunkStateValueKey]: Map() }),
-              MapRepo.Updaters.upsert(
-                chunkStateValueKey,
-                () => Map(),
-                stateUpdater,
-              ),
-            ),
-          ),
-      updateChunkStateValueItem:
-        (
-          chunkIndex: number,
-          chunkStateValueKey: string,
-          chunkStateValueItemKey: string,
-          defaultStateValueItem: () => any,
-        ) =>
-        (stateUpdater: BasicUpdater<any>): Updater<ValueInfiniteStreamState> =>
-          ValueInfiniteStreamState.Updaters.Core.chunkStates(
-            MapRepo.Updaters.upsert(
-              chunkIndex,
-              () => StateChunk.Default({}),
-              MapRepo.Updaters.upsert(
-                chunkStateValueKey,
-                () => StateChunk.Default({}),
-                MapRepo.Updaters.upsert<string, any>(
-                  chunkStateValueItemKey,
-                  defaultStateValueItem,
-                  stateUpdater,
-                ),
               ),
             ),
           ),

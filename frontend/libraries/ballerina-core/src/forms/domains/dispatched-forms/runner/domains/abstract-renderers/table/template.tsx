@@ -116,12 +116,10 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
           TableAbstractRendererReadonlyContext<CustomContext> &
             TableAbstractRendererState
         >((_) => {
-          const rowState = _.customFormState.stream.chunkStates
-            .get(chunkIndex)
-            ?.get(rowId);
+          const rowState = _.customFormState.rowStates.get(rowId);
 
           const cellState =
-            rowState?.get(column) ??
+            rowState?.fieldStates.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
 
           const rowValue = _.customFormState.stream.loadedElements
@@ -184,19 +182,24 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
           ) => {
             props.setState(
               TableAbstractRendererState.Updaters.Core.customFormState.children
-                .stream(
-                  ValueInfiniteStreamState.Updaters.Template.updateChunkStateValueItem(
-                    chunkIndex,
+                .rowStates(
+                  MapRepo.Updaters.upsert(
                     rowId,
-                    column,
-                    CellTemplates.get(column)!.GetDefaultState,
-                  )((__) => ({
-                    ...__,
-                    commonFormState:
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      )(__.commonFormState),
-                  })),
+                    () => RecordAbstractRendererState.Default.fieldState(Map()),
+                    RecordAbstractRendererState.Updaters.Core.fieldStates(
+                      MapRepo.Updaters.upsert(
+                        column,
+                        () => CellTemplates.get(column)!.GetDefaultState(),
+                        (__) => ({
+                          ...__,
+                          commonFormState:
+                            DispatchCommonFormState.Updaters.modifiedByUser(
+                              replaceWith(true),
+                            )(__.commonFormState),
+                        }),
+                      ),
+                    ),
+                  ),
                 )
                 .then(
                   TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
