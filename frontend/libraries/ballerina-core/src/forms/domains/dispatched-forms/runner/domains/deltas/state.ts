@@ -94,7 +94,11 @@ export type DispatchDeltaList<T = Unit> =
       type: DispatchParsedType<any>;
       flags: T | undefined;
     }
-  | { kind: "ArrayValue"; value: [number, DispatchDelta<T>]; flags: T | undefined }
+  | {
+      kind: "ArrayValue";
+      value: [number, DispatchDelta<T>];
+      flags: T | undefined;
+    }
   | {
       kind: "ArrayAdd";
       value: PredicateValue;
@@ -198,7 +202,11 @@ export type DispatchDeltaUnion<T = Unit> =
       type: DispatchParsedType<any>;
       flags: T | undefined;
     }
-  | { kind: "UnionCase"; caseName: [string, DispatchDelta<T>]; flags: T | undefined };
+  | {
+      kind: "UnionCase";
+      caseName: [string, DispatchDelta<T>];
+      flags: T | undefined;
+    };
 export type DispatchDeltaTuple<T = Unit> =
   | {
       kind: "TupleReplace";

@@ -30,15 +30,18 @@ export type DispatchFormRunnerStatus<
   | { kind: "loading" }
   | {
       kind: "loaded";
-      Form: Template<any, any, {
-        onChange: DispatchOnChange<PredicateValue, Flags>;
-      }, any>;
+      Form: Template<
+        any,
+        any,
+        {
+          onChange: DispatchOnChange<PredicateValue, Flags>;
+        },
+        any
+      >;
     }
   | { kind: "error"; errors: List<string> };
 
-export type DispatchFormRunnerContext<
-  T extends DispatchInjectablesTypes<T>,
-> = {
+export type DispatchFormRunnerContext<T extends DispatchInjectablesTypes<T>> = {
   extraContext: any;
   launcherRef: LauncherRef;
   showFormParsingErrors: BasicFun<
@@ -50,9 +53,7 @@ export type DispatchFormRunnerContext<
   errorComponent?: JSX.Element;
 } & DispatchFormsParserState<T>;
 
-export type DispatchFormRunnerState<
-  T extends DispatchInjectablesTypes<T>,
-> = {
+export type DispatchFormRunnerState<T extends DispatchInjectablesTypes<T>> = {
   status: DispatchFormRunnerStatus<T>;
   formState: any;
 };

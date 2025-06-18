@@ -1,5 +1,9 @@
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
-import { DispatchInjectablesTypes, MapAbstractRenderer, Template } from "../../../../../../../../../main";
+import {
+  DispatchInjectablesTypes,
+  MapAbstractRenderer,
+  Template,
+} from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
 import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";

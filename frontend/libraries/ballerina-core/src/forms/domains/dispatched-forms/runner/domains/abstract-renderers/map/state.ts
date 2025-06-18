@@ -37,7 +37,7 @@ export type MapAbstractRendererState = CommonAbstractRendererState & {
   >;
 };
 
-export const MapAbstractRendererState = ({
+export const MapAbstractRendererState = {
   Default: {
     zero: (): MapAbstractRendererState => ({
       ...CommonAbstractRendererState.Default(),
@@ -96,7 +96,7 @@ export const MapAbstractRendererState = ({
         ),
     },
   },
-});
+};
 
 export type MapAbstractRendererForeignMutationsExpected<Flags> = {
   onChange: DispatchOnChange<ValueTuple, Flags>;
@@ -104,10 +104,7 @@ export type MapAbstractRendererForeignMutationsExpected<Flags> = {
   remove: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
-export type MapAbstractRendererView<
-  CustomContext = Unit,
-  Flags = Unit,
-> = View<
+export type MapAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
   MapAbstractRendererReadonlyContext<CustomContext> & MapAbstractRendererState,
   MapAbstractRendererState,
   MapAbstractRendererForeignMutationsExpected<Flags>,

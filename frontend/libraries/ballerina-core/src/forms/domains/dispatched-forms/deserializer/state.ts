@@ -68,9 +68,7 @@ export type ErrorRendererProps = {
   message: string;
 };
 
-export type DispatcherContext<
-  T extends DispatchInjectablesTypes<T>,
-> = {
+export type DispatcherContext<T extends DispatchInjectablesTypes<T>> = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
@@ -304,27 +302,24 @@ export const parseDispatchFormsToLaunchers =
         errors.map((error) => `${error}\n...When parsing launchers`),
       );
 
-export type DispatchFormsParserContext<
-  T extends DispatchInjectablesTypes<T>,
-> = {
-  defaultRecordConcreteRenderer: any;
-  defaultNestedRecordConcreteRenderer: any;
-  concreteRenderers: ConcreteRenderers<T>;
-  IdWrapper: (props: IdWrapperProps) => React.ReactNode;
-  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
-  fieldTypeConverters: DispatchApiConverters<T>;
-  infiniteStreamSources: DispatchInfiniteStreamSources;
-  lookupSources?: DispatchLookupSources;
-  enumOptionsSources: DispatchEnumOptionsSources;
-  entityApis: DispatchEntityApis;
-  getFormsConfig: BasicFun<void, Promise<any>>;
-  injectedPrimitives?: DispatchInjectables<T>;
-  tableApiSources?: DispatchTableApiSources;
-};
+export type DispatchFormsParserContext<T extends DispatchInjectablesTypes<T>> =
+  {
+    defaultRecordConcreteRenderer: any;
+    defaultNestedRecordConcreteRenderer: any;
+    concreteRenderers: ConcreteRenderers<T>;
+    IdWrapper: (props: IdWrapperProps) => React.ReactNode;
+    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
+    fieldTypeConverters: DispatchApiConverters<T>;
+    infiniteStreamSources: DispatchInfiniteStreamSources;
+    lookupSources?: DispatchLookupSources;
+    enumOptionsSources: DispatchEnumOptionsSources;
+    entityApis: DispatchEntityApis;
+    getFormsConfig: BasicFun<void, Promise<any>>;
+    injectedPrimitives?: DispatchInjectables<T>;
+    tableApiSources?: DispatchTableApiSources;
+  };
 
-export type DispatchFormsParserState<
-  T extends DispatchInjectablesTypes<T>,
-> = {
+export type DispatchFormsParserState<T extends DispatchInjectablesTypes<T>> = {
   deserializedSpecification: Synchronized<
     Unit,
     DispatchSpecificationDeserializationResult<T>

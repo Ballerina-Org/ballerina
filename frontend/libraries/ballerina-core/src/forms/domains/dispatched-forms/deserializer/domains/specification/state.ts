@@ -18,10 +18,7 @@ import {
   DispatchInjectablesTypes,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
-import {
-  DispatchParsedType,
-  SerializedType,
-} from "./domains/types/state";
+import { DispatchParsedType, SerializedType } from "./domains/types/state";
 import {
   ConcreteRenderers,
   DispatchApiConverters,

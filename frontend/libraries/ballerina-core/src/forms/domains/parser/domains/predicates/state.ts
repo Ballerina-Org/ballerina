@@ -271,8 +271,8 @@ export const ValueUnionCase = {
 export type ValuePrimitive = number | string | boolean | Date;
 export type ValueUnit = { kind: "unit" };
 export const ValueUnit = {
-  Default: (): ValueUnit => ({kind: "unit"})
-}
+  Default: (): ValueUnit => ({ kind: "unit" }),
+};
 export type ValueTuple = { kind: "tuple"; values: List<PredicateValue> };
 export type ValueOption = {
   kind: "option";

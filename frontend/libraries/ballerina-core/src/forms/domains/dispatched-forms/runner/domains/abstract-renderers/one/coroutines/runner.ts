@@ -41,11 +41,10 @@ const DebouncerCo = <CustomContext = Unit>() =>
     OneAbstractRendererState
   >();
 
-const DebouncedCo =
-  CoTypedFactory<
-    { onDebounce: SimpleCallback<void> },
-    Value<Map<string, string>>
-  >();
+const DebouncedCo = CoTypedFactory<
+  { onDebounce: SimpleCallback<void> },
+  Value<Map<string, string>>
+>();
 
 const intializeOne = <CustomContext = Unit>() =>
   Co<CustomContext>()
@@ -190,11 +189,8 @@ const debouncer = <CustomContext = Unit>() =>
         Value<Map<string, string>>,
         { onDebounce: SimpleCallback<void> }
       >(
-        DebouncedCo
-          .GetState()
-          .then((current) =>
-            DebouncedCo.Do(() => current.onDebounce()),
-          )
+        DebouncedCo.GetState()
+          .then((current) => DebouncedCo.Do(() => current.onDebounce()))
           //.SetState(SearchNow.Updaters.reloadsRequested(_ => _ + 1))
           .then((_) => DebouncedCo.Return("success")),
         250,
@@ -224,7 +220,9 @@ const reinitialize = <CustomContext = Unit>() =>
     });
 
 export const reinitializeOneRunner = <CustomContext = Unit, Flags = Unit>() =>
-  Co<CustomContext>().Template<OneAbstractRendererForeignMutationsExpected<Flags>>(reinitialize<CustomContext>(), {
+  Co<CustomContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(reinitialize<CustomContext>(), {
     interval: 15,
     runFilter: (props) =>
       props.context.customFormState.initializationStatus === "initialized" &&
@@ -234,7 +232,9 @@ export const reinitializeOneRunner = <CustomContext = Unit, Flags = Unit>() =>
   });
 
 export const initializeOneRunner = <CustomContext = Unit, Flags = Unit>() =>
-  Co<CustomContext>().Template<OneAbstractRendererForeignMutationsExpected<Flags>>(intializeOne<CustomContext>(), {
+  Co<CustomContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(intializeOne<CustomContext>(), {
     interval: 15,
     runFilter: (props) =>
       props.context.customFormState.initializationStatus ===
@@ -243,7 +243,9 @@ export const initializeOneRunner = <CustomContext = Unit, Flags = Unit>() =>
   });
 
 export const oneTableDebouncerRunner = <CustomContext = Unit, Flags = Unit>() =>
-  DebouncerCo<CustomContext>().Template<OneAbstractRendererForeignMutationsExpected<Flags>>(debouncer<CustomContext>(), {
+  DebouncerCo<CustomContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(debouncer<CustomContext>(), {
     interval: 15,
     runFilter: (props) =>
       Debounced.Operations.shouldCoroutineRun(
@@ -252,7 +254,9 @@ export const oneTableDebouncerRunner = <CustomContext = Unit, Flags = Unit>() =>
   });
 
 export const oneTableLoaderRunner = <CustomContext = Unit, Flags = Unit>() =>
-  Co<CustomContext>().Template<OneAbstractRendererForeignMutationsExpected<Flags>>(
+  Co<CustomContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(
     ValueInfiniteStreamLoader.embed(
       (_) => _.customFormState.stream,
       OneAbstractRendererState.Updaters.Core.customFormState.children.stream,

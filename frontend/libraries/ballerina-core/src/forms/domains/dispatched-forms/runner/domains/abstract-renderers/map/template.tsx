@@ -31,10 +31,7 @@ import {
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const MapAbstractRenderer = <
-  CustomContext = Unit,
-  Flags = Unit,
->(
+export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   GetDefaultKeyFormState: () => CommonAbstractRendererState,
   GetDefaultKeyFormValue: () => PredicateValue,
   GetDefaultValueFormState: () => CommonAbstractRendererState,
@@ -95,7 +92,9 @@ export const MapAbstractRenderer = <
           }),
         )
         .mapState(
-          (_: BasicUpdater<CommonAbstractRendererState>): Updater<MapAbstractRendererState> =>
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<MapAbstractRendererState> =>
             MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
               elementIndex,
               GetDefaultKeyFormState(),
@@ -140,24 +139,23 @@ export const MapAbstractRenderer = <
             );
             props.setState(
               MapAbstractRendererState.Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
-                  ),
-                )
-                .then(
-                  MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
-                    elementIndex,
-                    GetDefaultKeyFormState(),
-                    GetDefaultValueFormState(),
-                    (_) => ({
-                      ..._,
-                      commonFormState:
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        )(_.commonFormState),
-                    }),
-                  ),
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
                 ),
+              ).then(
+                MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
+                  elementIndex,
+                  GetDefaultKeyFormState(),
+                  GetDefaultValueFormState(),
+                  (_) => ({
+                    ..._,
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(_.commonFormState),
+                  }),
+                ),
+              ),
             );
           },
         }));
@@ -247,26 +245,24 @@ export const MapAbstractRenderer = <
                 delta,
               );
               props.setState(
-                MapAbstractRendererState
-                  .Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  )
-                  .then(
-                    MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
-                      elementIndex,
-                      GetDefaultKeyFormState(),
-                      GetDefaultValueFormState(),
-                      (_) => ({
-                        ..._,
-                        commonFormState:
-                          DispatchCommonFormState.Updaters.modifiedByUser(
-                            replaceWith(true),
-                          )(_.commonFormState),
-                      }),
-                    ),
+                MapAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
                   ),
+                ).then(
+                  MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
               );
             },
           }),

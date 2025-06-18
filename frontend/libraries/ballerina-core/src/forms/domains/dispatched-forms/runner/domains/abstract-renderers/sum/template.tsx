@@ -67,8 +67,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               type: _.type.args[0],
               customContext: _.customContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[left]`),
-              remoteEntityVersionIdentifier:
-                _.remoteEntityVersionIdentifier,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             }),
           )
           .mapState(
@@ -144,8 +143,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               type: _.type.args[1],
               customContext: _.customContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[right]`),
-              remoteEntityVersionIdentifier:
-                _.remoteEntityVersionIdentifier,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             }),
           )
           .mapState(

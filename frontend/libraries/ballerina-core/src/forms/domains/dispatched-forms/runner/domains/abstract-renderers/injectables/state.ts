@@ -9,15 +9,16 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../main";
 
-export type DispatchInjectablePrimitive<T extends DispatchInjectablesTypes<T>> = {
-  name: keyof T;
-  defaultValue: PredicateValue;
-  abstractRenderer: (
-    IdWrapper: (props: IdWrapperProps) => React.ReactNode,
-    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  ) => Template<any, any, any, any>;
-  defaultState?: any;
-};
+export type DispatchInjectablePrimitive<T extends DispatchInjectablesTypes<T>> =
+  {
+    name: keyof T;
+    defaultValue: PredicateValue;
+    abstractRenderer: (
+      IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+      ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+    ) => Template<any, any, any, any>;
+    defaultState?: any;
+  };
 
 export type DispatchInjectedPrimitive<T> = {
   name: Guid;
@@ -48,9 +49,9 @@ export const DispatchInjectedPrimitive = {
 };
 
 export type DispatchInjectableType = {
-  type: any,
-  state: any,
-  view: any,
+  type: any;
+  state: any;
+  view: any;
 };
 
 export type DispatchInjectablesTypes<T> = {

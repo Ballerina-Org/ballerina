@@ -112,15 +112,15 @@ export const DispatcherFormsAppTables = (props: {}) => {
       );
     };
 
-  const onEntityChange: DispatchOnChange<PredicateValue> = (
-    updater,
-    delta,
-  ) => {
+  const onEntityChange: DispatchOnChange<PredicateValue> = (updater, delta) => {
     if (entity.kind == "r" || entity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater.kind == "r" ? updater.value(entity.value.value) : entity.value.value;
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(entity.value.value)
+        : entity.value.value;
     console.log("patching entity", newEntity);
     setEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),

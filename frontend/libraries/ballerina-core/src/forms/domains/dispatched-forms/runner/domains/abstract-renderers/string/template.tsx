@@ -18,10 +18,7 @@ import {
 } from "../../../../../../../../main";
 import React from "react";
 
-export const StringAbstractRenderer = < 
-  CustomContext = Unit,
-  Flags = Unit,
->(
+export const StringAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

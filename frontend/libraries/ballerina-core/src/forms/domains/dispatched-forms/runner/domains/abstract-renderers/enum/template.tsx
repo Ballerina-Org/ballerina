@@ -24,19 +24,18 @@ import {
 } from "./state";
 import { OrderedMap } from "immutable";
 
-export const EnumAbstractRenderer = <
-  CustomContext = Unit,
-  Flags = Unit,
->(
+export const EnumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    EnumAbstractRendererReadonlyContext<CustomContext> & EnumAbstractRendererState,
+    EnumAbstractRendererReadonlyContext<CustomContext> &
+      EnumAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    EnumAbstractRendererReadonlyContext<CustomContext> & EnumAbstractRendererState,
+    EnumAbstractRendererReadonlyContext<CustomContext> &
+      EnumAbstractRendererState,
     EnumAbstractRendererState,
     EnumAbstractRendererForeignMutationsExpected<Flags>,
     EnumAbstractRendererView<CustomContext, Flags>
@@ -147,9 +146,7 @@ export const EnumAbstractRenderer = <
       </>
     );
   }).any([
-    Co.Template<
-      EnumAbstractRendererForeignMutationsExpected<Flags>
-    >(
+    Co.Template<EnumAbstractRendererForeignMutationsExpected<Flags>>(
       Co.GetState().then((current) =>
         Co.Seq([
           Co.SetState((current) => ({

@@ -11,9 +11,7 @@ import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceW
 import { List } from "immutable";
 import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
 
-export const DispatchFormRunner = <
-  T extends DispatchInjectablesTypes<T>,
->() => {
+export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
   const Co = CoTypedFactory<
     DispatchFormRunnerContext<T>,
     DispatchFormRunnerState<T>

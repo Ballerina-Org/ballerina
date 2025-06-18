@@ -95,7 +95,10 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
     SearchableInfiniteStreamMultiselectAbstractRendererState,
     SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>,
-    SearchableInfiniteStreamMultiselectAbstractRendererView<CustomContext, Flags>
+    SearchableInfiniteStreamMultiselectAbstractRendererView<
+      CustomContext,
+      Flags
+    >
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
