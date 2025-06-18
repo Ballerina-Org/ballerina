@@ -18,34 +18,39 @@ import {
   replaceWith,
   DispatchTableApiSource,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   DispatchParsedType,
   Unit,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  TableType,
+  RecordAbstractRendererState,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
 import { Template, View } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type AbstractTableRendererReadonlyContext = {
-  tableApiSource: DispatchTableApiSource;
-  fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-  type: DispatchParsedType<any>;
-  bindings: Bindings;
-  value: ValueTable;
-  identifiers: { withLauncher: string; withoutLauncher: string };
-  label?: string;
-  remoteEntityVersionIdentifier: string;
-};
+export type AbstractTableRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    TableType<any>,
+    ValueTable,
+    CustomContext
+  > & {
+    tableApiSource: DispatchTableApiSource;
+    fromTableApiParser: (
+      value: unknown,
+    ) => ValueOrErrors<PredicateValue, string>;
+    tableHeaders: string[];
+    columnLabels: Map<string, string | undefined>;
+  };
 
-export type AbstractTableRendererState = {
-  commonFormState: DispatchCommonFormState;
+export type AbstractTableRendererState = CommonAbstractRendererState & {
   customFormState: {
     selectedRows: Set<string>;
+    rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: [number, string] | undefined;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
     streamParams: Debounced<Map<string, string>>;
@@ -60,12 +65,13 @@ export type AbstractTableRendererState = {
 };
 export const AbstractTableRendererState = {
   Default: (): AbstractTableRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
+      rowStates: Map(),
       // TODO: replace with sum
       getChunkWithParams: undefined as any,
       stream: undefined as any,
@@ -99,6 +105,9 @@ export const AbstractTableRendererState = {
         ),
         ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
           "shouldReinitialize",
+        ),
+        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+          "rowStates",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
@@ -169,54 +178,57 @@ export const AbstractTableRendererState = {
       ),
   },
 };
+
+export type AbstractTableRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueTable, Flags>;
+};
+
+export type AbstractTableRendererViewForeignMutationsExpected<Flags = Unit> = {
+  loadMore: SimpleCallback<void>;
+  selectDetailView: SimpleCallback<string>;
+  clearDetailView: SimpleCallback<void>;
+  selectRow: SimpleCallback<string>;
+  selectAllRows: SimpleCallback<void>;
+  clearRows: SimpleCallback<void>;
+  onChange: DispatchOnChange<ValueTable, Flags>;
+  add: VoidCallbackWithOptionalFlags<Flags>;
+  remove: ValueCallbackWithOptionalFlags<string, Flags>;
+  moveTo: (key: string, to: string, flags: Flags | undefined) => void;
+  duplicate: ValueCallbackWithOptionalFlags<string, Flags>;
+};
+
 export type AbstractTableRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<ValueOption> &
-    DomNodeIdReadonlyContext &
+  AbstractTableRendererReadonlyContext<CustomContext> &
     AbstractTableRendererState & {
       hasMoreValues: boolean;
-      disabled: boolean;
-      identifiers: { withLauncher: string; withoutLauncher: string };
     },
   AbstractTableRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<PredicateValue, Flags>;
-    toggleOpen: SimpleCallback<void>;
-    setStreamParam: SimpleCallback<string>;
-    select: ValueCallbackWithOptionalFlags<ValueOption>;
-    loadMore: SimpleCallback<void>;
-    reload: SimpleCallback<void>;
-    selectDetailView: SimpleCallback<string>;
-    clearDetailView: SimpleCallback<void>;
-    selectRow: SimpleCallback<string>;
-    selectAllRows: SimpleCallback<void>;
-    clearRows: SimpleCallback<void>;
-    add: VoidCallbackWithOptionalFlags<void>;
-    remove: ValueCallbackWithOptionalFlags<string>;
-    moveTo: (key: string, to: string, flags: Flags | undefined) => void;
-    duplicate: ValueCallbackWithOptionalFlags<string>;
-  },
+  AbstractTableRendererViewForeignMutationsExpected<Flags>,
   {
-    TableHeaders: string[];
-    ColumnLabels: Map<string, string | undefined>;
-    EmbeddedTableData: OrderedMap<
+    TableData: OrderedMap<
       string,
       OrderedMap<
         string,
-        (flags: Flags | undefined) => Template<
-          any,
-          any,
-          {
-            onChange: DispatchOnChange<PredicateValue, Flags>;
-          },
-          any
+        (
+          flags: Flags | undefined,
+        ) => Template<
+          AbstractTableRendererReadonlyContext<CustomContext> &
+            AbstractTableRendererState,
+          AbstractTableRendererState,
+          AbstractTableRendererForeignMutationsExpected<Flags>
         >
       >
     >;
-    DetailsRenderer: (flags: Flags | undefined) => Template<any, any, any, any>;
+    DetailsRenderer?: (
+      flags: Flags | undefined,
+    ) => Template<
+      AbstractTableRendererReadonlyContext<CustomContext> &
+        AbstractTableRendererState,
+      AbstractTableRendererState,
+      AbstractTableRendererForeignMutationsExpected<Flags>
+    >;
   }
 >;

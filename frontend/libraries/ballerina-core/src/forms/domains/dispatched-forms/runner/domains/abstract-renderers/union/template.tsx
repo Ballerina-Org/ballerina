@@ -1,39 +1,45 @@
 import {
   BasicUpdater,
   CommonAbstractRendererReadonlyContext,
-  DispatchCommonFormState,
   DispatchParsedType,
   MapRepo,
   PredicateValue,
-  UnionType,
   Updater,
   ValueUnionCase,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   DispatchDelta,
-  replaceWith,
-  ValueRecord,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
 import {
+  UnionAbstractRendererForeignMutationsExpected,
   UnionAbstractRendererReadonlyContext,
   UnionAbstractRendererState,
   UnionAbstractRendererView,
 } from "./state";
 import { Map } from "immutable";
 
-export const UnionAbstractRenderer = <
-  ForeignMutationsExpected,
-  CaseFormState extends { commonFormState: DispatchCommonFormState },
-  Flags = Unit,
->(
-  defaultCaseStates: Map<string, () => CaseFormState>,
-  caseTemplates: Map<string, Template<any, any, any, any>>,
+export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+  defaultCaseStates: Map<string, () => CommonAbstractRendererState>,
+  caseTemplates: Map<
+    string,
+    Template<
+      CommonAbstractRendererReadonlyContext<
+        DispatchParsedType<any>,
+        PredicateValue,
+        CustomContext
+      > &
+        CommonAbstractRendererState,
+      CommonAbstractRendererState,
+      CommonAbstractRendererForeignMutationsExpected<Flags>
+    >
+  >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -43,17 +49,9 @@ export const UnionAbstractRenderer = <
         .get(caseName)!
         .mapContext(
           (
-            _: UnionAbstractRendererReadonlyContext &
-              UnionAbstractRendererState<CaseFormState> & {
-                type: UnionType<any>;
-              },
-          ): CommonAbstractRendererReadonlyContext<
-            UnionType<any>,
-            ValueUnionCase
-          > & {
-            type: DispatchParsedType<any>;
-          } & UnionAbstractRendererState<CaseFormState> => ({
-            ..._,
+            _: UnionAbstractRendererReadonlyContext<CustomContext> &
+              UnionAbstractRendererState,
+          ) => ({
             ...(_.caseFormStates.get(caseName)! ??
               defaultCaseStates.get(caseName)!()),
             value: _.value.fields,
@@ -64,13 +62,19 @@ export const UnionAbstractRenderer = <
                 `[${caseName}]`,
               ),
             },
+            disabled: _.disabled,
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            domNodeId: _.domNodeId,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            customContext: _.customContext,
           }),
         )
         .mapState(
           (
-            _: BasicUpdater<CaseFormState>,
-          ): Updater<UnionAbstractRendererState<CaseFormState>> =>
-            UnionAbstractRendererState<CaseFormState>().Updaters.Core.caseFormStates(
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<UnionAbstractRendererState> =>
+            UnionAbstractRendererState.Updaters.Core.caseFormStates(
               MapRepo.Updaters.upsert(
                 caseName,
                 defaultCaseStates.get(caseName)!,
@@ -80,44 +84,34 @@ export const UnionAbstractRenderer = <
         )
 
         .mapForeignMutationsFromProps<
-          ForeignMutationsExpected & {
-            onChange: DispatchOnChange<ValueUnionCase, Flags>;
-          }
-        >(
-          (
-            props,
-          ): ForeignMutationsExpected & {
-            onChange: DispatchOnChange<ValueRecord, Flags>;
-          } => ({
-            ...props.foreignMutations,
-            onChange: (
-              fieldsUpdater: Option<BasicUpdater<ValueRecord>>,
-              nestedDelta: DispatchDelta<Flags>,
-            ) => {
-              const delta: DispatchDelta<Flags> = {
-                kind: "UnionCase",
-                caseName: [caseName, nestedDelta],
-                flags,
-              };
-              const caseUpdater =
-                fieldsUpdater.kind == "r"
-                  ? Option.Default.some(
-                      ValueUnionCase.Updaters.fields(fieldsUpdater.value),
-                    )
-                  : Option.Default.none<BasicUpdater<ValueUnionCase>>();
-              props.foreignMutations.onChange(caseUpdater, delta);
-              props.setState((_) => ({ ..._, modifiedByUser: true }));
-            },
-          }),
-        );
+          UnionAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
+          onChange: (
+            updater: Option<BasicUpdater<PredicateValue>>,
+            nestedDelta: DispatchDelta<Flags>,
+          ) => {
+            const delta: DispatchDelta<Flags> = {
+              kind: "UnionCase",
+              caseName: [caseName, nestedDelta],
+              flags,
+            };
+            const caseUpdater =
+              updater.kind == "r"
+                ? Option.Default.some(
+                    ValueUnionCase.Updaters.fields(updater.value),
+                  )
+                : Option.Default.none<BasicUpdater<ValueUnionCase>>();
+            props.foreignMutations.onChange(caseUpdater, delta);
+            props.setState((_) => ({ ..._, modifiedByUser: true }));
+          },
+        }));
 
   return Template.Default<
-    UnionAbstractRendererReadonlyContext,
-    UnionAbstractRendererState<CaseFormState>,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueUnionCase, Flags>;
-    },
-    UnionAbstractRendererView<CaseFormState, ForeignMutationsExpected, Flags>
+    UnionAbstractRendererReadonlyContext<CustomContext> &
+      UnionAbstractRendererState,
+    UnionAbstractRendererState,
+    UnionAbstractRendererForeignMutationsExpected<Flags>,
+    UnionAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(

@@ -1,4 +1,8 @@
-import { BoolAbstractRendererView } from "./state";
+import {
+  BoolAbstractRendererForeignMutationsExpected,
+  BoolAbstractRendererReadonlyContext,
+  BoolAbstractRendererView,
+} from "./state";
 import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
@@ -13,27 +17,18 @@ import {
   Unit,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { BoolAbstractRendererState } from "./state";
 
-export const BoolAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const BoolAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<boolean> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    BoolAbstractRendererReadonlyContext<CustomContext> &
+      BoolAbstractRendererState,
     BoolAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<boolean, Flags> },
-    BoolAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    BoolAbstractRendererForeignMutationsExpected<Flags>,
+    BoolAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
       console.error(

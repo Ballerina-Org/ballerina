@@ -27,27 +27,25 @@ import { DispatchParsedType } from "../../../../deserializer/domains/specificati
 import {
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractRendererView,
+  SearchableInfiniteStreamAbstractRendererReadonlyContext,
+  SearchableInfiniteStreamAbstractRendererForeignMutationsExpected,
 } from "./state";
 
 export const SearchableInfiniteStreamAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext>,
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    Context & { onDebounce: SimpleCallback<void> } & Value<ValueOption>,
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> & {
+      onDebounce: SimpleCallback<void>;
+    },
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncedCo = CoTypedFactory<
@@ -71,9 +69,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     ]),
   );
   const debouncerRunner = DebouncerCo.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption, Flags>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer, {
     interval: 15,
     runFilter: (props) =>
@@ -82,9 +78,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ),
   });
   const loaderRunner = Co.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption, Flags>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
       (_) => _.customFormState.stream,
@@ -101,21 +95,11 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
 
   return Template.Default<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> &
+      SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption, Flags>;
-    },
-    SearchableInfiniteStreamAbstractRendererView<
-      Context,
-      ForeignMutationsExpected,
-      Flags
-    >
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
+    SearchableInfiniteStreamAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

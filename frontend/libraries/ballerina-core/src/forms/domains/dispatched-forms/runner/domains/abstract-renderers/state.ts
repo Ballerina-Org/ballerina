@@ -1,10 +1,11 @@
 import {
   Bindings,
+  DispatchOnChange,
   DispatchParsedType,
   PredicateValue,
-  Value,
   simpleUpdater,
   simpleUpdaterWithChildren,
+  Unit,
 } from "../../../../../../../main";
 
 export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
@@ -13,28 +14,28 @@ export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
   return matches[matches.length - 1][1];
 };
 
-export type DomNodeIdReadonlyContext = {
-  domNodeId: string;
-};
-
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,
+  C = Unit,
 > = {
   value: V;
   disabled: boolean;
   bindings: Bindings;
-  extraContext: any;
+  extraContext: unknown;
   identifiers: { withLauncher: string; withoutLauncher: string };
+  domNodeId: string;
   type: T;
   label?: string;
   tooltip?: string;
   details?: string;
+  customContext: C | undefined;
+  remoteEntityVersionIdentifier: string;
 };
 
 export type CommonAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
-  customFormState: any;
+  customFormState: unknown;
 };
 
 export const CommonAbstractRendererState = {
@@ -53,6 +54,10 @@ export const CommonAbstractRendererState = {
       })("commonFormState"),
     },
   },
+};
+
+export type CommonAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<PredicateValue, Flags>;
 };
 
 export type DispatchCommonFormState = {

@@ -1,40 +1,33 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
+  Base64FileAbstractRendererForeignMutationsExpected,
+  Base64FileAbstractRendererReadonlyContext,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,
 } from "./state";
 
 export const Base64FileAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    Base64FileAbstractRendererReadonlyContext<CustomContext> &
+      Base64FileAbstractRendererState,
     Base64FileAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string, Flags> },
-    Base64FileAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    Base64FileAbstractRendererForeignMutationsExpected<Flags>,
+    Base64FileAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

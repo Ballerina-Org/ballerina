@@ -3,7 +3,6 @@ import { Template } from "../../../../../../../template/state";
 import {
   AsyncState,
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   Guid,
   PredicateValue,
@@ -20,41 +19,27 @@ import {
 import {
   EnumAbstractRendererState,
   EnumAbstractRendererView,
-  DispatchBaseEnumContext,
+  EnumAbstractRendererReadonlyContext,
+  EnumAbstractRendererForeignMutationsExpected,
 } from "./state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { Value } from "../../../../../../../value/state";
 import { OrderedMap } from "immutable";
 
 export const EnumAbstractRenderer = <
-  Context extends FormLabel & DispatchBaseEnumContext,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumAbstractRendererReadonlyContext<CustomContext> & EnumAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumAbstractRendererReadonlyContext<CustomContext> & EnumAbstractRendererState,
     EnumAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption, Flags>;
-    },
-    EnumAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    EnumAbstractRendererForeignMutationsExpected<Flags>,
+    EnumAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
@@ -163,9 +148,7 @@ export const EnumAbstractRenderer = <
     );
   }).any([
     Co.Template<
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueOption, Flags>;
-      }
+      EnumAbstractRendererForeignMutationsExpected<Flags>
     >(
       Co.GetState().then((current) =>
         Co.Seq([

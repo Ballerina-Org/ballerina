@@ -1,15 +1,25 @@
 import {
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
   DispatchCommonFormState,
+  DispatchOnChange,
+  DispatchPrimitiveType,
   FormLabel,
   simpleUpdater,
   Unit,
+  ValueUnit,
   View,
-  DomNodeIdReadonlyContext,
   VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
-export type UnitAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
+export type UnitAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    ValueUnit,
+    CustomContext
+  >;
+
+export type UnitAbstractRendererState = CommonAbstractRendererState & {
   customFormState: Unit;
 };
 
@@ -25,11 +35,19 @@ export const UnitAbstractRendererState = {
   },
 };
 
-export type UnitAbstractRendererView<
-  Context extends FormLabel,
-  Flags = Unit,
-> = View<
-  Context & UnitAbstractRendererState & DomNodeIdReadonlyContext,
+export type UnitAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueUnit, Flags>;
+};
+
+export type UnitAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueUnit, Flags>;
+  set: VoidCallbackWithOptionalFlags<Flags>;
+};
+
+export type UnitAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
+  UnitAbstractRendererReadonlyContext<CustomContext> &
+    UnitAbstractRendererState,
   UnitAbstractRendererState,
-  { set: VoidCallbackWithOptionalFlags<Flags> }
+  UnitAbstractRendererViewForeignMutationsExpected<Flags>,
+  Unit
 >;

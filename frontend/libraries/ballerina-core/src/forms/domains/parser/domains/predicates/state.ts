@@ -252,16 +252,16 @@ export type ValueCustom = {
 export type ValueUnionCase = {
   kind: "unionCase";
   caseName: string;
-  fields: ValueRecord;
+  fields: PredicateValue;
 };
 export const ValueUnionCase = {
-  Default: (caseName: string, fields: ValueRecord): ValueUnionCase => ({
+  Default: (caseName: string, fields: PredicateValue): ValueUnionCase => ({
     kind: "unionCase",
     caseName,
     fields,
   }),
   Updaters: {
-    case: (caseName: string) => (upd: BasicUpdater<ValueRecord>) =>
+    case: (caseName: string) => (upd: BasicUpdater<PredicateValue>) =>
       Updater<ValueUnionCase>((v) =>
         ValueUnionCase.Default(caseName, upd(v.fields)),
       ),
@@ -270,6 +270,9 @@ export const ValueUnionCase = {
 };
 export type ValuePrimitive = number | string | boolean | Date;
 export type ValueUnit = { kind: "unit" };
+export const ValueUnit = {
+  Default: (): ValueUnit => ({kind: "unit"})
+}
 export type ValueTuple = { kind: "tuple"; values: List<PredicateValue> };
 export type ValueOption = {
   kind: "option";
@@ -291,8 +294,8 @@ export const ValueOption = {
     }),
   },
   Updaters: {
-    value: (_: BasicUpdater<PredicateValue>) =>
-      Updater<PredicateValue>((v) => ValueOption.Default.some(_(v))),
+    value: (_: BasicUpdater<ValueOption>) =>
+      Updater<ValueOption>((v) => ValueOption.Default.some(_(v))),
   },
 };
 export type ValueVarLookup = { kind: "varLookup"; varName: string };

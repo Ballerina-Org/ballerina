@@ -1,16 +1,19 @@
 import { List } from "immutable";
 
-import { MapAbstractRendererState, MapAbstractRendererView } from "./state";
+import {
+  MapAbstractRendererForeignMutationsExpected,
+  MapAbstractRendererReadonlyContext,
+  MapAbstractRendererState,
+  MapAbstractRendererView,
+} from "./state";
 import { Template } from "../../../../../../../template/state";
 import {
   PredicateValue,
-  Value,
   ValueTuple,
   Updater,
   DispatchDelta,
   BasicUpdater,
   ListRepo,
-  Bindings,
   replaceWith,
   DispatchCommonFormState,
   DispatchOnChange,
@@ -19,98 +22,90 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../../../../main";
 import {
   DispatchParsedType,
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const MapAbstractRenderer = <
-  KeyFormState extends { commonFormState: DispatchCommonFormState },
-  ValueFormState extends { commonFormState: DispatchCommonFormState },
-  Context extends FormLabel & {
-    type: DispatchParsedType<any>;
-    disabled: boolean;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 >(
-  GetDefaultKeyFormState: () => KeyFormState,
+  GetDefaultKeyFormState: () => CommonAbstractRendererState,
   GetDefaultKeyFormValue: () => PredicateValue,
-  GetDefaultValueFormState: () => ValueFormState,
+  GetDefaultValueFormState: () => CommonAbstractRendererState,
   GetDefaultValueFormValue: () => PredicateValue,
   keyTemplate: Template<
-    Value<PredicateValue> & KeyFormState & { bindings: Bindings },
-    KeyFormState,
-    {
-      onChange: DispatchOnChange<PredicateValue, Flags>;
-    }
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue,
+      CustomContext
+    > &
+      CommonAbstractRendererState,
+    CommonAbstractRendererState,
+    CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
   valueTemplate: Template<
-    Value<PredicateValue> & ValueFormState & { bindings: Bindings },
-    ValueFormState,
-    {
-      onChange: DispatchOnChange<PredicateValue, Flags>;
-    }
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue,
+      CustomContext
+    > &
+      CommonAbstractRendererState,
+    CommonAbstractRendererState,
+    CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedKeyTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
-    keyTemplate
-      .mapContext(
-        (
-          _: Context &
-            Value<ValueTuple> &
-            MapAbstractRendererState<KeyFormState, ValueFormState> & {
-              bindings: Bindings;
-              extraContext: any;
+  const embeddedKeyTemplate =
+    (elementIndex: number) => (flags: Flags | undefined) =>
+      keyTemplate
+        .mapContext(
+          (
+            _: MapAbstractRendererReadonlyContext<CustomContext> &
+              MapAbstractRendererState,
+          ) => ({
+            ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
+              GetDefaultKeyFormState()),
+            value:
+              (_.value.values.get(elementIndex) as ValueTuple)?.values.get(0) ||
+              GetDefaultKeyFormValue(),
+            disabled: _.disabled,
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${elementIndex}][key]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${elementIndex}][key]`,
+              ),
             },
-        ): Value<PredicateValue> & KeyFormState & { bindings: Bindings } => ({
-          ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
-            GetDefaultKeyFormState()),
-          value:
-            (_.value.values.get(elementIndex) as ValueTuple)?.values.get(0) ||
-            GetDefaultKeyFormValue(),
-          disabled: _.disabled,
-          bindings: _.bindings,
-          extraContext: _.extraContext,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(
+            domNodeId: _.identifiers.withoutLauncher.concat(
               `[${elementIndex}][key]`,
             ),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}][key]`,
+            type: _.type.args[0],
+            customContext: _.customContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          }),
+        )
+        .mapState(
+          (_: BasicUpdater<CommonAbstractRendererState>): Updater<MapAbstractRendererState> =>
+            MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
+              elementIndex,
+              GetDefaultKeyFormState(),
+              GetDefaultValueFormState(),
+              _,
             ),
-          },
-        }),
-      )
-      .mapState(
-        (
-          _: BasicUpdater<KeyFormState>,
-        ): Updater<MapAbstractRendererState<KeyFormState, ValueFormState>> =>
-          MapAbstractRendererState<
-            KeyFormState,
-            ValueFormState
-          >().Updaters.Template.upsertElementKeyFormState(
-            elementIndex,
-            GetDefaultKeyFormState(),
-            GetDefaultValueFormState(),
-            _,
-          ),
-      )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple, Flags>;
-        }
-      >(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue, Flags>;
-        } => ({
+        )
+        .mapForeignMutationsFromProps<
+          MapAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
           onChange: (elementUpdater, nestedDelta) => {
             const delta: DispatchDelta<Flags> = {
               kind: "MapKey",
@@ -144,17 +139,13 @@ export const MapAbstractRenderer = <
               delta,
             );
             props.setState(
-              MapAbstractRendererState<KeyFormState, ValueFormState>()
-                .Updaters.Core.commonFormState(
+              MapAbstractRendererState.Updaters.Core.commonFormState(
                   DispatchCommonFormState.Updaters.modifiedByUser(
                     replaceWith(true),
                   ),
                 )
                 .then(
-                  MapAbstractRendererState<
-                    KeyFormState,
-                    ValueFormState
-                  >().Updaters.Template.upsertElementKeyFormState(
+                  MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
                     elementIndex,
                     GetDefaultKeyFormState(),
                     GetDefaultValueFormState(),
@@ -169,22 +160,16 @@ export const MapAbstractRenderer = <
                 ),
             );
           },
-        }),
-      );
+        }));
 
-  const embeddedValueTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
-    valueTemplate
-      .mapContext(
-        (
-          _: Context &
-            Value<ValueTuple> &
-            MapAbstractRendererState<KeyFormState, ValueFormState> & {
-              bindings: Bindings;
-              extraContext: any;
-              identifiers: { withLauncher: string; withoutLauncher: string };
-            },
-        ): Value<PredicateValue> & ValueFormState & { bindings: Bindings } => {
-          return {
+  const embeddedValueTemplate =
+    (elementIndex: number) => (flags: Flags | undefined) =>
+      valueTemplate
+        .mapContext(
+          (
+            _: MapAbstractRendererReadonlyContext<CustomContext> &
+              MapAbstractRendererState,
+          ) => ({
             ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
               GetDefaultValueFormState()),
             value:
@@ -202,105 +187,97 @@ export const MapAbstractRenderer = <
                 `[${elementIndex}][value]`,
               ),
             },
-          };
-        },
-      )
-      .mapState(
-        (
-          _: BasicUpdater<ValueFormState>,
-        ): Updater<MapAbstractRendererState<KeyFormState, ValueFormState>> =>
-          MapAbstractRendererState<
-            KeyFormState,
-            ValueFormState
-          >().Updaters.Template.upsertElementValueFormState(
-            elementIndex,
-            GetDefaultKeyFormState(),
-            GetDefaultValueFormState(),
-            _,
-          ),
-      )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple, Flags>;
-        }
-      >(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue, Flags>;
-        } => ({
-          onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta<Flags> = {
-              kind: "MapValue",
-              value: [elementIndex, nestedDelta],
-              flags,
-            };
-            props.foreignMutations.onChange(
-              elementUpdater.kind == "l"
-                ? Option.Default.none()
-                : Option.Default.some(
-                    Updater((elements: ValueTuple) =>
-                      PredicateValue.Default.tuple(
-                        elements.values.update(
-                          elementIndex,
-                          GetDefaultValueFormValue(),
-                          (_) =>
-                            _ == undefined
-                              ? _
-                              : !PredicateValue.Operations.IsTuple(_)
+            domNodeId: _.identifiers.withoutLauncher.concat(
+              `[${elementIndex}][value]`,
+            ),
+            type: _.type.args[1],
+            customContext: _.customContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          }),
+        )
+        .mapState(
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<MapAbstractRendererState> =>
+            MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
+              elementIndex,
+              GetDefaultKeyFormState(),
+              GetDefaultValueFormState(),
+              _,
+            ),
+        )
+        .mapForeignMutationsFromProps<
+          MapAbstractRendererForeignMutationsExpected<Flags>
+        >(
+          (
+            props,
+          ): {
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          } => ({
+            onChange: (elementUpdater, nestedDelta) => {
+              const delta: DispatchDelta<Flags> = {
+                kind: "MapValue",
+                value: [elementIndex, nestedDelta],
+                flags,
+              };
+              props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some(
+                      Updater((elements: ValueTuple) =>
+                        PredicateValue.Default.tuple(
+                          elements.values.update(
+                            elementIndex,
+                            GetDefaultValueFormValue(),
+                            (_) =>
+                              _ == undefined
                                 ? _
-                                : PredicateValue.Default.tuple(
-                                    List([
-                                      _.values.get(0)!,
-                                      elementUpdater.value(_.values.get(1)!),
-                                    ]),
-                                  ),
+                                : !PredicateValue.Operations.IsTuple(_)
+                                  ? _
+                                  : PredicateValue.Default.tuple(
+                                      List([
+                                        _.values.get(0)!,
+                                        elementUpdater.value(_.values.get(1)!),
+                                      ]),
+                                    ),
+                          ),
                         ),
                       ),
                     ),
+                delta,
+              );
+              props.setState(
+                MapAbstractRendererState
+                  .Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  )
+                  .then(
+                    MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
+                      elementIndex,
+                      GetDefaultKeyFormState(),
+                      GetDefaultValueFormState(),
+                      (_) => ({
+                        ..._,
+                        commonFormState:
+                          DispatchCommonFormState.Updaters.modifiedByUser(
+                            replaceWith(true),
+                          )(_.commonFormState),
+                      }),
+                    ),
                   ),
-              delta,
-            );
-            props.setState(
-              MapAbstractRendererState<KeyFormState, ValueFormState>()
-                .Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
-                  ),
-                )
-                .then(
-                  MapAbstractRendererState<
-                    KeyFormState,
-                    ValueFormState
-                  >().Updaters.Template.upsertElementValueFormState(
-                    elementIndex,
-                    GetDefaultKeyFormState(),
-                    GetDefaultValueFormState(),
-                    (_) => ({
-                      ..._,
-                      commonFormState:
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        )(_.commonFormState),
-                    }),
-                  ),
-                ),
-            );
-          },
-        }),
-      );
+              );
+            },
+          }),
+        );
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean },
-    MapAbstractRendererState<KeyFormState, ValueFormState>,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<ValueTuple, Flags> },
-    MapAbstractRendererView<
-      KeyFormState,
-      ValueFormState,
-      Context,
-      ForeignMutationsExpected,
-      Flags
-    >
+    MapAbstractRendererReadonlyContext<CustomContext> &
+      MapAbstractRendererState,
+    MapAbstractRendererState,
+    MapAbstractRendererForeignMutationsExpected<Flags>,
+    MapAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -362,10 +339,7 @@ export const MapAbstractRenderer = <
                   delta,
                 );
                 props.setState(
-                  MapAbstractRendererState<
-                    KeyFormState,
-                    ValueFormState
-                  >().Updaters.Core.commonFormState(
+                  MapAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
@@ -391,10 +365,7 @@ export const MapAbstractRenderer = <
                   delta,
                 );
                 props.setState(
-                  MapAbstractRendererState<
-                    KeyFormState,
-                    ValueFormState
-                  >().Updaters.Core.commonFormState(
+                  MapAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),

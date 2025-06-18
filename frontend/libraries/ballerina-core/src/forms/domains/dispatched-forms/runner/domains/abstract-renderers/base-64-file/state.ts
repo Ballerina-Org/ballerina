@@ -1,39 +1,38 @@
-import { Value } from "../../../../../../../value/state";
+
 import { View } from "../../../../../../../template/state";
 import {
-  DispatchCommonFormState,
-  FormLabel,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
-export type Base64FileAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type Base64FileAbstractRendererReadonlyContext<CustomContext> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    string,
+    CustomContext
+  >;
+
+export type Base64FileAbstractRendererState = CommonAbstractRendererState;
 
 export const Base64FileAbstractRendererState = {
-  Default: (): Base64FileAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
-  }),
+  Default: () => CommonAbstractRendererState.Default(),
+};
+
+export type Base64FileAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<string, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
 };
 
 export type Base64FileAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
-> = View< 
-  Context &
-    Value<string> &
-    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+> = View<
+  Base64FileAbstractRendererReadonlyContext<CustomContext> &
+    Base64FileAbstractRendererState,
   Base64FileAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string, Flags>;
-    setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
-  }
+  Base64FileAbstractRendererForeignMutationsExpected<Flags>
 >;

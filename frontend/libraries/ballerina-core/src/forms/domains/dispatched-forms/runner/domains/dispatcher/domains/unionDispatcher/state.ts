@@ -66,7 +66,7 @@ export const UnionDispatcher = {
                         UnionAbstractRenderer(
                           // TODO better typing for state and consider this pattern for other dispatchers
                           (
-                            defaultState as UnionAbstractRendererState<any>
+                            defaultState as UnionAbstractRendererState
                           ).caseFormStates.map((caseState) => () => caseState),
                           Map(templates),
                           dispatcherContext.IdProvider,

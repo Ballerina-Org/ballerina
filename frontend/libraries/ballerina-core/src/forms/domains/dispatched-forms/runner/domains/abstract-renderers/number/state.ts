@@ -6,35 +6,38 @@ import {
   View,
   DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   ValueCallbackWithOptionalFlags,
+  DispatchParsedType,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 
-export type NumberAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type NumberAbstractRendererReadonlyContext<CustomContext> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    number,
+    CustomContext
+  >;
+
+export type NumberAbstractRendererState = CommonAbstractRendererState;
 
 export const NumberAbstractRendererState = {
-  Default: (): NumberAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
-  }),
+  Default: (): NumberAbstractRendererState =>
+    CommonAbstractRendererState.Default(),
+};
+
+export type NumberAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<number, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
 export type NumberAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<number> &
-    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+  NumberAbstractRendererReadonlyContext<CustomContext> &
+    NumberAbstractRendererState,
   NumberAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<number, Flags>;
-    setNewValue: ValueCallbackWithOptionalFlags<number, Flags>;
-  }
+  NumberAbstractRendererForeignMutationsExpected<Flags>
 >;

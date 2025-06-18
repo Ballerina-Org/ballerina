@@ -1,6 +1,5 @@
 import {
   BasicUpdater,
-  Bindings,
   DispatchCommonFormState,
   DispatchDelta,
   IdWrapperProps,
@@ -9,77 +8,75 @@ import {
   PredicateValue,
   replaceWith,
   Updater,
-  ValueTuple,
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
-  id,
   Unit,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import {
   DispatchParsedType,
   ListType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
-import { ListAbstractRendererState, ListAbstractRendererView } from "./state";
+import {
+  ListAbstractRendererForeignMutationsExpected,
+  ListAbstractRendererReadonlyContext,
+  ListAbstractRendererState,
+  ListAbstractRendererView,
+} from "./state";
 
-export const ListAbstractRenderer = <
-  Context extends FormLabel & {
-    type: DispatchParsedType<any>;
-    disabled: boolean;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
-  GetDefaultElementState: () => any,
+export const ListAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+  GetDefaultElementState: () => CommonAbstractRendererState,
   GetDefaultElementValue: () => PredicateValue,
   elementTemplate: Template<
-    Context &
-      Value<PredicateValue> &
-      any & { bindings: Bindings; extraContext: any },
-    any,
-    {
-      onChange: DispatchOnChange<PredicateValue, Flags>;
-    }
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue,
+      CustomContext
+    > &
+      CommonAbstractRendererState,
+    CommonAbstractRendererState,
+    CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedElementTemplate = (elementIndex: number) => (flags: Flags | undefined) =>
-    elementTemplate
-      .mapContext(
-        (
-          _: Context &
-            Value<ValueTuple> &
-            ListAbstractRendererState & {
-              bindings: Bindings;
-              extraContext: any;
-              identifiers: { withLauncher: string; withoutLauncher: string };
+  const embeddedElementTemplate =
+    (elementIndex: number) => (flags: Flags | undefined) =>
+      elementTemplate
+        .mapContext(
+          (
+            _: ListAbstractRendererReadonlyContext<CustomContext> &
+              ListAbstractRendererState,
+          ) => ({
+            disabled: _.disabled,
+            value:
+              _.value.values?.get(elementIndex) || GetDefaultElementValue(),
+            ...(_.elementFormStates?.get(elementIndex) ||
+              GetDefaultElementState()),
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${elementIndex}]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${elementIndex}]`,
+              ),
             },
-        ): Value<ValueTuple> & any => ({
-          ..._,
-          disabled: _.disabled,
-          value: _.value.values?.get(elementIndex) || GetDefaultElementValue(),
-          ...(_.elementFormStates?.get(elementIndex) ||
-            GetDefaultElementState()),
-          bindings: _.bindings,
-          extraContext: _.extraContext,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(
+            domNodeId: _.identifiers.withoutLauncher.concat(
               `[${elementIndex}]`,
             ),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}]`,
-            ),
-          },
-        }),
-      )
-      .mapState(
-        (_: BasicUpdater<any>): Updater<ListAbstractRendererState> =>
+            type: _.type.args[0],
+            customContext: _.customContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          }),
+        )
+        .mapState((_) =>
           ListAbstractRendererState.Updaters.Core.elementFormStates(
             MapRepo.Updaters.upsert(
               elementIndex,
@@ -87,17 +84,10 @@ export const ListAbstractRenderer = <
               _,
             ),
           ),
-      )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple, Flags>;
-        }
-      >(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue, Flags>;
-        } => ({
+        )
+        .mapForeignMutationsFromProps<
+          ListAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
           onChange: (elementUpdater, nestedDelta) => {
             const delta: DispatchDelta<Flags> = {
               kind: "ArrayValue",
@@ -144,16 +134,14 @@ export const ListAbstractRenderer = <
               ),
             );
           },
-        }),
-      );
+        }));
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean },
+    ListAbstractRendererReadonlyContext<CustomContext> &
+      ListAbstractRendererState,
     ListAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTuple, Flags>;
-    },
-    ListAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    ListAbstractRendererForeignMutationsExpected<Flags>,
+    ListAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -301,7 +289,7 @@ export const ListAbstractRenderer = <
                   value: [_, GetDefaultElementValue()],
                   elementState: GetDefaultElementState(),
                   elementType: (props.context.type as ListType<any>).args[0],
-                  flags
+                  flags,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(

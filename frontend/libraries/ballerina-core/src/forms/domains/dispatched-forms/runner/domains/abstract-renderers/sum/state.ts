@@ -1,98 +1,76 @@
 import {
   simpleUpdater,
   Template,
-  Value,
   ValueSum,
   View,
   simpleUpdaterWithChildren,
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   Unit,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export type SumAbstractRendererReadonlyContext =
-  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum>;
+export type SumAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum, CustomContext>;
 
-export type SumAbstractRendererState<LeftFormState, RightFormState> =
-  CommonAbstractRendererState & {
-    customFormState: {
-      left: LeftFormState;
-      right: RightFormState;
-    };
+export type SumAbstractRendererState = CommonAbstractRendererState & {
+  customFormState: {
+    left: CommonAbstractRendererState;
+    right: CommonAbstractRendererState;
   };
+};
 
-export const SumAbstractRendererState = <LeftFormState, RightFormState>() => ({
+export const SumAbstractRendererState = {
   Default: (
-    customFormState: SumAbstractRendererState<
-      LeftFormState,
-      RightFormState
-    >["customFormState"],
-  ): SumAbstractRendererState<LeftFormState, RightFormState> => ({
+    customFormState: SumAbstractRendererState["customFormState"],
+  ): SumAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState,
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<
-        SumAbstractRendererState<LeftFormState, RightFormState>
-      >()("commonFormState"),
-      ...simpleUpdaterWithChildren<
-        SumAbstractRendererState<LeftFormState, RightFormState>
-      >()({
-        ...simpleUpdater<
-          SumAbstractRendererState<
-            LeftFormState,
-            RightFormState
-          >["customFormState"]
-        >()("left"),
-        ...simpleUpdater<
-          SumAbstractRendererState<
-            LeftFormState,
-            RightFormState
-          >["customFormState"]
-        >()("right"),
+      ...simpleUpdater<SumAbstractRendererState>()("commonFormState"),
+      ...simpleUpdaterWithChildren<SumAbstractRendererState>()({
+        ...simpleUpdater<SumAbstractRendererState["customFormState"]>()("left"),
+        ...simpleUpdater<SumAbstractRendererState["customFormState"]>()(
+          "right",
+        ),
       })("customFormState"),
     },
     Template: {},
   },
-});
-export type SumAbstractRendererView<
-  LeftFormState,
-  RightFormState,
-  SumAbstractRendererReadonlyContext,
-  ForeignMutationsExpected,
-  Flags = Unit,
-> = View<
-  SumAbstractRendererReadonlyContext &
-    DomNodeIdReadonlyContext &
-    Value<ValueSum> &
-    SumAbstractRendererState<LeftFormState, RightFormState>,
-  SumAbstractRendererState<LeftFormState, RightFormState>,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueSum, Flags>;
-  },
+};
+
+export type SumAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueSum, Flags>;
+};
+
+export type SumAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueSum, Flags>;
+};
+
+export type SumAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
+  SumAbstractRendererReadonlyContext<CustomContext> & SumAbstractRendererState,
+  SumAbstractRendererState,
+  SumAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    embeddedLeftTemplate?: (flags: Flags | undefined) => Template<
-      SumAbstractRendererReadonlyContext &
-        Value<ValueSum> &
-        SumAbstractRendererState<LeftFormState, RightFormState>,
-      SumAbstractRendererState<LeftFormState, RightFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum, Flags>;
-      }
+    embeddedLeftTemplate?: (
+      flags: Flags | undefined,
+    ) => Template<
+      SumAbstractRendererReadonlyContext<CustomContext> &
+        SumAbstractRendererState,
+      SumAbstractRendererState,
+      SumAbstractRendererForeignMutationsExpected<Flags>
     >;
 
-    embeddedRightTemplate?: (flags: Flags | undefined) => Template<
-      SumAbstractRendererReadonlyContext &
-        Value<ValueSum> &
-        SumAbstractRendererState<LeftFormState, RightFormState>,
-      SumAbstractRendererState<LeftFormState, RightFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueSum, Flags>;
-      }
+    embeddedRightTemplate?: (
+      flags: Flags | undefined,
+    ) => Template<
+      SumAbstractRendererReadonlyContext<CustomContext> &
+        SumAbstractRendererState,
+      SumAbstractRendererState,
+      SumAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;

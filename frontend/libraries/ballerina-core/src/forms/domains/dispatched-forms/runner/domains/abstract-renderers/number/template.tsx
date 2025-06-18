@@ -1,41 +1,31 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
 } from "../../../../../../../../main";
 import {
+  NumberAbstractRendererForeignMutationsExpected,
+  NumberAbstractRendererReadonlyContext,
   NumberAbstractRendererState,
   NumberAbstractRendererView,
 } from "./state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const NumberAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const NumberAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<number> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    NumberAbstractRendererReadonlyContext<CustomContext> &
+      NumberAbstractRendererState,
     NumberAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<number, Flags> },
-    NumberAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    NumberAbstractRendererForeignMutationsExpected<Flags>,
+    NumberAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(

@@ -14,65 +14,110 @@ import {
   replaceWith,
   ValueRecord,
   DispatchCommonFormState,
-  FormLabel,
   Bindings,
   RecordAbstractRendererState,
   DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
-  ValueTable,
   Option,
   Unit,
+  AbstractTableRendererForeignMutationsExpected,
+  DispatchParsedType,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
+  AbstractTableRendererView,
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
+  MapRepo,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
 
-const EmbeddedValueInfiniteStreamTemplate =
+const EmbeddedValueInfiniteStreamTemplate = <
+  CustomContext = Unit,
+  Flags = Unit,
+>() =>
   ValueInfiniteStreamTemplate.mapContext<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState
+    AbstractTableRendererReadonlyContext<CustomContext> &
+      AbstractTableRendererState
   >((_) => _.customFormState.stream)
     .mapState<AbstractTableRendererState>(
       AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
     )
-    .mapForeignMutationsFromProps<any>((props) => ({
+    .mapForeignMutationsFromProps<
+      AbstractTableRendererForeignMutationsExpected<Flags>
+    >((props) => ({
       ...props.foreignMutations,
     }));
 
-export const TableAbstractRenderer = <
-  Context extends FormLabel & {
-    bindings: Bindings;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   CellTemplates: Map<
     string,
     {
-      template: Template<any, any, any, any>;
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >;
       label?: string;
       disabled?: Expr;
-      GetDefaultValue: () => any;
-      GetDefaultState: () => any;
+      GetDefaultValue: () => PredicateValue;
+      GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
-  DetailsRenderer: Template<any, any, any, any> | undefined,
+  DetailsRenderer:
+    | Template<
+        RecordAbstractRendererReadonlyContext<CustomContext>,
+        RecordAbstractRendererState,
+        RecordAbstractRendererForeignMutationsExpected<Flags>
+      >
+    | undefined,
   Layout: PredicateVisibleColumns,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-): Template<any, any, any, any> => {
+): Template<
+  AbstractTableRendererReadonlyContext<CustomContext> &
+    AbstractTableRendererState,
+  AbstractTableRendererState,
+  AbstractTableRendererForeignMutationsExpected<Flags>,
+  AbstractTableRendererView<CustomContext, Flags>
+> => {
+  const InstantiatedTableRunner = TableRunner<CustomContext>();
+  const InstantiatedTableReinitialiseRunner =
+    TableReinitialiseRunner<CustomContext>();
+  const InstantiatedEmbeddedValueInfiniteStreamTemplate =
+    EmbeddedValueInfiniteStreamTemplate<CustomContext, Flags>();
+
   const embedCellTemplate =
-    (column: string, cellTemplate: Template<any, any, any, any>) =>
+    (
+      column: string,
+      cellTemplate: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >,
+    ) =>
     (chunkIndex: number) =>
     (rowId: string) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
     (flags: Flags | undefined) =>
       cellTemplate
-        // TODO, more helpful typing
-        .mapContext<any>((_: any) => {
+        .mapContext<
+          AbstractTableRendererReadonlyContext<CustomContext> &
+            AbstractTableRendererState
+        >((_) => {
           const rowState = _.customFormState.stream.chunkStates
             .get(chunkIndex)
             ?.get(rowId);
@@ -85,8 +130,16 @@ export const TableAbstractRenderer = <
             .get(chunkIndex)
             ?.data.get(rowId);
 
+          if (rowValue == undefined) {
+            console.error(
+              `Row value is undefined for row ${rowId} in chunk ${chunkIndex}\n
+              ...When rendering table field\n
+              ...${_.identifiers.withLauncher}`,
+            );
+            return undefined;
+          }
+
           return {
-            ..._,
             value,
             ...cellState,
             disabled: disabled || _.disabled,
@@ -100,21 +153,33 @@ export const TableAbstractRenderer = <
                 `[${rowId}][${column}]`,
               ),
             },
+            type: _.type.args[0].fields.get(column)!,
+            customContext: _.customContext,
+            domNodeId: _.identifiers.withoutLauncher.concat(
+              `[${rowId}][${column}]`,
+            ),
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           };
         })
-        .mapState<AbstractTableRendererState>((_) =>
-          AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-            ValueInfiniteStreamState.Updaters.Template.updateChunkStateValueItem(
-              chunkIndex,
+
+        .mapState<AbstractTableRendererState>((updater) =>
+          AbstractTableRendererState.Updaters.Core.customFormState.children.rowStates(
+            MapRepo.Updaters.upsert(
               rowId,
-              column,
-              CellTemplates.get(column)!.GetDefaultState,
-            )(_),
+              () => RecordAbstractRendererState.Default.fieldState(Map()),
+              RecordAbstractRendererState.Updaters.Core.fieldStates(
+                MapRepo.Updaters.upsert(
+                  column,
+                  () => CellTemplates.get(column)!.GetDefaultState(),
+                  updater,
+                ),
+              ),
+            ),
           ),
         )
-        .mapForeignMutationsFromProps<{
-          onChange: DispatchOnChange<PredicateValue, Flags>;
-        }>((props) => ({
+        .mapForeignMutationsFromProps<
+          AbstractTableRendererForeignMutationsExpected<Flags>
+        >((props) => ({
           onChange: (
             _: Option<BasicUpdater<PredicateValue>>,
             nestedDelta: DispatchDelta<Flags>,
@@ -164,22 +229,40 @@ export const TableAbstractRenderer = <
 
   const embedDetailsRenderer = DetailsRenderer
     ? (flags: Flags | undefined) =>
-        DetailsRenderer.mapContext<any>((_: any) => {
+        DetailsRenderer.mapContext<
+          AbstractTableRendererReadonlyContext<CustomContext> &
+            AbstractTableRendererState
+        >((_) => {
+          if (_.customFormState.selectedDetailRow == undefined) {
+            console.error(
+              `Selected detail row is undefined\n
+              ...When rendering table field\n
+              ...${_.identifiers.withLauncher}`,
+            );
+            return undefined;
+          }
+
           const value = _.customFormState.stream.loadedElements
             .get(_.customFormState.selectedDetailRow[0])
             ?.data.get(_.customFormState.selectedDetailRow[1]);
 
-          const rowState = _.customFormState.stream.chunkStates
-            .get(_.customFormState.selectedDetailRow[0])
-            ?.get(_.customFormState.selectedDetailRow[1]);
+          if (value == undefined) {
+            console.error(
+              `Value is undefined for selected detail row\n
+              ...When rendering table field\n
+              ...${_.identifiers.withLauncher}`,
+            );
+            return undefined;
+          }
 
-          const recordRowState = rowState
-            ? RecordAbstractRendererState.Default.fieldState(rowState)
-            : RecordAbstractRendererState.Default.fieldState(Map());
+          const rowState =
+            _.customFormState.rowStates.get(
+              _.customFormState.selectedDetailRow[1],
+            ) ?? RecordAbstractRendererState.Default.fieldState(Map());
 
           return {
             value,
-            ...recordRowState,
+            ...rowState,
             disabled: _.disabled,
             bindings: _.bindings.set("local", value),
             extraContext: _.extraContext,
@@ -191,28 +274,49 @@ export const TableAbstractRenderer = <
                 `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
               ),
             },
+            type: _.type.args[0],
+            customContext: _.customContext,
+            domNodeId: _.identifiers.withoutLauncher.concat(
+              `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
+            ),
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           };
         })
           .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
-            return AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-              ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
-                props.context.customFormState.selectedDetailRow[0],
+            if (props.context.customFormState.selectedDetailRow == undefined) {
+              console.error(
+                `Selected detail row is undefined\n
+                ...When rendering table detail view \n
+                ...${props.context.identifiers.withLauncher}`,
+              );
+              return id;
+            }
+
+            return AbstractTableRendererState.Updaters.Core.customFormState.children.rowStates(
+              MapRepo.Updaters.upsert(
                 props.context.customFormState.selectedDetailRow[1],
-              )((__) => {
-                const temp = RecordAbstractRendererState.Default.fieldState(__);
-                const updated = updater(temp);
-                const newState = updated.fieldStates;
-                return newState;
-              }),
+                () => RecordAbstractRendererState.Default.fieldState(Map()),
+                updater,
+              ),
             );
           })
-          .mapForeignMutationsFromProps<{
-            onChange: DispatchOnChange<PredicateValue, Flags>;
-          }>((props) => ({
+          .mapForeignMutationsFromProps<
+            AbstractTableRendererForeignMutationsExpected<Flags>
+          >((props) => ({
             onChange: (
               _: Option<BasicUpdater<ValueRecord>>,
               nestedDelta: DispatchDelta<Flags>,
             ) => {
+              if (
+                props.context.customFormState.selectedDetailRow == undefined
+              ) {
+                console.error(
+                  `Selected detail row is undefined\n
+                  ...When rendering table field\n
+                  ...${props.context.identifiers.withLauncher}`,
+                );
+                return id;
+              }
               props.setState(
                 AbstractTableRendererState.Updaters.Core.commonFormState.children
                   .modifiedByUser(replaceWith(true))
@@ -229,7 +333,7 @@ export const TableAbstractRenderer = <
               // TODO, different delta for details
               const delta: DispatchDelta<Flags> = {
                 kind: "TableValue",
-                id: props.context.customFormState.selectedDetailRow,
+                id: props.context.customFormState.selectedDetailRow[1],
                 nestedDelta: nestedDelta,
                 flags,
               };
@@ -246,12 +350,11 @@ export const TableAbstractRenderer = <
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
   return Template.Default<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState,
+    AbstractTableRendererReadonlyContext<CustomContext> &
+      AbstractTableRendererState,
     AbstractTableRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTable, Flags>;
-    },
-    any
+    AbstractTableRendererForeignMutationsExpected<Flags>,
+    AbstractTableRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
@@ -334,7 +437,10 @@ export const TableAbstractRenderer = <
       disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const tableData =
+    const hasMoreValues =
+      props.context.customFormState.stream.loadedElements.last()?.hasMoreValues;
+
+    const embeddedTableData =
       props.context.customFormState.stream.loadedElements.flatMap(
         (chunk, chunkIndex) =>
           chunk.data.map((rowData, rowId) =>
@@ -366,6 +472,9 @@ export const TableAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.identifiers.withoutLauncher,
+              tableHeaders: visibleColumns.value.columns,
+              columnLabels: ColumnLabels,
+              hasMoreValues: !!hasMoreValues,
             }}
             foreignMutations={{
               ...props.foreignMutations,
@@ -405,7 +514,7 @@ export const TableAbstractRenderer = <
               selectAllRows: () =>
                 props.setState(
                   AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
-                    replaceWith(Set(tableData.keySeq())),
+                    replaceWith(Set(embeddedTableData.keySeq())),
                   ),
                 ),
               clearRows: () =>
@@ -491,17 +600,15 @@ export const TableAbstractRenderer = <
                 );
               },
             }}
-            TableHeaders={visibleColumns.value.columns}
-            ColumnLabels={ColumnLabels}
-            EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
+            TableData={embeddedTableData}
           />
         </IdProvider>
       </>
     );
   }).any([
-    TableRunner,
-    TableReinitialiseRunner,
-    EmbeddedValueInfiniteStreamTemplate,
+    InstantiatedTableRunner,
+    InstantiatedTableReinitialiseRunner,
+    InstantiatedEmbeddedValueInfiniteStreamTemplate,
   ]);
 };

@@ -1,38 +1,31 @@
-import { Value } from "../../../../../../../value/state";
 import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
+import {
+  DateAbstractRendererForeignMutationsExpected,
+  DateAbstractRendererReadonlyContext,
+  DateAbstractRendererState,
+  DateAbstractRendererView,
+} from "./state";
 
-export const DateAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const DateAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<Date> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    DateAbstractRendererReadonlyContext<CustomContext> &
+      DateAbstractRendererState,
     DateAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<Date, Flags> },
-    DateAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    DateAbstractRendererForeignMutationsExpected<Flags>,
+    DateAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(

@@ -1,35 +1,31 @@
-import { UnitAbstractRendererState, UnitAbstractRendererView } from "./state";
+import {
+  UnitAbstractRendererReadonlyContext,
+  UnitAbstractRendererState,
+  UnitAbstractRendererView,
+  UnitAbstractRendererForeignMutationsExpected,
+} from "./state";
 import {
   DispatchDelta,
-  DispatchOnChange,
   ErrorRendererProps,
-  FormLabel,
   getLeafIdentifierFromIdentifier,
   IdWrapperProps,
   PredicateValue,
   Template,
   Unit,
-  ValueUnit,
   Option,
   replaceWith,
-  unit,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const UnitAbstractRenderer = <Context extends FormLabel, Flags = Unit>(
+export const UnitAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
   Template.Default<
-    Context & {
-      value: ValueUnit;
-      disabled: boolean;
-      type: DispatchParsedType<any>;
-      identifiers: { withLauncher: string; withoutLauncher: string };
-    },
+    UnitAbstractRendererReadonlyContext<CustomContext> &
+      UnitAbstractRendererState,
     UnitAbstractRendererState,
-    { onChange: DispatchOnChange<ValueUnit, Flags> },
-    UnitAbstractRendererView<Context, Flags>
+    UnitAbstractRendererForeignMutationsExpected<Flags>,
+    UnitAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
@@ -60,7 +56,7 @@ export const UnitAbstractRenderer = <Context extends FormLabel, Flags = Unit>(
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              set: (flags) => {
+              set: (flags: Flags | undefined) => {
                 const delta: DispatchDelta<Flags> = {
                   kind: "UnitReplace",
                   replace: PredicateValue.Default.unit(),

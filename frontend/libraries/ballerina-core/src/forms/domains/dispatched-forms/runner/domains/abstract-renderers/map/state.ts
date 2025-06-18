@@ -13,55 +13,56 @@ import {
   MapRepo,
   BasicUpdater,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  MapType,
 } from "../../../../../../../../main";
 
-export type MapAbstractRendererState<KeyFormState, ValueFormState> = {
-  commonFormState: DispatchCommonFormState;
+export type MapAbstractRendererReadonlyContext<CustomContext> =
+  CommonAbstractRendererReadonlyContext<
+    MapType<any>,
+    ValueTuple,
+    CustomContext
+  >;
+
+export type MapAbstractRendererState = CommonAbstractRendererState & {
   elementFormStates: Map<
     number,
-    { KeyFormState: KeyFormState; ValueFormState: ValueFormState }
+    {
+      KeyFormState: CommonAbstractRendererState;
+      ValueFormState: CommonAbstractRendererState;
+    }
   >;
 };
 
-export const MapAbstractRendererState = <KeyFormState, ValueFormState>() => ({
+export const MapAbstractRendererState = ({
   Default: {
-    zero: (): MapAbstractRendererState<KeyFormState, ValueFormState> => ({
-      commonFormState: DispatchCommonFormState.Default(),
+    zero: (): MapAbstractRendererState => ({
+      ...CommonAbstractRendererState.Default(),
       elementFormStates: Map(),
     }),
     elementFormStates: (
-      elementFormStates: MapAbstractRendererState<
-        KeyFormState,
-        ValueFormState
-      >["elementFormStates"],
-    ): MapAbstractRendererState<KeyFormState, ValueFormState> => ({
-      commonFormState: DispatchCommonFormState.Default(),
+      elementFormStates: MapAbstractRendererState["elementFormStates"],
+    ): MapAbstractRendererState => ({
+      ...CommonAbstractRendererState.Default(),
       elementFormStates,
     }),
   },
   Updaters: {
     Core: {
-      ...simpleUpdater<
-        MapAbstractRendererState<KeyFormState, ValueFormState>
-      >()("commonFormState"),
-      ...simpleUpdater<
-        MapAbstractRendererState<KeyFormState, ValueFormState>
-      >()("elementFormStates"),
+      ...simpleUpdater<MapAbstractRendererState>()("commonFormState"),
+      ...simpleUpdater<MapAbstractRendererState>()("elementFormStates"),
     },
     Template: {
       upsertElementKeyFormState: (
         elementIndex: number,
-        defaultKeyFormState: KeyFormState,
-        defaultValueFormState: ValueFormState,
-        updater: BasicUpdater<KeyFormState>,
+        defaultKeyFormState: CommonAbstractRendererState,
+        defaultValueFormState: CommonAbstractRendererState,
+        updater: BasicUpdater<CommonAbstractRendererState>,
       ) =>
-        MapAbstractRendererState<
-          KeyFormState,
-          ValueFormState
-        >().Updaters.Core.elementFormStates(
+        MapAbstractRendererState.Updaters.Core.elementFormStates(
           MapRepo.Updaters.upsert(
             elementIndex,
             () => ({
@@ -76,14 +77,11 @@ export const MapAbstractRendererState = <KeyFormState, ValueFormState>() => ({
         ),
       upsertElementValueFormState: (
         elementIndex: number,
-        defaultKeyFormState: KeyFormState,
-        defaultValueFormState: ValueFormState,
-        updater: BasicUpdater<ValueFormState>,
+        defaultKeyFormState: CommonAbstractRendererState,
+        defaultValueFormState: CommonAbstractRendererState,
+        updater: BasicUpdater<CommonAbstractRendererState>,
       ) =>
-        MapAbstractRendererState<
-          KeyFormState,
-          ValueFormState
-        >().Updaters.Core.elementFormStates(
+        MapAbstractRendererState.Updaters.Core.elementFormStates(
           MapRepo.Updaters.upsert(
             elementIndex,
             () => ({
@@ -99,51 +97,40 @@ export const MapAbstractRendererState = <KeyFormState, ValueFormState>() => ({
     },
   },
 });
+
+export type MapAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueTuple, Flags>;
+  add: VoidCallbackWithOptionalFlags<Flags>;
+  remove: ValueCallbackWithOptionalFlags<number, Flags>;
+};
+
 export type MapAbstractRendererView<
-  KeyFormState,
-  ValueFormState,
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<ValueTuple> &
-    DomNodeIdReadonlyContext &
-    MapAbstractRendererState<KeyFormState, ValueFormState>,
-  MapAbstractRendererState<KeyFormState, ValueFormState>,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple, Flags>;
-    add: VoidCallbackWithOptionalFlags<Flags>;
-    remove: ValueCallbackWithOptionalFlags<number, Flags>;
-  },
+  MapAbstractRendererReadonlyContext<CustomContext> & MapAbstractRendererState,
+  MapAbstractRendererState,
+  MapAbstractRendererForeignMutationsExpected<Flags>,
   {
-    embeddedKeyTemplate: (elementIndex: number) => (
+    embeddedKeyTemplate: (
+      elementIndex: number,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
-      Context &
-        Value<ValueTuple> &
-        MapAbstractRendererState<KeyFormState, ValueFormState> & {
-          bindings: Bindings;
-          extraContext: any;
-        },
-      MapAbstractRendererState<KeyFormState, ValueFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueTuple, Flags>;
-      }
+      MapAbstractRendererReadonlyContext<CustomContext> &
+        MapAbstractRendererState,
+      MapAbstractRendererState,
+      MapAbstractRendererForeignMutationsExpected<Flags>
     >;
-    embeddedValueTemplate: (elementIndex: number) => (
+    embeddedValueTemplate: (
+      elementIndex: number,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
-      Context &
-        Value<ValueTuple> &
-        MapAbstractRendererState<KeyFormState, ValueFormState> & {
-          bindings: Bindings;
-          extraContext: any;
-        },
-      MapAbstractRendererState<KeyFormState, ValueFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueTuple, Flags>;
-      }
+      MapAbstractRendererReadonlyContext<CustomContext> &
+        MapAbstractRendererState,
+      MapAbstractRendererState,
+      MapAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;

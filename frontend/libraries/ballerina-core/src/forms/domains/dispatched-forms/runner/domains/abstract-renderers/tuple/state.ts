@@ -1,86 +1,81 @@
 import { Map } from "immutable";
 import {
-  BasicFun,
   BasicUpdater,
   MapRepo,
-  Bindings,
   Template,
   Updater,
-  Value,
   ValueTuple,
-  DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   Unit,
+  CommonAbstractRendererReadonlyContext,
+  TupleType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
-import { FormLabel, View } from "../../../../../../../../main";
+import { View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
 
-export type TupleAbstractRendererState<
-  ItemFormState extends { commonFormState: DispatchCommonFormState },
-> = {
-  commonFormState: DispatchCommonFormState;
-  itemFormStates: Map<number, ItemFormState>;
+export type TupleAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    TupleType<any>,
+    ValueTuple,
+    CustomContext
+  >;
+
+export type TupleAbstractRendererState = CommonAbstractRendererState & {
+  itemFormStates: Map<number, CommonAbstractRendererState>;
 };
 
-export const TupleAbstractRendererState = <
-  ItemFormState extends { commonFormState: DispatchCommonFormState },
->() => ({
+export const TupleAbstractRendererState = {
   Default: (
-    itemFormStates: TupleAbstractRendererState<ItemFormState>["itemFormStates"],
-  ): TupleAbstractRendererState<ItemFormState> => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    itemFormStates: TupleAbstractRendererState["itemFormStates"],
+  ): TupleAbstractRendererState => ({
+    ...CommonAbstractRendererState.Default(),
     itemFormStates: itemFormStates,
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()(
-        "commonFormState",
-      ),
-      ...simpleUpdater<TupleAbstractRendererState<ItemFormState>>()(
-        "itemFormStates",
-      ),
+      ...simpleUpdater<TupleAbstractRendererState>()("commonFormState"),
+      ...simpleUpdater<TupleAbstractRendererState>()("itemFormStates"),
     },
     Template: {
       upsertItemFormState: (
         itemIndex: number,
         defaultState: () => any,
-        updater: BasicUpdater<ItemFormState>,
-      ): Updater<TupleAbstractRendererState<ItemFormState>> =>
-        TupleAbstractRendererState<ItemFormState>().Updaters.Core.itemFormStates(
+        updater: BasicUpdater<CommonAbstractRendererState>,
+      ): Updater<TupleAbstractRendererState> =>
+        TupleAbstractRendererState.Updaters.Core.itemFormStates(
           MapRepo.Updaters.upsert(itemIndex, defaultState, updater),
         ),
     },
   },
-});
+};
+
+export type TupleAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueTuple, Flags>;
+};
+
+export type TupleAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueTuple, Flags>;
+};
+
 export type TupleAbstractRendererView<
-  ItemFormState extends { commonFormState: DispatchCommonFormState },
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<ValueTuple> &
-    TupleAbstractRendererState<ItemFormState> &
-    DomNodeIdReadonlyContext,
-  TupleAbstractRendererState<ItemFormState>,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple, Flags>;
-  },
+  TupleAbstractRendererReadonlyContext<CustomContext> &
+    TupleAbstractRendererState,
+  TupleAbstractRendererState,
+  TupleAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    embeddedItemTemplates: (itemIndex: number) => (
+    embeddedItemTemplates: (
+      itemIndex: number,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
-      Context &
-        Value<ValueTuple> &
-        TupleAbstractRendererState<ItemFormState> & {
-          bindings: Bindings;
-          extraContext: any;
-        },
-      TupleAbstractRendererState<ItemFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueTuple, Flags>;
-      }
+      TupleAbstractRendererReadonlyContext<CustomContext> &
+        TupleAbstractRendererState,
+      TupleAbstractRendererState,
+      TupleAbstractRendererViewForeignMutationsExpected<Flags>
     >;
   }
 >;

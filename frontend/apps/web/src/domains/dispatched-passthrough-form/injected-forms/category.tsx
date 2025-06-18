@@ -1,17 +1,10 @@
 import {
-  FormLabel,
   View,
-  Value,
-  OnChange,
-  SimpleCallback,
   Template,
   replaceWith,
   Unit,
   simpleUpdater,
   simpleUpdaterWithChildren,
-  DeltaCustom,
-  ParsedType,
-  CommonFormState,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
@@ -19,7 +12,17 @@ import {
   DispatchOnChange,
   ValueCallbackWithOptionalFlags,
   Option,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
 } from "ballerina-core";
+
+export type CategoryAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    DispatchCategory,
+    CustomContext
+  >;
 
 export type DispatchCategory = {
   kind: "custom";
@@ -29,10 +32,7 @@ export type DispatchCategory = {
   };
 };
 
-export type DispatchCategoryState = {
-  commonFormState: {
-    modifiedByUser: boolean;
-  };
+export type DispatchCategoryState = CommonAbstractRendererState & {
   customFormState: {
     likelyOutdated: boolean;
   };
@@ -60,9 +60,7 @@ export const DispatchCategory = {
 
 export const DispatchCategoryState = {
   Default: (): DispatchCategoryState => ({
-    commonFormState: {
-      modifiedByUser: false,
-    },
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       likelyOutdated: false,
     },
@@ -78,49 +76,35 @@ export const DispatchCategoryState = {
   },
 };
 
+export type CategoryAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<DispatchCategory, Flags>;
+};
+
+export type CategoryAbstractRendererViewForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<DispatchCategory, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<DispatchCategory, Flags>;
+};
+
 export type CategoryAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<DispatchCategory> & {
-      commonFormState: CommonFormState;
-      customFormState: DispatchCategoryState["customFormState"];
-    } & { disabled: boolean; type: ParsedType<any> },
-  {
-    commonFormState: CommonFormState;
-    customFormState: DispatchCategoryState["customFormState"];
-  },
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<DispatchCategory, Flags>;
-    setNewValue: ValueCallbackWithOptionalFlags<DispatchCategory, Flags>;
-  }
+  CategoryAbstractRendererReadonlyContext<CustomContext> &
+    DispatchCategoryState,
+  DispatchCategoryState,
+  CategoryAbstractRendererViewForeignMutationsExpected<Flags>
 >;
 
-export const CategoryAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const CategoryAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<DispatchCategory> & {
-        disabled: boolean;
-        type: ParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
-    {
-      commonFormState: CommonFormState;
-      customFormState: DispatchCategoryState["customFormState"];
-    },
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<DispatchCategory, Flags>;
-    },
-    CategoryAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    CategoryAbstractRendererReadonlyContext<CustomContext> &
+      DispatchCategoryState,
+    DispatchCategoryState,
+    CategoryAbstractRendererForeignMutationsExpected<Flags>,
+    CategoryAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (

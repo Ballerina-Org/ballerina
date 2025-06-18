@@ -1,8 +1,6 @@
 import {
-  BasicFun,
   BasicUpdater,
   CommonAbstractRendererReadonlyContext,
-  DispatchCommonFormState,
   MapRepo,
   simpleUpdater,
   Template,
@@ -11,73 +9,73 @@ import {
   ValueUnionCase,
   View,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   Unit,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
-export type UnionAbstractRendererReadonlyContext =
-  CommonAbstractRendererReadonlyContext<UnionType<any>, ValueUnionCase>;
+export type UnionAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    UnionType<any>,
+    ValueUnionCase,
+    CustomContext
+  >;
 
-export type UnionAbstractRendererState<
-  CaseFormState extends { commonFormState: DispatchCommonFormState },
-> = {
-  commonFormState: DispatchCommonFormState;
-  caseFormStates: Map<string, CaseFormState>;
+export type UnionAbstractRendererState = CommonAbstractRendererState & {
+  caseFormStates: Map<string, CommonAbstractRendererState>;
 };
 
-export const UnionAbstractRendererState = <
-  CaseFormState extends { commonFormState: DispatchCommonFormState },
->() => ({
+export const UnionAbstractRendererState = {
   Default: (
-    caseFormStates: UnionAbstractRendererState<CaseFormState>["caseFormStates"],
-  ): UnionAbstractRendererState<CaseFormState> => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    caseFormStates: UnionAbstractRendererState["caseFormStates"],
+  ): UnionAbstractRendererState => ({
+    ...CommonAbstractRendererState.Default(),
     caseFormStates,
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<UnionAbstractRendererState<CaseFormState>>()(
-        "commonFormState",
-      ),
-      ...simpleUpdater<UnionAbstractRendererState<CaseFormState>>()(
-        "caseFormStates",
-      ),
+      ...simpleUpdater<UnionAbstractRendererState>()("commonFormState"),
+      ...simpleUpdater<UnionAbstractRendererState>()("caseFormStates"),
     },
     Template: {
       upsertCaseFormState: (
         caseName: string,
         defaultState: () => any,
-        updater: BasicUpdater<CaseFormState>,
-      ): Updater<UnionAbstractRendererState<CaseFormState>> =>
-        UnionAbstractRendererState<CaseFormState>().Updaters.Core.caseFormStates(
+        updater: BasicUpdater<CommonAbstractRendererState>,
+      ): Updater<UnionAbstractRendererState> =>
+        UnionAbstractRendererState.Updaters.Core.caseFormStates(
           MapRepo.Updaters.upsert(caseName, defaultState, updater),
         ),
     },
   },
-});
+};
+
+export type UnionAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueUnionCase, Flags>;
+};
+
+export type UnionAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueUnionCase, Flags>;
+};
+
 export type UnionAbstractRendererView<
-  CaseFormState extends { commonFormState: DispatchCommonFormState },
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  UnionAbstractRendererReadonlyContext &
-    UnionAbstractRendererState<CaseFormState> &
-    DomNodeIdReadonlyContext,
-  UnionAbstractRendererState<CaseFormState>,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueUnionCase, Flags>;
-  },
+  UnionAbstractRendererReadonlyContext<CustomContext> &
+    UnionAbstractRendererState,
+  UnionAbstractRendererState,
+  UnionAbstractRendererForeignMutationsExpected<Flags>,
   {
-    embeddedCaseTemplate: (caseName: string) => (
+    embeddedCaseTemplate: (
+      caseName: string,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
-      UnionAbstractRendererReadonlyContext &
-        UnionAbstractRendererState<CaseFormState>,
-      UnionAbstractRendererState<CaseFormState>,
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueUnionCase, Flags>;
-      }
+      UnionAbstractRendererReadonlyContext<CustomContext> &
+        UnionAbstractRendererState,
+      UnionAbstractRendererState,
+      UnionAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;

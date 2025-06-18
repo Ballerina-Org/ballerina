@@ -1,44 +1,31 @@
 import { List } from "immutable";
 import {
+  SecretAbstractRendererForeignMutationsExpected,
+  SecretAbstractRendererReadonlyContext,
   SecretAbstractRendererState,
   SecretAbstractRendererView,
 } from "./state";
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const SecretAbstractRenderer = <
-  Context extends FormLabel & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const SecretAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SecretAbstractRendererReadonlyContext<CustomContext>,
     SecretAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string, Flags> },
-    SecretAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    SecretAbstractRendererForeignMutationsExpected<Flags>,
+    SecretAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

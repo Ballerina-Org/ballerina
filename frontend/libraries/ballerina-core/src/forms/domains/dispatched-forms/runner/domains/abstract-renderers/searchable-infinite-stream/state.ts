@@ -12,26 +12,36 @@ import {
   simpleUpdaterWithChildren,
   DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   Unit,
   VoidCallbackWithOptionalFlags,
   ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  SingleSelectionType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
 
-export type SearchableInfiniteStreamAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: {
-    searchText: Debounced<Value<string>>;
-    status: "open" | "closed";
-    stream: InfiniteStreamState<CollectionReference>;
-    getChunk: BasicFun<
-      string,
-      InfiniteStreamState<CollectionReference>["getChunk"]
-    >;
+export type SearchableInfiniteStreamAbstractRendererReadonlyContext<
+  CustomContext,
+> = CommonAbstractRendererReadonlyContext<
+  SingleSelectionType<unknown>,
+  ValueOption,
+  CustomContext
+>;
+
+export type SearchableInfiniteStreamAbstractRendererState =
+  CommonAbstractRendererState & {
+    customFormState: {
+      searchText: Debounced<Value<string>>;
+      status: "open" | "closed";
+      stream: InfiniteStreamState<CollectionReference>;
+      getChunk: BasicFun<
+        string,
+        InfiniteStreamState<CollectionReference>["getChunk"]
+      >;
+    };
   };
-};
 
 export const SearchableInfiniteStreamAbstractRendererState = {
   Default: (
@@ -40,7 +50,7 @@ export const SearchableInfiniteStreamAbstractRendererState = {
       InfiniteStreamState<CollectionReference>["getChunk"]
     >,
   ): SearchableInfiniteStreamAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       searchText: Debounced.Default(Value.Default("")),
       status: "closed",
@@ -77,26 +87,33 @@ export const SearchableInfiniteStreamAbstractRendererState = {
     },
   },
 };
+
+export type SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<
+  Flags = Unit,
+> = {
+  onChange: DispatchOnChange<ValueOption, Flags>;
+};
+
+export type SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected<
+  Flags = Unit,
+> = {
+  onChange: DispatchOnChange<ValueOption, Flags>;
+  toggleOpen: SimpleCallback<void>;
+  clearSelection: VoidCallbackWithOptionalFlags<Flags>;
+  setSearchText: SimpleCallback<string>;
+  select: ValueCallbackWithOptionalFlags<ValueOption, Flags>;
+  loadMore: SimpleCallback<void>;
+  reload: SimpleCallback<void>;
+};
+
 export type SearchableInfiniteStreamAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    Value<ValueOption> &
-    DomNodeIdReadonlyContext &
+  SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
-      disabled: boolean;
     },
   SearchableInfiniteStreamAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueOption, Flags>;
-    toggleOpen: SimpleCallback<void>;
-    clearSelection: VoidCallbackWithOptionalFlags<Flags>;
-    setSearchText: SimpleCallback<string>;
-    select: ValueCallbackWithOptionalFlags<ValueOption, Flags>;
-    loadMore: SimpleCallback<void>;
-    reload: SimpleCallback<void>;
-  }
+  SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected<Flags>
 >;

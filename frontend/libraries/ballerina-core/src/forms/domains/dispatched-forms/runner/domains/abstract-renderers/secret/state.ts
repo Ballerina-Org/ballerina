@@ -6,35 +6,44 @@ import {
   View,
   DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   ValueCallbackWithOptionalFlags,
+  ValueOption,
+  CommonAbstractRendererReadonlyContext,
+  SingleSelectionType,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 
-export type SecretAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type SecretAbstractRendererReadonlyContext<CustomContext = Unit> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    string,
+    CustomContext
+  >;
+
+export type SecretAbstractRendererState = CommonAbstractRendererState;
 
 export const SecretAbstractRendererState = {
   Default: (): SecretAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
+    ...CommonAbstractRendererState.Default(),
   }),
 };
 
+export type SecretAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+};
+
+export type SecretAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
+};
+
 export type SecretAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomContext = Unit,
   Flags = Unit,
 > = View<
-  Context &
-    DomNodeIdReadonlyContext &
-    Value<string> & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+  SecretAbstractRendererReadonlyContext<CustomContext> &
+    SecretAbstractRendererState,
   SecretAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string, Flags>;
-    setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
-  }
+  SecretAbstractRendererViewForeignMutationsExpected<Flags>
 >;

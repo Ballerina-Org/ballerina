@@ -1,14 +1,12 @@
 import {
   DispatcherContext,
   DispatchParsedType,
-  DispatchPrimitiveType,
   MapRepo,
   Template,
   ValueOrErrors,
 } from "../../../../../../../main";
 import { Renderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/state";
 import { ListDispatcher } from "./domains/list/state";
-import { LookupDispatcher } from "./domains/lookup/state";
 import { MapDispatcher } from "./domains/map/state";
 import { MultiSelectionDispatcher } from "./domains/multiSelection/state";
 import { OneDispatcher } from "./domains/one/state";

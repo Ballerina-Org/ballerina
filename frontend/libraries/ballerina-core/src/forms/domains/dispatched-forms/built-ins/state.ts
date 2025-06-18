@@ -30,6 +30,7 @@ import {
   BasicUpdater,
   DispatchDelta,
   Option,
+  CommonAbstractRendererState,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -343,7 +344,7 @@ export const dispatchDefaultState =
       if (t.kind == "map")
         return renderer.kind == "mapRenderer"
           ? ValueOrErrors.Default.return(
-              MapAbstractRendererState().Default.zero(),
+              MapAbstractRendererState.Default.zero(),
             )
           : ValueOrErrors.Default.throwOne(
               `received non map renderer kind "${renderer.kind}" when resolving defaultState for map`,
@@ -354,7 +355,7 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Operations.All(
               List<
                 ValueOrErrors<
-                  [number, { commonFormState: DispatchCommonFormState }],
+                  [number, CommonAbstractRendererState],
                   string
                 >
               >(
@@ -375,9 +376,7 @@ export const dispatchDefaultState =
               ),
             ).Then((itemStates) =>
               ValueOrErrors.Default.return(
-                TupleAbstractRendererState<{
-                  commonFormState: DispatchCommonFormState;
-                }>().Default(Map(itemStates)),
+                TupleAbstractRendererState.Default(Map(itemStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -409,7 +408,7 @@ export const dispatchDefaultState =
                     tableApiSources,
                   )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
                     ValueOrErrors.Default.return(
-                      SumAbstractRendererState().Default({
+                      SumAbstractRendererState.Default({
                         left,
                         right,
                       }),
@@ -418,7 +417,7 @@ export const dispatchDefaultState =
             )
           : renderer.kind == "sumUnitDateRenderer"
             ? ValueOrErrors.Default.return(
-                SumAbstractRendererState().Default({
+                SumAbstractRendererState.Default({
                   left: UnitAbstractRendererState.Default(),
                   right: DateAbstractRendererState.Default(),
                 }),
@@ -510,7 +509,7 @@ export const dispatchDefaultState =
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[string, PredicateValue], string>>(
+              List<ValueOrErrors<[string, CommonAbstractRendererState], string>>(
                 renderer.fields
                   .entrySeq()
                   .map(([fieldName, fieldRenderer]) =>
@@ -576,7 +575,7 @@ export const dispatchDefaultState =
               ),
             ).Then((caseStates) =>
               ValueOrErrors.Default.return(
-                UnionAbstractRendererState<any>().Default(Map(caseStates)),
+                UnionAbstractRendererState.Default(Map(caseStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -1038,48 +1037,42 @@ export const dispatchFromAPIRawValue =
           );
         }
         const converterResult = converters["Table"].fromAPIRawValue(raw);
-        const lookupType = t.args[0];
-        if (lookupType.kind != "lookup") {
+        const argType = t.args[0];
+        if (argType.kind != "record") {
           return ValueOrErrors.Default.throwOne(
-            `expected lookup type for table arg, got ${JSON.stringify(
-              lookupType,
+            `expected record type for table arg, got ${JSON.stringify(
+              argType,
             )}`,
           );
         }
-        return MapRepo.Operations.tryFindWithError(
-          lookupType.name, // TODO check this
-          types,
-          () => `type ${lookupType.name} not found in types`,
-        ).Then((type) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, ValueRecord], string>>(
-              converterResult.data
-                .toArray()
-                .map(([key, record]) =>
-                  dispatchFromAPIRawValue(
-                    type,
-                    types,
-                    converters,
-                    injectedPrimitives,
-                  )(record).Then((value) =>
-                    PredicateValue.Operations.IsRecord(value)
-                      ? ValueOrErrors.Default.return([key, value])
-                      : ValueOrErrors.Default.throwOne(
-                          `record expected but got ${PredicateValue.Operations.GetKind(
-                            value,
-                          )}`,
-                        ),
-                  ),
+        return ValueOrErrors.Operations.All(
+          List<ValueOrErrors<[string, ValueRecord], string>>(
+            converterResult.data
+              .toArray()
+              .map(([key, record]) =>
+                dispatchFromAPIRawValue(
+                  argType,
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(record).Then((value) =>
+                  PredicateValue.Operations.IsRecord(value)
+                    ? ValueOrErrors.Default.return([key, value])
+                    : ValueOrErrors.Default.throwOne(
+                        `record expected but got ${PredicateValue.Operations.GetKind(
+                          value,
+                        )}`,
+                      ),
                 ),
-            ),
-          ).Then((values) =>
-            ValueOrErrors.Default.return(
-              ValueTable.Default.fromParsed(
-                converterResult.from,
-                converterResult.to,
-                converterResult.hasMoreValues,
-                OrderedMap(values),
               ),
+          ),
+        ).Then((values) =>
+          ValueOrErrors.Default.return(
+            ValueTable.Default.fromParsed(
+              converterResult.from,
+              converterResult.to,
+              converterResult.hasMoreValues,
+              OrderedMap(values),
             ),
           ),
         );

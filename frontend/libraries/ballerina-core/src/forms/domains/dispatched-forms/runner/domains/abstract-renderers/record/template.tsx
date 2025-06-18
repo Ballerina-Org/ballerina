@@ -1,18 +1,15 @@
 import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
-  Bindings,
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   Expr,
-  FormLabel,
   FormLayout,
   PredicateFormLayout,
   PredicateValue,
   replaceWith,
   Updater,
-  Value,
   ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
@@ -21,55 +18,69 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
 import {
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
   RecordAbstractRendererState,
   RecordAbstractRendererView,
 } from "./state";
 
-export const RecordAbstractRenderer = <
-  Context extends FormLabel & { bindings: Bindings } & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
-  Flags = Unit,
->(
+export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   FieldTemplates: Map<
     string,
     {
-      template: Template<any, any, any, any>;
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >;
       visible?: Expr;
       disabled?: Expr;
       label?: string;
-      GetDefaultState: () => any;
+      GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
   Layout: PredicateFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
-): Template<any, any, any, any> => {
+): Template<
+  RecordAbstractRendererReadonlyContext<CustomContext> &
+    RecordAbstractRendererState,
+  RecordAbstractRendererState,
+  RecordAbstractRendererForeignMutationsExpected<Flags>,
+  RecordAbstractRendererView<CustomContext, Flags>
+> => {
   const embedFieldTemplate =
     (
       fieldName: string,
-      fieldTemplate: Template<any, any, any, any>,
-    ): ((flags: Flags | undefined) => Template<any, any, any, any>) =>
+      fieldTemplate: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >,
+    ) =>
     (flags: Flags | undefined) =>
       fieldTemplate
         .mapContext(
           (
-            _: Value<ValueRecord> & {
-              identifiers: { withLauncher: string; withoutLauncher: string };
-              fieldStates: Map<string, any>;
-              disabled: boolean;
-              bindings: Bindings;
-              type: DispatchParsedType<any>;
-              extraContext: any;
-            },
-          ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
-            ..._,
+            _: RecordAbstractRendererReadonlyContext<CustomContext> &
+              RecordAbstractRendererState,
+          ) => ({
             identifiers: {
               withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
               withoutLauncher: _.identifiers.withoutLauncher.concat(
@@ -77,19 +88,21 @@ export const RecordAbstractRenderer = <
               ),
             },
             value: _.value.fields.get(fieldName)!,
-            type:
-              _.type.kind === "record"
-                ? _.type.fields.get(fieldName)
-                : undefined,
+            type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
               FieldTemplates.get(fieldName)!.GetDefaultState()),
             disabled: _.disabled,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
+            customContext: _.customContext,
+            domNodeId: _.identifiers.withoutLauncher.concat(`[${fieldName}]`),
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           }),
         )
         .mapState(
-          (_: BasicUpdater<any>): Updater<RecordAbstractRendererState> =>
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<RecordAbstractRendererState> =>
             RecordAbstractRendererState.Updaters.Template.upsertFieldState(
               fieldName,
               FieldTemplates.get(fieldName)!.GetDefaultState,
@@ -163,12 +176,11 @@ export const RecordAbstractRenderer = <
   );
 
   return Template.Default<
-    Context & Value<ValueRecord>,
+    RecordAbstractRendererReadonlyContext<CustomContext> &
+      RecordAbstractRendererState,
     RecordAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord, Flags>;
-    },
-    RecordAbstractRendererView<Context, ForeignMutationsExpected, Flags>
+    RecordAbstractRendererForeignMutationsExpected<Flags>,
+    RecordAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
