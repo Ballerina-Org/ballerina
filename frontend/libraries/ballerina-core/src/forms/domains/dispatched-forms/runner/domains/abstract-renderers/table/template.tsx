@@ -29,6 +29,7 @@ import {
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
   MapRepo,
+  ValueTable,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -177,7 +178,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
           TableAbstractRendererForeignMutationsExpected<Flags>
         >((props) => ({
           onChange: (
-            _: Option<BasicUpdater<PredicateValue>>,
+            nestedUpdater: Option<BasicUpdater<PredicateValue>>,
             nestedDelta: DispatchDelta<Flags>,
           ) => {
             props.setState(
@@ -212,7 +213,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                       chunkIndex,
                       rowId,
                       column,
-                    )(_.kind == "r" ? _.value : id),
+                    )(nestedUpdater.kind == "r" ? nestedUpdater.value : id),
                   ),
                 ),
             );
@@ -224,7 +225,22 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               flags,
             };
 
-            props.foreignMutations.onChange(Option.Default.none(), delta);
+            const updater =
+              nestedUpdater.kind == "l"
+                ? nestedUpdater
+                : Option.Default.some(
+                    ValueTable.Updaters.data(
+                      MapRepo.Updaters.update(
+                        rowId,
+                        ValueRecord.Updaters.update(
+                          column,
+                          nestedUpdater.kind == "r" ? nestedUpdater.value : id,
+                        ),
+                      ),
+                    ),
+                  );
+
+            props.foreignMutations.onChange(updater, delta);
           },
         }));
 

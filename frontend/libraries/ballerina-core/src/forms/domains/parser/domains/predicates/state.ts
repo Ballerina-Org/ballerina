@@ -354,6 +354,9 @@ export const ValueTable = {
       hasMoreValues,
     }),
   },
+  Updaters: {
+    ...simpleUpdater<ValueTable>()("data"),
+  },
 };
 export type PredicateValue =
   | ValuePrimitive

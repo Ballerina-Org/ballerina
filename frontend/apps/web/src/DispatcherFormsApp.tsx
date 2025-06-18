@@ -24,7 +24,6 @@ import {
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
-import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
 import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
 import {

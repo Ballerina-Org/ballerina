@@ -185,37 +185,37 @@ type BuiltInApiConverters = {
 };
 
 export type ConcreteRenderers<T extends DispatchInjectablesTypes<T>> = {
-  unit: { [_: string]: UnitAbstractRendererView<any, any> };
-  boolean: { [_: string]: BoolAbstractRendererView<any, any> };
-  number: { [_: string]: NumberAbstractRendererView<any, any> };
-  string: { [_: string]: StringAbstractRendererView<any, any> };
-  base64File: { [_: string]: Base64FileAbstractRendererView<any, any> };
-  secret: { [_: string]: SecretAbstractRendererView<any, any> };
-  date: { [_: string]: DateAbstractRendererView<any, any> };
-  enumSingleSelection: { [_: string]: EnumAbstractRendererView<any, any> };
+  unit: { [_: string]: UnitAbstractRendererView<Unit, Unit> };
+  boolean: { [_: string]: BoolAbstractRendererView<Unit, Unit> };
+  number: { [_: string]: NumberAbstractRendererView<Unit, Unit> };
+  string: { [_: string]: StringAbstractRendererView<Unit, Unit> };
+  base64File: { [_: string]: Base64FileAbstractRendererView<Unit, Unit> };
+  secret: { [_: string]: SecretAbstractRendererView<Unit, Unit> };
+  date: { [_: string]: DateAbstractRendererView<Unit, Unit> };
+  enumSingleSelection: { [_: string]: EnumAbstractRendererView<Unit, Unit> };
   enumMultiSelection: {
-    [_: string]: EnumMultiselectAbstractRendererView<any, any>;
+    [_: string]: EnumMultiselectAbstractRendererView<Unit, Unit>;
   };
   streamSingleSelection: {
-    [_: string]: SearchableInfiniteStreamAbstractRendererView<any, any>;
+    [_: string]: SearchableInfiniteStreamAbstractRendererView<Unit, Unit>;
   };
   streamMultiSelection: {
     [_: string]: SearchableInfiniteStreamMultiselectAbstractRendererView<
-      any,
-      any
+      Unit,
+      Unit
     >;
   };
-  list: { [_: string]: ListAbstractRendererView<any, any> };
-  map: { [_: string]: MapAbstractRendererView<any, any> };
-  tuple: { [_: string]: TupleAbstractRendererView<any, any> };
-  sum: { [_: string]: SumAbstractRendererView<any, any> };
-  sumUnitDate: { [_: string]: SumAbstractRendererView<any, any> };
-  record: { [_: string]: RecordAbstractRendererView<any, any> };
-  table: { [_: string]: TableAbstractRendererView<any, any> };
-  union: { [_: string]: UnionAbstractRendererView<any, any> };
-  one: { [_: string]: OneAbstractRendererView<any, any> };
+  list: { [_: string]: ListAbstractRendererView<Unit, Unit> };
+  map: { [_: string]: MapAbstractRendererView<Unit, Unit> };
+  tuple: { [_: string]: TupleAbstractRendererView<Unit, Unit> };
+  sum: { [_: string]: SumAbstractRendererView<Unit, Unit> };
+  sumUnitDate: { [_: string]: SumAbstractRendererView<Unit, Unit> };
+  record: { [_: string]: RecordAbstractRendererView<Unit, Unit> };
+  table: { [_: string]: TableAbstractRendererView<Unit, Unit> };
+  union: { [_: string]: UnionAbstractRendererView<Unit, Unit> };
+  one: { [_: string]: OneAbstractRendererView<Unit, Unit> };
 } & {
-  [key in keyof T]: { [_: string]: View<any, any, any, any> };
+  [key in keyof T]: { [_: string]: T[key]["view"] };
 };
 
 export type ConcreteRenderer<T> =
