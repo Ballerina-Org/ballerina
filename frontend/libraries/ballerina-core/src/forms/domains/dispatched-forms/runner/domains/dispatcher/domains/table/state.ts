@@ -6,6 +6,7 @@ import {
   Template,
   ValueOrErrors,
   TableAbstractRenderer,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -29,9 +30,7 @@ export const TableDispatcher = {
                 "lookup api not supported for table",
               )
             : dispatcherContext.tableApiSources(api),
-    DispatchDetailsRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
-    >(
+    DispatchDetailsRenderer: <T extends DispatchInjectablesTypes<T>>(
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
@@ -43,7 +42,7 @@ export const TableDispatcher = {
             "table details renderer",
             "details",
           ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: TableType<T>,
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
@@ -136,7 +135,6 @@ export const TableDispatcher = {
                             .getConcreteRenderer(
                               "table",
                               renderer.renderer.renderer,
-                              isNested,
                             )
                             .Then((concreteRenderer) =>
                               TableDispatcher.Operations.GetApi(

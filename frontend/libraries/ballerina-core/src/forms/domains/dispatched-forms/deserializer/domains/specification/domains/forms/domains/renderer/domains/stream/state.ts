@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
@@ -51,10 +52,10 @@ export const StreamRenderer = {
                   ...serialized,
                   stream: serialized.stream,
                 }),
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)

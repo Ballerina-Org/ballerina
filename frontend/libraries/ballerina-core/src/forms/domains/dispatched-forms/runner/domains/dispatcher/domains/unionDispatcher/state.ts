@@ -2,6 +2,7 @@ import { List, Map } from "immutable";
 
 import {
   DispatcherContext,
+  DispatchInjectablesTypes,
   MapRepo,
   Template,
   UnionAbstractRenderer,
@@ -15,7 +16,7 @@ import { Dispatcher } from "../../state";
 
 export const UnionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: UnionType<T>,
       unionRenderer: UnionRenderer<T>,
       dispatcherContext: DispatcherContext<T>,

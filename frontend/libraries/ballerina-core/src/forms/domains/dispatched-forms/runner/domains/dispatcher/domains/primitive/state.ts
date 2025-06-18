@@ -1,8 +1,9 @@
 import {
   DateAbstractRenderer,
   DispatcherContext,
-  NestedRenderer,
   ValueOrErrors,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 
@@ -13,12 +14,11 @@ import { NumberAbstractRenderer } from "../../../abstract-renderers/number/templ
 import { BoolAbstractRenderer } from "../../../abstract-renderers/boolean/template";
 import { SecretAbstractRenderer } from "../../../abstract-renderers/secret/template";
 import { Base64FileAbstractRenderer } from "../../../abstract-renderers/base-64-file/template";
-import { ConcreteRendererKinds } from "../../../../../built-ins/state";
 import { Renderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/state";
 
 export const PrimitiveDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchPrimitiveType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<T>,
@@ -50,8 +50,8 @@ export const PrimitiveDispatcher = {
           }
           return dispatcherContext
             .getConcreteRenderer(
-              viewKind as keyof ConcreteRendererKinds<T>,
-              renderer.renderer,
+              viewKind as keyof ConcreteRenderers<T>,
+              renderer.renderer as keyof ConcreteRenderers<T>[keyof ConcreteRenderers<T>],
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(

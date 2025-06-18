@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   Guid,
   isObject,
@@ -25,7 +26,7 @@ export type EnumRenderer<T> = {
 };
 
 export const EnumRenderer = {
-  Default: <T>(
+  Default: <T extends DispatchInjectablesTypes<T>>(
     type: SingleSelectionType<T> | MultiSelectionType<T>,
     options: string,
     renderer: Renderer<T>,
@@ -46,7 +47,7 @@ export const EnumRenderer = {
     ): serialized is SerializedEnumRenderer & {
       options: string;
     } => isObject(serialized) && "options" in serialized,
-    tryAsValidEnumRenderer: <T>(
+    tryAsValidEnumRenderer: <T extends DispatchInjectablesTypes<T>>(
       serialized: unknown,
     ): ValueOrErrors<SerializedEnumRenderer, string> =>
       !EnumRenderer.Operations.hasRenderer(serialized)
@@ -54,10 +55,10 @@ export const EnumRenderer = {
         : !EnumRenderer.Operations.hasOptions(serialized)
           ? ValueOrErrors.Default.throwOne(`options are required`)
           : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<EnumRenderer<T>, string> =>
       EnumRenderer.Operations.tryAsValidEnumRenderer(serialized)

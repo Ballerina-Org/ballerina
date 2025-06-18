@@ -15,15 +15,15 @@ import {
   TableApis,
   LookupApis,
   MapRepo,
+  DispatchInjectablesTypes,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
 import {
   DispatchParsedType,
-  RecordType,
   SerializedType,
 } from "./domains/types/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
   DispatchApiConverters,
 } from "../../../built-ins/state";
 import { Renderer } from "./domains/forms/domains/renderer/state";
@@ -133,10 +133,10 @@ export const Specification = {
         ),
       ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
     },
-    DeserializeForms: <T>(
+    DeserializeForms: <T extends DispatchInjectablesTypes<T>>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -172,9 +172,9 @@ export const Specification = {
         ),
       ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
-      <T extends { [key in keyof T]: { type: any; state: any } }>(
+      <T extends DispatchInjectablesTypes<T>>(
         apiConverters: DispatchApiConverters<T>,
-        concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+        concreteRenderers: ConcreteRenderers<T>,
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (

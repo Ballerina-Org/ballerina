@@ -1,5 +1,5 @@
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
-import { MapAbstractRenderer, Template } from "../../../../../../../../../main";
+import { DispatchInjectablesTypes, MapAbstractRenderer, Template } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
 import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
@@ -7,7 +7,7 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: MapType<T>,
       renderer: MapRenderer<T>,
       dispatcherContext: DispatcherContext<T>,

@@ -6,6 +6,7 @@ import {
   Unit,
   Specification,
   ValueOrErrors,
+  DispatchInjectablesTypes,
 } from "../../../../../../main";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import {
@@ -16,7 +17,7 @@ import {
 } from "../state";
 
 export const LoadAndDeserializeSpecification = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
 >() => {
   const Co = CoTypedFactory<
     DispatchFormsParserContext<T>,

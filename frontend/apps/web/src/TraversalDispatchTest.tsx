@@ -18,10 +18,8 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
-  id,
   IdWrapperProps,
   ErrorRendererProps,
-  InjectedPrimitive,
   DispatchInjectedPrimitive,
   RendererTraversal,
   EvalContext,
@@ -31,7 +29,6 @@ import {
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import { TraversalPersonApis } from "playground-core";
-import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/traverse-test-file.json";
 import {
   DispatchPersonContainerFormView,
@@ -40,12 +37,13 @@ import {
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchPassthroughFormConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes>,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -79,18 +77,18 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 );
 
 const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes>();
 
 const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes>();
 
 export const TraversalDispatchTest = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -108,9 +106,11 @@ export const TraversalDispatchTest = (props: {}) => {
   const [entityPath, setEntityPath] = useState<any>(null);
 
   const primitiveRendererNamesByType = Map(
-    Object.entries(PersonConcreteRenderers).map(([key, value]) => {
-      return [key, Set(Object.keys(value))];
-    }),
+    Object.entries(DispatchPassthroughFormConcreteRenderers).map(
+      ([key, value]) => {
+        return [key, Set(Object.keys(value))];
+      },
+    ),
   );
 
   const parseCustomDelta =
@@ -185,7 +185,10 @@ export const TraversalDispatchTest = (props: {}) => {
       return;
     }
 
-    const newEntity = updater.kind == "r" ? updater.value(personEntity.value.value) : personEntity.value.value;
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(personEntity.value.value)
+        : personEntity.value.value;
     console.log("patching entity", newEntity);
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -329,7 +332,7 @@ export const TraversalDispatchTest = (props: {}) => {
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources: TraversalPersonApis.streamApis,
                     enumOptionsSources: TraversalPersonApis.enumApis,
                     entityApis: TraversalPersonApis.entityApis,

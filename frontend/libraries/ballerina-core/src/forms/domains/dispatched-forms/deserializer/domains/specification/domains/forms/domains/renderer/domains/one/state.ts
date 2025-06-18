@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
@@ -72,10 +73,10 @@ export const OneRenderer = {
                         detailsRenderer: serialized.detailsRenderer,
                         api: serialized.api,
                       }),
-    DeserializePreviewRenderer: <T>(
+    DeserializePreviewRenderer: <T extends DispatchInjectablesTypes<T>>(
       type: OneType<T>,
       serialized: SerializedOneRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
@@ -87,10 +88,10 @@ export const OneRenderer = {
             "preview renderer",
             types,
           ),
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: OneType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(

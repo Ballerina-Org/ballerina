@@ -20,7 +20,7 @@ import {
   Updater,
 } from "../../../../../../../../main";
 
-export type InfiniteStreamMultiselectAbstractRendererReadonlyContext<
+export type SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
   CustomContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   MultiSelectionType<unknown>,
@@ -28,7 +28,7 @@ export type InfiniteStreamMultiselectAbstractRendererReadonlyContext<
   CustomContext
 >;
 
-export type InfiniteStreamMultiselectAbstractRendererState =
+export type SearchableInfiniteStreamMultiselectAbstractRendererState =
   CommonAbstractRendererState & {
     customFormState: {
       searchText: Debounced<Value<string>>;
@@ -41,13 +41,13 @@ export type InfiniteStreamMultiselectAbstractRendererState =
     };
   };
 
-export const InfiniteStreamMultiselectAbstractRendererState = {
+export const SearchableInfiniteStreamMultiselectAbstractRendererState = {
   Default: (
     getChunk: BasicFun<
       string,
       InfiniteStreamState<CollectionReference>["getChunk"]
     >,
-  ): InfiniteStreamMultiselectAbstractRendererState => ({
+  ): SearchableInfiniteStreamMultiselectAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
       searchText: Debounced.Default(Value.Default("")),
@@ -61,16 +61,16 @@ export const InfiniteStreamMultiselectAbstractRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<InfiniteStreamMultiselectAbstractRendererState>()(
+      ...simpleUpdaterWithChildren<SearchableInfiniteStreamMultiselectAbstractRendererState>()(
         {
           ...simpleUpdater<
-            InfiniteStreamMultiselectAbstractRendererState["customFormState"]
+            SearchableInfiniteStreamMultiselectAbstractRendererState["customFormState"]
           >()("status"),
           ...simpleUpdater<
-            InfiniteStreamMultiselectAbstractRendererState["customFormState"]
+            SearchableInfiniteStreamMultiselectAbstractRendererState["customFormState"]
           >()("stream"),
           ...simpleUpdater<
-            InfiniteStreamMultiselectAbstractRendererState["customFormState"]
+            SearchableInfiniteStreamMultiselectAbstractRendererState["customFormState"]
           >()("searchText"),
         },
       )("customFormState"),
@@ -78,15 +78,15 @@ export const InfiniteStreamMultiselectAbstractRendererState = {
     Template: {
       searchText: (
         _: BasicUpdater<string>,
-      ): Updater<InfiniteStreamMultiselectAbstractRendererState> =>
-        InfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.searchText(
+      ): Updater<SearchableInfiniteStreamMultiselectAbstractRendererState> =>
+        SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.searchText(
           Debounced.Updaters.Template.value(Value.Updaters.value(_)),
         ),
     },
   },
 };
 
-export type InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<
+export type SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<
   Flags = Unit,
 > = {
   onChange: DispatchOnChange<ValueRecord, Flags>;
@@ -99,17 +99,17 @@ export type InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<
   reload: SimpleCallback<void>;
 };
 
-export type InfiniteStreamMultiselectAbstractRendererView<
+export type SearchableInfiniteStreamMultiselectAbstractRendererView<
   CustomContext = Unit,
   Flags = Unit,
 > = View<
-  InfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> &
-    InfiniteStreamMultiselectAbstractRendererState & {
+  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> &
+    SearchableInfiniteStreamMultiselectAbstractRendererState & {
       hasMoreValues: boolean;
       isLoading: boolean;
       availableOptions: Array<CollectionReference>;
       disabled: boolean;
     },
-  InfiniteStreamMultiselectAbstractRendererState,
-  InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
+  SearchableInfiniteStreamMultiselectAbstractRendererState,
+  SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

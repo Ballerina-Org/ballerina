@@ -1,11 +1,10 @@
 import {
   BasicFun,
   DispatcherContext,
-  DispatchOneSource,
-  DispatchTableApiSource,
   Guid,
   OneAbstractRenderer,
   OneType,
+  DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -14,9 +13,7 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const OneDispatcher = {
   Operations: {
-    DispatchPreviewRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
-    >(
+    DispatchPreviewRenderer: <T extends DispatchInjectablesTypes<T>>(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
@@ -57,7 +54,7 @@ export const OneDispatcher = {
           : ValueOrErrors.Default.throwOne(
               `api must be a string or an array of strings`,
             ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: OneType<T>,
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContext<T>,

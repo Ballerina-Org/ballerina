@@ -37,12 +37,13 @@ import {
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchPassthroughFormConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes>,
 ) => (
   <div style={{ border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -59,18 +60,18 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 );
 
 const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes>();
 
 const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes>();
 
 export const DispatcherFormsAppTables = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [tablesRunnerState, setTablesRunnerState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [entity, setEntity] = useState<
@@ -205,7 +206,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources:
                       DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
                     enumOptionsSources: UsersSetupFromConfigApis.enumApis,

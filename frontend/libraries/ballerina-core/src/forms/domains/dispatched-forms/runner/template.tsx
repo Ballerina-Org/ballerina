@@ -12,15 +12,11 @@ import {
   Template,
   unit,
   BasicUpdater,
-  DispatchDelta,
-  PredicateValue,
-  Updater,
-  DispatchOnChange,
-  Unit,
+  DispatchInjectablesTypes,
 } from "../../../../../main";
 
 export const DispatchFormRunnerTemplate = <
-  T extends { [key in keyof T]: { type: any; state: any } }
+  T extends DispatchInjectablesTypes<T>,
 >() =>
   Template.Default<
     DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,

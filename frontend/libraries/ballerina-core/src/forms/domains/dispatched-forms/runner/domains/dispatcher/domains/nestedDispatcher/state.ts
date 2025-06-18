@@ -1,11 +1,11 @@
-import { Template, ValueOrErrors } from "../../../../../../../../../main";
+import { DispatchInjectablesTypes, Template, ValueOrErrors } from "../../../../../../../../../main";
 import { NestedRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import { Dispatcher } from "../../state";
 
 export const NestedDispatcher = {
   Operations: {
-    DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    DispatchAs: <T extends DispatchInjectablesTypes<T>>(
       renderer: NestedRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       as: string,
@@ -18,7 +18,7 @@ export const NestedDispatcher = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       renderer: NestedRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
       formName?: string,

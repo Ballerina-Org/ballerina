@@ -33,7 +33,7 @@ import { Template, View } from "../../../../../../../template/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type AbstractTableRendererReadonlyContext<CustomContext = Unit> =
+export type TableAbstractRendererReadonlyContext<CustomContext = Unit> =
   CommonAbstractRendererReadonlyContext<
     TableType<any>,
     ValueTable,
@@ -47,7 +47,7 @@ export type AbstractTableRendererReadonlyContext<CustomContext = Unit> =
     columnLabels: Map<string, string | undefined>;
   };
 
-export type AbstractTableRendererState = CommonAbstractRendererState & {
+export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
@@ -63,8 +63,8 @@ export type AbstractTableRendererState = CommonAbstractRendererState & {
     shouldReinitialize: boolean;
   };
 };
-export const AbstractTableRendererState = {
-  Default: (): AbstractTableRendererState => ({
+export const TableAbstractRendererState = {
+  Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
       initializationStatus: "not initialized",
@@ -81,37 +81,37 @@ export const AbstractTableRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+      ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "getChunkWithParams",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "stream",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "streamParams",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "initializationStatus",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "selectedDetailRow",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "selectedRows",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "previousRemoteEntityVersionIdentifier",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "shouldReinitialize",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "rowStates",
         ),
       })("customFormState"),
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["commonFormState"]>()(
+      ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
+        ...simpleUpdater<TableAbstractRendererState["commonFormState"]>()(
           "modifiedByUser",
         ),
       })("commonFormState"),
@@ -120,18 +120,18 @@ export const AbstractTableRendererState = {
       searchText: (
         key: string,
         _: BasicUpdater<string>,
-      ): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
+      ): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
             MapRepo.Updaters.upsert(key, () => "", _),
           ),
         ),
-      loadMore: (): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+      loadMore: (): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
         ),
       shouldReinitialize: (_: boolean) =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
           replaceWith(_),
         ),
     },
@@ -179,11 +179,11 @@ export const AbstractTableRendererState = {
   },
 };
 
-export type AbstractTableRendererForeignMutationsExpected<Flags = Unit> = {
+export type TableAbstractRendererForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueTable, Flags>;
 };
 
-export type AbstractTableRendererViewForeignMutationsExpected<Flags = Unit> = {
+export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   loadMore: SimpleCallback<void>;
   selectDetailView: SimpleCallback<string>;
   clearDetailView: SimpleCallback<void>;
@@ -197,16 +197,16 @@ export type AbstractTableRendererViewForeignMutationsExpected<Flags = Unit> = {
   duplicate: ValueCallbackWithOptionalFlags<string, Flags>;
 };
 
-export type AbstractTableRendererView<
+export type TableAbstractRendererView<
   CustomContext = Unit,
   Flags = Unit,
 > = View<
-  AbstractTableRendererReadonlyContext<CustomContext> &
-    AbstractTableRendererState & {
+  TableAbstractRendererReadonlyContext<CustomContext> &
+    TableAbstractRendererState & {
       hasMoreValues: boolean;
     },
-  AbstractTableRendererState,
-  AbstractTableRendererViewForeignMutationsExpected<Flags>,
+  TableAbstractRendererState,
+  TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {
     TableData: OrderedMap<
       string,
@@ -215,20 +215,20 @@ export type AbstractTableRendererView<
         (
           flags: Flags | undefined,
         ) => Template<
-          AbstractTableRendererReadonlyContext<CustomContext> &
-            AbstractTableRendererState,
-          AbstractTableRendererState,
-          AbstractTableRendererForeignMutationsExpected<Flags>
+          TableAbstractRendererReadonlyContext<CustomContext> &
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          TableAbstractRendererForeignMutationsExpected<Flags>
         >
       >
     >;
     DetailsRenderer?: (
       flags: Flags | undefined,
     ) => Template<
-      AbstractTableRendererReadonlyContext<CustomContext> &
-        AbstractTableRendererState,
-      AbstractTableRendererState,
-      AbstractTableRendererForeignMutationsExpected<Flags>
+      TableAbstractRendererReadonlyContext<CustomContext> &
+        TableAbstractRendererState,
+      TableAbstractRendererState,
+      TableAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;

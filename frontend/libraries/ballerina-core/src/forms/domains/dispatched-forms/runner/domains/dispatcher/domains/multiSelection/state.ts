@@ -8,6 +8,7 @@ import {
   Guid,
   ValueRecord,
   unit,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -16,7 +17,7 @@ import { EnumRenderer } from "../../../../../deserializer/domains/specification/
 
 export const MultiSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>

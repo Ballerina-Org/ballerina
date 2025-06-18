@@ -1,9 +1,9 @@
 import { OrderedMap } from "immutable";
 import {
-  InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected,
-  InfiniteStreamMultiselectAbstractRendererReadonlyContext,
-  InfiniteStreamMultiselectAbstractRendererState,
-  InfiniteStreamMultiselectAbstractRendererView,
+  SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected,
+  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext,
+  SearchableInfiniteStreamMultiselectAbstractRendererState,
+  SearchableInfiniteStreamMultiselectAbstractRendererView,
 } from "./state";
 import {
   AsyncState,
@@ -36,14 +36,14 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    InfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
-    InfiniteStreamMultiselectAbstractRendererState
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    InfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> & {
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> & {
       onDebounce: SimpleCallback<void>;
     },
-    InfiniteStreamMultiselectAbstractRendererState
+    SearchableInfiniteStreamMultiselectAbstractRendererState
   >();
   const DebouncedCo = CoTypedFactory<
     { onDebounce: SimpleCallback<void> },
@@ -59,14 +59,14 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
         250,
       ).embed(
         (_) => ({ ..._, ..._.customFormState.searchText }),
-        InfiniteStreamMultiselectAbstractRendererState.Updaters.Core
+        SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core
           .customFormState.children.searchText,
       ),
       DebouncerCo.Wait(0),
     ]),
   );
   const debouncerRunner = DebouncerCo.Template<
-    InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
+    SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer, {
     interval: 15,
     runFilter: (props) =>
@@ -75,11 +75,11 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ),
   });
   const loaderRunner = Co.Template<
-    InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
+    SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
       (_) => _.customFormState.stream,
-      InfiniteStreamMultiselectAbstractRendererState.Updaters.Core
+      SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core
         .customFormState.children.stream,
     ),
     {
@@ -92,10 +92,10 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   );
 
   return Template.Default<
-    InfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
-    InfiniteStreamMultiselectAbstractRendererState,
-    InfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>,
-    InfiniteStreamMultiselectAbstractRendererView<CustomContext, Flags>
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererState,
+    SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>,
+    SearchableInfiniteStreamMultiselectAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
@@ -140,7 +140,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
               ...props.foreignMutations,
               toggleOpen: () =>
                 props.setState(
-                  InfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children
+                  SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children
                     .status(
                       replaceWith(
                         props.context.customFormState.status == "closed"
@@ -151,7 +151,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     .then(
                       props.context.customFormState.stream.loadedElements.count() ==
                         0
-                        ? InfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                        ? SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
                             InfiniteStreamState<CollectionReference>().Updaters.Template.loadInitial(),
                           )
                         : id,
@@ -175,19 +175,19 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
               },
               setSearchText: (value) =>
                 props.setState(
-                  InfiniteStreamMultiselectAbstractRendererState.Updaters.Template.searchText(
+                  SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Template.searchText(
                     replaceWith(value),
                   ),
                 ),
               loadMore: () =>
                 props.setState(
-                  InfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                  SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     InfiniteStreamState<CollectionReference>().Updaters.Template.loadMore(),
                   ),
                 ),
               reload: () =>
                 props.setState(
-                  InfiniteStreamMultiselectAbstractRendererState.Updaters.Template.searchText(
+                  SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Template.searchText(
                     replaceWith(""),
                   ),
                 ),
@@ -258,7 +258,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ...props.context,
       onDebounce: () =>
         props.setState(
-          InfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
+          SearchableInfiniteStreamMultiselectAbstractRendererState.Updaters.Core.customFormState.children.stream(
             InfiniteStreamState<CollectionReference>().Updaters.Template.reload(
               props.context.customFormState.getChunk(
                 props.context.customFormState.searchText.value,

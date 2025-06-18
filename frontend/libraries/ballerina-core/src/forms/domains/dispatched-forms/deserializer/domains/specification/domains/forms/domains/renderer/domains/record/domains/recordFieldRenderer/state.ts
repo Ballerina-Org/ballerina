@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   Expr,
   isObject,
@@ -53,10 +54,10 @@ export const RecordFieldRenderer = {
             : undefined,
       }),
     ),
-  Deserialize: <T>(
+  Deserialize: <T extends DispatchInjectablesTypes<T>>(
     type: DispatchParsedType<T>,
     serialized: unknown,
-    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+    concreteRenderers: ConcreteRenderers<T>,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>

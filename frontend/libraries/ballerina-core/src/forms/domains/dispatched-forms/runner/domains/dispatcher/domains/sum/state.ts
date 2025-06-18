@@ -1,5 +1,6 @@
 import {
   DispatcherContext,
+  DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -11,7 +12,7 @@ import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specifi
 
 export const SumDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>

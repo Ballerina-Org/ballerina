@@ -3,31 +3,29 @@ import {
   BasicUpdater,
   id,
   PredicateValue,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
   TableLayout,
   ValueInfiniteStreamTemplate,
   Expr,
   PredicateVisibleColumns,
   DispatchDelta,
   ValueOrErrors,
-  AbstractTableRendererReadonlyContext,
+  TableAbstractRendererReadonlyContext,
   replaceWith,
   ValueRecord,
   DispatchCommonFormState,
-  Bindings,
   RecordAbstractRendererState,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
-  AbstractTableRendererForeignMutationsExpected,
+  TableAbstractRendererForeignMutationsExpected,
   DispatchParsedType,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
-  AbstractTableRendererView,
+  TableAbstractRendererView,
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
   MapRepo,
@@ -41,14 +39,14 @@ const EmbeddedValueInfiniteStreamTemplate = <
   Flags = Unit,
 >() =>
   ValueInfiniteStreamTemplate.mapContext<
-    AbstractTableRendererReadonlyContext<CustomContext> &
-      AbstractTableRendererState
+    TableAbstractRendererReadonlyContext<CustomContext> &
+      TableAbstractRendererState
   >((_) => _.customFormState.stream)
-    .mapState<AbstractTableRendererState>(
-      AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
+    .mapState<TableAbstractRendererState>(
+      TableAbstractRendererState.Updaters.Core.customFormState.children.stream,
     )
     .mapForeignMutationsFromProps<
-      AbstractTableRendererForeignMutationsExpected<Flags>
+      TableAbstractRendererForeignMutationsExpected<Flags>
     >((props) => ({
       ...props.foreignMutations,
     }));
@@ -83,11 +81,11 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ): Template<
-  AbstractTableRendererReadonlyContext<CustomContext> &
-    AbstractTableRendererState,
-  AbstractTableRendererState,
-  AbstractTableRendererForeignMutationsExpected<Flags>,
-  AbstractTableRendererView<CustomContext, Flags>
+  TableAbstractRendererReadonlyContext<CustomContext> &
+    TableAbstractRendererState,
+  TableAbstractRendererState,
+  TableAbstractRendererForeignMutationsExpected<Flags>,
+  TableAbstractRendererView<CustomContext, Flags>
 > => {
   const InstantiatedTableRunner = TableRunner<CustomContext>();
   const InstantiatedTableReinitialiseRunner =
@@ -115,8 +113,8 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
-          AbstractTableRendererReadonlyContext<CustomContext> &
-            AbstractTableRendererState
+          TableAbstractRendererReadonlyContext<CustomContext> &
+            TableAbstractRendererState
         >((_) => {
           const rowState = _.customFormState.stream.chunkStates
             .get(chunkIndex)
@@ -162,8 +160,8 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
           };
         })
 
-        .mapState<AbstractTableRendererState>((updater) =>
-          AbstractTableRendererState.Updaters.Core.customFormState.children.rowStates(
+        .mapState<TableAbstractRendererState>((updater) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
             MapRepo.Updaters.upsert(
               rowId,
               () => RecordAbstractRendererState.Default.fieldState(Map()),
@@ -178,14 +176,14 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
           ),
         )
         .mapForeignMutationsFromProps<
-          AbstractTableRendererForeignMutationsExpected<Flags>
+          TableAbstractRendererForeignMutationsExpected<Flags>
         >((props) => ({
           onChange: (
             _: Option<BasicUpdater<PredicateValue>>,
             nestedDelta: DispatchDelta<Flags>,
           ) => {
             props.setState(
-              AbstractTableRendererState.Updaters.Core.customFormState.children
+              TableAbstractRendererState.Updaters.Core.customFormState.children
                 .stream(
                   ValueInfiniteStreamState.Updaters.Template.updateChunkStateValueItem(
                     chunkIndex,
@@ -201,12 +199,12 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                   })),
                 )
                 .then(
-                  AbstractTableRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
                     replaceWith(true),
                   ),
                 )
                 .then(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     ValueInfiniteStreamState.Updaters.Template.updateChunkValueItem(
                       chunkIndex,
                       rowId,
@@ -230,8 +228,8 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   const embedDetailsRenderer = DetailsRenderer
     ? (flags: Flags | undefined) =>
         DetailsRenderer.mapContext<
-          AbstractTableRendererReadonlyContext<CustomContext> &
-            AbstractTableRendererState
+          TableAbstractRendererReadonlyContext<CustomContext> &
+            TableAbstractRendererState
         >((_) => {
           if (_.customFormState.selectedDetailRow == undefined) {
             console.error(
@@ -282,7 +280,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           };
         })
-          .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
+          .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
             if (props.context.customFormState.selectedDetailRow == undefined) {
               console.error(
                 `Selected detail row is undefined\n
@@ -292,7 +290,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               return id;
             }
 
-            return AbstractTableRendererState.Updaters.Core.customFormState.children.rowStates(
+            return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
               MapRepo.Updaters.upsert(
                 props.context.customFormState.selectedDetailRow[1],
                 () => RecordAbstractRendererState.Default.fieldState(Map()),
@@ -301,7 +299,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
             );
           })
           .mapForeignMutationsFromProps<
-            AbstractTableRendererForeignMutationsExpected<Flags>
+            TableAbstractRendererForeignMutationsExpected<Flags>
           >((props) => ({
             onChange: (
               _: Option<BasicUpdater<ValueRecord>>,
@@ -318,10 +316,10 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 return id;
               }
               props.setState(
-                AbstractTableRendererState.Updaters.Core.commonFormState.children
+                TableAbstractRendererState.Updaters.Core.commonFormState.children
                   .modifiedByUser(replaceWith(true))
                   .then(
-                    AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                    TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
                       ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
                         props.context.customFormState.selectedDetailRow[0],
                         props.context.customFormState.selectedDetailRow[1],
@@ -350,11 +348,11 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
   return Template.Default<
-    AbstractTableRendererReadonlyContext<CustomContext> &
-      AbstractTableRendererState,
-    AbstractTableRendererState,
-    AbstractTableRendererForeignMutationsExpected<Flags>,
-    AbstractTableRendererView<CustomContext, Flags>
+    TableAbstractRendererReadonlyContext<CustomContext> &
+      TableAbstractRendererState,
+    TableAbstractRendererState,
+    TableAbstractRendererForeignMutationsExpected<Flags>,
+    TableAbstractRendererView<CustomContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
@@ -480,7 +478,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               ...props.foreignMutations,
               loadMore: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Template.loadMore(),
+                  TableAbstractRendererState.Updaters.Template.loadMore(),
                 ),
               selectDetailView: (rowId: string) => {
                 const chunkIndex =
@@ -489,7 +487,7 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                     rowId,
                   );
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
                     chunkIndex.kind == "value"
                       ? replaceWith<[number, string] | undefined>([
                           chunkIndex.value,
@@ -501,25 +499,25 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               },
               clearDetailView: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
                     replaceWith<[number, string] | undefined>(undefined),
                   ),
                 ),
               selectRow: (rowId: string) =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
                     (_) => (_.has(rowId) ? _.remove(rowId) : _.add(rowId)),
                   ),
                 ),
               selectAllRows: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
                     replaceWith(Set(embeddedTableData.keySeq())),
                   ),
                 ),
               clearRows: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
                     replaceWith(Set()),
                   ),
                 ),
@@ -530,12 +528,12 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -549,12 +547,12 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -569,12 +567,12 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),
@@ -588,12 +586,12 @@ export const TableAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 };
                 props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
                   ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                       true,
                     ),
                   ),

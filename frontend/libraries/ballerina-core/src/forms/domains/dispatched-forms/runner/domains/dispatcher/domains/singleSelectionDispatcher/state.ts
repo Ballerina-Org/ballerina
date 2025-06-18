@@ -8,6 +8,7 @@ import {
   unit,
   EnumReference,
   PredicateValue,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -16,7 +17,7 @@ import { StreamRenderer } from "../../../../../deserializer/domains/specificatio
 
 export const SingleSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
       dispatcherContext: DispatcherContext<T>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>

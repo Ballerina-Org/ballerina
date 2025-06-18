@@ -156,5 +156,9 @@ export const CategoryAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
 };
 
 export type DispatchPassthroughFormInjectedTypes = {
-  injectedCategory: { type: DispatchCategory; state: DispatchCategoryState };
+  injectedCategory: {
+    type: DispatchCategory;
+    state: DispatchCategoryState;
+    view: CategoryAbstractRendererView<any, any>;
+  };
 };

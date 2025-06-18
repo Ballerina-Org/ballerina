@@ -1,6 +1,7 @@
 import { ListType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import {
+  DispatchInjectablesTypes,
   ListAbstractRenderer,
   Template,
   ValueOrErrors,
@@ -11,7 +12,7 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 //TODO check type
 export const ListDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: ListType<T>,
       renderer: ListRenderer<T>,
       dispatcherContext: DispatcherContext<T>,

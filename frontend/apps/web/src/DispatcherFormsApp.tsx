@@ -6,7 +6,6 @@ import {
   Sum,
   PredicateValue,
   replaceWith,
-  Updater,
   DeltaTransfer,
   ValueOrErrors,
   DispatchFormsParserTemplate,
@@ -23,7 +22,7 @@ import {
   DispatchInjectedPrimitive,
   DispatchOnChange,
 } from "ballerina-core";
-import { Set, Map, OrderedMap } from "immutable";
+import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
@@ -35,13 +34,14 @@ import {
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchPassthroughFormConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes>,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -75,21 +75,21 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 );
 
 const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes>();
 
 const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes>();
 
 export const DispatcherFormsApp = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
   const [personConfigState, setPersonConfigState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -151,7 +151,10 @@ export const DispatcherFormsApp = (props: {}) => {
       return;
     }
 
-    const newConfig = updater.kind == "r" ? updater.value(config.value.value) : config.value.value;
+    const newConfig =
+      updater.kind == "r"
+        ? updater.value(config.value.value)
+        : config.value.value;
     console.log("patching config", newConfig);
     setConfig(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
@@ -184,7 +187,10 @@ export const DispatcherFormsApp = (props: {}) => {
       return;
     }
 
-    const newEntity = updater.kind == "r" ? updater.value(personEntity.value.value) : personEntity.value.value;
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(personEntity.value.value)
+        : personEntity.value.value;
     console.log("patching entity", newEntity);
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -333,7 +339,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources:
                       DispatchPersonFromConfigApis.streamApis,
                     enumOptionsSources: DispatchPersonFromConfigApis.enumApis,

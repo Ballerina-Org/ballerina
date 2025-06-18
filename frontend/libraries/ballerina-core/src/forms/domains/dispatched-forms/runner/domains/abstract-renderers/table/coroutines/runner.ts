@@ -5,18 +5,16 @@ import {
 } from "../../../../../../../../value-infinite-data-stream/state";
 import {
   replaceWith,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
   Unit,
-  Value,
 } from "../../../../../../../../../main";
-import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
+import { TableAbstractRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
-import { v4 } from "uuid";
 
 const Co = <CustomContext = Unit>() =>
   CoTypedFactory<
-    AbstractTableRendererReadonlyContext<CustomContext>,
-    AbstractTableRendererState
+    TableAbstractRendererReadonlyContext<CustomContext>,
+    TableAbstractRendererState
   >();
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
@@ -38,8 +36,8 @@ const intialiseTable = <CustomContext = Unit>() =>
       );
 
       return Co<CustomContext>().SetState(
-        replaceWith(AbstractTableRendererState.Default()).then(
-          AbstractTableRendererState.Updaters.Core.customFormState.children
+        replaceWith(TableAbstractRendererState.Default()).then(
+          TableAbstractRendererState.Updaters.Core.customFormState.children
             .stream(
               replaceWith(
                 ValueInfiniteStreamState.Default(
@@ -68,18 +66,18 @@ const intialiseTable = <CustomContext = Unit>() =>
                 ),
             )
             .thenMany([
-              AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
                 replaceWith(getChunkWithParams),
               ),
-              AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+              TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                 false,
               ),
-              AbstractTableRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
                 replaceWith(current.remoteEntityVersionIdentifier),
               ),
-              AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
                 replaceWith<
-                  AbstractTableRendererState["customFormState"]["initializationStatus"]
+                  TableAbstractRendererState["customFormState"]["initializationStatus"]
                 >("initialized"),
               ),
             ]),
@@ -92,9 +90,9 @@ const reinitialise = <CustomContext = Unit>() =>
     .GetState()
     .then((_) => {
       return Co<CustomContext>().SetState(
-        AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
           replaceWith<
-            AbstractTableRendererState["customFormState"]["initializationStatus"]
+            TableAbstractRendererState["customFormState"]["initializationStatus"]
           >("reinitializing"),
         ),
       );

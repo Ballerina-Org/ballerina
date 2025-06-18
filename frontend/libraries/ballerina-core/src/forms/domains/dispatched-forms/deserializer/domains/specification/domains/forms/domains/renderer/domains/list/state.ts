@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   ListType,
@@ -63,10 +64,10 @@ export const ListRenderer = {
             )
           : ValueOrErrors.Default.return(serialized),
 
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: ListType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)

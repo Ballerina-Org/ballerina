@@ -4,7 +4,6 @@ import {
   CoTypedFactory,
   Debounce,
   Debounced,
-  Delta,
   DispatchDelta,
   id,
   InfiniteStreamLoader,
@@ -14,16 +13,12 @@ import {
   SimpleCallback,
   Template,
   Value,
-  ValueOption,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
 } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractRendererView,

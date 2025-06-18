@@ -1,6 +1,7 @@
 import { List, Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchIsObject,
   DispatchParsedType,
   FormLayout,
@@ -80,9 +81,9 @@ export const RecordRenderer = {
                     extends:
                       "extends" in _ ? (_.extends as string[]) : undefined,
                   }),
-    DeserializeRenderer: <T>(
+    DeserializeRenderer: <T extends DispatchInjectablesTypes<T>>(
       type: RecordType<T>,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
       serialized?: unknown,
     ): ValueOrErrors<Renderer<T> | undefined, string> =>
@@ -95,10 +96,10 @@ export const RecordRenderer = {
             undefined,
           )
         : ValueOrErrors.Default.return(undefined),
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: RecordType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
       isInlined: boolean,
     ): ValueOrErrors<RecordRenderer<T>, string> =>

@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -44,10 +45,10 @@ export const BaseSumUnitDateRenderer = {
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is required`)
           : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<T>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(

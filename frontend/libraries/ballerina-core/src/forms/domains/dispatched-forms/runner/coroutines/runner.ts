@@ -9,10 +9,10 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { Dispatcher } from "../../../../../../main";
+import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
 
 export const DispatchFormRunner = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
 >() => {
   const Co = CoTypedFactory<
     DispatchFormRunnerContext<T>,

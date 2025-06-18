@@ -1,5 +1,6 @@
 import { type } from "node:os";
 import {
+  DispatchInjectablesTypes,
   DispatchParsedType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -15,7 +16,7 @@ export type LookupRenderer<T> = {
 };
 
 export const LookupRenderer = {
-  Default: <T>(
+  Default: <T extends DispatchInjectablesTypes<T>>(
     renderer: string,
     type: DispatchParsedType<T>,
     api?: string | string[],
@@ -26,7 +27,7 @@ export const LookupRenderer = {
     api,
   }),
   Operations: {
-    Deserialize: <T>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchParsedType<T>,
       serialized: SerializedLookupRenderer,
       api?: string | string[],

@@ -1,5 +1,6 @@
 import {
   DispatcherContext,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   MapRepo,
   Template,
@@ -20,7 +21,7 @@ import { UnionDispatcher } from "./domains/unionDispatcher/state";
 
 export const Dispatcher = {
   Operations: {
-    DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    DispatchAs: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<T>,
@@ -41,7 +42,7 @@ export const Dispatcher = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as: ${as}`),
       ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<T>,

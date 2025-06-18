@@ -1,4 +1,5 @@
 import {
+  DispatchInjectablesTypes,
   DispatcherContext,
   Template,
   ValueOrErrors,
@@ -8,7 +9,7 @@ import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>>(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
       dispatcherContext: DispatcherContext<T>,

@@ -1,20 +1,17 @@
 import { List } from "immutable";
 import {
   BasicFun,
-  DispatchDelta,
-  DispatcherContext,
   DispatchSpecificationDeserializationResult,
   DispatchFormsParserState,
-  DispatchParsedLauncher,
   PredicateValue,
   simpleUpdater,
   Sum,
   Unit,
-  Updater,
   ValueOrErrors,
   Template,
   unit,
   DispatchOnChange,
+  DispatchInjectablesTypes,
 } from "../../../../../main";
 
 export type LauncherRef<Flags = Unit> = {
@@ -26,7 +23,7 @@ export type LauncherRef<Flags = Unit> = {
 };
 
 export type DispatchFormRunnerStatus<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
 > =
   | { kind: "not initialized" }
@@ -40,7 +37,7 @@ export type DispatchFormRunnerStatus<
   | { kind: "error"; errors: List<string> };
 
 export type DispatchFormRunnerContext<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
 > = {
   extraContext: any;
   launcherRef: LauncherRef;
@@ -54,14 +51,14 @@ export type DispatchFormRunnerContext<
 } & DispatchFormsParserState<T>;
 
 export type DispatchFormRunnerState<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
 > = {
   status: DispatchFormRunnerStatus<T>;
   formState: any;
 };
 export type DispatchFormRunnerForeignMutationsExpected = Unit;
 export const DispatchFormRunnerState = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
 >() => {
   return {
     Default: (): DispatchFormRunnerState<T> => ({
