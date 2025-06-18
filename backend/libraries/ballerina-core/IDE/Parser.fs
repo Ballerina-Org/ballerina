@@ -16,7 +16,7 @@ open Ballerina.DSL.FormEngine.Validator
 open Ballerina.Errors
 open Ballerina.DSL.Expr.Model
 
-//TODO: most of the code is from a FromEngine, decouple that and unify
+//TODO: most of the code is from a FormEngine, decouple that and unify
 module Parser =
   let codegenConfigFilePath = Environment.GetEnvironmentVariable("codegenConfigPath")
   let private codegenConfig = File.ReadAllText codegenConfigFilePath
@@ -67,7 +67,6 @@ module Parser =
   let validate (spec: string) =
     sum {
       let! _mergedJson, parsedForms = parse spec
-          
       let! _ =
         (CodegenConfig, { PredicateValidationHistory = Set.empty })
         |> (ParsedFormsContext.Validate generatedLanguageSpecificConfig parsedForms.Value).run //TODO: confirm Options is always Some

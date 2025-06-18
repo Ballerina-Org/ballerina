@@ -35,4 +35,4 @@ type SpecController (_logger : ILogger<SpecController>) =
       
   [<HttpPost("lock")>]
   member _.Lock([<FromBody>] req: SpecRequest) =
-    ActionResult<bool>(Db.lockSpace req.SpecBody)
+    ActionResult<unit>(Storage.lockSpec req.SpecBody)

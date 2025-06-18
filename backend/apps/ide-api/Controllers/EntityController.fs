@@ -20,7 +20,7 @@ type EntityController (_logger : ILogger<EntityController>) =
   member _.Get() =  
     let op =
       sum {
-        let! spec = Db.lockedSpec () |> Sum.fromOption (fun () -> "Error: missing a locked spec") //TODO:use Errors.Singleton
+        let! spec = Storage.lockedSpec () |> Sum.fromOption (fun () -> "Error: missing a locked spec") //TODO:use Errors.Singleton
         let! _mergedJson, parsedForms = Parser.parse spec
         return { Value = parsedForms.Value.Types.Keys.ToArray()[0] }
       }
