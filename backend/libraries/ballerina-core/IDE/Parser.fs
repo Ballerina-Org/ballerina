@@ -56,7 +56,7 @@ module Parser =
           Types = injectedTypes }
       
     sum {
-      let! _mergedJson, parsedForms  =
+      let! _mergedJson, parsedForms =
         (CodegenConfig, initialContext)
         |> (ParsedFormsContext.Parse generatedLanguageSpecificConfig [json]).run
         |> sum.MapError foldErrors

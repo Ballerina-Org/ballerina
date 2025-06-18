@@ -38,7 +38,7 @@ export const IDELayout: IDEView = (props) => (
         right={
             <>
                 <Actions
-                    onRun={ async () =>{
+                    onRun={ async () => {
                         await IDEApi.validateSpec({value: props.context.editor.input.value})
                             .then(res =>                        
                                 props.setState(
@@ -48,18 +48,15 @@ export const IDELayout: IDEView = (props) => (
                     }}
                     onSave={ async () =>
                         {
-                            const res = await IDEApi.lock(props.context.editor.input);
-                            const test = await IDEApi.entity()
-                            
-                            debugger
- 
+                            //const res = await IDEApi.lock(props.context.editor.input);
+                            const entity = await IDEApi.entity(props.context.editor.input)
                             props.setState(
                                 IDE.Updaters.Core.runner(
                                     SpecRunner.Updaters.Core.indicator(
                                         replaceWith(SpecRunnerIndicator.Default.locked())
                                     )
                                 ).then (x =>{
-                                    alert(res);
+                                    alert(entity);
                                     return x
                                 })
                             )

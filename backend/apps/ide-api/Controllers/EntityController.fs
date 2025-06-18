@@ -16,18 +16,19 @@ type EntityResponse = { Value: string  }
 type EntityController (_logger : ILogger<EntityController>) =
   inherit ControllerBase()
 
-  [<HttpGet>]
-  member _.Get() =  
+  [<HttpPost("play")>]
+  member _.Post([<FromBody>] req: SpecRequest) =  
     let op =
       sum {
-        let! spec = Storage.lockedSpec () |> Sum.fromOption (fun () -> "Error: missing a locked spec") //TODO:use Errors.Singleton
+        //let! spec = Storage.lockedSpec () |> Sum.fromOption (fun () -> "Error: missing a locked spec") //TODO:use Errors.Singleton
+        let spec = req.SpecBody
         let! _mergedJson, parsedForms = Parser.parse spec
         return { Value = parsedForms.Value.Types.Keys.ToArray()[0] }
       }
-      
+       
     {
       Value =
         match op with
         | Left result -> result.Value
         | Right error -> error
-    }
+    } |> ActionResult<EntityResponse>

@@ -1,0 +1,90 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"fsharp","items":[{"name":"csharp","languageName":"C#","aliases":["c#","cs"]},{"name":"fsharp","languageName":"fsharp"},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!markdown
+
+## Bogus (fake data generator for .NET) on F#: 
+Bogus on F# (blog post)[https://www.compositional-it.com/news-blog/bogus-on-f/]
+
+#!fsharp
+
+#r "nuget: Bogus"
+open Bogus
+
+#!fsharp
+
+type Customer =
+  { FullName : string
+    PhoneNumber : string
+    Street : string
+    City : string
+    PostCode : string
+    Country : string }
+
+#!fsharp
+
+let faker = Faker "en"
+
+#!fsharp
+
+let generateCustomer() =
+  { FullName = faker.Name.FullName()
+    PhoneNumber = faker.Phone.PhoneNumber()
+    Street = faker.Address.StreetAddress()
+    City = faker.Address.City()
+    PostCode = faker.Address.ZipCode()
+    Country = faker.Address.Country() }
+
+#!fsharp
+
+generateCustomer()
+
+#!fsharp
+
+[ for i = 1 to 5 do generateCustomer() ]
+
+#!fsharp
+
+type Gender = Male = 1 | Female = 2 | Other = 3
+
+type EmailProvider = Outlook = 1 | Gmail = 2 | Yahoo = 3
+
+type Customer =
+  { FullName : string
+    Username : string
+    EmailProvider : EmailProvider
+    Gender : Gender }
+
+type Order = 
+  { Id : Guid
+    Customer : Customer
+    Delivered : bool }
+
+#!fsharp
+
+faker.Date.Between(
+  System.DateTime(2023, 1, 1),
+  System.DateTime(2023, 12, 31)
+)
+
+#!fsharp
+
+let faker = Faker "de"
+
+let orders =
+  let customers =
+    [ for i = 0 to 3 do 
+      { FullName = faker.Name.FullName()
+        Username = faker.Internet.UserName()
+        EmailProvider = faker.PickRandom<EmailProvider>()
+        Gender = faker.PickRandom<Gender>() } ]
+
+  [ for i = 0 to 5 do 
+    { Id = faker.Random.Guid()
+      Customer = faker.PickRandom(customers) 
+      Delivered = faker.Random.Bool() } ]
+
+#!fsharp
+
+orders |> List.toArray

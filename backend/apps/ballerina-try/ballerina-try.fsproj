@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(OutputPath)/ballerina-try.dll" Pack="true" PackagePath="interactive-extensions/dotnet" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.9.300" />
+    <PackageReference Include="Microsoft.DotNet.Interactive" Version="1.0.0-beta.25177.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.FSharp" Version="1.0.0-beta.25177.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Update="FSharp.Core" Version="9.0.300" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Data\FileStore.fs" />
+    <Compile Include="Commands\FormsCommand.fs" />
+    <Compile Include="Commands\BogusCommand.fs" />
+    <Compile Include="Languages.fs" />
+    <Compile Include="LoadDependencies.fs" />
+    <Compile Include="Builders\CheatInteractive.fs" />
+    <Compile Include="Builders\Runner.fs" />
+    <Compile Include="Builders\CodeExecute.fs" />
+    <Compile Include="KernelExtension.fs" />
+    <Folder Include="docs\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libraries\ballerina-core\ballerina-core.fsproj" />
+  </ItemGroup>
+  <PropertyGroup Label="customnuget">
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionSuffix>1.0.0-beta.$([System.DateTime]::UtcNow.DayOfYear).$([System.DateTime]::UtcNow.ToString("Hmm"))</VersionSuffix>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>$(VersionSuffix)</Version>
+    <InformationalVersion>$(VersionSuffix)</InformationalVersion>
+    <PackageVersion>$(VersionSuffix)</PackageVersion>
+    <PackageId>TryBallerina</PackageId>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <BaseOutputPath>c:/nuget</BaseOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Label="nowarn">
+    <NoWarn>NU5100</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Label="restorer">
+    <RestoreLockedMode>false</RestoreLockedMode>
+  </PropertyGroup>
+</Project>

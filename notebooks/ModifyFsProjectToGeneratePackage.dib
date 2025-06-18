@@ -1,0 +1,125 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"fsharp","items":[{"name":"csharp","languageName":"C#","aliases":["c#","cs"]},{"name":"fsharp","languageName":"fsharp"},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!fsharp
+
+open System
+open System.IO
+open System.Xml.Linq
+
+#!markdown
+
+## fsprojPaths contains projects for whom we want to temporarly add GeneratePackageOnBuild and similar properties
+
+We generate nuget packages sorely for notebooks so they should be generated only locally.
+Changes to the fsproj should be next discarded from git changes
+
+#!fsharp
+
+let fsprojPaths = [
+    {| Path = """D:\_blp\code\unbound\backend\apps\ballerina-try\ballerina-try.fsproj"""; PackageName = "TryBallerina" |}
+    {| Path = """D:\_blp\code\unbound\backend\libraries\unbound-core\unbound-core.fsproj"""; PackageName = "UnboundCore" |}
+    {| Path = """D:\_blp\code\unbound\backend\libraries\ballerina-core\ballerina-core.fsproj"""; PackageName = "BallerinaCore" |}
+]
+
+#!fsharp
+
+let nsName name = XName.Get(name)
+
+let createPropertyGroup label (elements: (string*string) seq) =
+    let pg = XElement(nsName "PropertyGroup")
+    pg.SetAttributeValue(XName.Get("Label"), label)
+    for (key,value) in elements do
+        pg.Add(XElement(nsName key, value))
+    pg
+
+for path in fsprojPaths do
+    if File.Exists(path.Path) then
+        let doc = XDocument.Load(path.Path)
+        let ns = doc.Root.Name.Namespace
+
+        let existsByLabel label =
+            doc.Descendants(ns + "PropertyGroup")
+            |> Seq.exists (fun pg ->
+                let attr = pg.Attribute(XName.Get("Label"))
+                attr <> null && attr.Value = label
+            )
+
+        let addIfMissing label keyValues =
+            if not (existsByLabel label) then
+                let group = createPropertyGroup label keyValues
+                doc.Root.Add(group)
+                printfn $"✅ Added PropertyGroup '{label}' to: {Path.GetFileName(path.Path)}"
+            else
+                printfn $"✔ Already contains PropertyGroup '{label}' in: {Path.GetFileName(path.Path)}"
+
+        addIfMissing "customnuget" [
+            "AutoGenerateBindingRedirects", "true"
+            "GenerateBindingRedirectsOutputType", "true"
+            "GenerateDocumentationFile", "true"
+            "VersionSuffix", """1.0.0-beta.$([System.DateTime]::UtcNow.DayOfYear).$([System.DateTime]::UtcNow.ToString("Hmm"))"""
+            "AssemblyVersion", "1.0.0.0"
+            "FileVersion", "1.0.0.0"
+            "Version", "$(VersionSuffix)"
+            "InformationalVersion", "$(VersionSuffix)"
+            "PackageVersion", "$(VersionSuffix)"
+            "PackageId", $"{path.PackageName}"
+            "GeneratePackageOnBuild", "True"
+            "BaseOutputPath", "c:/nuget"
+        ]
+
+        addIfMissing "nowarn" [
+            "NoWarn", "NU5100"
+        ]
+
+        addIfMissing "restorer" [
+            "RestoreLockedMode", "false"
+        ]
+
+        doc.Save(path.Path)
+    else
+        printfn $"❌ File not found: {path}"
+
+#!fsharp
+
+open System
+open System.IO
+open System.Xml.Linq
+
+let nsName name = XName.Get(name)
+
+let removePropertyGroupByLabel (doc: XDocument) (label: string) =
+    let ns = doc.Root.Name.Namespace
+    let toRemove =
+        doc.Descendants(ns + "PropertyGroup")
+        |> Seq.filter (fun pg ->
+            let attr = pg.Attribute(XName.Get("Label"))
+            attr <> null && attr.Value = label
+        )
+        |> Seq.toList
+
+    for node in toRemove do
+        node.Remove()
+
+    toRemove.Length
+
+for path in fsprojPaths do
+    if File.Exists(path.Path) then
+        let doc = XDocument.Load(path.Path)
+
+        let removedCount =
+            [ "customnuget"; "nowarn"; "restorer" ]
+            |> List.sumBy (fun label ->
+                let count = removePropertyGroupByLabel doc label
+                if count > 0 then
+                    printfn $"🗑 Removed {count} PropertyGroup(s) with label '{label}' from: {Path.GetFileName(path.Path)}"
+                else
+                    printfn $"✔ No PropertyGroup with label '{label}' found in: {Path.GetFileName(path.Path)}"
+                count
+            )
+
+        if removedCount > 0 then
+            doc.Save(path.Path)
+    else
+        printfn $"❌ File not found: {path.Path}"

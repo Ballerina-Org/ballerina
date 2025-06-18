@@ -1,4 +1,4 @@
-﻿import { Value } from "ballerina-core";
+﻿import {Unit, Value } from "ballerina-core";
 import { SpecValidationResult } from "../domains/spec-editor/state";
 
 const url = "https://localhost:7005"
@@ -21,7 +21,7 @@ export const IDEApi = {
         
         return await response.json(); 
     },
-    async lock(spec: Value<string>): Promise<boolean> {
+    async lock(spec: Value<string>): Promise<Unit> {
 
         const response = await fetch(`${url}/spec/lock`, {
             method: "POST",
@@ -38,14 +38,15 @@ export const IDEApi = {
 
         return await response.json();
     },
-    async entity(): Promise<string> {
+    async entity(spec: Value<string>): Promise<string> {
 
-        const response = await fetch(`${url}/entity`, {
-            method: "GET",
+        const response = await fetch(`${url}/entity/play`, {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
+            body: JSON.stringify({ specBody: spec.value })
         });
 
         if (!response.ok) {

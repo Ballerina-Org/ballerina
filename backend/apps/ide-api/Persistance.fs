@@ -24,7 +24,7 @@ module Storage =
   let getInstancePath tenantId specName instanceName =
     Path.Combine(getInstancesPath tenantId specName, instanceName + ".json")
 
-  let ensureSpecStructure tenantId specName =
+  let ensureSpecStructure tenantId specName=
     let path = getSpecFolder tenantId specName
     let instances = getInstancesPath tenantId specName
     Directory.CreateDirectory(path) |> ignore
@@ -74,12 +74,11 @@ module Storage =
     let private options = JsonSerializerOptions(WriteIndented = true)
     options.Converters.Add(JsonFSharpConverter())
 
-    
     let get(): Sum<string,string> =
       loadInstance tenantId specName instanceName
       |> Sum.fromOption<string, string> (fun () -> $"Entity file for ({instanceName}) not found:")
 
-    let save() (data: string) =
+    let save(data: string) =
       saveInstance tenantId specName instanceName data
 
     // tmp to play with an entity objects in a repl

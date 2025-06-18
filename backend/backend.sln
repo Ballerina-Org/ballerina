@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ide-api", "apps\ide-api\ide-api.fsproj", "{CB4EC671-3C5A-4F88-903C-599C38B13025}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-try", "apps\ballerina-try\ballerina-try.fsproj", "{8407B9BA-FC4C-4630-9D05-E9917AA528BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{CB4EC671-3C5A-4F88-903C-599C38B13025}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB4EC671-3C5A-4F88-903C-599C38B13025}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB4EC671-3C5A-4F88-903C-599C38B13025}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8407B9BA-FC4C-4630-9D05-E9917AA528BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8407B9BA-FC4C-4630-9D05-E9917AA528BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8407B9BA-FC4C-4630-9D05-E9917AA528BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8407B9BA-FC4C-4630-9D05-E9917AA528BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +49,7 @@ Global
 		{B98EDEBE-45D3-4CBA-9521-377DE038FD35} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
 		{5C76714D-75D7-45D3-912F-9C9FBFD7E299} = {F2E35B3E-9711-EDEC-6202-DB40BDEED14A}
 		{CB4EC671-3C5A-4F88-903C-599C38B13025} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
+		{8407B9BA-FC4C-4630-9D05-E9917AA528BF} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2BC92A62-6F92-4DC8-ADB6-66FD290B6369}
