@@ -62,6 +62,7 @@ import {
   UnionAbstractRendererView,
   OneAbstractRendererView,
   ValueOption,
+  TableMethod,
 } from "ballerina-core";
 import { CategoryAbstractRendererView } from "../injected-forms/category";
 import { Map, OrderedMap } from "immutable";
@@ -737,7 +738,7 @@ export const PersonConcreteRenderers = {
       },
     streamingTable:
       <
-        Context extends FormLabel,
+        Context extends FormLabel & { apiMethods: Array<TableMethod> },
         ForeignMutationsExpected,
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
@@ -805,34 +806,42 @@ export const PersonConcreteRenderers = {
                               ? "🙉"
                               : "🙈"}
                           </button>
-                          <button
-                            onClick={() => props.foreignMutations.remove(id)}
-                          >
-                            {"❌"}
-                          </button>
-                          <button
-                            onClick={() => props.foreignMutations.duplicate(id)}
-                          >
-                            {"👥"}
-                          </button>
-                          <select
-                            onChange={(_) =>
-                              props.foreignMutations.moveTo(
-                                id,
-                                props.EmbeddedTableData.keySeq().get(
-                                  Number(_.currentTarget.value),
-                                )!,
-                              )
-                            }
-                          >
-                            {props.EmbeddedTableData.entrySeq().map(
-                              (_, optIdx) => (
-                                <option key={_[0]} selected={optIdx === idx}>
-                                  {optIdx}
-                                </option>
-                              ),
-                            )}
-                          </select>
+                          {props.context.apiMethods.includes("remove") && (
+                            <button
+                              onClick={() => props.foreignMutations.remove(id)}
+                            >
+                              {"❌"}
+                            </button>
+                          )}
+                          {props.context.apiMethods.includes("duplicate") && (
+                            <button
+                              onClick={() =>
+                                props.foreignMutations.duplicate(id)
+                              }
+                            >
+                              {"👥"}
+                            </button>
+                          )}
+                          {props.context.apiMethods.includes("move") && (
+                            <select
+                              onChange={(_) =>
+                                props.foreignMutations.moveTo(
+                                  id,
+                                  props.EmbeddedTableData.keySeq().get(
+                                    Number(_.currentTarget.value),
+                                  )!,
+                                )
+                              }
+                            >
+                              {props.EmbeddedTableData.entrySeq().map(
+                                (_, optIdx) => (
+                                  <option key={_[0]} selected={optIdx === idx}>
+                                    {optIdx}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          )}
                           <td style={{ border: "1px solid black" }}>
                             <input
                               type="checkbox"

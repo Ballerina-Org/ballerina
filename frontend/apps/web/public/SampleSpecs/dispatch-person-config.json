@@ -561,10 +561,12 @@
     },
     "tables": {
       "ActiveUsersApi": {
-        "type": "User"
+        "type": "User",
+        "methods": ["move", "duplicate"]
       },
       "ActiveFriendsApi": {
-        "type": "Friend"
+        "type": "Friend",
+        "methods": ["remove"]
       },
       "ChildrenApi": {
         "type": "User"

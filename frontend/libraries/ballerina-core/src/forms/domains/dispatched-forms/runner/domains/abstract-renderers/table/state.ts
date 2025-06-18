@@ -22,6 +22,7 @@ import {
   DispatchOnChange,
   DomNodeIdReadonlyContext,
   DispatchParsedType,
+  TableMethod,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -39,6 +40,7 @@ export type AbstractTableRendererReadonlyContext = {
   identifiers: { withLauncher: string; withoutLauncher: string };
   label?: string;
   remoteEntityVersionIdentifier: string;
+  apiMethods: Array<TableMethod>;
 };
 
 export type AbstractTableRendererState = {

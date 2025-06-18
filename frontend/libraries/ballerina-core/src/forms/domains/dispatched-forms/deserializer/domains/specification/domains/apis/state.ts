@@ -102,10 +102,29 @@ export const StreamApis = {
   },
 };
 
+const TableMethods = {
+  add: "add",
+  duplicate: "duplicate",
+  remove: "remove",
+  move: "move",
+} as const;
+export type TableMethod = (typeof TableMethods)[keyof typeof TableMethods];
 export type TableApiName = string;
-export type TableApis = Map<TableApiName, { type: DispatchTypeName }>;
+export type TableApis = Map<
+  TableApiName,
+  { type: DispatchTypeName; methods: Array<TableMethod> }
+>;
 export const TableApis = {
   Operations: {
+    IsMethod: (value: unknown): value is TableMethod => {
+      return (
+        isString(value) &&
+        Object.values(TableMethods).includes(value as TableMethod)
+      );
+    },
+    IsMethodsArray: (values: unknown[]): values is Array<TableMethod> => {
+      return values.every((value) => TableApis.Operations.IsMethod(value));
+    },
     Deserialize: (
       serializedApiTables?: unknown,
     ): ValueOrErrors<undefined | TableApis, string> =>
@@ -118,7 +137,10 @@ export const TableApis = {
           : ValueOrErrors.Operations.All(
               List<
                 ValueOrErrors<
-                  [TableApiName, { type: DispatchTypeName }],
+                  [
+                    TableApiName,
+                    { type: DispatchTypeName; methods: Array<TableMethod> },
+                  ],
                   string
                 >
               >(
@@ -135,17 +157,41 @@ export const TableApis = {
                           ? ValueOrErrors.Default.throwOne(
                               `type is not a string`,
                             )
-                          : // TODO: type assertion is safe but would like typescript to know that
-                            ValueOrErrors.Default.return([
-                              key,
-                              value as { type: DispatchTypeName },
-                            ]),
+                          : !("methods" in value)
+                            ? ValueOrErrors.Default.return([
+                                key,
+                                { ...value, methods: [] } as {
+                                  type: DispatchTypeName;
+                                  methods: Array<TableMethod>;
+                                },
+                              ])
+                            : !Array.isArray(value.methods)
+                              ? ValueOrErrors.Default.throwOne(
+                                  `methods is not an array`,
+                                )
+                              : !TableApis.Operations.IsMethodsArray(
+                                    value.methods,
+                                  )
+                                ? ValueOrErrors.Default.throwOne(
+                                    `methods is not an array of valid table methods`,
+                                  )
+                                : ValueOrErrors.Default.return([
+                                    key,
+                                    {
+                                      // TODO: type assertion is safe but would like typescript to know that
+                                      type: value.type as DispatchTypeName,
+                                      methods: value.methods,
+                                    },
+                                  ]),
                 ),
               ),
             )
               .Then((entries) =>
                 ValueOrErrors.Default.return(
-                  Map<TableApiName, { type: DispatchTypeName }>(entries),
+                  Map<
+                    TableApiName,
+                    { type: DispatchTypeName; methods: Array<TableMethod> }
+                  >(entries),
                 ),
               )
               .MapErrors((errors) =>
