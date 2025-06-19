@@ -414,10 +414,12 @@ export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
 
 export type DispatchDeltaTransferComparand = string;
 
+export type AggregatedFlags<Flags> = Array<[Flags, DispatchDeltaTransferComparand]>;
+
 export const DispatchDeltaTransfer = {
   Default: {
     FromDelta:
-      <DispatchDeltaTransferCustom>(
+      <DispatchDeltaTransferCustom, Flags = Unit>(
         toRawObject: (
           value: PredicateValue,
           type: DispatchParsedType<any>,
@@ -430,27 +432,29 @@ export const DispatchDeltaTransfer = {
             state: any,
           ) => ValueOrErrors<any, string>,
           fromDelta: (
-            delta: DispatchDelta,
+            delta: DispatchDelta<Flags>,
           ) => ValueOrErrors<
             [
               DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
               DispatchDeltaTransferComparand,
+              AggregatedFlags<Flags>
             ],
             string
           >,
         ) => (
-          deltaCustom: DispatchDeltaCustom,
+          deltaCustom: DispatchDeltaCustom<Flags>,
         ) => ValueOrErrors<
-          [DispatchDeltaTransferCustom, DispatchDeltaTransferComparand],
+          [DispatchDeltaTransferCustom, DispatchDeltaTransferComparand, AggregatedFlags<Flags>],
           string
         >,
       ) =>
       (
-        delta: DispatchDelta,
+        delta: DispatchDelta<Flags>,
       ): ValueOrErrors<
         [
           DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
           DispatchDeltaTransferComparand,
+          AggregatedFlags<Flags>
         ],
         string
       > => {
@@ -458,6 +462,7 @@ export const DispatchDeltaTransfer = {
           [
             DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
             DispatchDeltaTransferComparand,
+            AggregatedFlags<Flags>
           ],
           string
         > = (() => {
@@ -468,6 +473,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -476,6 +482,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[NumberReplace]",
+                  delta.flags ? [[delta.flags, "[NumberReplace]"]] : []
                 ]),
             );
           }
@@ -486,6 +493,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -494,6 +502,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[StringReplace]",
+                  delta.flags ? [[delta.flags, "[StringReplace]"]] : []
                 ]),
             );
           }
@@ -504,6 +513,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -512,6 +522,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[BoolReplace]",
+                  delta.flags ? [[delta.flags, "[BoolReplace]"]] : []
                 ]),
             );
           }
@@ -522,6 +533,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -530,6 +542,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[TimeReplace]",
+                  delta.flags ? [[delta.flags, "[TimeReplace]"]] : []
                 ]),
             );
           }
@@ -540,6 +553,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -548,6 +562,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[GuidReplace]",
+                  delta.flags ? [[delta.flags, "[GuidReplace]"]] : []
                 ]),
             );
           }
@@ -558,6 +573,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -566,6 +582,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "UnitReplace",
+                  delta.flags ? [[delta.flags, "UnitReplace"]] : []
                 ]),
             );
           }
@@ -576,6 +593,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -584,6 +602,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[OptionReplace]",
+                  delta.flags ? [[delta.flags, "[OptionReplace]"]] : []
                 ]),
             );
           }
@@ -596,6 +615,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -604,6 +624,7 @@ export const DispatchDeltaTransfer = {
                   Value: value[0],
                 },
                 `[OptionValue]${value[1]}`,
+                delta.flags ? [[delta.flags, `[OptionValue]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -614,6 +635,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -622,6 +644,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[SumReplace]",
+                  delta.flags ? [[delta.flags, "[SumReplace]"]] : []
                 ]),
             );
           }
@@ -634,6 +657,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -642,6 +666,7 @@ export const DispatchDeltaTransfer = {
                   Left: value[0],
                 },
                 `[SumLeft]${value[1]}`,
+                delta.flags ? [[delta.flags, `[SumLeft]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -654,6 +679,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -662,6 +688,7 @@ export const DispatchDeltaTransfer = {
                   Right: value[0],
                 },
                 `[SumRight]${value[1]}`,
+                delta.flags ? [[delta.flags, "[SumRight]"], ...value[2]] : value[2]
               ]),
             );
           }
@@ -672,6 +699,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -680,6 +708,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[ArrayReplace]",
+                  delta.flags ? [[delta.flags, "[ArrayReplace]"]] : []
                 ]),
             );
           }
@@ -692,6 +721,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -703,6 +733,7 @@ export const DispatchDeltaTransfer = {
                   },
                 },
                 `[ArrayValue][${delta.value[0]}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[ArrayValue][${delta.value[0]}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -713,6 +744,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -721,6 +753,7 @@ export const DispatchDeltaTransfer = {
                     Add: value,
                   },
                   "[ArrayAdd]",
+                  delta.flags ? [[delta.flags, "[ArrayAdd]"]] : []
                 ]),
             );
           }
@@ -734,6 +767,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -742,6 +776,7 @@ export const DispatchDeltaTransfer = {
                   AddAt: { Item1: delta.value[0], Item2: element },
                 },
                 `[ArrayAddAt][${delta.value[0]}]`,
+                delta.flags ? [[delta.flags, `[ArrayAddAt][${delta.value[0]}]`]] : []
               ]),
             );
           }
@@ -750,6 +785,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -758,6 +794,7 @@ export const DispatchDeltaTransfer = {
                 RemoveAt: delta.index,
               },
               `[ArrayRemoveAt]`,
+              delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : []
             ]);
           }
           if (delta.kind == "ArrayMoveFromTo") {
@@ -765,6 +802,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -773,6 +811,7 @@ export const DispatchDeltaTransfer = {
                 MoveFromTo: { Item1: delta.from, Item2: delta.to },
               },
               `[ArrayMoveFromTo]`,
+              delta.flags ? [[delta.flags, "[ArrayMoveFromTo]"]] : []
             ]);
           }
           if (delta.kind == "ArrayDuplicateAt") {
@@ -780,6 +819,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -788,6 +828,7 @@ export const DispatchDeltaTransfer = {
                 DuplicateAt: delta.index,
               },
               `[ArrayDuplicateAt]`,
+              delta.flags ? [[delta.flags, "[ArrayDuplicateAt]"]] : []
             ]);
           }
           if (delta.kind == "SetReplace") {
@@ -797,6 +838,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -805,6 +847,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[SetReplace]",
+                  delta.flags ? [[delta.flags, "[SetReplace]"]] : []
                 ]),
             );
           }
@@ -817,6 +860,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -825,6 +869,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[SetValue][${delta.value[0]}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[SetValue][${delta.value[0]}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -835,6 +880,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -843,6 +889,7 @@ export const DispatchDeltaTransfer = {
                     Add: value,
                   },
                   `[SetAdd]`,
+                  delta.flags ? [[delta.flags, "[SetAdd]"]] : []
                 ]),
             );
           }
@@ -853,6 +900,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -861,6 +909,7 @@ export const DispatchDeltaTransfer = {
                     Remove: value,
                   },
                   `[SetRemove]`,
+                  delta.flags ? [[delta.flags, "[SetRemove]"]] : []
                 ]),
             );
           }
@@ -871,6 +920,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -879,6 +929,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[MapReplace]",
+                  delta.flags ? [[delta.flags, "[MapReplace]"]] : []
                 ]),
             );
           }
@@ -891,6 +942,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -899,6 +951,7 @@ export const DispatchDeltaTransfer = {
                   Key: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[MapKey][${delta.value[0]}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[MapKey][${delta.value[0]}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -911,6 +964,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -919,6 +973,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.value[0], Item2: value[0] },
                 },
                 `[MapValue][${delta.value[0]}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[MapValue][${delta.value[0]}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -937,6 +992,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -945,6 +1001,7 @@ export const DispatchDeltaTransfer = {
                     Add: { Item1: key, Item2: value },
                   },
                   `[MapAdd]`,
+                  delta.flags ? [[delta.flags, "[MapAdd]"]] : []
                 ]),
               ),
             );
@@ -954,6 +1011,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -962,6 +1020,7 @@ export const DispatchDeltaTransfer = {
                 Remove: delta.index,
               },
               `[MapRemove]`,
+              delta.flags ? [[delta.flags, "[MapRemove]"]] : []
             ]);
           }
           if (delta.kind == "RecordReplace") {
@@ -970,6 +1029,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >(
@@ -983,6 +1043,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -991,6 +1052,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   `[${lookupName}Replace]`,
+                  delta.flags ? [[delta.flags, `[${lookupName}Replace]`]] : []
                 ]),
             );
           }
@@ -1003,6 +1065,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1017,6 +1080,7 @@ export const DispatchDeltaTransfer = {
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[RecordField][${delta.field[0]}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[RecordField][${delta.field[0]}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1027,6 +1091,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -1035,6 +1100,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[UnionReplace]",
+                  delta.flags ? [[delta.flags, "[UnionReplace]"]] : []
                 ]),
             );
           }
@@ -1047,6 +1113,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1061,6 +1128,7 @@ export const DispatchDeltaTransfer = {
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[UnionCase][${delta.caseName[0]}]`,
+                delta.flags ? [[delta.flags, `[UnionCase][${delta.caseName[0]}]`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1071,6 +1139,7 @@ export const DispatchDeltaTransfer = {
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -1079,6 +1148,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   "[TupleReplace]",
+                  delta.flags ? [[delta.flags, "[TupleReplace]"]] : []
                 ]),
             );
           }
@@ -1091,6 +1161,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1107,6 +1178,7 @@ export const DispatchDeltaTransfer = {
                   ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
                 },
                 `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[TupleCase][${delta.item[0] + 1}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1119,6 +1191,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1127,6 +1200,7 @@ export const DispatchDeltaTransfer = {
                   Value: { Item1: delta.id, Item2: value[0] },
                 },
                 `[TableValue][${delta.id}]${value[1]}`,
+                delta.flags ? [[delta.flags, `[TableValue][${delta.id}]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1135,6 +1209,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -1142,6 +1217,7 @@ export const DispatchDeltaTransfer = {
                 Discriminator: "TableAddEmpty",
               },
               `[TableAddEmpty]`,
+              delta.flags ? [[delta.flags, "[TableAddEmpty]"]] : []
             ]);
           }
           if (delta.kind == "TableRemove") {
@@ -1149,6 +1225,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -1157,6 +1234,7 @@ export const DispatchDeltaTransfer = {
                 RemoveAt: delta.id,
               },
               `[TableRemoveAt][${delta.id}]`,
+              delta.flags ? [[delta.flags, `[TableRemoveAt][${delta.id}]`]] : []
             ]);
           }
           if (delta.kind == "TableDuplicate") {
@@ -1164,6 +1242,7 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -1172,6 +1251,7 @@ export const DispatchDeltaTransfer = {
                 DuplicateAt: delta.id,
               },
               `[TableDuplicateAt][${delta.id}]`,
+              delta.flags ? [[delta.flags, `[TableDuplicateAt][${delta.id}]`]] : []
             ]);
           }
           if (delta.kind == "TableMoveTo") {
@@ -1179,7 +1259,8 @@ export const DispatchDeltaTransfer = {
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
-              ],
+                AggregatedFlags<Flags>
+                ],
               string
             >([
               {
@@ -1187,6 +1268,7 @@ export const DispatchDeltaTransfer = {
                 MoveFromTo: [delta.id, delta.to],
               },
               `[TableMoveFromTo][${delta.id}][${delta.to}]`,
+              delta.flags ? [[delta.flags, `[TableMoveFromTo][${delta.id}][${delta.to}]`]] : []
             ]);
           }
           if (delta.kind == "OneValue") {
@@ -1198,6 +1280,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1206,6 +1289,7 @@ export const DispatchDeltaTransfer = {
                   Value: value[0],
                 },
                 `[OneValue]${value[1]}`,
+                delta.flags ? [[delta.flags, `[OneValue]${value[1]}`], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1215,6 +1299,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >(
@@ -1223,12 +1308,14 @@ export const DispatchDeltaTransfer = {
                 )} in OneReplace.`,
               );
             }
+            // TODO -- suspicious
             return toRawObject(delta.replace, delta.type.args, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -1237,6 +1324,7 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   `[OneReplace]`,
+                  delta.flags ? [[delta.flags, `[OneReplace]`], ...value[2]] : value[2]
                 ]),
             );
           }
@@ -1246,6 +1334,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >(
@@ -1254,13 +1343,14 @@ export const DispatchDeltaTransfer = {
                 )} in OneCreateValue.`,
               );
             }
-
+            // TODO -- suspicious
             return toRawObject(delta.value, delta.type.args, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>
                   ],
                   string
                 >([
@@ -1269,14 +1359,17 @@ export const DispatchDeltaTransfer = {
                     CreateValue: value,
                   },
                   `[OneCreateValue]`,
+                  delta.flags ? [[delta.flags, `[OneCreateValue]`], ...value[2]] : value[2]
                 ]),
             );
           }
+          // TODO -- suspicious
           if (delta.kind == "OneDeleteValue") {
             return ValueOrErrors.Default.return<
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                 DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>
               ],
               string
             >([
@@ -1285,6 +1378,7 @@ export const DispatchDeltaTransfer = {
                 DeleteValue: unit,
               },
               `[OneDeleteValue]`,
+              delta.flags ? [[delta.flags, `[OneDeleteValue]`]] : []
             ]);
           }
           if (delta.kind == "CustomDelta") {
@@ -1299,6 +1393,7 @@ export const DispatchDeltaTransfer = {
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                   DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>
                 ],
                 string
               >([
@@ -1306,6 +1401,7 @@ export const DispatchDeltaTransfer = {
                   ...value[0],
                 },
                 value[1],
+                delta.flags ? [[delta.flags, value[1]], ...value[2]] : value[2]
               ]),
             );
           }
@@ -1313,6 +1409,7 @@ export const DispatchDeltaTransfer = {
             [
               DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
               DispatchDeltaTransferComparand,
+              AggregatedFlags<Flags>
             ],
             string
           >(`Error: cannot process delta ${delta}, not currently supported.`);
@@ -1329,4 +1426,4 @@ export const DispatchDeltaTransfer = {
         );
       },
   },
-};
+}
