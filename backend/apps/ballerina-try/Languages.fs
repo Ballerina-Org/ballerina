@@ -78,3 +78,7 @@ let {name} = JsonProvider<{path.trippleQuote()}, InferTypesFromValues = false>.G
 let {name}_content = File.ReadAllText({path.trippleQuote()})"""
     //printfn $"{code}"
     code  |> Languages.fsharpDefer
+  let makeStrongFromContent (name: string) (content: string) =
+    let code = $"""
+let {name} = JsonProvider<{content.trippleQuote()}, InferTypesFromValues = false>.GetSample()"""
+    code  |> Languages.fsharpDefer

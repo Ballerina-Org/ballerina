@@ -33,7 +33,6 @@ type TryBallerinaKernelExtension () =
           task {
             do! Dependencies.load ()
             let _ = ConvenientCodeExecute._code
-            //do! Async.Sleep 2000
             let _ = ConvenientCodeExecute._blp
             let! _markup =
                     """<div><img style="width:200px" src ="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"/><p>Try Ballerina!</p></div>"""

@@ -25,14 +25,13 @@ module Dependencies =
             "TryBallerina.Interactive.BuildersRunner"
             "TryBallerina.Interactive.FileStore"
             "FSharp.Management"
-            
+            "System.Linq"
             "Ballerina.DSL.Expr"
             "Ballerina.DSL.Expr.Model"
             "Ballerina.Collections.Sum"
             "Ballerina.DSL.FormEngine.Model"
             "Ballerina.DSL.Expr.Types.Model"
             "Ballerina"
-            "Ballerina.IDE"
             "Bogus"
         ]
 

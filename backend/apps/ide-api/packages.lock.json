@@ -8,6 +8,11 @@
         "resolved": "9.0.300",
         "contentHash": "TVt2J7RCE1KCS2IaONF+p8/KIZ1eHNbW+7qmKF6hGoD4tXl+o07ja1mPtFjMqRa5uHMFaTrGTPn/m945WnDLiQ=="
       },
+      "Bogus": {
+        "type": "Transitive",
+        "resolved": "35.6.3",
+        "contentHash": "+5omfZWy8gOcbpc48vKfMI4h/ecbdf3NQm6xCl3zMbaP4J3rMMm5h3kPFeIWBgt4mbz6YY0eeZDLR/6yv1khKw=="
+      },
       "FSharp.Data": {
         "type": "Transitive",
         "resolved": "6.6.0",
@@ -211,6 +216,7 @@
       "BallerinaCore": {
         "type": "Project",
         "dependencies": {
+          "Bogus": "[35.6.3, )",
           "FSharp.Core": "[9.0.300, )",
           "FSharp.Data": "[6.6.0, )",
           "FSharp.SystemTextJson": "[1.3.13, )",

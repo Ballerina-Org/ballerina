@@ -1,19 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-
     <!-- NuGet package metadata -->
     <PackageId>Ballerina.Core</PackageId>
     <Version>1.0.0</Version>
     <Authors>Dr. Giuseppe Maggiore</Authors>
     <Company>Ballerina-Org</Company>
     <Description>Core library for Ballerina</Description>
-
     <!-- Repository info -->
     <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Core/Object/Model.fs" />
     <Compile Include="Core/String/Model.fs" />
@@ -39,6 +37,7 @@
     <Compile Include="BusinessRuleEngine/ExprType/Model.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/Patterns.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/Unification.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/RandomSeeder.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/TypeCheck.fs" />
     <Compile Include="BusinessRuleEngine/Expr/Eval.fs" />
     <Compile Include="BusinessRuleEngine/Parser/Patterns.fs" />
@@ -51,16 +50,15 @@
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/Renderers.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Parser/Runner.fs" />
     <Compile Include="BusinessRuleEngine/FormEngine/Validator.fs" />
-    <Compile Include="IDE\Parser.fs" />
+    <Compile Include="IDE/Parser.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <!--
     https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
     <PackageReference Update="FSharp.Core" Version="9.0.300" />
+    <PackageReference Include="Bogus" Version="35.6.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
     <PackageReference Include="FSharp.Data" Version="6.6.0" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
   </ItemGroup>
-
 </Project>
