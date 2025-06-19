@@ -163,9 +163,15 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   reload: SimpleCallback<void>;
 };
 
-export type OneAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type OneAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   (
-    | (Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
+    | (Omit<
+        OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+        "value"
+      > & {
         value: ValueRecord | ValueUnit;
       } & OneAbstractRendererState & {
           kind: "initialized";
@@ -187,7 +193,10 @@ export type OneAbstractRendererView<CustomPresentationContext = Unit, Flags = Un
   | {
       kind: "initialized";
       DetailsRenderer: (flags: Flags | undefined) => Template<
-        Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
+        Omit<
+          OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+          "value"
+        > & {
           value: ValueRecord | ValueUnit;
         } & OneAbstractRendererState,
         OneAbstractRendererState,
@@ -196,7 +205,10 @@ export type OneAbstractRendererView<CustomPresentationContext = Unit, Flags = Un
       PreviewRenderer?: (value: ValueRecord) => (
         flags: Flags | undefined,
       ) => Template<
-        Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
+        Omit<
+          OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+          "value"
+        > & {
           value: ValueRecord | ValueUnit;
         } & OneAbstractRendererState,
         OneAbstractRendererState,

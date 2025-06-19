@@ -912,9 +912,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultCategory: (props) => {
       return (
         <>
-          {props.context.CustomPresentationContext?.listElement?.isLastListElement && (
-            <p>Last</p>
-          )}
+          {props.context.CustomPresentationContext?.listElement
+            ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1060,9 +1059,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultString: (props) => {
       return (
         <>
-          {props.context.CustomPresentationContext?.listElement?.isLastListElement && (
-            <p>Last</p>
-          )}
+          {props.context.CustomPresentationContext?.listElement
+            ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (

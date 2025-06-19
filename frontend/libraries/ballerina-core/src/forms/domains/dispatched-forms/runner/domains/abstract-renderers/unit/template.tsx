@@ -16,7 +16,10 @@ import {
   replaceWith,
 } from "../../../../../../../../main";
 
-export const UnitAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const UnitAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>

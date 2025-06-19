@@ -28,7 +28,14 @@ export const LoadAndDeserializeSpecification = <
 
   return Co.Template<Unit>(
     Co.GetState().then((current) =>
-      Synchronize<Unit, DispatchSpecificationDeserializationResult<T, Flags, CustomPresentationContexts>>(
+      Synchronize<
+        Unit,
+        DispatchSpecificationDeserializationResult<
+          T,
+          Flags,
+          CustomPresentationContexts
+        >
+      >(
         async () => {
           const serializedSpecifications = await current
             .getFormsConfig()
@@ -101,7 +108,8 @@ export const LoadAndDeserializeSpecification = <
         50,
       ).embed(
         (_) => _.deserializedSpecification,
-        DispatchFormsParserState<T, Flags, CustomPresentationContexts>().Updaters.deserializedSpecification,
+        DispatchFormsParserState<T, Flags, CustomPresentationContexts>()
+          .Updaters.deserializedSpecification,
       ),
     ),
     {

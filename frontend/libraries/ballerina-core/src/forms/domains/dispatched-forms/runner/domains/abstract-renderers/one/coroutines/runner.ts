@@ -86,28 +86,29 @@ const intializeOne = <CustomPresentationContext = Unit>() =>
         return Co<CustomPresentationContext>().Wait(0);
       }
 
-      const initializationCompletedCo = Co<CustomPresentationContext>().SetState(
-        OneAbstractRendererState.Updaters.Core.customFormState.children
-          .initializationStatus(
-            replaceWith<
-              OneAbstractRendererState["customFormState"]["initializationStatus"]
-            >("initialized"),
-          )
-          .thenMany([
-            OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
-              replaceWith(current.remoteEntityVersionIdentifier),
-            ),
-            OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-              replaceWith(false),
-            ),
-            current.customFormState.initializationStatus == "reinitializing" &&
-            current.customFormState.status == "open"
-              ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                  ValueInfiniteStreamState.Updaters.Template.loadMore(),
-                )
-              : idUpdater,
-          ]),
-      );
+      const initializationCompletedCo =
+        Co<CustomPresentationContext>().SetState(
+          OneAbstractRendererState.Updaters.Core.customFormState.children
+            .initializationStatus(
+              replaceWith<
+                OneAbstractRendererState["customFormState"]["initializationStatus"]
+              >("initialized"),
+            )
+            .thenMany([
+              OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+                replaceWith(current.remoteEntityVersionIdentifier),
+              ),
+              OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+                replaceWith(false),
+              ),
+              current.customFormState.initializationStatus ==
+                "reinitializing" && current.customFormState.status == "open"
+                ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                  )
+                : idUpdater,
+            ]),
+        );
 
       const hasInitialValue =
         (PredicateValue.Operations.IsOption(current.value) &&
@@ -219,7 +220,10 @@ const reinitialize = <CustomPresentationContext = Unit>() =>
       );
     });
 
-export const reinitializeOneRunner = <CustomPresentationContext = Unit, Flags = Unit>() =>
+export const reinitializeOneRunner = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>() =>
   Co<CustomPresentationContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(reinitialize<CustomPresentationContext>(), {
@@ -231,7 +235,10 @@ export const reinitializeOneRunner = <CustomPresentationContext = Unit, Flags = 
         props.context.customFormState.previousRemoteEntityVersionIdentifier,
   });
 
-export const initializeOneRunner = <CustomPresentationContext = Unit, Flags = Unit>() =>
+export const initializeOneRunner = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>() =>
   Co<CustomPresentationContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(intializeOne<CustomPresentationContext>(), {
@@ -242,7 +249,10 @@ export const initializeOneRunner = <CustomPresentationContext = Unit, Flags = Un
       props.context.customFormState.initializationStatus === "reinitializing",
   });
 
-export const oneTableDebouncerRunner = <CustomPresentationContext = Unit, Flags = Unit>() =>
+export const oneTableDebouncerRunner = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>() =>
   DebouncerCo<CustomPresentationContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer<CustomPresentationContext>(), {
@@ -253,7 +263,10 @@ export const oneTableDebouncerRunner = <CustomPresentationContext = Unit, Flags 
       ),
   });
 
-export const oneTableLoaderRunner = <CustomPresentationContext = Unit, Flags = Unit>() =>
+export const oneTableLoaderRunner = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>() =>
   Co<CustomPresentationContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(

@@ -17,7 +17,10 @@ import {
   Unit,
 } from "../../../../../../../../main";
 
-export const SecretAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const SecretAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

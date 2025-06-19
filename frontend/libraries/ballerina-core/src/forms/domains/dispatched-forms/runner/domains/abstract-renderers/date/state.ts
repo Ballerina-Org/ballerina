@@ -44,7 +44,10 @@ export type DateAbstractRendererForeignMutationsExpected<Flags> = {
   setNewValue: ValueCallbackWithOptionalFlags<Maybe<string>, Flags>;
 };
 
-export type DateAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type DateAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   DateAbstractRendererReadonlyContext<CustomPresentationContext> &
     DateAbstractRendererState,
   DateAbstractRendererState,

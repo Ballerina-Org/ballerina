@@ -27,7 +27,10 @@ export type BoolAbstractRendererForeignMutationsExpected<Flags> = {
   setNewValue: ValueCallbackWithOptionalFlags<boolean, Flags>;
 };
 
-export type BoolAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type BoolAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
     BoolAbstractRendererState,
   BoolAbstractRendererState,

@@ -49,7 +49,11 @@ export type DispatchFormRunnerContext<
   extraContext: any;
   launcherRef: LauncherRef<Flags>;
   showFormParsingErrors: BasicFun<
-    DispatchSpecificationDeserializationResult<T, Flags, CustomPresentationContexts>,
+    DispatchSpecificationDeserializationResult<
+      T,
+      Flags,
+      CustomPresentationContexts
+    >,
     JSX.Element
   >;
   remoteEntityVersionIdentifier: string;

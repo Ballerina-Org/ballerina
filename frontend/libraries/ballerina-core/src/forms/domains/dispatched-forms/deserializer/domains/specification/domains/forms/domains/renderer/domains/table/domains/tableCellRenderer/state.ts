@@ -43,10 +43,18 @@ export const TableCellRenderer = {
               : undefined,
         }),
       ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       columnName: string,
     ): ValueOrErrors<TableCellRenderer<T>, string> =>

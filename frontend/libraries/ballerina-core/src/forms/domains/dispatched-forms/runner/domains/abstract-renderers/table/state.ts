@@ -29,19 +29,18 @@ import { Template, View } from "../../../../../../../template/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type TableAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    TableType<any>,
-    ValueTable,
-    CustomPresentationContext
-  > & {
-    tableApiSource: DispatchTableApiSource;
-    fromTableApiParser: (
-      value: unknown,
-    ) => ValueOrErrors<PredicateValue, string>;
-    tableHeaders: string[];
-    columnLabels: Map<string, string | undefined>;
-  };
+export type TableAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  TableType<any>,
+  ValueTable,
+  CustomPresentationContext
+> & {
+  tableApiSource: DispatchTableApiSource;
+  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
+  tableHeaders: string[];
+  columnLabels: Map<string, string | undefined>;
+};
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {

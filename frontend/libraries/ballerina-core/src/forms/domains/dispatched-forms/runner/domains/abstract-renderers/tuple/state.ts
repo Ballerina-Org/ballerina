@@ -14,12 +14,13 @@ import {
 import { View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
 
-export type TupleAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    TupleType<any>,
-    ValueTuple,
-    CustomPresentationContext
-  >;
+export type TupleAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  TupleType<any>,
+  ValueTuple,
+  CustomPresentationContext
+>;
 
 export type TupleAbstractRendererState = CommonAbstractRendererState & {
   itemFormStates: Map<number, CommonAbstractRendererState>;

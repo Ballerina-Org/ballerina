@@ -24,7 +24,10 @@ import {
 } from "./state";
 import { OrderedMap } from "immutable";
 
-export const EnumAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const EnumAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

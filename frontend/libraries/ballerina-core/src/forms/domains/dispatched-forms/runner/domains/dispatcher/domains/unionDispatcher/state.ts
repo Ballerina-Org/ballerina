@@ -16,10 +16,18 @@ import { Dispatcher } from "../../state";
 
 export const UnionDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: UnionType<T>,
       unionRenderer: UnionRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       isNested: boolean,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(

@@ -14,12 +14,13 @@ import {
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
-export type UnionAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    UnionType<any>,
-    ValueUnionCase,
-    CustomPresentationContext
-  >;
+export type UnionAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  UnionType<any>,
+  ValueUnionCase,
+  CustomPresentationContext
+>;
 
 export type UnionAbstractRendererState = CommonAbstractRendererState & {
   caseFormStates: Map<string, CommonAbstractRendererState>;

@@ -12,10 +12,18 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 //TODO check type
 export const ListDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: ListType<T>,
       renderer: ListRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,

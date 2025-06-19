@@ -23,7 +23,10 @@ import {
   SumAbstractRendererView,
 } from "./state";
 
-export const SumAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const SumAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   leftTemplate?: Template<

@@ -15,7 +15,10 @@ import {
   Base64FileAbstractRendererView,
 } from "./state";
 
-export const Base64FileAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const Base64FileAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

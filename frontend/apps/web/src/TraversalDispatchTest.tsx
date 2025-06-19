@@ -47,7 +47,11 @@ import {
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomPresentationContext
+  >,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -94,11 +98,18 @@ const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
 
 export const TraversalDispatchTest = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext
+    >().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<

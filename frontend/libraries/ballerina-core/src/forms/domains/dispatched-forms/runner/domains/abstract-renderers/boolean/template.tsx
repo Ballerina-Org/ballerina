@@ -19,7 +19,10 @@ import {
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
 
-export const BoolAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const BoolAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

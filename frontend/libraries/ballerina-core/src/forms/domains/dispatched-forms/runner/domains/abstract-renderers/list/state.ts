@@ -61,7 +61,10 @@ export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   insert: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
-export type ListAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type ListAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   ListAbstractRendererReadonlyContext<CustomPresentationContext> &
     ListAbstractRendererState,
   ListAbstractRendererState,

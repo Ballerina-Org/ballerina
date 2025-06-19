@@ -94,7 +94,10 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
-    SearchableInfiniteStreamAbstractRendererView<CustomPresentationContext, Flags>
+    SearchableInfiniteStreamAbstractRendererView<
+      CustomPresentationContext,
+      Flags
+    >
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

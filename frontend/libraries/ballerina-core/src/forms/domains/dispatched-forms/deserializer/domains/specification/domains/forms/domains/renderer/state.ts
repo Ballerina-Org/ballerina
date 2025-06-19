@@ -84,18 +84,34 @@ export const Renderer = {
       isObject(_) && "stream" in _,
     HasColumns: (_: unknown): _ is SerializedTableRenderer =>
       isObject(_) && "columns" in _,
-    IsSumUnitDate: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    IsSumUnitDate: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): boolean =>
       isObject(serialized) &&
       "renderer" in serialized &&
       isString(serialized.renderer) &&
       concreteRenderers?.sumUnitDate?.[serialized.renderer] != undefined,
-    DeserializeAs: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    DeserializeAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<Renderer<T>, string> =>
@@ -108,10 +124,18 @@ export const Renderer = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
       isInlined?: boolean,

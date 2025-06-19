@@ -31,7 +31,10 @@ import {
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const MapAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const MapAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   GetDefaultKeyFormState: () => CommonAbstractRendererState,
   GetDefaultKeyFormValue: () => PredicateValue,
   GetDefaultValueFormState: () => CommonAbstractRendererState,

@@ -81,9 +81,17 @@ export const RecordRenderer = {
                     extends:
                       "extends" in _ ? (_.extends as string[]) : undefined,
                   }),
-    DeserializeRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    DeserializeRenderer: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: RecordType<T>,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       serialized?: unknown,
     ): ValueOrErrors<Renderer<T> | undefined, string> =>
@@ -96,10 +104,18 @@ export const RecordRenderer = {
             undefined,
           )
         : ValueOrErrors.Default.return(undefined),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: RecordType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       isInlined: boolean,
     ): ValueOrErrors<RecordRenderer<T>, string> =>

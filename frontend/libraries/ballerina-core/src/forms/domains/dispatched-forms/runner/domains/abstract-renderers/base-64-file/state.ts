@@ -8,12 +8,13 @@ import {
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
-export type Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    string,
-    CustomPresentationContext
-  >;
+export type Base64FileAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext
+>;
 
 export type Base64FileAbstractRendererState = CommonAbstractRendererState;
 

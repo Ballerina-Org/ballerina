@@ -17,12 +17,13 @@ import {
   CommonAbstractRendererState,
 } from "ballerina-core";
 
-export type CategoryAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    DispatchCategory,
-    CustomPresentationContext
-  >;
+export type CategoryAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  DispatchCategory,
+  CustomPresentationContext
+>;
 
 export type DispatchCategory = {
   kind: "custom";
@@ -95,7 +96,10 @@ export type CategoryAbstractRendererView<
   CategoryAbstractRendererViewForeignMutationsExpected<Flags>
 >;
 
-export const CategoryAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const CategoryAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

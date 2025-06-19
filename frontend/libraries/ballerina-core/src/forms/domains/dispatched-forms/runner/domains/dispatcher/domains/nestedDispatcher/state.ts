@@ -9,9 +9,17 @@ import { Dispatcher } from "../../state";
 
 export const NestedDispatcher = {
   Operations: {
-    DispatchAs: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    DispatchAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       as: string,
       formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -22,9 +30,17 @@ export const NestedDispatcher = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       formName?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(

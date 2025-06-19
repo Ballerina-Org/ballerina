@@ -11,12 +11,13 @@ import {
   CommonAbstractRendererReadonlyContext,
 } from "../../../../../../../../main";
 
-export type StringAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    string,
-    CustomPresentationContext
-  >;
+export type StringAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext
+>;
 
 export type StringAbstractRendererState = CommonAbstractRendererState;
 

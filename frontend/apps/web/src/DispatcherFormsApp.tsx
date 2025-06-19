@@ -35,12 +35,20 @@ import {
   DispatchCategoryState,
   DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { DispatchPassthroughFormConcreteRenderers, DispatchPassthroughFormCustomPresentationContext, DispatchPassthroughFormFlags } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import {
+  DispatchPassthroughFormConcreteRenderers,
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+} from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomPresentationContext
+  >,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -73,22 +81,38 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   </div>
 );
 
-const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>();
+const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>();
+const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
 export const DispatcherFormsApp = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext
+    >().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
   const [personConfigState, setPersonConfigState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -142,10 +166,10 @@ export const DispatcherFormsApp = (props: {}) => {
 
   console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
-  const onPersonConfigChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
-    updater,
-    delta,
-  ) => {
+  const onPersonConfigChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (config.kind == "r" || config.value.kind == "errors") {
       return;
     }
@@ -178,10 +202,10 @@ export const DispatcherFormsApp = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
-    updater,
-    delta,
-  ) => {
+  const onPersonEntityChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }

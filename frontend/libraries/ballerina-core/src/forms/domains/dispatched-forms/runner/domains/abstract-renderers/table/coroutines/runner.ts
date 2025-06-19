@@ -99,23 +99,30 @@ const reinitialise = <CustomPresentationContext = Unit>() =>
     });
 
 export const TableReinitialiseRunner = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>().Template<any>(reinitialise<CustomPresentationContext>(), {
-    interval: 15,
-    runFilter: (props) =>
-      props.context.customFormState.initializationStatus === "initialized" &&
-      props.context.customFormState.shouldReinitialize &&
-      props.context.remoteEntityVersionIdentifier !==
-        props.context.customFormState.previousRemoteEntityVersionIdentifier,
-  });
+  Co<CustomPresentationContext>().Template<any>(
+    reinitialise<CustomPresentationContext>(),
+    {
+      interval: 15,
+      runFilter: (props) =>
+        props.context.customFormState.initializationStatus === "initialized" &&
+        props.context.customFormState.shouldReinitialize &&
+        props.context.remoteEntityVersionIdentifier !==
+          props.context.customFormState.previousRemoteEntityVersionIdentifier,
+    },
+  );
 
 export const TableRunner = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>().Template<any>(intialiseTable<CustomPresentationContext>(), {
-    interval: 15,
-    runFilter: (props) => {
-      return (
-        props.context.customFormState.initializationStatus ===
-          "not initialized" ||
-        props.context.customFormState.initializationStatus === "reinitializing"
-      );
+  Co<CustomPresentationContext>().Template<any>(
+    intialiseTable<CustomPresentationContext>(),
+    {
+      interval: 15,
+      runFilter: (props) => {
+        return (
+          props.context.customFormState.initializationStatus ===
+            "not initialized" ||
+          props.context.customFormState.initializationStatus ===
+            "reinitializing"
+        );
+      },
     },
-  });
+  );

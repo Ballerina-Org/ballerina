@@ -366,7 +366,11 @@ export const tryGetConcreteRenderer =
     kind: K,
     name: keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K],
   ): ValueOrErrors<
-    ConcreteRenderers<T, Flags, CustomPresentationContexts>[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]],
+    ConcreteRenderers<
+      T,
+      Flags,
+      CustomPresentationContexts
+    >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]],
     string
   > => {
     if (!concreteRenderers[kind]) {

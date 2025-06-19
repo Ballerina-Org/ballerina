@@ -11,8 +11,13 @@ import {
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export type SumAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum, CustomPresentationContext>;
+export type SumAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  SumType<any>,
+  ValueSum,
+  CustomPresentationContext
+>;
 
 export type SumAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
@@ -50,8 +55,12 @@ export type SumAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueSum, Flags>;
 };
 
-export type SumAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
-  SumAbstractRendererReadonlyContext<CustomPresentationContext> & SumAbstractRendererState,
+export type SumAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
+  SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+    SumAbstractRendererState,
   SumAbstractRendererState,
   SumAbstractRendererViewForeignMutationsExpected<Flags>,
   {

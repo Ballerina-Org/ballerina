@@ -104,8 +104,12 @@ export type MapAbstractRendererForeignMutationsExpected<Flags> = {
   remove: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
-export type MapAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
-  MapAbstractRendererReadonlyContext<CustomPresentationContext> & MapAbstractRendererState,
+export type MapAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
+  MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+    MapAbstractRendererState,
   MapAbstractRendererState,
   MapAbstractRendererForeignMutationsExpected<Flags>,
   {

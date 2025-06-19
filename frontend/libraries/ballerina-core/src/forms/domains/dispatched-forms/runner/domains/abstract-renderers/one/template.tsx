@@ -55,7 +55,10 @@ import {
  * The actual implementation and passing down of the callbacks is done in the concrete sum renderer.
  */
 
-export const OneAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const OneAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   DetailsRenderer: Template<
     RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
       RecordAbstractRendererState,
@@ -73,7 +76,10 @@ export const OneAbstractRenderer = <CustomPresentationContext = Unit, Flags = Un
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const typedInitializeOneRunner = initializeOneRunner<CustomPresentationContext, Flags>();
+  const typedInitializeOneRunner = initializeOneRunner<
+    CustomPresentationContext,
+    Flags
+  >();
   const typedReinitializeOneRunner = reinitializeOneRunner<
     CustomPresentationContext,
     Flags
@@ -89,7 +95,10 @@ export const OneAbstractRenderer = <CustomPresentationContext = Unit, Flags = Un
 
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
-      Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
+      Omit<
+        OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+        "value"
+      > & {
         value: ValueRecord | ValueUnit;
       } & OneAbstractRendererState
     >((_) => {
@@ -220,7 +229,10 @@ export const OneAbstractRenderer = <CustomPresentationContext = Unit, Flags = Un
   const embeddedPreviewRenderer = PreviewRenderer
     ? (value: ValueRecord) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
-          Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
+          Omit<
+            OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+            "value"
+          > & {
             value: ValueRecord | ValueUnit;
           } & OneAbstractRendererState
         >((_) => {

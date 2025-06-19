@@ -14,12 +14,13 @@ import {
   CommonAbstractRendererState,
 } from "../../../../../../../../main";
 
-export type SecretAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    string,
-    CustomPresentationContext
-  >;
+export type SecretAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext
+>;
 
 export type SecretAbstractRendererState = CommonAbstractRendererState;
 

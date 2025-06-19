@@ -15,13 +15,14 @@ import {
   EnumAbstractRendererState,
 } from "../enum/state";
 
-export type EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    MultiSelectionType<any>,
-    ValueRecord,
-    CustomPresentationContext
-  > &
-    DispatchBaseEnumContext;
+export type EnumMultiselectAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+> = CommonAbstractRendererReadonlyContext<
+  MultiSelectionType<any>,
+  ValueRecord,
+  CustomPresentationContext
+> &
+  DispatchBaseEnumContext;
 
 export type EnumMultiselectAbstractRendererState = EnumAbstractRendererState;
 

@@ -130,11 +130,19 @@ export const Specification = {
             ),
         ),
       ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
-    },  
-    DeserializeForms: <T extends DispatchInjectablesTypes<T>, Flags = Unit, CustomPresentationContexts = Unit>(
+    },
+    DeserializeForms: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags = Unit,
+      CustomPresentationContexts = Unit,
+    >(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -170,9 +178,17 @@ export const Specification = {
         ),
       ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
-      <T extends DispatchInjectablesTypes<T>, Flags = Unit, CustomPresentationContexts = Unit>(
+      <
+        T extends DispatchInjectablesTypes<T>,
+        Flags = Unit,
+        CustomPresentationContexts = Unit,
+      >(
         apiConverters: DispatchApiConverters<T>,
-        concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+        concreteRenderers: ConcreteRenderers<
+          T,
+          Flags,
+          CustomPresentationContexts
+        >,
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (
@@ -205,7 +221,11 @@ export const Specification = {
                     ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
                         "forms are missing from the specification",
                       )
-                    : Specification.Operations.DeserializeForms<T, Flags, CustomPresentationContexts>(
+                    : Specification.Operations.DeserializeForms<
+                        T,
+                        Flags,
+                        CustomPresentationContexts
+                      >(
                         serializedSpecifications.forms,
                         allTypes,
                         concreteRenderers,

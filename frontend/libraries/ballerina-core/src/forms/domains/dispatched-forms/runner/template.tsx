@@ -22,7 +22,8 @@ export const DispatchFormRunnerTemplate = <
   CustomPresentationContexts = Unit,
 >() =>
   Template.Default<
-    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts> & DispatchFormRunnerState<T, Flags>,
+    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts> &
+      DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
@@ -64,7 +65,9 @@ export const DispatchFormRunnerTemplate = <
             props.context.remoteEntityVersionIdentifier,
         }}
         setState={(_: BasicUpdater<any>) =>
-          props.setState(DispatchFormRunnerState<T, Flags>().Updaters.formState(_))
+          props.setState(
+            DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+          )
         }
         view={unit}
         foreignMutations={{

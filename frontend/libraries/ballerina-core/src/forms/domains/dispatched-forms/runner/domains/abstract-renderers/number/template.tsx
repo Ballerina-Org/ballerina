@@ -16,7 +16,10 @@ import {
   NumberAbstractRendererView,
 } from "./state";
 
-export const NumberAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const NumberAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

@@ -25,7 +25,10 @@ import {
 } from "./state";
 import { Map } from "immutable";
 
-export const UnionAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const UnionAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   defaultCaseStates: Map<string, () => CommonAbstractRendererState>,
   caseTemplates: Map<
     string,

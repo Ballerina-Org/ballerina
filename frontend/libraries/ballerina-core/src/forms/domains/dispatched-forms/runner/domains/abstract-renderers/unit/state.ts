@@ -12,12 +12,13 @@ import {
   VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
-export type UnitAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    ValueUnit,
-    CustomPresentationContext
-  >;
+export type UnitAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  ValueUnit,
+  CustomPresentationContext
+>;
 
 export type UnitAbstractRendererState = CommonAbstractRendererState & {
   customFormState: Unit;
@@ -44,7 +45,10 @@ export type UnitAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   set: VoidCallbackWithOptionalFlags<Flags>;
 };
 
-export type UnitAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type UnitAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
     UnitAbstractRendererState,
   UnitAbstractRendererState,

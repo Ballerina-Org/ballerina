@@ -29,7 +29,10 @@ import {
   ListAbstractRendererView,
 } from "./state";
 
-export const ListAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const ListAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   GetDefaultElementState: () => CommonAbstractRendererState,
   GetDefaultElementValue: () => PredicateValue,
   elementTemplate: Template<

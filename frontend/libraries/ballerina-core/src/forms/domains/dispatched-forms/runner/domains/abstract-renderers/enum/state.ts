@@ -49,7 +49,10 @@ export type EnumAbstractRendererForeignMutationsExpected<Flags> = {
   loadOptions: SimpleCallback<void>;
 };
 
-export type EnumAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+export type EnumAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+> = View<
   EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
     EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;

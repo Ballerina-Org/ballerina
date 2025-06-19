@@ -16,7 +16,10 @@ import {
   DateAbstractRendererView,
 } from "./state";
 
-export const DateAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const DateAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {

@@ -21,10 +21,18 @@ import { UnionDispatcher } from "./domains/unionDispatcher/state";
 
 export const Dispatcher = {
   Operations: {
-    DispatchAs: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    DispatchAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       as: string,
       isNested: boolean,
       formName?: string,
@@ -42,10 +50,18 @@ export const Dispatcher = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as: ${as}`),
       ),
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       isNested: boolean,
       formName?: string,
       launcherName?: string,

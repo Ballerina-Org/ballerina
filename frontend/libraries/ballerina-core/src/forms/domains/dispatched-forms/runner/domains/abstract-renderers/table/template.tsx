@@ -52,7 +52,10 @@ const EmbeddedValueInfiniteStreamTemplate = <
       ...props.foreignMutations,
     }));
 
-export const TableAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const TableAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   CellTemplates: Map<
     string,
     {

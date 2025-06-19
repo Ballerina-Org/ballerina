@@ -56,10 +56,18 @@ export const EnumRenderer = {
         : !EnumRenderer.Operations.hasOptions(serialized)
           ? ValueOrErrors.Default.throwOne(`options are required`)
           : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<EnumRenderer<T>, string> =>
       EnumRenderer.Operations.tryAsValidEnumRenderer(serialized)

@@ -31,7 +31,10 @@ import {
   RecordAbstractRendererView,
 } from "./state";
 
-export const RecordAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
+export const RecordAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   FieldTemplates: Map<
     string,
     {
