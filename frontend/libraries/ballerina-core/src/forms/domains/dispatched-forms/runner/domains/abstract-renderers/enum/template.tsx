@@ -24,21 +24,21 @@ import {
 } from "./state";
 import { OrderedMap } from "immutable";
 
-export const EnumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const EnumAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    EnumAbstractRendererReadonlyContext<CustomContext> &
+    EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
       EnumAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    EnumAbstractRendererReadonlyContext<CustomContext> &
+    EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
       EnumAbstractRendererState,
     EnumAbstractRendererState,
     EnumAbstractRendererForeignMutationsExpected<Flags>,
-    EnumAbstractRendererView<CustomContext, Flags>
+    EnumAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

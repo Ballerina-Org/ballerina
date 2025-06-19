@@ -19,16 +19,16 @@ import {
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
 
-export const BoolAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const BoolAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    BoolAbstractRendererReadonlyContext<CustomContext> &
+    BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
       BoolAbstractRendererState,
     BoolAbstractRendererState,
     BoolAbstractRendererForeignMutationsExpected<Flags>,
-    BoolAbstractRendererView<CustomContext, Flags>
+    BoolAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
       console.error(

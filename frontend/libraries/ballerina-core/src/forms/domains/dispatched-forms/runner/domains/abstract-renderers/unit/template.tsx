@@ -16,16 +16,16 @@ import {
   replaceWith,
 } from "../../../../../../../../main";
 
-export const UnitAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const UnitAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
   Template.Default<
-    UnitAbstractRendererReadonlyContext<CustomContext> &
+    UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
       UnitAbstractRendererState,
     UnitAbstractRendererState,
     UnitAbstractRendererForeignMutationsExpected<Flags>,
-    UnitAbstractRendererView<CustomContext, Flags>
+    UnitAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(

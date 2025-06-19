@@ -45,10 +45,10 @@ export const UnionRenderer = {
               ...serialized,
               cases: Map(serialized.cases),
             }),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: UnionType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)

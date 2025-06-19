@@ -55,16 +55,16 @@ import {
  * The actual implementation and passing down of the callbacks is done in the concrete sum renderer.
  */
 
-export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const OneAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   DetailsRenderer: Template<
-    RecordAbstractRendererReadonlyContext<CustomContext> &
+    RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
       RecordAbstractRendererState,
     RecordAbstractRendererState,
     RecordAbstractRendererForeignMutationsExpected<Flags>
   >,
   PreviewRenderer:
     | Template<
-        RecordAbstractRendererReadonlyContext<CustomContext> &
+        RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
           RecordAbstractRendererState,
         RecordAbstractRendererState,
         RecordAbstractRendererForeignMutationsExpected<Flags>
@@ -73,23 +73,23 @@ export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const typedInitializeOneRunner = initializeOneRunner<CustomContext, Flags>();
+  const typedInitializeOneRunner = initializeOneRunner<CustomPresentationContext, Flags>();
   const typedReinitializeOneRunner = reinitializeOneRunner<
-    CustomContext,
+    CustomPresentationContext,
     Flags
   >();
   const typedOneTableLoaderRunner = oneTableLoaderRunner<
-    CustomContext,
+    CustomPresentationContext,
     Flags
   >();
   const typedOneTableDebouncerRunner = oneTableDebouncerRunner<
-    CustomContext,
+    CustomPresentationContext,
     Flags
   >();
 
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
-      Omit<OneAbstractRendererReadonlyContext<CustomContext>, "value"> & {
+      Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
         value: ValueRecord | ValueUnit;
       } & OneAbstractRendererState
     >((_) => {
@@ -130,7 +130,7 @@ export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         // TODO: this is not correct, type is a lookup, need to resolve in dispatcher and
         // correct type on RecordAbstractRendererReadonlyContext
         type: _.type.args as RecordType<any>,
-        customContext: _.customContext,
+        CustomPresentationContext: _.CustomPresentationContext,
         domNodeId: _.identifiers.withoutLauncher.concat(`[details]`),
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
       };
@@ -220,7 +220,7 @@ export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   const embeddedPreviewRenderer = PreviewRenderer
     ? (value: ValueRecord) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
-          Omit<OneAbstractRendererReadonlyContext<CustomContext>, "value"> & {
+          Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
             value: ValueRecord | ValueUnit;
           } & OneAbstractRendererState
         >((_) => {
@@ -239,7 +239,7 @@ export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 _.identifiers.withoutLauncher.concat(`[preview]`),
             },
             type: _.type.args as RecordType<any>,
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(`[preview]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           };
@@ -325,10 +325,10 @@ export const OneAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     : undefined;
 
   return Template.Default<
-    OneAbstractRendererReadonlyContext<CustomContext>,
+    OneAbstractRendererReadonlyContext<CustomPresentationContext>,
     OneAbstractRendererState,
     OneAbstractRendererForeignMutationsExpected<Flags>,
-    OneAbstractRendererView<CustomContext, Flags>
+    OneAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     const value = props.context.value;
     if (

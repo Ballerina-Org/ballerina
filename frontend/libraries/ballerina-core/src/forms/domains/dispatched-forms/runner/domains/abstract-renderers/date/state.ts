@@ -11,11 +11,11 @@ import {
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
-export type DateAbstractRendererReadonlyContext<CustomContext> =
+export type DateAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     Date,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type DateAbstractRendererState = CommonAbstractRendererState & {
@@ -44,8 +44,8 @@ export type DateAbstractRendererForeignMutationsExpected<Flags> = {
   setNewValue: ValueCallbackWithOptionalFlags<Maybe<string>, Flags>;
 };
 
-export type DateAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  DateAbstractRendererReadonlyContext<CustomContext> &
+export type DateAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  DateAbstractRendererReadonlyContext<CustomPresentationContext> &
     DateAbstractRendererState,
   DateAbstractRendererState,
   DateAbstractRendererForeignMutationsExpected<Flags>

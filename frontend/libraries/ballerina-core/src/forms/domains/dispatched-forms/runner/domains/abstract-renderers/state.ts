@@ -29,7 +29,7 @@ export type CommonAbstractRendererReadonlyContext<
   label?: string;
   tooltip?: string;
   details?: string;
-  customContext: C | undefined;
+  CustomPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
 };
 

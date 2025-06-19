@@ -28,18 +28,18 @@ export type DispatchPassthroughFormFlags = {
   test: boolean;
 };
 
-export type ListElementCustomContext = {
+export type ListElementCustomPresentationContext = {
   isLastListElement: boolean;
 };
 
-export type DispatchPassthroughFormCustomContext = {
-  listElement: ListElementCustomContext;
+export type DispatchPassthroughFormCustomPresentationContext = {
+  listElement: ListElementCustomPresentationContext;
 };
 
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomContext
+  DispatchPassthroughFormCustomPresentationContext
 > = {
   one: {
     admin: (props) => {
@@ -912,7 +912,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultCategory: (props) => {
       return (
         <>
-          {props.context.customContext?.listElement?.isLastListElement && (
+          {props.context.CustomPresentationContext?.listElement?.isLastListElement && (
             <p>Last</p>
           )}
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1060,7 +1060,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultString: (props) => {
       return (
         <>
-          {props.context.customContext?.listElement?.isLastListElement && (
+          {props.context.CustomPresentationContext?.listElement?.isLastListElement && (
             <p>Last</p>
           )}
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1444,7 +1444,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     ...props,
                     context: {
                       ...props.context,
-                      customContext: {
+                      CustomPresentationContext: {
                         listElement: {
                           isLastListElement:
                             elementIndex == props.context.value.values.size - 1,

@@ -71,9 +71,9 @@ export type DispatchInjectedPrimitives<T> = Map<
 export const injectedPrimitivesFromConcreteRenderers = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomContexts = Unit,
+  CustomPresentationContexts = Unit,
 >(
-  concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+  concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
   injectables: DispatchInjectables<T>,
 ): ValueOrErrors<DispatchInjectedPrimitives<T>, string> =>
   ValueOrErrors.Operations.All(

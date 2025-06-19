@@ -21,11 +21,11 @@ import {
 } from "../../../../../../../../main";
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   MultiSelectionType<unknown>,
   ValueRecord,
-  CustomContext
+  CustomPresentationContext
 >;
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererState =
@@ -100,10 +100,10 @@ export type SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsE
 };
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> &
+  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
     SearchableInfiniteStreamMultiselectAbstractRendererState & {
       hasMoreValues: boolean;
       isLoading: boolean;

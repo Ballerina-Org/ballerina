@@ -31,7 +31,7 @@ import {
   RecordAbstractRendererView,
 } from "./state";
 
-export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const RecordAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   FieldTemplates: Map<
     string,
     {
@@ -39,7 +39,7 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomContext
+          CustomPresentationContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -55,11 +55,11 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
 ): Template<
-  RecordAbstractRendererReadonlyContext<CustomContext> &
+  RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
     RecordAbstractRendererState,
   RecordAbstractRendererState,
   RecordAbstractRendererForeignMutationsExpected<Flags>,
-  RecordAbstractRendererView<CustomContext, Flags>
+  RecordAbstractRendererView<CustomPresentationContext, Flags>
 > => {
   const embedFieldTemplate =
     (
@@ -68,7 +68,7 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomContext
+          CustomPresentationContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -78,7 +78,7 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
       fieldTemplate
         .mapContext(
           (
-            _: RecordAbstractRendererReadonlyContext<CustomContext> &
+            _: RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
               RecordAbstractRendererState,
           ) => ({
             identifiers: {
@@ -94,7 +94,7 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
             disabled: _.disabled,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(`[${fieldName}]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           }),
@@ -176,11 +176,11 @@ export const RecordAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
   );
 
   return Template.Default<
-    RecordAbstractRendererReadonlyContext<CustomContext> &
+    RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
       RecordAbstractRendererState,
     RecordAbstractRendererState,
     RecordAbstractRendererForeignMutationsExpected<Flags>,
-    RecordAbstractRendererView<CustomContext, Flags>
+    RecordAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

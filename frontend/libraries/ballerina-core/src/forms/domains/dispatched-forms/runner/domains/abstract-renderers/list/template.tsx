@@ -29,14 +29,14 @@ import {
   ListAbstractRendererView,
 } from "./state";
 
-export const ListAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const ListAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   GetDefaultElementState: () => CommonAbstractRendererState,
   GetDefaultElementValue: () => PredicateValue,
   elementTemplate: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomContext
+      CustomPresentationContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -50,7 +50,7 @@ export const ListAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
       elementTemplate
         .mapContext(
           (
-            _: ListAbstractRendererReadonlyContext<CustomContext> &
+            _: ListAbstractRendererReadonlyContext<CustomPresentationContext> &
               ListAbstractRendererState,
           ) => ({
             disabled: _.disabled,
@@ -72,7 +72,7 @@ export const ListAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               `[${elementIndex}]`,
             ),
             type: _.type.args[0],
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           }),
         )
@@ -137,11 +137,11 @@ export const ListAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         }));
 
   return Template.Default<
-    ListAbstractRendererReadonlyContext<CustomContext> &
+    ListAbstractRendererReadonlyContext<CustomPresentationContext> &
       ListAbstractRendererState,
     ListAbstractRendererState,
     ListAbstractRendererForeignMutationsExpected<Flags>,
-    ListAbstractRendererView<CustomContext, Flags>
+    ListAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

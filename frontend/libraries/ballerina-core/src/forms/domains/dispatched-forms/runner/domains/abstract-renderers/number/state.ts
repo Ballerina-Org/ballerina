@@ -13,11 +13,11 @@ import {
   CommonAbstractRendererState,
 } from "../../../../../../../../main";
 
-export type NumberAbstractRendererReadonlyContext<CustomContext> =
+export type NumberAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     number,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type NumberAbstractRendererState = CommonAbstractRendererState;
@@ -33,10 +33,10 @@ export type NumberAbstractRendererForeignMutationsExpected<Flags> = {
 };
 
 export type NumberAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  NumberAbstractRendererReadonlyContext<CustomContext> &
+  NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
     NumberAbstractRendererState,
   NumberAbstractRendererState,
   NumberAbstractRendererForeignMutationsExpected<Flags>

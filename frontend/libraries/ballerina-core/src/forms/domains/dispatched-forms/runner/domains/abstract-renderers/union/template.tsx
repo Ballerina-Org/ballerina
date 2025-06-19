@@ -25,7 +25,7 @@ import {
 } from "./state";
 import { Map } from "immutable";
 
-export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const UnionAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   defaultCaseStates: Map<string, () => CommonAbstractRendererState>,
   caseTemplates: Map<
     string,
@@ -33,7 +33,7 @@ export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
       CommonAbstractRendererReadonlyContext<
         DispatchParsedType<any>,
         PredicateValue,
-        CustomContext
+        CustomPresentationContext
       > &
         CommonAbstractRendererState,
       CommonAbstractRendererState,
@@ -49,7 +49,7 @@ export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         .get(caseName)!
         .mapContext(
           (
-            _: UnionAbstractRendererReadonlyContext<CustomContext> &
+            _: UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
               UnionAbstractRendererState,
           ) => ({
             ...(_.caseFormStates.get(caseName)! ??
@@ -67,7 +67,7 @@ export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
             extraContext: _.extraContext,
             domNodeId: _.domNodeId,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
           }),
         )
         .mapState(
@@ -107,11 +107,11 @@ export const UnionAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         }));
 
   return Template.Default<
-    UnionAbstractRendererReadonlyContext<CustomContext> &
+    UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
       UnionAbstractRendererState,
     UnionAbstractRendererState,
     UnionAbstractRendererForeignMutationsExpected<Flags>,
-    UnionAbstractRendererView<CustomContext, Flags>
+    UnionAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(

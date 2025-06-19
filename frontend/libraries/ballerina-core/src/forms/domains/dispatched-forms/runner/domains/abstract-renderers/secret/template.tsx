@@ -17,15 +17,15 @@ import {
   Unit,
 } from "../../../../../../../../main";
 
-export const SecretAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const SecretAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    SecretAbstractRendererReadonlyContext<CustomContext>,
+    SecretAbstractRendererReadonlyContext<CustomPresentationContext>,
     SecretAbstractRendererState,
     SecretAbstractRendererForeignMutationsExpected<Flags>,
-    SecretAbstractRendererView<CustomContext, Flags>
+    SecretAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

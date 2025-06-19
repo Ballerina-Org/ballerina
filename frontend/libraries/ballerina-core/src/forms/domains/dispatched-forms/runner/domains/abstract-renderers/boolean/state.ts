@@ -8,11 +8,11 @@ import {
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
-export type BoolAbstractRendererReadonlyContext<CustomContext> =
+export type BoolAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     boolean,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type BoolAbstractRendererState = CommonAbstractRendererState;
@@ -27,8 +27,8 @@ export type BoolAbstractRendererForeignMutationsExpected<Flags> = {
   setNewValue: ValueCallbackWithOptionalFlags<boolean, Flags>;
 };
 
-export type BoolAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  BoolAbstractRendererReadonlyContext<CustomContext> &
+export type BoolAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
     BoolAbstractRendererState,
   BoolAbstractRendererState,
   BoolAbstractRendererForeignMutationsExpected<Flags>

@@ -35,12 +35,12 @@ import {
   DispatchCategoryState,
   DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { DispatchPassthroughFormConcreteRenderers, DispatchPassthroughFormCustomContext, DispatchPassthroughFormFlags } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchPassthroughFormConcreteRenderers, DispatchPassthroughFormCustomPresentationContext, DispatchPassthroughFormFlags } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -74,14 +74,14 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 );
 
 const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>();
+  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>();
 
 const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>();
+  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>();
 
 export const DispatcherFormsApp = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>().Default(),
+    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomPresentationContext>().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(

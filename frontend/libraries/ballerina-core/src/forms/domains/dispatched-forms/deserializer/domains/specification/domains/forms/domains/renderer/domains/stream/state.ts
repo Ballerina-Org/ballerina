@@ -53,10 +53,10 @@ export const StreamRenderer = {
                   ...serialized,
                   stream: serialized.stream,
                 }),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)

@@ -11,10 +11,10 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: MapType<T>,
       renderer: MapRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.keyRenderer,

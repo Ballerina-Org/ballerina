@@ -16,16 +16,16 @@ import {
   NumberAbstractRendererView,
 } from "./state";
 
-export const NumberAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const NumberAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    NumberAbstractRendererReadonlyContext<CustomContext> &
+    NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
       NumberAbstractRendererState,
     NumberAbstractRendererState,
     NumberAbstractRendererForeignMutationsExpected<Flags>,
-    NumberAbstractRendererView<CustomContext, Flags>
+    NumberAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(

@@ -16,9 +16,9 @@ import { Renderer } from "../../../../../deserializer/domains/specification/doma
 
 export const RecordDispatcher = {
   Operations: {
-    GetRecordConcreteRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    GetRecordConcreteRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       renderer: Renderer<T> | undefined,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
       isNested: boolean,
     ): ValueOrErrors<RecordAbstractRendererView<any, any>, string> =>
       renderer != undefined && renderer.kind != "lookupRenderer"
@@ -31,10 +31,10 @@ export const RecordDispatcher = {
               dispatcherContext.getDefaultRecordRenderer(isNested),
             )
           : dispatcherContext.getConcreteRenderer("record", renderer.renderer),
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: RecordType<T>,
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
       isNested: boolean,
       formName?: string,
       launcherName?: string,

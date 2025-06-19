@@ -8,11 +8,11 @@ import {
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
-export type Base64FileAbstractRendererReadonlyContext<CustomContext> =
+export type Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     string,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type Base64FileAbstractRendererState = CommonAbstractRendererState;
@@ -27,10 +27,10 @@ export type Base64FileAbstractRendererForeignMutationsExpected<Flags> = {
 };
 
 export type Base64FileAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  Base64FileAbstractRendererReadonlyContext<CustomContext> &
+  Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
     Base64FileAbstractRendererState,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererForeignMutationsExpected<Flags>

@@ -17,11 +17,11 @@ import {
   RecordType,
 } from "../../../../../../../../main";
 
-export type RecordAbstractRendererReadonlyContext<CustomContext> =
+export type RecordAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     RecordType<any>,
     ValueRecord,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type RecordAbstractRendererState = CommonAbstractRendererState & {
@@ -70,10 +70,10 @@ export type RecordAbstractRendererForeignMutationsExpected<Flags> = {
 };
 
 export type RecordAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  RecordAbstractRendererReadonlyContext<CustomContext> &
+  RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
     RecordAbstractRendererState & {
       layout: FormLayout;
     },
@@ -85,7 +85,7 @@ export type RecordAbstractRendererView<
       (
         flags: Flags | undefined,
       ) => Template<
-        RecordAbstractRendererReadonlyContext<CustomContext> &
+        RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
           RecordAbstractRendererState,
         RecordAbstractRendererState,
         RecordAbstractRendererForeignMutationsExpected<Flags>

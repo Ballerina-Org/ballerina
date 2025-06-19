@@ -17,9 +17,9 @@ import { TableRenderer } from "../../../../../deserializer/domains/specification
 
 export const TableDispatcher = {
   Operations: {
-    GetApi: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    GetApi: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       api: string | string[] | undefined,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
       api == undefined
         ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
@@ -30,9 +30,9 @@ export const TableDispatcher = {
                 "lookup api not supported for table",
               )
             : dispatcherContext.tableApiSources(api),
-    DispatchDetailsRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    DispatchDetailsRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -42,10 +42,10 @@ export const TableDispatcher = {
             "table details renderer",
             "details",
           ),
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: TableType<T>,
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
       api: string | string[] | undefined,
       isNested: boolean,
       launcherName?: string,

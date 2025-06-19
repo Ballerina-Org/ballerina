@@ -23,14 +23,14 @@ import {
   SumAbstractRendererView,
 } from "./state";
 
-export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const SumAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   leftTemplate?: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomContext
+      CustomPresentationContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -40,7 +40,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomContext
+      CustomPresentationContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -52,7 +52,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         leftTemplate
           .mapContext(
             (
-              _: SumAbstractRendererReadonlyContext<CustomContext> &
+              _: SumAbstractRendererReadonlyContext<CustomPresentationContext> &
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.left,
@@ -65,7 +65,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                 withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
               },
               type: _.type.args[0],
-              customContext: _.customContext,
+              CustomPresentationContext: _.CustomPresentationContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[left]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             }),
@@ -127,7 +127,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         rightTemplate
           .mapContext(
             (
-              _: SumAbstractRendererReadonlyContext<CustomContext> &
+              _: SumAbstractRendererReadonlyContext<CustomPresentationContext> &
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.right,
@@ -141,7 +141,7 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
                   _.identifiers.withoutLauncher.concat(`[right]`),
               },
               type: _.type.args[1],
-              customContext: _.customContext,
+              CustomPresentationContext: _.CustomPresentationContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[right]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             }),
@@ -192,11 +192,11 @@ export const SumAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     : undefined;
 
   return Template.Default<
-    SumAbstractRendererReadonlyContext<CustomContext> &
+    SumAbstractRendererReadonlyContext<CustomPresentationContext> &
       CommonAbstractRendererState,
     SumAbstractRendererState,
     SumAbstractRendererForeignMutationsExpected<Flags>,
-    SumAbstractRendererView<CustomContext, Flags>
+    SumAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsSum(props.context.value)) {
       console.error(

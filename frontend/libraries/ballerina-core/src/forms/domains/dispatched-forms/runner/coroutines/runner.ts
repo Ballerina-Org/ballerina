@@ -14,10 +14,10 @@ import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
 export const DispatchFormRunner = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomContexts,
+  CustomPresentationContexts,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormRunnerContext<T, Flags, CustomContexts>,
+    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts>,
     DispatchFormRunnerState<T, Flags>
   >();
 

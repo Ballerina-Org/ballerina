@@ -44,18 +44,18 @@ export type DispatchFormRunnerStatus<
 export type DispatchFormRunnerContext<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomContexts = Unit,
+  CustomPresentationContexts = Unit,
 > = {
   extraContext: any;
   launcherRef: LauncherRef<Flags>;
   showFormParsingErrors: BasicFun<
-    DispatchSpecificationDeserializationResult<T, Flags, CustomContexts>,
+    DispatchSpecificationDeserializationResult<T, Flags, CustomPresentationContexts>,
     JSX.Element
   >;
   remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
-} & DispatchFormsParserState<T, Flags, CustomContexts>;
+} & DispatchFormsParserState<T, Flags, CustomPresentationContexts>;
 
 export type DispatchFormRunnerState<
   T extends DispatchInjectablesTypes<T>,

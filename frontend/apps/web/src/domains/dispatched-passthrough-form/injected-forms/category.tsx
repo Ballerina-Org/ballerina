@@ -17,11 +17,11 @@ import {
   CommonAbstractRendererState,
 } from "ballerina-core";
 
-export type CategoryAbstractRendererReadonlyContext<CustomContext = Unit> =
+export type CategoryAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     DispatchCategory,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type DispatchCategory = {
@@ -86,25 +86,25 @@ export type CategoryAbstractRendererViewForeignMutationsExpected<Flags> = {
 };
 
 export type CategoryAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  CategoryAbstractRendererReadonlyContext<CustomContext> &
+  CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
     DispatchCategoryState,
   DispatchCategoryState,
   CategoryAbstractRendererViewForeignMutationsExpected<Flags>
 >;
 
-export const CategoryAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const CategoryAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    CategoryAbstractRendererReadonlyContext<CustomContext> &
+    CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
       DispatchCategoryState,
     DispatchCategoryState,
     CategoryAbstractRendererForeignMutationsExpected<Flags>,
-    CategoryAbstractRendererView<CustomContext, Flags>
+    CategoryAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (

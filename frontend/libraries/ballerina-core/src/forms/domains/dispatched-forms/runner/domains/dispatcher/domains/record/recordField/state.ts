@@ -9,10 +9,10 @@ import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       return NestedDispatcher.Operations.Dispatch(
         renderer,

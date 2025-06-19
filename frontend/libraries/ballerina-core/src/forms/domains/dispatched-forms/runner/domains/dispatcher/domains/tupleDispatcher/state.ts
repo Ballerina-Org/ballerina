@@ -14,10 +14,10 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const TupleDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: TupleType<T>,
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(

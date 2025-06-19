@@ -11,8 +11,8 @@ import {
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export type SumAbstractRendererReadonlyContext<CustomContext = Unit> =
-  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum, CustomContext>;
+export type SumAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
+  CommonAbstractRendererReadonlyContext<SumType<any>, ValueSum, CustomPresentationContext>;
 
 export type SumAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
@@ -50,15 +50,15 @@ export type SumAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueSum, Flags>;
 };
 
-export type SumAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  SumAbstractRendererReadonlyContext<CustomContext> & SumAbstractRendererState,
+export type SumAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  SumAbstractRendererReadonlyContext<CustomPresentationContext> & SumAbstractRendererState,
   SumAbstractRendererState,
   SumAbstractRendererViewForeignMutationsExpected<Flags>,
   {
     embeddedLeftTemplate?: (
       flags: Flags | undefined,
     ) => Template<
-      SumAbstractRendererReadonlyContext<CustomContext> &
+      SumAbstractRendererReadonlyContext<CustomPresentationContext> &
         SumAbstractRendererState,
       SumAbstractRendererState,
       SumAbstractRendererForeignMutationsExpected<Flags>
@@ -67,7 +67,7 @@ export type SumAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
     embeddedRightTemplate?: (
       flags: Flags | undefined,
     ) => Template<
-      SumAbstractRendererReadonlyContext<CustomContext> &
+      SumAbstractRendererReadonlyContext<CustomPresentationContext> &
         SumAbstractRendererState,
       SumAbstractRendererState,
       SumAbstractRendererForeignMutationsExpected<Flags>

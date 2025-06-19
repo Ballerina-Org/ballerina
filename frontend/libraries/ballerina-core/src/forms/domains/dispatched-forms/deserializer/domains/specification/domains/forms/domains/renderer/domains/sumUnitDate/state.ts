@@ -45,10 +45,10 @@ export const BaseSumUnitDateRenderer = {
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is required`)
           : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(

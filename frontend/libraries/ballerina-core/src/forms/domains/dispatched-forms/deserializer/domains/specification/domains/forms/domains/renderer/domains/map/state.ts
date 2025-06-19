@@ -52,10 +52,10 @@ export const MapRenderer = {
             : !("valueRenderer" in serialized)
               ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
               : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: MapType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<MapRenderer<T>, string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)

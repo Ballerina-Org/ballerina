@@ -18,10 +18,10 @@ import { Renderer } from "../../../../../deserializer/domains/specification/doma
 
 export const PrimitiveDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: DispatchPrimitiveType<T>,
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       const result: ValueOrErrors<
         Template<any, any, any, any>,

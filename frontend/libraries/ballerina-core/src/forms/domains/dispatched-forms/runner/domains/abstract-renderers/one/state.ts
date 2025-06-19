@@ -34,11 +34,11 @@ import {
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
-export type OneAbstractRendererReadonlyContext<CustomContext> =
+export type OneAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     OneType<unknown>,
     ValueOption | ValueUnit,
-    CustomContext
+    CustomPresentationContext
   > & {
     getApi: BasicFun<Guid, Promise<unknown>>;
     fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
@@ -163,9 +163,9 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   reload: SimpleCallback<void>;
 };
 
-export type OneAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
+export type OneAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
   (
-    | (Omit<OneAbstractRendererReadonlyContext<CustomContext>, "value"> & {
+    | (Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
         value: ValueRecord | ValueUnit;
       } & OneAbstractRendererState & {
           kind: "initialized";
@@ -187,7 +187,7 @@ export type OneAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
   | {
       kind: "initialized";
       DetailsRenderer: (flags: Flags | undefined) => Template<
-        Omit<OneAbstractRendererReadonlyContext<CustomContext>, "value"> & {
+        Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
           value: ValueRecord | ValueUnit;
         } & OneAbstractRendererState,
         OneAbstractRendererState,
@@ -196,7 +196,7 @@ export type OneAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
       PreviewRenderer?: (value: ValueRecord) => (
         flags: Flags | undefined,
       ) => Template<
-        Omit<OneAbstractRendererReadonlyContext<CustomContext>, "value"> & {
+        Omit<OneAbstractRendererReadonlyContext<CustomPresentationContext>, "value"> & {
           value: ValueRecord | ValueUnit;
         } & OneAbstractRendererState,
         OneAbstractRendererState,

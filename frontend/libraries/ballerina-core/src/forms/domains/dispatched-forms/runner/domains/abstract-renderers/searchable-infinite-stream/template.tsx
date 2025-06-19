@@ -27,18 +27,18 @@ import {
 } from "./state";
 
 export const SearchableInfiniteStreamAbstractRenderer = <
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext>,
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext>,
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> & {
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> & {
       onDebounce: SimpleCallback<void>;
     },
     SearchableInfiniteStreamAbstractRendererState
@@ -90,11 +90,11 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
 
   return Template.Default<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> &
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
       SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
-    SearchableInfiniteStreamAbstractRendererView<CustomContext, Flags>
+    SearchableInfiniteStreamAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

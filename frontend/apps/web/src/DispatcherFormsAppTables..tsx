@@ -41,7 +41,7 @@ import {
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import {
   DispatchPassthroughFormConcreteRenderers,
-  DispatchPassthroughFormCustomContext,
+  DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
@@ -50,7 +50,7 @@ const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
     DispatchPassthroughFormInjectedTypes,
     DispatchPassthroughFormFlags,
-    DispatchPassthroughFormCustomContext
+    DispatchPassthroughFormCustomPresentationContext
   >,
 ) => (
   <div style={{ border: "red" }}>
@@ -70,13 +70,13 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomContext
+  DispatchPassthroughFormCustomPresentationContext
 >();
 
 const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomContext
+  DispatchPassthroughFormCustomPresentationContext
 >();
 
 export const DispatcherFormsAppTables = (props: {}) => {
@@ -84,7 +84,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
     DispatchFormsParserState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags,
-      DispatchPassthroughFormCustomContext
+      DispatchPassthroughFormCustomPresentationContext
     >().Default(),
   );
 

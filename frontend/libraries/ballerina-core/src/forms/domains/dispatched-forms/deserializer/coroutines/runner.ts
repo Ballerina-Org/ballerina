@@ -19,16 +19,16 @@ import {
 export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomContexts = Unit,
+  CustomPresentationContexts = Unit,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormsParserContext<T, Flags, CustomContexts>,
-    DispatchFormsParserState<T, Flags, CustomContexts>
+    DispatchFormsParserContext<T, Flags, CustomPresentationContexts>,
+    DispatchFormsParserState<T, Flags, CustomPresentationContexts>
   >();
 
   return Co.Template<Unit>(
     Co.GetState().then((current) =>
-      Synchronize<Unit, DispatchSpecificationDeserializationResult<T, Flags, CustomContexts>>(
+      Synchronize<Unit, DispatchSpecificationDeserializationResult<T, Flags, CustomPresentationContexts>>(
         async () => {
           const serializedSpecifications = await current
             .getFormsConfig()
@@ -101,7 +101,7 @@ export const LoadAndDeserializeSpecification = <
         50,
       ).embed(
         (_) => _.deserializedSpecification,
-        DispatchFormsParserState<T, Flags, CustomContexts>().Updaters.deserializedSpecification,
+        DispatchFormsParserState<T, Flags, CustomPresentationContexts>().Updaters.deserializedSpecification,
       ),
     ),
     {

@@ -11,11 +11,11 @@ import {
   CommonAbstractRendererReadonlyContext,
 } from "../../../../../../../../main";
 
-export type StringAbstractRendererReadonlyContext<CustomContext = Unit> =
+export type StringAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     string,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type StringAbstractRendererState = CommonAbstractRendererState;
@@ -36,10 +36,10 @@ export type StringAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 };
 
 export type StringAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  StringAbstractRendererReadonlyContext<CustomContext> &
+  StringAbstractRendererReadonlyContext<CustomPresentationContext> &
     StringAbstractRendererState,
   StringAbstractRendererState,
   StringAbstractRendererViewForeignMutationsExpected<Flags>

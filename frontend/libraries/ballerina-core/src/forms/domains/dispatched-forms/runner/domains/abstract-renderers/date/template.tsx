@@ -16,16 +16,16 @@ import {
   DateAbstractRendererView,
 } from "./state";
 
-export const DateAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const DateAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    DateAbstractRendererReadonlyContext<CustomContext> &
+    DateAbstractRendererReadonlyContext<CustomPresentationContext> &
       DateAbstractRendererState,
     DateAbstractRendererState,
     DateAbstractRendererForeignMutationsExpected<Flags>,
-    DateAbstractRendererView<CustomContext, Flags>
+    DateAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(

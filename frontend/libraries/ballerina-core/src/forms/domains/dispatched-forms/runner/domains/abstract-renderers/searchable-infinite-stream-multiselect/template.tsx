@@ -29,18 +29,18 @@ import {
 } from "../../../../../../../../main";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext>,
     SearchableInfiniteStreamMultiselectAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext> & {
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> & {
       onDebounce: SimpleCallback<void>;
     },
     SearchableInfiniteStreamMultiselectAbstractRendererState
@@ -92,11 +92,11 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   );
 
   return Template.Default<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext>,
     SearchableInfiniteStreamMultiselectAbstractRendererState,
     SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>,
     SearchableInfiniteStreamMultiselectAbstractRendererView<
-      CustomContext,
+      CustomPresentationContext,
       Flags
     >
   >((props) => {

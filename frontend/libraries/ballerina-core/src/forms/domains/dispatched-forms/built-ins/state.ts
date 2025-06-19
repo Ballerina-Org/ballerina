@@ -195,125 +195,125 @@ type RecursivePartial<T> = {
 export type ConcreteRenderers<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomContexts = Unit,
+  CustomPresentationContexts = Unit,
 > = {
   unit: {
     [_: string]: UnitAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   boolean: {
     [_: string]: BoolAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   number: {
     [_: string]: NumberAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   string: {
     [_: string]: StringAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   base64File: {
     [_: string]: Base64FileAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   secret: {
     [_: string]: SecretAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   date: {
     [_: string]: DateAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   enumSingleSelection: {
     [_: string]: EnumAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   enumMultiSelection: {
     [_: string]: EnumMultiselectAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   streamSingleSelection: {
     [_: string]: SearchableInfiniteStreamAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   streamMultiSelection: {
     [_: string]: SearchableInfiniteStreamMultiselectAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   list: {
     [_: string]: ListAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   map: {
     [_: string]: MapAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   tuple: {
     [_: string]: TupleAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   sum: {
     [_: string]: SumAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   sumUnitDate: {
     [_: string]: SumAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   record: {
     [_: string]: RecordAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   table: {
     [_: string]: TableAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   union: {
     [_: string]: UnionAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   one: {
     [_: string]: OneAbstractRendererView<
-      RecursivePartial<CustomContexts>,
+      RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
@@ -343,8 +343,8 @@ export type ConcreteRenderer<T> =
   | UnitAbstractRendererView<any, any>;
 
 export const concreteRendererToKind =
-  <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
-    concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+  <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
   ) =>
   (name: string): ValueOrErrors<string, string> => {
     const viewTypes = Object.keys(concreteRenderers);
@@ -359,14 +359,14 @@ export const concreteRendererToKind =
   };
 
 export const tryGetConcreteRenderer =
-  <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
-    concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+  <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
   ) =>
-  <K extends keyof ConcreteRenderers<T, Flags, CustomContexts>>(
+  <K extends keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>>(
     kind: K,
-    name: keyof ConcreteRenderers<T, Flags, CustomContexts>[K],
+    name: keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K],
   ): ValueOrErrors<
-    ConcreteRenderers<T, Flags, CustomContexts>[K][keyof ConcreteRenderers<T, Flags, CustomContexts>[K]],
+    ConcreteRenderers<T, Flags, CustomPresentationContexts>[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]],
     string
   > => {
     if (!concreteRenderers[kind]) {

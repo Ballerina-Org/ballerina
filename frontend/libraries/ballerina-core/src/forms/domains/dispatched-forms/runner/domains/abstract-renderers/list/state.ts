@@ -15,11 +15,11 @@ import { View } from "../../../../../../../template/state";
 import { simpleUpdater } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
 import { ValueTuple } from "../../../../../../../../main";
 
-export type ListAbstractRendererReadonlyContext<CustomContext> =
+export type ListAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     ListType<any>,
     ValueTuple,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type ListAbstractRendererState = CommonAbstractRendererState & {
@@ -61,8 +61,8 @@ export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   insert: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
-export type ListAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  ListAbstractRendererReadonlyContext<CustomContext> &
+export type ListAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  ListAbstractRendererReadonlyContext<CustomPresentationContext> &
     ListAbstractRendererState,
   ListAbstractRendererState,
   ListAbstractRendererViewForeignMutationsExpected<Flags>,
@@ -72,7 +72,7 @@ export type ListAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      ListAbstractRendererReadonlyContext<CustomContext> &
+      ListAbstractRendererReadonlyContext<CustomPresentationContext> &
         ListAbstractRendererState,
       ListAbstractRendererState,
       ListAbstractRendererForeignMutationsExpected<Flags>

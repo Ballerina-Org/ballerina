@@ -18,15 +18,15 @@ import {
 } from "../../../../../../../../main";
 import React from "react";
 
-export const StringAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const StringAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    StringAbstractRendererReadonlyContext<CustomContext>,
+    StringAbstractRendererReadonlyContext<CustomPresentationContext>,
     StringAbstractRendererState,
     StringAbstractRendererForeignMutationsExpected<Flags>,
-    StringAbstractRendererView<CustomContext, Flags>
+    StringAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

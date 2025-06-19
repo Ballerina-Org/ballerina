@@ -27,23 +27,23 @@ import {
 import { OrderedMap } from "immutable";
 
 export const EnumMultiselectAbstractRenderer = <
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    EnumMultiselectAbstractRendererReadonlyContext<CustomContext> &
+    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
       EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    EnumMultiselectAbstractRendererReadonlyContext<CustomContext> &
+    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
       EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState,
     EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>,
-    EnumMultiselectAbstractRendererView<CustomContext, Flags>
+    EnumMultiselectAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

@@ -11,21 +11,21 @@ import {
 import { TableAbstractRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
 
-const Co = <CustomContext = Unit>() =>
+const Co = <CustomPresentationContext = Unit>() =>
   CoTypedFactory<
-    TableAbstractRendererReadonlyContext<CustomContext>,
+    TableAbstractRendererReadonlyContext<CustomPresentationContext>,
     TableAbstractRendererState
   >();
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
-const intialiseTable = <CustomContext = Unit>() =>
-  Co<CustomContext>()
+const intialiseTable = <CustomPresentationContext = Unit>() =>
+  Co<CustomPresentationContext>()
     .GetState()
     .then((current) => {
       if (current.value == undefined) {
-        return Co<CustomContext>().Wait(0);
+        return Co<CustomPresentationContext>().Wait(0);
       }
       const initialData = current.value.data;
       const hasMoreValues = current.value.hasMoreValues;
@@ -35,7 +35,7 @@ const intialiseTable = <CustomContext = Unit>() =>
         current.fromTableApiParser,
       );
 
-      return Co<CustomContext>().SetState(
+      return Co<CustomPresentationContext>().SetState(
         replaceWith(TableAbstractRendererState.Default()).then(
           TableAbstractRendererState.Updaters.Core.customFormState.children
             .stream(
@@ -85,11 +85,11 @@ const intialiseTable = <CustomContext = Unit>() =>
       );
     });
 
-const reinitialise = <CustomContext = Unit>() =>
-  Co<CustomContext>()
+const reinitialise = <CustomPresentationContext = Unit>() =>
+  Co<CustomPresentationContext>()
     .GetState()
     .then((_) => {
-      return Co<CustomContext>().SetState(
+      return Co<CustomPresentationContext>().SetState(
         TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
           replaceWith<
             TableAbstractRendererState["customFormState"]["initializationStatus"]
@@ -98,8 +98,8 @@ const reinitialise = <CustomContext = Unit>() =>
       );
     });
 
-export const TableReinitialiseRunner = <CustomContext = Unit>() =>
-  Co<CustomContext>().Template<any>(reinitialise<CustomContext>(), {
+export const TableReinitialiseRunner = <CustomPresentationContext = Unit>() =>
+  Co<CustomPresentationContext>().Template<any>(reinitialise<CustomPresentationContext>(), {
     interval: 15,
     runFilter: (props) =>
       props.context.customFormState.initializationStatus === "initialized" &&
@@ -108,8 +108,8 @@ export const TableReinitialiseRunner = <CustomContext = Unit>() =>
         props.context.customFormState.previousRemoteEntityVersionIdentifier,
   });
 
-export const TableRunner = <CustomContext = Unit>() =>
-  Co<CustomContext>().Template<any>(intialiseTable<CustomContext>(), {
+export const TableRunner = <CustomPresentationContext = Unit>() =>
+  Co<CustomPresentationContext>().Template<any>(intialiseTable<CustomPresentationContext>(), {
     interval: 15,
     runFilter: (props) => {
       return (

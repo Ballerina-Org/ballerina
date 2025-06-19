@@ -12,11 +12,11 @@ import {
   VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 
-export type UnitAbstractRendererReadonlyContext<CustomContext = Unit> =
+export type UnitAbstractRendererReadonlyContext<CustomPresentationContext = Unit> =
   CommonAbstractRendererReadonlyContext<
     DispatchPrimitiveType<any>,
     ValueUnit,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type UnitAbstractRendererState = CommonAbstractRendererState & {
@@ -44,8 +44,8 @@ export type UnitAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   set: VoidCallbackWithOptionalFlags<Flags>;
 };
 
-export type UnitAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  UnitAbstractRendererReadonlyContext<CustomContext> &
+export type UnitAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
     UnitAbstractRendererState,
   UnitAbstractRendererState,
   UnitAbstractRendererViewForeignMutationsExpected<Flags>,

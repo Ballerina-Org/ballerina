@@ -12,9 +12,9 @@ import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specifi
 
 export const SumDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       (renderer.kind == "sumRenderer"
         ? NestedDispatcher.Operations.DispatchAs(

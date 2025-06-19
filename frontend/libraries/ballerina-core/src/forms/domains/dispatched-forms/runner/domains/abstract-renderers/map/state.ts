@@ -20,11 +20,11 @@ import {
   MapType,
 } from "../../../../../../../../main";
 
-export type MapAbstractRendererReadonlyContext<CustomContext> =
+export type MapAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     MapType<any>,
     ValueTuple,
-    CustomContext
+    CustomPresentationContext
   >;
 
 export type MapAbstractRendererState = CommonAbstractRendererState & {
@@ -104,8 +104,8 @@ export type MapAbstractRendererForeignMutationsExpected<Flags> = {
   remove: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
-export type MapAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  MapAbstractRendererReadonlyContext<CustomContext> & MapAbstractRendererState,
+export type MapAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  MapAbstractRendererReadonlyContext<CustomPresentationContext> & MapAbstractRendererState,
   MapAbstractRendererState,
   MapAbstractRendererForeignMutationsExpected<Flags>,
   {
@@ -114,7 +114,7 @@ export type MapAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      MapAbstractRendererReadonlyContext<CustomContext> &
+      MapAbstractRendererReadonlyContext<CustomPresentationContext> &
         MapAbstractRendererState,
       MapAbstractRendererState,
       MapAbstractRendererForeignMutationsExpected<Flags>
@@ -124,7 +124,7 @@ export type MapAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      MapAbstractRendererReadonlyContext<CustomContext> &
+      MapAbstractRendererReadonlyContext<CustomPresentationContext> &
         MapAbstractRendererState,
       MapAbstractRendererState,
       MapAbstractRendererForeignMutationsExpected<Flags>

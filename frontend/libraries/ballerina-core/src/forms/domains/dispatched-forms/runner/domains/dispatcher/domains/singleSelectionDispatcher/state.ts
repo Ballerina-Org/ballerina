@@ -17,9 +17,9 @@ import { StreamRenderer } from "../../../../../deserializer/domains/specificatio
 
 export const SingleSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.renderer.kind != "lookupRenderer"
         ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(

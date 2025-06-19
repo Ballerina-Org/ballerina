@@ -15,11 +15,11 @@ import {
   EnumAbstractRendererState,
 } from "../enum/state";
 
-export type EnumMultiselectAbstractRendererReadonlyContext<CustomContext> =
+export type EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     MultiSelectionType<any>,
     ValueRecord,
-    CustomContext
+    CustomPresentationContext
   > &
     DispatchBaseEnumContext;
 
@@ -32,10 +32,10 @@ export type EnumMultiselectAbstractRendererForeignMutationsExpected<Flags> = {
 };
 
 export type EnumMultiselectAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  EnumMultiselectAbstractRendererReadonlyContext<CustomContext> &
+  EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
     EnumMultiselectAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;

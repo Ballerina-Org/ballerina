@@ -19,11 +19,11 @@ export type DispatchBaseEnumContext = {
   getOptions: () => Promise<OrderedMap<Guid, ValueRecord>>;
 };
 
-export type EnumAbstractRendererReadonlyContext<CustomContext> =
+export type EnumAbstractRendererReadonlyContext<CustomPresentationContext> =
   CommonAbstractRendererReadonlyContext<
     SingleSelectionType<any>,
     ValueOption,
-    CustomContext
+    CustomPresentationContext
   > &
     DispatchBaseEnumContext;
 
@@ -49,8 +49,8 @@ export type EnumAbstractRendererForeignMutationsExpected<Flags> = {
   loadOptions: SimpleCallback<void>;
 };
 
-export type EnumAbstractRendererView<CustomContext = Unit, Flags = Unit> = View<
-  EnumAbstractRendererReadonlyContext<CustomContext> &
+export type EnumAbstractRendererView<CustomPresentationContext = Unit, Flags = Unit> = View<
+  EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
     EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
     },

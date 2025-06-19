@@ -73,10 +73,10 @@ export const OneRenderer = {
                         detailsRenderer: serialized.detailsRenderer,
                         api: serialized.api,
                       }),
-    DeserializePreviewRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    DeserializePreviewRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: OneType<T>,
       serialized: SerializedOneRenderer,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
@@ -88,10 +88,10 @@ export const OneRenderer = {
             "preview renderer",
             types,
           ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
       type: OneType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(

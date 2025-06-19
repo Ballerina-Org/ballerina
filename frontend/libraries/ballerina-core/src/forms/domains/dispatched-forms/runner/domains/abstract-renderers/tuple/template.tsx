@@ -31,7 +31,7 @@ import {
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 >(
   ItemFormStates: Map<number, () => CommonAbstractRendererState>,
@@ -41,7 +41,7 @@ export const DispatchTupleAbstractRenderer = <
       CommonAbstractRendererReadonlyContext<
         DispatchParsedType<any>,
         PredicateValue,
-        CustomContext
+        CustomPresentationContext
       > &
         CommonAbstractRendererState,
       CommonAbstractRendererState,
@@ -57,7 +57,7 @@ export const DispatchTupleAbstractRenderer = <
         .get(itemIndex)!
         .mapContext(
           (
-            _: TupleAbstractRendererReadonlyContext<CustomContext> &
+            _: TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
               TupleAbstractRendererState,
           ) => ({
             ...(_.itemFormStates.get(itemIndex) ||
@@ -78,7 +78,7 @@ export const DispatchTupleAbstractRenderer = <
               `[${itemIndex + 1}]`,
             ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             type: _.type.args[itemIndex],
           }),
         )
@@ -150,11 +150,11 @@ export const DispatchTupleAbstractRenderer = <
         );
 
   return Template.Default<
-    TupleAbstractRendererReadonlyContext<CustomContext> &
+    TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
       TupleAbstractRendererState,
     TupleAbstractRendererState,
     TupleAbstractRendererForeignMutationsExpected<Flags>,
-    TupleAbstractRendererView<CustomContext, Flags>
+    TupleAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

@@ -31,7 +31,7 @@ import {
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const MapAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   GetDefaultKeyFormState: () => CommonAbstractRendererState,
   GetDefaultKeyFormValue: () => PredicateValue,
   GetDefaultValueFormState: () => CommonAbstractRendererState,
@@ -40,7 +40,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomContext
+      CustomPresentationContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -50,7 +50,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomContext
+      CustomPresentationContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -64,7 +64,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
       keyTemplate
         .mapContext(
           (
-            _: MapAbstractRendererReadonlyContext<CustomContext> &
+            _: MapAbstractRendererReadonlyContext<CustomPresentationContext> &
               MapAbstractRendererState,
           ) => ({
             ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
@@ -87,7 +87,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               `[${elementIndex}][key]`,
             ),
             type: _.type.args[0],
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           }),
         )
@@ -165,7 +165,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
       valueTemplate
         .mapContext(
           (
-            _: MapAbstractRendererReadonlyContext<CustomContext> &
+            _: MapAbstractRendererReadonlyContext<CustomPresentationContext> &
               MapAbstractRendererState,
           ) => ({
             ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
@@ -189,7 +189,7 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
               `[${elementIndex}][value]`,
             ),
             type: _.type.args[1],
-            customContext: _.customContext,
+            CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           }),
         )
@@ -269,11 +269,11 @@ export const MapAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
         );
 
   return Template.Default<
-    MapAbstractRendererReadonlyContext<CustomContext> &
+    MapAbstractRendererReadonlyContext<CustomPresentationContext> &
       MapAbstractRendererState,
     MapAbstractRendererState,
     MapAbstractRendererForeignMutationsExpected<Flags>,
-    MapAbstractRendererView<CustomContext, Flags>
+    MapAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

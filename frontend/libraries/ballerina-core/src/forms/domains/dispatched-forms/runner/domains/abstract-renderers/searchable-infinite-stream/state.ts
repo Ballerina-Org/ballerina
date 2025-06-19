@@ -23,11 +23,11 @@ import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
 
 export type SearchableInfiniteStreamAbstractRendererReadonlyContext<
-  CustomContext,
+  CustomPresentationContext,
 > = CommonAbstractRendererReadonlyContext<
   SingleSelectionType<unknown>,
   ValueOption,
-  CustomContext
+  CustomPresentationContext
 >;
 
 export type SearchableInfiniteStreamAbstractRendererState =
@@ -107,10 +107,10 @@ export type SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected
 };
 
 export type SearchableInfiniteStreamAbstractRendererView<
-  CustomContext = Unit,
+  CustomPresentationContext = Unit,
   Flags = Unit,
 > = View<
-  SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomContext> &
+  SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
     },

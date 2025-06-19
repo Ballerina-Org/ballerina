@@ -15,16 +15,16 @@ import {
   Base64FileAbstractRendererView,
 } from "./state";
 
-export const Base64FileAbstractRenderer = <CustomContext = Unit, Flags = Unit>(
+export const Base64FileAbstractRenderer = <CustomPresentationContext = Unit, Flags = Unit>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Base64FileAbstractRendererReadonlyContext<CustomContext> &
+    Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
       Base64FileAbstractRendererState,
     Base64FileAbstractRendererState,
     Base64FileAbstractRendererForeignMutationsExpected<Flags>,
-    Base64FileAbstractRendererView<CustomContext, Flags>
+    Base64FileAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
