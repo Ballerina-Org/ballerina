@@ -6,6 +6,7 @@ import {
   IdWrapperProps,
   PredicateValue,
   Template,
+  Unit,
   ValueOrErrors,
 } from "../../../../../../../../main";
 
@@ -69,8 +70,10 @@ export type DispatchInjectedPrimitives<T> = Map<
 
 export const injectedPrimitivesFromConcreteRenderers = <
   T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomContexts = Unit,
 >(
-  concreteRenderers: ConcreteRenderers<T>,
+  concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
   injectables: DispatchInjectables<T>,
 ): ValueOrErrors<DispatchInjectedPrimitives<T>, string> =>
   ValueOrErrors.Operations.All(

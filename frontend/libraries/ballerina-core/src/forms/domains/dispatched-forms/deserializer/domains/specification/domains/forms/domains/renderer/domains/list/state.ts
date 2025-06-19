@@ -64,10 +64,10 @@ export const ListRenderer = {
             )
           : ValueOrErrors.Default.return(serialized),
 
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: ListType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)

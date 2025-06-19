@@ -16,6 +16,7 @@ import {
   LookupApis,
   MapRepo,
   DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
@@ -130,10 +131,10 @@ export const Specification = {
         ),
       ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
     },
-    DeserializeForms: <T extends DispatchInjectablesTypes<T>>(
+    DeserializeForms: <T extends DispatchInjectablesTypes<T>, Flags = Unit, CustomContexts = Unit>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -169,9 +170,9 @@ export const Specification = {
         ),
       ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
-      <T extends DispatchInjectablesTypes<T>>(
+      <T extends DispatchInjectablesTypes<T>, Flags = Unit, CustomContexts = Unit>(
         apiConverters: DispatchApiConverters<T>,
-        concreteRenderers: ConcreteRenderers<T>,
+        concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (
@@ -204,7 +205,7 @@ export const Specification = {
                     ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
                         "forms are missing from the specification",
                       )
-                    : Specification.Operations.DeserializeForms<T>(
+                    : Specification.Operations.DeserializeForms<T, Flags, CustomContexts>(
                         serializedSpecifications.forms,
                         allTypes,
                         concreteRenderers,

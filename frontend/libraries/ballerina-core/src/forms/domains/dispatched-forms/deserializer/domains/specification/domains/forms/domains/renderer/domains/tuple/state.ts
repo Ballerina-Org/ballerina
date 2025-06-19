@@ -52,10 +52,10 @@ export const TupleRenderer = {
                     ...serialized,
                     itemRenderers: serialized.itemRenderers,
                   }),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: TupleType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized).Then(

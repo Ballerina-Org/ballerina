@@ -11,17 +11,21 @@ import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceW
 import { List } from "immutable";
 import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
 
-export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
+export const DispatchFormRunner = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomContexts,
+>() => {
   const Co = CoTypedFactory<
-    DispatchFormRunnerContext<T>,
-    DispatchFormRunnerState<T>
+    DispatchFormRunnerContext<T, Flags, CustomContexts>,
+    DispatchFormRunnerState<T, Flags>
   >();
 
   return Co.Template<DispatchFormRunnerForeignMutationsExpected>(
     Co.Seq([
       Co.SetState(
-        DispatchFormRunnerState<T>().Updaters.status(
-          replaceWith<DispatchFormRunnerStatus<T>>({ kind: "loading" }),
+        DispatchFormRunnerState<T, Flags>().Updaters.status(
+          replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
         ),
       ),
       Co.GetState().then((current) =>
@@ -38,8 +42,8 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
                 return id;
 
               if (current.deserializedSpecification.sync.value.kind == "errors")
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.deserializedSpecification.sync.value.errors,
                   }),
@@ -54,8 +58,8 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
                     .toArray()
                     .join("\n")}`,
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.launcherRef.entity.value.errors,
                   }),
@@ -71,8 +75,8 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
                     .toArray()
                     .join("\n")}`,
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.launcherRef.config.value.errors,
                   }),
@@ -94,8 +98,8 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
                   `Cannot find form '${launcherRef.name}' in the launchers`,
                 );
 
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: List([
                       `Cannot find form '${launcherRef.name}' in the launchers`,
@@ -116,8 +120,8 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
 
               if (Form.kind == "errors") {
                 console.error(Form.errors.valueSeq().toArray().join("\n"));
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: Form.errors,
                   }),
@@ -133,18 +137,18 @@ export const DispatchFormRunner = <T extends DispatchInjectablesTypes<T>>() => {
                 console.error(
                   initialState.errors.valueSeq().toArray().join("\n"),
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: initialState.errors,
                   }),
                 );
               }
-              return DispatchFormRunnerState<T>()
+              return DispatchFormRunnerState<T, Flags>()
                 .Updaters.formState(replaceWith(initialState.value))
                 .then(
-                  DispatchFormRunnerState<T>().Updaters.status(
-                    replaceWith<DispatchFormRunnerStatus<T>>({
+                  DispatchFormRunnerState<T, Flags>().Updaters.status(
+                    replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                       kind: "loaded",
                       Form: Form.value,
                     }),

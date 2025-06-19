@@ -33,6 +33,7 @@ import { MapRepo } from "../../../../../../../../../../collections/domains/immut
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../../../../../../../main";
 
 export type CommonSerializedRendererProperties = {
@@ -83,18 +84,18 @@ export const Renderer = {
       isObject(_) && "stream" in _,
     HasColumns: (_: unknown): _ is SerializedTableRenderer =>
       isObject(_) && "columns" in _,
-    IsSumUnitDate: <T extends DispatchInjectablesTypes<T>>(
+    IsSumUnitDate: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
     ): boolean =>
       isObject(serialized) &&
       "renderer" in serialized &&
       isString(serialized.renderer) &&
       concreteRenderers?.sumUnitDate?.[serialized.renderer] != undefined,
-    DeserializeAs: <T extends DispatchInjectablesTypes<T>>(
+    DeserializeAs: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<Renderer<T>, string> =>
@@ -107,10 +108,10 @@ export const Renderer = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
       isInlined?: boolean,

@@ -15,23 +15,32 @@ import {
   ConcreteRenderers,
   ListAbstractRendererView,
   StringAbstractRendererView,
+  UnitAbstractRendererView,
+  OneAbstractRendererView,
 } from "ballerina-core";
 import { OrderedMap } from "immutable";
-import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
+import {
+  CategoryAbstractRendererView,
+  DispatchPassthroughFormInjectedTypes,
+} from "../injected-forms/category";
 
-type CR = ConcreteRenderers<DispatchPassthroughFormInjectedTypes> & {
-  list: {
-    defaultList: ListAbstractRendererView<Unit, { test: boolean }>;
-  };
-  string: {
-    defaultString: StringAbstractRendererView<
-      { isLast: boolean },
-      { test: boolean }
-    >;
-  };
+export type DispatchPassthroughFormFlags = {
+  test: boolean;
 };
 
-export const DispatchPassthroughFormConcreteRenderers: CR = {
+export type ListElementCustomContext = {
+  isLastListElement: boolean;
+};
+
+export type DispatchPassthroughFormCustomContext = {
+  listElement: ListElementCustomContext;
+};
+
+export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomContext
+> = {
   one: {
     admin: (props) => {
       const propsLocal = props;
@@ -903,6 +912,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
     defaultCategory: (props) => {
       return (
         <>
+          {props.context.customContext?.listElement?.isLastListElement && (
+            <p>Last</p>
+          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1048,7 +1060,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
     defaultString: (props) => {
       return (
         <>
-          {props.context.customContext?.isLast && <p>Last</p>}
+          {props.context.customContext?.listElement?.isLastListElement && (
+            <p>Last</p>
+          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1060,10 +1074,31 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
             disabled={props.context.disabled}
             value={props.context.value}
             onChange={(e) =>
-              props.foreignMutations.setNewValue(
-                e.currentTarget.value,
-                undefined,
-              )
+              props.foreignMutations.setNewValue(e.currentTarget.value, {
+                test: true,
+              })
+            }
+          />
+        </>
+      );
+    },
+    otherString: (props) => {
+      return (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <input
+            disabled={props.context.disabled}
+            value={props.context.value}
+            onChange={(e) =>
+              props.foreignMutations.setNewValue(e.currentTarget.value, {
+                test: true,
+              })
             }
           />
         </>
@@ -1410,8 +1445,10 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
                     context: {
                       ...props.context,
                       customContext: {
-                        isLast:
-                          elementIndex == props.context.value.values.size - 1,
+                        listElement: {
+                          isLastListElement:
+                            elementIndex == props.context.value.values.size - 1,
+                        },
                       },
                     },
                     view: unit,
@@ -1561,7 +1598,7 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
         </ul>
         <button
           onClick={() => {
-            props.foreignMutations.add(unit);
+            props.foreignMutations.add({ test: true });
           }}
         >
           ➕
@@ -1670,7 +1707,7 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
         );
         const newValue = _ == undefined ? _ : new Date(_);
         if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-          const delta: DispatchDelta<Unit> = {
+          const delta: DispatchDelta<DispatchPassthroughFormFlags> = {
             kind: "SumReplace",
             replace: PredicateValue.Default.sum(Sum.Default.right(newValue)),
             state: {
@@ -1678,7 +1715,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
               customFormState: props.context.customFormState,
             },
             type: props.context.type,
-            flags: undefined,
+            flags: {
+              test: true,
+            },
           };
           setTimeout(() => {
             props.foreignMutations.onChange(
@@ -1703,7 +1742,7 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
             }))(__.left as UnitFormState),
           })),
         );
-        const delta: DispatchDelta<Unit> = {
+        const delta: DispatchDelta<DispatchPassthroughFormFlags> = {
           kind: "SumReplace",
           replace: PredicateValue.Default.sum(
             Sum.Default.left(PredicateValue.Default.unit()),
@@ -1713,7 +1752,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
             customFormState: props.context.customFormState,
           },
           type: props.context.type,
-          flags: undefined,
+          flags: {
+            test: true,
+          },
         };
         setTimeout(() => {
           props.foreignMutations.onChange(
@@ -1786,7 +1827,7 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
         );
         const newValue = _ == undefined ? _ : new Date(_);
         if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-          const delta: DispatchDelta<Unit> = {
+          const delta: DispatchDelta<DispatchPassthroughFormFlags> = {
             kind: "SumReplace",
             replace: PredicateValue.Default.sum(Sum.Default.right(newValue)),
             state: {
@@ -1794,7 +1835,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
               customFormState: props.context.customFormState,
             },
             type: props.context.type,
-            flags: undefined,
+            flags: {
+              test: true,
+            },
           };
           setTimeout(() => {
             props.foreignMutations.onChange(
@@ -1819,7 +1862,7 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
             }))(__.left as UnitFormState),
           })),
         );
-        const delta: DispatchDelta = {
+        const delta: DispatchDelta<DispatchPassthroughFormFlags> = {
           kind: "SumReplace",
           replace: PredicateValue.Default.sum(
             Sum.Default.left(PredicateValue.Default.unit()),
@@ -1829,7 +1872,9 @@ export const DispatchPassthroughFormConcreteRenderers: CR = {
             customFormState: props.context.customFormState,
           },
           type: props.context.type,
-          flags: undefined,
+          flags: {
+            test: true,
+          },
         };
         setTimeout(() => {
           props.foreignMutations.onChange(

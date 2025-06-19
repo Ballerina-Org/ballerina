@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   isObject,
   isString,
+  Unit,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -52,10 +53,10 @@ export const StreamRenderer = {
                   ...serialized,
                   stream: serialized.stream,
                 }),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)

@@ -98,10 +98,10 @@ export const TableRenderer = {
                       visibleColumns: _.visibleColumns,
                       api: _?.api,
                     }),
-    DeserializeDetailsRenderer: <T extends DispatchInjectablesTypes<T>>(
+    DeserializeDetailsRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
@@ -116,10 +116,10 @@ export const TableRenderer = {
               "renderer" in serialized.detailsRenderer &&
               typeof serialized.detailsRenderer.renderer == "object",
           ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: TableType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
     ): ValueOrErrors<TableRenderer<T>, string> =>

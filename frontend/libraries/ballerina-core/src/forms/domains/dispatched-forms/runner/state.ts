@@ -41,34 +41,42 @@ export type DispatchFormRunnerStatus<
     }
   | { kind: "error"; errors: List<string> };
 
-export type DispatchFormRunnerContext<T extends DispatchInjectablesTypes<T>> = {
+export type DispatchFormRunnerContext<
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomContexts = Unit,
+> = {
   extraContext: any;
-  launcherRef: LauncherRef;
+  launcherRef: LauncherRef<Flags>;
   showFormParsingErrors: BasicFun<
-    DispatchSpecificationDeserializationResult<T>,
+    DispatchSpecificationDeserializationResult<T, Flags, CustomContexts>,
     JSX.Element
   >;
   remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
-} & DispatchFormsParserState<T>;
+} & DispatchFormsParserState<T, Flags, CustomContexts>;
 
-export type DispatchFormRunnerState<T extends DispatchInjectablesTypes<T>> = {
-  status: DispatchFormRunnerStatus<T>;
+export type DispatchFormRunnerState<
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+> = {
+  status: DispatchFormRunnerStatus<T, Flags>;
   formState: any;
 };
 export type DispatchFormRunnerForeignMutationsExpected = Unit;
 export const DispatchFormRunnerState = <
   T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
 >() => {
   return {
-    Default: (): DispatchFormRunnerState<T> => ({
+    Default: (): DispatchFormRunnerState<T, Flags> => ({
       status: { kind: "not initialized" },
       formState: unit,
     }),
     Updaters: {
-      ...simpleUpdater<DispatchFormRunnerState<T>>()("status"),
-      ...simpleUpdater<DispatchFormRunnerState<T>>()("formState"),
+      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("status"),
+      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("formState"),
     },
   };
 };

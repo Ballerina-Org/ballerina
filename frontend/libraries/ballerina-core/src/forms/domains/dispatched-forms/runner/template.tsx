@@ -13,14 +13,17 @@ import {
   unit,
   BasicUpdater,
   DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../main";
 
 export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomContexts = Unit,
 >() =>
   Template.Default<
-    DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,
-    DispatchFormRunnerState<T>,
+    DispatchFormRunnerContext<T, Flags, CustomContexts> & DispatchFormRunnerState<T, Flags>,
+    DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
     const entity = props.context.launcherRef.entity;
@@ -61,7 +64,7 @@ export const DispatchFormRunnerTemplate = <
             props.context.remoteEntityVersionIdentifier,
         }}
         setState={(_: BasicUpdater<any>) =>
-          props.setState(DispatchFormRunnerState().Updaters.formState(_))
+          props.setState(DispatchFormRunnerState<T, Flags>().Updaters.formState(_))
         }
         view={unit}
         foreignMutations={{

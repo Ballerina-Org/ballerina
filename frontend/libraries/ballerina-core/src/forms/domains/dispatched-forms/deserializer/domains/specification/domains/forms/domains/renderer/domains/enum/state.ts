@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   Guid,
   isObject,
+  Unit,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -55,10 +56,10 @@ export const EnumRenderer = {
         : !EnumRenderer.Operations.hasOptions(serialized)
           ? ValueOrErrors.Default.throwOne(`options are required`)
           : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<EnumRenderer<T>, string> =>
       EnumRenderer.Operations.tryAsValidEnumRenderer(serialized)

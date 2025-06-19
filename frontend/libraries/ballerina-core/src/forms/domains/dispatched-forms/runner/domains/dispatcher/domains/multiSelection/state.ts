@@ -17,9 +17,9 @@ import { EnumRenderer } from "../../../../../deserializer/domains/specification/
 
 export const MultiSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends DispatchInjectablesTypes<T>>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.renderer.kind != "lookupRenderer"
         ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(

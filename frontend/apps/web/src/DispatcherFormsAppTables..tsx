@@ -39,11 +39,19 @@ import {
   DispatchCategoryState,
   DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { DispatchPassthroughFormConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import {
+  DispatchPassthroughFormConcreteRenderers,
+  DispatchPassthroughFormCustomContext,
+  DispatchPassthroughFormFlags,
+} from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomContext
+  >,
 ) => (
   <div style={{ border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -59,19 +67,32 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   </div>
 );
 
-const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes>();
+const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomContext
+>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes>();
+const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomContext
+>();
 
 export const DispatcherFormsAppTables = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomContext
+    >().Default(),
   );
 
   const [tablesRunnerState, setTablesRunnerState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [entity, setEntity] = useState<

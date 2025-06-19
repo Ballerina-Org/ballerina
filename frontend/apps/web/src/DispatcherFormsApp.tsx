@@ -35,12 +35,12 @@ import {
   DispatchCategoryState,
   DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { DispatchPassthroughFormConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchPassthroughFormConcreteRenderers, DispatchPassthroughFormCustomContext, DispatchPassthroughFormFlags } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -74,21 +74,21 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 );
 
 const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes>();
+  DispatchFormsParserTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>();
 
 const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes>();
+  DispatchFormRunnerTemplate<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>();
 
 export const DispatcherFormsApp = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes>().Default(),
+    DispatchFormsParserState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags, DispatchPassthroughFormCustomContext>().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags>().Default(),
   );
   const [personConfigState, setPersonConfigState] = useState(
-    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<DispatchPassthroughFormInjectedTypes, DispatchPassthroughFormFlags>().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -142,7 +142,7 @@ export const DispatcherFormsApp = (props: {}) => {
 
   console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
-  const onPersonConfigChange: DispatchOnChange<PredicateValue> = (
+  const onPersonConfigChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
     updater,
     delta,
   ) => {
@@ -178,7 +178,7 @@ export const DispatcherFormsApp = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange: DispatchOnChange<PredicateValue> = (
+  const onPersonEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
     updater,
     delta,
   ) => {
@@ -191,6 +191,7 @@ export const DispatcherFormsApp = (props: {}) => {
         ? updater.value(personEntity.value.value)
         : personEntity.value.value;
     console.log("patching entity", newEntity);
+    console.log("delta", JSON.stringify(delta, null, 2));
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
     );

@@ -57,10 +57,10 @@ export const SumRenderer = {
             `renderer, leftRenderer and rightRenderer are required`,
           )
         : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<SumRenderer<T>, string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)

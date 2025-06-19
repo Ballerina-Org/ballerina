@@ -13,9 +13,9 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const OneDispatcher = {
   Operations: {
-    DispatchPreviewRenderer: <T extends DispatchInjectablesTypes<T>>(
+    DispatchPreviewRenderer: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -25,9 +25,9 @@ export const OneDispatcher = {
             "previewRenderer",
             "previewRenderer",
           ),
-    GetApi: (
+    GetApi: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       api: string | string[],
-      dispatcherContext: DispatcherContext<any>,
+      dispatcherContext: DispatcherContext<any, Flags, CustomContexts>,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
         ? ValueOrErrors.Default.throwOne(
@@ -54,10 +54,10 @@ export const OneDispatcher = {
           : ValueOrErrors.Default.throwOne(
               `api must be a string or an array of strings`,
             ),
-    Dispatch: <T extends DispatchInjectablesTypes<T>>(
+    Dispatch: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: OneType<T>,
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomContexts>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       OneDispatcher.Operations.DispatchPreviewRenderer(
         renderer,

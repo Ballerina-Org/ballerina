@@ -61,10 +61,10 @@ export const NestedRenderer = {
               : !("renderer" in serialized)
                 ? ValueOrErrors.Default.throwOne(`renderer is missing`)
                 : ValueOrErrors.Default.return(serialized),
-    DeserializeAs: <T extends DispatchInjectablesTypes<T>>(
+    DeserializeAs: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType?: boolean,
@@ -77,10 +77,10 @@ export const NestedRenderer = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
-    Deserialize: <T extends DispatchInjectablesTypes<T>>(
+    Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<T>,
+      concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(

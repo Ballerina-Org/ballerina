@@ -54,10 +54,10 @@ export const RecordFieldRenderer = {
             : undefined,
       }),
     ),
-  Deserialize: <T extends DispatchInjectablesTypes<T>>(
+  Deserialize: <T extends DispatchInjectablesTypes<T>, Flags, CustomContexts>(
     type: DispatchParsedType<T>,
     serialized: unknown,
-    concreteRenderers: ConcreteRenderers<T>,
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomContexts>,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>

@@ -3,4 +3,6 @@ import { LoadAndDeserializeSpecification } from "./coroutines/runner";
 
 export const DispatchFormsParserTemplate = <
   T extends DispatchInjectablesTypes<T> = Unit,
->() => LoadAndDeserializeSpecification<T>();
+  Flags = Unit,
+  CustomContexts = Unit,
+>() => LoadAndDeserializeSpecification<T, Flags, CustomContexts>();
