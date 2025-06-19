@@ -195,10 +195,10 @@ export type AbstractTableRendererView<
     selectRow: SimpleCallback<string>;
     selectAllRows: SimpleCallback<void>;
     clearRows: SimpleCallback<void>;
-    add: SimpleCallback<void>;
-    remove: SimpleCallback<string>;
-    moveTo: (key: string, to: string) => void;
-    duplicate: SimpleCallback<string>;
+    add: SimpleCallback<void> | undefined;
+    remove: SimpleCallback<string> | undefined;
+    moveTo: ((key: string, to: string) => void) | undefined;
+    duplicate: SimpleCallback<string> | undefined;
   },
   {
     TableHeaders: string[];

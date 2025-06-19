@@ -738,7 +738,7 @@ export const PersonConcreteRenderers = {
       },
     streamingTable:
       <
-        Context extends FormLabel & { apiMethods: Array<TableMethod> },
+        Context extends FormLabel,
         ForeignMutationsExpected,
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
@@ -764,9 +764,11 @@ export const PersonConcreteRenderers = {
                   <thead style={{ border: "1px solid black" }}>
                     <tr style={{ border: "1px solid black" }}>
                       <th>
-                        <button onClick={() => props.foreignMutations.add()}>
-                          {"➕"}
-                        </button>
+                        {props.foreignMutations.add && (
+                          <button onClick={() => props.foreignMutations.add!()}>
+                            {"➕"}
+                          </button>
+                        )}
                       </th>
                       <th>
                         <input
@@ -806,26 +808,26 @@ export const PersonConcreteRenderers = {
                               ? "🙉"
                               : "🙈"}
                           </button>
-                          {props.context.apiMethods.includes("remove") && (
+                          {props.foreignMutations.remove && (
                             <button
-                              onClick={() => props.foreignMutations.remove(id)}
+                              onClick={() => props.foreignMutations.remove!(id)}
                             >
                               {"❌"}
                             </button>
                           )}
-                          {props.context.apiMethods.includes("duplicate") && (
+                          {props.foreignMutations.duplicate && (
                             <button
                               onClick={() =>
-                                props.foreignMutations.duplicate(id)
+                                props.foreignMutations.duplicate!(id)
                               }
                             >
                               {"👥"}
                             </button>
                           )}
-                          {props.context.apiMethods.includes("move") && (
+                          {props.foreignMutations.moveTo && (
                             <select
                               onChange={(_) =>
-                                props.foreignMutations.moveTo(
+                                props.foreignMutations.moveTo!(
                                   id,
                                   props.EmbeddedTableData.keySeq().get(
                                     Number(_.currentTarget.value),
