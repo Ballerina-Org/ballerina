@@ -158,6 +158,12 @@ module Model =
   and CodegenConfigRecordDef =
     { SupportedRenderers: Map<string, Set<string>> }
 
+  type TableMethod =
+    | Add
+    | Remove
+    | Duplicate
+    | Move
+
   type CrudMethod =
     | Create
     | Delete
@@ -257,7 +263,7 @@ module Model =
     { Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Entities: Map<string, EntityApi * Set<CrudMethod>>
-      Tables: Map<string, TableApi>
+      Tables: Map<string, TableApi * Set<TableMethod>>
       Lookups: Map<string, LookupApi> }
 
     static member Empty =
@@ -450,6 +456,9 @@ module Model =
         PrimitiveRendererId = r.PrimitiveRendererId }
 
   // and RendererChildren = { Fields: Map<string, FieldConfig> }
+
+  type FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension> =
+    { ConstBool: bool -> Expr<'ExprExtension, 'ValueExtension> }
 
   type FormPredicateValidationHistoryItem =
     { Form: FormConfigId
