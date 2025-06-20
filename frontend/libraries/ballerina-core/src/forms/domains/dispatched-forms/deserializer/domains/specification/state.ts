@@ -98,15 +98,16 @@ export const Specification = {
     DeserializeSpecTypes: <T>(
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
-    ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> =>
-      ValueOrErrors.Operations.All(
+    ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
+      const serializedTypeNames = Set(Object.keys(serializedTypes));
+      return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
             .reduce((acc, [rawTypeName, rawType]) => {
               const res = DispatchParsedType.Operations.ParseRawType(
                 rawTypeName,
                 rawType,
-                Set(Object.keys(serializedTypes)),
+                serializedTypeNames,
                 serializedTypes,
                 acc,
                 injectedPrimitives,
@@ -130,7 +131,8 @@ export const Specification = {
               ),
             ),
         ),
-      ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes))),
+      ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
+    },
     DeserializeForms: <T>(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
