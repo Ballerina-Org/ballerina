@@ -1,6 +1,7 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {style} from "./ide.styled.ts";
-import {IDE, IDEView, SpecRunner,  SpecRunnerIndicator} from "playground-core";
+import { style as editorStyle } from "../domains/spec-editor/json-editor.styled.ts";
+import {IDE, IDEView, SpecEditor, SpecRunner, SpecRunnerIndicator} from "playground-core";
 import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React from "react";
@@ -15,7 +16,65 @@ import {Option} from "ballerina-core";
 
 export const IDELayout: IDEView = (props) => (
     <Grid 
-        left={<props.RawJsonEditor{...props} view={TmpJsonEditor} />}
+        left={
+        <>
+            <div css={editorStyle.container}>
+                <div css={editorStyle.row}>
+                    <input
+                      type="text"
+                      placeholder="spec name"
+                      css={editorStyle.input}
+                      value={props.context.editor.name.value}
+                      onChange={(e) => props.setState(IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.name(replaceWith({ value: e.target.value }))))}
+                    />
+                    <select css={editorStyle.select}>
+                        <option value="v1">Version 1</option>
+                        <option value="v2">Version 2</option>
+                        <option value="v3">Version 3</option>
+                    </select>
+                    <label css={editorStyle.switchWrapper}>
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          //onChange={(e) => setIsChecked(e.target.checked)}
+                          css={editorStyle.visuallyHidden}
+                        />
+                        <span css={[editorStyle.switchTrack, true && editorStyle.switchTrackChecked]}>
+                 <span css={[editorStyle.switchThumb, true && editorStyle.switchThumbChecked]} />
+              </span>
+                        <span css={editorStyle.labelText}>Preview</span>
+                    </label>
+                  <Actions
+                    onRun={ async () => {
+                      await IDEApi.validateSpec({value: props.context.editor.input.value})
+                        .then(res =>
+                          props.setState(
+                            SpecRunner.Operations.runEditor(props.context.editor.input.value, res)
+                          )
+                        )
+                    }}
+                    onSave={ async () =>
+                    {
+                      //const res = await IDEApi.lock(props.context.editor.input);
+                      const entity = await IDEApi.save(props.context.editor.name.value, props.context.editor.input.value)
+                      props.setState(
+                        IDE.Updaters.Core.runner(
+                          SpecRunner.Updaters.Core.indicator(
+                            replaceWith(SpecRunnerIndicator.Default.locked())
+                          )
+                        ).then (x =>{
+                          alert(entity);
+                          return x
+                        })
+                      )
+                    }
+                    }
+                  />
+                </div>
+              
+            </div>
+
+            <props.RawJsonEditor{...props} view={TmpJsonEditor} /></>}
         header={
             <div css={style.headerParent}>
                 <div css={style.logoParent}>
@@ -25,7 +84,7 @@ export const IDELayout: IDEView = (props) => (
                         alt="Ballerina"
                     />
                     <p>IDE</p>
-                    <p css={style.stepColor}>{props.context.layout.indicators.step.kind}...</p>
+                    {/*<p css={style.stepColor}>{props.context.layout.indicators.step.kind}...</p>*/}
                 </div>
                 <div css={{ flex: 1 }} />
                 <div css={style.topTabs}>
@@ -37,32 +96,7 @@ export const IDELayout: IDEView = (props) => (
             </div>}
         right={
             <>
-                <Actions
-                    onRun={ async () => {
-                        await IDEApi.validateSpec({value: props.context.editor.input.value})
-                            .then(res =>                        
-                                props.setState(
-                                    SpecRunner.Operations.runEditor(props.context.editor.input.value, res)
-                                )
-                            )
-                    }}
-                    onSave={ async () =>
-                        {
-                            //const res = await IDEApi.lock(props.context.editor.input);
-                            const entity = await IDEApi.entity(props.context.editor.input)
-                            props.setState(
-                                IDE.Updaters.Core.runner(
-                                    SpecRunner.Updaters.Core.indicator(
-                                        replaceWith(SpecRunnerIndicator.Default.locked())
-                                    )
-                                ).then (x =>{
-                                    alert(entity);
-                                    return x
-                                })
-                            )
-                        }
-                    }
-                />
+
                 <Messages
                     indicator={props.context.runner.indicator}
                     clientErrors={[]

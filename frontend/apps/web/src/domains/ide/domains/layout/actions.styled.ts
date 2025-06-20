@@ -4,8 +4,8 @@ export const style = {
     buttonSection:
         css`
           display: flex;
-          gap: 20px;
-          margin-bottom: 32px;
+          gap: 10px;
+          
         `,
     iconButton:
         css`
@@ -17,8 +17,8 @@ export const style = {
           border: none;
           border-radius: 8px;
           padding: 10px 20px;
-          font-size: 1rem;
-          font-weight: 500;
+          font-size: 0.85rem;
+          font-weight: 300;
           cursor: pointer;
           transition: background 0.18s;
           &:hover {

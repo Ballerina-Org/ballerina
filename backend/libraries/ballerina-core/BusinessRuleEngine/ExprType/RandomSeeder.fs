@@ -1,4 +1,6 @@
-﻿namespace Ballerina.DSL.Expr.Types
+﻿(* this is first naive ExprType traversing to play with the types, it is about to be simplified with CE in Traverse.fs*)
+
+namespace Ballerina.DSL.Expr.Types
 
 open System
 open System.Linq

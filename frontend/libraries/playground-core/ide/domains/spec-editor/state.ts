@@ -1,9 +1,20 @@
-﻿import {simpleUpdater, Option, replaceWith, BasicUpdater} from "ballerina-core";
+﻿import {
+    simpleUpdater,
+    Option,
+    replaceWith,
+    BasicUpdater,
+    Debounced,
+    Synchronized,
+    ValidationResult, Updater, Fun
+} from "ballerina-core";
 
 import { View } from "ballerina-core";
 import { Unit, Value, ForeignMutationsInput } from "ballerina-core";
 import {IDE,} from "../../state";
 import {IDEApi} from "../../apis/spec";
+
+export type ValidationResultWithPayload<T> =
+  Extract<ValidationResult, "valid"> & { payload: T };
 
 export type SpecEditorIndicator =
     | { kind : "idle" }
@@ -33,13 +44,15 @@ export const JsonValue = {
 }
 
 export type SpecEditor<T = unknown> = {
-    input: Value<string>, 
+    input: Debounced<Synchronized<Value<string>, ValidationResultWithPayload<string>>>, 
     indicator: SpecEditorIndicator,
+    name: Value<string>,
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<SpecEditor>()("input"),
     ...simpleUpdater<SpecEditor>()("indicator"),
+    ...simpleUpdater<SpecEditor>()("name"),
 };
 
 export const SpecEditor = {
@@ -66,13 +79,24 @@ export const SpecEditor = {
         }
 
         return {
-            input: Value.Default(inputString), 
-            indicator: SpecEditorIndicator.Default.idle()
+            input: Debounced.Default(Synchronized.Default(Value.Default(inputString))), 
+            indicator: SpecEditorIndicator.Default.idle(),
+            name: Value.Default("Spec Name"),
         }},
     Updaters: {
         Core: CoreUpdaters,
         Template: {
-            inputString: CoreUpdaters.input,
+            inputString:  Fun(Value.Updaters.value<string>).then(
+              Fun(Synchronized.Updaters.value<Value<string>, ValidationResultWithPayload<string>>).then(
+                Fun(
+                  Debounced.Updaters.Template.value<
+                    Synchronized<Value<string>, ValidationResultWithPayload<string>>
+                  >,
+                ).then(CoreUpdaters.input),
+              ),
+            ),
+            //inputString: CoreUpdaters.input,
+            name: CoreUpdaters.name,
         },
         Coroutine: {
         },

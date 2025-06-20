@@ -1,6 +1,6 @@
 ﻿/** @jsxImportSource @emotion/react */
 import React from "react";
-import {CheckCircle, Play} from "lucide-react";
+import {CheckCircle, Play, SaveIcon} from "lucide-react";
 import {style} from "./actions.styled";
 
 export const Actions: React.FC<{
@@ -13,7 +13,7 @@ export const Actions: React.FC<{
     <div css={style.layout}>
         <div css={style.buttonSection}>
             <button css={style.iconButton} onClick={onSave}>
-                <CheckCircle size={18}  /> Save
+                <SaveIcon size={18}  /> Save
             </button>
             <button css={style.iconButton} onClick={onRun}>
                 <Play size={18} /> Run

@@ -9,6 +9,7 @@
         <Compile Include="Persistance.fs" />
         <Compile Include="Controllers\SpecController.fs" />
         <Compile Include="Controllers\EntityController.fs" />
+        <Compile Include="Controllers\EnumController.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 
@@ -26,6 +27,7 @@
 
     <ItemGroup>
       <PackageReference Update="FSharp.Core" Version="9.0.300" />
+      <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
 
 </Project>

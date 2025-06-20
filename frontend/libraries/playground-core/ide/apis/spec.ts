@@ -1,5 +1,5 @@
-﻿import {Unit, Value } from "ballerina-core";
-import { SpecValidationResult } from "../domains/spec-editor/state";
+﻿import {Unit, ValidationResult, Value} from "ballerina-core";
+import {SpecValidationResult, ValidationResultWithPayload} from "../domains/spec-editor/state";
 
 const url = "https://localhost:7005"
 
@@ -38,9 +38,28 @@ export const IDEApi = {
 
         return await response.json();
     },
-    async entity(spec: Value<string>): Promise<string> {
+    async save(name: string, spec: string): Promise<true> {
 
-        const response = await fetch(`${url}/entity/play`, {
+        const response = await fetch(`${url}/spec/save`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ specBody: spec, name })
+        });
+
+        if (!response.ok) {
+            throw new Error(`spec/validate HTTP error (status: ${response.status})`);
+        }
+
+        const res =  await response.json();
+        debugger
+        return res;
+    },
+    async seed(spec: Value<string>): Promise<ValidationResultWithPayload<string>> {
+
+        const response = await fetch(`${url}/entity/seed`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -53,6 +72,10 @@ export const IDEApi = {
             throw new Error(`spec/validate HTTP error (status: ${response.status})`);
         }
 
-        return await response.json();
+        const result =  await response.json();
+        
+        const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
+        debugger
+        return t
     },
 };

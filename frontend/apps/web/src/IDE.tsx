@@ -11,7 +11,7 @@ export const IDEApp = (props: {}) => {
     
     useEffect(() => {
         setIDE(IDE.Updaters.Core.editor(
-            SpecEditor.Updaters.Core.input(replaceWith({value: JSON.stringify(SPEC)}))))
+            SpecEditor.Updaters.Template.inputString(replaceWith(JSON.stringify(SPEC)))))
     }, []);
     
     return (

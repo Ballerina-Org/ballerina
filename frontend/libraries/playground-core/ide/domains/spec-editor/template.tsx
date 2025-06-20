@@ -5,6 +5,7 @@ import {
     RawJsonEditorView,
     RawJsonEditorWritableState,
 } from "./state";
+import { SpecPreviewDebouncer } from "./coroutines/runner";
 
 export const RawJsonEditorTemplate = Template.Default<
     RawJsonEditorReadonlyContext,
@@ -12,4 +13,5 @@ export const RawJsonEditorTemplate = Template.Default<
     RawJsonEditorForeignMutationsExpected,
     RawJsonEditorView
 >((props) => <props.view {...props} />).any([
+  SpecPreviewDebouncer
 ]);

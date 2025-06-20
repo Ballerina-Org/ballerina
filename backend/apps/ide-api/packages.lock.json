@@ -8,13 +8,9 @@
         "resolved": "9.0.300",
         "contentHash": "TVt2J7RCE1KCS2IaONF+p8/KIZ1eHNbW+7qmKF6hGoD4tXl+o07ja1mPtFjMqRa5uHMFaTrGTPn/m945WnDLiQ=="
       },
-      "Bogus": {
-        "type": "Transitive",
-        "resolved": "35.6.3",
-        "contentHash": "+5omfZWy8gOcbpc48vKfMI4h/ecbdf3NQm6xCl3zMbaP4J3rMMm5h3kPFeIWBgt4mbz6YY0eeZDLR/6yv1khKw=="
-      },
       "FSharp.Data": {
-        "type": "Transitive",
+        "type": "Direct",
+        "requested": "[6.6.0, )",
         "resolved": "6.6.0",
         "contentHash": "AC87/VZV1iGrnK1uG6QhX22HZARlFiCqdlckzPDgdE3+fzc0ZNRR3Y4ny5vbLvfDj2rjFoJdmRZy6kzI1C/sQQ==",
         "dependencies": {
@@ -27,6 +23,11 @@
           "FSharp.Data.WorldBank.Core": "6.6.0",
           "FSharp.Data.Xml.Core": "6.6.0"
         }
+      },
+      "Bogus": {
+        "type": "Transitive",
+        "resolved": "35.6.3",
+        "contentHash": "+5omfZWy8gOcbpc48vKfMI4h/ecbdf3NQm6xCl3zMbaP4J3rMMm5h3kPFeIWBgt4mbz6YY0eeZDLR/6yv1khKw=="
       },
       "FSharp.Data.Csv.Core": {
         "type": "Transitive",
@@ -213,7 +214,7 @@
           "System.Text.Encodings.Web": "6.0.0"
         }
       },
-      "BallerinaCore": {
+      "Ballerina.Core": {
         "type": "Project",
         "dependencies": {
           "Bogus": "[35.6.3, )",

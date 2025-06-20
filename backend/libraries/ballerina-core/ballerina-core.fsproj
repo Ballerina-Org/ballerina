@@ -39,6 +39,7 @@
     <Compile Include="BusinessRuleEngine/ExprType/Unification.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/RandomSeeder.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/TypeCheck.fs" />
+    <Compile Include="BusinessRuleEngine\ExprType\Traverse.fs" />
     <Compile Include="BusinessRuleEngine/Expr/Eval.fs" />
     <Compile Include="BusinessRuleEngine/Parser/Patterns.fs" />
     <Compile Include="BusinessRuleEngine/Parser/Expr.fs" />
