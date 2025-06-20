@@ -27,6 +27,8 @@ module Dependencies =
             "FSharp.Management"
             "System.Linq"
             "Ballerina.DSL.Expr"
+            "Ballerina.DSL.Expr.Types"
+            "Ballerina.DSL.Expr.Types.ScopeBuilder"
             "Ballerina.DSL.Expr.Model"
             "Ballerina.Collections.Sum"
             "Ballerina.DSL.FormEngine.Model"

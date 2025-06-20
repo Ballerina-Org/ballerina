@@ -34,6 +34,9 @@ type TryBallerinaKernelExtension () =
             do! Dependencies.load ()
             let _ = ConvenientCodeExecute._code
             let _ = ConvenientCodeExecute._blp
+            let _ = Languages.fsharpDefer "#!faker --lang ch
+let rng = System.Random()
+type Store = FileSystem<Env.BLP_INPUT_FORMS_DIR.Value>"
             let! _markup =
                     """<div><img style="width:200px" src ="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"/><p>Try Ballerina!</p></div>"""
                  

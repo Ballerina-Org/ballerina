@@ -93,10 +93,9 @@ module ScopeBuilder =
   
   let runScope (WithScope(_, v)) = v
   
-  let rec eval (acc: JsonValue) (scopeIn: TraversalScope) (expr: ExprType) : JsonValue =
+  let rec eval (acc: Value<_,_>) (scopeIn: TraversalScope) (expr: ExprType): Value<_, _> =
     match expr with
-    | UnitType ->
-      JsonValue.Record [||]
+    | UnitType -> Value.Unit
     | RecordType map ->
       map
       |> Map.toList
@@ -107,7 +106,9 @@ module ScopeBuilder =
           }
       )
       |> runScope
-      |> Array.ofList
-      |> JsonValue.Record
-    | _ -> JsonValue.Record [||]
-    |> mergeJson acc
+      |> Map.ofList
+      |> Value.Record
+    | _ -> Value.Record Map.empty
+  let example (exprType: ExprType) =
+    eval Value.Unit TraversalScope.All exprType
+    |> Expr<_,_>.toJSon // that is only in unbound
