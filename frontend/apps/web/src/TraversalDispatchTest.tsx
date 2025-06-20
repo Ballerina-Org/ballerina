@@ -18,19 +18,17 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchFormRunnerState,
   DispatchParsedType,
-  id,
   IdWrapperProps,
   ErrorRendererProps,
-  InjectedPrimitive,
   DispatchInjectedPrimitive,
   RendererTraversal,
   EvalContext,
   Option,
   ValueTraversal,
+  DispatchOnChange,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import { TraversalPersonApis } from "playground-core";
-import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/traverse-test-file.json";
 import {
   DispatchPersonContainerFormView,
@@ -39,12 +37,21 @@ import {
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import {
+  DispatchPassthroughFormConcreteRenderers,
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+} from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomPresentationContext
+  >,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -77,19 +84,32 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   </div>
 );
 
-const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
 export const TraversalDispatchTest = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext
+    >().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -107,9 +127,11 @@ export const TraversalDispatchTest = (props: {}) => {
   const [entityPath, setEntityPath] = useState<any>(null);
 
   const primitiveRendererNamesByType = Map(
-    Object.entries(PersonConcreteRenderers).map(([key, value]) => {
-      return [key, Set(Object.keys(value))];
-    }),
+    Object.entries(DispatchPassthroughFormConcreteRenderers).map(
+      ([key, value]) => {
+        return [key, Set(Object.keys(value))];
+      },
+    ),
   );
 
   const parseCustomDelta =
@@ -176,15 +198,18 @@ export const TraversalDispatchTest = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onPersonEntityChange: DispatchOnChange<PredicateValue> = (
+    updater,
+    delta,
+  ) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(personEntity.value.value);
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(personEntity.value.value)
+        : personEntity.value.value;
     console.log("patching entity", newEntity);
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -328,7 +353,7 @@ export const TraversalDispatchTest = (props: {}) => {
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources: TraversalPersonApis.streamApis,
                     enumOptionsSources: TraversalPersonApis.enumApis,
                     entityApis: TraversalPersonApis.entityApis,
@@ -386,6 +411,7 @@ export const TraversalDispatchTest = (props: {}) => {
                       onEntityChange: onPersonEntityChange,
                     },
                     showFormParsingErrors: ShowFormsParsingErrors,
+                    remoteEntityVersionIdentifier: "",
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },

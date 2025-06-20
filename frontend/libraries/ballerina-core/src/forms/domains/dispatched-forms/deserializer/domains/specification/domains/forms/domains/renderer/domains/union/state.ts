@@ -1,5 +1,6 @@
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   MapRepo,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -44,10 +45,18 @@ export const UnionRenderer = {
               ...serialized,
               cases: Map(serialized.cases),
             }),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: UnionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)

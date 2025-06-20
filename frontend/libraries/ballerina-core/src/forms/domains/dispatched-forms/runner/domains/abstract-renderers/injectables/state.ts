@@ -1,6 +1,6 @@
 import { List, Map, Set } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
   ErrorRendererProps,
   Guid,
   IdWrapperProps,
@@ -10,15 +10,16 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../main";
 
-export type DispatchInjectablePrimitive<T> = {
-  name: keyof T;
-  defaultValue: PredicateValue;
-  abstractRenderer: (
-    IdWrapper: (props: IdWrapperProps) => React.ReactNode,
-    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  ) => Template<any, any, any, any>;
-  defaultState?: any;
-};
+export type DispatchInjectablePrimitive<T extends DispatchInjectablesTypes<T>> =
+  {
+    name: keyof T;
+    defaultValue: PredicateValue;
+    abstractRenderer: (
+      IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+      ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+    ) => Template<any, any, any, any>;
+    defaultState?: any;
+  };
 
 export type DispatchInjectedPrimitive<T> = {
   name: Guid;
@@ -32,7 +33,7 @@ export type DispatchInjectedPrimitive<T> = {
 };
 
 export const DispatchInjectedPrimitive = {
-  Default: <T>(
+  Default: <T extends DispatchInjectablesTypes<T>>(
     name: keyof T,
     abstractRenderer: (
       IdWrapper: (props: IdWrapperProps) => React.ReactNode,
@@ -48,9 +49,19 @@ export const DispatchInjectedPrimitive = {
   }),
 };
 
-export type DispatchInjectables<
-  T extends { [key in keyof T]: { type: any; state: any } },
-> = Array<DispatchInjectablePrimitive<T>>;
+export type DispatchInjectableType = {
+  type: any;
+  state: any;
+  view: any;
+};
+
+export type DispatchInjectablesTypes<T> = {
+  [key in keyof T]: DispatchInjectableType;
+};
+
+export type DispatchInjectables<T extends DispatchInjectablesTypes<T>> = Array<
+  DispatchInjectablePrimitive<T>
+>;
 
 export type DispatchInjectedPrimitives<T> = Map<
   keyof T,
@@ -58,9 +69,11 @@ export type DispatchInjectedPrimitives<T> = Map<
 >;
 
 export const injectedPrimitivesFromConcreteRenderers = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
 >(
-  concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+  concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
   injectables: DispatchInjectables<T>,
 ): ValueOrErrors<DispatchInjectedPrimitives<T>, string> =>
   ValueOrErrors.Operations.All(

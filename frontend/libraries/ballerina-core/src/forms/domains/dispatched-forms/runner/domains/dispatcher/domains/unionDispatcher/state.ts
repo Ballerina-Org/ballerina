@@ -2,6 +2,7 @@ import { List, Map } from "immutable";
 
 import {
   DispatcherContext,
+  DispatchInjectablesTypes,
   MapRepo,
   Template,
   UnionAbstractRenderer,
@@ -15,10 +16,18 @@ import { Dispatcher } from "../../state";
 
 export const UnionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: UnionType<T>,
       unionRenderer: UnionRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       isNested: boolean,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
@@ -66,7 +75,7 @@ export const UnionDispatcher = {
                         UnionAbstractRenderer(
                           // TODO better typing for state and consider this pattern for other dispatchers
                           (
-                            defaultState as UnionAbstractRendererState<any>
+                            defaultState as UnionAbstractRendererState
                           ).caseFormStates.map((caseState) => () => caseState),
                           Map(templates),
                           dispatcherContext.IdProvider,

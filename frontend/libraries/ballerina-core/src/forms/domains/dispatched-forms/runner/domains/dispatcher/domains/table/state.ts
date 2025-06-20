@@ -6,6 +6,7 @@ import {
   Template,
   ValueOrErrors,
   TableAbstractRenderer,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -16,9 +17,17 @@ import { TableRenderer } from "../../../../../deserializer/domains/specification
 
 export const TableDispatcher = {
   Operations: {
-    GetApi: (
+    GetApi: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       api: string | string[] | undefined,
-      dispatcherContext: DispatcherContext<any>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
       api == undefined
         ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
@@ -30,10 +39,16 @@ export const TableDispatcher = {
               )
             : dispatcherContext.tableApiSources(api),
     DispatchDetailsRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -43,10 +58,18 @@ export const TableDispatcher = {
             "table details renderer",
             "details",
           ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: TableType<T>,
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       api: string | string[] | undefined,
       isNested: boolean,
       launcherName?: string,
@@ -136,7 +159,6 @@ export const TableDispatcher = {
                             .getConcreteRenderer(
                               "table",
                               renderer.renderer.renderer,
-                              isNested,
                             )
                             .Then((concreteRenderer) =>
                               TableDispatcher.Operations.GetApi(

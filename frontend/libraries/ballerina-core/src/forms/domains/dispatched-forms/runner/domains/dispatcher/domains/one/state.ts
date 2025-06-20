@@ -1,11 +1,10 @@
 import {
   BasicFun,
   DispatcherContext,
-  DispatchOneSource,
-  DispatchTableApiSource,
   Guid,
   OneAbstractRenderer,
   OneType,
+  DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -15,10 +14,16 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 export const OneDispatcher = {
   Operations: {
     DispatchPreviewRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -28,9 +33,17 @@ export const OneDispatcher = {
             "previewRenderer",
             "previewRenderer",
           ),
-    GetApi: (
+    GetApi: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       api: string | string[],
-      dispatcherContext: DispatcherContext<any>,
+      dispatcherContext: DispatcherContext<
+        any,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
         ? ValueOrErrors.Default.throwOne(
@@ -57,10 +70,18 @@ export const OneDispatcher = {
           : ValueOrErrors.Default.throwOne(
               `api must be a string or an array of strings`,
             ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: OneType<T>,
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       OneDispatcher.Operations.DispatchPreviewRenderer(
         renderer,

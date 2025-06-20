@@ -258,7 +258,7 @@ export type MapType<T> = {
 export type TableType<T> = {
   kind: "table";
   name: DispatchTypeName;
-  args: Array<DispatchParsedType<T>>;
+  args: Array<RecordType<T>>;
   typeName: DispatchTypeName;
 };
 
@@ -287,7 +287,7 @@ export const DispatchParsedType = {
   Default: {
     table: <T>(
       name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
+      args: Array<RecordType<T>>,
       typeName: DispatchTypeName,
     ): TableType<T> => ({
       kind: "table",
@@ -897,14 +897,40 @@ export const DispatchParsedType = {
             alreadyParsedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
-            ValueOrErrors.Default.return([
-              DispatchParsedType.Default.table(
-                typeName,
-                [parsedArg[0]],
-                typeName,
-              ),
-              alreadyParsedTypes,
-            ]),
+            parsedArg[0].kind == "lookup"
+              ? MapRepo.Operations.tryFindWithError(
+                  parsedArg[0].name,
+                  alreadyParsedTypes,
+                  () =>
+                    `cannot find lookup type ${parsedArg[0].name as string} in types`,
+                ).Then((resolvedType) =>
+                  resolvedType.Then((resolvedType) =>
+                    resolvedType.kind == "record"
+                      ? ValueOrErrors.Default.return([
+                          DispatchParsedType.Default.table(
+                            typeName,
+                            [resolvedType],
+                            typeName,
+                          ),
+                          alreadyParsedTypes,
+                        ])
+                      : ValueOrErrors.Default.throwOne(
+                          `Error: ${JSON.stringify(resolvedType)} is not a record type`,
+                        ),
+                  ),
+                )
+              : parsedArg[0].kind == "record"
+                ? ValueOrErrors.Default.return([
+                    DispatchParsedType.Default.table(
+                      typeName,
+                      [parsedArg[0]],
+                      typeName,
+                    ),
+                    alreadyParsedTypes,
+                  ])
+                : ValueOrErrors.Default.throwOne(
+                    `Error: ${JSON.stringify(parsedArg[0])} is not a record type or lookup type to a record type`,
+                  ),
           );
         }
         if (SerializedType.isLookup(rawType, typeNames))

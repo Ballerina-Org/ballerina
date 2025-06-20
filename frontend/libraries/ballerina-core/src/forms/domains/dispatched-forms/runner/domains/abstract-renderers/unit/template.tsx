@@ -1,32 +1,34 @@
-import { UnitAbstractRendererState, UnitAbstractRendererView } from "./state";
+import {
+  UnitAbstractRendererReadonlyContext,
+  UnitAbstractRendererState,
+  UnitAbstractRendererView,
+  UnitAbstractRendererForeignMutationsExpected,
+} from "./state";
 import {
   DispatchDelta,
-  DispatchOnChange,
   ErrorRendererProps,
-  FormLabel,
   getLeafIdentifierFromIdentifier,
   IdWrapperProps,
   PredicateValue,
   Template,
   Unit,
-  ValueUnit,
+  Option,
+  replaceWith,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
-export const UnitAbstractRenderer = <Context extends FormLabel>(
+export const UnitAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+>(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) =>
   Template.Default<
-    Context & {
-      value: ValueUnit;
-      disabled: boolean;
-      type: DispatchParsedType<any>;
-      identifiers: { withLauncher: string; withoutLauncher: string };
-    },
+    UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
+      UnitAbstractRendererState,
     UnitAbstractRendererState,
-    { onChange: DispatchOnChange<Unit> },
-    UnitAbstractRendererView<Context>
+    UnitAbstractRendererForeignMutationsExpected<Flags>,
+    UnitAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
@@ -57,8 +59,8 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              onChange: (_) => {
-                const delta: DispatchDelta = {
+              set: (flags: Flags | undefined) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "UnitReplace",
                   replace: PredicateValue.Default.unit(),
                   state: {
@@ -66,9 +68,14 @@ export const UnitAbstractRenderer = <Context extends FormLabel>(
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(_, delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(
+                    replaceWith(PredicateValue.Default.unit()),
+                  ),
+                  delta,
+                );
               },
             }}
           />

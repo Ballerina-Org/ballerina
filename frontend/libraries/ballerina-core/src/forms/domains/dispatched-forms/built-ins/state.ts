@@ -18,7 +18,7 @@ import {
   DispatchInfiniteStreamSources,
   DispatchInjectedPrimitives,
   RecordAbstractRendererState,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
   MapRepo,
   ValueTable,
   DispatchCommonFormState,
@@ -29,24 +29,73 @@ import {
   ValueOption,
   BasicUpdater,
   DispatchDelta,
+  Option,
+  CommonAbstractRendererState,
+  EnumMultiselectAbstractRendererView,
+  RecordAbstractRendererView,
+  SearchableInfiniteStreamMultiselectAbstractRendererView,
+  OneAbstractRendererView,
+  TableAbstractRendererView,
+  UnionAbstractRendererView,
+  View,
+  DispatchInjectablesTypes,
 } from "../../../../../main";
 import {
   DispatchParsedType,
   DispatchTypeName,
 } from "../deserializer/domains/specification/domains/types/state";
-import { UnitAbstractRendererState } from "../runner/domains/abstract-renderers/unit/state";
-import { StringAbstractRendererState } from "../runner/domains/abstract-renderers/string/state";
-import { NumberAbstractRendererState } from "../runner/domains/abstract-renderers/number/state";
-import { BoolAbstractRendererState } from "../runner/domains/abstract-renderers/boolean/state";
-import { DateAbstractRendererState } from "../runner/domains/abstract-renderers/date/state";
-import { Base64FileAbstractRendererState } from "../runner/domains/abstract-renderers/base-64-file/state";
-import { SecretAbstractRendererState } from "../runner/domains/abstract-renderers/secret/state";
-import { MapAbstractRendererState } from "../runner/domains/abstract-renderers/map/state";
-import { TupleAbstractRendererState } from "../runner/domains/abstract-renderers/tuple/state";
-import { SumAbstractRendererState } from "../runner/domains/abstract-renderers/sum/state";
-import { EnumAbstractRendererState } from "../runner/domains/abstract-renderers/enum/state";
-import { ListAbstractRendererState } from "../runner/domains/abstract-renderers/list/state";
-import { SearchableInfiniteStreamAbstractRendererState } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
+import {
+  UnitAbstractRendererState,
+  UnitAbstractRendererView,
+} from "../runner/domains/abstract-renderers/unit/state";
+import {
+  StringAbstractRendererState,
+  StringAbstractRendererView,
+} from "../runner/domains/abstract-renderers/string/state";
+import {
+  NumberAbstractRendererState,
+  NumberAbstractRendererView,
+} from "../runner/domains/abstract-renderers/number/state";
+import {
+  BoolAbstractRendererState,
+  BoolAbstractRendererView,
+} from "../runner/domains/abstract-renderers/boolean/state";
+import {
+  DateAbstractRendererState,
+  DateAbstractRendererView,
+} from "../runner/domains/abstract-renderers/date/state";
+import {
+  Base64FileAbstractRendererState,
+  Base64FileAbstractRendererView,
+} from "../runner/domains/abstract-renderers/base-64-file/state";
+import {
+  SecretAbstractRendererState,
+  SecretAbstractRendererView,
+} from "../runner/domains/abstract-renderers/secret/state";
+import {
+  MapAbstractRendererState,
+  MapAbstractRendererView,
+} from "../runner/domains/abstract-renderers/map/state";
+import {
+  TupleAbstractRendererState,
+  TupleAbstractRendererView,
+} from "../runner/domains/abstract-renderers/tuple/state";
+import {
+  SumAbstractRendererState,
+  SumAbstractRendererView,
+} from "../runner/domains/abstract-renderers/sum/state";
+import {
+  EnumAbstractRendererState,
+  EnumAbstractRendererView,
+} from "../runner/domains/abstract-renderers/enum/state";
+import {
+  ListAbstractRendererState,
+  ListAbstractRendererView,
+} from "../runner/domains/abstract-renderers/list/state";
+import {
+  SearchableInfiniteStreamAbstractRendererState,
+  SearchableInfiniteStreamAbstractRendererView,
+} from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Renderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
@@ -62,18 +111,28 @@ const simpleMapKeyToIdentifer = (key: any): string => {
   return JSON.stringify(key);
 };
 
-export type DispatchOnChange<Entity> = (
-  updater: BasicUpdater<Entity>,
-  delta: DispatchDelta,
+export type VoidCallbackWithOptionalFlags<Flags = Unit> = (
+  flags: Flags | undefined,
+) => void;
+
+export type ValueCallbackWithOptionalFlags<Value, Flags = Unit> = (
+  value: Value,
+  flags: Flags | undefined,
+) => void;
+
+export type DispatchOnChange<Value, Flags = Unit> = (
+  updater: Option<BasicUpdater<Value>>,
+  delta: DispatchDelta<Flags>,
 ) => void;
 
 type ApiConverter<T> = {
   fromAPIRawValue: BasicFun<any, T>;
   toAPIRawValue: BasicFun<[T, boolean], any>;
 };
-export type DispatchApiConverters<
-  T extends { [key in keyof T]: { type: any; state: any } },
-> = { [key in keyof T]: ApiConverter<T[key]["type"]> } & BuiltInApiConverters;
+
+export type DispatchApiConverters<T extends DispatchInjectablesTypes<T>> = {
+  [key in keyof T]: ApiConverter<T[key]["type"]>;
+} & BuiltInApiConverters;
 
 type RawUnion = {
   caseName: string;
@@ -125,37 +184,172 @@ type BuiltInApiConverters = {
   One: ApiConverter<ValueOption>;
 };
 
-export type ConcreteRendererKinds<T> = {
-  unit: Set<string>;
-  boolean: Set<string>;
-  number: Set<string>;
-  string: Set<string>;
-  base64File: Set<string>;
-  secret: Set<string>;
-  date: Set<string>;
-  enumSingleSelection: Set<string>;
-  enumMultiSelection: Set<string>;
-  streamSingleSelection: Set<string>;
-  streamMultiSelection: Set<string>;
-  list: Set<string>;
-  map: Set<string>;
-  tuple: Set<string>;
-  sum: Set<string>;
-  sumUnitDate: Set<string>;
-  record: Set<string>;
-  table: Set<string>;
-  union: Set<string>;
-  one: Set<string>;
-} & { [key in keyof T]: Set<string> };
+type RecursivePartial<T> = {
+  [P in keyof T]?: T[P] extends (infer U)[]
+    ? RecursivePartial<U>[]
+    : T[P] extends object | undefined
+      ? RecursivePartial<T[P]>
+      : T[P];
+};
+
+export type ConcreteRenderers<
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
+> = {
+  unit: {
+    [_: string]: UnitAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  boolean: {
+    [_: string]: BoolAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  number: {
+    [_: string]: NumberAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  string: {
+    [_: string]: StringAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  base64File: {
+    [_: string]: Base64FileAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  secret: {
+    [_: string]: SecretAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  date: {
+    [_: string]: DateAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  enumSingleSelection: {
+    [_: string]: EnumAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  enumMultiSelection: {
+    [_: string]: EnumMultiselectAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  streamSingleSelection: {
+    [_: string]: SearchableInfiniteStreamAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  streamMultiSelection: {
+    [_: string]: SearchableInfiniteStreamMultiselectAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  list: {
+    [_: string]: ListAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  map: {
+    [_: string]: MapAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  tuple: {
+    [_: string]: TupleAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  sum: {
+    [_: string]: SumAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  sumUnitDate: {
+    [_: string]: SumAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  record: {
+    [_: string]: RecordAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  table: {
+    [_: string]: TableAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  union: {
+    [_: string]: UnionAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+  one: {
+    [_: string]: OneAbstractRendererView<
+      RecursivePartial<CustomPresentationContexts>,
+      Flags
+    >;
+  };
+} & {
+  [key in keyof T]: { [_: string]: T[key]["view"] };
+};
+
+export type ConcreteRenderer<T> =
+  | Base64FileAbstractRendererView<any, any>
+  | BoolAbstractRendererView<any, any>
+  | DateAbstractRendererView<any, any>
+  | EnumAbstractRendererView<any, any>
+  | EnumMultiselectAbstractRendererView<any, any>
+  | ListAbstractRendererView<any, any>
+  | MapAbstractRendererView<any, any>
+  | NumberAbstractRendererView<any, any>
+  | OneAbstractRendererView<any, any>
+  | RecordAbstractRendererView<any, any>
+  | SearchableInfiniteStreamAbstractRendererView<any, any>
+  | SearchableInfiniteStreamMultiselectAbstractRendererView<any, any>
+  | SecretAbstractRendererView<any, any>
+  | StringAbstractRendererView<any, any>
+  | SumAbstractRendererView<any, any>
+  | TableAbstractRendererView<any, any>
+  | TupleAbstractRendererView<any, any>
+  | UnionAbstractRendererView<any, any>
+  | UnitAbstractRendererView<any, any>;
 
 export const concreteRendererToKind =
-  <T>(concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>) =>
+  <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+  ) =>
   (name: string): ValueOrErrors<string, string> => {
     const viewTypes = Object.keys(concreteRenderers);
     for (const viewType of viewTypes) {
-      if (
-        name in concreteRenderers[viewType as keyof ConcreteRendererKinds<T>]
-      ) {
+      if (name in concreteRenderers[viewType as keyof ConcreteRenderers<T>]) {
         return ValueOrErrors.Default.return(viewType);
       }
     }
@@ -164,44 +358,43 @@ export const concreteRendererToKind =
     );
   };
 
-// TODO -- JSX instead of any
 export const tryGetConcreteRenderer =
-  <T>(
-    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
-    defaultRecordRenderer: any,
-    defaultNestedRecordRenderer: any,
+  <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
   ) =>
-  (
-    kind: keyof ConcreteRendererKinds<T>,
-    name?: string,
-    isNested?: boolean, // valid only for record kind
-  ): ValueOrErrors<JSX.Element, string> => {
-    if (kind == "record" && name == undefined) {
-      if (isNested) {
-        return ValueOrErrors.Default.return(defaultNestedRecordRenderer);
-      }
-      return ValueOrErrors.Default.return(defaultRecordRenderer);
-    }
-    if (name == undefined) {
-      return ValueOrErrors.Default.throwOne(
-        `concrete renderer name is undefined for kind "${kind as string}"`,
-      );
-    }
+  <K extends keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>>(
+    kind: K,
+    name: keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K],
+  ): ValueOrErrors<
+    ConcreteRenderers<
+      T,
+      Flags,
+      CustomPresentationContexts
+    >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]],
+    string
+  > => {
     if (!concreteRenderers[kind]) {
       return ValueOrErrors.Default.throwOne(
         `cannot find concrete renderer kind "${kind as string}" in formViews`,
       );
     }
     if (concreteRenderers[kind][name]) {
-      return ValueOrErrors.Default.return(concreteRenderers[kind][name]());
+      return ValueOrErrors.Default.return(concreteRenderers[kind][name]);
     }
     return ValueOrErrors.Default.throwOne(
-      `cannot find concrete renderer "${name}" in kind "${kind as string}"`,
+      `cannot find concrete renderer "${name as string}" in kind "${kind as string}"`,
     );
   };
 
+export const getDefaultRecordRenderer = (
+  isNested: boolean,
+  defaultRecordRenderer: RecordAbstractRendererView<any, any>,
+  defaultNestedRecordRenderer: RecordAbstractRendererView<any, any>,
+): RecordAbstractRendererView<any, any> =>
+  isNested ? defaultNestedRecordRenderer : defaultRecordRenderer;
+
 export const dispatchDefaultState =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends DispatchInjectablesTypes<T>>(
     infiniteStreamSources: DispatchInfiniteStreamSources,
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
@@ -333,7 +526,7 @@ export const dispatchDefaultState =
       if (t.kind == "map")
         return renderer.kind == "mapRenderer"
           ? ValueOrErrors.Default.return(
-              MapAbstractRendererState().Default.zero(),
+              MapAbstractRendererState.Default.zero(),
             )
           : ValueOrErrors.Default.throwOne(
               `received non map renderer kind "${renderer.kind}" when resolving defaultState for map`,
@@ -343,10 +536,7 @@ export const dispatchDefaultState =
         return renderer.kind == "tupleRenderer"
           ? ValueOrErrors.Operations.All(
               List<
-                ValueOrErrors<
-                  [number, { commonFormState: DispatchCommonFormState }],
-                  string
-                >
+                ValueOrErrors<[number, CommonAbstractRendererState], string>
               >(
                 t.args.map((_, index) =>
                   dispatchDefaultState(
@@ -365,9 +555,7 @@ export const dispatchDefaultState =
               ),
             ).Then((itemStates) =>
               ValueOrErrors.Default.return(
-                TupleAbstractRendererState<{
-                  commonFormState: DispatchCommonFormState;
-                }>().Default(Map(itemStates)),
+                TupleAbstractRendererState.Default(Map(itemStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -399,7 +587,7 @@ export const dispatchDefaultState =
                     tableApiSources,
                   )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
                     ValueOrErrors.Default.return(
-                      SumAbstractRendererState().Default({
+                      SumAbstractRendererState.Default({
                         left,
                         right,
                       }),
@@ -408,7 +596,7 @@ export const dispatchDefaultState =
             )
           : renderer.kind == "sumUnitDateRenderer"
             ? ValueOrErrors.Default.return(
-                SumAbstractRendererState().Default({
+                SumAbstractRendererState.Default({
                   left: UnitAbstractRendererState.Default(),
                   right: DateAbstractRendererState.Default(),
                 }),
@@ -500,7 +688,9 @@ export const dispatchDefaultState =
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[string, PredicateValue], string>>(
+              List<
+                ValueOrErrors<[string, CommonAbstractRendererState], string>
+              >(
                 renderer.fields
                   .entrySeq()
                   .map(([fieldName, fieldRenderer]) =>
@@ -566,7 +756,7 @@ export const dispatchDefaultState =
               ),
             ).Then((caseStates) =>
               ValueOrErrors.Default.return(
-                UnionAbstractRendererState<any>().Default(Map(caseStates)),
+                UnionAbstractRendererState.Default(Map(caseStates)),
               ),
             )
           : ValueOrErrors.Default.throwOne(
@@ -576,7 +766,7 @@ export const dispatchDefaultState =
 
       if (t.kind == "table") {
         return renderer.kind == "tableRenderer"
-          ? ValueOrErrors.Default.return(AbstractTableRendererState.Default())
+          ? ValueOrErrors.Default.return(TableAbstractRendererState.Default())
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultState for table`,
             );
@@ -838,7 +1028,7 @@ export const dispatchDefaultValue =
   };
 
 export const dispatchFromAPIRawValue =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends DispatchInjectablesTypes<T>>(
     t: DispatchParsedType<T>,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     converters: DispatchApiConverters<T>,
@@ -1028,48 +1218,42 @@ export const dispatchFromAPIRawValue =
           );
         }
         const converterResult = converters["Table"].fromAPIRawValue(raw);
-        const lookupType = t.args[0];
-        if (lookupType.kind != "lookup") {
+        const argType = t.args[0];
+        if (argType.kind != "record") {
           return ValueOrErrors.Default.throwOne(
-            `expected lookup type for table arg, got ${JSON.stringify(
-              lookupType,
+            `expected record type for table arg, got ${JSON.stringify(
+              argType,
             )}`,
           );
         }
-        return MapRepo.Operations.tryFindWithError(
-          lookupType.name, // TODO check this
-          types,
-          () => `type ${lookupType.name} not found in types`,
-        ).Then((type) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, ValueRecord], string>>(
-              converterResult.data
-                .toArray()
-                .map(([key, record]) =>
-                  dispatchFromAPIRawValue(
-                    type,
-                    types,
-                    converters,
-                    injectedPrimitives,
-                  )(record).Then((value) =>
-                    PredicateValue.Operations.IsRecord(value)
-                      ? ValueOrErrors.Default.return([key, value])
-                      : ValueOrErrors.Default.throwOne(
-                          `record expected but got ${PredicateValue.Operations.GetKind(
-                            value,
-                          )}`,
-                        ),
-                  ),
+        return ValueOrErrors.Operations.All(
+          List<ValueOrErrors<[string, ValueRecord], string>>(
+            converterResult.data
+              .toArray()
+              .map(([key, record]) =>
+                dispatchFromAPIRawValue(
+                  argType,
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(record).Then((value) =>
+                  PredicateValue.Operations.IsRecord(value)
+                    ? ValueOrErrors.Default.return([key, value])
+                    : ValueOrErrors.Default.throwOne(
+                        `record expected but got ${PredicateValue.Operations.GetKind(
+                          value,
+                        )}`,
+                      ),
                 ),
-            ),
-          ).Then((values) =>
-            ValueOrErrors.Default.return(
-              ValueTable.Default.fromParsed(
-                converterResult.from,
-                converterResult.to,
-                converterResult.hasMoreValues,
-                OrderedMap(values),
               ),
+          ),
+        ).Then((values) =>
+          ValueOrErrors.Default.return(
+            ValueTable.Default.fromParsed(
+              converterResult.from,
+              converterResult.to,
+              converterResult.hasMoreValues,
+              OrderedMap(values),
             ),
           ),
         );
@@ -1143,7 +1327,7 @@ export const dispatchFromAPIRawValue =
   };
 
 export const dispatchToAPIRawValue =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends DispatchInjectablesTypes<T>>(
     t: DispatchParsedType<T>,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     converters: DispatchApiConverters<T>,

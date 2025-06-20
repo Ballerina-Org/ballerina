@@ -7,55 +7,43 @@ import {
   replaceWith,
   Synchronize,
   Unit,
-  DispatchOnChange,
   getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
+  Option,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
 import {
   PredicateValue,
   ValueRecord,
 } from "../../../../../parser/domains/predicates/state";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import { EnumAbstractRendererState } from "../enum/state";
 import {
-  DispatchBaseEnumContext,
-  EnumAbstractRendererState,
-} from "../enum/state";
-import { EnumMultiselectAbstractRendererView } from "./state";
+  EnumMultiselectAbstractRendererState,
+  EnumMultiselectAbstractRendererReadonlyContext,
+  EnumMultiselectAbstractRendererView,
+  EnumMultiselectAbstractRendererForeignMutationsExpected,
+} from "./state";
 import { OrderedMap } from "immutable";
 
 export const EnumMultiselectAbstractRenderer = <
-  Context extends FormLabel & DispatchBaseEnumContext,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueRecord> &
-      EnumAbstractRendererState & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+      EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    Context &
-      Value<ValueRecord> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+      EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
-    },
-    EnumMultiselectAbstractRendererView<Context, ForeignMutationsExpected>
+    EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>,
+    EnumMultiselectAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
@@ -94,7 +82,7 @@ export const EnumMultiselectAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
+              setNewValue: (value, flags) => {
                 if (
                   !AsyncState.Operations.hasValue(
                     props.context.customFormState.options.sync,
@@ -103,7 +91,7 @@ export const EnumMultiselectAbstractRenderer = <
                   return;
                 const options =
                   props.context.customFormState.options.sync.value;
-                const newSelection = _.flatMap((_) => {
+                const newSelection = value.flatMap((_) => {
                   const selectedItem = options.get(_);
                   if (selectedItem != undefined) {
                     const item: [string, ValueRecord] = [_, selectedItem];
@@ -111,7 +99,7 @@ export const EnumMultiselectAbstractRenderer = <
                   }
                   return [];
                 });
-                const delta: DispatchDelta = {
+                const delta: DispatchDelta<Flags> = {
                   kind: "SetReplace",
                   replace: PredicateValue.Default.record(
                     OrderedMap(newSelection),
@@ -121,11 +109,13 @@ export const EnumMultiselectAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.record(OrderedMap(newSelection)),
+                  Option.Default.some(
+                    replaceWith(
+                      PredicateValue.Default.record(OrderedMap(newSelection)),
+                    ),
                   ),
                   delta,
                 );
@@ -145,11 +135,7 @@ export const EnumMultiselectAbstractRenderer = <
       </>
     );
   }).any([
-    Co.Template<
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueRecord>;
-      }
-    >(
+    Co.Template<EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>>(
       Co.GetState().then((current) =>
         Co.Seq([
           Co.SetState((current) => ({

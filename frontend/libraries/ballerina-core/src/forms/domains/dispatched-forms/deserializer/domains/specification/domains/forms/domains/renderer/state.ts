@@ -29,8 +29,12 @@ import {
 import { SerializedUnionRenderer, UnionRenderer } from "./domains/union/state";
 import { SerializedTupleRenderer, TupleRenderer } from "./domains/tuple/state";
 import { SerializedTableRenderer, TableRenderer } from "./domains/table/state";
-import { ConcreteRendererKinds } from "../../../../../../../built-ins/state";
 import { MapRepo } from "../../../../../../../../../../collections/domains/immutable/domains/map/state";
+import {
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
+  Unit,
+} from "../../../../../../../../../../../main";
 
 export type CommonSerializedRendererProperties = {
   renderer?: unknown;
@@ -80,18 +84,34 @@ export const Renderer = {
       isObject(_) && "stream" in _,
     HasColumns: (_: unknown): _ is SerializedTableRenderer =>
       isObject(_) && "columns" in _,
-    IsSumUnitDate: <T>(
+    IsSumUnitDate: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): boolean =>
       isObject(serialized) &&
       "renderer" in serialized &&
       isString(serialized.renderer) &&
       concreteRenderers?.sumUnitDate?.[serialized.renderer] != undefined,
-    DeserializeAs: <T>(
+    DeserializeAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<Renderer<T>, string> =>
@@ -104,10 +124,18 @@ export const Renderer = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
       isInlined?: boolean,

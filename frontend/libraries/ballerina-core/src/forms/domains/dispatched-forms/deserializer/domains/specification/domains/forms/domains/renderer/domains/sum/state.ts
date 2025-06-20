@@ -2,7 +2,8 @@ import { Map } from "immutable";
 import { Renderer } from "../../state";
 import { NestedRenderer } from "../nestedRenderer/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   SumType,
@@ -56,10 +57,18 @@ export const SumRenderer = {
             `renderer, leftRenderer and rightRenderer are required`,
           )
         : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<SumRenderer<T>, string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)

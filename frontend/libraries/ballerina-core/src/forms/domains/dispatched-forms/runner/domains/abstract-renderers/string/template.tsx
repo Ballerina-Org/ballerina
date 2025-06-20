@@ -1,41 +1,35 @@
 import { List } from "immutable";
 import {
+  StringAbstractRendererReadonlyContext,
+  StringAbstractRendererForeignMutationsExpected,
   StringAbstractRendererState,
   StringAbstractRendererView,
 } from "./state";
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import React from "react";
 
 export const StringAbstractRenderer = <
-  Context extends FormLabel & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-      },
+    StringAbstractRendererReadonlyContext<CustomPresentationContext>,
     StringAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    StringAbstractRendererView<Context, ForeignMutationsExpected>
+    StringAbstractRendererForeignMutationsExpected<Flags>,
+    StringAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -66,22 +60,25 @@ export const StringAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind:
                     props.context.type.kind == "primitive" &&
                     props.context.type.name == "string"
                       ? "StringReplace"
                       : "GuidReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

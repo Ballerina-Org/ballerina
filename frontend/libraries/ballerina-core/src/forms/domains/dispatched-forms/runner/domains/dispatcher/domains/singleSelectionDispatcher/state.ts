@@ -8,6 +8,7 @@ import {
   unit,
   EnumReference,
   PredicateValue,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -16,9 +17,17 @@ import { StreamRenderer } from "../../../../../deserializer/domains/specificatio
 
 export const SingleSelectionDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.renderer.kind != "lookupRenderer"
         ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(

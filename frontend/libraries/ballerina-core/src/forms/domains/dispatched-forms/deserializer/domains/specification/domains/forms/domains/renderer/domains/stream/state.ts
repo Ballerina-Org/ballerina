@@ -1,9 +1,11 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
+  Unit,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -51,10 +53,18 @@ export const StreamRenderer = {
                   ...serialized,
                   stream: serialized.stream,
                 }),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)

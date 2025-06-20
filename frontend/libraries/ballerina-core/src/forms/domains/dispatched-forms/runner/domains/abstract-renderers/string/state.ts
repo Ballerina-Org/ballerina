@@ -1,39 +1,47 @@
 import {
   FormLabel,
-  SimpleCallback,
   Unit,
   Value,
   View,
   DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererState,
+  DispatchPrimitiveType,
+  CommonAbstractRendererReadonlyContext,
 } from "../../../../../../../../main";
 
-export type StringAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type StringAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext
+>;
+
+export type StringAbstractRendererState = CommonAbstractRendererState;
 
 export const StringAbstractRendererState = {
   Default: (): StringAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
+    ...CommonAbstractRendererState.Default(),
   }),
 };
 
+export type StringAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+};
+
+export type StringAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
+};
+
 export type StringAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 > = View<
-  Context &
-    Value<string> &
-    DomNodeIdReadonlyContext & {
-      commonFormState: DispatchCommonFormState;
-      customFormState: Unit;
-    } & { disabled: boolean },
-  { commonFormState: DispatchCommonFormState; customFormState: Unit },
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string>;
-    setNewValue: SimpleCallback<string>;
-  }
+  StringAbstractRendererReadonlyContext<CustomPresentationContext> &
+    StringAbstractRendererState,
+  StringAbstractRendererState,
+  StringAbstractRendererViewForeignMutationsExpected<Flags>
 >;

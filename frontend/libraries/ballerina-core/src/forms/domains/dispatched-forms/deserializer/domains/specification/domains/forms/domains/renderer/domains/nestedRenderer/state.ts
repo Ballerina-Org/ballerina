@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
@@ -33,7 +34,7 @@ export type NestedRenderer<T> = {
 
 export const NestedRenderer = {
   Operations: {
-    tryAsValidSerializedNestedRenderer: <T>(
+    tryAsValidSerializedNestedRenderer: (
       serialized: unknown,
     ): ValueOrErrors<
       Omit<
@@ -60,10 +61,18 @@ export const NestedRenderer = {
               : !("renderer" in serialized)
                 ? ValueOrErrors.Default.throwOne(`renderer is missing`)
                 : ValueOrErrors.Default.return(serialized),
-    DeserializeAs: <T>(
+    DeserializeAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       canOmitType?: boolean,
@@ -76,10 +85,18 @@ export const NestedRenderer = {
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: DispatchParsedType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(

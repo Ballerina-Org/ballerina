@@ -27,7 +27,7 @@ import {
   MapFieldState,
   TupleFormState,
   SumFormState,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
 } from "../../../../../../main";
 import { ValueOrErrors } from "../../../../../collections/domains/valueOrErrors/state";
 

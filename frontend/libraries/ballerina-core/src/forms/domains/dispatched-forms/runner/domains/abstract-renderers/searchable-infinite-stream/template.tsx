@@ -4,7 +4,6 @@ import {
   CoTypedFactory,
   Debounce,
   Debounced,
-  Delta,
   DispatchDelta,
   id,
   InfiniteStreamLoader,
@@ -14,37 +13,34 @@ import {
   SimpleCallback,
   Template,
   Value,
-  ValueOption,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
 } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractRendererView,
+  SearchableInfiniteStreamAbstractRendererReadonlyContext,
+  SearchableInfiniteStreamAbstractRendererForeignMutationsExpected,
 } from "./state";
 
 export const SearchableInfiniteStreamAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext>,
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    Context & { onDebounce: SimpleCallback<void> } & Value<ValueOption>,
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> & {
+      onDebounce: SimpleCallback<void>;
+    },
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncedCo = CoTypedFactory<
@@ -68,9 +64,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     ]),
   );
   const debouncerRunner = DebouncerCo.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer, {
     interval: 15,
     runFilter: (props) =>
@@ -79,9 +73,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ),
   });
   const loaderRunner = Co.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
       (_) => _.customFormState.stream,
@@ -98,19 +90,13 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
 
   return Template.Default<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
+      SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    },
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
     SearchableInfiniteStreamAbstractRendererView<
-      Context,
-      ForeignMutationsExpected
+      CustomPresentationContext,
+      Flags
     >
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
@@ -165,8 +151,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                         : id,
                     ),
                 ),
-              clearSelection: () => {
-                const delta: DispatchDelta = {
+              clearSelection: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
                   replace: PredicateValue.Default.option(
                     false,
@@ -177,13 +163,15 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.option(
-                      false,
-                      PredicateValue.Default.unit(),
+                  Option.Default.some(
+                    replaceWith(
+                      PredicateValue.Default.option(
+                        false,
+                        PredicateValue.Default.unit(),
+                      ),
                     ),
                   ),
                   delta,
@@ -207,18 +195,21 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     replaceWith(""),
                   ),
                 ),
-              select: (_) => {
-                const delta: DispatchDelta = {
+              select: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

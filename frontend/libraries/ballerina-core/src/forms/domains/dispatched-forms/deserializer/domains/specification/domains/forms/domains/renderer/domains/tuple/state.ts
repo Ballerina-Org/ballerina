@@ -4,7 +4,8 @@ import { DispatchParsedType, TupleType } from "../../../../../types/state";
 import { Renderer } from "../../state";
 import { ValueOrErrors } from "../../../../../../../../../../../../collections/domains/valueOrErrors/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   isObject,
 } from "../../../../../../../../../../../../../main";
 
@@ -51,10 +52,18 @@ export const TupleRenderer = {
                     ...serialized,
                     itemRenderers: serialized.itemRenderers,
                   }),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: TupleType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized).Then(

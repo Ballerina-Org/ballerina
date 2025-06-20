@@ -7,6 +7,8 @@ import {
   Template,
   MapRepo,
   RecordAbstractRenderer,
+  DispatchInjectablesTypes,
+  RecordAbstractRendererView,
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
@@ -15,26 +17,40 @@ import { Renderer } from "../../../../../deserializer/domains/specification/doma
 export const RecordDispatcher = {
   Operations: {
     GetRecordConcreteRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
     >(
       renderer: Renderer<T> | undefined,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       isNested: boolean,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<RecordAbstractRendererView<any, any>, string> =>
       renderer != undefined && renderer.kind != "lookupRenderer"
         ? ValueOrErrors.Default.throwOne(
             "expected renderer.kind == 'lookupRenderer' but got " +
               renderer.kind,
           )
-        : dispatcherContext.getConcreteRenderer(
-            "record",
-            renderer?.renderer,
-            isNested,
-          ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+        : renderer == undefined
+          ? ValueOrErrors.Default.return(
+              dispatcherContext.getDefaultRecordRenderer(isNested),
+            )
+          : dispatcherContext.getConcreteRenderer("record", renderer.renderer),
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: RecordType<T>,
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       isNested: boolean,
       formName?: string,
       launcherName?: string,

@@ -1,4 +1,8 @@
-import { BoolAbstractRendererView } from "./state";
+import {
+  BoolAbstractRendererForeignMutationsExpected,
+  BoolAbstractRendererReadonlyContext,
+  BoolAbstractRendererView,
+} from "./state";
 import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
@@ -9,28 +13,25 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import { BoolAbstractRendererState } from "./state";
 
 export const BoolAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<boolean> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
+      BoolAbstractRendererState,
     BoolAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<boolean> },
-    BoolAbstractRendererView<Context, ForeignMutationsExpected>
+    BoolAbstractRendererForeignMutationsExpected<Flags>,
+    BoolAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
       console.error(
@@ -61,18 +62,21 @@ export const BoolAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "BoolReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

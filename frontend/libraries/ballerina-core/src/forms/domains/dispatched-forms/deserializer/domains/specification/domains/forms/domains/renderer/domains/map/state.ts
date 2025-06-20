@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   ValueOrErrors,
@@ -51,10 +52,18 @@ export const MapRenderer = {
             : !("valueRenderer" in serialized)
               ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
               : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: MapType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<MapRenderer<T>, string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)

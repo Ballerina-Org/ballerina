@@ -1,24 +1,30 @@
 import {
-  FormLabel,
   simpleUpdaterWithChildren,
   simpleUpdater,
   View,
-  Value,
-  SimpleCallback,
-  DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  Unit,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
-export type DateAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
+export type DateAbstractRendererReadonlyContext<CustomPresentationContext> =
+  CommonAbstractRendererReadonlyContext<
+    DispatchPrimitiveType<any>,
+    Date,
+    CustomPresentationContext
+  >;
+
+export type DateAbstractRendererState = CommonAbstractRendererState & {
   customFormState: { possiblyInvalidInput: Maybe<string> };
 };
 
 export const DateAbstractRendererState = {
   Default: (): DateAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    ...CommonAbstractRendererState.Default(),
     customFormState: { possiblyInvalidInput: Maybe.Default(undefined) },
   }),
   Updaters: {
@@ -32,17 +38,18 @@ export const DateAbstractRendererState = {
     },
   },
 };
+
+export type DateAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<Date, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<Maybe<string>, Flags>;
+};
+
 export type DateAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 > = View<
-  Context &
-    Value<Maybe<Date>> &
-    DomNodeIdReadonlyContext &
-    DateAbstractRendererState & { disabled: boolean },
+  DateAbstractRendererReadonlyContext<CustomPresentationContext> &
+    DateAbstractRendererState,
   DateAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<Date>;
-    setNewValue: SimpleCallback<Maybe<string>>;
-  }
+  DateAbstractRendererForeignMutationsExpected<Flags>
 >;

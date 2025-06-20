@@ -3,7 +3,6 @@ import { Template } from "../../../../../../../template/state";
 import {
   AsyncState,
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   Guid,
   PredicateValue,
@@ -15,44 +14,34 @@ import {
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
   EnumAbstractRendererView,
-  DispatchBaseEnumContext,
+  EnumAbstractRendererReadonlyContext,
+  EnumAbstractRendererForeignMutationsExpected,
 } from "./state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { Value } from "../../../../../../../value/state";
 import { OrderedMap } from "immutable";
 
 export const EnumAbstractRenderer = <
-  Context extends FormLabel & DispatchBaseEnumContext,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
+      EnumAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
+      EnumAbstractRendererState,
     EnumAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    },
-    EnumAbstractRendererView<Context, ForeignMutationsExpected>
+    EnumAbstractRendererForeignMutationsExpected<Flags>,
+    EnumAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
@@ -90,7 +79,7 @@ export const EnumAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
+              setNewValue: (value, flags) => {
                 if (
                   !AsyncState.Operations.hasValue(
                     props.context.customFormState.options.sync,
@@ -98,9 +87,9 @@ export const EnumAbstractRenderer = <
                 )
                   return;
                 const newSelection =
-                  props.context.customFormState.options.sync.value.get(_);
+                  props.context.customFormState.options.sync.value.get(value);
                 if (newSelection == undefined) {
-                  const delta: DispatchDelta = {
+                  const delta: DispatchDelta<Flags> = {
                     kind: "OptionReplace",
                     replace: PredicateValue.Default.option(
                       false,
@@ -111,19 +100,21 @@ export const EnumAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
+                    flags,
                   };
                   return props.foreignMutations.onChange(
-                    replaceWith(
-                      PredicateValue.Default.option(
-                        false,
-                        PredicateValue.Default.unit(),
+                    Option.Default.some(
+                      replaceWith(
+                        PredicateValue.Default.option(
+                          false,
+                          PredicateValue.Default.unit(),
+                        ),
                       ),
                     ),
                     delta,
                   );
                 } else {
-                  const delta: DispatchDelta = {
+                  const delta: DispatchDelta<Flags> = {
                     kind: "OptionReplace",
                     replace: PredicateValue.Default.option(true, newSelection),
                     state: {
@@ -131,11 +122,13 @@ export const EnumAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
+                    flags,
                   };
                   return props.foreignMutations.onChange(
-                    replaceWith(
-                      PredicateValue.Default.option(true, newSelection),
+                    Option.Default.some(
+                      replaceWith(
+                        PredicateValue.Default.option(true, newSelection),
+                      ),
                     ),
                     delta,
                   );
@@ -156,11 +149,7 @@ export const EnumAbstractRenderer = <
       </>
     );
   }).any([
-    Co.Template<
-      ForeignMutationsExpected & {
-        onChange: DispatchOnChange<ValueOption>;
-      }
-    >(
+    Co.Template<EnumAbstractRendererForeignMutationsExpected<Flags>>(
       Co.GetState().then((current) =>
         Co.Seq([
           Co.SetState((current) => ({

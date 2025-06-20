@@ -1,35 +1,41 @@
 import { Map } from "immutable";
 import {
-  BasicFun,
   Bindings,
-  PredicateValue,
-  SimpleCallback,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
   DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ListType,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
 import { View } from "../../../../../../../template/state";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import { simpleUpdater } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
 import { ValueTuple } from "../../../../../../../../main";
 
-export type ListAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  elementFormStates: Map<number, any>;
+export type ListAbstractRendererReadonlyContext<CustomPresentationContext> =
+  CommonAbstractRendererReadonlyContext<
+    ListType<any>,
+    ValueTuple,
+    CustomPresentationContext
+  >;
+
+export type ListAbstractRendererState = CommonAbstractRendererState & {
+  elementFormStates: Map<number, CommonAbstractRendererState>;
 };
+
 export const ListAbstractRendererState = {
   Default: {
     zero: () => ({
-      commonFormState: DispatchCommonFormState.Default(),
-      elementFormStates: Map(),
+      ...CommonAbstractRendererState.Default(),
+      elementFormStates: Map<number, CommonAbstractRendererState>(),
     }),
     elementFormStates: (
-      elementFormStates: Map<number, any>,
+      elementFormStates: Map<number, CommonAbstractRendererState>,
     ): ListAbstractRendererState => ({
-      commonFormState: DispatchCommonFormState.Default(),
+      ...CommonAbstractRendererState.Default(),
       elementFormStates,
     }),
   },
@@ -41,35 +47,38 @@ export const ListAbstractRendererState = {
     Template: {},
   },
 };
+
+export type ListAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueTuple, Flags>;
+};
+
+export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueTuple, Flags>;
+  add: VoidCallbackWithOptionalFlags<Flags>;
+  remove: ValueCallbackWithOptionalFlags<number, Flags>;
+  move: (elementIndex: number, to: number, flags: Flags | undefined) => void;
+  duplicate: ValueCallbackWithOptionalFlags<number, Flags>;
+  insert: ValueCallbackWithOptionalFlags<number, Flags>;
+};
+
 export type ListAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 > = View<
-  Context &
-    Value<ValueTuple> &
-    DomNodeIdReadonlyContext &
+  ListAbstractRendererReadonlyContext<CustomPresentationContext> &
     ListAbstractRendererState,
   ListAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueTuple>;
-    add: SimpleCallback<Unit>;
-    remove: SimpleCallback<number>;
-    move: (elementIndex: number, to: number) => void;
-    duplicate: SimpleCallback<number>;
-    insert: SimpleCallback<number>;
-  },
+  ListAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    embeddedElementTemplate: BasicFun<
-      number,
-      Template<
-        Context &
-          Value<ValueTuple> &
-          ListAbstractRendererState & { bindings: Bindings; extraContext: any },
+    embeddedElementTemplate: (
+      elementIndex: number,
+    ) => (
+      flags: Flags | undefined,
+    ) => Template<
+      ListAbstractRendererReadonlyContext<CustomPresentationContext> &
         ListAbstractRendererState,
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >
+      ListAbstractRendererState,
+      ListAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;

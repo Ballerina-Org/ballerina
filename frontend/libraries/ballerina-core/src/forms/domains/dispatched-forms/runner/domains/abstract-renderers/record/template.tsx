@@ -1,146 +1,173 @@
 import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
-  Bindings,
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   Expr,
-  FormLabel,
   FormLayout,
   PredicateFormLayout,
   PredicateValue,
   replaceWith,
   Updater,
-  Value,
   ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
 import {
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
   RecordAbstractRendererState,
   RecordAbstractRendererView,
 } from "./state";
 
 export const RecordAbstractRenderer = <
-  Context extends FormLabel & { bindings: Bindings } & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   FieldTemplates: Map<
     string,
     {
-      template: Template<any, any, any, any>;
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >;
       visible?: Expr;
       disabled?: Expr;
       label?: string;
-      GetDefaultState: () => any;
+      GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
   Layout: PredicateFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
-): Template<any, any, any, any> => {
-  const embedFieldTemplate = (
-    fieldName: string,
-    fieldTemplate: Template<any, any, any, any>,
-  ): Template<any, any, any, any> =>
-    fieldTemplate
-      .mapContext(
-        (
-          _: Value<ValueRecord> & {
-            identifiers: { withLauncher: string; withoutLauncher: string };
-            fieldStates: Map<string, any>;
-            disabled: boolean;
-            bindings: Bindings;
-            type: DispatchParsedType<any>;
-            extraContext: any;
-          },
-        ): Value<PredicateValue> & { type: DispatchParsedType<any> } => ({
-          ..._,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${fieldName}]`,
-            ),
-          },
-          value: _.value.fields.get(fieldName)!,
-          type:
-            _.type.kind === "record" ? _.type.fields.get(fieldName) : undefined,
-          ...(_.fieldStates?.get(fieldName) ||
-            FieldTemplates.get(fieldName)!.GetDefaultState()),
-          disabled: _.disabled,
-          bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
-          extraContext: _.extraContext,
-        }),
-      )
-      .mapState(
-        (_: BasicUpdater<any>): Updater<RecordAbstractRendererState> =>
-          RecordAbstractRendererState.Updaters.Template.upsertFieldState(
-            fieldName,
-            FieldTemplates.get(fieldName)!.GetDefaultState,
-            _,
-          ),
-      )
-      .mapForeignMutationsFromProps<{
-        onChange: DispatchOnChange<ValueRecord>;
-      }>(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue>;
-        } => ({
-          onChange: (elementUpdater: any, nestedDelta: DispatchDelta) => {
-            const delta: DispatchDelta = {
-              kind: "RecordField",
-              field: [fieldName, nestedDelta],
-              recordType: props.context.type,
-              isWholeEntityMutation: false,
-            };
-
-            props.foreignMutations.onChange(
-              (current: ValueRecord): ValueRecord =>
-                PredicateValue.Operations.IsRecord(current)
-                  ? PredicateValue.Default.record(
-                      current.fields.update(
-                        fieldName,
-                        PredicateValue.Default.unit(),
-                        elementUpdater,
-                      ),
-                    )
-                  : current,
-              delta,
-            );
-
-            props.setState(
-              RecordAbstractRendererState.Updaters.Core.commonFormState(
-                DispatchCommonFormState.Updaters.modifiedByUser(
-                  replaceWith(true),
-                ),
-              ).then(
-                RecordAbstractRendererState.Updaters.Template.upsertFieldState(
-                  fieldName,
-                  FieldTemplates.get(fieldName)!.GetDefaultState,
-                  (_) => ({
-                    ..._,
-                    commonFormState:
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      )(_.commonFormState),
-                  }),
-                ),
+): Template<
+  RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+    RecordAbstractRendererState,
+  RecordAbstractRendererState,
+  RecordAbstractRendererForeignMutationsExpected<Flags>,
+  RecordAbstractRendererView<CustomPresentationContext, Flags>
+> => {
+  const embedFieldTemplate =
+    (
+      fieldName: string,
+      fieldTemplate: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >,
+    ) =>
+    (flags: Flags | undefined) =>
+      fieldTemplate
+        .mapContext(
+          (
+            _: RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+              RecordAbstractRendererState,
+          ) => ({
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${fieldName}]`,
               ),
-            );
-          },
-        }),
-      );
+            },
+            value: _.value.fields.get(fieldName)!,
+            type: _.type.fields.get(fieldName)!,
+            ...(_.fieldStates?.get(fieldName) ||
+              FieldTemplates.get(fieldName)!.GetDefaultState()),
+            disabled: _.disabled,
+            bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
+            extraContext: _.extraContext,
+            CustomPresentationContext: _.CustomPresentationContext,
+            domNodeId: _.identifiers.withoutLauncher.concat(`[${fieldName}]`),
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          }),
+        )
+        .mapState(
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<RecordAbstractRendererState> =>
+            RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+              fieldName,
+              FieldTemplates.get(fieldName)!.GetDefaultState,
+              _,
+            ),
+        )
+        .mapForeignMutationsFromProps<{
+          onChange: DispatchOnChange<ValueRecord, Flags>;
+        }>(
+          (
+            props,
+          ): {
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          } => ({
+            onChange: (
+              elementUpdater: Option<BasicUpdater<PredicateValue>>,
+              nestedDelta: DispatchDelta<Flags>,
+            ) => {
+              const delta: DispatchDelta<Flags> = {
+                kind: "RecordField",
+                field: [fieldName, nestedDelta],
+                recordType: props.context.type,
+                flags,
+              };
+
+              props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some((current: ValueRecord) =>
+                      PredicateValue.Default.record(
+                        current.fields.update(
+                          fieldName,
+                          PredicateValue.Default.unit(),
+                          elementUpdater.value,
+                        ),
+                      ),
+                    ),
+                delta,
+              );
+
+              props.setState(
+                RecordAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ).then(
+                  RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+                    fieldName,
+                    FieldTemplates.get(fieldName)!.GetDefaultState,
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              );
+            },
+          }),
+        );
 
   const EmbeddedFieldTemplates = FieldTemplates.map(
     (fieldTemplate, fieldName) =>
@@ -152,12 +179,11 @@ export const RecordAbstractRenderer = <
   );
 
   return Template.Default<
-    Context & Value<ValueRecord>,
+    RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+      RecordAbstractRendererState,
     RecordAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
-    },
-    RecordAbstractRendererView<Context, ForeignMutationsExpected>
+    RecordAbstractRendererForeignMutationsExpected<Flags>,
+    RecordAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

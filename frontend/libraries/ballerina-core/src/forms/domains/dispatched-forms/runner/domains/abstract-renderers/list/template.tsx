@@ -1,6 +1,5 @@
 import {
   BasicUpdater,
-  Bindings,
   DispatchCommonFormState,
   DispatchDelta,
   IdWrapperProps,
@@ -9,73 +8,78 @@ import {
   PredicateValue,
   replaceWith,
   Updater,
-  ValueTuple,
   DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
 import {
   DispatchParsedType,
   ListType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
-import { ListAbstractRendererState, ListAbstractRendererView } from "./state";
+import {
+  ListAbstractRendererForeignMutationsExpected,
+  ListAbstractRendererReadonlyContext,
+  ListAbstractRendererState,
+  ListAbstractRendererView,
+} from "./state";
 
 export const ListAbstractRenderer = <
-  Context extends FormLabel & {
-    type: DispatchParsedType<any>;
-    disabled: boolean;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
-  GetDefaultElementState: () => any,
+  GetDefaultElementState: () => CommonAbstractRendererState,
   GetDefaultElementValue: () => PredicateValue,
   elementTemplate: Template<
-    Context &
-      Value<PredicateValue> &
-      any & { bindings: Bindings; extraContext: any },
-    any,
-    {
-      onChange: DispatchOnChange<PredicateValue>;
-    }
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue,
+      CustomPresentationContext
+    > &
+      CommonAbstractRendererState,
+    CommonAbstractRendererState,
+    CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
-  const embeddedElementTemplate = (elementIndex: number) =>
-    elementTemplate
-      .mapContext(
-        (
-          _: Context &
-            Value<ValueTuple> &
-            ListAbstractRendererState & {
-              bindings: Bindings;
-              extraContext: any;
-              identifiers: { withLauncher: string; withoutLauncher: string };
+  const embeddedElementTemplate =
+    (elementIndex: number) => (flags: Flags | undefined) =>
+      elementTemplate
+        .mapContext(
+          (
+            _: ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+              ListAbstractRendererState,
+          ) => ({
+            disabled: _.disabled,
+            value:
+              _.value.values?.get(elementIndex) || GetDefaultElementValue(),
+            ...(_.elementFormStates?.get(elementIndex) ||
+              GetDefaultElementState()),
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            identifiers: {
+              withLauncher: _.identifiers.withLauncher.concat(
+                `[${elementIndex}]`,
+              ),
+              withoutLauncher: _.identifiers.withoutLauncher.concat(
+                `[${elementIndex}]`,
+              ),
             },
-        ): Value<ValueTuple> & any => ({
-          ..._,
-          disabled: _.disabled,
-          value: _.value.values?.get(elementIndex) || GetDefaultElementValue(),
-          ...(_.elementFormStates?.get(elementIndex) ||
-            GetDefaultElementState()),
-          bindings: _.bindings,
-          extraContext: _.extraContext,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(
+            domNodeId: _.identifiers.withoutLauncher.concat(
               `[${elementIndex}]`,
             ),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}]`,
-            ),
-          },
-        }),
-      )
-      .mapState(
-        (_: BasicUpdater<any>): Updater<ListAbstractRendererState> =>
+            type: _.type.args[0],
+            CustomPresentationContext: _.CustomPresentationContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          }),
+        )
+        .mapState((_) =>
           ListAbstractRendererState.Updaters.Core.elementFormStates(
             MapRepo.Updaters.upsert(
               elementIndex,
@@ -83,35 +87,32 @@ export const ListAbstractRenderer = <
               _,
             ),
           ),
-      )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue>;
-        } => ({
+        )
+        .mapForeignMutationsFromProps<
+          ListAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
-              isWholeEntityMutation: false,
+              flags,
             };
             props.foreignMutations.onChange(
-              Updater((list) =>
-                list.values.has(elementIndex)
-                  ? PredicateValue.Default.tuple(
-                      list.values.update(
-                        elementIndex,
-                        PredicateValue.Default.unit(),
-                        elementUpdater,
-                      ),
-                    )
-                  : list,
-              ),
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((list) =>
+                      list.values.has(elementIndex)
+                        ? PredicateValue.Default.tuple(
+                            list.values.update(
+                              elementIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : list,
+                    ),
+                  ),
               delta,
             );
             props.setState(
@@ -136,16 +137,14 @@ export const ListAbstractRenderer = <
               ),
             );
           },
-        }),
-      );
+        }));
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean },
+    ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+      ListAbstractRendererState,
     ListAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTuple>;
-    },
-    ListAbstractRendererView<Context, ForeignMutationsExpected>
+    ListAbstractRendererForeignMutationsExpected<Flags>,
+    ListAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -176,8 +175,8 @@ export const ListAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              add: (_) => {
-                const delta: DispatchDelta = {
+              add: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayAdd",
                   value: GetDefaultElementValue(),
                   state: {
@@ -185,85 +184,15 @@ export const ListAbstractRenderer = <
                     elementFormStates: props.context.elementFormStates,
                   },
                   type: (props.context.type as ListType<any>).args[0],
-                  isWholeEntityMutation: true, // TODO: check
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.push<PredicateValue>(
-                        GetDefaultElementValue(),
-                      )(list.values),
-                    ),
-                  ),
-                  delta,
-                );
-                props.setState(
-                  ListAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
-                );
-              },
-              remove: (_) => {
-                const delta: DispatchDelta = {
-                  kind: "ArrayRemoveAt",
-                  index: _,
-                  isWholeEntityMutation: true, // TODO: check
-                };
-                props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.remove<PredicateValue>(_)(list.values),
-                    ),
-                  ),
-                  delta,
-                );
-                props.setState(
-                  ListAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
-                );
-              },
-              move: (index, to) => {
-                const delta: DispatchDelta = {
-                  kind: "ArrayMoveFromTo",
-                  from: index,
-                  to: to,
-                  isWholeEntityMutation: true, // TODO: check
-                };
-                props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.move<PredicateValue>(
-                        index,
-                        to,
-                      )(list.values),
-                    ),
-                  ),
-                  delta,
-                );
-                props.setState(
-                  ListAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
-                );
-              },
-              duplicate: (_) => {
-                const delta: DispatchDelta = {
-                  kind: "ArrayDuplicateAt",
-                  index: _,
-                  isWholeEntityMutation: true, // TODO: check
-                };
-                props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.duplicate<PredicateValue>(_)(
-                        list.values,
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.push<PredicateValue>(
+                          GetDefaultElementValue(),
+                        )(list.values),
                       ),
                     ),
                   ),
@@ -277,21 +206,103 @@ export const ListAbstractRenderer = <
                   ),
                 );
               },
-              insert: (_) => {
-                const delta: DispatchDelta = {
+              remove: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "ArrayRemoveAt",
+                  index: _,
+                  flags,
+                };
+                props.foreignMutations.onChange(
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.remove<PredicateValue>(_)(
+                          list.values,
+                        ),
+                      ),
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  ListAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              move: (index, to, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "ArrayMoveFromTo",
+                  from: index,
+                  to: to,
+                  flags,
+                };
+                props.foreignMutations.onChange(
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.move<PredicateValue>(
+                          index,
+                          to,
+                        )(list.values),
+                      ),
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  ListAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              duplicate: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "ArrayDuplicateAt",
+                  index: _,
+                  flags,
+                };
+                props.foreignMutations.onChange(
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.duplicate<PredicateValue>(_)(
+                          list.values,
+                        ),
+                      ),
+                    ),
+                  ),
+                  delta,
+                );
+                props.setState(
+                  ListAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
+              insert: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "ArrayAddAt",
                   value: [_, GetDefaultElementValue()],
                   elementState: GetDefaultElementState(),
                   elementType: (props.context.type as ListType<any>).args[0],
-                  isWholeEntityMutation: true, // TODO: check
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  Updater((list) =>
-                    PredicateValue.Default.tuple(
-                      ListRepo.Updaters.insert<PredicateValue>(
-                        _,
-                        GetDefaultElementValue(),
-                      )(list.values),
+                  Option.Default.some(
+                    Updater((list) =>
+                      PredicateValue.Default.tuple(
+                        ListRepo.Updaters.insert<PredicateValue>(
+                          _,
+                          GetDefaultElementValue(),
+                        )(list.values),
+                      ),
                     ),
                   ),
                   delta,

@@ -2,13 +2,12 @@ import { List, Map } from "immutable";
 import {
   DispatchIsObject,
   DispatchParsedType,
-  RecordType,
   TableType,
 } from "../../../../../types/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   isString,
-  MapRepo,
   PredicateVisibleColumns,
   TableLayout,
   ValueOrErrors,
@@ -99,10 +98,18 @@ export const TableRenderer = {
                       visibleColumns: _.visibleColumns,
                       api: _?.api,
                     }),
-    DeserializeDetailsRenderer: <T>(
+    DeserializeDetailsRenderer: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
@@ -117,10 +124,18 @@ export const TableRenderer = {
               "renderer" in serialized.detailsRenderer &&
               typeof serialized.detailsRenderer.renderer == "object",
           ),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: TableType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       types: Map<string, DispatchParsedType<T>>,
       api?: string | string[],
     ): ValueOrErrors<TableRenderer<T>, string> =>

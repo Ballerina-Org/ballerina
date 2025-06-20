@@ -1,37 +1,33 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
+  Base64FileAbstractRendererForeignMutationsExpected,
+  Base64FileAbstractRendererReadonlyContext,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,
 } from "./state";
 
 export const Base64FileAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
+      Base64FileAbstractRendererState,
     Base64FileAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    Base64FileAbstractRendererView<Context, ForeignMutationsExpected>
+    Base64FileAbstractRendererForeignMutationsExpected<Flags>,
+    Base64FileAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -62,18 +58,21 @@ export const Base64FileAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "StringReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

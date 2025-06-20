@@ -14,25 +14,25 @@ import {
   Guid,
   ApiErrors,
   Specification,
-  Injectables,
   Synchronized,
   simpleUpdater,
   ValueInfiniteStreamState,
   MapRepo,
-  OneAbstractRendererState,
-  ValueOption,
   DispatchInjectables,
+  RecordAbstractRendererView,
+  DispatchInjectablesTypes,
 } from "../../../../../main";
 
 import {
   DispatchApiConverters,
-  ConcreteRendererKinds,
   concreteRendererToKind,
   dispatchDefaultState,
   dispatchDefaultValue,
   dispatchFromAPIRawValue,
   dispatchToAPIRawValue,
   tryGetConcreteRenderer,
+  ConcreteRenderers,
+  getDefaultRecordRenderer,
 } from "../built-ins/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Renderer } from "./domains/specification/domains/forms/domains/renderer/state";
@@ -69,7 +69,9 @@ export type ErrorRendererProps = {
 };
 
 export type DispatcherContext<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
@@ -77,11 +79,13 @@ export type DispatcherContext<
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
   getConcreteRendererKind: (viewName: string) => ValueOrErrors<string, string>;
-  getConcreteRenderer: (
-    kind: keyof ConcreteRendererKinds<T>,
-    name?: string,
-    isNested?: boolean,
-  ) => ValueOrErrors<any, string>;
+  getConcreteRenderer: ReturnType<
+    typeof tryGetConcreteRenderer<T, Flags, CustomPresentationContexts>
+  >;
+  getDefaultRecordRenderer: (
+    isNested: boolean,
+  ) => RecordAbstractRendererView<any, any>;
+  concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>;
   defaultValue: (
     t: DispatchParsedType<T>,
     renderer: Renderer<T>,
@@ -102,11 +106,13 @@ export type DispatcherContext<
 };
 
 export type DispatchSpecificationDeserializationResult<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
 > = ValueOrErrors<
   {
     launchers: DispatchParsedLaunchers<T>;
-    dispatcherContext: DispatcherContext<T>;
+    dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>;
   },
   string
 >;
@@ -173,12 +179,12 @@ export type DispatchEntityApis = {
 };
 
 export const parseDispatchFormsToLaunchers =
-  <T extends { [key in keyof T]: { type: any; state: any } }>(
+  <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
-    defaultRecordRenderer: any,
-    defaultNestedRecordRenderer: any,
-    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+    defaultRecordRenderer: RecordAbstractRendererView<any, any>,
+    defaultNestedRecordRenderer: RecordAbstractRendererView<any, any>,
+    concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,
     entityApis: DispatchEntityApis,
@@ -189,7 +195,11 @@ export const parseDispatchFormsToLaunchers =
   ) =>
   (
     specification: Specification<T>,
-  ): DispatchSpecificationDeserializationResult<T> =>
+  ): DispatchSpecificationDeserializationResult<
+    T,
+    Flags,
+    CustomPresentationContexts
+  > =>
     ValueOrErrors.Operations.All(
       List<
         ValueOrErrors<[string, DispatchParsedPassthroughLauncher<T>], string>
@@ -255,6 +265,7 @@ export const parseDispatchFormsToLaunchers =
             passthrough: Map(passthroughLaunchers),
           },
           dispatcherContext: {
+            specApis: specification.apis,
             forms: specification.forms,
             injectedPrimitives,
             apiConverters,
@@ -263,12 +274,19 @@ export const parseDispatchFormsToLaunchers =
             enumOptionsSources,
             tableApiSources,
             entityApis,
+            concreteRenderers,
             getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
-            getConcreteRenderer: tryGetConcreteRenderer(
-              concreteRenderers,
-              defaultRecordRenderer,
-              defaultNestedRecordRenderer,
-            ),
+            getConcreteRenderer: tryGetConcreteRenderer<
+              T,
+              Flags,
+              CustomPresentationContexts
+            >(concreteRenderers),
+            getDefaultRecordRenderer: (isNested: boolean) =>
+              getDefaultRecordRenderer(
+                isNested,
+                defaultRecordRenderer,
+                defaultNestedRecordRenderer,
+              ),
             defaultValue: dispatchDefaultValue(
               injectedPrimitives,
               specification.types,
@@ -301,11 +319,13 @@ export const parseDispatchFormsToLaunchers =
       );
 
 export type DispatchFormsParserContext<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
 > = {
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
-  concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>;
+  concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>;
   IdWrapper: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   fieldTypeConverters: DispatchApiConverters<T>;
@@ -317,25 +337,39 @@ export type DispatchFormsParserContext<
   injectedPrimitives?: DispatchInjectables<T>;
   tableApiSources?: DispatchTableApiSources;
 };
+
 export type DispatchFormsParserState<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
 > = {
   deserializedSpecification: Synchronized<
     Unit,
-    DispatchSpecificationDeserializationResult<T>
+    DispatchSpecificationDeserializationResult<
+      T,
+      Flags,
+      CustomPresentationContexts
+    >
   >;
 };
+
 export const DispatchFormsParserState = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
 >() => {
   return {
-    Default: (): DispatchFormsParserState<T> => ({
+    Default: (): DispatchFormsParserState<
+      T,
+      Flags,
+      CustomPresentationContexts
+    > => ({
       deserializedSpecification: Synchronized.Default(unit),
     }),
     Updaters: {
-      ...simpleUpdater<DispatchFormsParserState<T>>()(
-        "deserializedSpecification",
-      ),
+      ...simpleUpdater<
+        DispatchFormsParserState<T, Flags, CustomPresentationContexts>
+      >()("deserializedSpecification"),
     },
   };
 };

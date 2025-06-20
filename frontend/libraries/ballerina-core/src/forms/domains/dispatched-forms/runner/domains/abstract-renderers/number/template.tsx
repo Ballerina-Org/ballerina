@@ -1,38 +1,34 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
 } from "../../../../../../../../main";
 import {
+  NumberAbstractRendererForeignMutationsExpected,
+  NumberAbstractRendererReadonlyContext,
   NumberAbstractRendererState,
   NumberAbstractRendererView,
 } from "./state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const NumberAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    Context &
-      Value<number> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
+      NumberAbstractRendererState,
     NumberAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<number> },
-    NumberAbstractRendererView<Context, ForeignMutationsExpected>
+    NumberAbstractRendererForeignMutationsExpected<Flags>,
+    NumberAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
@@ -63,18 +59,21 @@ export const NumberAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "NumberReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

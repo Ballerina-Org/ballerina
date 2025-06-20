@@ -12,17 +12,19 @@ import {
   Template,
   unit,
   BasicUpdater,
-  DispatchDelta,
-  PredicateValue,
-  Updater,
+  DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../main";
 
 export const DispatchFormRunnerTemplate = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
 >() =>
   Template.Default<
-    DispatchFormRunnerContext<T> & DispatchFormRunnerState<T>,
-    DispatchFormRunnerState<T>,
+    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts> &
+      DispatchFormRunnerState<T, Flags>,
+    DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
     const entity = props.context.launcherRef.entity;
@@ -63,14 +65,13 @@ export const DispatchFormRunnerTemplate = <
             props.context.remoteEntityVersionIdentifier,
         }}
         setState={(_: BasicUpdater<any>) =>
-          props.setState(DispatchFormRunnerState().Updaters.formState(_))
+          props.setState(
+            DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+          )
         }
         view={unit}
         foreignMutations={{
-          onChange: (
-            updater: Updater<PredicateValue>,
-            delta: DispatchDelta,
-          ) => {
+          onChange: (updater, delta) => {
             if (props.context.launcherRef.entity.kind == "r") return;
             props.context.launcherRef.onEntityChange(updater, delta);
           },

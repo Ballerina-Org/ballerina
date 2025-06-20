@@ -5,6 +5,7 @@ import {
   DispatchTupleAbstractRenderer,
   Template,
   ValueOrErrors,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 
 import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
@@ -13,10 +14,18 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const TupleDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       type: TupleType<T>,
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(

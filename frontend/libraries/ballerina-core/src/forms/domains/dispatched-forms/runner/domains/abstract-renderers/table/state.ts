@@ -6,45 +6,46 @@ import {
   Updater,
   SimpleCallback,
   simpleUpdaterWithChildren,
-  ValueOption,
   MapRepo,
   ValueOrErrors,
   PredicateValue,
-  TableApiSource,
-  ParsedType,
   ValueRecord,
-  DispatchCommonFormState,
-  FormLabel,
-  Bindings,
   ValueTable,
   replaceWith,
   DispatchTableApiSource,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
   DispatchParsedType,
+  Unit,
+  ValueCallbackWithOptionalFlags,
+  VoidCallbackWithOptionalFlags,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  TableType,
+  RecordAbstractRendererState,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
 import { Template, View } from "../../../../../../../template/state";
-import { Value } from "../../../../../../../value/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
-export type AbstractTableRendererReadonlyContext = {
+export type TableAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  TableType<any>,
+  ValueTable,
+  CustomPresentationContext
+> & {
   tableApiSource: DispatchTableApiSource;
-  fromTableApiParser: (value: any) => ValueOrErrors<PredicateValue, string>;
-  type: DispatchParsedType<any>;
-  bindings: Bindings;
-  value: ValueTable;
-  identifiers: { withLauncher: string; withoutLauncher: string };
-  label?: string;
-  remoteEntityVersionIdentifier: string;
+  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
+  tableHeaders: string[];
+  columnLabels: Map<string, string | undefined>;
 };
 
-export type AbstractTableRendererState = {
-  commonFormState: DispatchCommonFormState;
+export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     selectedRows: Set<string>;
+    rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: [number, string] | undefined;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
     streamParams: Debounced<Map<string, string>>;
@@ -57,15 +58,16 @@ export type AbstractTableRendererState = {
     shouldReinitialize: boolean;
   };
 };
-export const AbstractTableRendererState = {
-  Default: (): AbstractTableRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
+export const TableAbstractRendererState = {
+  Default: (): TableAbstractRendererState => ({
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
       streamParams: Debounced.Default(Map()),
-      // TODO: replace with su
+      rowStates: Map(),
+      // TODO: replace with sum
       getChunkWithParams: undefined as any,
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
@@ -74,34 +76,37 @@ export const AbstractTableRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+      ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "getChunkWithParams",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "stream",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "streamParams",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "initializationStatus",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "selectedDetailRow",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "selectedRows",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "previousRemoteEntityVersionIdentifier",
         ),
-        ...simpleUpdater<AbstractTableRendererState["customFormState"]>()(
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "shouldReinitialize",
         ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "rowStates",
+        ),
       })("customFormState"),
-      ...simpleUpdaterWithChildren<AbstractTableRendererState>()({
-        ...simpleUpdater<AbstractTableRendererState["commonFormState"]>()(
+      ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
+        ...simpleUpdater<TableAbstractRendererState["commonFormState"]>()(
           "modifiedByUser",
         ),
       })("commonFormState"),
@@ -110,18 +115,18 @@ export const AbstractTableRendererState = {
       searchText: (
         key: string,
         _: BasicUpdater<string>,
-      ): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.streamParams(
+      ): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
             MapRepo.Updaters.upsert(key, () => "", _),
           ),
         ),
-      loadMore: (): Updater<AbstractTableRendererState> =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+      loadMore: (): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
         ),
       shouldReinitialize: (_: boolean) =>
-        AbstractTableRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
           replaceWith(_),
         ),
     },
@@ -168,53 +173,57 @@ export const AbstractTableRendererState = {
       ),
   },
 };
-export type AbstractTableRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+
+export type TableAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<ValueTable, Flags>;
+};
+
+export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  loadMore: SimpleCallback<void>;
+  selectDetailView: SimpleCallback<string>;
+  clearDetailView: SimpleCallback<void>;
+  selectRow: SimpleCallback<string>;
+  selectAllRows: SimpleCallback<void>;
+  clearRows: SimpleCallback<void>;
+  onChange: DispatchOnChange<ValueTable, Flags>;
+  add: VoidCallbackWithOptionalFlags<Flags>;
+  remove: ValueCallbackWithOptionalFlags<string, Flags>;
+  moveTo: (key: string, to: string, flags: Flags | undefined) => void;
+  duplicate: ValueCallbackWithOptionalFlags<string, Flags>;
+};
+
+export type TableAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 > = View<
-  Context &
-    Value<ValueOption> &
-    DomNodeIdReadonlyContext &
-    AbstractTableRendererState & {
+  TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+    TableAbstractRendererState & {
       hasMoreValues: boolean;
-      disabled: boolean;
-      identifiers: { withLauncher: string; withoutLauncher: string };
     },
-  AbstractTableRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<PredicateValue>;
-    toggleOpen: SimpleCallback<void>;
-    setStreamParam: SimpleCallback<string>;
-    select: SimpleCallback<ValueOption>;
-    loadMore: SimpleCallback<void>;
-    reload: SimpleCallback<void>;
-    selectDetailView: SimpleCallback<string>;
-    clearDetailView: SimpleCallback<void>;
-    selectRow: SimpleCallback<string>;
-    selectAllRows: SimpleCallback<void>;
-    clearRows: SimpleCallback<void>;
-    add: SimpleCallback<void>;
-    remove: SimpleCallback<string>;
-    moveTo: (key: string, to: string) => void;
-    duplicate: SimpleCallback<string>;
-  },
+  TableAbstractRendererState,
+  TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    TableHeaders: string[];
-    ColumnLabels: Map<string, string | undefined>;
-    EmbeddedTableData: OrderedMap<
+    TableData: OrderedMap<
       string,
       OrderedMap<
         string,
-        Template<
-          any,
-          any,
-          {
-            onChange: DispatchOnChange<PredicateValue>;
-          },
-          any
+        (
+          flags: Flags | undefined,
+        ) => Template<
+          TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          TableAbstractRendererForeignMutationsExpected<Flags>
         >
       >
     >;
-    DetailsRenderer: Template<any, any, any, any>;
+    DetailsRenderer?: (
+      flags: Flags | undefined,
+    ) => Template<
+      TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+        TableAbstractRendererState,
+      TableAbstractRendererState,
+      TableAbstractRendererForeignMutationsExpected<Flags>
+    >;
   }
 >;

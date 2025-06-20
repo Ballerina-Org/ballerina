@@ -9,21 +9,23 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { Dispatcher } from "../../../../../../main";
+import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
 
 export const DispatchFormRunner = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormRunnerContext<T>,
-    DispatchFormRunnerState<T>
+    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts>,
+    DispatchFormRunnerState<T, Flags>
   >();
 
   return Co.Template<DispatchFormRunnerForeignMutationsExpected>(
     Co.Seq([
       Co.SetState(
-        DispatchFormRunnerState<T>().Updaters.status(
-          replaceWith<DispatchFormRunnerStatus<T>>({ kind: "loading" }),
+        DispatchFormRunnerState<T, Flags>().Updaters.status(
+          replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
         ),
       ),
       Co.GetState().then((current) =>
@@ -40,8 +42,8 @@ export const DispatchFormRunner = <
                 return id;
 
               if (current.deserializedSpecification.sync.value.kind == "errors")
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.deserializedSpecification.sync.value.errors,
                   }),
@@ -56,8 +58,8 @@ export const DispatchFormRunner = <
                     .toArray()
                     .join("\n")}`,
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.launcherRef.entity.value.errors,
                   }),
@@ -73,8 +75,8 @@ export const DispatchFormRunner = <
                     .toArray()
                     .join("\n")}`,
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: current.launcherRef.config.value.errors,
                   }),
@@ -96,8 +98,8 @@ export const DispatchFormRunner = <
                   `Cannot find form '${launcherRef.name}' in the launchers`,
                 );
 
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: List([
                       `Cannot find form '${launcherRef.name}' in the launchers`,
@@ -118,8 +120,8 @@ export const DispatchFormRunner = <
 
               if (Form.kind == "errors") {
                 console.error(Form.errors.valueSeq().toArray().join("\n"));
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: Form.errors,
                   }),
@@ -135,18 +137,18 @@ export const DispatchFormRunner = <
                 console.error(
                   initialState.errors.valueSeq().toArray().join("\n"),
                 );
-                return DispatchFormRunnerState<T>().Updaters.status(
-                  replaceWith<DispatchFormRunnerStatus<T>>({
+                return DispatchFormRunnerState<T, Flags>().Updaters.status(
+                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "error",
                     errors: initialState.errors,
                   }),
                 );
               }
-              return DispatchFormRunnerState<T>()
+              return DispatchFormRunnerState<T, Flags>()
                 .Updaters.formState(replaceWith(initialState.value))
                 .then(
-                  DispatchFormRunnerState<T>().Updaters.status(
-                    replaceWith<DispatchFormRunnerStatus<T>>({
+                  DispatchFormRunnerState<T, Flags>().Updaters.status(
+                    replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                       kind: "loaded",
                       Form: Form.value,
                     }),
