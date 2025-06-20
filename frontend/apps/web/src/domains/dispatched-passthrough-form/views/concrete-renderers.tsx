@@ -62,6 +62,7 @@ import {
   UnionAbstractRendererView,
   OneAbstractRendererView,
   ValueOption,
+  TableMethod,
 } from "ballerina-core";
 import { CategoryAbstractRendererView } from "../injected-forms/category";
 import { Map, OrderedMap } from "immutable";
@@ -763,9 +764,11 @@ export const PersonConcreteRenderers = {
                   <thead style={{ border: "1px solid black" }}>
                     <tr style={{ border: "1px solid black" }}>
                       <th>
-                        <button onClick={() => props.foreignMutations.add()}>
-                          {"➕"}
-                        </button>
+                        {props.foreignMutations.add && (
+                          <button onClick={() => props.foreignMutations.add!()}>
+                            {"➕"}
+                          </button>
+                        )}
                       </th>
                       <th>
                         <input
@@ -805,34 +808,42 @@ export const PersonConcreteRenderers = {
                               ? "🙉"
                               : "🙈"}
                           </button>
-                          <button
-                            onClick={() => props.foreignMutations.remove(id)}
-                          >
-                            {"❌"}
-                          </button>
-                          <button
-                            onClick={() => props.foreignMutations.duplicate(id)}
-                          >
-                            {"👥"}
-                          </button>
-                          <select
-                            onChange={(_) =>
-                              props.foreignMutations.moveTo(
-                                id,
-                                props.EmbeddedTableData.keySeq().get(
-                                  Number(_.currentTarget.value),
-                                )!,
-                              )
-                            }
-                          >
-                            {props.EmbeddedTableData.entrySeq().map(
-                              (_, optIdx) => (
-                                <option key={_[0]} selected={optIdx === idx}>
-                                  {optIdx}
-                                </option>
-                              ),
-                            )}
-                          </select>
+                          {props.foreignMutations.remove && (
+                            <button
+                              onClick={() => props.foreignMutations.remove!(id)}
+                            >
+                              {"❌"}
+                            </button>
+                          )}
+                          {props.foreignMutations.duplicate && (
+                            <button
+                              onClick={() =>
+                                props.foreignMutations.duplicate!(id)
+                              }
+                            >
+                              {"👥"}
+                            </button>
+                          )}
+                          {props.foreignMutations.moveTo && (
+                            <select
+                              onChange={(_) =>
+                                props.foreignMutations.moveTo!(
+                                  id,
+                                  props.EmbeddedTableData.keySeq().get(
+                                    Number(_.currentTarget.value),
+                                  )!,
+                                )
+                              }
+                            >
+                              {props.EmbeddedTableData.entrySeq().map(
+                                (_, optIdx) => (
+                                  <option key={_[0]} selected={optIdx === idx}>
+                                    {optIdx}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                          )}
                           <td style={{ border: "1px solid black" }}>
                             <input
                               type="checkbox"

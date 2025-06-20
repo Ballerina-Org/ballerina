@@ -22,6 +22,8 @@ import {
   OneAbstractRendererState,
   ValueOption,
   DispatchInjectables,
+  TableApis,
+  SpecificationApis,
 } from "../../../../../main";
 
 import {
@@ -73,6 +75,7 @@ export type DispatcherContext<
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
+  specApis: SpecificationApis;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
@@ -255,6 +258,7 @@ export const parseDispatchFormsToLaunchers =
             passthrough: Map(passthroughLaunchers),
           },
           dispatcherContext: {
+            specApis: specification.apis,
             forms: specification.forms,
             injectedPrimitives,
             apiConverters,

@@ -410,82 +410,90 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
-              add: () => {
-                const delta: DispatchDelta = {
-                  kind: "TableAddEmpty",
-                  isWholeEntityMutation: true,
-                };
-                props.foreignMutations.onChange(id, delta);
-                props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              remove: (k: string) => {
-                const delta: DispatchDelta = {
-                  kind: "TableRemove",
-                  id: k,
-                  isWholeEntityMutation: true,
-                };
-                props.foreignMutations.onChange(id, delta);
-                props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              moveTo: (k: string, to: string) => {
-                const delta: DispatchDelta = {
-                  kind: "TableMoveTo",
-                  id: k,
-                  to,
-                  isWholeEntityMutation: true,
-                };
-                props.foreignMutations.onChange(id, delta);
-                props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              duplicate: (k: string) => {
-                const delta: DispatchDelta = {
-                  kind: "TableDuplicate",
-                  id: k,
-                  isWholeEntityMutation: true,
-                };
-                props.foreignMutations.onChange(id, delta);
-                props.setState(
-                  AbstractTableRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    AbstractTableRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
+              add: !props.context.apiMethods.includes("add")
+                ? undefined
+                : () => {
+                    const delta: DispatchDelta = {
+                      kind: "TableAddEmpty",
+                      isWholeEntityMutation: true,
+                    };
+                    props.foreignMutations.onChange(id, delta);
+                    props.setState(
+                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              remove: !props.context.apiMethods.includes("remove")
+                ? undefined
+                : (k: string) => {
+                    const delta: DispatchDelta = {
+                      kind: "TableRemove",
+                      id: k,
+                      isWholeEntityMutation: true,
+                    };
+                    props.foreignMutations.onChange(id, delta);
+                    props.setState(
+                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              moveTo: !props.context.apiMethods.includes("move")
+                ? undefined
+                : (k: string, to: string) => {
+                    const delta: DispatchDelta = {
+                      kind: "TableMoveTo",
+                      id: k,
+                      to,
+                      isWholeEntityMutation: true,
+                    };
+                    props.foreignMutations.onChange(id, delta);
+                    props.setState(
+                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              duplicate: !props.context.apiMethods.includes("duplicate")
+                ? undefined
+                : (k: string) => {
+                    const delta: DispatchDelta = {
+                      kind: "TableDuplicate",
+                      id: k,
+                      isWholeEntityMutation: true,
+                    };
+                    props.foreignMutations.onChange(id, delta);
+                    props.setState(
+                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
             }}
             TableHeaders={visibleColumns.value.columns}
             ColumnLabels={ColumnLabels}
