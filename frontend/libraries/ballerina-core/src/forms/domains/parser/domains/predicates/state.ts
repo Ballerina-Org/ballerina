@@ -1150,10 +1150,7 @@ export const Expr = {
                   () => `cannot find match case Sum.Right`,
                 ).Then((rightCaseHandler) =>
                   Expr.Operations.Evaluate(
-                    vars.set(
-                      rightCaseHandler.parameter,
-                      matchable.value.value,
-                    ),
+                    vars.set(rightCaseHandler.parameter, matchable.value.value),
                   )(rightCaseHandler),
                 )
             : PredicateValue.Operations.IsUnionCase(matchable)
