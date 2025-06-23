@@ -389,6 +389,7 @@ export const TraversalDispatchTest = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    remoteEntityVersionIdentifier: "",
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}
