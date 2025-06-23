@@ -148,11 +148,17 @@ export const TableAbstractRenderer = <
                 ),
             );
 
-            // TODO, check the nesting
+            const nestedRecordDelta: DispatchDelta = {
+              kind: "RecordField",
+              field: [column, nestedDelta],
+              recordType: props.context.type.args[0],
+              isWholeEntityMutation: false,
+            };
+
             const delta: DispatchDelta = {
               kind: "TableValue",
               id: rowId,
-              nestedDelta: nestedDelta,
+              nestedDelta: nestedRecordDelta,
               isWholeEntityMutation: false,
             };
 
