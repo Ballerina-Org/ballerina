@@ -22,6 +22,7 @@ import {
   DispatchOnChange,
   DomNodeIdReadonlyContext,
   DispatchParsedType,
+  TableMethod,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -39,6 +40,7 @@ export type AbstractTableRendererReadonlyContext = {
   identifiers: { withLauncher: string; withoutLauncher: string };
   label?: string;
   remoteEntityVersionIdentifier: string;
+  apiMethods: Array<TableMethod>;
 };
 
 export type AbstractTableRendererState = {
@@ -193,10 +195,10 @@ export type AbstractTableRendererView<
     selectRow: SimpleCallback<string>;
     selectAllRows: SimpleCallback<void>;
     clearRows: SimpleCallback<void>;
-    add: SimpleCallback<void>;
-    remove: SimpleCallback<string>;
-    moveTo: (key: string, to: string) => void;
-    duplicate: SimpleCallback<string>;
+    add: SimpleCallback<void> | undefined;
+    remove: SimpleCallback<string> | undefined;
+    moveTo: ((key: string, to: string) => void) | undefined;
+    duplicate: SimpleCallback<string> | undefined;
   },
   {
     TableHeaders: string[];
