@@ -1393,13 +1393,36 @@
             ]
           },
           "visible": {
-            "kind": "fieldLookup",
+            "kind": "matchCase",
             "operands": [
               {
-                "kind": "varLookup",
-                "varName": "local"
+                "kind": "fieldLookup",
+                "operands": [
+                  {
+                    "kind": "varLookup",
+                    "varName": "root"
+                  },
+                  "MainAddress"
+                ]
               },
-              "SubscribeToNewsletter"
+              {
+                "kind": "caseName",
+                "caseName": "Sum.Left",
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": false
+                }
+              },
+              {
+                "kind": "caseName",
+                "caseName": "Sum.Right",
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": true
+                }
+              }
             ]
           }
         },
@@ -1435,7 +1458,39 @@
         "ImportantDate": {
           "label": "important date",
           "renderer": "maybeDate",
-          "visible": true,
+          "visible": {
+            "kind": "matchCase",
+            "operands": [
+              {
+                "kind": "fieldLookup",
+                "operands": [
+                  {
+                    "kind": "varLookup",
+                    "varName": "root"
+                  },
+                  "ImportantDate"
+                ]
+              },
+              {
+                "kind": "caseName",
+                "caseName": "Sum.Left",
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": false
+                }
+              },
+              {
+                "kind": "caseName",
+                "caseName": "Sum.Right",
+                "handler": {
+                  "kind": "lambda",
+                  "parameter": "_",
+                  "body": true
+                }
+              }
+            ]
+          },
           "disabled": false
         },
         "CutOffDates": {

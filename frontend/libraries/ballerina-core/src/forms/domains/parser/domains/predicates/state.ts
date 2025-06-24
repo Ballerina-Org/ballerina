@@ -364,7 +364,10 @@ export type PredicateValue =
   | ValueTable;
 
 export type ExprLambda = { kind: "lambda"; parameter: string; body: Expr };
-export type ExprMatchCase = { kind: "matchCase"; operands: Expr[] };
+export type ExprMatchCase = {
+  kind: "matchCase";
+  operands: Expr[];
+};
 export type ExprCase = {
   kind: "caseName";
   caseName: string;
@@ -930,7 +933,7 @@ export const Expr = {
       kind: op,
       operands: [e1, e2],
     }),
-    matchCase: (operands: Expr[]): Expr => ({
+    matchCase: (operands: Expr[]): ExprMatchCase => ({
       kind: "matchCase",
       operands,
     }),
@@ -983,6 +986,13 @@ export const Expr = {
     },
     IsCaseArray: (e: Expr[]): e is ExprCase[] => {
       return e.every((e) => Expr.Operations.IsCase(e));
+    },
+    AsCaseArray: (e: Expr[]): ValueOrErrors<ExprCase[], string> => {
+      return e.every((e) => Expr.Operations.IsCase(e))
+        ? ValueOrErrors.Default.return(e)
+        : ValueOrErrors.Default.throwOne(
+            `Error: expected cases, got ${JSON.stringify(e)}`,
+          );
     },
     IsMatchCase: (e: Expr): e is ExprMatchCase => {
       return (
@@ -1119,23 +1129,44 @@ export const Expr = {
     MatchCase:
       (vars: Bindings) =>
       (
-        e: ValueUnionCase,
-        cases: ExprCase[],
-      ): ValueOrErrors<PredicateValue, string> => {
-        const matchedCase = cases.find((c) => c.caseName == e.caseName);
-        if (matchedCase == undefined) {
-          return ValueOrErrors.Default.throwOne(
-            `cannot find match case ${JSON.stringify(
-              e.caseName,
-            )} in ${JSON.stringify(cases)}`,
-          );
-        }
-        const updatedBindings = vars.set(
-          matchedCase.handler.parameter,
-          e.fields,
-        );
-        return Expr.Operations.Evaluate(updatedBindings)(matchedCase.handler);
-      },
+        e: Expr,
+        cases: Map<string, ExprLambda>,
+      ): ValueOrErrors<PredicateValue, string> =>
+        Expr.Operations.Evaluate(vars)(e).Then((matchable) =>
+          PredicateValue.Operations.IsSum(matchable)
+            ? matchable.value.kind == "l"
+              ? MapRepo.Operations.tryFindWithError(
+                  "Sum.Left",
+                  cases,
+                  () => `cannot find match case Sum.Left`,
+                ).Then((leftCaseHandler) =>
+                  Expr.Operations.Evaluate(
+                    vars.set(leftCaseHandler.parameter, matchable.value.value),
+                  )(leftCaseHandler),
+                )
+              : MapRepo.Operations.tryFindWithError(
+                  "Sum.Right",
+                  cases,
+                  () => `cannot find match case Sum.Right`,
+                ).Then((rightCaseHandler) =>
+                  Expr.Operations.Evaluate(
+                    vars.set(rightCaseHandler.parameter, matchable.value.value),
+                  )(rightCaseHandler),
+                )
+            : PredicateValue.Operations.IsUnionCase(matchable)
+              ? MapRepo.Operations.tryFindWithError(
+                  matchable.caseName,
+                  cases,
+                  () => `cannot find match case ${matchable.caseName}`,
+                ).Then((matchedCaseHandler) =>
+                  Expr.Operations.Evaluate(
+                    vars.set(matchedCaseHandler.parameter, matchable.fields),
+                  )(matchedCaseHandler),
+                )
+              : ValueOrErrors.Default.throwOne(
+                  `unsupported matchable type in MatchCase: ${JSON.stringify(matchable)}`,
+                ),
+        ),
     ComputePredicateEvaluation:
       (vars: Bindings) =>
       (expr: Expr): ValueOrErrors<boolean, string> => {
@@ -1177,7 +1208,8 @@ export const Expr = {
             PredicateValue.Operations.IsRecord(e) ||
             PredicateValue.Operations.IsTuple(e) ||
             PredicateValue.Operations.IsUnionCase(e) ||
-            PredicateValue.Operations.IsUnit(e)
+            PredicateValue.Operations.IsUnit(e) ||
+            PredicateValue.Operations.IsSum(e)
             ? ValueOrErrors.Default.return(e)
             : PredicateValue.Operations.IsVarLookup(e)
               ? MapRepo.Operations.tryFindWithError(
@@ -1227,21 +1259,15 @@ export const Expr = {
                       )
                     : Expr.Operations.IsMatchCase(e)
                       ? Expr.Operations.Evaluate(vars)(e.operands[0]).Then(
-                          (maybeUnionCase: PredicateValue) =>
-                            Expr.Operations.EvaluateAsUnionCase(vars)(
-                              maybeUnionCase,
-                            ).Then((unionCase: ValueUnionCase) => {
-                              const cases = e.operands.slice(1);
-                              if (!Expr.Operations.IsCaseArray(cases)) {
-                                return ValueOrErrors.Default.throwOne(
-                                  `Error: expected cases, got ${JSON.stringify(cases)}`,
-                                );
-                              }
-                              return Expr.Operations.MatchCase(vars)(
-                                unionCase,
-                                cases,
-                              );
-                            }),
+                          (matchable: PredicateValue) =>
+                            Expr.Operations.AsCaseArray(
+                              e.operands.slice(1),
+                            ).Then((cases) =>
+                              Expr.Operations.MatchCase(vars)(
+                                matchable,
+                                Map(cases.map((c) => [c.caseName, c.handler])),
+                              ),
+                            ),
                         )
                       : Expr.Operations.IsLambda(e)
                         ? Expr.Operations.Evaluate(vars)(e.body)

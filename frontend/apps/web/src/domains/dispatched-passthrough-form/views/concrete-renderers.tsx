@@ -1710,6 +1710,7 @@ export const PersonConcreteRenderers = {
       return (props) => {
         return (
           <>
+            {props.context.label && <h3>{props.context.label}</h3>}
             {props.context.value.value.kind == "l"
               ? props?.embeddedLeftTemplate?.({
                   ...props,
