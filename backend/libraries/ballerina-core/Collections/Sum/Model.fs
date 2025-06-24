@@ -46,6 +46,7 @@ module Sum =
 
   type SumBuilder() =
     member _.MapError f p = p |> Sum.mapRight f
+    member _.Map f p = p |> Sum.map f
 
     member _.Catch h p =
       match p with
