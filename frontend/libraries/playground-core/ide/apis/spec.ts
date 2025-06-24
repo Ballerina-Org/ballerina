@@ -54,7 +54,7 @@ export const IDEApi = {
         }
 
         const res =  await response.json();
-        debugger
+
         return res;
     },
     async seed(spec: Value<string>): Promise<ValidationResultWithPayload<string>> {
@@ -75,7 +75,6 @@ export const IDEApi = {
         const result =  await response.json();
         
         const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
-        debugger
         return t
     },
 };

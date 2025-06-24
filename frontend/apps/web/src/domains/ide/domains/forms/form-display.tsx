@@ -29,14 +29,14 @@ import {
     CategoryAbstractRenderer,
     DispatchCategoryState
 } from "../../../dispatched-passthrough-form/injected-forms/category.tsx";
+type EntityFormInjectedTypes = PersonFormInjectedTypes
+const InstantiedDispatchFormRunnerTemplate =
+    DispatchFormRunnerTemplate<EntityFormInjectedTypes>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-    DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
-
-const InstantiedPersonFormsParserTemplate =
-    DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+const InstantiedFormsParserTemplate =
+    DispatchFormsParserTemplate<EntityFormInjectedTypes>();
 const ShowFormsParsingErrors = (
-    parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+    parsedFormsConfig: DispatchSpecificationDeserializationResult<EntityFormInjectedTypes>,
 ) => (
     <div style={{ display: "flex", border: "red" }}>
         {parsedFormsConfig.kind == "errors" &&
@@ -44,13 +44,14 @@ const ShowFormsParsingErrors = (
     </div>
 );
 
+
 export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, string>>, step: EditorStep}) => {
-    const [personEntity, setPersonEntity] = useState<
+    const [entity, setEntity] = useState<
         Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
     >(Sum.Default.right("not initialized"));
     
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
-        DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+        DispatchFormsParserState<EntityFormInjectedTypes>().Default(),
     );
     const parseCustomDelta =
         <T,>(
@@ -98,7 +99,7 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
     ] = useState(v4());
     
     const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-        DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+        DispatchFormRunnerState<EntityFormInjectedTypes>().Default(),
     );
 
     const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
@@ -126,17 +127,17 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
         </div>
     );
     
-    const onPersonEntityChange = (
+    const onEntityChange = (
         updater: Updater<any>,
         delta: DispatchDelta,
     ): void => {
-        if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
+        if (entity.kind == "r" || entity.value.kind == "errors") {
             return;
         }
 
-        const newEntity = updater(personEntity.value.value);
+        const newEntity = updater(entity.value.value);
         console.log("patching entity", newEntity);
-        setPersonEntity(
+        setEntity(
             replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
         );
         if (
@@ -175,7 +176,7 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
                     if (parsed.kind == "errors") {
                         console.error("parsed entity errors", parsed.errors);
                     } else {
-                        setPersonEntity(Sum.Default.left(parsed));
+                        setEntity(Sum.Default.left(parsed));
                     }
                 }
             });
@@ -212,7 +213,7 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
                     return (<div>
                         <div>{props.step.kind}</div>
                         <div className="App">
-                            <InstantiedPersonFormsParserTemplate
+                            <InstantiedFormsParserTemplate
                                 context={{
                                     ...specificationDeserializer,
                                     defaultRecordConcreteRenderer: DispatchPersonContainerFormView,
@@ -246,16 +247,16 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
                                 view={unit}
                                 foreignMutations={unit}
                             />
-                            <InstantiedPersonDispatchFormRunnerTemplate
+                            <InstantiedDispatchFormRunnerTemplate
                                 context={{
                                     ...specificationDeserializer,
                                     ...personPassthroughFormState,
                                     launcherRef: {
                                         name: "person-transparent",
                                         kind: "passthrough",
-                                        entity: personEntity,
+                                        entity: entity,
                                         config,
-                                        onEntityChange: onPersonEntityChange,
+                                        onEntityChange: onEntityChange,
                                     },
                                     remoteEntityVersionIdentifier,
                                     showFormParsingErrors: ShowFormsParsingErrors,

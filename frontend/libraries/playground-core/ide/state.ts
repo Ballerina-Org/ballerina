@@ -4,10 +4,9 @@ import { ForeignMutationsInput } from "ballerina-core";
 import {
     SpecEditor,
     RawJsonEditorForeignMutationsExpected,
-    JsonValue,
     RawJsonEditorView
 } from "./domains/spec-editor/state";
-import {LayoutActions} from "./domains/layout/domains/actions/state";
+
 import {Layout} from "./domains/layout/state";
 import {SpecRunner} from "./domains/spec-runner/state";
 
@@ -25,7 +24,7 @@ const CoreUpdaters = {
 };
 
 export const IDE = {
-    Default: (specs: JsonValue []): IDE => ({
+    Default: (_specs: any []): IDE => ({
         editor: SpecEditor.Default(Option.Default.none()),
         layout: Layout.Default(),
         runner: SpecRunner.Default(),

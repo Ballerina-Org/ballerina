@@ -27,11 +27,6 @@ export const IDELayout: IDEView = (props) => (
                       value={props.context.editor.name.value}
                       onChange={(e) => props.setState(IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.name(replaceWith({ value: e.target.value }))))}
                     />
-                    <select css={editorStyle.select}>
-                        <option value="v1">Version 1</option>
-                        <option value="v2">Version 2</option>
-                        <option value="v3">Version 3</option>
-                    </select>
                     <label css={editorStyle.switchWrapper}>
                         <input
                           type="checkbox"
@@ -40,8 +35,8 @@ export const IDELayout: IDEView = (props) => (
                           css={editorStyle.visuallyHidden}
                         />
                         <span css={[editorStyle.switchTrack, true && editorStyle.switchTrackChecked]}>
-                 <span css={[editorStyle.switchThumb, true && editorStyle.switchThumbChecked]} />
-              </span>
+                          <span css={[editorStyle.switchThumb, true && editorStyle.switchThumbChecked]} />
+                        </span>
                         <span css={editorStyle.labelText}>Preview</span>
                     </label>
                   <Actions

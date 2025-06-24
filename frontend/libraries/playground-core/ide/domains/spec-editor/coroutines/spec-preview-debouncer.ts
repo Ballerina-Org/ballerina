@@ -4,10 +4,7 @@ import { Synchronized } from "ballerina-core";
 import { Debounce } from "ballerina-core";
 import { Value } from "ballerina-core";
 import { IDEApi } from "../../../apis/spec"
-
-import { ValidationResult } from "ballerina-core";
 import { Co } from "./builder";
-import {RawJsonEditorTemplate} from "../template";
 import {SpecEditor, ValidationResultWithPayload} from "../state";
 
 export const specPreviewDebouncer = Co.Repeat(

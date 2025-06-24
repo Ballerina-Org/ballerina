@@ -62,4 +62,24 @@
     <PackageReference Include="FSharp.Data" Version="6.6.0" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
   </ItemGroup>
+  <PropertyGroup Label="customnuget">
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <VersionSuffix>1.0.0-beta.$([System.DateTime]::UtcNow.DayOfYear).$([System.DateTime]::UtcNow.ToString("Hmm"))</VersionSuffix>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>$(VersionSuffix)</Version>
+    <InformationalVersion>$(VersionSuffix)</InformationalVersion>
+    <PackageVersion>$(VersionSuffix)</PackageVersion>
+    <PackageId>BallerinaCore</PackageId>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <BaseOutputPath>c:/nuget</BaseOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Label="nowarn">
+    <NoWarn>NU5100</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Label="restorer">
+    <RestoreLockedMode>false</RestoreLockedMode>
+  </PropertyGroup>
 </Project>

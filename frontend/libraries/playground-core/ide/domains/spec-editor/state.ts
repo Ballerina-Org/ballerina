@@ -30,20 +30,7 @@ export const SpecEditorIndicator = {
 }
 export type SpecValidationResult = { isValid: boolean; errors: string }
 
-export type JsonValue<T = unknown> = 
-    | { kind: "unparsed"; raw: string }
-    | { kind: "parsed"; value: T }
-    | { kind: "unknown"; value: any };
-
-export const JsonValue = {
-    Default: {
-        unparsed: (raw: string): JsonValue => ({ kind: "unparsed", raw }),
-        parsed: <T>(value: T): JsonValue<T> => ({ kind: "parsed", value }),
-        unknown: (value: any): JsonValue => ({ kind: "unknown", value }),
-    }
-}
-
-export type SpecEditor<T = unknown> = {
+export type SpecEditor = {
     input: Debounced<Synchronized<Value<string>, ValidationResultWithPayload<string>>>, 
     indicator: SpecEditorIndicator,
     name: Value<string>,
@@ -56,25 +43,13 @@ const CoreUpdaters = {
 };
 
 export const SpecEditor = {
-    Default: <T>(json: Option<JsonValue<T>>): SpecEditor<T> => {
+    Default: (json: Option<any>): SpecEditor => {
         let inputString = `{}`;
 
         switch (json.kind) {
             case "l": break;
             case "r":
-                switch (json.value.kind) {
-                    case "unparsed":
-                        inputString = json.value.raw;
-                        break;
-
-                    case "parsed":
-                        inputString = JSON.stringify(json.value.value);
-                        break;
-
-                    case "unknown":
-                        inputString = json.value.value;
-                        break;
-                }
+                inputString = JSON.stringify(json.value.value);
                 break;
         }
 
