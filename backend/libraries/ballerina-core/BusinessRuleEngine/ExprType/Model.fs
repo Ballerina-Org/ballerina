@@ -14,11 +14,15 @@ module Model =
       Type: ExprType
       Const: bool }
 
+  and TypeBindingId = { TypeId: ExprTypeId }
+
   and TypeContext = Map<string, TypeBinding>
 
   and TypeBindings = Map<ExprTypeId, ExprType>
 
   type TypeBinding with
+    static member Id(t: TypeBinding) = { TypeId = t.TypeId }
+
     static member Create(name, exprType) =
       { TypeBinding.TypeId = name
         TypeBinding.Type = exprType

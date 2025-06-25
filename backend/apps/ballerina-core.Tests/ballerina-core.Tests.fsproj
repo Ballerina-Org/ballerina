@@ -36,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../libraries/unbound-core/unbound-core.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-core/ballerina-core.fsproj" />
   </ItemGroup>
 </Project>
