@@ -36,7 +36,12 @@ export const style = {
       font-size: 0.95rem;
   `,
 
-
+  dividerStyle: css`
+  width: 3px;
+  color: #000000;
+  height: 50px;
+  margin: 0 1rem;
+`,
   /*** switch ***/
   switchWrapper: css`
       display: flex;

@@ -33,8 +33,8 @@ import { TraversalPersonApis } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/traverse-test-file.json";
 import {
-  DispatchPersonContainerFormView,
-  DispatchPersonNestedContainerFormView,
+  DispatchEntityContainerFormView,
+  DispatchEntityNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
@@ -324,10 +324,10 @@ export const TraversalDispatchTest = (props: {}) => {
                   context={{
                     ...specificationDeserializer,
                     defaultRecordConcreteRenderer:
-                      DispatchPersonContainerFormView,
+                      DispatchEntityContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
-                      DispatchPersonNestedContainerFormView,
+                      DispatchEntityNestedContainerFormView,
                     concreteRenderers: PersonConcreteRenderers,
                     infiniteStreamSources: TraversalPersonApis.streamApis,
                     enumOptionsSources: TraversalPersonApis.enumApis,

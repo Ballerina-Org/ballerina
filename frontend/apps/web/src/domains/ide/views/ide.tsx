@@ -1,7 +1,7 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {style} from "./ide.styled.ts";
 import { style as editorStyle } from "../domains/spec-editor/json-editor.styled.ts";
-import {IDE, IDEView, SpecEditor, SpecRunner, SpecRunnerIndicator} from "playground-core";
+import {IDE, IDEView, SpecEditor, SpecEditorIndicator, SpecRunner, SpecRunnerIndicator} from "playground-core";
 import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React from "react";
@@ -13,6 +13,8 @@ import {replaceWith, ValueOrErrors} from "ballerina-core";
 import {Grid} from "./grid.tsx";
 import {IDEApi} from "playground-core/ide/apis/spec.ts";
 import {Option} from "ballerina-core";
+import RadioButtons from "../domains/layout/localisation.tsx";
+import {HorizontalDropdown} from "../domains/layout/spec-selector.tsx";
 
 export const IDELayout: IDEView = (props) => (
     <Grid 
@@ -40,11 +42,13 @@ export const IDELayout: IDEView = (props) => (
                         <span css={editorStyle.labelText}>Preview</span>
                     </label>
                   <Actions
+                    //TODO: this Run does too much by sharing state internals on a view level
                     onRun={ async () => {
+                      const _ = props.setState(IDE.Updaters.Core.runner(SpecRunner.Operations.updateStep(SpecRunnerIndicator.Default.validating())));
                       await IDEApi.validateSpec({value: props.context.editor.input.value})
                         .then(res =>
                           props.setState(
-                            SpecRunner.Operations.runEditor(props.context.editor.input.value, res)
+                            IDE.Updaters.Core.runner(SpecRunner.Operations.runEditor(props.context.editor.input.value, res))
                           )
                         )
                     }}
@@ -65,6 +69,18 @@ export const IDELayout: IDEView = (props) => (
                     }
                     }
                   />
+                  <div css={editorStyle.dividerStyle} />
+                  <input
+                    type="text"
+                    placeholder="instance"
+                    css={editorStyle.input}
+                    value={props.context.editor.name.value}
+                    onChange={(e) => props.setState(IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.name(replaceWith({ value: e.target.value }))))}
+                  />
+                  <Actions onSave={async () => {}} 
+                  
+                  />
+                  
                 </div>
               
             </div>
@@ -79,21 +95,33 @@ export const IDELayout: IDEView = (props) => (
                         alt="Ballerina"
                     />
                     <p>IDE</p>
+                  {/*{props.context.specNames.sync.kind == "loaded" && <p>{props.context.specNames.sync.value.payload.join((", "))}</p>}*/}
+                  <HorizontalDropdown 
+                          label={"Select a spec"} 
+                          onChange={async value =>{
+                       
+                            const t = await IDEApi.load(value)
+              
+                            props.setState(IDE.Operations.changeSpec(t.payload));
+                          }}
+                          options={props.context.specNames.sync.kind != "loaded" ? [] : props.context.specNames.sync.value.payload}/>
+                  {props.context.specNames.sync.kind == "reloading" && <p>Checking the database for new spec files ...</p>}
                     {/*<p css={style.stepColor}>{props.context.layout.indicators.step.kind}...</p>*/}
                 </div>
                 <div css={{ flex: 1 }} />
-                <div css={style.topTabs}>
-                    <HorizontalButtonContainer>
-                        <Tab name="tab 1" active={true} />
-                        <Tab name="tab 2" />
-                    </HorizontalButtonContainer>
-                </div>
+              <RadioButtons />
             </div>}
         right={
             <>
-
+                <HorizontalButtonContainer>
+                  <Tab name="create-person" active={true} />
+                  <Tab name="edit-person" />
+                  <Tab name="person-transparent"  />
+                  <Tab name="person-config" />
+                </HorizontalButtonContainer>
                 <Messages
-                    indicator={props.context.runner.indicator}
+                    editorIndicator={props.context.editor.indicator}
+                    runnerIndicator={props.context.runner.indicator}
                     clientErrors={[]
                         //props.context.runner.validation.kind == "errors" ? props.context.runner.validation.errors.toArray() : []}
                     }
@@ -101,9 +129,10 @@ export const IDELayout: IDEView = (props) => (
                     clientSuccess={[]}
                     serverSuccess={[]}
                 />
-                <FormDisplayTemplate 
-                    step={props.context.layout.indicators.step} 
-                    spec={props.context.runner.validation} />
+              
+              {props.context.runner.validation.kind == "r" && props.context.runner.validation.value.kind == "value" && <FormDisplayTemplate 
+                    step={props.context.runner.indicator} 
+                    spec={props.context.runner.validation.value.value} />}
                 </>
         } />
 );

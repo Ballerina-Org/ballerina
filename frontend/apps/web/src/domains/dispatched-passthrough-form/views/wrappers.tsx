@@ -19,7 +19,7 @@ import {
   RecordAbstractRendererView,
 } from "ballerina-core";
 
-export const DispatchPersonContainerFormView: RecordAbstractRendererView<
+export const DispatchEntityContainerFormView: RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
 > = (props) => {
@@ -67,7 +67,7 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
   );
 };
 
-export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
+export const DispatchEntityNestedContainerFormView: RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
 > = (props) => {

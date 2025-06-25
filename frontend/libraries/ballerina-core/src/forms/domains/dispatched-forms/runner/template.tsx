@@ -52,7 +52,7 @@ export const DispatchFormRunnerTemplate = <
       ["root", entity.value.value],
       ["local", entity.value.value],
     ]);
-
+    
     return props.context.status.kind == "loaded" ? (
       <props.context.status.Form
         context={{

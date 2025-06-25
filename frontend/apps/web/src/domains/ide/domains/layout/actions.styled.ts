@@ -11,12 +11,12 @@ export const style = {
         css`
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 5px;
           background: #083d34;
           color: white;
           border: none;
           border-radius: 8px;
-          padding: 10px 20px;
+          padding: 8px;
           font-size: 0.85rem;
           font-weight: 300;
           cursor: pointer;

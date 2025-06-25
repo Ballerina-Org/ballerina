@@ -1,22 +1,23 @@
 ﻿/** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react";
-import { Server, User, Loader } from "lucide-react";
+import {Server, User, Loader, Edit} from "lucide-react";
 import { style } from "./messages.styled.ts";
-import {SpecRunnerIndicator} from "playground-core";
+import {SpecEditorIndicator, SpecRunnerIndicator} from "playground-core";
 
 export const Messages: React.FC<{
-
+  editorIndicator: SpecEditorIndicator;
   clientErrors?: string[];
   serverErrors?: string[];
   clientSuccess?: string[];
   serverSuccess?: string[];
-  indicator: SpecRunnerIndicator;
+  runnerIndicator: SpecRunnerIndicator;
 }> = ({
+        editorIndicator,
         clientErrors = [],
         serverErrors = [],
         clientSuccess = [],
         serverSuccess = [],
-        indicator
+        runnerIndicator
       }) => (<div css={style.messageLayout}>
     <div
         css={css`
@@ -25,7 +26,8 @@ export const Messages: React.FC<{
     align-items: flex-end;  // right-align all children in this column
   `}
     >
-        <p>{indicator.kind}</p>
+      {editorIndicator.kind == "editing" && <p>⚠️ Editor is dirty</p>}
+        <p>{runnerIndicator.kind}</p>
         {clientErrors.map((msg, i) => (
             <div key={`client-error-${i}`} css={style.messageBox("error")}>
                 <User size={60} />

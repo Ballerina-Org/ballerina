@@ -73,7 +73,59 @@ export const IDEApi = {
         }
 
         const result =  await response.json();
-        
+        const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
+        return t
+    },
+    async entity(name: string,spec: string): Promise<ValidationResultWithPayload<string>> {
+        debugger
+        const response = await fetch(`${url}/entity/name?name=${name}&spec=SpecName`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`spec/validate HTTP error (status: ${response.status})`);
+        }
+
+        const result =  await response.json();
+        const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
+        return t
+    },
+    async names(): Promise<ValidationResultWithPayload<string[]>> {
+        const response = await fetch(`${url}/spec`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`spec/validate HTTP error (status: ${response.status})`);
+        }
+
+        const result =  await response.json();
+        const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
+        return t
+    },
+    async load(name: string): Promise<ValidationResultWithPayload<string>> {
+ 
+        const response = await fetch(`${url}/spec/name?name=${name}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`spec/validate HTTP error (status: ${response.status})`);
+        }
+
+        const result =  await response.text();
         const t = Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
         return t
     },

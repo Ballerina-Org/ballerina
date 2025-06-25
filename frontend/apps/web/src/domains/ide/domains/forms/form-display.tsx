@@ -1,58 +1,72 @@
 ﻿import {
-    DeltaTransfer,
-    DispatchDelta, DispatchDeltaCustom,
-    DispatchDeltaTransfer,
-    DispatchFormRunnerState,
-    DispatchFormRunnerTemplate,
-    DispatchFormsParserState,
-    DispatchFormsParserTemplate, DispatchInjectedPrimitive, DispatchParsedType,
-    DispatchSpecificationDeserializationResult, ErrorRendererProps, IdWrapperProps, Option,
-    PredicateValue, PromiseRepo,
-    replaceWith,
-    Sum,
-    unit,
-    Updater,
-    ValueOrErrors
+  DeltaTransfer,
+  DispatchDelta,
+  DispatchDeltaCustom,
+  DispatchDeltaTransfer, DispatcherContext,
+  DispatchFormRunnerState,
+  DispatchFormRunnerTemplate,
+  DispatchFormsParserState,
+  DispatchFormsParserTemplate,
+  DispatchInjectedPrimitive,
+  DispatchParsedLauncher,
+  DispatchParsedLaunchers,
+  DispatchParsedType,
+  DispatchSpecificationDeserializationResult,
+  ErrorRendererProps,
+  IdWrapperProps,
+  Option,
+  PredicateValue,
+  PromiseRepo,
+  replaceWith,
+  Sum,
+  unit,
+  Updater,
+  ValueOrErrors
 } from "ballerina-core";
-import {PersonFormInjectedTypes} from "../../../person-from-config/injected-forms/category.tsx";
+
+import {PersonFormInjectedTypes as EntityFormInjectedTypes} from "../../../person-from-config/injected-forms/category.tsx";
 import {Set} from "immutable";
 import {useEffect, useState} from "react";
 import {v4} from "uuid";
 import {
-    DispatchPersonContainerFormView,
-    DispatchPersonNestedContainerFormView
+    DispatchEntityContainerFormView,
+    DispatchEntityNestedContainerFormView
 } from "../../../dispatched-passthrough-form/views/wrappers.tsx";
 import {DispatchFieldTypeConverters} from "../../../dispatched-passthrough-form/apis/field-converters.ts";
 import {PersonConcreteRenderers} from "../../../dispatched-passthrough-form/views/concrete-renderers.tsx";
-import {DispatchPersonFromConfigApis, EditorStep} from "playground-core";
+import {DispatchFromConfigApis, SpecRunnerIndicator} from "playground-core";
 import {
     CategoryAbstractRenderer,
     DispatchCategoryState
 } from "../../../dispatched-passthrough-form/injected-forms/category.tsx";
-type EntityFormInjectedTypes = PersonFormInjectedTypes
-const InstantiedDispatchFormRunnerTemplate =
+import { IdWrapper, ShowFormsParsingErrors, ErrorRenderer, GetLoadedValue} from "./form-display-shadow";
+import {IDEApi} from "playground-core/ide/apis/spec.ts";
+
+const InstantiatedDispatchFormRunnerTemplate =
     DispatchFormRunnerTemplate<EntityFormInjectedTypes>();
 
-const InstantiedFormsParserTemplate =
+const InstantiatedFormsParserTemplate =
     DispatchFormsParserTemplate<EntityFormInjectedTypes>();
-const ShowFormsParsingErrors = (
-    parsedFormsConfig: DispatchSpecificationDeserializationResult<EntityFormInjectedTypes>,
-) => (
-    <div style={{ display: "flex", border: "red" }}>
-        {parsedFormsConfig.kind == "errors" &&
-            JSON.stringify(parsedFormsConfig.errors)}
-    </div>
-);
 
 
-export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, string>>, step: EditorStep}) => {
-    const [entity, setEntity] = useState<
-        Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
-    >(Sum.Default.right("not initialized"));
+export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndicator}) => {
+    const [entity, setEntity] = 
+      useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
+    const [config, setConfig] =
+      useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));    
     
-    const [specificationDeserializer, setSpecificationDeserializer] = useState(
-        DispatchFormsParserState<EntityFormInjectedTypes>().Default(),
-    );
+    const [localValue, setLocalValue] = useState<string>(props.spec);
+    const [prevValue, setPrevValue] = useState<string>(props.spec);
+    useEffect(() => {
+
+      if (props.spec !== localValue) {
+        setPrevValue(localValue);
+        setLocalValue(props.spec);
+      }
+    }, [props.spec]);
+    
+    const [specificationDeserializer, setSpecificationDeserializer] = useState(DispatchFormsParserState<EntityFormInjectedTypes>().Default());
+    const [passthroughFormState, setPassthroughFormState] = useState(DispatchFormRunnerState<EntityFormInjectedTypes>().Default());
     const parseCustomDelta =
         <T,>(
             toRawObject: (
@@ -84,48 +98,13 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
                     `Unsupported delta kind: ${deltaCustom.value.kind}`,
                 );
             };
-
-    const [config, setConfig] = useState<
-        Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
-    >(Sum.Default.right("not initialized"));
+    
     
     // TODO replace with delta transfer
     const [entityPath, setEntityPath] = useState<any>(null);
-    const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] =
-        useState(v4());
-    const [
-        remoteConfigEntityVersionIdentifier,
-        setRemoteConfigEntityVersionIdentifier,
-    ] = useState(v4());
+    const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] = useState(v4());
+    const [remoteConfigEntityVersionIdentifier, setRemoteConfigEntityVersionIdentifier] = useState(v4());
     
-    const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-        DispatchFormRunnerState<EntityFormInjectedTypes>().Default(),
-    );
-
-    const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
-        <div id={domNodeId}>{children}</div>
-    );
-
-    const ErrorRenderer = ({ message }: ErrorRendererProps) => (
-        <div
-            style={{
-                display: "flex",
-                border: "2px dashed red",
-                maxWidth: "200px",
-                maxHeight: "50px",
-                overflowY: "scroll",
-                padding: "10px",
-            }}
-        >
-    <pre
-        style={{
-            whiteSpace: "pre-wrap",
-            maxWidth: "200px",
-            lineBreak: "anywhere",
-        }}
-    >{`Error: ${message}`}</pre>
-        </div>
-    );
     
     const onEntityChange = (
         updater: Updater<any>,
@@ -159,28 +138,26 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
             setRemoteEntityVersionIdentifier(v4());
         }
     };
-    useEffect(() => {
-        DispatchPersonFromConfigApis.entityApis
-            .get("person")("")
+    
+    useEffect( () => {
+        //DispatchFromConfigApis.entityApis
+        //    .get("person")("")
+      IDEApi.entity("person", props.spec)
             .then((raw) => {
-                if (
-                    specificationDeserializer.deserializedSpecification.sync.kind ==
-                    "loaded" &&
-                    specificationDeserializer.deserializedSpecification.sync.value.kind ==
-                    "value"
-                ) {
-                    const parsed =
-                        specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get("person-transparent")!
-                            .parseEntityFromApi(raw);
-                    if (parsed.kind == "errors") {
-                        console.error("parsed entity errors", parsed.errors);
-                    } else {
-                        setEntity(Sum.Default.left(parsed));
-                    }
-                }
+                GetLoadedValue<{
+                  launchers: DispatchParsedLaunchers<EntityFormInjectedTypes>
+                  dispatcherContext: DispatcherContext<EntityFormInjectedTypes>
+                }>(specificationDeserializer.deserializedSpecification).then(value =>{
+     
+                    const parsed = value.launchers.passthrough
+                      .get("person-transparent")!
+                      .parseEntityFromApi(raw);
+                    parsed.kind == "errors" ? console.error("parsed entity errors", parsed.errors): setEntity(Sum.Default.left(parsed));
+
+                  
+         })
             });
-        DispatchPersonFromConfigApis.entityApis
+        DispatchFromConfigApis.entityApis
             .get("person-config")("")
             .then((raw) => {
                 if (
@@ -200,78 +177,68 @@ export const FormDisplayTemplate = (props: { spec: Option<ValueOrErrors<string, 
                     }
                 }
             });
-    }, [specificationDeserializer.deserializedSpecification.sync.kind]);
-    switch (props.spec.kind) {
-        case "l":
-            return <p>Forms not yet run</p>;
-        case "r": {
-            switch (props.spec.value.kind) {
-                case "errors":
-                    return <p>Error parsing forms: {props.spec.value.errors.join(", ")}</p>;
-                case "value": {
-                    const v = props.spec.value.value;
-                    return (<div>
-                        <div>{props.step.kind}</div>
-                        <div className="App">
-                            <InstantiedFormsParserTemplate
-                                context={{
-                                    ...specificationDeserializer,
-                                    defaultRecordConcreteRenderer: DispatchPersonContainerFormView,
-                                    fieldTypeConverters: DispatchFieldTypeConverters,
-                                    defaultNestedRecordConcreteRenderer: DispatchPersonNestedContainerFormView,
-                                    concreteRenderers: PersonConcreteRenderers,
-                                    infiniteStreamSources: DispatchPersonFromConfigApis.streamApis,
-                                    enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
-                                    entityApis: DispatchPersonFromConfigApis.entityApis,
-                                    tableApiSources: DispatchPersonFromConfigApis.tableApiSources,
-                                    lookupSources: DispatchPersonFromConfigApis.lookupSources,
-                                    getFormsConfig: () => PromiseRepo.Default.mock(() => JSON.parse(v)),
-                                    IdWrapper,
-                                    ErrorRenderer,
-                                    injectedPrimitives: [
-                                        DispatchInjectedPrimitive.Default(
-                                            "injectedCategory",
-                                            CategoryAbstractRenderer,
-                                            {
-                                                kind: "custom",
-                                                value: {
-                                                    kind: "adult",
-                                                    extraSpecial: false,
-                                                },
-                                            },
-                                            DispatchCategoryState.Default(),
-                                        ),
-                                    ],
-                                }}
-                                setState={setSpecificationDeserializer}
-                                view={unit}
-                                foreignMutations={unit}
-                            />
-                            <InstantiedDispatchFormRunnerTemplate
-                                context={{
-                                    ...specificationDeserializer,
-                                    ...personPassthroughFormState,
-                                    launcherRef: {
-                                        name: "person-transparent",
-                                        kind: "passthrough",
-                                        entity: entity,
-                                        config,
-                                        onEntityChange: onEntityChange,
-                                    },
-                                    remoteEntityVersionIdentifier,
-                                    showFormParsingErrors: ShowFormsParsingErrors,
-                                    extraContext: {
-                                        flags: Set(["BC", "X"]),
-                                    },
-                                }}
-                                setState={setPersonPassthroughFormState}
-                                view={unit}
-                                foreignMutations={unit}
-                            />
-                        </div>
-                    </div>)
-                }
-            }
-        }
-    }
+    }, [specificationDeserializer.deserializedSpecification.sync.kind, prevValue ]);
+    
+    return (<div>
+        <div className="App">
+            <InstantiatedFormsParserTemplate
+                context={{
+                    ...specificationDeserializer,
+                    defaultRecordConcreteRenderer: DispatchEntityContainerFormView,
+                    fieldTypeConverters: DispatchFieldTypeConverters,
+                    defaultNestedRecordConcreteRenderer: DispatchEntityNestedContainerFormView,
+                    concreteRenderers: PersonConcreteRenderers,
+                    infiniteStreamSources: DispatchFromConfigApis.streamApis,
+                    enumOptionsSources: DispatchFromConfigApis.enumApis,
+                    entityApis: DispatchFromConfigApis.entityApis,
+                    tableApiSources: DispatchFromConfigApis.tableApiSources,
+                    lookupSources: DispatchFromConfigApis.lookupSources,
+                    getFormsConfig: () => PromiseRepo.Default.mock(() =>
+                    {
+                      return JSON.parse(localValue)}),
+                    parentSpecification: { current: localValue, prev: prevValue },  
+                  IdWrapper,
+                    ErrorRenderer,
+                    injectedPrimitives: [
+                        DispatchInjectedPrimitive.Default(
+                            "injectedCategory",
+                            CategoryAbstractRenderer,
+                            {
+                                kind: "custom",
+                                value: {
+                                    kind: "adult",
+                                    extraSpecial: false,
+                                },
+                            },
+                            DispatchCategoryState.Default(),
+                        ),
+                    ],
+                }}
+                setState={setSpecificationDeserializer}
+                view={unit}
+                foreignMutations={unit}
+            />
+            <InstantiatedDispatchFormRunnerTemplate
+                context={{
+                    ...specificationDeserializer,
+                    ...passthroughFormState,
+                    launcherRef: {
+                        name: "person-transparent",
+                        kind: "passthrough",
+                        entity: entity,
+                        config,
+                        onEntityChange: onEntityChange,
+                    },
+                    remoteEntityVersionIdentifier,
+                    showFormParsingErrors: ShowFormsParsingErrors,
+                    extraContext: {
+                        flags: Set(["BC", "X"]),
+                    },
+                }}
+                setState={setPassthroughFormState}
+                view={unit}
+                foreignMutations={unit}
+            />
+        </div>
+    </div>)
 }

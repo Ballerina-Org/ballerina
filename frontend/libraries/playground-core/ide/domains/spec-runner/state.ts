@@ -18,6 +18,8 @@ export type SpecRunnerIndicator =
     | { kind : "validating" }
     | { kind : "locked" }
     | { kind : "running" }
+    | { kind : "editor-dirty" }
+    | { kind : "ready-for-UI" }
 
 export const SpecRunnerIndicator = {
     Default: {
@@ -25,6 +27,8 @@ export const SpecRunnerIndicator = {
         validating: (): SpecRunnerIndicator => ({ kind: "validating" }),
         running: (): SpecRunnerIndicator => ({ kind: "running" }),
         locked: (): SpecRunnerIndicator => ({ kind: "locked" }),
+        readyForUI: (): SpecRunnerIndicator => ({ kind: "ready-for-UI" }),
+        editorDirty: (): SpecRunnerIndicator => ({ kind: "editor-dirty" }),
     }
 }
 
@@ -32,12 +36,14 @@ export type SpecRunner = {
     validation: Option<ValueOrErrors<string, string>>
     lockedSpec: Option<string>,
     indicator: SpecRunnerIndicator,
+    launchers: string [],
 };
 
 const CoreUpdaters = {
     ...simpleUpdater<SpecRunner>()("validation"),
     ...simpleUpdater<SpecRunner>()("lockedSpec"),
     ...simpleUpdater<SpecRunner>()("indicator"),
+    ...simpleUpdater<SpecRunner>()("launchers"),
 }
 
 export const SpecRunner = ({
@@ -45,13 +51,19 @@ export const SpecRunner = ({
         validation: Option.Default.none(), 
         lockedSpec: Option.Default.none(),
         indicator: SpecRunnerIndicator.Default.idle(),
+        launchers: [],
     }),
     Updaters: {
         Core: CoreUpdaters,
     },
     Operations: {
-        runEditor: (spec: string, res: SpecValidationResult): Updater<IDE> =>
-            IDE.Updaters.Core.runner(
+        updateStep: (step: SpecRunnerIndicator): Updater<SpecRunner>  => 
+          
+        SpecRunner.Updaters.Core.indicator(
+            replaceWith(step)
+        ),
+        runEditor: (spec: string, res: SpecValidationResult): Updater<SpecRunner> =>
+    
                 SpecRunner.Updaters.Core.indicator(
                     replaceWith(SpecRunnerIndicator.Default.running())
                 )
@@ -65,9 +77,11 @@ export const SpecRunner = ({
                                 Option.Default.some(ValueOrErrors.Default.return(spec)):
                                 Option.Default.none()
                         )
+                    )).then(SpecRunner.Updaters.Core.indicator(
+                      replaceWith(SpecRunnerIndicator.Default.readyForUI())
                     ))
                 )
-            )
+            
     },
 })
 

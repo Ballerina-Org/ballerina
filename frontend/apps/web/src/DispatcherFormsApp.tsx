@@ -23,13 +23,13 @@ import {
   DispatchInjectedPrimitive,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
-import { DispatchPersonFromConfigApis } from "playground-core";
+import { DispatchFromConfigApis } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
 import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
 import {
-  DispatchPersonContainerFormView,
-  DispatchPersonNestedContainerFormView,
+  DispatchEntityContainerFormView,
+  DispatchEntityNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
@@ -236,7 +236,7 @@ export const DispatcherFormsApp = (props: {}) => {
   // };
 
   useEffect(() => {
-    DispatchPersonFromConfigApis.entityApis
+    DispatchFromConfigApis.entityApis
       .get("person")("")
       .then((raw) => {
         if (
@@ -256,7 +256,7 @@ export const DispatcherFormsApp = (props: {}) => {
           }
         }
       });
-    DispatchPersonFromConfigApis.entityApis
+    DispatchFromConfigApis.entityApis
       .get("person-config")("")
       .then((raw) => {
         if (
@@ -326,18 +326,18 @@ export const DispatcherFormsApp = (props: {}) => {
                   context={{
                     ...specificationDeserializer,
                     defaultRecordConcreteRenderer:
-                      DispatchPersonContainerFormView,
+                      DispatchEntityContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
-                      DispatchPersonNestedContainerFormView,
+                      DispatchEntityNestedContainerFormView,
                     concreteRenderers: PersonConcreteRenderers,
                     infiniteStreamSources:
-                      DispatchPersonFromConfigApis.streamApis,
-                    enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
-                    entityApis: DispatchPersonFromConfigApis.entityApis,
+                      DispatchFromConfigApis.streamApis,
+                    enumOptionsSources: DispatchFromConfigApis.enumApis,
+                    entityApis: DispatchFromConfigApis.entityApis,
                     tableApiSources:
-                      DispatchPersonFromConfigApis.tableApiSources,
-                    lookupSources: DispatchPersonFromConfigApis.lookupSources,
+                      DispatchFromConfigApis.tableApiSources,
+                    lookupSources: DispatchFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,

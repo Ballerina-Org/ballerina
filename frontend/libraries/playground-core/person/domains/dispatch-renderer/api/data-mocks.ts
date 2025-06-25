@@ -585,6 +585,7 @@ const entityApis: EntityApis = {
               ],
               extraSpecial: false,
             },
+            //✅
             FullName: {
               Item1: faker.person.firstName(),
               Item2: faker.person.lastName(),
@@ -784,12 +785,14 @@ const entityApis: EntityApis = {
                 },
               },
             ],
+            //✅
             ImportantDate: {
               IsRight: true,
               Value: new Date(
                 Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
               ).toISOString(),
             },
+            //✅
             CutOffDates: [
               {
                 IsRight: true,
@@ -1070,7 +1073,7 @@ const entityApis: EntityApis = {
         },
 };
 
-export const DispatchPersonFromConfigApis = {
+export const DispatchFromConfigApis = {
   streamApis,
   enumApis,
   entityApis,

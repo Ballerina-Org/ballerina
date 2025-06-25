@@ -14,7 +14,29 @@ import {
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
 } from "../state";
+function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
 
+  if (typeof a !== typeof b) return false;
+
+  if (a == null || b == null) return false;
+
+  if (typeof a !== "object") return a === b;
+
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+
+  if (aKeys.length !== bKeys.length) return false;
+
+  for (const key of aKeys) {
+    if (!bKeys.includes(key)) return false;
+    if (!deepEqual(a[key], b[key])) return false;
+  }
+
+  return true;
+}
 export const LoadAndDeserializeSpecification = <
   T extends { [key in keyof T]: { type: any; state: any } },
 >() => {
@@ -24,88 +46,94 @@ export const LoadAndDeserializeSpecification = <
   >();
 
   return Co.Template<Unit>(
-    Co.GetState().then((current) =>
-      Synchronize<Unit, DispatchSpecificationDeserializationResult<T>>(
-        async () => {
-          const serializedSpecifications = await current
-            .getFormsConfig()
-            .catch((_) => {
-              console.error(
-                `Error getting forms config in LoadAndDeserializeSpecification: ${_}`,
+    Co.Seq([
+      Co.Do(() =>console.log("running parser coroutine")),
+      Co.GetState().then((current) =>
+        Synchronize<Unit, DispatchSpecificationDeserializationResult<T>>(
+          async () => {
+            const serializedSpecifications = await current
+              .getFormsConfig()
+              .catch((_) => {
+                console.error(
+                  `Error getting forms config in LoadAndDeserializeSpecification: ${_}`,
+                );
+                return undefined;
+              });
+            if (serializedSpecifications == undefined) {
+              return ValueOrErrors.Default.throwOne(
+                "Error getting forms config in LoadAndDeserializeSpecification",
               );
-              return undefined;
-            });
-          if (serializedSpecifications == undefined) {
-            return ValueOrErrors.Default.throwOne(
-              "Error getting forms config in LoadAndDeserializeSpecification",
-            );
-          }
-          const injectedPrimitivesResult = current.injectedPrimitives
-            ? injectedPrimitivesFromConcreteRenderers(
+            }
+            const injectedPrimitivesResult = current.injectedPrimitives
+              ? injectedPrimitivesFromConcreteRenderers(
                 current.concreteRenderers,
                 current.injectedPrimitives,
               )
-            : ValueOrErrors.Default.return(undefined);
+              : ValueOrErrors.Default.return(undefined);
 
-          if (injectedPrimitivesResult.kind == "errors") {
-            console.error(
-              injectedPrimitivesResult.errors.valueSeq().toArray().join("\n"),
-            );
-            return ValueOrErrors.Default.throwOne(
-              "Error getting injected primitives in LoadAndDeserializeSpecification: " +
+            if (injectedPrimitivesResult.kind == "errors") {
+              console.error(
                 injectedPrimitivesResult.errors.valueSeq().toArray().join("\n"),
-            );
-          }
+              );
+              return ValueOrErrors.Default.throwOne(
+                "Error getting injected primitives in LoadAndDeserializeSpecification: " +
+                injectedPrimitivesResult.errors.valueSeq().toArray().join("\n"),
+              );
+            }
 
-          const injectedPrimitives = injectedPrimitivesResult.value;
+            const injectedPrimitives = injectedPrimitivesResult.value;
 
-          const deserializationResult = Specification.Operations.Deserialize(
-            current.fieldTypeConverters,
-            current.concreteRenderers,
-            injectedPrimitives,
-          )(serializedSpecifications);
+            const deserializationResult = Specification.Operations.Deserialize(
+              current.fieldTypeConverters,
+              current.concreteRenderers,
+              injectedPrimitives,
+            )(serializedSpecifications);
 
-          if (deserializationResult.kind == "errors") {
-            console.error(
-              deserializationResult.errors.valueSeq().toArray().join("\n"),
-            );
-            return deserializationResult;
-          }
+            if (deserializationResult.kind == "errors") {
+              console.error(
+                deserializationResult.errors.valueSeq().toArray().join("\n"),
+              );
+              return deserializationResult;
+            }
 
-          const result = parseDispatchFormsToLaunchers(
-            injectedPrimitives,
-            current.fieldTypeConverters,
-            current.defaultRecordConcreteRenderer,
-            current.defaultNestedRecordConcreteRenderer,
-            current.concreteRenderers,
-            current.infiniteStreamSources,
-            current.enumOptionsSources,
-            current.entityApis,
-            current.IdWrapper,
-            current.ErrorRenderer,
-            current.tableApiSources,
-            current.lookupSources,
-          )(deserializationResult.value);
+            const result = parseDispatchFormsToLaunchers(
+              injectedPrimitives,
+              current.fieldTypeConverters,
+              current.defaultRecordConcreteRenderer,
+              current.defaultNestedRecordConcreteRenderer,
+              current.concreteRenderers,
+              current.infiniteStreamSources,
+              current.enumOptionsSources,
+              current.entityApis,
+              current.IdWrapper,
+              current.ErrorRenderer,
+              current.tableApiSources,
+              current.lookupSources,
+            )(deserializationResult.value);
 
-          if (result.kind == "errors") {
-            console.error(result.errors.valueSeq().toArray().join("\n"));
+            if (result.kind == "errors") {
+              console.error(result.errors.valueSeq().toArray().join("\n"));
+              return result;
+            }
             return result;
-          }
-          return result;
-        },
-        (_) => "transient failure",
-        5,
-        50,
-      ).embed(
-        (_) => _.deserializedSpecification,
-        DispatchFormsParserState<T>().Updaters.deserializedSpecification,
+          },
+          (_) => "transient failure",
+          5,
+          50,
+        ).embed(
+          (_) => _.deserializedSpecification,
+          DispatchFormsParserState<T>().Updaters.deserializedSpecification,
+        ),
       ),
-    ),
+    ]),
     {
       interval: 15,
       runFilter: (props) =>
         !AsyncState.Operations.hasValue(
           props.context.deserializedSpecification.sync,
+        ) || !deepEqual(
+          props.context.parentSpecification?.prev,
+          props.context.parentSpecification?.current
         ),
     },
   );

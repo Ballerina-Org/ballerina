@@ -24,14 +24,14 @@ import {
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import {
-  DispatchPersonFromConfigApis,
+  DispatchFromConfigApis,
   UsersSetupFromConfigApis,
 } from "playground-core";
 import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
-  DispatchPersonContainerFormView,
-  DispatchPersonNestedContainerFormView,
+  DispatchEntityContainerFormView,
+  DispatchEntityNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
@@ -200,16 +200,16 @@ export const DispatcherFormsAppTables = (props: {}) => {
                   context={{
                     ...specificationDeserializer,
                     defaultRecordConcreteRenderer:
-                      DispatchPersonContainerFormView,
+                      DispatchEntityContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
-                      DispatchPersonNestedContainerFormView,
+                      DispatchEntityNestedContainerFormView,
                     concreteRenderers: PersonConcreteRenderers,
                     infiniteStreamSources:
-                      DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
+                      DispatchFromConfigApis.streamApis, // TODO make and test some table cell streams
                     enumOptionsSources: UsersSetupFromConfigApis.enumApis,
                     lookupSources: UsersSetupFromConfigApis.lookupSources,
-                    entityApis: DispatchPersonFromConfigApis.entityApis,
+                    entityApis: DispatchFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     tableApiSources: UsersSetupFromConfigApis.tableApiSources,
                     IdWrapper,
