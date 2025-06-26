@@ -1166,7 +1166,7 @@ export const dispatchToAPIRawValue =
       if (t.kind == "union") {
         if (!PredicateValue.Operations.IsRecord(raw)) {
           return ValueOrErrors.Default.throwOne(
-            `Option expected but got ${JSON.stringify(raw)}`,
+            `Record expected but got ${JSON.stringify(raw)}`,
           );
         }
         const caseName = raw.fields.get("caseName");
