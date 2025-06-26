@@ -44,7 +44,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormCustomPresentationContext
 > = {
   one: {
-    admin: (props) => {
+    admin: () => (props) => {
       const propsLocal = props;
       const fm = propsLocal.foreignMutations;
       const ctx = propsLocal.context;
@@ -174,7 +174,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       );
     },
-    partialAdmin: (props) => {
+    partialAdmin: () => (props) => {
       const propsLocal = props;
       const fm = propsLocal.foreignMutations;
       const ctx = propsLocal.context;
@@ -374,7 +374,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    bestFriend: (props) => {
+    bestFriend: () => (props) => {
       const propsLocal = props;
       const fm = propsLocal.foreignMutations;
       const ctx = propsLocal.context;
@@ -510,7 +510,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   union: {
-    personCases: (props) => {
+    personCases: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -521,7 +521,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    job: (props) => {
+    job: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -534,7 +534,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   record: {
-    personDetails: (props) => {
+    personDetails: () => (props) => {
       return (
         <>
           <table>
@@ -573,7 +573,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    userDetails: (props) => {
+    userDetails: () => (props) => {
       return (
         <>
           {props.context.layout.valueSeq().map((tab) =>
@@ -606,7 +606,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    friendsDetails: (props) => {
+    friendsDetails: () => (props) => {
       return (
         <>
           {props.context.layout.valueSeq().map((tab) =>
@@ -639,7 +639,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    preview: (props) => {
+    preview: () => (props) => {
       return (
         <>
           {props.context.layout.valueSeq().map((tab) =>
@@ -672,7 +672,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    address: (props) => {
+    address: () => (props) => {
       return (
         <>
           <table>
@@ -709,8 +709,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   table: {
-    table: (_props) => <>Test</>,
-    finiteTable: (props) => {
+    table: () => (_props) => <>Test</>,
+    finiteTable: () => (props) => {
       return (
         <table>
           <thead style={{ border: "1px solid black" }}>
@@ -742,7 +742,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </table>
       );
     },
-    streamingTable: (props) => {
+    streamingTable: () => (props) => {
       return (
         <>
           <h3>{props.context.label}</h3>
@@ -766,7 +766,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   <tr style={{ border: "1px solid black" }}>
                     <th>
                       <button
-                        onClick={() => props.foreignMutations.add(undefined)}
+                        onClick={() => props.foreignMutations.add && props.foreignMutations.add(undefined)}
                       >
                         {"➕"}
                       </button>
@@ -811,21 +811,21 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                         </button>
                         <button
                           onClick={() =>
-                            props.foreignMutations.remove(id, undefined)
+                            props.foreignMutations.remove && props.foreignMutations.remove(id, undefined)
                           }
                         >
                           {"❌"}
                         </button>
                         <button
                           onClick={() =>
-                            props.foreignMutations.duplicate(id, undefined)
+                            props.foreignMutations.duplicate && props.foreignMutations.duplicate(id, undefined)
                           }
                         >
                           {"👥"}
                         </button>
                         <select
                           onChange={(_) =>
-                            props.foreignMutations.moveTo(
+                            props.foreignMutations.moveTo && props.foreignMutations.moveTo(
                               id,
                               props.TableData.keySeq().get(
                                 Number(_.currentTarget.value),
@@ -911,7 +911,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   injectedCategory: {
-    defaultCategory: (props) => {
+    defaultCategory: () => (props) => {
       return (
         <>
           {props.context.CustomPresentationContext?.listElement
@@ -991,7 +991,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   boolean: {
-    defaultBoolean: (props) => (
+    defaultBoolean: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -1012,7 +1012,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         />
       </>
     ),
-    secondBoolean: (props) => (
+    secondBoolean: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -1035,7 +1035,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   number: {
-    defaultNumber: (props) => (
+    defaultNumber: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -1058,7 +1058,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   string: {
-    defaultString: (props) => {
+    defaultString: () => (props) => {
       return (
         <>
           {props.context.CustomPresentationContext?.listElement
@@ -1082,7 +1082,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    otherString: (props) => {
+    otherString: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1106,7 +1106,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   date: {
-    defaultDate: (props) => {
+    defaultDate: () => (props) => {
       const displayValue = props.context.commonFormState.modifiedByUser
         ? props.context.customFormState.possiblyInvalidInput
         : props.context.value?.toISOString().slice(0, 10);
@@ -1135,7 +1135,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   enumSingleSelection: {
-    defaultEnum: (props) => {
+    defaultEnum: () => (props) => {
       const isSome = props.context.value.isSome;
       const value =
         isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
@@ -1187,7 +1187,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   enumMultiSelection: {
-    defaultEnumMultiselect: (props) => {
+    defaultEnumMultiselect: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1241,7 +1241,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   streamSingleSelection: {
-    defaultInfiniteStream: (props) => (
+    defaultInfiniteStream: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.tooltip && <p>{props.context.tooltip}</p>}
@@ -1320,7 +1320,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   streamMultiSelection: {
-    defaultInfiniteStreamMultiselect: (props) => {
+    defaultInfiniteStreamMultiselect: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1418,7 +1418,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   list: {
-    defaultList: (props) => {
+    defaultList: () => (props) => {
       return (
         <div style={{ border: "1px solid darkblue" }}>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1526,7 +1526,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   base64File: {
-    defaultBase64File: (props) => (
+    defaultBase64File: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -1545,7 +1545,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   secret: {
-    defaultSecret: (props) => (
+    defaultSecret: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -1564,7 +1564,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   map: {
-    defaultMap: (props) => (
+    defaultMap: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.tooltip && <p>{props.context.tooltip}</p>}
@@ -1607,7 +1607,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   tuple: {
-    defaultTuple2: (props) => (
+    defaultTuple2: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         <div>
@@ -1624,7 +1624,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       </>
     ),
-    defaultTuple3: (props) => {
+    defaultTuple3: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1649,7 +1649,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   sum: {
-    defaultSum: (props) => {
+    defaultSum: () => (props) => {
       return (
         <>
           {props.context.value.value.kind == "l"
@@ -1664,7 +1664,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    alwaysRight: (props) => {
+    alwaysRight: () => (props) => {
       return (
         <>
           {props?.embeddedRightTemplate?.(undefined)({
@@ -1680,7 +1680,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    maybeDate: (props) => {
+    maybeDate: () => (props) => {
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""
@@ -1790,7 +1790,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   unit: {
-    defaultUnit: (props) => {
+    defaultUnit: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1800,7 +1800,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   sumUnitDate: {
-    maybeDate: (props) => {
+    maybeDate: () => (props) => {
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""

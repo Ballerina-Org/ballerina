@@ -22,6 +22,7 @@ import {
   ErrorRendererProps,
   DispatchInjectedPrimitive,
   DispatchOnChange,
+  AggregatedFlags,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import {
@@ -109,10 +110,15 @@ export const DispatcherFormsAppTables = (props: {}) => {
         state: any,
       ) => ValueOrErrors<any, string>,
       fromDelta: (
-        delta: DispatchDelta,
+        delta: DispatchDelta<DispatchPassthroughFormFlags>,
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
-    (deltaCustom: DispatchDeltaCustom): ValueOrErrors<[T, string], string> => {
+    (
+      deltaCustom: DispatchDeltaCustom,
+    ): ValueOrErrors<
+      [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
+      string
+    > => {
       if (deltaCustom.value.kind == "CategoryReplace") {
         return toRawObject(
           deltaCustom.value.replace,
@@ -125,7 +131,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
               replace: value,
             },
             "[CategoryReplace]",
-          ] as [T, string]);
+            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
+          ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
         });
       }
       return ValueOrErrors.Default.throwOne(
@@ -133,7 +140,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
       );
     };
 
-  const onEntityChange: DispatchOnChange<PredicateValue> = (updater, delta) => {
+
+  const onEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (updater, delta) => {
     if (entity.kind == "r" || entity.value.kind == "errors") {
       return;
     }
@@ -291,7 +299,6 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
-                    remoteEntityVersionIdentifier: "",
                   }}
                   setState={setTablesRunnerState}
                   view={unit}

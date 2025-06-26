@@ -198,127 +198,127 @@ export type ConcreteRenderers<
   CustomPresentationContexts = Unit,
 > = {
   unit: {
-    [_: string]: UnitAbstractRendererView<
+    [_: string]: () => UnitAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   boolean: {
-    [_: string]: BoolAbstractRendererView<
+    [_: string]: () => BoolAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   number: {
-    [_: string]: NumberAbstractRendererView<
+    [_: string]: () => NumberAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   string: {
-    [_: string]: StringAbstractRendererView<
+    [_: string]: () => StringAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   base64File: {
-    [_: string]: Base64FileAbstractRendererView<
+    [_: string]: () => Base64FileAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   secret: {
-    [_: string]: SecretAbstractRendererView<
+    [_: string]: () => SecretAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   date: {
-    [_: string]: DateAbstractRendererView<
+    [_: string]: () => DateAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   enumSingleSelection: {
-    [_: string]: EnumAbstractRendererView<
+    [_: string]: () => EnumAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   enumMultiSelection: {
-    [_: string]: EnumMultiselectAbstractRendererView<
+    [_: string]: () => EnumMultiselectAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   streamSingleSelection: {
-    [_: string]: SearchableInfiniteStreamAbstractRendererView<
+    [_: string]: () => SearchableInfiniteStreamAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   streamMultiSelection: {
-    [_: string]: SearchableInfiniteStreamMultiselectAbstractRendererView<
+    [_: string]: () => SearchableInfiniteStreamMultiselectAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   list: {
-    [_: string]: ListAbstractRendererView<
+    [_: string]: () => ListAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   map: {
-    [_: string]: MapAbstractRendererView<
+    [_: string]: () => MapAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   tuple: {
-    [_: string]: TupleAbstractRendererView<
+    [_: string]: () => TupleAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   sum: {
-    [_: string]: SumAbstractRendererView<
+    [_: string]: () => SumAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   sumUnitDate: {
-    [_: string]: SumAbstractRendererView<
+    [_: string]: () => SumAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   record: {
-    [_: string]: RecordAbstractRendererView<
+    [_: string]: () => RecordAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   table: {
-    [_: string]: TableAbstractRendererView<
+    [_: string]: () => TableAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   union: {
-    [_: string]: UnionAbstractRendererView<
+    [_: string]: () => UnionAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
   one: {
-    [_: string]: OneAbstractRendererView<
+    [_: string]: () => OneAbstractRendererView<
       RecursivePartial<CustomPresentationContexts>,
       Flags
     >;
   };
 } & {
-  [key in keyof T]: { [_: string]: T[key]["view"] };
+  [key in keyof T]: { [_: string]: () => T[key]["view"] };
 };
 
 export type ConcreteRenderer<T> =
@@ -366,11 +366,11 @@ export const tryGetConcreteRenderer =
     kind: K,
     name: keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K],
   ): ValueOrErrors<
-    ConcreteRenderers<
+    ReturnType<ConcreteRenderers<
       T,
       Flags,
       CustomPresentationContexts
-    >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]],
+    >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]]>,
     string
   > => {
     if (!concreteRenderers[kind]) {
@@ -379,7 +379,7 @@ export const tryGetConcreteRenderer =
       );
     }
     if (concreteRenderers[kind][name]) {
-      return ValueOrErrors.Default.return(concreteRenderers[kind][name]);
+      return ValueOrErrors.Default.return(concreteRenderers[kind][name]());
     }
     return ValueOrErrors.Default.throwOne(
       `cannot find concrete renderer "${name as string}" in kind "${kind as string}"`,
@@ -388,10 +388,10 @@ export const tryGetConcreteRenderer =
 
 export const getDefaultRecordRenderer = (
   isNested: boolean,
-  defaultRecordRenderer: RecordAbstractRendererView<any, any>,
-  defaultNestedRecordRenderer: RecordAbstractRendererView<any, any>,
+  defaultRecordRenderer: () => RecordAbstractRendererView<any, any>,
+  defaultNestedRecordRenderer: () => RecordAbstractRendererView<any, any>,
 ): RecordAbstractRendererView<any, any> =>
-  isNested ? defaultNestedRecordRenderer : defaultRecordRenderer;
+  isNested ? defaultNestedRecordRenderer() : defaultRecordRenderer();
 
 export const dispatchDefaultState =
   <T extends DispatchInjectablesTypes<T>>(

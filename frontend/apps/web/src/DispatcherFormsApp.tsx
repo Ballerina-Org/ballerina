@@ -21,6 +21,7 @@ import {
   ErrorRendererProps,
   DispatchInjectedPrimitive,
   DispatchOnChange,
+  AggregatedFlags,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
@@ -140,10 +141,15 @@ export const DispatcherFormsApp = (props: {}) => {
         state: any,
       ) => ValueOrErrors<any, string>,
       fromDelta: (
-        delta: DispatchDelta,
+        delta: DispatchDelta<DispatchPassthroughFormFlags>,
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
-    (deltaCustom: DispatchDeltaCustom): ValueOrErrors<[T, string], string> => {
+    (
+      deltaCustom: DispatchDeltaCustom,
+    ): ValueOrErrors<
+      [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
+      string
+    > => {
       if (deltaCustom.value.kind == "CategoryReplace") {
         return toRawObject(
           deltaCustom.value.replace,
@@ -156,7 +162,8 @@ export const DispatcherFormsApp = (props: {}) => {
               replace: value,
             },
             "[CategoryReplace]",
-          ] as [T, string]);
+            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
+          ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
         });
       }
       return ValueOrErrors.Default.throwOne(

@@ -185,8 +185,8 @@ export const parseDispatchFormsToLaunchers =
   <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
-    defaultRecordRenderer: RecordAbstractRendererView<any, any>,
-    defaultNestedRecordRenderer: RecordAbstractRendererView<any, any>,
+    defaultRecordRenderer: () => RecordAbstractRendererView<any, any>,
+    defaultNestedRecordRenderer: () => RecordAbstractRendererView<any, any>,
     concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
     infiniteStreamSources: DispatchInfiniteStreamSources,
     enumOptionsSources: DispatchEnumOptionsSources,

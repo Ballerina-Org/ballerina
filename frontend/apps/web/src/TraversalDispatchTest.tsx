@@ -26,6 +26,7 @@ import {
   Option,
   ValueTraversal,
   DispatchOnChange,
+  AggregatedFlags,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import { TraversalPersonApis } from "playground-core";
@@ -142,10 +143,15 @@ export const TraversalDispatchTest = (props: {}) => {
         state: any,
       ) => ValueOrErrors<any, string>,
       fromDelta: (
-        delta: DispatchDelta,
+        delta: DispatchDelta<DispatchPassthroughFormFlags>,
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
-    (deltaCustom: DispatchDeltaCustom): ValueOrErrors<[T, string], string> => {
+    (
+      deltaCustom: DispatchDeltaCustom,
+    ): ValueOrErrors<
+      [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
+      string
+    > => {
       if (deltaCustom.value.kind == "CategoryReplace") {
         return toRawObject(
           deltaCustom.value.replace,
@@ -158,7 +164,8 @@ export const TraversalDispatchTest = (props: {}) => {
               replace: value,
             },
             "[CategoryReplace]",
-          ] as [T, string]);
+            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
+          ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
         });
       }
       return ValueOrErrors.Default.throwOne(
@@ -168,7 +175,7 @@ export const TraversalDispatchTest = (props: {}) => {
 
   const onPersonConfigChange = (
     updater: Updater<any>,
-    delta: DispatchDelta,
+    delta: DispatchDelta<DispatchPassthroughFormFlags>,
   ): void => {
     if (config.kind == "r" || config.value.kind == "errors") {
       return;
@@ -198,7 +205,7 @@ export const TraversalDispatchTest = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange: DispatchOnChange<PredicateValue> = (
+  const onPersonEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
     updater,
     delta,
   ) => {
@@ -415,7 +422,6 @@ export const TraversalDispatchTest = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
-                    remoteEntityVersionIdentifier: "",
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}

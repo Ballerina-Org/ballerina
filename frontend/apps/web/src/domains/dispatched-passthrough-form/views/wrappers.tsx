@@ -19,10 +19,10 @@ import {
   RecordAbstractRendererView,
 } from "ballerina-core";
 
-export const DispatchPersonContainerFormView: RecordAbstractRendererView<
+export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
-> = (props) => {
+> = () => (props) => {
   return (
     <>
       <table>
@@ -67,10 +67,10 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
   );
 };
 
-export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
+export const DispatchPersonNestedContainerFormView: () => RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
-> = (props) => {
+> = () => (props) => {
   return (
     <>
       {/* {props.context.label && <h3>{props.context.label}</h3>} */}
