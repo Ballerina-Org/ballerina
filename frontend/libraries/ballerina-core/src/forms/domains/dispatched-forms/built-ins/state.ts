@@ -1164,12 +1164,12 @@ export const dispatchToAPIRawValue =
       }
 
       if (t.kind == "union") {
-        if (!PredicateValue.Operations.IsRecord(raw)) {
+        if (!PredicateValue.Operations.IsUnionCase(raw)) {
           return ValueOrErrors.Default.throwOne(
-            `Record expected but got ${JSON.stringify(raw)}`,
+            `Union case expected but got ${JSON.stringify(raw)}\n...when converting union to API raw value`,
           );
         }
-        const caseName = raw.fields.get("caseName");
+        const caseName = raw.caseName;
         if (
           caseName == undefined ||
           !PredicateValue.Operations.IsString(caseName)
@@ -1190,7 +1190,7 @@ export const dispatchToAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(raw, formState);
+        )(raw.fields, formState);
       }
 
       if (t.kind == "singleSelection") {
@@ -1491,7 +1491,7 @@ export const dispatchToAPIRawValue =
       if (t.kind == "one") {
         if (!PredicateValue.Operations.IsOption(raw)) {
           return ValueOrErrors.Default.throwOne(
-            `Option expected but got ${JSON.stringify(raw)}`,
+            `Option expected but got ${JSON.stringify(raw)}\n...when converting one to API raw value`,
           );
         }
 
