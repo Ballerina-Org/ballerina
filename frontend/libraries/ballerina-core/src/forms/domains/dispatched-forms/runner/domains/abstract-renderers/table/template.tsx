@@ -23,6 +23,7 @@ import {
   getLeafIdentifierFromIdentifier,
   TableType,
   ValueTable,
+  DispatchParsedType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -348,8 +349,7 @@ export const TableAbstractRenderer = <
                 const result = EmbeddedCellTemplates.get(column);
                 if (result == undefined) {
                   console.error(
-                    "Visible column defined which is not in column renderers",
-                    column,
+                    `Cannot find a cell template for column ${column}`,
                   );
                   // TODO -- better error handling
                 }
@@ -359,6 +359,17 @@ export const TableAbstractRenderer = <
               }),
           ),
       );
+
+    // don't send to the renderer columns which do not exist in the embedded type
+    const validColumns =
+      props.context.type.kind !== "table"
+        ? []
+        : props.context.type.args[0].kind !== "record"
+          ? []
+          : props.context.type.args[0].fields.keySeq().toArray();
+    const validVisibleColumns = visibleColumns.value.columns.filter(
+      (_) => !validColumns.length || validColumns.includes(_),
+    );
 
     return (
       <>
@@ -501,7 +512,7 @@ export const TableAbstractRenderer = <
                     );
                   },
             }}
-            TableHeaders={visibleColumns.value.columns}
+            TableHeaders={validVisibleColumns}
             ColumnLabels={ColumnLabels}
             EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
