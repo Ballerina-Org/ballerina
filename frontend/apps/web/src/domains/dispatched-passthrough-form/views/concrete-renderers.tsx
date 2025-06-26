@@ -17,6 +17,8 @@ import {
   StringAbstractRendererView,
   UnitAbstractRendererView,
   OneAbstractRendererView,
+  ValueOption,
+  TableMethod,
 } from "ballerina-core";
 import { OrderedMap } from "immutable";
 import {

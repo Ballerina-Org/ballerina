@@ -291,6 +291,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    remoteEntityVersionIdentifier: "",
                   }}
                   setState={setTablesRunnerState}
                   view={unit}

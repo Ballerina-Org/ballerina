@@ -785,8 +785,10 @@ const entityApis: EntityApis = {
               },
             ],
             ImportantDate: {
-              IsRight: false,
-              Value: {},
+              IsRight: true,
+              Value: new Date(
+                Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
+              ).toISOString(),
             },
             CutOffDates: [
               {

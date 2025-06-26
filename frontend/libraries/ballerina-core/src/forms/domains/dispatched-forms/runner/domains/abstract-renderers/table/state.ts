@@ -22,6 +22,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   TableType,
   RecordAbstractRendererState,
+  TableMethod,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -40,6 +41,7 @@ export type TableAbstractRendererReadonlyContext<
   fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
+  apiMethods: Array<TableMethod>;
 };
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
@@ -186,10 +188,10 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   selectAllRows: SimpleCallback<void>;
   clearRows: SimpleCallback<void>;
   onChange: DispatchOnChange<ValueTable, Flags>;
-  add: VoidCallbackWithOptionalFlags<Flags>;
-  remove: ValueCallbackWithOptionalFlags<string, Flags>;
-  moveTo: (key: string, to: string, flags: Flags | undefined) => void;
-  duplicate: ValueCallbackWithOptionalFlags<string, Flags>;
+  add: VoidCallbackWithOptionalFlags<Flags> | undefined;
+  remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
+  moveTo: ((key: string, to: string, flags: Flags | undefined) => void) | undefined;
+  duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
 };
 
 export type TableAbstractRendererView<

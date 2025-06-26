@@ -21,6 +21,8 @@ import {
   DispatchInjectables,
   RecordAbstractRendererView,
   DispatchInjectablesTypes,
+  TableApis,
+  SpecificationApis,
 } from "../../../../../main";
 
 import {
@@ -75,6 +77,7 @@ export type DispatcherContext<
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
+  specApis: SpecificationApis;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;

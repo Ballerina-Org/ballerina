@@ -221,10 +221,17 @@ export const TableAbstractRenderer = <
                 ),
             );
 
+            const nestedRecordDelta: DispatchDelta<Flags> = {
+              kind: "RecordField",
+              field: [column, nestedDelta],
+              recordType: props.context.type.args[0],
+              flags: undefined,
+            };
+
             const delta: DispatchDelta<Flags> = {
               kind: "TableValue",
               id: rowId,
-              nestedDelta: nestedDelta,
+              nestedDelta: nestedRecordDelta,
               flags,
             };
 
@@ -543,82 +550,102 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
-              add: (flags: Flags | undefined) => {
-                const delta: DispatchDelta<Flags> = {
-                  kind: "TableAddEmpty",
-                  flags,
-                };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-                props.setState(
-                  TableAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              remove: (k: string, flags: Flags | undefined) => {
-                const delta: DispatchDelta<Flags> = {
-                  kind: "TableRemove",
-                  id: k,
-                  flags,
-                };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-                props.setState(
-                  TableAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              moveTo: (k: string, to: string, flags: Flags | undefined) => {
-                const delta: DispatchDelta<Flags> = {
-                  kind: "TableMoveTo",
-                  id: k,
-                  to,
-                  flags,
-                };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-                props.setState(
-                  TableAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
-              duplicate: (k: string, flags: Flags | undefined) => {
-                const delta: DispatchDelta<Flags> = {
-                  kind: "TableDuplicate",
-                  id: k,
-                  flags,
-                };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-                props.setState(
-                  TableAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ).then(
-                    TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                      true,
-                    ),
-                  ),
-                );
-              },
+              add: !props.context.apiMethods.includes("add")
+                ? undefined
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableAddEmpty",
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              remove: !props.context.apiMethods.includes("remove")
+                ? undefined
+                : (k: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableRemove",
+                      id: k,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              moveTo: !props.context.apiMethods.includes("move")
+                ? undefined
+                : (k: string, to: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableMoveTo",
+                      id: k,
+                      to,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
+              duplicate: !props.context.apiMethods.includes("duplicate")
+                ? undefined
+                : (k: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableDuplicate",
+                      id: k,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ).then(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                          true,
+                        ),
+                      ),
+                    );
+                  },
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}

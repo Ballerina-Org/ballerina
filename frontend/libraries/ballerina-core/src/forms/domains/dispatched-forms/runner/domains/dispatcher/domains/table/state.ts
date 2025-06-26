@@ -175,6 +175,12 @@ export const TableDispatcher = {
                                   )
                                     .mapContext((_: any) => ({
                                       ..._,
+                                      apiMethods:
+                                        typeof api !== "string"
+                                          ? []
+                                          : (dispatcherContext.specApis.tables?.get(
+                                              api!,
+                                            )?.methods ?? []),
                                       ...(!isNested && launcherName
                                         ? {
                                             identifiers: {
