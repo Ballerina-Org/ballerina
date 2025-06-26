@@ -1,5 +1,5 @@
 import { Map } from "immutable";
-import { MapRepo, Template } from "../../../../../../../../../main";
+import { DispatchInjectablesTypes, MapRepo, Template } from "../../../../../../../../../main";
 import {
   DispatcherContext,
   ValueOrErrors,
@@ -10,9 +10,13 @@ import { Dispatcher } from "../../state";
 
 export const LookupDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+    >(
       renderer: LookupRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
       renderers: Map<string, Renderer<T>>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       MapRepo.Operations.tryFindWithError(

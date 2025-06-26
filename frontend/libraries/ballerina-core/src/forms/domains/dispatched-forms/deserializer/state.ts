@@ -23,6 +23,7 @@ import {
   DispatchInjectablesTypes,
   TableApis,
   SpecificationApis,
+  LookupTypeAbstractRendererView,
 } from "../../../../../main";
 
 import {
@@ -85,6 +86,7 @@ export type DispatcherContext<
   getConcreteRenderer: ReturnType<
     typeof tryGetConcreteRenderer<T, Flags, CustomPresentationContexts>
   >;
+  lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>;
   getDefaultRecordRenderer: (
     isNested: boolean,
   ) => RecordAbstractRendererView<any, any>;
@@ -185,6 +187,7 @@ export const parseDispatchFormsToLaunchers =
   <T extends DispatchInjectablesTypes<T>, Flags, CustomPresentationContexts>(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
+    lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>,
     defaultRecordRenderer: () => RecordAbstractRendererView<any, any>,
     defaultNestedRecordRenderer: () => RecordAbstractRendererView<any, any>,
     concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
@@ -278,6 +281,7 @@ export const parseDispatchFormsToLaunchers =
             tableApiSources,
             entityApis,
             concreteRenderers,
+            lookupTypeRenderer,
             getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
             getConcreteRenderer: tryGetConcreteRenderer<
               T,
