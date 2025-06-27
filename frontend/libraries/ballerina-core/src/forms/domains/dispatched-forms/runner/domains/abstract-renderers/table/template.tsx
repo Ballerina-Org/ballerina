@@ -344,18 +344,22 @@ export const TableAbstractRenderer = <
               .filter((_, column) =>
                 visibleColumns.value.columns.includes(column),
               )
-              .map((_, column) => {
-                const result = EmbeddedCellTemplates.get(column);
-                if (result == undefined) {
+              .flatMap((_, column) => {
+                const EmbeddedCell = EmbeddedCellTemplates.get(column);
+                if (EmbeddedCell == undefined) {
                   console.error(
-                    "Visible column defined which is not in column renderers",
-                    column,
+                    `Cannot find column ${column} in fields ${rowData.fields.keySeq().toArray()}, this is likely due to a mismatch between the data we are trying to parse and the specs.`,
                   );
-                  // TODO -- better error handling
+                  return [];
                 }
-                return EmbeddedCellTemplates.get(column)!(chunkIndex)(rowId)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column));
+                return [
+                  [
+                    column,
+                    EmbeddedCell(chunkIndex)(rowId)(
+                      rowData.fields.get(column)!,
+                    )(disabledColumnKeysSet.has(column)),
+                  ],
+                ];
               }),
           ),
       );
