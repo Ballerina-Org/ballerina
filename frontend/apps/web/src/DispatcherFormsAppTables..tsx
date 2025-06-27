@@ -33,6 +33,7 @@ import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-f
 import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
   DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
@@ -230,6 +231,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
                       DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,

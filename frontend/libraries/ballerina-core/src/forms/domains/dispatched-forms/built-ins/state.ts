@@ -348,13 +348,14 @@ export const concreteRendererToKind =
   ) =>
   (name: string): ValueOrErrors<string, string> => {
     const viewTypes = Object.keys(concreteRenderers);
+    console.debug("concreteRenderers", concreteRenderers);
     for (const viewType of viewTypes) {
       if (name in concreteRenderers[viewType as keyof ConcreteRenderers<T>]) {
         return ValueOrErrors.Default.return(viewType);
       }
     }
     return ValueOrErrors.Default.throwOne(
-      `cannot find view ${name} in formViews`,
+      `cannot find view ${name} in concrete renderers`,
     );
   };
 
@@ -375,7 +376,7 @@ export const tryGetConcreteRenderer =
   > => {
     if (!concreteRenderers[kind]) {
       return ValueOrErrors.Default.throwOne(
-        `cannot find concrete renderer kind "${kind as string}" in formViews`,
+        `cannot find concrete renderer kind "${kind as string}" in  concrete renderers`,
       );
     }
     if (concreteRenderers[kind][name]) {

@@ -11,12 +11,7 @@ import {
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import {
-  LookupTypeAbstractRendererForeignMutationsExpected,
-  LookupTypeAbstractRendererReadonlyContext,
-  LookupTypeAbstractRendererState,
-  LookupTypeAbstractRendererView,
-} from "./state";
+import { LookupTypeAbstractRendererView } from "./state";
 
 export const LookupTypeAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -36,10 +31,14 @@ export const LookupTypeAbstractRenderer = <
   _ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
-    LookupTypeAbstractRendererReadonlyContext<CustomPresentationContext> &
-      LookupTypeAbstractRendererState,
-    LookupTypeAbstractRendererState,
-    LookupTypeAbstractRendererForeignMutationsExpected<Flags>,
+    CommonAbstractRendererReadonlyContext<
+      DispatchParsedType<any>,
+      PredicateValue,
+      CustomPresentationContext
+    > &
+      CommonAbstractRendererState,
+    CommonAbstractRendererState,
+    CommonAbstractRendererForeignMutationsExpected<Flags>,
     LookupTypeAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
     return (
@@ -47,8 +46,6 @@ export const LookupTypeAbstractRenderer = <
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
           <props.view
             {...props}
-            context={props.context}
-            foreignMutations={props.foreignMutations}
             embeddedTemplate={embeddedTemplate}
           />
         </IdProvider>

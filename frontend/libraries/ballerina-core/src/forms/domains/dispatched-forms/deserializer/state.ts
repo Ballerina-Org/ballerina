@@ -330,6 +330,7 @@ export type DispatchFormsParserContext<
   Flags = Unit,
   CustomPresentationContexts = Unit,
 > = {
+  lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>;
   defaultRecordConcreteRenderer: any;
   defaultNestedRecordConcreteRenderer: any;
   concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>;

@@ -29,6 +29,7 @@ import { DispatchPersonFromConfigApis } from "playground-core";
 import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
 import {
   DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
@@ -365,6 +366,7 @@ export const DispatcherFormsApp = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
                       DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,

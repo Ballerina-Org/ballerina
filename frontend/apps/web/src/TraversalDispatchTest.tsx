@@ -33,6 +33,7 @@ import { TraversalPersonApis } from "playground-core";
 import SPEC from "../public/SampleSpecs/traverse-test-file.json";
 import {
   DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
@@ -355,6 +356,7 @@ export const TraversalDispatchTest = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
                       DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,

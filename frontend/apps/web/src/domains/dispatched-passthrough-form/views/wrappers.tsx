@@ -17,6 +17,7 @@ import {
   EditFormForeignMutationsExpected,
   FormLayout,
   RecordAbstractRendererView,
+  LookupTypeAbstractRendererView,
 } from "ballerina-core";
 
 export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
@@ -103,6 +104,20 @@ export const DispatchPersonNestedContainerFormView: () => RecordAbstractRenderer
           )}
         </tbody>
       </table>
+    </>
+  );
+};
+
+export const DispatchPersonLookupTypeRenderer: () => LookupTypeAbstractRendererView<
+  any,
+  any
+> = () => (props) => {
+  return (
+    <>
+      {props.embeddedTemplate({
+        ...props,
+        view: unit,
+      })}
     </>
   );
 };

@@ -85,6 +85,7 @@ export const LoadAndDeserializeSpecification = <
           const result = parseDispatchFormsToLaunchers(
             injectedPrimitives,
             current.fieldTypeConverters,
+            current.lookupTypeRenderer,
             current.defaultRecordConcreteRenderer,
             current.defaultNestedRecordConcreteRenderer,
             current.concreteRenderers,

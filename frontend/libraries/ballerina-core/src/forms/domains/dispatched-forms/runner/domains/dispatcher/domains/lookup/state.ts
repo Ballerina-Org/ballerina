@@ -1,5 +1,10 @@
 import { Map } from "immutable";
-import { DispatchInjectablesTypes, MapRepo, Template } from "../../../../../../../../../main";
+import {
+  DispatchInjectablesTypes,
+  LookupTypeAbstractRenderer,
+  MapRepo,
+  Template,
+} from "../../../../../../../../../main";
 import {
   DispatcherContext,
   ValueOrErrors,
@@ -16,7 +21,11 @@ export const LookupDispatcher = {
       CustomPresentationContexts,
     >(
       renderer: LookupRenderer<T>,
-      dispatcherContext: DispatcherContext<T, Flags, CustomPresentationContexts>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >,
       renderers: Map<string, Renderer<T>>,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       MapRepo.Operations.tryFindWithError(
@@ -33,6 +42,15 @@ export const LookupDispatcher = {
             renderer.renderer,
             undefined,
             renderer.api,
+          ),
+        )
+        .Then((template) =>
+          ValueOrErrors.Default.return(
+            LookupTypeAbstractRenderer(
+              template,
+              dispatcherContext.IdProvider,
+              dispatcherContext.ErrorRenderer,
+            ).withView(dispatcherContext.lookupTypeRenderer()),
           ),
         )
         .MapErrors((errors) =>
