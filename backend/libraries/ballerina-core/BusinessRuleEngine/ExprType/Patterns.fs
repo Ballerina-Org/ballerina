@@ -70,6 +70,13 @@ module Patterns =
         | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a lookup.""")
       }
 
+    static member AsLambda(t: ExprType) : Sum<_, Errors> =
+      sum {
+        match t with
+        | ExprType.ArrowType(i, o) -> return (i, o)
+        | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a lambda.""")
+      }
+
     static member CreateEnum(cases: NonEmptyList<string>) : Map<CaseName, UnionCase> =
       let createEnumCase (caseName: string) : CaseName * UnionCase =
         { CaseName = caseName },
