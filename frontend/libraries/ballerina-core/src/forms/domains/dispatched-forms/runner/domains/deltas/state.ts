@@ -1164,7 +1164,7 @@ export const DispatchDeltaTransfer = {
               >([
                 {
                   Discriminator: "UnionCase",
-                  [delta.caseName[0]]: value,
+                  [delta.caseName[0]]: value[0],
                 } as {
                   Discriminator: "UnionCase";
                 } & {
