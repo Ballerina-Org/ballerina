@@ -1,4 +1,4 @@
-import { Set, List, Map, isMap } from "immutable";
+import { Set, List, Map, isMap, OrderedMap } from "immutable";
 import {} from "../../../../../../parser/domains/built-ins/state";
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
 import {
@@ -7,6 +7,7 @@ import {
   DispatchGenericTypes,
   MapRepo,
   DispatchInjectedPrimitives,
+  OrderedMapUpdater,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -194,11 +195,27 @@ export type UnionType<T> = {
   typeName: DispatchTypeName;
 };
 
+export const UnionType = {
+  SerializeToString: <T>(
+    serializedArgs: Map<DispatchCaseName, string>,
+  ): string => {
+    return `[union; cases: {${serializedArgs.map((v, k) => `${k}: ${v}`).join(", ")}}]`;
+  },
+};
+
 export type RecordType<T> = {
   kind: "record";
   name: DispatchTypeName;
-  fields: Map<DispatchFieldName, DispatchParsedType<T>>;
+  fields: OrderedMap<DispatchFieldName, DispatchParsedType<T>>;
   typeName: DispatchTypeName;
+};
+
+export const RecordType = {
+  SerializeToString: <T>(
+    serializedFields: OrderedMap<DispatchFieldName, string>,
+  ): string => {
+    return `[record; fields: {${serializedFields.map((v, k) => `${k}: ${v}`).join(", ")}}]`;
+  },
 };
 
 export type LookupType = {
@@ -207,10 +224,22 @@ export type LookupType = {
   typeName: DispatchTypeName;
 };
 
+export const LookupType = {
+  SerializeToString: (name: string): string => {
+    return `[lookup; name: ${name}]`;
+  },
+};
+
 export type DispatchPrimitiveType<T> = {
   kind: "primitive";
   name: DispatchPrimitiveTypeName<T>;
   typeName: DispatchTypeName;
+};
+
+export const DispatchPrimitiveType = {
+  SerializeToString: <T>(name: DispatchPrimitiveTypeName<T>): string => {
+    return `[primitive; name: ${String(name)}]`;
+  },
 };
 
 export type SingleSelectionType<T> = {
@@ -220,11 +249,23 @@ export type SingleSelectionType<T> = {
   typeName: DispatchTypeName;
 };
 
+export const SingleSelectionType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[singleSelection; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type MultiSelectionType<T> = {
   kind: "multiSelection";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
   typeName: DispatchTypeName;
+};
+
+export const MultiSelectionType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[multiSelection; args: [${serializedArgs.join(", ")}]]`;
+  },
 };
 
 export type ListType<T> = {
@@ -234,11 +275,23 @@ export type ListType<T> = {
   typeName: DispatchTypeName;
 };
 
+export const ListType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[list; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type TupleType<T> = {
   kind: "tuple";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
   typeName: DispatchTypeName;
+};
+
+export const TupleType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[tuple; args: [${serializedArgs.join(", ")}]]`;
+  },
 };
 
 export type SumType<T> = {
@@ -248,11 +301,23 @@ export type SumType<T> = {
   typeName: DispatchTypeName;
 };
 
+export const SumType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[sum; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type MapType<T> = {
   kind: "map";
   name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
   typeName: DispatchTypeName;
+};
+
+export const MapType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[map; args: [${serializedArgs.join(", ")}]]`;
+  },
 };
 
 export type TableType<T> = {
@@ -262,11 +327,23 @@ export type TableType<T> = {
   typeName: DispatchTypeName;
 };
 
+export const TableType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[table; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type OneType<T> = {
   kind: "one";
   name: DispatchTypeName;
   args: DispatchParsedType<T>;
   typeName: DispatchTypeName;
+};
+
+export const OneType = {
+  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+    return `[one; args: [${serializedArgs.join(", ")}]]`;
+  },
 };
 
 export type DispatchParsedType<T> =
