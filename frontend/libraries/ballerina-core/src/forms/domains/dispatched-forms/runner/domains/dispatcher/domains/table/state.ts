@@ -7,6 +7,8 @@ import {
   ValueOrErrors,
   TableAbstractRenderer,
   DispatchInjectablesTypes,
+  StringSerializedType,
+  PredicateValue,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -49,7 +51,10 @@ export const TableDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      undefined | [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.DispatchAs(
@@ -63,7 +68,6 @@ export const TableDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: TableType<T>,
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
@@ -74,13 +78,17 @@ export const TableDispatcher = {
       isNested: boolean,
       launcherName?: string,
       formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       !isNested && (!launcherName || !formName)
-        ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(
-            `no launcher name or form name provided for top level table form`,
-          )
+        ? ValueOrErrors.Default.throwOne<
+            [Template<any, any, any, any>, StringSerializedType],
+            string
+          >(`no launcher name or form name provided for top level table form`)
         : DispatchParsedType.Operations.ResolveLookupType(
-            type.args[0].typeName,
+            renderer.type.args[0].typeName,
             dispatcherContext.types,
           )
             .Then((tableEntityType) =>
@@ -127,10 +135,27 @@ export const TableDispatcher = {
                                       columnRenderer.renderer,
                                     )
                                     .Then((defaultValue) =>
-                                      ValueOrErrors.Default.return([
+                                      ValueOrErrors.Default.return<
+                                        [
+                                          string,
+                                          {
+                                            template: Template<
+                                              any,
+                                              any,
+                                              any,
+                                              any
+                                            >;
+                                            disabled?: Expr;
+                                            label: string | undefined;
+                                            GetDefaultState: () => any;
+                                            GetDefaultValue: () => PredicateValue;
+                                          },
+                                        ],
+                                        string
+                                      >([
                                         columnName,
                                         {
-                                          template,
+                                          template: template[0],
                                           disabled: columnRenderer.disabled,
                                           label: columnRenderer.label,
                                           GetDefaultState: () => defaultState,
@@ -150,7 +175,10 @@ export const TableDispatcher = {
                     ).Then((detailsRenderer) =>
                       renderer.renderer.kind != "lookupRenderer"
                         ? ValueOrErrors.Default.throwOne<
-                            Template<any, any, any, any>,
+                            [
+                              Template<any, any, any, any>,
+                              StringSerializedType,
+                            ],
                             string
                           >(
                             `received non lookup renderer kind for table concrete renderer`,
@@ -165,10 +193,16 @@ export const TableDispatcher = {
                                 renderer.api ?? api,
                                 dispatcherContext,
                               ).Then((tableApiSource) =>
-                                ValueOrErrors.Default.return(
+                                ValueOrErrors.Default.return<
+                                  [
+                                    Template<any, any, any, any>,
+                                    StringSerializedType,
+                                  ],
+                                  string
+                                >([
                                   TableAbstractRenderer(
                                     Map(cellTemplates),
-                                    detailsRenderer,
+                                    detailsRenderer?.[0],
                                     renderer.visibleColumns,
                                     dispatcherContext.IdProvider,
                                     dispatcherContext.ErrorRenderer,
@@ -186,8 +220,8 @@ export const TableDispatcher = {
                                             identifiers: {
                                               // withLauncher: `[${launcherName}][${formName}]`,
                                               // withoutLauncher: `[${formName}]`,
-                                              withLauncher: `[${type.name}]`,
-                                              withoutLauncher: `[${type.name}]`,
+                                              withLauncher: `[${renderer.type.name}]`,
+                                              withoutLauncher: `[${renderer.type.name}]`,
                                             },
                                           }
                                         : {}),
@@ -198,13 +232,16 @@ export const TableDispatcher = {
                                         ),
                                     }))
                                     .withView(concreteRenderer),
-                                ),
+                                  TableType.SerializeToString([
+                                    renderer.type.args[0] as unknown as string, // always a lookup,
+                                  ]),
+                                ]),
                               ),
                             ),
                     ),
                   )
                 : ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
+                    [Template<any, any, any, any>, StringSerializedType],
                     string
                   >(
                     `expected a record type, but got a ${tableEntityType.kind} type`,

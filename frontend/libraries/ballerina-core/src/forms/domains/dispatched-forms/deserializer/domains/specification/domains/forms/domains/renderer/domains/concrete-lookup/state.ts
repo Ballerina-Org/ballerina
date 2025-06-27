@@ -1,39 +1,34 @@
-import { type } from "node:os";
 import {
   DispatchInjectablesTypes,
   DispatchParsedType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
-import { LookupType } from "../../../../../../../../../../../../../main";
 
 export type SerializedLookupRenderer = string;
 
-export type LookupRenderer<T> = {
-  kind: "lookupRenderer";
+export type ConcreteLookupRenderer<T> = {
+  kind: "concreteLookupRenderer";
   renderer: string;
   type: DispatchParsedType<T>;
-  api?: string | string[];
 };
 
-export const LookupRenderer = {
+export const ConcreteLookupRenderer = {
   Default: <T extends DispatchInjectablesTypes<T>>(
     renderer: string,
     type: DispatchParsedType<T>,
     api?: string | string[],
-  ): LookupRenderer<T> => ({
-    kind: "lookupRenderer",
+  ): ConcreteLookupRenderer<T> => ({
+    kind: "concreteLookupRenderer",
     renderer,
     type,
-    api,
   }),
   Operations: {
     Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchParsedType<T>,
       serialized: SerializedLookupRenderer,
-      api?: string | string[],
-    ): ValueOrErrors<LookupRenderer<T>, string> =>
+    ): ValueOrErrors<ConcreteLookupRenderer<T>, string> =>
       ValueOrErrors.Default.return(
-        LookupRenderer.Default(serialized, type, api),
+        ConcreteLookupRenderer.Default(serialized, type),
       ),
   },
 };

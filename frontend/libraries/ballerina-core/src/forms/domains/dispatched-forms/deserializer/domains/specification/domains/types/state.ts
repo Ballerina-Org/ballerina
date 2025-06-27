@@ -188,6 +188,8 @@ export const SerializedType = {
     SerializedType.isApplication(_) && _.fun == "One" && _.args.length == 1,
 };
 
+export type StringSerializedType = string;
+
 export type UnionType<T> = {
   kind: "union";
   name: DispatchTypeName;
@@ -196,9 +198,9 @@ export type UnionType<T> = {
 };
 
 export const UnionType = {
-  SerializeToString: <T>(
-    serializedArgs: Map<DispatchCaseName, string>,
-  ): string => {
+  SerializeToString: (
+    serializedArgs: Map<DispatchCaseName, StringSerializedType>,
+  ): StringSerializedType => {
     return `[union; cases: {${serializedArgs.map((v, k) => `${k}: ${v}`).join(", ")}}]`;
   },
 };
@@ -211,9 +213,9 @@ export type RecordType<T> = {
 };
 
 export const RecordType = {
-  SerializeToString: <T>(
-    serializedFields: OrderedMap<DispatchFieldName, string>,
-  ): string => {
+  SerializeToString: (
+    serializedFields: OrderedMap<DispatchFieldName, StringSerializedType>,
+  ): StringSerializedType => {
     return `[record; fields: {${serializedFields.map((v, k) => `${k}: ${v}`).join(", ")}}]`;
   },
 };
@@ -225,7 +227,7 @@ export type LookupType = {
 };
 
 export const LookupType = {
-  SerializeToString: (name: string): string => {
+  SerializeToString: (name: string): StringSerializedType => {
     return `[lookup; name: ${name}]`;
   },
 };
@@ -237,7 +239,9 @@ export type DispatchPrimitiveType<T> = {
 };
 
 export const DispatchPrimitiveType = {
-  SerializeToString: <T>(name: DispatchPrimitiveTypeName<T>): string => {
+  SerializeToString: <T>(
+    name: DispatchPrimitiveTypeName<T>,
+  ): StringSerializedType => {
     return `[primitive; name: ${String(name)}]`;
   },
 };
@@ -250,7 +254,9 @@ export type SingleSelectionType<T> = {
 };
 
 export const SingleSelectionType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[singleSelection; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -263,7 +269,9 @@ export type MultiSelectionType<T> = {
 };
 
 export const MultiSelectionType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[multiSelection; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -276,7 +284,9 @@ export type ListType<T> = {
 };
 
 export const ListType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[list; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -289,7 +299,9 @@ export type TupleType<T> = {
 };
 
 export const TupleType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[tuple; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -302,7 +314,9 @@ export type SumType<T> = {
 };
 
 export const SumType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[sum; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -315,7 +329,9 @@ export type MapType<T> = {
 };
 
 export const MapType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[map; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -328,7 +344,7 @@ export type TableType<T> = {
 };
 
 export const TableType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (serializedArgs: Array<string>): string => {
     return `[table; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -341,7 +357,7 @@ export type OneType<T> = {
 };
 
 export const OneType = {
-  SerializeToString: <T>(serializedArgs: Array<string>): string => {
+  SerializeToString: (serializedArgs: Array<string>): string => {
     return `[one; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -606,6 +622,36 @@ export const DispatchParsedType = {
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing keyOf type`),
         ),
+    SerializeToString: <T>(type: DispatchParsedType<T>): StringSerializedType => {
+      switch(type.kind) {
+        case "primitive":
+          return DispatchPrimitiveType.SerializeToString(type.name)
+        case "record":
+          return RecordType.SerializeToString(type.fields.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "table":
+          return TableType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "one":
+          return OneType.SerializeToString([DispatchParsedType.Operations.SerializeToString(type.args)])
+        case "singleSelection":
+          return SingleSelectionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "multiSelection":
+          return MultiSelectionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "list":
+          return ListType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "tuple":
+          return TupleType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "sum":
+          return SumType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "map":
+          return MapType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "union":
+          return UnionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+        case "lookup":
+          return LookupType.SerializeToString(type.name)
+        default:
+          throw new Error(`Unknown type: ${JSON.stringify(type)}`)
+      }
+    },
     ParseRecord: <T>(
       typeName: DispatchTypeName,
       rawType: unknown,

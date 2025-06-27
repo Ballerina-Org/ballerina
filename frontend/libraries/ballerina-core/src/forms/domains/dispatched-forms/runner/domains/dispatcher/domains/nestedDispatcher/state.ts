@@ -1,5 +1,6 @@
 import {
   DispatchInjectablesTypes,
+  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -22,7 +23,10 @@ export const NestedDispatcher = {
       >,
       as: string,
       formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
@@ -42,23 +46,29 @@ export const NestedDispatcher = {
         CustomPresentationContexts
       >,
       formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       Dispatcher.Operations.Dispatch(
-        renderer.renderer.type,
         renderer.renderer,
         dispatcherContext,
         true,
         formName,
       )
         .Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
+          ValueOrErrors.Default.return<
+            [Template<any, any, any, any>, StringSerializedType],
+            string
+          >([
+            template[0].mapContext((_: any) => ({
               ..._,
               label: renderer.label,
               tooltip: renderer.tooltip,
               details: renderer.details,
             })),
-          ),
+            template[1],
+          ]),
         )
         .MapErrors((errors) =>
           errors.map(

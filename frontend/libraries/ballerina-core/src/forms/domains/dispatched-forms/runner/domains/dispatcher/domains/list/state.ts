@@ -1,6 +1,11 @@
-import { ListType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  ListType,
+  StringSerializedType,
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import {
+  Dispatcher,
   DispatchInjectablesTypes,
   ListAbstractRenderer,
   Template,
@@ -17,14 +22,16 @@ export const ListDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: ListType<T>,
       renderer: ListRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,
         dispatcherContext,
@@ -33,14 +40,14 @@ export const ListDispatcher = {
       )
         .Then((elementTemplate) =>
           dispatcherContext
-            .defaultState(type.args[0], renderer.elementRenderer.renderer)
+            .defaultState(renderer.type.args[0], renderer.elementRenderer.renderer)
             .Then((defaultElementState) =>
               dispatcherContext
-                .defaultValue(type.args[0], renderer.elementRenderer.renderer)
+                .defaultValue(renderer.type.args[0], renderer.elementRenderer.renderer)
                 .Then((defaultElementValue) =>
                   renderer.renderer.kind != "lookupRenderer"
                     ? ValueOrErrors.Default.throwOne<
-                        Template<any, any, any, any>,
+                        [Template<any, any, any, any>, StringSerializedType],
                         string
                       >(
                         `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
@@ -48,15 +55,22 @@ export const ListDispatcher = {
                     : dispatcherContext
                         .getConcreteRenderer("list", renderer.renderer.renderer)
                         .Then((concreteRenderer) =>
-                          ValueOrErrors.Default.return(
+                          ValueOrErrors.Default.return<
+                            [
+                              Template<any, any, any, any>,
+                              StringSerializedType,
+                            ],
+                            string
+                          >([
                             ListAbstractRenderer(
                               () => defaultElementState,
                               () => defaultElementValue,
-                              elementTemplate,
+                              elementTemplate[0],
                               dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             ).withView(concreteRenderer),
-                          ),
+                            ListType.SerializeToString([elementTemplate[1]]),
+                          ]),
                         ),
                 ),
             ),

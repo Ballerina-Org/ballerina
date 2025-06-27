@@ -75,7 +75,6 @@ export const NestedRenderer = {
       >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
-      canOmitType?: boolean,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.Deserialize(
         type,

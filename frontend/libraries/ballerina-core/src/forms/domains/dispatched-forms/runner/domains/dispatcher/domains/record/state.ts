@@ -1,4 +1,4 @@
-import { List, Map } from "immutable";
+import { List, Map, OrderedMap } from "immutable";
 import {
   Expr,
   RecordType,
@@ -9,6 +9,8 @@ import {
   RecordAbstractRenderer,
   DispatchInjectablesTypes,
   RecordAbstractRendererView,
+  StringSerializedType,
+  DispatchParsedType, 
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
@@ -44,7 +46,6 @@ export const RecordDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: RecordType<T>,
       renderer: RecordRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
@@ -54,7 +55,10 @@ export const RecordDispatcher = {
       isNested: boolean,
       formName?: string,
       launcherName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       ValueOrErrors.Operations.All(
         List<
           ValueOrErrors<
@@ -67,6 +71,7 @@ export const RecordDispatcher = {
                 label?: string;
                 GetDefaultState: () => any;
               },
+              StringSerializedType,
             ],
             string
           >
@@ -77,7 +82,7 @@ export const RecordDispatcher = {
             .map(([fieldName, fieldRenderer]) => {
               const res = MapRepo.Operations.tryFindWithError(
                 fieldName,
-                type.fields,
+                renderer.type.fields,
                 () => `cannot find field "${fieldName}" in types`,
               );
 
@@ -86,7 +91,7 @@ export const RecordDispatcher = {
                   fieldName,
                   fieldRenderer,
                   dispatcherContext,
-                ).Then((template) =>
+                ).Then(([template, serializedType]) =>
                   dispatcherContext
                     .defaultState(fieldType, fieldRenderer.renderer)
                     .Then((defaultState) =>
@@ -99,6 +104,7 @@ export const RecordDispatcher = {
                           label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
+                        serializedType,
                       ]),
                     ),
                 ),
@@ -114,19 +120,27 @@ export const RecordDispatcher = {
           ).Then((concreteRenderer) =>
             !isNested && launcherName == undefined
               ? ValueOrErrors.Default.throwOne<
-                  Template<any, any, any, any>,
+                  [Template<any, any, any, any>, StringSerializedType],
                   string
                 >(
                   "internal error: launcherName is required for top level forms",
                 )
               : formName == undefined
                 ? ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
+                    [Template<any, any, any, any>, StringSerializedType],
                     string
                   >("internal error: formName is required for all forms")
-                : ValueOrErrors.Default.return(
+                : ValueOrErrors.Default.return<
+                    [Template<any, any, any, any>, StringSerializedType],
+                    string
+                  >([
                     RecordAbstractRenderer(
-                      Map(fieldTemplates),
+                      Map(
+                        fieldTemplates.map((template) => [
+                          template[0],
+                          template[1],
+                        ]),
+                      ),
                       renderer.tabs,
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
@@ -140,14 +154,21 @@ export const RecordDispatcher = {
                               identifiers: {
                                 // withLauncher: `[${launcherName}][${formName}]`,
                                 // withoutLauncher: `[${formName}]`,
-                                withLauncher: `[${type.name}]`,
-                                withoutLauncher: `[${type.name}]`,
+                                withLauncher: `[${renderer.type.name}]`,
+                                withoutLauncher: `[${renderer.type.name}]`,
                               },
                             }
                           : {}),
                       }))
                       .withView(concreteRenderer),
-                  ),
+                    RecordType.SerializeToString(
+                      OrderedMap(
+                        fieldTemplates
+                          .toArray()
+                          .map((template) => [template[0], template[2]]),
+                      ),
+                    ),
+                  ]),
           ),
         )
         .MapErrors((errors) =>

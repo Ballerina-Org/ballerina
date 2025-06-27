@@ -8,9 +8,13 @@ import { DispatchParsedType } from "../../../types/state";
 import { EnumRenderer, SerializedEnumRenderer } from "./domains/enum/state";
 import { ListRenderer, SerializedListRenderer } from "./domains/list/state";
 import {
-  LookupRenderer,
+  ConcreteLookupRenderer,
   SerializedLookupRenderer,
-} from "./domains/lookup/state";
+} from "./domains/concrete-lookup/state";
+import {
+  PrimitiveRenderer,
+  SerializedPrimitiveRenderer,
+} from "./domains/primitive/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
 import {
@@ -63,8 +67,9 @@ export type SerializedRenderer =
 // | SerializedRecordFormRenderer;
 
 export type Renderer<T> =
+  | PrimitiveRenderer<T>
   | EnumRenderer<T>
-  | LookupRenderer<T>
+  | ConcreteLookupRenderer<T>
   | ListRenderer<T>
   | MapRenderer<T>
   | OneRenderer<T>
@@ -156,7 +161,7 @@ export const Renderer = {
             ),
           )
         : typeof serialized == "string"
-          ? LookupRenderer.Operations.Deserialize(type, serialized, api)
+          ? ConcreteLookupRenderer.Operations.Deserialize(type, serialized)
           : Renderer.Operations.HasOptions(serialized) &&
               (type.kind == "singleSelection" || type.kind == "multiSelection")
             ? EnumRenderer.Operations.Deserialize(

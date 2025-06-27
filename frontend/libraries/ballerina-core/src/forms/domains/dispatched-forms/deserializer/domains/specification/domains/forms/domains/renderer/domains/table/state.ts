@@ -119,10 +119,7 @@ export const TableRenderer = {
             serialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
-            types,
-            typeof serialized.detailsRenderer == "object" &&
-              "renderer" in serialized.detailsRenderer &&
-              typeof serialized.detailsRenderer.renderer == "object",
+            types
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,

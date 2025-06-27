@@ -4,10 +4,11 @@ import {
   ValueOrErrors,
   ConcreteRenderers,
   DispatchInjectablesTypes,
+  StringSerializedType,
+  DispatchPrimitiveType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 
-import { DispatchPrimitiveType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { UnitAbstractRenderer } from "../../../abstract-renderers/unit/template";
 import { StringAbstractRenderer } from "../../../abstract-renderers/string/template";
 import { NumberAbstractRenderer } from "../../../abstract-renderers/number/template";
@@ -23,16 +24,18 @@ export const PrimitiveDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: DispatchPrimitiveType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> => {
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > => {
       const result: ValueOrErrors<
-        Template<any, any, any, any>,
+        [Template<any, any, any, any>, StringSerializedType],
         string
       > = (() => {
         if (renderer.kind != "lookupRenderer") {
@@ -47,13 +50,17 @@ export const PrimitiveDispatcher = {
           return viewKindRes;
         }
         const viewKind = viewKindRes.value;
-        if (dispatcherContext.injectedPrimitives?.has(type.name as keyof T)) {
+        if (
+          dispatcherContext.injectedPrimitives?.has(
+            renderer.type.name as keyof T,
+          )
+        ) {
           const injectedPrimitive = dispatcherContext.injectedPrimitives?.get(
-            type.name as keyof T,
+            renderer.type.name as keyof T,
           );
           if (injectedPrimitive == undefined) {
             return ValueOrErrors.Default.throwOne(
-              `could not find injected primitive ${type.name as string}`,
+              `could not find injected primitive ${renderer.type.name as string}`,
             );
           }
           return dispatcherContext
@@ -62,98 +69,122 @@ export const PrimitiveDispatcher = {
               renderer.renderer,
             )
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 injectedPrimitive
                   .abstractRenderer(
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
                   )
                   .withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "unit") {
           return dispatcherContext
             .getConcreteRenderer("unit", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 UnitAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "string") {
           return dispatcherContext
             .getConcreteRenderer("string", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 StringAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "number") {
           return dispatcherContext
             .getConcreteRenderer("number", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 NumberAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "boolean") {
           return dispatcherContext
             .getConcreteRenderer("boolean", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 BoolAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "secret") {
           return dispatcherContext
             .getConcreteRenderer("secret", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 SecretAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "base64File") {
           return dispatcherContext
             .getConcreteRenderer("base64File", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 Base64FileAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         if (viewKind == "date") {
           return dispatcherContext
             .getConcreteRenderer("date", renderer.renderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return([
                 DateAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),
-              ),
+                DispatchPrimitiveType.SerializeToString(
+                  renderer.type.name as string,
+                ),
+              ]),
             );
         }
         return ValueOrErrors.Default.throwOne(

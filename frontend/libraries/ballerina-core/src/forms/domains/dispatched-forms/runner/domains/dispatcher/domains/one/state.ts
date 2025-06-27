@@ -7,6 +7,7 @@ import {
   DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
+  StringSerializedType,
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
@@ -24,7 +25,10 @@ export const OneDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      undefined | [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.DispatchAs(
@@ -75,14 +79,16 @@ export const OneDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: OneType<T>,
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       OneDispatcher.Operations.DispatchPreviewRenderer(
         renderer,
         dispatcherContext,
@@ -97,7 +103,7 @@ export const OneDispatcher = {
             (getApi) =>
               renderer.renderer.kind != "lookupRenderer"
                 ? ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
+                    [Template<any, any, any, any>, StringSerializedType],
                     string
                   >(
                     `received non lookup renderer kind when resolving defaultState for one`,
@@ -106,12 +112,12 @@ export const OneDispatcher = {
                     .getConcreteRenderer("one", renderer.renderer.renderer)
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return<
-                        Template<any, any, any, any>,
+                        [Template<any, any, any, any>, StringSerializedType],
                         string
-                      >(
+                      >([
                         OneAbstractRenderer(
-                          detailsRenderer,
-                          previewRenderer,
+                          detailsRenderer[0],
+                          previewRenderer?.[0],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                         )
@@ -119,11 +125,12 @@ export const OneDispatcher = {
                             ..._,
                             getApi,
                             fromApiParser: dispatcherContext.parseFromApiByType(
-                              type.args,
+                              renderer.type.args,
                             ),
                           }))
                           .withView(concreteRenderer),
-                      ),
+                        OneType.SerializeToString([renderer.type.args as unknown as string]), // always a lookup
+                      ]),
                     ),
           ),
         ),

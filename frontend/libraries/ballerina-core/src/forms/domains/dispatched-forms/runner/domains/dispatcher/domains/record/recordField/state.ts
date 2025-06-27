@@ -1,6 +1,7 @@
 import {
   DispatchInjectablesTypes,
   DispatcherContext,
+  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../../main";
@@ -21,8 +22,11 @@ export const RecordFieldDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      return NestedDispatcher.Operations.Dispatch(
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
+      NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
         fieldName,
@@ -30,7 +34,6 @@ export const RecordFieldDispatcher = {
         errors.map(
           (error) => `${error}\n...When dispatching field ${fieldName}`,
         ),
-      );
-    },
+      ),
   },
 };

@@ -5,7 +5,10 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import {
+  MapType,
+  StringSerializedType,
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
@@ -16,14 +19,16 @@ export const MapDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: MapType<T>,
       renderer: MapRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.keyRenderer,
         dispatcherContext,
@@ -32,10 +37,10 @@ export const MapDispatcher = {
       )
         .Then((keyTemplate) =>
           dispatcherContext
-            .defaultState(type.args[0], renderer.keyRenderer.renderer)
+            .defaultState(renderer.type.args[0], renderer.keyRenderer.renderer)
             .Then((defaultKeyState) =>
               dispatcherContext
-                .defaultValue(type.args[0], renderer.keyRenderer.renderer)
+                .defaultValue(renderer.type.args[0], renderer.keyRenderer.renderer)
                 .Then((defaultKeyValue) =>
                   NestedDispatcher.Operations.DispatchAs(
                     renderer.valueRenderer,
@@ -45,19 +50,22 @@ export const MapDispatcher = {
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(
-                        type.args[1],
+                        renderer.type.args[1],
                         renderer.valueRenderer.renderer,
                       )
                       .Then((defaultValueState) =>
                         dispatcherContext
                           .defaultValue(
-                            type.args[1],
+                            renderer.type.args[1],
                             renderer.valueRenderer.renderer,
                           )
                           .Then((defaultValueValue) =>
                             renderer.renderer.kind != "lookupRenderer"
                               ? ValueOrErrors.Default.throwOne<
-                                  Template<any, any, any, any>,
+                                  [
+                                    Template<any, any, any, any>,
+                                    StringSerializedType,
+                                  ],
                                   string
                                 >(
                                   `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for map`,
@@ -68,18 +76,28 @@ export const MapDispatcher = {
                                     renderer.renderer.renderer,
                                   )
                                   .Then((concreteRenderer) =>
-                                    ValueOrErrors.Default.return(
+                                    ValueOrErrors.Default.return<
+                                      [
+                                        Template<any, any, any, any>,
+                                        StringSerializedType,
+                                      ],
+                                      string
+                                    >([
                                       MapAbstractRenderer(
                                         () => defaultKeyState,
                                         () => defaultKeyValue,
                                         () => defaultValueState,
                                         () => defaultValueValue,
-                                        keyTemplate,
-                                        valueTemplate,
+                                        keyTemplate[0],
+                                        valueTemplate[0],
                                         dispatcherContext.IdProvider,
                                         dispatcherContext.ErrorRenderer,
                                       ).withView(concreteRenderer),
-                                    ),
+                                      MapType.SerializeToString([
+                                        keyTemplate[1],
+                                        valueTemplate[1],
+                                      ]),
+                                    ]),
                                   ),
                           ),
                       ),

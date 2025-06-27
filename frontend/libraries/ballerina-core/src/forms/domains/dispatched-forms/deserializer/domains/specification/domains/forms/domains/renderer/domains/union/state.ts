@@ -17,13 +17,13 @@ export type SerializedUnionRenderer = {
 export type UnionRenderer<T> = {
   kind: "unionRenderer";
   renderer: Renderer<T>;
-  type: DispatchParsedType<T>;
+  type: UnionType<T>;
   cases: Map<string, Renderer<T>>;
 };
 
 export const UnionRenderer = {
   Default: <T>(
-    type: DispatchParsedType<T>,
+    type: UnionType<T>,
     cases: Map<string, Renderer<T>>,
     renderer: Renderer<T>,
   ): UnionRenderer<T> => ({ kind: "unionRenderer", type, renderer, cases }),

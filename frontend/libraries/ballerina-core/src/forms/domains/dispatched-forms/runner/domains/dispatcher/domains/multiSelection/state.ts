@@ -9,6 +9,8 @@ import {
   ValueRecord,
   unit,
   DispatchInjectablesTypes,
+  StringSerializedType,
+  MultiSelectionType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -28,9 +30,9 @@ export const MultiSelectionDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+    ): ValueOrErrors<[Template<any, any, any, any>, StringSerializedType], string> =>
       renderer.renderer.kind != "lookupRenderer"
-        ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(
+        ? ValueOrErrors.Default.throwOne<[Template<any, any, any, any>, StringSerializedType], string>(
             `received non lookup renderer kind when resolving defaultState for enum multi selection`,
           )
         : dispatcherContext
@@ -48,7 +50,7 @@ export const MultiSelectionDispatcher = {
                       dispatcherContext
                         .enumOptionsSources(renderer.options)
                         .Then((optionsSource) =>
-                          ValueOrErrors.Default.return(
+                          ValueOrErrors.Default.return<[Template<any, any, any, any>, StringSerializedType], string>([
                             EnumMultiselectAbstractRenderer(
                               dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
@@ -70,6 +72,8 @@ export const MultiSelectionDispatcher = {
                                   ),
                               }))
                               .withView(concreteRenderer),
+                              MultiSelectionType.SerializeToString([renderer.type.args[0] as unknown as string]) // always a lookup type
+                            ]
                           ),
                         ),
                     )
@@ -83,7 +87,7 @@ export const MultiSelectionDispatcher = {
                     renderer.kind == "streamRenderer"
                   ? renderer.renderer.kind != "lookupRenderer"
                     ? ValueOrErrors.Default.throwOne<
-                        Template<any, any, any, any>,
+                        [Template<any, any, any, any>, StringSerializedType],
                         string
                       >(
                         `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for stream multi selection`,
@@ -94,12 +98,13 @@ export const MultiSelectionDispatcher = {
                           renderer.renderer.renderer,
                         )
                         .Then((concreteRenderer) =>
-                          ValueOrErrors.Default.return(
-                            InfiniteMultiselectDropdownFormAbstractRenderer(
+                          ValueOrErrors.Default.return<[Template<any, any, any, any>, StringSerializedType], string>(
+                            [InfiniteMultiselectDropdownFormAbstractRenderer(
                               dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
                             ).withView(concreteRenderer),
-                          ),
+                            MultiSelectionType.SerializeToString([renderer.type.args[0] as unknown as string]) // always a lookup type]
+                          ]),
                         )
                         .MapErrors((errors) =>
                           errors.map(
@@ -108,7 +113,7 @@ export const MultiSelectionDispatcher = {
                           ),
                         )
                   : ValueOrErrors.Default.throwOne<
-                      Template<any, any, any, any>,
+                      [Template<any, any, any, any>, StringSerializedType],
                       string
                     >(
                       `could not resolve multi selection concrete renderer for ${viewKind}`,
