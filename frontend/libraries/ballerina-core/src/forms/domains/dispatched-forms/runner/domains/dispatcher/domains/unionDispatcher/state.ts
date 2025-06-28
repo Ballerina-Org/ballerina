@@ -52,7 +52,6 @@ export const UnionDispatcher = {
                 () => `cannot find case ${caseName}`,
               ).Then((caseRenderer) =>
                 Dispatcher.Operations.DispatchAs(
-                  caseType,
                   caseRenderer,
                   dispatcherContext,
                   `case ${caseName}`,
@@ -83,40 +82,49 @@ export const UnionDispatcher = {
                   >(
                     `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for union`,
                   )
-                : dispatcherContext
-                    .getConcreteRenderer(
-                      "union",
-                      renderer.renderer.renderer,
+                : renderer.renderer.renderer.kind != "concreteLookup"
+                  ? ValueOrErrors.Default.throwOne<
+                      [Template<any, any, any, any>, StringSerializedType],
+                      string
+                    >(
+                      `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
                     )
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
-                        UnionAbstractRenderer(
-                          // TODO better typing for state and consider this pattern for other dispatchers
-                          (
-                            defaultState as UnionAbstractRendererState
-                          ).caseFormStates.map((caseState) => () => caseState),
-                          Map(
-                            templates.map((template) => [
-                              template[0],
-                              template[1],
-                            ]),
+                  : dispatcherContext
+                      .getConcreteRenderer(
+                        "union",
+                        renderer.renderer.renderer.renderer,
+                      )
+                      .Then((concreteRenderer) =>
+                        ValueOrErrors.Default.return<
+                          [Template<any, any, any, any>, StringSerializedType],
+                          string
+                        >([
+                          UnionAbstractRenderer(
+                            // TODO better typing for state and consider this pattern for other dispatchers
+                            (
+                              defaultState as UnionAbstractRendererState
+                            ).caseFormStates.map(
+                              (caseState) => () => caseState,
+                            ),
+                            Map(
+                              templates.map((template) => [
+                                template[0],
+                                template[1],
+                              ]),
+                            ),
+                            dispatcherContext.IdProvider,
+                            dispatcherContext.ErrorRenderer,
+                          ).withView(concreteRenderer),
+                          UnionType.SerializeToString(
+                            Map(
+                              templates.map((template) => [
+                                template[0],
+                                template[2],
+                              ]),
+                            ),
                           ),
-                          dispatcherContext.IdProvider,
-                          dispatcherContext.ErrorRenderer,
-                        ).withView(concreteRenderer),
-                        UnionType.SerializeToString(
-                          Map(
-                            templates.map((template) => [
-                              template[0],
-                              template[2],
-                            ]),
-                          ),
-                        ),
-                      ]),
-                    ),
+                        ]),
+                      ),
             ),
         )
         .MapErrors((errors) =>

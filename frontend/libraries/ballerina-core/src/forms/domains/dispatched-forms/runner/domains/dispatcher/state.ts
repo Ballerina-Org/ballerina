@@ -2,8 +2,6 @@ import {
   DispatcherContext,
   DispatchInjectablesTypes,
   DispatchParsedType,
-  LookupType,
-  MapRepo,
   StringSerializedType,
   Template,
   ValueOrErrors,
@@ -13,7 +11,6 @@ import { ListDispatcher } from "./domains/list/state";
 import { MapDispatcher } from "./domains/map/state";
 import { MultiSelectionDispatcher } from "./domains/multiSelection/state";
 import { OneDispatcher } from "./domains/one/state";
-import { PrimitiveDispatcher } from "./domains/primitive/state";
 import { RecordDispatcher } from "./domains/record/state";
 import { LookupDispatcher } from "./domains/lookup/state";
 import { SingleSelectionDispatcher } from "./domains/singleSelectionDispatcher/state";
@@ -21,6 +18,7 @@ import { SumDispatcher } from "./domains/sum/state";
 import { TableDispatcher } from "./domains/table/state";
 import { TupleDispatcher } from "./domains/tupleDispatcher/state";
 import { UnionDispatcher } from "./domains/unionDispatcher/state";
+import { PrimitiveDispatcher } from "./domains/primitive/state";
 
 export const Dispatcher = {
   Operations: {
@@ -29,7 +27,6 @@ export const Dispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      type: DispatchParsedType<T>,
       renderer: Renderer<T>,
       dispatcherContext: DispatcherContext<
         T,
@@ -73,9 +70,9 @@ export const Dispatcher = {
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
-    > =>
-      renderer.kind == "lookupRenderer"
-        ? LookupDispatcher.Operations.Dispatch(
+    > => {
+      return renderer.type.kind == "primitive"
+        ? PrimitiveDispatcher.Operations.Dispatch(
             renderer,
             dispatcherContext,
           ).Then((template) =>
@@ -87,8 +84,8 @@ export const Dispatcher = {
               template[1],
             ]),
           )
-        : renderer.kind == "primitiveRenderer"
-          ? PrimitiveDispatcher.Operations.Dispatch(
+        : renderer.kind == "lookupRenderer"
+          ? LookupDispatcher.Operations.Dispatch(
               renderer,
               dispatcherContext,
             ).Then((template) =>
@@ -245,6 +242,7 @@ export const Dispatcher = {
                                 )
                               : ValueOrErrors.Default.throwOne(
                                   `unknown renderer ${renderer.kind}`,
-                                ),
+                                );
+    },
   },
 };

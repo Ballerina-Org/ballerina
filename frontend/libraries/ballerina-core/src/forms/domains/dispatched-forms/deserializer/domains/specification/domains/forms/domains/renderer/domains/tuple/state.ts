@@ -89,6 +89,8 @@ export const TupleRenderer = {
                 validatedSerialized.renderer,
                 concreteRenderers,
                 types,
+                undefined,
+                undefined,
               ).Then((deserializedRenderer) =>
                 ValueOrErrors.Default.return(
                   TupleRenderer.Default(

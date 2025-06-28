@@ -109,7 +109,6 @@ export const DispatchFormRunner = <
               }
 
               const Form = Dispatcher.Operations.Dispatch(
-                passthroughFormLauncher.type,
                 passthroughFormLauncher.renderer,
                 dispatcherContext,
                 false,
@@ -150,7 +149,7 @@ export const DispatchFormRunner = <
                   DispatchFormRunnerState<T, Flags>().Updaters.status(
                     replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                       kind: "loaded",
-                      Form: Form.value,
+                      Form: Form.value[0],
                     }),
                   ),
                 );

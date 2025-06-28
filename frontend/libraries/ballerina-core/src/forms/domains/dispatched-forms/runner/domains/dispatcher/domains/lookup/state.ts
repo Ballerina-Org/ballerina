@@ -11,8 +11,7 @@ import {
   DispatcherContext,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { ConcreteLookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/concrete-lookup/state";
-import { Renderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/state";
+import { LookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
 import { Dispatcher } from "../../state";
 
 export const LookupDispatcher = {
@@ -22,7 +21,7 @@ export const LookupDispatcher = {
       Flags,
       CustomPresentationContexts,
     >(
-      renderer: ConcreteLookupRenderer<T>,
+      renderer: LookupRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
@@ -32,19 +31,20 @@ export const LookupDispatcher = {
       [Template<any, any, any, any>, StringSerializedType],
       string
     > =>
-      MapRepo.Operations.tryFindWithError(
-        renderer.renderer,
+      LookupRenderer.Operations.ResolveRenderer(
+        renderer,
         dispatcherContext.forms,
-        () => `cannot find renderer "${renderer.renderer}"`,
       )
         .Then((resolvedRenderer) =>
           Dispatcher.Operations.Dispatch(
             resolvedRenderer,
             dispatcherContext,
             true,
-            renderer.renderer,
+            renderer.renderer.kind == "inlinedFormLookup"
+              ? `inlined ${renderer.type.name as string}`
+              : renderer.renderer.renderer,
             undefined,
-            renderer.api,
+            renderer.tableApi,
           ),
         )
         .Then((template) =>

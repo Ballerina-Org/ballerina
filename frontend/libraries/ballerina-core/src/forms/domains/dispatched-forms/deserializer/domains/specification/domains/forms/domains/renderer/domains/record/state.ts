@@ -102,6 +102,7 @@ export const RecordRenderer = {
             concreteRenderers,
             types,
             undefined,
+            undefined,
           )
         : ValueOrErrors.Default.return(undefined),
     Deserialize: <

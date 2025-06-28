@@ -68,6 +68,8 @@ export const BaseSumUnitDateRenderer = {
             validatedSerialized.renderer,
             concreteRenderers,
             types,
+            undefined,
+            undefined,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(
               BaseSumUnitDateRenderer.Default(type, renderer),

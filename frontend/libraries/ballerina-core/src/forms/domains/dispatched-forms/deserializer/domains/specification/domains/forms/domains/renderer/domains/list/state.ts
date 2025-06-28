@@ -92,6 +92,8 @@ export const ListRenderer = {
               serializedRenderer.renderer,
               concreteRenderers,
               types,
+              undefined,
+              undefined,
             ).Then((renderer) =>
               ValueOrErrors.Default.return(
                 ListRenderer.Default(type, renderer, elementRenderer),

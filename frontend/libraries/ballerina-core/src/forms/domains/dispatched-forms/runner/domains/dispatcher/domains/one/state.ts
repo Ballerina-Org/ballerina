@@ -108,30 +108,43 @@ export const OneDispatcher = {
                   >(
                     `received non lookup renderer kind when resolving defaultState for one`,
                   )
-                : dispatcherContext
-                    .getConcreteRenderer("one", renderer.renderer.renderer)
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
-                        OneAbstractRenderer(
-                          detailsRenderer[0],
-                          previewRenderer?.[0],
-                          dispatcherContext.IdProvider,
-                          dispatcherContext.ErrorRenderer,
-                        )
-                          .mapContext((_: any) => ({
-                            ..._,
-                            getApi,
-                            fromApiParser: dispatcherContext.parseFromApiByType(
-                              renderer.type.args,
-                            ),
-                          }))
-                          .withView(concreteRenderer),
-                        OneType.SerializeToString([renderer.type.args as unknown as string]), // always a lookup
-                      ]),
-                    ),
+                : renderer.renderer.renderer.kind != "concreteLookup"
+                  ? ValueOrErrors.Default.throwOne<
+                      [Template<any, any, any, any>, StringSerializedType],
+                      string
+                    >(
+                      `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
+                    )
+                  : dispatcherContext
+                      .getConcreteRenderer(
+                        "one",
+                        renderer.renderer.renderer.renderer,
+                      )
+                      .Then((concreteRenderer) =>
+                        ValueOrErrors.Default.return<
+                          [Template<any, any, any, any>, StringSerializedType],
+                          string
+                        >([
+                          OneAbstractRenderer(
+                            detailsRenderer[0],
+                            previewRenderer?.[0],
+                            dispatcherContext.IdProvider,
+                            dispatcherContext.ErrorRenderer,
+                          )
+                            .mapContext((_: any) => ({
+                              ..._,
+                              getApi,
+                              fromApiParser:
+                                dispatcherContext.parseFromApiByType(
+                                  renderer.type.args,
+                                ),
+                            }))
+                            .withView(concreteRenderer),
+                          OneType.SerializeToString([
+                            renderer.type.args as unknown as string,
+                          ]), // always a lookup
+                        ]),
+                      ),
           ),
         ),
       ),

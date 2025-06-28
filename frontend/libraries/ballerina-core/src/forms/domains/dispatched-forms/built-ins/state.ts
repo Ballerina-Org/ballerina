@@ -97,6 +97,7 @@ import {
   SearchableInfiniteStreamAbstractRendererView,
 } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Renderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/state";
+import { LookupRenderer } from "../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
 
 const sortObjectKeys = (obj: Record<string, any>) =>
   Object.keys(obj)
@@ -348,7 +349,6 @@ export const concreteRendererToKind =
   ) =>
   (name: string): ValueOrErrors<string, string> => {
     const viewTypes = Object.keys(concreteRenderers);
-    console.debug("concreteRenderers", concreteRenderers);
     for (const viewType of viewTypes) {
       if (name in concreteRenderers[viewType as keyof ConcreteRenderers<T>]) {
         return ValueOrErrors.Default.return(viewType);
@@ -367,11 +367,13 @@ export const tryGetConcreteRenderer =
     kind: K,
     name: keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K],
   ): ValueOrErrors<
-    ReturnType<ConcreteRenderers<
-      T,
-      Flags,
-      CustomPresentationContexts
-    >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]]>,
+    ReturnType<
+      ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts
+      >[K][keyof ConcreteRenderers<T, Flags, CustomPresentationContexts>[K]]
+    >,
     string
   > => {
     if (!concreteRenderers[kind]) {
@@ -412,41 +414,47 @@ export const dispatchDefaultState =
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(undefined);
       }
-      if (t.kind == "lookup") {
+      if (t.kind == "lookup" && renderer.kind == "lookupRenderer") {
         return MapRepo.Operations.tryFindWithError(
           t.name,
           types,
           () => `lookup type ${t.name} not found in types`,
-        ).Then((lookupType) =>
-          dispatchDefaultState(
-            infiniteStreamSources,
-            injectedPrimitives,
-            types,
-            forms,
-            converters,
-            lookupSources,
-            tableApiSources,
-          )(lookupType, renderer),
+        ).Then((resolvedType) =>
+          LookupRenderer.Operations.ResolveRenderer(renderer, forms).Then(
+            (resolvedRenderer) =>
+              dispatchDefaultState(
+                infiniteStreamSources,
+                injectedPrimitives,
+                types,
+                forms,
+                converters,
+                lookupSources,
+                tableApiSources,
+              )(resolvedType, resolvedRenderer),
+          ),
         );
       }
 
-      if (t.kind != "primitive" && renderer.kind == "lookupRenderer") {
-        return MapRepo.Operations.tryFindWithError(
-          renderer.renderer,
-          forms,
-          () => `lookup form renderer ${renderer.renderer} not found in forms`,
-        ).Then((formRenderer) =>
-          dispatchDefaultState(
-            infiniteStreamSources,
-            injectedPrimitives,
-            types,
-            forms,
-            converters,
-            lookupSources,
-            tableApiSources,
-          )(t, formRenderer),
-        );
-      }
+      // if (
+      //   renderer.kind == "lookupRenderer" &&
+      //   renderer.renderer.kind == "formLookup"
+      // ) {
+      //   return MapRepo.Operations.tryFindWithError(
+      //     renderer.renderer.renderer,
+      //     forms,
+      //     () => `lookup form renderer ${renderer.renderer} not found in forms`,
+      //   ).Then((formRenderer) =>
+      //     dispatchDefaultState(
+      //       infiniteStreamSources,
+      //       injectedPrimitives,
+      //       types,
+      //       forms,
+      //       converters,
+      //       lookupSources,
+      //       tableApiSources,
+      //     )(renderer.renderer.type, formRenderer),
+      //   );
+      // }
 
       if (t.kind == "primitive")
         return t.name == "unit"
@@ -766,6 +774,8 @@ export const dispatchDefaultState =
       }
 
       if (t.kind == "table") {
+        console.debug("table type", t);
+        console.debug("table renderer", renderer);
         return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(TableAbstractRendererState.Default())
           : ValueOrErrors.Default.throwOne(
@@ -786,7 +796,7 @@ export const dispatchDefaultState =
   };
 
 export const dispatchDefaultValue =
-  <T>(
+  <T extends DispatchInjectablesTypes<T>>(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     types: Map<DispatchTypeName, DispatchParsedType<T>>,
     forms: Map<string, Renderer<T>>,
@@ -799,32 +809,38 @@ export const dispatchDefaultValue =
       if (renderer == undefined) {
         return ValueOrErrors.Default.return(PredicateValue.Default.unit());
       }
-      if (t.kind == "lookup")
+      if (t.kind == "lookup" && renderer.kind == "lookupRenderer")
         return MapRepo.Operations.tryFindWithError(
           t.name,
           types,
           () => `lookup type ${t.name} not found in types`,
         ).Then((lookupType) =>
-          dispatchDefaultValue(
-            injectedPrimitives,
-            types,
-            forms,
-          )(lookupType, renderer),
+          LookupRenderer.Operations.ResolveRenderer(renderer, forms).Then(
+            (resolvedRenderer) =>
+              dispatchDefaultValue(
+                injectedPrimitives,
+                types,
+                forms,
+              )(lookupType, resolvedRenderer),
+          ),
         );
 
-      if (t.kind != "primitive" && renderer.kind == "lookupRenderer") {
-        return MapRepo.Operations.tryFindWithError(
-          renderer.renderer,
-          forms,
-          () => `lookup form renderer ${renderer.renderer} not found in forms`,
-        ).Then((formRenderer) =>
-          dispatchDefaultValue(
-            injectedPrimitives,
-            types,
-            forms,
-          )(t, formRenderer),
-        );
-      }
+      // if (
+      //   renderer.kind == "lookupRenderer" &&
+      //   renderer.renderer.kind == "formLookup"
+      // ) {
+      //   return MapRepo.Operations.tryFindWithError(
+      //     renderer.renderer.renderer,
+      //     forms,
+      //     () => `lookup form renderer ${renderer.renderer} not found in forms`,
+      //   ).Then((formRenderer) =>
+      //     dispatchDefaultValue(
+      //       injectedPrimitives,
+      //       types,
+      //       forms,
+      //     )(renderer.renderer.type, formRenderer),
+      //   );
+      // }
 
       if (t.kind == "primitive")
         return t.name == "unit"

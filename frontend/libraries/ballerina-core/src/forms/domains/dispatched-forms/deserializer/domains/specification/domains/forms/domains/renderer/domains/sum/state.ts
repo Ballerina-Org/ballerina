@@ -92,6 +92,8 @@ export const SumRenderer = {
                 validatedSerialized.renderer,
                 concreteRenderers,
                 types,
+                undefined,
+                undefined,
               ).Then((renderer) =>
                 ValueOrErrors.Default.return(
                   SumRenderer.Default(

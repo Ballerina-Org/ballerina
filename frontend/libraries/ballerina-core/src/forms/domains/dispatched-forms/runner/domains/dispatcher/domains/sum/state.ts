@@ -50,11 +50,12 @@ export const SumDispatcher = {
             : ValueOrErrors.Default.return<undefined, string>(undefined)
           ).Then((rightForm) =>
             renderer.kind == "sumUnitDateRenderer" &&
-            renderer.renderer.kind == "lookupRenderer"
+            renderer.renderer.kind == "lookupRenderer" &&
+            renderer.renderer.renderer.kind == "concreteLookup"
               ? dispatcherContext
                   .getConcreteRenderer(
                     "sumUnitDate",
-                    renderer.renderer.renderer,
+                    renderer.renderer.renderer.renderer,
                   )
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return<
@@ -79,9 +80,13 @@ export const SumDispatcher = {
                       ]),
                     ]),
                   )
-              : renderer.renderer.kind == "lookupRenderer"
+              : renderer.renderer.kind == "lookupRenderer" &&
+                renderer.renderer.renderer.kind == "concreteLookup"
                 ? dispatcherContext
-                    .getConcreteRenderer("sum", renderer.renderer.renderer)
+                    .getConcreteRenderer(
+                      "sum",
+                      renderer.renderer.renderer.renderer,
+                    )
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return<
                         [Template<any, any, any, any>, StringSerializedType],

@@ -74,6 +74,8 @@ export const StreamRenderer = {
             validatedSerialized.renderer,
             concreteRenderers,
             types,
+            undefined,
+            undefined,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(
               StreamRenderer.Default(

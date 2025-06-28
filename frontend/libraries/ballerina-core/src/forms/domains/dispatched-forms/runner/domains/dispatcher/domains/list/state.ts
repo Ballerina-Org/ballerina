@@ -40,10 +40,16 @@ export const ListDispatcher = {
       )
         .Then((elementTemplate) =>
           dispatcherContext
-            .defaultState(renderer.type.args[0], renderer.elementRenderer.renderer)
+            .defaultState(
+              renderer.type.args[0],
+              renderer.elementRenderer.renderer,
+            )
             .Then((defaultElementState) =>
               dispatcherContext
-                .defaultValue(renderer.type.args[0], renderer.elementRenderer.renderer)
+                .defaultValue(
+                  renderer.type.args[0],
+                  renderer.elementRenderer.renderer,
+                )
                 .Then((defaultElementValue) =>
                   renderer.renderer.kind != "lookupRenderer"
                     ? ValueOrErrors.Default.throwOne<
@@ -52,26 +58,36 @@ export const ListDispatcher = {
                       >(
                         `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
                       )
-                    : dispatcherContext
-                        .getConcreteRenderer("list", renderer.renderer.renderer)
-                        .Then((concreteRenderer) =>
-                          ValueOrErrors.Default.return<
-                            [
-                              Template<any, any, any, any>,
-                              StringSerializedType,
-                            ],
-                            string
-                          >([
-                            ListAbstractRenderer(
-                              () => defaultElementState,
-                              () => defaultElementValue,
-                              elementTemplate[0],
-                              dispatcherContext.IdProvider,
-                              dispatcherContext.ErrorRenderer,
-                            ).withView(concreteRenderer),
-                            ListType.SerializeToString([elementTemplate[1]]),
-                          ]),
-                        ),
+                    : renderer.renderer.renderer.kind != "concreteLookup"
+                      ? ValueOrErrors.Default.throwOne<
+                          [Template<any, any, any, any>, StringSerializedType],
+                          string
+                        >(
+                          `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
+                        )
+                      : dispatcherContext
+                          .getConcreteRenderer(
+                            "list",
+                            renderer.renderer.renderer.renderer,
+                          )
+                          .Then((concreteRenderer) =>
+                            ValueOrErrors.Default.return<
+                              [
+                                Template<any, any, any, any>,
+                                StringSerializedType,
+                              ],
+                              string
+                            >([
+                              ListAbstractRenderer(
+                                () => defaultElementState,
+                                () => defaultElementValue,
+                                elementTemplate[0],
+                                dispatcherContext.IdProvider,
+                                dispatcherContext.ErrorRenderer,
+                              ).withView(concreteRenderer),
+                              ListType.SerializeToString([elementTemplate[1]]),
+                            ]),
+                          ),
                 ),
             ),
         )

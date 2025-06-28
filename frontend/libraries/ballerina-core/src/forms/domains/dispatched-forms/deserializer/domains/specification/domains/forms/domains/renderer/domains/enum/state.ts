@@ -77,6 +77,8 @@ export const EnumRenderer = {
             serialized.renderer,
             concreteRenderers,
             types,
+            undefined,
+            undefined,
           ).Then((renderer) =>
             ValueOrErrors.Default.return(
               EnumRenderer.Default(type, serialized.options, renderer),

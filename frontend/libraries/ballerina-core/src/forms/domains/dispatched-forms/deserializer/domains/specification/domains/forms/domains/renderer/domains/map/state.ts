@@ -87,6 +87,8 @@ export const MapRenderer = {
                 renderer.renderer,
                 concreteRenderers,
                 types,
+                undefined,
+                undefined,
               ).Then((deserializedRenderer) =>
                 ValueOrErrors.Default.return(
                   MapRenderer.Default(

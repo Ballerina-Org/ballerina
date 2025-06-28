@@ -101,80 +101,34 @@ export const NestedRenderer = {
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
       ).Then((validatedSerialized) =>
-        type.kind == "primitive" ||
-        type.kind == "singleSelection" ||
-        type.kind == "multiSelection" ||
-        type.kind == "list" ||
-        type.kind == "sum" ||
-        type.kind == "tuple" ||
-        type.kind == "one" ||
-        type.kind == "map"
-          ? Renderer.Operations.Deserialize(
-              type,
-              type.kind == "primitive"
-                ? validatedSerialized.renderer
-                : validatedSerialized,
-              concreteRenderers,
-              types,
-            ).Then((renderer) =>
-              renderer.kind == "tableRenderer" ||
-              renderer.kind == "recordRenderer" ||
-              renderer.kind == "unionRenderer"
-                ? ValueOrErrors.Default.throwOne<NestedRenderer<T>, string>(
-                    `renderer ${renderer.kind} does not match type ${type.kind}`,
-                  )
-                : ValueOrErrors.Default.return<NestedRenderer<T>, string>({
-                    renderer,
-                    label: validatedSerialized.label,
-                    tooltip: validatedSerialized.tooltip,
-                    details: validatedSerialized.details,
-                  }).MapErrors<NestedRenderer<T>, string, string>((errors) =>
-                    errors.map(
-                      (error) =>
-                        `${error}\n...When parsing as ${renderer.kind} nested renderer`,
-                    ),
-                  ),
-            )
-          : Renderer.Operations.Deserialize(
-              type,
-              validatedSerialized.renderer,
-              concreteRenderers,
-              types,
-              "api" in validatedSerialized && isString(validatedSerialized.api)
-                ? validatedSerialized.api
-                : undefined,
-              typeof validatedSerialized.renderer == "object",
-            ).Then((renderer) =>
-              type.kind == "table" && renderer.kind == "tableRenderer"
-                ? ValueOrErrors.Default.return({
-                    renderer,
-                    label: validatedSerialized.label,
-                    tooltip: validatedSerialized.tooltip,
-                    details: validatedSerialized.details,
-                  }).MapErrors((errors) =>
-                    errors.map(
-                      (error) =>
-                        `${error}\n...When parsing as table nested renderer`,
-                    ),
-                  )
-                : renderer.kind == "recordRenderer" ||
-                    renderer.kind == "unionRenderer" ||
-                    renderer.kind == "lookupRenderer"
-                  ? ValueOrErrors.Default.return({
-                      renderer,
-                      label: validatedSerialized.label,
-                      tooltip: validatedSerialized.tooltip,
-                      details: validatedSerialized.details,
-                    }).MapErrors((errors) =>
-                      errors.map(
-                        (error) =>
-                          `${error}\n...When parsing as ${renderer.kind} nested renderer`,
-                      ),
-                    )
-                  : ValueOrErrors.Default.throwOne(
-                      `renderer ${renderer.kind} does not match type ${type.kind}`,
-                    ),
+        Renderer.Operations.Deserialize(
+          type,
+          type.kind == "primitive" ||
+            type.kind == "lookup" ||
+            type.kind == "record" ||
+            type.kind == "union" ||
+            type.kind == "table"
+            ? validatedSerialized.renderer
+            : validatedSerialized,
+          concreteRenderers,
+          types,
+          "api" in validatedSerialized && isString(validatedSerialized.api)
+            ? validatedSerialized.api
+            : undefined,
+          undefined,
+        ).Then((renderer) =>
+          ValueOrErrors.Default.return<NestedRenderer<T>, string>({
+            renderer,
+            label: validatedSerialized.label,
+            tooltip: validatedSerialized.tooltip,
+            details: validatedSerialized.details,
+          }).MapErrors<NestedRenderer<T>, string, string>((errors) =>
+            errors.map(
+              (error) =>
+                `${error}\n...When parsing as ${renderer.kind} nested renderer`,
             ),
+          ),
+        ),
       ),
   },
 };

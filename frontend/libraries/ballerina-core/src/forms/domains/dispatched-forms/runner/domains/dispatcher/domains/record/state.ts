@@ -10,7 +10,7 @@ import {
   DispatchInjectablesTypes,
   RecordAbstractRendererView,
   StringSerializedType,
-  DispatchParsedType, 
+  DispatchParsedType,
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
@@ -40,7 +40,14 @@ export const RecordDispatcher = {
           ? ValueOrErrors.Default.return(
               dispatcherContext.getDefaultRecordRenderer(isNested),
             )
-          : dispatcherContext.getConcreteRenderer("record", renderer.renderer),
+          : renderer.renderer.kind != "concreteLookup"
+            ? ValueOrErrors.Default.throwOne(
+                `received non concrete lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
+              )
+            : dispatcherContext.getConcreteRenderer(
+                "record",
+                renderer.renderer.renderer,
+              ),
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,

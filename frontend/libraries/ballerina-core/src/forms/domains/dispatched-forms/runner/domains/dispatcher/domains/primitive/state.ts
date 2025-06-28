@@ -38,13 +38,16 @@ export const PrimitiveDispatcher = {
         [Template<any, any, any, any>, StringSerializedType],
         string
       > = (() => {
-        if (renderer.kind != "lookupRenderer") {
+        if (
+          renderer.kind != "lookupRenderer" ||
+          renderer.renderer.kind != "concreteLookup"
+        ) {
           return ValueOrErrors.Default.throwOne(
             `expected primitive to have a renderer with kind == "lookupRenderer" but got ${renderer.kind}`,
           );
         }
         const viewKindRes = dispatcherContext.getConcreteRendererKind(
-          renderer.renderer,
+          renderer.renderer.renderer,
         );
         if (viewKindRes.kind == "errors") {
           return viewKindRes;
@@ -66,7 +69,7 @@ export const PrimitiveDispatcher = {
           return dispatcherContext
             .getConcreteRenderer(
               viewKind as keyof ConcreteRenderers<T>,
-              renderer.renderer,
+              renderer.renderer.renderer,
             )
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
@@ -84,7 +87,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "unit") {
           return dispatcherContext
-            .getConcreteRenderer("unit", renderer.renderer)
+            .getConcreteRenderer("unit", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 UnitAbstractRenderer(
@@ -99,7 +102,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "string") {
           return dispatcherContext
-            .getConcreteRenderer("string", renderer.renderer)
+            .getConcreteRenderer("string", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 StringAbstractRenderer(
@@ -114,7 +117,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "number") {
           return dispatcherContext
-            .getConcreteRenderer("number", renderer.renderer)
+            .getConcreteRenderer("number", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 NumberAbstractRenderer(
@@ -129,7 +132,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "boolean") {
           return dispatcherContext
-            .getConcreteRenderer("boolean", renderer.renderer)
+            .getConcreteRenderer("boolean", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 BoolAbstractRenderer(
@@ -144,7 +147,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "secret") {
           return dispatcherContext
-            .getConcreteRenderer("secret", renderer.renderer)
+            .getConcreteRenderer("secret", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 SecretAbstractRenderer(
@@ -159,7 +162,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "base64File") {
           return dispatcherContext
-            .getConcreteRenderer("base64File", renderer.renderer)
+            .getConcreteRenderer("base64File", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 Base64FileAbstractRenderer(
@@ -174,7 +177,7 @@ export const PrimitiveDispatcher = {
         }
         if (viewKind == "date") {
           return dispatcherContext
-            .getConcreteRenderer("date", renderer.renderer)
+            .getConcreteRenderer("date", renderer.renderer.renderer)
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return([
                 DateAbstractRenderer(

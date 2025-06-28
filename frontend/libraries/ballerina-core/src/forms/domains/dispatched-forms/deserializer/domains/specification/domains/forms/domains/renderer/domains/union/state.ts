@@ -100,6 +100,8 @@ export const UnionRenderer = {
               validSerialized.renderer,
               concreteRenderers,
               types,
+              undefined,
+              undefined,
             ).Then((renderer) =>
               ValueOrErrors.Default.return(
                 UnionRenderer.Default(type, Map(caseTuples), renderer),

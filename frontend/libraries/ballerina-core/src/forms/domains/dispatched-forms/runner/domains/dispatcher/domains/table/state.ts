@@ -183,10 +183,17 @@ export const TableDispatcher = {
                           >(
                             `received non lookup renderer kind for table concrete renderer`,
                           )
+                        : renderer.renderer.renderer.kind != "concreteLookup"
+                          ? ValueOrErrors.Default.throwOne<
+                              [Template<any, any, any, any>, StringSerializedType],
+                              string
+                            >(
+                              `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
+                            )
                         : dispatcherContext
                             .getConcreteRenderer(
                               "table",
-                              renderer.renderer.renderer,
+                              renderer.renderer.renderer.renderer,
                             )
                             .Then((concreteRenderer) =>
                               TableDispatcher.Operations.GetApi(

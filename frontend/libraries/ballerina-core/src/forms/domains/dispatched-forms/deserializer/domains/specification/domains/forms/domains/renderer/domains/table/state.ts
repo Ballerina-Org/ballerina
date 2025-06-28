@@ -191,6 +191,8 @@ export const TableRenderer = {
                             validTableForm.renderer,
                             concreteRenderers,
                             types,
+                            undefined,
+                            undefined,
                           ).Then((renderer) =>
                             ValueOrErrors.Default.return(
                               TableRenderer.Default(

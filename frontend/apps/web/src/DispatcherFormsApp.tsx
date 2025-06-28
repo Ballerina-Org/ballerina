@@ -344,11 +344,13 @@ export const DispatcherFormsApp = (props: {}) => {
   ) {
     return (
       <ol>
-        {specificationDeserializer.deserializedSpecification.sync.value.errors.map(
-          (_: string, index: number) => (
-            <li key={index}>{_}</li>
-          ),
-        )}
+        <pre>
+          {specificationDeserializer.deserializedSpecification.sync.value.errors.map(
+            (_: string, index: number) => (
+              <li key={index}>{_}</li>
+            ),
+          )}
+        </pre>
       </ol>
     );
   }
@@ -444,9 +446,9 @@ export const DispatcherFormsApp = (props: {}) => {
                   </pre>
                 )}
                 {entityPath && entityPath.kind == "errors" && (
-                  <p>
+                  <pre>
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
-                  </p>
+                  </pre>
                 )}
                 <InstantiedPersonDispatchFormRunnerTemplate
                   context={{
