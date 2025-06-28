@@ -66,13 +66,8 @@ export const RecordFieldRenderer = {
     fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
-      (validatedSerialized) =>
-        {
-          if(fieldName == "Friends") {
-            console.debug("validatedSerialized", validatedSerialized);
-            console.debug("type", type);
-          }
-          return NestedRenderer.Operations.DeserializeAs(
+      (validatedSerialized) => {
+        return NestedRenderer.Operations.DeserializeAs(
           type,
           validatedSerialized,
           concreteRenderers,
@@ -92,6 +87,7 @@ export const RecordFieldRenderer = {
               }),
             ),
           ),
-        )}
+        );
+      },
     ),
 };

@@ -28,6 +28,8 @@ export const ListDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -36,7 +38,8 @@ export const ListDispatcher = {
         renderer.elementRenderer,
         dispatcherContext,
         "listElement",
-        "listElement",
+        isInlined,
+        tableApi,
       )
         .Then((elementTemplate) =>
           dispatcherContext
@@ -51,43 +54,26 @@ export const ListDispatcher = {
                   renderer.elementRenderer.renderer,
                 )
                 .Then((defaultElementValue) =>
-                  renderer.renderer.kind != "lookupRenderer"
-                    ? ValueOrErrors.Default.throwOne<
+                  dispatcherContext
+                    .getConcreteRenderer(
+                      "list",
+                      renderer.concreteRenderer,
+                    )
+                    .Then((concreteRenderer) =>
+                      ValueOrErrors.Default.return<
                         [Template<any, any, any, any>, StringSerializedType],
                         string
-                      >(
-                        `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
-                      )
-                    : renderer.renderer.renderer.kind != "concreteLookup"
-                      ? ValueOrErrors.Default.throwOne<
-                          [Template<any, any, any, any>, StringSerializedType],
-                          string
-                        >(
-                          `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-                        )
-                      : dispatcherContext
-                          .getConcreteRenderer(
-                            "list",
-                            renderer.renderer.renderer.renderer,
-                          )
-                          .Then((concreteRenderer) =>
-                            ValueOrErrors.Default.return<
-                              [
-                                Template<any, any, any, any>,
-                                StringSerializedType,
-                              ],
-                              string
-                            >([
-                              ListAbstractRenderer(
-                                () => defaultElementState,
-                                () => defaultElementValue,
-                                elementTemplate[0],
-                                dispatcherContext.IdProvider,
-                                dispatcherContext.ErrorRenderer,
-                              ).withView(concreteRenderer),
-                              ListType.SerializeToString([elementTemplate[1]]),
-                            ]),
-                          ),
+                      >([
+                        ListAbstractRenderer(
+                          () => defaultElementState,
+                          () => defaultElementValue,
+                          elementTemplate[0],
+                          dispatcherContext.IdProvider,
+                          dispatcherContext.ErrorRenderer,
+                        ).withView(concreteRenderer),
+                        ListType.SerializeToString([elementTemplate[1]]),
+                      ]),
+                    ),
                 ),
             ),
         )

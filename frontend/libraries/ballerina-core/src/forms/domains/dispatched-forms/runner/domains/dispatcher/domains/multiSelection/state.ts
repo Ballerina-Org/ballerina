@@ -34,129 +34,89 @@ export const MultiSelectionDispatcher = {
       [Template<any, any, any, any>, StringSerializedType],
       string
     > =>
-      renderer.renderer.kind != "lookupRenderer"
-        ? ValueOrErrors.Default.throwOne<
-            [Template<any, any, any, any>, StringSerializedType],
-            string
-          >(
-            `received non lookup renderer kind when resolving defaultState for enum multi selection`,
-          )
-        : renderer.renderer.renderer.kind != "concreteLookup"
-          ? ValueOrErrors.Default.throwOne<
-              [Template<any, any, any, any>, StringSerializedType],
-              string
-            >(
-              `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-            )
-          : dispatcherContext
-              .getConcreteRendererKind(renderer.renderer.renderer.renderer)
-              .Then((viewKind) =>
-                viewKind == "enumMultiSelection" &&
-                renderer.kind == "enumRenderer" &&
-                renderer.renderer.kind == "lookupRenderer" &&
-                renderer.renderer.renderer.kind == "concreteLookup"
-                  ? dispatcherContext
-                      .getConcreteRenderer(
-                        "enumMultiSelection",
-                        renderer.renderer.renderer.renderer,
-                      )
-                      .Then((concreteRenderer) =>
-                        dispatcherContext
-                          .enumOptionsSources(renderer.options)
-                          .Then((optionsSource) =>
-                            ValueOrErrors.Default.return<
-                              [
-                                Template<any, any, any, any>,
-                                StringSerializedType,
-                              ],
-                              string
-                            >([
-                              EnumMultiselectAbstractRenderer(
-                                dispatcherContext.IdProvider,
-                                dispatcherContext.ErrorRenderer,
-                              )
-                                .mapContext((_: any) => ({
-                                  ..._,
-                                  getOptions: (): Promise<
-                                    OrderedMap<Guid, ValueRecord>
-                                  > =>
-                                    optionsSource(unit).then((options) =>
-                                      OrderedMap(
-                                        options.map((o: EnumReference) => [
-                                          o.Value,
-                                          PredicateValue.Default.record(
-                                            OrderedMap(o),
-                                          ),
-                                        ]),
-                                      ),
-                                    ),
-                                }))
-                                .withView(concreteRenderer),
-                              MultiSelectionType.SerializeToString([
-                                renderer.type.args[0] as unknown as string,
-                              ]), // always a lookup type
-                            ]),
-                          ),
-                      )
-                      .MapErrors((errors) =>
-                        errors.map(
-                          (error) =>
-                            `${error}\n...When dispatching nested enum multi selection: ${renderer}`,
-                        ),
-                      )
-                  : viewKind == "streamMultiSelection" &&
-                      renderer.kind == "streamRenderer"
-                    ? renderer.renderer.kind != "lookupRenderer"
-                      ? ValueOrErrors.Default.throwOne<
-                          [Template<any, any, any, any>, StringSerializedType],
-                          string
-                        >(
-                          `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for stream multi selection`,
-                        )
-                      : renderer.renderer.renderer.kind != "concreteLookup"
-                        ? ValueOrErrors.Default.throwOne<
-                            [
-                              Template<any, any, any, any>,
-                              StringSerializedType,
-                            ],
-                            string
-                          >(
-                            `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-                          )
-                        : dispatcherContext
-                            .getConcreteRenderer(
-                              "streamMultiSelection",
-                              renderer.renderer.renderer.renderer,
-                            )
-                            .Then((concreteRenderer) =>
-                              ValueOrErrors.Default.return<
-                                [
-                                  Template<any, any, any, any>,
-                                  StringSerializedType,
-                                ],
-                                string
-                              >([
-                                InfiniteMultiselectDropdownFormAbstractRenderer(
-                                  dispatcherContext.IdProvider,
-                                  dispatcherContext.ErrorRenderer,
-                                ).withView(concreteRenderer),
-                                MultiSelectionType.SerializeToString([
-                                  renderer.type.args[0] as unknown as string,
-                                ]), // always a lookup type]
-                              ]),
-                            )
-                            .MapErrors((errors) =>
-                              errors.map(
-                                (error) =>
-                                  `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
-                              ),
-                            )
-                    : ValueOrErrors.Default.throwOne<
+      dispatcherContext
+        .getConcreteRendererKind(renderer.concreteRenderer)
+        .Then((viewKind) =>
+          viewKind == "enumMultiSelection" && renderer.kind == "enumRenderer"
+            ? dispatcherContext
+                .getConcreteRenderer(
+                  "enumMultiSelection",
+                  renderer.concreteRenderer,
+                )
+                .Then((concreteRenderer) =>
+                  dispatcherContext
+                    .enumOptionsSources(renderer.options)
+                    .Then((optionsSource) =>
+                      ValueOrErrors.Default.return<
                         [Template<any, any, any, any>, StringSerializedType],
                         string
-                      >(
-                        `could not resolve multi selection concrete renderer for ${viewKind}`,
-                      ),
-              ),
+                      >([
+                        EnumMultiselectAbstractRenderer(
+                          dispatcherContext.IdProvider,
+                          dispatcherContext.ErrorRenderer,
+                        )
+                          .mapContext((_: any) => ({
+                            ..._,
+                            getOptions: (): Promise<
+                              OrderedMap<Guid, ValueRecord>
+                            > =>
+                              optionsSource(unit).then((options) =>
+                                OrderedMap(
+                                  options.map((o: EnumReference) => [
+                                    o.Value,
+                                    PredicateValue.Default.record(
+                                      OrderedMap(o),
+                                    ),
+                                  ]),
+                                ),
+                              ),
+                          }))
+                          .withView(concreteRenderer),
+                        MultiSelectionType.SerializeToString([
+                          renderer.type.args[0] as unknown as string,
+                        ]), // always a lookup type
+                      ]),
+                    ),
+                )
+                .MapErrors((errors) =>
+                  errors.map(
+                    (error) =>
+                      `${error}\n...When dispatching nested enum multi selection: ${renderer}`,
+                  ),
+                )
+            : viewKind == "streamMultiSelection" &&
+                renderer.kind == "streamRenderer"
+              ? dispatcherContext
+                  .getConcreteRenderer(
+                    "streamMultiSelection",
+                    renderer.concreteRenderer,
+                  )
+                  .Then((concreteRenderer) =>
+                    ValueOrErrors.Default.return<
+                      [Template<any, any, any, any>, StringSerializedType],
+                      string
+                    >([
+                      InfiniteMultiselectDropdownFormAbstractRenderer(
+                        dispatcherContext.IdProvider,
+                        dispatcherContext.ErrorRenderer,
+                      ).withView(concreteRenderer),
+                      MultiSelectionType.SerializeToString([
+                        renderer.type.args[0] as unknown as string,
+                      ]), // always a lookup type]
+                    ]),
+                  )
+                  .MapErrors((errors) =>
+                    errors.map(
+                      (error) =>
+                        `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
+                    ),
+                  )
+              : ValueOrErrors.Default.throwOne<
+                  [Template<any, any, any, any>, StringSerializedType],
+                  string
+                >(
+                  `could not resolve multi selection concrete renderer for ${viewKind}`,
+                ),
+        ),
   },
 };

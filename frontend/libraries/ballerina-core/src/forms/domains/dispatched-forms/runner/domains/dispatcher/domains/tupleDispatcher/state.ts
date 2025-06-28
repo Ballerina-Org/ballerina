@@ -29,6 +29,8 @@ export const TupleDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -45,7 +47,8 @@ export const TupleDispatcher = {
               renderer.itemRenderers[index],
               dispatcherContext,
               `Item ${index + 1}`,
-              `Item ${index + 1}`,
+              isInlined,
+              tableApi,
             ).Then((template) =>
               ValueOrErrors.Default.return<
                 [number, Template<any, any, any, any>, StringSerializedType],
@@ -67,46 +70,26 @@ export const TupleDispatcher = {
               ),
             ),
           ).Then((ItemDefaultStates) =>
-            renderer.renderer.kind != "lookupRenderer"
-              ? ValueOrErrors.Default.throwOne<
+            dispatcherContext
+              .getConcreteRenderer("tuple", renderer.concreteRenderer)
+              .Then((concreteRenderer) =>
+                ValueOrErrors.Default.return<
                   [Template<any, any, any, any>, StringSerializedType],
                   string
-                >(
-                  `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for tuple`,
-                )
-              : renderer.renderer.renderer.kind != "concreteLookup"
-                ? ValueOrErrors.Default.throwOne<
-                    [Template<any, any, any, any>, StringSerializedType],
-                    string
-                  >(
-                    `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-                  )
-                : dispatcherContext
-                    .getConcreteRenderer(
-                      "tuple",
-                      renderer.renderer.renderer.renderer,
-                    )
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
-                        DispatchTupleAbstractRenderer(
-                          Map(ItemDefaultStates).map((state) => () => state),
-                          Map(
-                            templates.map((template) => [
-                              template[0],
-                              template[1],
-                            ]),
-                          ),
-                          dispatcherContext.IdProvider,
-                          dispatcherContext.ErrorRenderer,
-                        ).withView(concreteRenderer),
-                        TupleType.SerializeToString(
-                          templates.map((template) => template[2]).toArray(),
-                        ),
-                      ]),
+                >([
+                  DispatchTupleAbstractRenderer(
+                    Map(ItemDefaultStates).map((state) => () => state),
+                    Map(
+                      templates.map((template) => [template[0], template[1]]),
                     ),
+                    dispatcherContext.IdProvider,
+                    dispatcherContext.ErrorRenderer,
+                  ).withView(concreteRenderer),
+                  TupleType.SerializeToString(
+                    templates.map((template) => template[2]).toArray(),
+                  ),
+                ]),
+              ),
           ),
         )
         .MapErrors((errors) =>

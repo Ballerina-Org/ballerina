@@ -3,6 +3,7 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   DispatchParsedType,
+  isString,
 } from "../../../../../../../../../../../../../main";
 import {
   isObject,
@@ -12,68 +13,55 @@ import { SumType } from "../../../../../types/state";
 import { Renderer } from "../../state";
 
 export type SerializedSumUnitDateBaseRenderer = {
-  renderer: unknown;
+  renderer: string;
 };
 
 export type SumUnitDateRenderer<T> = {
   kind: "sumUnitDateRenderer";
   type: SumType<T>;
-  renderer: Renderer<T>;
+  concreteRenderer: string;
 };
 
 export type BaseSumUnitDateRenderer<T> = {
   kind: "sumUnitDateRenderer";
   type: SumType<T>;
-  renderer: Renderer<T>;
+  concreteRenderer: string;
 };
 
 export const BaseSumUnitDateRenderer = {
   Default: <T>(
     type: SumType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
   ): BaseSumUnitDateRenderer<T> => ({
     kind: "sumUnitDateRenderer",
     type,
-    renderer,
+    concreteRenderer,
   }),
   Operations: {
     tryAsValidSumUnitDateBaseRenderer: (
       serialized: unknown,
     ): ValueOrErrors<SerializedSumUnitDateBaseRenderer, string> =>
       !isObject(serialized)
-        ? ValueOrErrors.Default.throwOne(`renderer is required`)
+        ? ValueOrErrors.Default.throwOne(
+            `sumUnitDate renderer is not an object`,
+          )
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is required`)
-          : ValueOrErrors.Default.return(serialized),
-    Deserialize: <
-      T extends DispatchInjectablesTypes<T>,
-      Flags,
-      CustomPresentationContexts,
-    >(
+          : !isString(serialized.renderer)
+            ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+            : ValueOrErrors.Default.return({
+                renderer: serialized.renderer,
+              }),
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SumType<T>,
       serialized: unknown,
-      concreteRenderers: ConcreteRenderers<
-        T,
-        Flags,
-        CustomPresentationContexts
-      >,
-      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(
         serialized,
       )
         .Then((validatedSerialized) =>
-          Renderer.Operations.Deserialize(
-            type,
-            validatedSerialized.renderer,
-            concreteRenderers,
-            types,
-            undefined,
-            undefined,
-          ).Then((renderer) =>
-            ValueOrErrors.Default.return(
-              BaseSumUnitDateRenderer.Default(type, renderer),
-            ),
+          ValueOrErrors.Default.return(
+            BaseSumUnitDateRenderer.Default(type, validatedSerialized.renderer),
           ),
         )
         .MapErrors((errors) =>

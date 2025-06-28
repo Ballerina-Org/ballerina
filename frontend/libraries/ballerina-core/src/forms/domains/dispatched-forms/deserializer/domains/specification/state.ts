@@ -163,6 +163,7 @@ export const Specification = {
                     form,
                     concreteRenderers,
                     types,
+                    undefined,
                   )
                     .MapErrors((errors) =>
                       errors.map(
@@ -365,6 +366,8 @@ export const Specification = {
                                             launcher,
                                           );
                                     });
+
+                                    console.debug("forms", forms.toJS());
 
                                     return ValueOrErrors.Default.return({
                                       types: allTypes,

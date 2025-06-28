@@ -25,6 +25,8 @@ export const MapDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -33,7 +35,8 @@ export const MapDispatcher = {
         renderer.keyRenderer,
         dispatcherContext,
         "key",
-        "key",
+        isInlined,
+        tableApi,
       )
         .Then((keyTemplate) =>
           dispatcherContext
@@ -49,7 +52,8 @@ export const MapDispatcher = {
                     renderer.valueRenderer,
                     dispatcherContext,
                     "value",
-                    "value",
+                    isInlined,
+                    tableApi,
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(
@@ -63,56 +67,35 @@ export const MapDispatcher = {
                             renderer.valueRenderer.renderer,
                           )
                           .Then((defaultValueValue) =>
-                            renderer.renderer.kind != "lookupRenderer"
-                              ? ValueOrErrors.Default.throwOne<
+                            dispatcherContext
+                              .getConcreteRenderer(
+                                "map",
+                                renderer.concreteRenderer,
+                              )
+                              .Then((concreteRenderer) =>
+                                ValueOrErrors.Default.return<
                                   [
                                     Template<any, any, any, any>,
                                     StringSerializedType,
                                   ],
                                   string
-                                >(
-                                  `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for map`,
-                                )
-                              : renderer.renderer.renderer.kind !=
-                                  "concreteLookup"
-                                ? ValueOrErrors.Default.throwOne<
-                                    [
-                                      Template<any, any, any, any>,
-                                      StringSerializedType,
-                                    ],
-                                    string
-                                  >(
-                                    `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-                                  )
-                                : dispatcherContext
-                                    .getConcreteRenderer(
-                                      "map",
-                                      renderer.renderer.renderer.renderer,
-                                    )
-                                    .Then((concreteRenderer) =>
-                                      ValueOrErrors.Default.return<
-                                        [
-                                          Template<any, any, any, any>,
-                                          StringSerializedType,
-                                        ],
-                                        string
-                                      >([
-                                        MapAbstractRenderer(
-                                          () => defaultKeyState,
-                                          () => defaultKeyValue,
-                                          () => defaultValueState,
-                                          () => defaultValueValue,
-                                          keyTemplate[0],
-                                          valueTemplate[0],
-                                          dispatcherContext.IdProvider,
-                                          dispatcherContext.ErrorRenderer,
-                                        ).withView(concreteRenderer),
-                                        MapType.SerializeToString([
-                                          keyTemplate[1],
-                                          valueTemplate[1],
-                                        ]),
-                                      ]),
-                                    ),
+                                >([
+                                  MapAbstractRenderer(
+                                    () => defaultKeyState,
+                                    () => defaultKeyValue,
+                                    () => defaultValueState,
+                                    () => defaultValueValue,
+                                    keyTemplate[0],
+                                    valueTemplate[0],
+                                    dispatcherContext.IdProvider,
+                                    dispatcherContext.ErrorRenderer,
+                                  ).withView(concreteRenderer),
+                                  MapType.SerializeToString([
+                                    keyTemplate[1],
+                                    valueTemplate[1],
+                                  ]),
+                                ]),
+                              ),
                           ),
                       ),
                   ),

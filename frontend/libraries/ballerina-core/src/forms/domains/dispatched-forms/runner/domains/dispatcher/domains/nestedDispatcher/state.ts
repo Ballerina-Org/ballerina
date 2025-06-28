@@ -22,7 +22,8 @@ export const NestedDispatcher = {
         CustomPresentationContexts
       >,
       as: string,
-      formName?: string,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -30,7 +31,8 @@ export const NestedDispatcher = {
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
-        formName,
+        isInlined,
+        tableApi,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
@@ -45,7 +47,8 @@ export const NestedDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-      formName?: string,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -54,7 +57,8 @@ export const NestedDispatcher = {
         renderer.renderer,
         dispatcherContext,
         true,
-        formName,
+        isInlined,
+        tableApi,
       )
         .Then((template) =>
           ValueOrErrors.Default.return<

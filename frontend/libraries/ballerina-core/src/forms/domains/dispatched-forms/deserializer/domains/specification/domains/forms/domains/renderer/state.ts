@@ -26,6 +26,7 @@ import {
 import { SerializedUnionRenderer, UnionRenderer } from "./domains/union/state";
 import { SerializedTupleRenderer, TupleRenderer } from "./domains/tuple/state";
 import { SerializedTableRenderer, TableRenderer } from "./domains/table/state";
+import { PrimitiveRenderer } from "./domains/primitive/state";
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
@@ -36,9 +37,6 @@ export type CommonSerializedRendererProperties = {
   visible?: unknown;
   disabled?: unknown;
 };
-
-//  detailsRenderer?: unknown; // only for tables at the moment
-//  api?: unknown; // only for tables at the moment
 
 export type SerializedRenderer =
   | string
@@ -55,6 +53,7 @@ export type SerializedRenderer =
   | SerializedTableRenderer;
 
 export type Renderer<T> =
+  | PrimitiveRenderer<T>
   | EnumRenderer<T>
   | LookupRenderer<T>
   | ListRenderer<T>
@@ -107,7 +106,6 @@ export const Renderer = {
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined,
-      isInlined: boolean | undefined,
     ): ValueOrErrors<Renderer<T>, string> =>
       Renderer.Operations.Deserialize(
         type,
@@ -115,7 +113,6 @@ export const Renderer = {
         concreteRenderers,
         types,
         tableApi,
-        isInlined,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -133,7 +130,6 @@ export const Renderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
-      isInlined: boolean | undefined,
     ): ValueOrErrors<Renderer<T>, string> =>
       /*
         Important semantics of lookup vs inlined renderers and types:
@@ -147,10 +143,10 @@ export const Renderer = {
         
         Consider a component on the form as a renderer and type together.
         There are 4 potential combiniations:
-          1. lookup renderer and lookup type
-          2. inlined renderer and lookup type
-          3. lookup renderer and inlined type
-          4. inlined renderer and inlined type
+          1. lookup type and lookup renderer
+          2. lookup type and inlined renderer
+          3. inlined type and lookup renderer
+          4. inlined type and inlined renderer
 
         Each of these combinations has a different semantics meaning in how the componenent is
         represented in the form hierarchy and how it's local bindings are set (Which are used in expressions).
@@ -170,73 +166,49 @@ export const Renderer = {
         Since lookups have semantic meaning, we must preserve this until the moment we dispatch the renderer (at which point we
         pass this information to the abstract renderer).
       */
-      // typeof serialized == "string" // lookup renderer
-      //   ? type.kind == "lookup" // Lookup renderer and lookup type (case 1)
-      //     ? LookupRenderer.Operations.Deserialize(
-      //         type,
-      //         SerializedLookup.Default.FormLookup(serialized),
-      //         tableApi,
-      //         concreteRenderers,
-      //         types,
-      //       )
-      //     : LookupRenderer.Operations.Deserialize( // Lookup renderer and inlined type (case 3)
-      //         type,
-      //         SerializedLookup.Default.ConcreteLookup(serialized),
-      //         tableApi,
-      //         concreteRenderers,
-      //         types,
-      //       )
-      //   : type.kind == "lookup" // Inlined renderer and lookup type (case 2)
-      //     ? LookupRenderer.Operations.Deserialize(
-      //         type,
-      //         SerializedLookup.Default.InlinedFormLookup(serialized, type),
-      //         tableApi,
-      //         concreteRenderers,
-      //         types,
-      //       )
+
       type.kind == "lookup" // Lookup type
-        ? typeof serialized == "string" // lookup renderer and lookup type (case 1)
+        ? typeof serialized == "string" // lookup type and lookup renderer (case 1)
           ? LookupRenderer.Operations.Deserialize(
-              type,
-              SerializedLookup.Default.FormLookup(serialized),
-              tableApi,
-              concreteRenderers,
-              types,
-            )
-          : LookupRenderer.Operations.Deserialize( // inlined renderer and lookup type (case 2)
-              type,
-              SerializedLookup.Default.InlinedFormLookup(serialized, type),
-              tableApi,
-              concreteRenderers,
-              types,
-            )
-        : typeof serialized == "string" // lookup renderer
-            
-          ? LookupRenderer.Operations.Deserialize(
-              type,
-              SerializedLookup.Default.ConcreteLookup(serialized),
-              tableApi,
-              concreteRenderers,
-              types,
-            )
-          : // All other cases are inlined renderers and inlined types (case 4)
-            Renderer.Operations.HasOptions(serialized) &&
-              (type.kind == "singleSelection" || type.kind == "multiSelection")
-            ? EnumRenderer.Operations.Deserialize(
+              SerializedLookup.Default.LookupTypeLookupRenderer(
                 type,
                 serialized,
+              ),
+              tableApi,
+              concreteRenderers,
+              types,
+            )
+          : LookupRenderer.Operations.Deserialize(
+              // lookup type and inlined renderer (case 2)
+              SerializedLookup.Default.LookupTypeInlinedRenderer(
+                type,
+                serialized,
+              ),
+              tableApi,
+              concreteRenderers,
+              types,
+            )
+        : typeof serialized == "string"
+          ? type.kind == "primitive" // special case
+            ? PrimitiveRenderer.Operations.Deserialize(type, serialized)
+            : // inlined type and lookup renderer (case 3)
+              LookupRenderer.Operations.Deserialize(
+                SerializedLookup.Default.InlinedTypeLookupRenderer(
+                  type,
+                  serialized,
+                ),
+                tableApi,
                 concreteRenderers,
                 types,
               )
+          : // All other cases are inlined renderers and inlined types (case 4)
+            Renderer.Operations.HasOptions(serialized) &&
+              (type.kind == "singleSelection" || type.kind == "multiSelection")
+            ? EnumRenderer.Operations.Deserialize(type, serialized)
             : Renderer.Operations.HasStream(serialized) &&
                 (type.kind == "singleSelection" ||
                   type.kind == "multiSelection")
-              ? StreamRenderer.Operations.Deserialize(
-                  type,
-                  serialized,
-                  concreteRenderers,
-                  types,
-                )
+              ? StreamRenderer.Operations.Deserialize(type, serialized)
               : Renderer.Operations.HasColumns(serialized) &&
                   (type.kind == "table" || type.kind == "record")
                 ? TableRenderer.Operations.Deserialize(
@@ -280,8 +252,6 @@ export const Renderer = {
                         ? BaseSumUnitDateRenderer.Operations.Deserialize(
                             type,
                             serialized,
-                            concreteRenderers,
-                            types,
                           )
                         : type.kind == "sum"
                           ? SumRenderer.Operations.Deserialize(
@@ -296,7 +266,6 @@ export const Renderer = {
                                 serialized,
                                 concreteRenderers,
                                 types,
-                                isInlined ?? false,
                               )
                             : type.kind == "union"
                               ? UnionRenderer.Operations.Deserialize(

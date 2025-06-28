@@ -32,6 +32,7 @@ export const UnionDispatcher = {
         CustomPresentationContexts
       >,
       isNested: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -45,7 +46,7 @@ export const UnionDispatcher = {
         >(
           renderer.type.args
             .entrySeq()
-            .map(([caseName, caseType]) =>
+            .map(([caseName]) =>
               MapRepo.Operations.tryFindWithError(
                 caseName,
                 renderer.cases,
@@ -56,7 +57,8 @@ export const UnionDispatcher = {
                   dispatcherContext,
                   `case ${caseName}`,
                   isNested,
-                  caseName,
+                  false,
+                  tableApi,
                 ).Then((template) =>
                   ValueOrErrors.Default.return<
                     [
@@ -75,56 +77,31 @@ export const UnionDispatcher = {
           dispatcherContext
             .defaultState(renderer.type, renderer)
             .Then((defaultState) =>
-              renderer.renderer.kind != "lookupRenderer"
-                ? ValueOrErrors.Default.throwOne<
+              dispatcherContext
+                .getConcreteRenderer("union", renderer.concreteRenderer)
+                .Then((concreteRenderer) =>
+                  ValueOrErrors.Default.return<
                     [Template<any, any, any, any>, StringSerializedType],
                     string
-                  >(
-                    `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for union`,
-                  )
-                : renderer.renderer.renderer.kind != "concreteLookup"
-                  ? ValueOrErrors.Default.throwOne<
-                      [Template<any, any, any, any>, StringSerializedType],
-                      string
-                    >(
-                      `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
-                    )
-                  : dispatcherContext
-                      .getConcreteRenderer(
-                        "union",
-                        renderer.renderer.renderer.renderer,
-                      )
-                      .Then((concreteRenderer) =>
-                        ValueOrErrors.Default.return<
-                          [Template<any, any, any, any>, StringSerializedType],
-                          string
-                        >([
-                          UnionAbstractRenderer(
-                            // TODO better typing for state and consider this pattern for other dispatchers
-                            (
-                              defaultState as UnionAbstractRendererState
-                            ).caseFormStates.map(
-                              (caseState) => () => caseState,
-                            ),
-                            Map(
-                              templates.map((template) => [
-                                template[0],
-                                template[1],
-                              ]),
-                            ),
-                            dispatcherContext.IdProvider,
-                            dispatcherContext.ErrorRenderer,
-                          ).withView(concreteRenderer),
-                          UnionType.SerializeToString(
-                            Map(
-                              templates.map((template) => [
-                                template[0],
-                                template[2],
-                              ]),
-                            ),
-                          ),
-                        ]),
+                  >([
+                    UnionAbstractRenderer(
+                      // TODO better typing for state and consider this pattern for other dispatchers
+                      (
+                        defaultState as UnionAbstractRendererState
+                      ).caseFormStates.map((caseState) => () => caseState),
+                      Map(
+                        templates.map((template) => [template[0], template[1]]),
                       ),
+                      dispatcherContext.IdProvider,
+                      dispatcherContext.ErrorRenderer,
+                    ).withView(concreteRenderer),
+                    UnionType.SerializeToString(
+                      Map(
+                        templates.map((template) => [template[0], template[2]]),
+                      ),
+                    ),
+                  ]),
+                ),
             ),
         )
         .MapErrors((errors) =>

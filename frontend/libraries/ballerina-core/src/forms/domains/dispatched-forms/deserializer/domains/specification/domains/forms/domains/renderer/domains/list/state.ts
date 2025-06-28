@@ -7,20 +7,16 @@ import {
   ListType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
-import {
-  NestedRenderer,
-  SerializedNestedRenderer,
-} from "../nestedRenderer/state";
-import { Renderer, SerializedRenderer } from "../../state";
+import { NestedRenderer } from "../nestedRenderer/state";
 
 export type SerializedListRenderer = {
-  renderer: unknown;
+  renderer: string;
   elementRenderer: unknown;
 };
 
 export type ListRenderer<T> = {
   kind: "listRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   elementRenderer: NestedRenderer<T>;
   type: ListType<T>;
 };
@@ -28,20 +24,20 @@ export type ListRenderer<T> = {
 export const ListRenderer = {
   Default: <T>(
     type: ListType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     elementRenderer: NestedRenderer<T>,
   ): ListRenderer<T> => ({
     kind: "listRenderer",
     type,
-    renderer,
+    concreteRenderer,
     elementRenderer,
   }),
   Operations: {
     hasRenderers: (
       serialized: unknown,
-    ): serialized is SerializedListRenderer & {
-      renderer: SerializedRenderer;
-      elementRenderer: SerializedNestedRenderer;
+    ): serialized is object & {
+      renderer: string;
+      elementRenderer: unknown;
     } =>
       isObject(serialized) &&
       "renderer" in serialized &&
@@ -51,8 +47,8 @@ export const ListRenderer = {
       type: DispatchParsedType<T>,
     ): ValueOrErrors<
       Omit<SerializedListRenderer, "renderer" | "elementRenderer"> & {
-        renderer: SerializedRenderer;
-        elementRenderer: SerializedNestedRenderer;
+        renderer: string;
+        elementRenderer: unknown;
       },
       string
     > =>
@@ -62,8 +58,10 @@ export const ListRenderer = {
           ? ValueOrErrors.Default.throwOne(
               `renderer and elementRenderer are required`,
             )
-          : ValueOrErrors.Default.return(serialized),
-
+          : ValueOrErrors.Default.return({
+              renderer: serialized.renderer,
+              elementRenderer: serialized.elementRenderer,
+            }),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -87,16 +85,11 @@ export const ListRenderer = {
             "list element",
             types,
           ).Then((elementRenderer) =>
-            Renderer.Operations.Deserialize(
-              type,
-              serializedRenderer.renderer,
-              concreteRenderers,
-              types,
-              undefined,
-              undefined,
-            ).Then((renderer) =>
-              ValueOrErrors.Default.return(
-                ListRenderer.Default(type, renderer, elementRenderer),
+            ValueOrErrors.Default.return(
+              ListRenderer.Default(
+                type,
+                serializedRenderer.renderer,
+                elementRenderer,
               ),
             ),
           ),

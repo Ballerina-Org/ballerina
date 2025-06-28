@@ -1,9 +1,7 @@
-import { Map } from "immutable";
 import {
   DispatchInjectablesTypes,
   LookupType,
   LookupTypeAbstractRenderer,
-  MapRepo,
   StringSerializedType,
   Template,
 } from "../../../../../../../../../main";
@@ -27,43 +25,46 @@ export const LookupDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
     > =>
-      LookupRenderer.Operations.ResolveRenderer(
-        renderer,
-        dispatcherContext.forms,
-      )
-        .Then((resolvedRenderer) =>
-          Dispatcher.Operations.Dispatch(
-            resolvedRenderer,
-            dispatcherContext,
-            true,
-            renderer.renderer.kind == "inlinedFormLookup"
-              ? `inlined ${renderer.type.name as string}`
-              : renderer.renderer.renderer,
-            undefined,
-            renderer.tableApi,
-          ),
-        )
-        .Then((template) =>
-          ValueOrErrors.Default.return<
-            [Template<any, any, any, any>, StringSerializedType],
-            string
-          >([
-            LookupTypeAbstractRenderer(
-              template[0],
-              dispatcherContext.IdProvider,
-              dispatcherContext.ErrorRenderer,
-            ).withView(dispatcherContext.lookupTypeRenderer()),
-            LookupType.SerializeToString(renderer.type.name as string),
-          ]),
-        )
-        .MapErrors((errors) =>
-          errors.map(
-            (error) => `${error}\n...When dispatching lookup renderer`,
-          ),
-        ),
+      renderer.kind == "inlinedType-lookupRenderer"
+        ? ValueOrErrors.Default.throwOne(
+            `inlined type lookup renderer should not have been dispatched to a lookup renderer`,
+          )
+        : LookupRenderer.Operations.ResolveRenderer(
+            renderer,
+            dispatcherContext.forms,
+          )
+            .Then((resolvedRenderer) =>
+              Dispatcher.Operations.Dispatch(
+                resolvedRenderer,
+                dispatcherContext,
+                true,
+                renderer.kind == "lookupType-inlinedRenderer",
+                renderer.tableApi ?? tableApi,
+              ),
+            )
+            .Then((template) =>
+              ValueOrErrors.Default.return<
+                [Template<any, any, any, any>, StringSerializedType],
+                string
+              >([
+                LookupTypeAbstractRenderer(
+                  template[0],
+                  dispatcherContext.IdProvider,
+                  dispatcherContext.ErrorRenderer,
+                ).withView(dispatcherContext.lookupTypeRenderer()),
+                LookupType.SerializeToString(renderer.type.name as string),
+              ]),
+            )
+            .MapErrors((errors) =>
+              errors.map(
+                (error) => `${error}\n...When dispatching lookup renderer`,
+              ),
+            ),
   },
 };

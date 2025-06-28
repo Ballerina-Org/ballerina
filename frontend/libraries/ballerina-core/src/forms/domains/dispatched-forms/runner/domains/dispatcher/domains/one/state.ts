@@ -25,6 +25,8 @@ export const OneDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       undefined | [Template<any, any, any, any>, StringSerializedType],
       string
@@ -35,7 +37,8 @@ export const OneDispatcher = {
             renderer.previewRenderer,
             dispatcherContext,
             "previewRenderer",
-            "previewRenderer",
+            isInlined,
+            tableApi,
           ),
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
@@ -85,6 +88,8 @@ export const OneDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -92,59 +97,44 @@ export const OneDispatcher = {
       OneDispatcher.Operations.DispatchPreviewRenderer(
         renderer,
         dispatcherContext,
+        isInlined,
+        tableApi,
       ).Then((previewRenderer) =>
         NestedDispatcher.Operations.DispatchAs(
           renderer.detailsRenderer,
           dispatcherContext,
           "detailsRenderer",
-          "detailsRenderer",
+          isInlined,
+          tableApi,
         ).Then((detailsRenderer) =>
           OneDispatcher.Operations.GetApi(renderer.api, dispatcherContext).Then(
             (getApi) =>
-              renderer.renderer.kind != "lookupRenderer"
-                ? ValueOrErrors.Default.throwOne<
+              dispatcherContext
+                .getConcreteRenderer("one", renderer.concreteRenderer)
+                .Then((concreteRenderer) =>
+                  ValueOrErrors.Default.return<
                     [Template<any, any, any, any>, StringSerializedType],
                     string
-                  >(
-                    `received non lookup renderer kind when resolving defaultState for one`,
-                  )
-                : renderer.renderer.renderer.kind != "concreteLookup"
-                  ? ValueOrErrors.Default.throwOne<
-                      [Template<any, any, any, any>, StringSerializedType],
-                      string
-                    >(
-                      `received non concrete lookup renderer kind "${renderer.renderer.renderer.kind}" when resolving defaultState for list`,
+                  >([
+                    OneAbstractRenderer(
+                      detailsRenderer[0],
+                      previewRenderer?.[0],
+                      dispatcherContext.IdProvider,
+                      dispatcherContext.ErrorRenderer,
                     )
-                  : dispatcherContext
-                      .getConcreteRenderer(
-                        "one",
-                        renderer.renderer.renderer.renderer,
-                      )
-                      .Then((concreteRenderer) =>
-                        ValueOrErrors.Default.return<
-                          [Template<any, any, any, any>, StringSerializedType],
-                          string
-                        >([
-                          OneAbstractRenderer(
-                            detailsRenderer[0],
-                            previewRenderer?.[0],
-                            dispatcherContext.IdProvider,
-                            dispatcherContext.ErrorRenderer,
-                          )
-                            .mapContext((_: any) => ({
-                              ..._,
-                              getApi,
-                              fromApiParser:
-                                dispatcherContext.parseFromApiByType(
-                                  renderer.type.args,
-                                ),
-                            }))
-                            .withView(concreteRenderer),
-                          OneType.SerializeToString([
-                            renderer.type.args as unknown as string,
-                          ]), // always a lookup
-                        ]),
-                      ),
+                      .mapContext((_: any) => ({
+                        ..._,
+                        getApi,
+                        fromApiParser: dispatcherContext.parseFromApiByType(
+                          renderer.type.args,
+                        ),
+                      }))
+                      .withView(concreteRenderer),
+                    OneType.SerializeToString([
+                      renderer.type.args as unknown as string,
+                    ]), // always a lookup
+                  ]),
+                ),
           ),
         ),
       ),

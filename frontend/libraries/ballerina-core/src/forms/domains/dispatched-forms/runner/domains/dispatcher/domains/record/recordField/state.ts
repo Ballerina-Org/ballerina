@@ -22,6 +22,8 @@ export const RecordFieldDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
+      isInlined: boolean,
+      tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
@@ -29,7 +31,8 @@ export const RecordFieldDispatcher = {
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
-        fieldName,
+        isInlined,
+        tableApi,
       ).MapErrors((errors) =>
         errors.map(
           (error) => `${error}\n...When dispatching field ${fieldName}`,

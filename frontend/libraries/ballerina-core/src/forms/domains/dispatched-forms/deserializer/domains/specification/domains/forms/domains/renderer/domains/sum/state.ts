@@ -6,19 +6,20 @@ import {
   DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
+  isString,
   SumType,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 
 export type SerializedSumRenderer = {
-  renderer: unknown;
+  renderer: string;
   leftRenderer: unknown;
   rightRenderer: unknown;
 };
 
 export type SumRenderer<T> = {
   kind: "sumRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   leftRenderer: NestedRenderer<T>;
   rightRenderer: NestedRenderer<T>;
   type: SumType<T>;
@@ -27,13 +28,13 @@ export type SumRenderer<T> = {
 export const SumRenderer = {
   Default: <T>(
     type: SumType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     leftRenderer: NestedRenderer<T>,
     rightRenderer: NestedRenderer<T>,
   ): SumRenderer<T> => ({
     kind: "sumRenderer",
     type,
-    renderer,
+    concreteRenderer,
     leftRenderer,
     rightRenderer,
   }),
@@ -56,7 +57,12 @@ export const SumRenderer = {
         ? ValueOrErrors.Default.throwOne(
             `renderer, leftRenderer and rightRenderer are required`,
           )
-        : ValueOrErrors.Default.return(serialized),
+        : !isString(serialized.renderer)
+          ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+          : ValueOrErrors.Default.return({
+              ...serialized,
+              renderer: serialized.renderer,
+            }),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -87,21 +93,12 @@ export const SumRenderer = {
               "Right renderer",
               types,
             ).Then((deserializedRightRenderer) =>
-              Renderer.Operations.Deserialize(
-                type,
-                validatedSerialized.renderer,
-                concreteRenderers,
-                types,
-                undefined,
-                undefined,
-              ).Then((renderer) =>
-                ValueOrErrors.Default.return(
-                  SumRenderer.Default(
-                    type,
-                    renderer,
-                    deserializedLeftRenderer,
-                    deserializedRightRenderer,
-                  ),
+              ValueOrErrors.Default.return(
+                SumRenderer.Default(
+                  type,
+                  validatedSerialized.renderer,
+                  deserializedLeftRenderer,
+                  deserializedRightRenderer,
                 ),
               ),
             ),

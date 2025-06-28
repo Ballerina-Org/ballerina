@@ -115,7 +115,6 @@ export const NestedRenderer = {
           "api" in validatedSerialized && isString(validatedSerialized.api)
             ? validatedSerialized.api
             : undefined,
-          undefined,
         ).Then((renderer) =>
           ValueOrErrors.Default.return<NestedRenderer<T>, string>({
             renderer,

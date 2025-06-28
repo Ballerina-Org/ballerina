@@ -10,26 +10,38 @@ import {
 } from "../../../../../../../../../../../../../main";
 import { Map } from "immutable";
 
-export type SerializedLookup =
-  | { kind: "concreteLookup"; renderer: string }
-  | { kind: "formLookup"; renderer: string }
-  | { kind: "inlinedFormLookup"; renderer: unknown; type: LookupType };
+export type SerializedLookup<T> =
+  | { kind: "lookupType-lookupRenderer"; renderer: string; type: LookupType }
+  | { kind: "lookupType-inlinedRenderer"; renderer: unknown; type: LookupType }
+  | {
+      kind: "inlinedType-lookupRenderer";
+      renderer: string;
+      type: DispatchParsedType<T>;
+    };
 
 export const SerializedLookup = {
   Default: {
-    ConcreteLookup: (renderer: string): SerializedLookup => ({
-      kind: "concreteLookup",
-      renderer,
-    }),
-    FormLookup: (renderer: string): SerializedLookup => ({
-      kind: "formLookup",
-      renderer,
-    }),
-    InlinedFormLookup: (
-      renderer: unknown,
+    LookupTypeLookupRenderer: <T>(
       type: LookupType,
-    ): SerializedLookup => ({
-      kind: "inlinedFormLookup",
+      renderer: string,
+    ): SerializedLookup<T> => ({
+      kind: "lookupType-lookupRenderer",
+      renderer,
+      type,
+    }),
+    LookupTypeInlinedRenderer: <T>(
+      type: LookupType,
+      renderer: unknown,
+    ): SerializedLookup<T> => ({
+      kind: "lookupType-inlinedRenderer",
+      renderer,
+      type,
+    }),
+    InlinedTypeLookupRenderer: <T>(
+      type: DispatchParsedType<T>,
+      renderer: string,
+    ): SerializedLookup<T> => ({
+      kind: "inlinedType-lookupRenderer",
       renderer,
       type,
     }),
@@ -37,16 +49,11 @@ export const SerializedLookup = {
 };
 
 export type Lookup<T> =
-  | { kind: "concreteLookup"; renderer: string }
   | { kind: "formLookup"; renderer: string }
   | { kind: "inlinedFormLookup"; renderer: Renderer<T> };
 
 export const Lookup = {
   Default: {
-    ConcreteLookup: <T>(renderer: string): Lookup<T> => ({
-      kind: "concreteLookup",
-      renderer,
-    }),
     FormLookup: <T>(renderer: string): Lookup<T> => ({
       kind: "formLookup",
       renderer,
@@ -58,24 +65,59 @@ export const Lookup = {
   },
 };
 
-export type LookupRenderer<T> = {
-  kind: "lookupRenderer";
-  renderer: Lookup<T>;
-  type: DispatchParsedType<T>;
-  tableApi: string | undefined; // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
-};
+export type LookupRenderer<T> =
+  | {
+      kind: "lookupType-lookupRenderer";
+      type: LookupType;
+      lookupRenderer: string;
+      tableApi: string | undefined;
+    }
+  | {
+      kind: "lookupType-inlinedRenderer";
+      inlinedRenderer: Renderer<T>;
+      type: LookupType;
+      tableApi: string | undefined;
+    }
+  | {
+      kind: "inlinedType-lookupRenderer";
+      lookupRenderer: string;
+      type: DispatchParsedType<T>;
+      tableApi: string | undefined;
+    };
 
 export const LookupRenderer = {
-  Default: <T extends DispatchInjectablesTypes<T>>(
-    type: DispatchParsedType<T>,
-    renderer: Lookup<T>,
-    tableApi: string | undefined,
-  ): LookupRenderer<T> => ({
-    kind: "lookupRenderer",
-    renderer,
-    type,
-    tableApi,
-  }),
+  Default: {
+    LookupTypeLookupRenderer: <T extends DispatchInjectablesTypes<T>>(
+      type: LookupType,
+      lookupRenderer: string,
+      tableApi: string | undefined,
+    ): LookupRenderer<T> => ({
+      kind: "lookupType-lookupRenderer",
+      lookupRenderer,
+      type,
+      tableApi,
+    }),
+    LookupTypeInlinedRenderer: <T extends DispatchInjectablesTypes<T>>(
+      type: LookupType,
+      inlinedRenderer: Renderer<T>,
+      tableApi: string | undefined,
+    ): LookupRenderer<T> => ({
+      kind: "lookupType-inlinedRenderer",
+      inlinedRenderer,
+      type,
+      tableApi,
+    }),
+    InlinedTypeLookupRenderer: <T extends DispatchInjectablesTypes<T>>(
+      type: DispatchParsedType<T>,
+      lookupRenderer: string,
+      tableApi: string | undefined,
+    ): LookupRenderer<T> => ({
+      kind: "inlinedType-lookupRenderer",
+      lookupRenderer,
+      type,
+      tableApi,
+    }),
+  },
   Operations: {
     ResolveRenderer: <
       T extends DispatchInjectablesTypes<T>,
@@ -85,21 +127,20 @@ export const LookupRenderer = {
       renderer: LookupRenderer<T>,
       forms: DispatcherContext<T, Flags, CustomPresentationContexts>["forms"],
     ): ValueOrErrors<Renderer<T>, string> =>
-      renderer.renderer.kind == "inlinedFormLookup"
-        ? ValueOrErrors.Default.return(renderer.renderer.renderer)
+      renderer.kind == "lookupType-inlinedRenderer"
+        ? ValueOrErrors.Default.return(renderer.inlinedRenderer)
         : MapRepo.Operations.tryFindWithError(
-            renderer.renderer.renderer,
+            renderer.lookupRenderer,
             forms,
             () =>
-              `cannot find renderer ${JSON.stringify(renderer.renderer, null, 2)}`,
+              `cannot find renderer ${JSON.stringify(renderer.lookupRenderer, null, 2)}`,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
     >(
-      type: DispatchParsedType<T>,
-      serialized: SerializedLookup,
+      serialized: SerializedLookup<T>,
       tableApi: string | undefined,
       concreteRenderers: ConcreteRenderers<
         T,
@@ -108,7 +149,7 @@ export const LookupRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<LookupRenderer<T>, string> =>
-      serialized.kind == "inlinedFormLookup"
+      serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
             serialized.type.name,
             types,
@@ -119,19 +160,30 @@ export const LookupRenderer = {
               concreteRenderers,
               types,
               tableApi,
-              true, // TODO: possibly we can remove this now
             ).Then((renderer) =>
               ValueOrErrors.Default.return(
-                LookupRenderer.Default(
-                  type,
-                  Lookup.Default.InlinedFormLookup(renderer),
+                LookupRenderer.Default.LookupTypeInlinedRenderer(
+                  serialized.type,
+                  renderer,
                   tableApi,
                 ),
               ),
             ),
           )
-        : ValueOrErrors.Default.return(
-            LookupRenderer.Default(type, serialized, tableApi),
-          ),
+        : serialized.kind == "lookupType-lookupRenderer"
+          ? ValueOrErrors.Default.return(
+              LookupRenderer.Default.LookupTypeLookupRenderer(
+                serialized.type,
+                serialized.renderer,
+                tableApi,
+              ),
+            )
+          : ValueOrErrors.Default.return(
+              LookupRenderer.Default.InlinedTypeLookupRenderer(
+                serialized.type,
+                serialized.renderer,
+                tableApi,
+              ),
+            ),
   },
 };
