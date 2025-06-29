@@ -141,8 +141,10 @@ export const DispatcherFormsAppTables = (props: {}) => {
       );
     };
 
-
-  const onEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (updater, delta) => {
+  const onEntityChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (entity.kind == "r" || entity.value.kind == "errors") {
       return;
     }

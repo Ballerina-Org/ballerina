@@ -190,7 +190,9 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueTable, Flags>;
   add: VoidCallbackWithOptionalFlags<Flags> | undefined;
   remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
-  moveTo: ((key: string, to: string, flags: Flags | undefined) => void) | undefined;
+  moveTo:
+    | ((key: string, to: string, flags: Flags | undefined) => void)
+    | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
 };
 

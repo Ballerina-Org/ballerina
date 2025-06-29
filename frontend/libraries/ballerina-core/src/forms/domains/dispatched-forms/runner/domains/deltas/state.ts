@@ -1415,7 +1415,7 @@ export const DispatchDeltaTransfer = {
                 )} in OneCreateValue.`,
               );
             }
-            
+
             return toRawObject(delta.value, delta.type.arg, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<

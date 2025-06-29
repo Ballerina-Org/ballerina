@@ -206,10 +206,10 @@ export const TraversalDispatchTest = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange: DispatchOnChange<PredicateValue, DispatchPassthroughFormFlags> = (
-    updater,
-    delta,
-  ) => {
+  const onPersonEntityChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }

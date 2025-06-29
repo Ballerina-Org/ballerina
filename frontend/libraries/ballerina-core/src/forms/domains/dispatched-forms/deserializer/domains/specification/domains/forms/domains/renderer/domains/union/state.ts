@@ -80,7 +80,8 @@ export const UnionRenderer = {
                   MapRepo.Operations.tryFindWithError(
                     caseName,
                     type.args,
-                    () => `case ${caseName} not found in type ${JSON.stringify(type, null, 2)}`,
+                    () =>
+                      `case ${caseName} not found in type ${JSON.stringify(type, null, 2)}`,
                   ).Then((caseType) =>
                     Renderer.Operations.Deserialize(
                       caseType,

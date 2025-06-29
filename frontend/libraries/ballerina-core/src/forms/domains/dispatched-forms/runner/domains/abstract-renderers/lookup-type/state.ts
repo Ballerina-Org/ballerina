@@ -10,7 +10,6 @@ import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
 import { View } from "../../../../../../../template/state";
 
-
 export type LookupTypeAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,

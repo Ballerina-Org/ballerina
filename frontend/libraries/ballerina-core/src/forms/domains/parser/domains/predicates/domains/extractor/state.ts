@@ -216,7 +216,12 @@ export const PredicateValueExtractor = {
         }
         case "tuple": {
           const traverseTupleFields = t.args.map((f, k) =>
-            self(lookupName, typesMap, f, debugPath.concat(`TupleItem-${k + 1}`)),
+            self(
+              lookupName,
+              typesMap,
+              f,
+              debugPath.concat(`TupleItem-${k + 1}`),
+            ),
           );
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
@@ -242,12 +247,7 @@ export const PredicateValueExtractor = {
         case "union": {
           const traverseCases: Map<string, TypeInstancesExtractor> = t.args
             .map((f, caseName) =>
-              self(
-                lookupName,
-                typesMap,
-                f,
-                debugPath.concat(caseName),
-              ),
+              self(lookupName, typesMap, f, debugPath.concat(caseName)),
             )
             .toMap();
           return (v): ExtractedTypeInstances =>

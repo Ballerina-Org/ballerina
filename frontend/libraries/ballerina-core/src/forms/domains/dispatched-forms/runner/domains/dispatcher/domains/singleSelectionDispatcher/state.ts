@@ -56,8 +56,9 @@ export const SingleSelectionDispatcher = {
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           SingleSelectionType.SerializeToString([
-                            (renderer.type.args[0] as LookupType).name as string,
-                          ])
+                            (renderer.type.args[0] as LookupType)
+                              .name as string,
+                          ]),
                         )
                           .mapContext((_: any) => ({
                             ..._,
@@ -105,7 +106,7 @@ export const SingleSelectionDispatcher = {
                         dispatcherContext.ErrorRenderer,
                         SingleSelectionType.SerializeToString([
                           (renderer.type.args[0] as LookupType).name as string,
-                        ])
+                        ]),
                       ).withView(concreteRenderer),
                       SingleSelectionType.SerializeToString([
                         (renderer.type.args[0] as LookupType).name as string, // always a lookup type

@@ -133,7 +133,7 @@ export const TableRenderer = {
         CustomPresentationContexts
       >,
       types: Map<string, DispatchParsedType<T>>,
-      api: string | undefined
+      api: string | undefined,
     ): ValueOrErrors<TableRenderer<T>, string> =>
       api != undefined && Array.isArray(api)
         ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
