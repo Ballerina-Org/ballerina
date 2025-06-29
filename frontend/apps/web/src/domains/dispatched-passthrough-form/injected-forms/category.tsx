@@ -1,21 +1,30 @@
 import {
-  FormLabel,
   View,
-  Value,
-  OnChange,
-  SimpleCallback,
   Template,
   replaceWith,
   Unit,
   simpleUpdater,
   simpleUpdaterWithChildren,
-  DeltaCustom,
-  ParsedType,
-  CommonFormState,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  DispatchDelta,
+  DispatchOnChange,
+  ValueCallbackWithOptionalFlags,
+  Option,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
+  StringSerializedType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "ballerina-core";
+
+export type CategoryAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  DispatchCategory,
+  CustomPresentationContext
+>;
 
 export type DispatchCategory = {
   kind: "custom";
@@ -25,10 +34,7 @@ export type DispatchCategory = {
   };
 };
 
-export type DispatchCategoryState = {
-  commonFormState: {
-    modifiedByUser: boolean;
-  };
+export type DispatchCategoryState = CommonAbstractRendererState & {
   customFormState: {
     likelyOutdated: boolean;
   };
@@ -56,9 +62,7 @@ export const DispatchCategory = {
 
 export const DispatchCategoryState = {
   Default: (): DispatchCategoryState => ({
-    commonFormState: {
-      modifiedByUser: false,
-    },
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       likelyOutdated: false,
     },
@@ -74,70 +78,71 @@ export const DispatchCategoryState = {
   },
 };
 
+export type CategoryAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<DispatchCategory, Flags>;
+};
+
+export type CategoryAbstractRendererViewForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<DispatchCategory, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<DispatchCategory, Flags>;
+};
+
 export type CategoryAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 > = View<
-  Context &
-    Value<DispatchCategory> & {
-      commonFormState: CommonFormState;
-      customFormState: DispatchCategoryState["customFormState"];
-    } & { disabled: boolean; type: ParsedType<any> },
-  {
-    commonFormState: CommonFormState;
-    customFormState: DispatchCategoryState["customFormState"];
-  },
-  ForeignMutationsExpected & {
-    onChange: OnChange<DispatchCategory>;
-    setNewValue: SimpleCallback<DispatchCategory>;
-  }
+  CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
+    DispatchCategoryState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
+  DispatchCategoryState,
+  CategoryAbstractRendererViewForeignMutationsExpected<Flags>
 >;
 
 export const CategoryAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Context &
-      Value<DispatchCategory> & {
-        disabled: boolean;
-        type: ParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
-    {
-      commonFormState: CommonFormState;
-      customFormState: DispatchCategoryState["customFormState"];
-    },
-    ForeignMutationsExpected & { onChange: OnChange<DispatchCategory> },
-    CategoryAbstractRendererView<Context, ForeignMutationsExpected>
+    CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
+      DispatchCategoryState,
+    DispatchCategoryState,
+    CategoryAbstractRendererForeignMutationsExpected<Flags>,
+    CategoryAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Expected dispatch category, got: ${JSON.stringify(
+          message={`${SerializedType}: Expected dispatch category, got: ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DeltaCustom = {
+              setNewValue: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "CustomDelta",
                   value: {
                     kind: "CategoryReplace",
@@ -148,8 +153,12 @@ export const CategoryAbstractRenderer = <
                     },
                     type: props.context.type,
                   },
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />
@@ -160,5 +169,10 @@ export const CategoryAbstractRenderer = <
 };
 
 export type DispatchPassthroughFormInjectedTypes = {
-  injectedCategory: { type: DispatchCategory; state: DispatchCategoryState };
+  injectedCategory: {
+    type: DispatchCategory;
+    state: DispatchCategoryState;
+    abstractRenderer: typeof CategoryAbstractRenderer;
+    view: CategoryAbstractRendererView<any, any>;
+  };
 };

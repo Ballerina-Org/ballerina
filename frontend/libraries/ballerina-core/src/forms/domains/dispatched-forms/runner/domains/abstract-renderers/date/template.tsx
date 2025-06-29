@@ -1,75 +1,83 @@
-import { Value } from "../../../../../../../value/state";
 import { Template } from "../../../../../../../template/state";
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
-  DispatchOnChange,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
-import { DateAbstractRendererState, DateAbstractRendererView } from "./state";
+import {
+  DateAbstractRendererForeignMutationsExpected,
+  DateAbstractRendererReadonlyContext,
+  DateAbstractRendererState,
+  DateAbstractRendererView,
+} from "./state";
 
 export const DateAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Context &
-      Value<Date> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    DateAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      DateAbstractRendererState,
     DateAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<Date> },
-    DateAbstractRendererView<Context, ForeignMutationsExpected>
+    DateAbstractRendererForeignMutationsExpected<Flags>,
+    DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(
         `Date expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering date field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering date field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Date value expected for date but got ${JSON.stringify(
+          message={`${SerializedType}: Date value expected for date but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
+              setNewValue: (value, flags) => {
                 props.setState(
                   DateAbstractRendererState.Updaters.Core.customFormState.children.possiblyInvalidInput(
-                    replaceWith(_),
+                    replaceWith(value),
                   ),
                 );
-                const newValue = _ == undefined ? _ : new Date(_);
+                const newValue = value == undefined ? value : new Date(value);
 
                 if (!(newValue == undefined || isNaN(newValue.getTime()))) {
-                  const delta: DispatchDelta = {
+                  const delta: DispatchDelta<Flags> = {
                     kind: "TimeReplace",
                     replace: newValue.toISOString(),
                     state: {
@@ -77,11 +85,11 @@ export const DateAbstractRenderer = <
                       customFormState: props.context.customFormState,
                     },
                     type: props.context.type,
-                    isWholeEntityMutation: false,
+                    flags,
                   };
                   setTimeout(() => {
                     props.foreignMutations.onChange(
-                      replaceWith(newValue),
+                      Option.Default.some(replaceWith(newValue)),
                       delta,
                     );
                   }, 0);

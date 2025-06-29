@@ -1,38 +1,46 @@
-import { Value } from "../../../../../../../value/state";
 import { View } from "../../../../../../../template/state";
 import {
-  DispatchCommonFormState,
-  FormLabel,
-  SimpleCallback,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
-export type Base64FileAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type Base64FileAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext,
+  ExtraContext
+>;
+
+export type Base64FileAbstractRendererState = CommonAbstractRendererState;
 
 export const Base64FileAbstractRendererState = {
-  Default: (): Base64FileAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
-  }),
+  Default: () => CommonAbstractRendererState.Default(),
+};
+
+export type Base64FileAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<string, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
 };
 
 export type Base64FileAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Context &
-    Value<string> &
-    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+  Base64FileAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    Base64FileAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   Base64FileAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string>;
-    setNewValue: SimpleCallback<string>;
-  }
+  Base64FileAbstractRendererForeignMutationsExpected<Flags>
 >;

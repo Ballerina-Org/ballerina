@@ -5,107 +5,139 @@ import {
 } from "../../../../../../../../value-infinite-data-stream/state";
 import {
   replaceWith,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
   Unit,
-  Value,
 } from "../../../../../../../../../main";
-import { AbstractTableRendererReadonlyContext } from "../../../../../../../../../main";
+import { TableAbstractRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
-import { v4 } from "uuid";
 
-const Co = CoTypedFactory<
-  AbstractTableRendererReadonlyContext,
-  AbstractTableRendererState
->();
+const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
+  CoTypedFactory<
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
+    TableAbstractRendererState
+  >();
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
-const intialiseTable = Co.GetState().then((current) => {
-  if (current.value == undefined) {
-    return Co.Wait(0);
-  }
-  const initialData = current.value.data;
-  const hasMoreValues = current.value.hasMoreValues;
-  const from = current.value.from;
-  const to = current.value.to;
-  const getChunkWithParams = current.tableApiSource.getMany(
-    current.fromTableApiParser,
-  );
+const intialiseTable = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>()
+    .GetState()
+    .then((current) => {
+      if (current.value == undefined) {
+        return Co<CustomPresentationContext, ExtraContext>().Wait(0);
+      }
+      const initialData = current.value.data;
+      const hasMoreValues = current.value.hasMoreValues;
+      const from = current.value.from;
+      const to = current.value.to;
+      const getChunkWithParams = current.tableApiSource.getMany(
+        current.fromTableApiParser,
+      );
 
-  return Co.SetState(
-    replaceWith(AbstractTableRendererState.Default()).then(
-      AbstractTableRendererState.Updaters.Core.customFormState.children
-        .stream(
-          replaceWith(
-            ValueInfiniteStreamState.Default(
-              DEFAULT_CHUNK_SIZE,
-              getChunkWithParams(Map<string, string>()),
-              initialData.size == 0 && hasMoreValues ? "loadMore" : false,
-            ),
-          )
-            .then(
-              ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
-                data: initialData,
-                hasMoreValues: hasMoreValues,
-                from,
-                to,
-              }),
-            )
-            .then(
-              ValueInfiniteStreamState.Updaters.Core.position(
-                ValueStreamPosition.Updaters.Core.nextStart(
-                  replaceWith(to + 1),
+      return Co<CustomPresentationContext, ExtraContext>().SetState(
+        replaceWith(TableAbstractRendererState.Default()).then(
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .stream(
+              replaceWith(
+                ValueInfiniteStreamState.Default(
+                  DEFAULT_CHUNK_SIZE,
+                  getChunkWithParams(Map<string, string>()),
+                  initialData.size == 0 && hasMoreValues ? "loadMore" : false,
                 ),
+              )
+                .then(
+                  ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(
+                    0,
+                    {
+                      data: initialData,
+                      hasMoreValues: hasMoreValues,
+                      from,
+                      to,
+                    },
+                  ),
+                )
+                .then(
+                  ValueInfiniteStreamState.Updaters.Core.position(
+                    ValueStreamPosition.Updaters.Core.nextStart(
+                      replaceWith(to + 1),
+                    ),
+                  ),
+                ),
+            )
+            .thenMany([
+              TableAbstractRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
+                replaceWith(getChunkWithParams),
               ),
-            ),
-        )
-        .thenMany([
-          AbstractTableRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
-            replaceWith(getChunkWithParams),
-          ),
-          AbstractTableRendererState.Updaters.Template.shouldReinitialize(
-            false,
-          ),
-          AbstractTableRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
-            replaceWith(current.remoteEntityVersionIdentifier),
-          ),
-          AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
-            replaceWith<
-              AbstractTableRendererState["customFormState"]["initializationStatus"]
-            >("initialized"),
-          ),
-        ]),
-    ),
+              TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                false,
+              ),
+              TableAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+                replaceWith(current.remoteEntityVersionIdentifier),
+              ),
+              TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["initializationStatus"]
+                >("initialized"),
+              ),
+            ]),
+        ),
+      );
+    });
+
+const reinitialise = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>()
+    .GetState()
+    .then((_) => {
+      return Co<CustomPresentationContext, ExtraContext>().SetState(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+          replaceWith<
+            TableAbstractRendererState["customFormState"]["initializationStatus"]
+          >("reinitializing"),
+        ),
+      );
+    });
+
+export const TableReinitialiseRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>().Template<any>(
+    reinitialise<CustomPresentationContext, ExtraContext>(),
+    {
+      interval: 15,
+      runFilter: (props) =>
+        props.context.customFormState.initializationStatus === "initialized" &&
+        props.context.customFormState.shouldReinitialize &&
+        props.context.remoteEntityVersionIdentifier !==
+          props.context.customFormState.previousRemoteEntityVersionIdentifier,
+    },
   );
-});
 
-const reinitialise = Co.GetState().then((_) => {
-  return Co.SetState(
-    AbstractTableRendererState.Updaters.Core.customFormState.children.initializationStatus(
-      replaceWith<
-        AbstractTableRendererState["customFormState"]["initializationStatus"]
-      >("reinitializing"),
-    ),
+export const TableRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>().Template<any>(
+    intialiseTable<CustomPresentationContext, ExtraContext>(),
+    {
+      interval: 15,
+      runFilter: (props) => {
+        return (
+          props.context.customFormState.initializationStatus ===
+            "not initialized" ||
+          props.context.customFormState.initializationStatus ===
+            "reinitializing"
+        );
+      },
+    },
   );
-});
-
-export const TableReinitialiseRunner = Co.Template<any>(reinitialise, {
-  interval: 15,
-  runFilter: (props) =>
-    props.context.customFormState.initializationStatus === "initialized" &&
-    props.context.customFormState.shouldReinitialize &&
-    props.context.remoteEntityVersionIdentifier !==
-      props.context.customFormState.previousRemoteEntityVersionIdentifier,
-});
-
-export const TableRunner = Co.Template<any>(intialiseTable, {
-  interval: 15,
-  runFilter: (props) => {
-    return (
-      props.context.customFormState.initializationStatus ===
-        "not initialized" ||
-      props.context.customFormState.initializationStatus === "reinitializing"
-    );
-  },
-});

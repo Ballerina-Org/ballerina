@@ -1,6 +1,12 @@
-import { ListType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  ListType,
+  StringSerializedType,
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import {
+  Dispatcher,
+  DispatchInjectablesTypes,
   ListAbstractRenderer,
   Template,
   ValueOrErrors,
@@ -11,44 +17,66 @@ import { NestedDispatcher } from "../nestedDispatcher/state";
 //TODO check type
 export const ListDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      type: ListType<T>,
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: ListRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,
         dispatcherContext,
         "listElement",
-        "listElement",
+        isInlined,
+        tableApi,
       )
         .Then((elementTemplate) =>
           dispatcherContext
-            .defaultState(type.args[0], renderer.elementRenderer.renderer)
+            .defaultState(
+              renderer.type.args[0],
+              renderer.elementRenderer.renderer,
+            )
             .Then((defaultElementState) =>
               dispatcherContext
-                .defaultValue(type.args[0], renderer.elementRenderer.renderer)
+                .defaultValue(
+                  renderer.type.args[0],
+                  renderer.elementRenderer.renderer,
+                )
                 .Then((defaultElementValue) =>
-                  renderer.renderer.kind != "lookupRenderer"
-                    ? ValueOrErrors.Default.throwOne<
-                        Template<any, any, any, any>,
+                  dispatcherContext
+                    .getConcreteRenderer("list", renderer.concreteRenderer)
+                    .Then((concreteRenderer) => {
+                      const serializedType = ListType.SerializeToString([
+                        elementTemplate[1],
+                      ]);
+                      return ValueOrErrors.Default.return<
+                        [Template<any, any, any, any>, StringSerializedType],
                         string
-                      >(
-                        `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for list`,
-                      )
-                    : dispatcherContext
-                        .getConcreteRenderer("list", renderer.renderer.renderer)
-                        .Then((concreteRenderer) =>
-                          ValueOrErrors.Default.return(
-                            ListAbstractRenderer(
-                              () => defaultElementState,
-                              () => defaultElementValue,
-                              elementTemplate,
-                              dispatcherContext.IdProvider,
-                              dispatcherContext.ErrorRenderer,
-                            ).withView(concreteRenderer),
-                          ),
-                        ),
+                      >([
+                        ListAbstractRenderer(
+                          () => defaultElementState,
+                          () => defaultElementValue,
+                          elementTemplate[0],
+                          dispatcherContext.IdProvider,
+                          dispatcherContext.ErrorRenderer,
+                          serializedType,
+                        ).withView(concreteRenderer),
+                        serializedType,
+                      ]);
+                    }),
                 ),
             ),
         )

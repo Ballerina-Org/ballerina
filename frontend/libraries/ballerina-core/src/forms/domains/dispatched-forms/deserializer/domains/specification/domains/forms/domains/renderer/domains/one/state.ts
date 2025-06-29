@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
@@ -11,17 +12,17 @@ import { NestedRenderer } from "../nestedRenderer/state";
 import { Renderer } from "../../state";
 
 export type SerializedOneRenderer = {
-  renderer: unknown;
+  renderer: string;
   detailsRenderer: unknown;
   previewRenderer?: unknown;
-  api: string | Array<string>;
+  api: Array<string>;
 };
 
 export type OneRenderer<T> = {
   kind: "oneRenderer";
-  api: string | Array<string>;
+  api: Array<string>;
   type: OneType<T>;
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   detailsRenderer: NestedRenderer<T>;
   previewRenderer?: NestedRenderer<T>;
 };
@@ -29,14 +30,14 @@ export type OneRenderer<T> = {
 export const OneRenderer = {
   Default: <T>(
     type: OneType<T>,
-    api: string | Array<string>,
-    renderer: Renderer<T>,
+    api: Array<string>,
+    concreteRenderer: string,
     detailsRenderer: NestedRenderer<T>,
     previewRenderer?: NestedRenderer<T>,
   ): OneRenderer<T> => ({
     kind: "oneRenderer",
     type,
-    renderer,
+    concreteRenderer,
     api,
     detailsRenderer,
     previewRenderer,
@@ -51,52 +52,77 @@ export const OneRenderer = {
           )
         : !("api" in serialized)
           ? ValueOrErrors.Default.throwOne(`api is missing`)
-          : !isString(serialized.api) && !Array.isArray(serialized.api)
-            ? ValueOrErrors.Default.throwOne(`api must be a string or an array`)
-            : Array.isArray(serialized.api) && serialized.api.length != 2
+          : !Array.isArray(serialized.api)
+            ? ValueOrErrors.Default.throwOne(`api must be an array`)
+            : serialized.api.length != 2
               ? ValueOrErrors.Default.throwOne(
                   `api must be an array of length 2`,
                 )
-              : Array.isArray(serialized.api) && !serialized.api.every(isString)
+              : !serialized.api.every(isString)
                 ? ValueOrErrors.Default.throwOne(
                     `api array elements must be strings`,
                   )
                 : !("renderer" in serialized)
                   ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-                  : !("detailsRenderer" in serialized)
+                  : !isString(serialized.renderer)
                     ? ValueOrErrors.Default.throwOne(
-                        `detailsRenderer is missing`,
+                        `renderer must be a string`,
                       )
-                    : ValueOrErrors.Default.return({
-                        ...serialized,
-                        detailsRenderer: serialized.detailsRenderer,
-                        api: serialized.api,
-                      }),
-    DeserializePreviewRenderer: <T>(
+                    : !("detailsRenderer" in serialized)
+                      ? ValueOrErrors.Default.throwOne(
+                          `detailsRenderer is missing`,
+                        )
+                      : ValueOrErrors.Default.return({
+                          ...serialized,
+                          renderer: serialized.renderer,
+                          detailsRenderer: serialized.detailsRenderer,
+                          api: serialized.api,
+                        }),
+    DeserializePreviewRenderer: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: OneType<T>,
       serialized: SerializedOneRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type.args,
+            type.arg,
             serialized.previewRenderer,
             concreteRenderers,
             "preview renderer",
             types,
           ),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: OneType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
-            type.args,
+            type.arg,
             validatedSerialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
@@ -108,20 +134,13 @@ export const OneRenderer = {
               concreteRenderers,
               types,
             ).Then((previewRenderer) =>
-              Renderer.Operations.Deserialize(
-                type,
-                validatedSerialized.renderer,
-                concreteRenderers,
-                types,
-              ).Then((renderer) =>
-                ValueOrErrors.Default.return(
-                  OneRenderer.Default(
-                    type,
-                    validatedSerialized.api,
-                    renderer,
-                    detailsRenderer,
-                    previewRenderer,
-                  ),
+              ValueOrErrors.Default.return(
+                OneRenderer.Default(
+                  type,
+                  validatedSerialized.api,
+                  validatedSerialized.renderer,
+                  detailsRenderer,
+                  previewRenderer,
                 ),
               ),
             ),

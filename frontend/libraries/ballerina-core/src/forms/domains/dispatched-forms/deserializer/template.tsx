@@ -1,6 +1,15 @@
-import { Unit } from "../../../../../main";
+import { DispatchInjectablesTypes, Unit } from "../../../../../main";
 import { LoadAndDeserializeSpecification } from "./coroutines/runner";
 
 export const DispatchFormsParserTemplate = <
-  T extends { [key in keyof T]: { type: any; state: any } } = Unit,
->() => LoadAndDeserializeSpecification<T>();
+  T extends DispatchInjectablesTypes<T> = Unit,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
+>() =>
+  LoadAndDeserializeSpecification<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >();

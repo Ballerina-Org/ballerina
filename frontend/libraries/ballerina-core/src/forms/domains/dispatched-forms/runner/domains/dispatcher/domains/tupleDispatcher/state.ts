@@ -5,29 +5,56 @@ import {
   DispatchTupleAbstractRenderer,
   Template,
   ValueOrErrors,
+  DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 
-import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import {
+  StringSerializedType,
+  TupleType,
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { TupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/tuple/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const TupleDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      type: TupleType<T>,
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       ValueOrErrors.Operations.All(
-        List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(
-          type.args.map((_, index) =>
+        List<
+          ValueOrErrors<
+            [number, Template<any, any, any, any>, StringSerializedType],
+            string
+          >
+        >(
+          renderer.type.args.map((_, index) =>
             NestedDispatcher.Operations.DispatchAs(
               renderer.itemRenderers[index],
               dispatcherContext,
               `Item ${index + 1}`,
-              `Item ${index + 1}`,
+              isInlined,
+              tableApi,
             ).Then((template) =>
-              ValueOrErrors.Default.return([index, template]),
+              ValueOrErrors.Default.return<
+                [number, Template<any, any, any, any>, StringSerializedType],
+                string
+              >([index, template[0], template[1]]),
             ),
           ),
         ),
@@ -35,7 +62,7 @@ export const TupleDispatcher = {
         .Then((templates) =>
           ValueOrErrors.Operations.All(
             List<ValueOrErrors<[number, any], string>>(
-              type.args.map((arg, index) =>
+              renderer.type.args.map((arg, index) =>
                 dispatcherContext
                   .defaultState(arg, renderer.itemRenderers[index].renderer)
                   .Then((defaultState) =>
@@ -44,25 +71,28 @@ export const TupleDispatcher = {
               ),
             ),
           ).Then((ItemDefaultStates) =>
-            renderer.renderer.kind != "lookupRenderer"
-              ? ValueOrErrors.Default.throwOne<
-                  Template<any, any, any, any>,
+            dispatcherContext
+              .getConcreteRenderer("tuple", renderer.concreteRenderer)
+              .Then((concreteRenderer) => {
+                const serializedType = TupleType.SerializeToString(
+                  templates.map((template) => template[2]).toArray(),
+                );
+                return ValueOrErrors.Default.return<
+                  [Template<any, any, any, any>, StringSerializedType],
                   string
-                >(
-                  `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for tuple`,
-                )
-              : dispatcherContext
-                  .getConcreteRenderer("tuple", renderer.renderer.renderer)
-                  .Then((concreteRenderer) =>
-                    ValueOrErrors.Default.return(
-                      DispatchTupleAbstractRenderer(
-                        Map(ItemDefaultStates).map((state) => () => state),
-                        Map(templates),
-                        dispatcherContext.IdProvider,
-                        dispatcherContext.ErrorRenderer,
-                      ).withView(concreteRenderer),
+                >([
+                  DispatchTupleAbstractRenderer(
+                    Map(ItemDefaultStates).map((state) => () => state),
+                    Map(
+                      templates.map((template) => [template[0], template[1]]),
                     ),
-                  ),
+                    dispatcherContext.IdProvider,
+                    dispatcherContext.ErrorRenderer,
+                    serializedType,
+                  ).withView(concreteRenderer),
+                  serializedType,
+                ]);
+              }),
           ),
         )
         .MapErrors((errors) =>

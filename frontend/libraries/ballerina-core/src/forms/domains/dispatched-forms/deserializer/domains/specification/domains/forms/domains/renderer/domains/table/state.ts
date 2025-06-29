@@ -2,13 +2,12 @@ import { List, Map } from "immutable";
 import {
   DispatchIsObject,
   DispatchParsedType,
-  RecordType,
   TableType,
 } from "../../../../../types/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   isString,
-  MapRepo,
   PredicateVisibleColumns,
   TableLayout,
   ValueOrErrors,
@@ -16,11 +15,10 @@ import {
 
 import { NestedRenderer } from "../nestedRenderer/state";
 import { TableCellRenderer } from "./domains/tableCellRenderer/state";
-import { Renderer } from "../../state";
 
 export type SerializedTableRenderer = {
   type: string;
-  renderer: unknown;
+  renderer: string;
   columns: Map<string, unknown>;
   detailsRenderer?: unknown;
   visibleColumns: unknown;
@@ -31,7 +29,7 @@ export type TableRenderer<T> = {
   type: TableType<T>;
   columns: Map<string, TableCellRenderer<T>>;
   visibleColumns: PredicateVisibleColumns;
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
   api?: string;
 };
@@ -41,7 +39,7 @@ export const TableRenderer = {
     type: TableType<T>,
     columns: Map<string, TableCellRenderer<T>>,
     visibleColumns: PredicateVisibleColumns,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
     api?: string,
   ): TableRenderer<T> => ({
@@ -49,7 +47,7 @@ export const TableRenderer = {
     type,
     columns,
     visibleColumns,
-    renderer,
+    concreteRenderer,
     detailsRenderer,
     api,
   }),
@@ -99,37 +97,54 @@ export const TableRenderer = {
                       visibleColumns: _.visibleColumns,
                       api: _?.api,
                     }),
-    DeserializeDetailsRenderer: <T>(
+    DeserializeDetailsRenderer: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type.args[0],
+            type.arg,
             serialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
             types,
-            typeof serialized.detailsRenderer == "object" &&
-              "renderer" in serialized.detailsRenderer &&
-              typeof serialized.detailsRenderer.renderer == "object",
           ),
-    Deserialize: <T>(
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: TableType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
-      api?: string | string[],
+      api: string | undefined,
     ): ValueOrErrors<TableRenderer<T>, string> =>
       api != undefined && Array.isArray(api)
         ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
         : TableRenderer.Operations.tryAsValidTableForm(serialized)
             .Then((validTableForm) =>
-              DispatchParsedType.Operations.AsResolvedType(
-                type.args[0],
+              DispatchParsedType.Operations.ResolveLookupType(
+                type.arg.name,
                 types,
               ).Then((resolvedType) =>
                 resolvedType.kind != "record"
@@ -174,21 +189,14 @@ export const TableRenderer = {
                           concreteRenderers,
                           types,
                         ).Then((detailsRenderer) =>
-                          Renderer.Operations.Deserialize(
-                            type,
-                            validTableForm.renderer,
-                            concreteRenderers,
-                            types,
-                          ).Then((renderer) =>
-                            ValueOrErrors.Default.return(
-                              TableRenderer.Default(
-                                type,
-                                Map<string, TableCellRenderer<T>>(columns),
-                                layout,
-                                renderer,
-                                detailsRenderer,
-                                api,
-                              ),
+                          ValueOrErrors.Default.return(
+                            TableRenderer.Default(
+                              type,
+                              Map<string, TableCellRenderer<T>>(columns),
+                              layout,
+                              validTableForm.renderer,
+                              detailsRenderer,
+                              api,
                             ),
                           ),
                         ),

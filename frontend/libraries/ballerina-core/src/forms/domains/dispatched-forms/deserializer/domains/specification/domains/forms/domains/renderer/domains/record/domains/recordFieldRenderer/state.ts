@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   Expr,
   isObject,
@@ -53,16 +54,26 @@ export const RecordFieldRenderer = {
             : undefined,
       }),
     ),
-  Deserialize: <T>(
+  Deserialize: <
+    T extends DispatchInjectablesTypes<T>,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext,
+  >(
     type: DispatchParsedType<T>,
     serialized: unknown,
-    concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+    concreteRenderers: ConcreteRenderers<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
-      (validatedSerialized) =>
-        NestedRenderer.Operations.DeserializeAs(
+      (validatedSerialized) => {
+        return NestedRenderer.Operations.DeserializeAs(
           type,
           validatedSerialized,
           concreteRenderers,
@@ -82,6 +93,7 @@ export const RecordFieldRenderer = {
               }),
             ),
           ),
-        ),
+        );
+      },
     ),
 };

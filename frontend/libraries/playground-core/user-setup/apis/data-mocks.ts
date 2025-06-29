@@ -1,22 +1,20 @@
 import { faker } from "@faker-js/faker";
 import {
   PromiseRepo,
-  EnumOptionsSources,
   EntityApis,
   Guid,
-  TableApiSources,
   PredicateValue,
   ValueOrErrors,
   BasicFun,
-  AbstractTableRendererState,
   DispatchEnumOptionsSources,
   DispatchTableApiSources,
   DispatchTableApiSource,
   DispatchOneSource,
   DispatchLookupSources,
+  TableAbstractRendererState,
 } from "ballerina-core";
-import { Map, OrderedMap, Range } from "immutable";
-import { ValueInfiniteStreamState, ValueStreamPosition } from "ballerina-core";
+import { Map, Range } from "immutable";
+import { ValueStreamPosition } from "ballerina-core";
 import { v4 } from "uuid";
 
 const userFieldsEnum = [
@@ -74,7 +72,7 @@ const getAdminLookup: DispatchOneSource = {
         hasMoreValues: res.HasMore,
         to: res.To,
         from: res.From,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -209,7 +207,7 @@ const getActiveUsers: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -253,7 +251,7 @@ const getInactiveUsers: DispatchTableApiSource = {
         hasMoreValues: res.HasMore,
         to: res.To,
         from: res.From,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -297,7 +295,7 @@ const getAdmin: DispatchTableApiSource = {
         hasMoreValues: res.HasMore,
         to: res.To,
         from: res.From,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -332,7 +330,7 @@ const getUserGroups: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -366,7 +364,7 @@ const getActivities: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),

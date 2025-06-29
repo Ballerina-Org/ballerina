@@ -1,5 +1,7 @@
 import {
+  DispatchInjectablesTypes,
   DispatcherContext,
+  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../../main";
@@ -8,20 +10,35 @@ import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      return NestedDispatcher.Operations.Dispatch(
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
+      NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
-        fieldName,
+        isInlined,
+        tableApi,
       ).MapErrors((errors) =>
         errors.map(
           (error) => `${error}\n...When dispatching field ${fieldName}`,
         ),
-      );
-    },
+      ),
   },
 };

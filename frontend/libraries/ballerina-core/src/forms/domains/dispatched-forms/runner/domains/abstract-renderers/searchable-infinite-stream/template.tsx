@@ -4,7 +4,6 @@ import {
   CoTypedFactory,
   Debounce,
   Debounced,
-  Delta,
   DispatchDelta,
   id,
   InfiniteStreamLoader,
@@ -14,37 +13,42 @@ import {
   SimpleCallback,
   Template,
   Value,
-  ValueOption,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
-import { FormLabel } from "../../../../../singleton/domains/form-label/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractRendererView,
+  SearchableInfiniteStreamAbstractRendererReadonlyContext,
+  SearchableInfiniteStreamAbstractRendererForeignMutationsExpected,
 } from "./state";
 
 export const SearchableInfiniteStreamAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    Context & { onDebounce: SimpleCallback<void> } & Value<ValueOption>,
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > & {
+      onDebounce: SimpleCallback<void>;
+    },
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncedCo = CoTypedFactory<
@@ -68,9 +72,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     ]),
   );
   const debouncerRunner = DebouncerCo.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer, {
     interval: 15,
     runFilter: (props) =>
@@ -79,9 +81,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ),
   });
   const loaderRunner = Co.Template<
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    }
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>
   >(
     InfiniteStreamLoader<CollectionReference>().embed(
       (_) => _.customFormState.stream,
@@ -98,47 +98,50 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
 
   return Template.Default<
-    Context &
-      Value<ValueOption> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueOption>;
-    },
+    SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
     SearchableInfiniteStreamAbstractRendererView<
-      Context,
-      ForeignMutationsExpected
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
     >
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering searchable infinite stream field\n...${
-          props.context.identifiers.withLauncher
+          SerializedType
         }`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Option value expected for searchable infinite stream but got ${JSON.stringify(
+          message={`${SerializedType}: Option value expected for searchable infinite stream but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues == false
@@ -165,8 +168,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                         : id,
                     ),
                 ),
-              clearSelection: () => {
-                const delta: DispatchDelta = {
+              clearSelection: (flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
                   replace: PredicateValue.Default.option(
                     false,
@@ -177,13 +180,15 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
                 props.foreignMutations.onChange(
-                  replaceWith(
-                    PredicateValue.Default.option(
-                      false,
-                      PredicateValue.Default.unit(),
+                  Option.Default.some(
+                    replaceWith(
+                      PredicateValue.Default.option(
+                        false,
+                        PredicateValue.Default.unit(),
+                      ),
                     ),
                   ),
                   delta,
@@ -207,18 +212,21 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                     replaceWith(""),
                   ),
                 ),
-              select: (_) => {
-                const delta: DispatchDelta = {
+              select: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "OptionReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

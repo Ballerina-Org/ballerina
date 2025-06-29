@@ -1,12 +1,13 @@
-import { Value } from "../../../../../../../value/state";
-
 import {
   ValueRecord,
   DispatchOnChange,
-  FormLabel,
   Guid,
   SimpleCallback,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  Unit,
+  CommonAbstractRendererReadonlyContext,
+  MultiSelectionType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 import { View } from "../../../../../../../template/state";
@@ -15,22 +16,38 @@ import {
   EnumAbstractRendererState,
 } from "../enum/state";
 
+export type EnumMultiselectAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  MultiSelectionType<any>,
+  ValueRecord,
+  CustomPresentationContext,
+  ExtraContext
+> &
+  DispatchBaseEnumContext;
+
+export type EnumMultiselectAbstractRendererState = EnumAbstractRendererState;
+
+export type EnumMultiselectAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueRecord, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<Array<Guid>, Flags>;
+  loadOptions: SimpleCallback<void>;
+};
+
 export type EnumMultiselectAbstractRendererView<
-  Context extends FormLabel & DispatchBaseEnumContext,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Context &
-    Value<ValueRecord> &
-    DomNodeIdReadonlyContext &
-    EnumAbstractRendererState & {
+  EnumMultiselectAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    EnumMultiselectAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-      disabled: boolean;
-    },
-  EnumAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueRecord>;
-    setNewValue: SimpleCallback<Array<Guid>>;
-    loadOptions: SimpleCallback<void>;
-  }
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
+  EnumMultiselectAbstractRendererState,
+  EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

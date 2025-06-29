@@ -1,9 +1,11 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
   isString,
+  Unit,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import {
@@ -13,13 +15,13 @@ import {
 import { Renderer } from "../../state";
 
 export type SerializedStreamRenderer = {
-  renderer: unknown;
+  renderer: string;
   stream: string;
 };
 
 export type StreamRenderer<T> = {
   kind: "streamRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   stream: string;
   type: SingleSelectionType<T> | MultiSelectionType<T>;
 };
@@ -28,12 +30,12 @@ export const StreamRenderer = {
   Default: <T>(
     type: SingleSelectionType<T> | MultiSelectionType<T>,
     stream: string,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
   ): StreamRenderer<T> => ({
     kind: "streamRenderer",
     type,
     stream,
-    renderer,
+    concreteRenderer,
   }),
   Operations: {
     tryAsValidStreamBaseRenderer: (
@@ -43,34 +45,27 @@ export const StreamRenderer = {
         ? ValueOrErrors.Default.throwOne(`stream renderer is not an object`)
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is required`)
-          : !("stream" in serialized)
-            ? ValueOrErrors.Default.throwOne(`stream is required`)
-            : !isString(serialized.stream)
-              ? ValueOrErrors.Default.throwOne(`stream must be a string`)
-              : ValueOrErrors.Default.return({
-                  ...serialized,
-                  stream: serialized.stream,
-                }),
-    Deserialize: <T>(
+          : !isString(serialized.renderer)
+            ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+            : !("stream" in serialized)
+              ? ValueOrErrors.Default.throwOne(`stream is required`)
+              : !isString(serialized.stream)
+                ? ValueOrErrors.Default.throwOne(`stream must be a string`)
+                : ValueOrErrors.Default.return({
+                    renderer: serialized.renderer,
+                    stream: serialized.stream,
+                  }),
+    Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SingleSelectionType<T> | MultiSelectionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
-      types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<StreamRenderer<T>, string> =>
       StreamRenderer.Operations.tryAsValidStreamBaseRenderer(serialized)
         .Then((validatedSerialized) =>
-          Renderer.Operations.Deserialize(
-            type,
-            validatedSerialized.renderer,
-            concreteRenderers,
-            types,
-          ).Then((renderer) =>
-            ValueOrErrors.Default.return(
-              StreamRenderer.Default(
-                type,
-                validatedSerialized.stream,
-                renderer,
-              ),
+          ValueOrErrors.Default.return(
+            StreamRenderer.Default(
+              type,
+              validatedSerialized.stream,
+              validatedSerialized.renderer,
             ),
           ),
         )

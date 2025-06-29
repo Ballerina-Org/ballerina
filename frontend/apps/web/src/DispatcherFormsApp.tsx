@@ -6,7 +6,6 @@ import {
   Sum,
   PredicateValue,
   replaceWith,
-  Updater,
   DeltaTransfer,
   ValueOrErrors,
   DispatchFormsParserTemplate,
@@ -21,26 +20,37 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   DispatchInjectedPrimitive,
+  DispatchOnChange,
+  AggregatedFlags,
 } from "ballerina-core";
-import { Set, Map, OrderedMap } from "immutable";
+import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
-import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
 import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
 import {
   DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import {
+  DispatchPassthroughFormConcreteRenderers,
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+} from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomPresentationContext
+  >,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -73,22 +83,38 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   </div>
 );
 
-const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
 export const DispatcherFormsApp = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext
+    >().Default(),
   );
 
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
   const [personConfigState, setPersonConfigState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -116,10 +142,15 @@ export const DispatcherFormsApp = (props: {}) => {
         state: any,
       ) => ValueOrErrors<any, string>,
       fromDelta: (
-        delta: DispatchDelta,
+        delta: DispatchDelta<DispatchPassthroughFormFlags>,
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
-    (deltaCustom: DispatchDeltaCustom): ValueOrErrors<[T, string], string> => {
+    (
+      deltaCustom: DispatchDeltaCustom,
+    ): ValueOrErrors<
+      [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
+      string
+    > => {
       if (deltaCustom.value.kind == "CategoryReplace") {
         return toRawObject(
           deltaCustom.value.replace,
@@ -132,7 +163,8 @@ export const DispatcherFormsApp = (props: {}) => {
               replace: value,
             },
             "[CategoryReplace]",
-          ] as [T, string]);
+            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
+          ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
         });
       }
       return ValueOrErrors.Default.throwOne(
@@ -140,15 +172,20 @@ export const DispatcherFormsApp = (props: {}) => {
       );
     };
 
-  const onPersonConfigChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  console.debug("personEntity", JSON.stringify(personEntity, null, 2));
+
+  const onPersonConfigChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (config.kind == "r" || config.value.kind == "errors") {
       return;
     }
 
-    const newConfig = updater(config.value.value);
+    const newConfig =
+      updater.kind == "r"
+        ? updater.value(config.value.value)
+        : config.value.value;
     console.log("patching config", newConfig);
     setConfig(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
@@ -173,16 +210,20 @@ export const DispatcherFormsApp = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onPersonEntityChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(personEntity.value.value);
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(personEntity.value.value)
+        : personEntity.value.value;
     console.log("patching entity", newEntity);
+    console.log("delta", JSON.stringify(delta, null, 2));
     setPersonEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
     );
@@ -303,11 +344,13 @@ export const DispatcherFormsApp = (props: {}) => {
   ) {
     return (
       <ol>
-        {specificationDeserializer.deserializedSpecification.sync.value.errors.map(
-          (_: string, index: number) => (
-            <li key={index}>{_}</li>
-          ),
-        )}
+        <pre>
+          {specificationDeserializer.deserializedSpecification.sync.value.errors.map(
+            (_: string, index: number) => (
+              <li key={index}>{_}</li>
+            ),
+          )}
+        </pre>
       </ol>
     );
   }
@@ -325,12 +368,13 @@ export const DispatcherFormsApp = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
                       DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources:
                       DispatchPersonFromConfigApis.streamApis,
                     enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
@@ -402,9 +446,9 @@ export const DispatcherFormsApp = (props: {}) => {
                   </pre>
                 )}
                 {entityPath && entityPath.kind == "errors" && (
-                  <p>
+                  <pre>
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
-                  </p>
+                  </pre>
                 )}
                 <InstantiedPersonDispatchFormRunnerTemplate
                   context={{

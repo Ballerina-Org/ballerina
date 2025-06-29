@@ -1,75 +1,92 @@
 import { List } from "immutable";
 import {
   BasicFun,
-  DispatchDelta,
-  DispatcherContext,
   DispatchSpecificationDeserializationResult,
   DispatchFormsParserState,
-  DispatchParsedLauncher,
   PredicateValue,
   simpleUpdater,
   Sum,
   Unit,
-  Updater,
   ValueOrErrors,
   Template,
   unit,
+  DispatchOnChange,
+  DispatchInjectablesTypes,
 } from "../../../../../main";
 
-export type LauncherRef = {
+export type LauncherRef<Flags = Unit> = {
   name: string;
   kind: "passthrough";
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-  onEntityChange: (
-    updater: Updater<PredicateValue>,
-    delta: DispatchDelta,
-  ) => void;
+  onEntityChange: DispatchOnChange<PredicateValue, Flags>;
 };
 
 export type DispatchFormRunnerStatus<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
 > =
   | { kind: "not initialized" }
   | { kind: "loading" }
   | {
       kind: "loaded";
-      Form: Template<any, any, any, any>;
+      Form: Template<
+        any,
+        any,
+        {
+          onChange: DispatchOnChange<PredicateValue, Flags>;
+        },
+        any
+      >;
     }
   | { kind: "error"; errors: List<string> };
 
 export type DispatchFormRunnerContext<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
 > = {
-  extraContext: any;
-  launcherRef: LauncherRef;
+  extraContext: ExtraContext;
+  launcherRef: LauncherRef<Flags>;
   showFormParsingErrors: BasicFun<
-    DispatchSpecificationDeserializationResult<T>,
+    DispatchSpecificationDeserializationResult<
+      T,
+      Flags,
+      CustomPresentationContexts
+    >,
     JSX.Element
   >;
   remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
-} & DispatchFormsParserState<T>;
+} & DispatchFormsParserState<
+  T,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext
+>;
 
 export type DispatchFormRunnerState<
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
 > = {
-  status: DispatchFormRunnerStatus<T>;
+  status: DispatchFormRunnerStatus<T, Flags>;
   formState: any;
 };
 export type DispatchFormRunnerForeignMutationsExpected = Unit;
 export const DispatchFormRunnerState = <
-  T extends { [key in keyof T]: { type: any; state: any } },
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
 >() => {
   return {
-    Default: (): DispatchFormRunnerState<T> => ({
+    Default: (): DispatchFormRunnerState<T, Flags> => ({
       status: { kind: "not initialized" },
       formState: unit,
     }),
     Updaters: {
-      ...simpleUpdater<DispatchFormRunnerState<T>>()("status"),
-      ...simpleUpdater<DispatchFormRunnerState<T>>()("formState"),
+      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("status"),
+      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("formState"),
     },
   };
 };

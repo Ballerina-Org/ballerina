@@ -69,6 +69,56 @@
         "Surname": "string"
       }
     },
+    "ColorsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Red",
+          "fields": {}
+        },
+        {
+          "caseName": "Green",
+          "fields": {}
+        },
+        {
+          "caseName": "Blue",
+          "fields": {}
+        }
+      ]
+    },
+    "ColorRef": {
+      "fields": {
+        "Value": "ColorsEnum"
+      }
+    },
+    "Friend": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        }
+      }
+    },
+    "Child": {
+      "fields": {
+        "Id": "string",
+        "Name": "string",
+        "Surname": "string",
+        "Birthday": "Date",
+        "Email": "string",
+        "SubscribeToNewsletter": "boolean",
+        "FavoriteColor": {
+          "fun": "SingleSelection",
+          "args": ["ColorRef"]
+        }
+      }
+    },
     "User": {
       "extends": ["FullNamed", "Identifiable"],
       "fields": {
@@ -101,34 +151,6 @@
               "args": ["CityRef"]
             }
           ]
-        }
-      }
-    },
-    "Friend": {
-      "fields": {
-        "Id": "string",
-        "Name": "string",
-        "Surname": "string",
-        "Birthday": "Date",
-        "Email": "string",
-        "SubscribeToNewsletter": "boolean",
-        "FavoriteColor": {
-          "fun": "SingleSelection",
-          "args": ["ColorRef"]
-        }
-      }
-    },
-    "Child": {
-      "fields": {
-        "Id": "string",
-        "Name": "string",
-        "Surname": "string",
-        "Birthday": "Date",
-        "Email": "string",
-        "SubscribeToNewsletter": "boolean",
-        "FavoriteColor": {
-          "fun": "SingleSelection",
-          "args": ["ColorRef"]
         }
       }
     },
@@ -243,28 +265,6 @@
     "GenderRef": {
       "fields": {
         "Value": "GendersEnum"
-      }
-    },
-    "ColorsEnum": {
-      "fun": "Union",
-      "args": [
-        {
-          "caseName": "Red",
-          "fields": {}
-        },
-        {
-          "caseName": "Green",
-          "fields": {}
-        },
-        {
-          "caseName": "Blue",
-          "fields": {}
-        }
-      ]
-    },
-    "ColorRef": {
-      "fields": {
-        "Value": "ColorsEnum"
       }
     },
     "InterestsEnum": {

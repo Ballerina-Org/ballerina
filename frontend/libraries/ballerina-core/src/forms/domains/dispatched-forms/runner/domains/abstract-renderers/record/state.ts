@@ -2,36 +2,46 @@ import { Map, Set } from "immutable";
 
 import {
   BasicUpdater,
-  FormLabel,
   MapRepo,
-  PredicateValue,
   simpleUpdater,
   Template,
   Updater,
-  Value,
   ValueRecord,
   View,
-  DispatchCommonFormState,
   DispatchOnChange,
   FieldName,
-  DomNodeIdReadonlyContext,
+  Unit,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  FormLayout,
+  RecordType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
-export type RecordAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  fieldStates: Map<string, any>;
+export type RecordAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  RecordType<any>,
+  ValueRecord,
+  CustomPresentationContext,
+  ExtraContext
+>;
+
+export type RecordAbstractRendererState = CommonAbstractRendererState & {
+  fieldStates: Map<string, CommonAbstractRendererState>;
 };
 
 export const RecordAbstractRendererState = {
   Default: {
     zero: (): RecordAbstractRendererState => ({
-      commonFormState: DispatchCommonFormState.Default(),
+      ...CommonAbstractRendererState.Default(),
       fieldStates: Map(),
     }),
     fieldState: (
       fieldStates: RecordAbstractRendererState["fieldStates"],
     ): RecordAbstractRendererState => ({
-      commonFormState: DispatchCommonFormState.Default(),
+      ...CommonAbstractRendererState.Default(),
       fieldStates,
     }),
   },
@@ -58,29 +68,42 @@ export const RecordAbstractRendererState = {
     },
   },
 };
-export type RecordAbstractRendererView<Context, ForeignMutationsExpected> =
-  View<
-    Context &
-      Value<ValueRecord> &
-      RecordAbstractRendererState &
-      DomNodeIdReadonlyContext,
-    RecordAbstractRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueRecord>;
-    },
-    {
-      EmbeddedFields: Map<
-        string,
-        Template<
-          Context & Value<PredicateValue> & any,
-          any,
-          ForeignMutationsExpected & {
-            onChange: DispatchOnChange<ValueRecord>;
-          }
-        >
-      >;
-      VisibleFieldKeys: Set<string>;
-      DisabledFieldKeys: Set<string>;
-      FieldLabels: Map<FieldName, string | undefined>;
-    }
-  >;
+
+export type RecordAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueRecord, Flags>;
+};
+
+export type RecordAbstractRendererView<
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
+> = View<
+  RecordAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    RecordAbstractRendererState & {
+      layout: FormLayout;
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
+  RecordAbstractRendererState,
+  RecordAbstractRendererForeignMutationsExpected<Flags>,
+  {
+    EmbeddedFields: Map<
+      string,
+      (
+        flags: Flags | undefined,
+      ) => Template<
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          RecordAbstractRendererState,
+        RecordAbstractRendererState,
+        RecordAbstractRendererForeignMutationsExpected<Flags>
+      >
+    >;
+    VisibleFieldKeys: Set<string>;
+    DisabledFieldKeys: Set<string>;
+    FieldLabels: Map<FieldName, string | undefined>;
+  }
+>;

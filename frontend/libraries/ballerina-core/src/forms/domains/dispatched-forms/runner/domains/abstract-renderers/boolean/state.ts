@@ -1,38 +1,44 @@
 import { View } from "../../../../../../../template/state";
 import {
-  FormLabel,
-  SimpleCallback,
-  Value,
-  DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
-export type BoolAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type BoolAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  boolean,
+  CustomPresentationContext,
+  ExtraContext
+>;
+
+export type BoolAbstractRendererState = CommonAbstractRendererState;
 
 export const BoolAbstractRendererState = {
-  Default: (): BoolAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
-  }),
+  Default: (): BoolAbstractRendererState =>
+    CommonAbstractRendererState.Default(),
+};
+
+export type BoolAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<boolean, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<boolean, Flags>;
 };
 
 export type BoolAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Context &
-    Value<boolean> &
-    DomNodeIdReadonlyContext & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+  BoolAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
+    BoolAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   BoolAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<boolean>;
-    setNewValue: SimpleCallback<boolean>;
-  }
+  BoolAbstractRendererForeignMutationsExpected<Flags>
 >;

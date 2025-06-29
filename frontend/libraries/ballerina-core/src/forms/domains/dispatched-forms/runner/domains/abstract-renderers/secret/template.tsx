@@ -1,73 +1,75 @@
 import { List } from "immutable";
 import {
+  SecretAbstractRendererForeignMutationsExpected,
+  SecretAbstractRendererReadonlyContext,
   SecretAbstractRendererState,
   SecretAbstractRendererView,
 } from "./state";
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const SecretAbstractRenderer = <
-  Context extends FormLabel & {
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    SecretAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SecretAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    SecretAbstractRendererView<Context, ForeignMutationsExpected>
+    SecretAbstractRendererForeignMutationsExpected<Flags>,
+    SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering secret field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering secret field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: String value expected for secret but got ${JSON.stringify(
+          message={`${SerializedType}: String value expected for secret but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (_, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "StringReplace",
                   replace: _,
                   state: {
@@ -75,9 +77,12 @@ export const SecretAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(_)),
+                  delta,
+                );
               },
             }}
           />

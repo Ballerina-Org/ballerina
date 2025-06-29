@@ -15,15 +15,13 @@ import {
   TableApis,
   LookupApis,
   MapRepo,
+  DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
+import { DispatchParsedType, SerializedType } from "./domains/types/state";
 import {
-  DispatchParsedType,
-  RecordType,
-  SerializedType,
-} from "./domains/types/state";
-import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
   DispatchApiConverters,
 } from "../../../built-ins/state";
 import { Renderer } from "./domains/forms/domains/renderer/state";
@@ -133,10 +131,20 @@ export const Specification = {
         ),
       ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
     },
-    DeserializeForms: <T>(
+    DeserializeForms: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags = Unit,
+      CustomPresentationContexts = Unit,
+      ExtraContext = Unit,
+    >(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -153,10 +161,21 @@ export const Specification = {
                   () => `form type ${form.type} not found in types`,
                 ).Then((formType) =>
                   Renderer.Operations.Deserialize(
-                    formType,
+                    "columns" in form
+                      ? DispatchParsedType.Default.table(
+                          DispatchParsedType.Default.lookup(
+                            form.type as string,
+                          ),
+                        )
+                      : formType,
                     form,
-                    concreteRenderers,
+                    concreteRenderers as unknown as ConcreteRenderers<
+                      T,
+                      Flags,
+                      CustomPresentationContexts
+                    >,
                     types,
+                    undefined,
                   )
                     .MapErrors((errors) =>
                       errors.map(
@@ -172,9 +191,19 @@ export const Specification = {
         ),
       ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
-      <T extends { [key in keyof T]: { type: any; state: any } }>(
+      <
+        T extends DispatchInjectablesTypes<T>,
+        Flags = Unit,
+        CustomPresentationContexts = Unit,
+        ExtraContext = Unit,
+      >(
         apiConverters: DispatchApiConverters<T>,
-        concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+        concreteRenderers: ConcreteRenderers<
+          T,
+          Flags,
+          CustomPresentationContexts,
+          ExtraContext
+        >,
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (
@@ -207,7 +236,12 @@ export const Specification = {
                     ? ValueOrErrors.Default.throwOne<Specification<T>, string>(
                         "forms are missing from the specification",
                       )
-                    : Specification.Operations.DeserializeForms<T>(
+                    : Specification.Operations.DeserializeForms<
+                        T,
+                        Flags,
+                        CustomPresentationContexts,
+                        ExtraContext
+                      >(
                         serializedSpecifications.forms,
                         allTypes,
                         concreteRenderers,
@@ -347,6 +381,8 @@ export const Specification = {
                                             launcher,
                                           );
                                     });
+
+                                    console.debug("forms", forms.toJS());
 
                                     return ValueOrErrors.Default.return({
                                       types: allTypes,

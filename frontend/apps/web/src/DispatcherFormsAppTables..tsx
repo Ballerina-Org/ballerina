@@ -21,6 +21,8 @@ import {
   IdWrapperProps,
   ErrorRendererProps,
   DispatchInjectedPrimitive,
+  DispatchOnChange,
+  AggregatedFlags,
 } from "ballerina-core";
 import { Set, Map, OrderedMap } from "immutable";
 import {
@@ -31,17 +33,27 @@ import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-f
 import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
   DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
   DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
   DispatchCategoryState,
+  DispatchPassthroughFormInjectedTypes,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
-import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
+import {
+  DispatchPassthroughFormConcreteRenderers,
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+} from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
 const ShowFormsParsingErrors = (
-  parsedFormsConfig: DispatchSpecificationDeserializationResult<PersonFormInjectedTypes>,
+  parsedFormsConfig: DispatchSpecificationDeserializationResult<
+    DispatchPassthroughFormInjectedTypes,
+    DispatchPassthroughFormFlags,
+    DispatchPassthroughFormCustomPresentationContext
+  >,
 ) => (
   <div style={{ border: "red" }}>
     {parsedFormsConfig.kind == "errors" &&
@@ -57,19 +69,32 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   </div>
 );
 
-const InstantiedPersonFormsParserTemplate =
-  DispatchFormsParserTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
-const InstantiedPersonDispatchFormRunnerTemplate =
-  DispatchFormRunnerTemplate<PersonFormInjectedTypes>();
+const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
+  DispatchPassthroughFormInjectedTypes,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormCustomPresentationContext
+>();
 
 export const DispatcherFormsAppTables = (props: {}) => {
   const [specificationDeserializer, setSpecificationDeserializer] = useState(
-    DispatchFormsParserState<PersonFormInjectedTypes>().Default(),
+    DispatchFormsParserState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext
+    >().Default(),
   );
 
   const [tablesRunnerState, setTablesRunnerState] = useState(
-    DispatchFormRunnerState<PersonFormInjectedTypes>().Default(),
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default(),
   );
 
   const [entity, setEntity] = useState<
@@ -86,10 +111,15 @@ export const DispatcherFormsAppTables = (props: {}) => {
         state: any,
       ) => ValueOrErrors<any, string>,
       fromDelta: (
-        delta: DispatchDelta,
+        delta: DispatchDelta<DispatchPassthroughFormFlags>,
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
-    (deltaCustom: DispatchDeltaCustom): ValueOrErrors<[T, string], string> => {
+    (
+      deltaCustom: DispatchDeltaCustom,
+    ): ValueOrErrors<
+      [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
+      string
+    > => {
       if (deltaCustom.value.kind == "CategoryReplace") {
         return toRawObject(
           deltaCustom.value.replace,
@@ -102,7 +132,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
               replace: value,
             },
             "[CategoryReplace]",
-          ] as [T, string]);
+            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
+          ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
         });
       }
       return ValueOrErrors.Default.throwOne(
@@ -110,15 +141,18 @@ export const DispatcherFormsAppTables = (props: {}) => {
       );
     };
 
-  const onEntityChange = (
-    updater: Updater<any>,
-    delta: DispatchDelta,
-  ): void => {
+  const onEntityChange: DispatchOnChange<
+    PredicateValue,
+    DispatchPassthroughFormFlags
+  > = (updater, delta) => {
     if (entity.kind == "r" || entity.value.kind == "errors") {
       return;
     }
 
-    const newEntity = updater(entity.value.value);
+    const newEntity =
+      updater.kind == "r"
+        ? updater.value(entity.value.value)
+        : entity.value.value;
     console.log("patching entity", newEntity);
     setEntity(
       replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -199,12 +233,13 @@ export const DispatcherFormsAppTables = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
                       DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
-                    concreteRenderers: PersonConcreteRenderers,
+                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     infiniteStreamSources:
                       DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
                     enumOptionsSources: UsersSetupFromConfigApis.enumApis,
@@ -261,13 +296,13 @@ export const DispatcherFormsAppTables = (props: {}) => {
                           PredicateValue.Default.record(OrderedMap()),
                         ),
                       ),
-                      onEntityChange: onEntityChange,
+                      onEntityChange,
                     },
+                    remoteEntityVersionIdentifier: "",
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
-                    remoteEntityVersionIdentifier: "",
                   }}
                   setState={setTablesRunnerState}
                   view={unit}

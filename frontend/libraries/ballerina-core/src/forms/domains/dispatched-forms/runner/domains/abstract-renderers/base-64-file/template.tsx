@@ -1,79 +1,91 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
+  Base64FileAbstractRendererForeignMutationsExpected,
+  Base64FileAbstractRendererReadonlyContext,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,
 } from "./state";
 
 export const Base64FileAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Context &
-      Value<string> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    Base64FileAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      Base64FileAbstractRendererState,
     Base64FileAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<string> },
-    Base64FileAbstractRendererView<Context, ForeignMutationsExpected>
+    Base64FileAbstractRendererForeignMutationsExpected<Flags>,
+    Base64FileAbstractRendererView<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering base64 field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering base64 field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: String expected for base64 but got ${JSON.stringify(
+          message={`${SerializedType}: String expected for base64 but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "StringReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

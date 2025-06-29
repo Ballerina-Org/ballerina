@@ -54,8 +54,8 @@ export const PredicateValueExtractor = {
         //       : traverseOptionValue(v.value);
         // }
         case "record": {
-          const traverseRecordFields = t.fields.map((f) =>
-            self(lookupName, typesMap, f, debugPath.concat(f.name.toString())),
+          const traverseRecordFields = t.fields.map((f, k) =>
+            self(lookupName, typesMap, f, debugPath.concat(k)),
           );
           return (v: PredicateValue): ExtractedTypeInstances =>
             !PredicateValue.Operations.IsRecord(v)
@@ -85,7 +85,7 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
-            debugPath.concat(t.args[0].name.toString()),
+            debugPath.concat("singleSelection"),
           );
           return (v) =>
             !PredicateValue.Operations.IsOption(v)
@@ -105,7 +105,7 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
-            debugPath.concat(t.args[0].name.toString()),
+            debugPath.concat("multiSelection"),
           );
           return (v: PredicateValue) =>
             !PredicateValue.Operations.IsRecord(v)
@@ -133,13 +133,13 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
-            debugPath.concat(t.args[0].name.toString()),
+            debugPath.concat("map-key"),
           );
           const traverseValue = self(
             lookupName,
             typesMap,
             t.args[1],
-            debugPath.concat(t.args[1].name.toString()),
+            debugPath.concat("map-value"),
           );
           return (v: PredicateValue) =>
             !PredicateValue.Operations.IsTuple(v)
@@ -188,13 +188,13 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
-            debugPath.concat(t.args[0].name.toString()),
+            debugPath.concat("sum-left"),
           );
           const traverseRightValue = self(
             lookupName,
             typesMap,
             t.args[1],
-            debugPath.concat(t.args[1].name.toString()),
+            debugPath.concat("sum-right"),
           );
           return (v) =>
             !PredicateValue.Operations.IsSum(v)
@@ -215,8 +215,13 @@ export const PredicateValueExtractor = {
           // );
         }
         case "tuple": {
-          const traverseTupleFields = t.args.map((f) =>
-            self(lookupName, typesMap, f, debugPath.concat(f.name.toString())),
+          const traverseTupleFields = t.args.map((f, k) =>
+            self(
+              lookupName,
+              typesMap,
+              f,
+              debugPath.concat(`TupleItem-${k + 1}`),
+            ),
           );
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)
@@ -241,13 +246,8 @@ export const PredicateValueExtractor = {
         }
         case "union": {
           const traverseCases: Map<string, TypeInstancesExtractor> = t.args
-            .map((f) =>
-              self(
-                lookupName,
-                typesMap,
-                f,
-                debugPath.concat(f.name.toString()),
-              ),
+            .map((f, caseName) =>
+              self(lookupName, typesMap, f, debugPath.concat(caseName)),
             )
             .toMap();
           return (v): ExtractedTypeInstances =>
@@ -277,8 +277,8 @@ export const PredicateValueExtractor = {
           const traverseValue: TypeInstancesExtractor = self(
             lookupName,
             typesMap,
-            t.args,
-            debugPath.concat(t.args.name.toString()),
+            t.arg,
+            debugPath.concat("one"),
           );
           return (v): ExtractedTypeInstances =>
             PredicateValue.Operations.IsOption(v)
@@ -301,7 +301,7 @@ export const PredicateValueExtractor = {
             lookupName,
             typesMap,
             t.args[0],
-            debugPath.concat(t.args[0].name.toString()),
+            debugPath.concat("list"),
           );
           return (v) =>
             !PredicateValue.Operations.IsTuple(v)

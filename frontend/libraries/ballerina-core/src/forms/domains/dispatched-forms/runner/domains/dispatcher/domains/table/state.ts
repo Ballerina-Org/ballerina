@@ -6,6 +6,11 @@ import {
   Template,
   ValueOrErrors,
   TableAbstractRenderer,
+  DispatchInjectablesTypes,
+  StringSerializedType,
+  PredicateValue,
+  LookupType,
+  LookupTypeAbstractRenderer,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -16,9 +21,19 @@ import { TableRenderer } from "../../../../../deserializer/domains/specification
 
 export const TableDispatcher = {
   Operations: {
-    GetApi: (
-      api: string | string[] | undefined,
-      dispatcherContext: DispatcherContext<any>,
+    GetApi: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
+      api: string | undefined,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
       api == undefined
         ? ValueOrErrors.Default.throwOne("internal error: api is not defined")
@@ -30,168 +45,198 @@ export const TableDispatcher = {
               )
             : dispatcherContext.tableApiSources(api),
     DispatchDetailsRenderer: <
-      T extends { [key in keyof T]: { type: any; state: any } },
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      undefined | [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.DispatchAs(
             renderer.detailsRenderer,
             dispatcherContext,
             "table details renderer",
-            "details",
+            isInlined,
+            tableApi,
           ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      type: TableType<T>,
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-      api: string | string[] | undefined,
-      isNested: boolean,
-      launcherName?: string,
-      formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
-      !isNested && (!launcherName || !formName)
-        ? ValueOrErrors.Default.throwOne<Template<any, any, any, any>, string>(
-            `no launcher name or form name provided for top level table form`,
-          )
-        : DispatchParsedType.Operations.ResolveLookupType(
-            type.args[0].typeName,
-            dispatcherContext.types,
-          )
-            .Then((tableEntityType) =>
-              tableEntityType.kind == "record"
-                ? ValueOrErrors.Operations.All(
-                    List<
-                      ValueOrErrors<
-                        [
-                          string,
-                          {
-                            template: Template<any, any, any, any>;
-                            disabled?: Expr;
-                            GetDefaultState: () => any;
-                            GetDefaultValue: () => any;
-                          },
-                        ],
-                        string
-                      >
-                    >(
-                      renderer.columns
-                        .entrySeq()
-                        .toArray()
-                        .map(([columnName, columnRenderer]) =>
-                          MapRepo.Operations.tryFindWithError(
-                            columnName,
-                            tableEntityType.fields,
-                            () =>
-                              `cannot find column "${columnName}" in table entity type`,
-                          ).Then((columnType) =>
-                            NestedDispatcher.Operations.DispatchAs(
-                              columnRenderer,
-                              dispatcherContext,
-                              `table column ${columnName}`,
-                            ).Then((template) =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      tableApi: string | undefined,
+      isInlined: boolean,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
+      DispatchParsedType.Operations.ResolveLookupType(
+        renderer.type.arg.name,
+        dispatcherContext.types,
+      )
+        .Then((tableEntityType) =>
+          tableEntityType.kind == "record"
+            ? ValueOrErrors.Operations.All(
+                List<
+                  ValueOrErrors<
+                    [
+                      string,
+                      {
+                        template: Template<any, any, any, any>;
+                        disabled?: Expr;
+                        GetDefaultState: () => any;
+                        GetDefaultValue: () => any;
+                      },
+                    ],
+                    string
+                  >
+                >(
+                  renderer.columns
+                    .entrySeq()
+                    .toArray()
+                    .map(([columnName, columnRenderer]) =>
+                      MapRepo.Operations.tryFindWithError(
+                        columnName,
+                        tableEntityType.fields,
+                        () =>
+                          `cannot find column "${columnName}" in table entity type`,
+                      ).Then((columnType) =>
+                        NestedDispatcher.Operations.DispatchAs(
+                          columnRenderer,
+                          dispatcherContext,
+                          `table column ${columnName}`,
+                          isInlined,
+                          tableApi,
+                        ).Then((template) =>
+                          dispatcherContext
+                            .defaultState(columnType, columnRenderer.renderer)
+                            .Then((defaultState) =>
                               dispatcherContext
-                                .defaultState(
+                                .defaultValue(
                                   columnType,
                                   columnRenderer.renderer,
                                 )
-                                .Then((defaultState) =>
-                                  dispatcherContext
-                                    .defaultValue(
-                                      columnType,
-                                      columnRenderer.renderer,
-                                    )
-                                    .Then((defaultValue) =>
-                                      ValueOrErrors.Default.return([
-                                        columnName,
-                                        {
-                                          template,
-                                          disabled: columnRenderer.disabled,
-                                          label: columnRenderer.label,
-                                          GetDefaultState: () => defaultState,
-                                          GetDefaultValue: () => defaultValue,
-                                        },
-                                      ]),
-                                    ),
-                                ),
-                            ),
-                          ),
-                        ),
-                    ),
-                  ).Then((cellTemplates) =>
-                    TableDispatcher.Operations.DispatchDetailsRenderer(
-                      renderer,
-                      dispatcherContext,
-                    ).Then((detailsRenderer) =>
-                      renderer.renderer.kind != "lookupRenderer"
-                        ? ValueOrErrors.Default.throwOne<
-                            Template<any, any, any, any>,
-                            string
-                          >(
-                            `received non lookup renderer kind for table concrete renderer`,
-                          )
-                        : dispatcherContext
-                            .getConcreteRenderer(
-                              "table",
-                              renderer.renderer.renderer,
-                              isNested,
-                            )
-                            .Then((concreteRenderer) =>
-                              TableDispatcher.Operations.GetApi(
-                                renderer.api ?? api,
-                                dispatcherContext,
-                              ).Then((tableApiSource) =>
-                                ValueOrErrors.Default.return(
-                                  TableAbstractRenderer(
-                                    Map(cellTemplates),
-                                    detailsRenderer,
-                                    renderer.visibleColumns,
-                                    dispatcherContext.IdProvider,
-                                    dispatcherContext.ErrorRenderer,
-                                  )
-                                    .mapContext((_: any) => ({
-                                      ..._,
-                                      apiMethods:
-                                        typeof api !== "string"
-                                          ? []
-                                          : (dispatcherContext.specApis.tables?.get(
-                                              api!,
-                                            )?.methods ?? []),
-                                      ...(!isNested && launcherName
-                                        ? {
-                                            identifiers: {
-                                              // withLauncher: `[${launcherName}][${formName}]`,
-                                              // withoutLauncher: `[${formName}]`,
-                                              withLauncher: `[${type.name}]`,
-                                              withoutLauncher: `[${type.name}]`,
-                                            },
-                                          }
-                                        : {}),
-                                      tableApiSource,
-                                      fromTableApiParser:
-                                        dispatcherContext.parseFromApiByType(
-                                          renderer.type.args[0],
+                                .Then((defaultValue) =>
+                                  ValueOrErrors.Default.return<
+                                    [
+                                      string,
+                                      {
+                                        template: Template<any, any, any, any>;
+                                        disabled?: Expr;
+                                        label: string | undefined;
+                                        GetDefaultState: () => any;
+                                        GetDefaultValue: () => PredicateValue;
+                                      },
+                                    ],
+                                    string
+                                  >([
+                                    columnName,
+                                    {
+                                      // Special attention - tables have a look up arg that represents the table entity type
+                                      template: LookupTypeAbstractRenderer(
+                                        template[0],
+                                        dispatcherContext.IdProvider,
+                                        dispatcherContext.ErrorRenderer,
+                                        LookupType.SerializeToString(
+                                          renderer.type.arg.name,
                                         ),
-                                    }))
-                                    .withView(concreteRenderer),
+                                      ).withView(
+                                        dispatcherContext.lookupTypeRenderer(),
+                                      ),
+                                      disabled: columnRenderer.disabled,
+                                      label: columnRenderer.label,
+                                      GetDefaultState: () => defaultState,
+                                      GetDefaultValue: () => defaultValue,
+                                    },
+                                  ]),
                                 ),
-                              ),
                             ),
+                        ),
+                      ),
                     ),
-                  )
-                : ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
-                    string
-                  >(
-                    `expected a record type, but got a ${tableEntityType.kind} type`,
-                  ),
-            )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When dispatching as table form`,
+                ),
+              ).Then((cellTemplates) =>
+                TableDispatcher.Operations.DispatchDetailsRenderer(
+                  renderer,
+                  dispatcherContext,
+                  isInlined,
+                  tableApi,
+                ).Then((detailsRenderer) =>
+                  dispatcherContext
+                    .getConcreteRenderer("table", renderer.concreteRenderer)
+                    .Then((concreteRenderer) =>
+                      TableDispatcher.Operations.GetApi(
+                        renderer.api ?? tableApi,
+                        dispatcherContext,
+                      ).Then((tableApiSource) => {
+                        const serializedType = TableType.SerializeToString(
+                          renderer.type.arg.name,
+                        );
+                        return ValueOrErrors.Default.return<
+                          [Template<any, any, any, any>, StringSerializedType],
+                          string
+                        >([
+                          TableAbstractRenderer(
+                            Map(cellTemplates),
+                            detailsRenderer?.[0],
+                            renderer.visibleColumns,
+                            dispatcherContext.IdProvider,
+                            dispatcherContext.ErrorRenderer,
+                            serializedType,
+                            tableEntityType,
+                          )
+                            .mapContext((_: any) => ({
+                              ..._,
+                              type: renderer.type,
+                              apiMethods:
+                                tableApi == undefined
+                                  ? []
+                                  : (dispatcherContext.specApis.tables?.get(
+                                      tableApi!,
+                                    )?.methods ?? []),
+                              tableApiSource,
+                              fromTableApiParser:
+                                dispatcherContext.parseFromApiByType(
+                                  renderer.type.arg,
+                                ),
+                            }))
+                            .withView(concreteRenderer),
+                          serializedType,
+                        ]);
+                      }),
+                    ),
+                ),
+              )
+            : ValueOrErrors.Default.throwOne<
+                [Template<any, any, any, any>, StringSerializedType],
+                string
+              >(
+                `expected a record type, but got a ${tableEntityType.kind} type`,
               ),
-            ),
+        )
+        .MapErrors((errors) =>
+          errors.map((error) => `${error}\n...When dispatching as table form`),
+        ),
   },
 };

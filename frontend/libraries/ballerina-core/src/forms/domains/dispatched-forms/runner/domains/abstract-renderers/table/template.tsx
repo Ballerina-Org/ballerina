@@ -3,243 +3,385 @@ import {
   BasicUpdater,
   id,
   PredicateValue,
-  AbstractTableRendererState,
+  TableAbstractRendererState,
   TableLayout,
   ValueInfiniteStreamTemplate,
   Expr,
   PredicateVisibleColumns,
   DispatchDelta,
   ValueOrErrors,
-  AbstractTableRendererReadonlyContext,
+  TableAbstractRendererReadonlyContext,
   replaceWith,
   ValueRecord,
   DispatchCommonFormState,
-  FormLabel,
-  Bindings,
   RecordAbstractRendererState,
-  DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
-  TableType,
+  Option,
+  Unit,
+  TableAbstractRendererForeignMutationsExpected,
+  DispatchParsedType,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
+  TableAbstractRendererView,
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
+  MapRepo,
   ValueTable,
+  StringSerializedType,
+  RecordType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
 
-const EmbeddedValueInfiniteStreamTemplate =
+const EmbeddedValueInfiniteStreamTemplate = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
+>() =>
   ValueInfiniteStreamTemplate.mapContext<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      TableAbstractRendererState
   >((_) => _.customFormState.stream)
-    .mapState<AbstractTableRendererState>(
-      AbstractTableRendererState.Updaters.Core.customFormState.children.stream,
+    .mapState<TableAbstractRendererState>(
+      TableAbstractRendererState.Updaters.Core.customFormState.children.stream,
     )
-    .mapForeignMutationsFromProps<any>((props) => ({
+    .mapForeignMutationsFromProps<
+      TableAbstractRendererForeignMutationsExpected<Flags>
+    >((props) => ({
       ...props.foreignMutations,
     }));
 
 export const TableAbstractRenderer = <
-  Context extends FormLabel & {
-    bindings: Bindings;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   CellTemplates: Map<
     string,
     {
-      template: Template<any, any, any, any>;
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >;
       label?: string;
       disabled?: Expr;
-      GetDefaultValue: () => any;
-      GetDefaultState: () => any;
+      GetDefaultValue: () => PredicateValue;
+      GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
-  DetailsRenderer: Template<any, any, any, any> | undefined,
+  DetailsRenderer:
+    | Template<
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        >,
+        RecordAbstractRendererState,
+        RecordAbstractRendererForeignMutationsExpected<Flags>
+      >
+    | undefined,
   Layout: PredicateVisibleColumns,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-): Template<any, any, any, any> => {
+  SerializedType: StringSerializedType,
+  TableEntityType: RecordType<any>,
+): Template<
+  TableAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    TableAbstractRendererState,
+  TableAbstractRendererState,
+  TableAbstractRendererForeignMutationsExpected<Flags>,
+  TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+> => {
+  const InstantiatedTableRunner = TableRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
+  const InstantiatedTableReinitialiseRunner = TableReinitialiseRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
+  const InstantiatedEmbeddedValueInfiniteStreamTemplate =
+    EmbeddedValueInfiniteStreamTemplate<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >();
+
   const embedCellTemplate =
-    (column: string, cellTemplate: Template<any, any, any, any>) =>
+    (
+      column: string,
+      cellTemplate: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >,
+    ) =>
     (chunkIndex: number) =>
     (rowId: string) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
+    (flags: Flags | undefined) =>
       cellTemplate
-        // TODO, more helpful typing
-        .mapContext<any>((_: any) => {
-          const rowState = _.customFormState.stream.chunkStates
-            .get(chunkIndex)
-            ?.get(rowId);
+        .mapContext<
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState
+        >((_) => {
+          const rowState = _.customFormState.rowStates.get(rowId);
 
           const cellState =
-            rowState?.get(column) ??
+            rowState?.fieldStates.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
 
           const rowValue = _.customFormState.stream.loadedElements
             .get(chunkIndex)
             ?.data.get(rowId);
 
+          if (rowValue == undefined) {
+            console.error(
+              `Row value is undefined for row ${rowId} in chunk ${chunkIndex}\n
+              ...When rendering table field\n
+              ...${SerializedType}`,
+            );
+            return undefined;
+          }
+
           return {
-            ..._,
             value,
             ...cellState,
             disabled: disabled || _.disabled,
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${rowId}][${column}]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${rowId}][${column}]`,
-              ),
-            },
+            type: TableEntityType.fields.get(column)!,
+            customPresentationContext: _.customPresentationContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [`[${column}]`, `[${rowId}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           };
         })
-        .mapState<AbstractTableRendererState>((_) =>
-          AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-            ValueInfiniteStreamState.Updaters.Template.updateChunkStateValueItem(
-              chunkIndex,
+
+        .mapState<TableAbstractRendererState>((updater) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+            MapRepo.Updaters.upsert(
               rowId,
-              column,
-              CellTemplates.get(column)!.GetDefaultState,
-            )(_),
+              () => RecordAbstractRendererState.Default.fieldState(Map()),
+              RecordAbstractRendererState.Updaters.Core.fieldStates(
+                MapRepo.Updaters.upsert(
+                  column,
+                  () => CellTemplates.get(column)!.GetDefaultState(),
+                  updater,
+                ),
+              ),
+            ),
           ),
         )
-        .mapForeignMutationsFromProps<{
-          onChange: DispatchOnChange<PredicateValue>;
-        }>((props) => ({
+        .mapForeignMutationsFromProps<
+          TableAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
           onChange: (
-            _: BasicUpdater<PredicateValue>,
-            nestedDelta: DispatchDelta,
+            nestedUpdater: Option<BasicUpdater<PredicateValue>>,
+            nestedDelta: DispatchDelta<Flags>,
           ) => {
             props.setState(
-              AbstractTableRendererState.Updaters.Core.customFormState.children
-                .stream(
-                  ValueInfiniteStreamState.Updaters.Template.updateChunkStateValueItem(
-                    chunkIndex,
+              TableAbstractRendererState.Updaters.Core.customFormState.children
+                .rowStates(
+                  MapRepo.Updaters.upsert(
                     rowId,
-                    column,
-                    CellTemplates.get(column)!.GetDefaultState,
-                  )((__) => ({
-                    ...__,
-                    commonFormState:
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      )(__.commonFormState),
-                  })),
+                    () => RecordAbstractRendererState.Default.fieldState(Map()),
+                    RecordAbstractRendererState.Updaters.Core.fieldStates(
+                      MapRepo.Updaters.upsert(
+                        column,
+                        () => CellTemplates.get(column)!.GetDefaultState(),
+                        (__) => ({
+                          ...__,
+                          commonFormState:
+                            DispatchCommonFormState.Updaters.modifiedByUser(
+                              replaceWith(true),
+                            )(__.commonFormState),
+                        }),
+                      ),
+                    ),
+                  ),
                 )
                 .then(
-                  AbstractTableRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
                     replaceWith(true),
                   ),
                 )
                 .then(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     ValueInfiniteStreamState.Updaters.Template.updateChunkValueItem(
                       chunkIndex,
                       rowId,
                       column,
-                    )(_),
+                    )(nestedUpdater.kind == "r" ? nestedUpdater.value : id),
                   ),
                 ),
             );
 
-            const nestedRecordDelta: DispatchDelta = {
+            const nestedRecordDelta: DispatchDelta<Flags> = {
               kind: "RecordField",
               field: [column, nestedDelta],
-              recordType: props.context.type.args[0],
-              isWholeEntityMutation: false,
+              recordType: TableEntityType,
+              flags: undefined,
             };
 
-            const delta: DispatchDelta = {
+            const delta: DispatchDelta<Flags> = {
               kind: "TableValue",
               id: rowId,
               nestedDelta: nestedRecordDelta,
-              isWholeEntityMutation: false,
+              flags,
             };
 
-            props.foreignMutations.onChange(id, delta);
+            const updater =
+              nestedUpdater.kind == "l"
+                ? nestedUpdater
+                : Option.Default.some(
+                    ValueTable.Updaters.data(
+                      MapRepo.Updaters.update(
+                        rowId,
+                        ValueRecord.Updaters.update(
+                          column,
+                          nestedUpdater.kind == "r" ? nestedUpdater.value : id,
+                        ),
+                      ),
+                    ),
+                  );
+
+            props.foreignMutations.onChange(updater, delta);
           },
         }));
 
-  const embedDetailsRenderer: Template<any, any, any, any> | undefined =
-    DetailsRenderer?.mapContext<any>((_: any) => {
-      const value = _.customFormState.stream.loadedElements
-        .get(_.customFormState.selectedDetailRow[0])
-        ?.data.get(_.customFormState.selectedDetailRow[1]);
+  const embedDetailsRenderer = DetailsRenderer
+    ? (flags: Flags | undefined) =>
+        DetailsRenderer.mapContext<
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState
+        >((_) => {
+          if (_.customFormState.selectedDetailRow == undefined) {
+            console.error(
+              `Selected detail row is undefined\n
+              ...When rendering table field\n
+              ...${SerializedType}`,
+            );
+            return undefined;
+          }
 
-      const rowState = _.customFormState.stream.chunkStates
-        .get(_.customFormState.selectedDetailRow[0])
-        ?.get(_.customFormState.selectedDetailRow[1]);
+          const value = _.customFormState.stream.loadedElements
+            .get(_.customFormState.selectedDetailRow[0])
+            ?.data.get(_.customFormState.selectedDetailRow[1]);
 
-      const recordRowState = rowState
-        ? RecordAbstractRendererState.Default.fieldState(rowState)
-        : RecordAbstractRendererState.Default.fieldState(Map());
+          if (value == undefined) {
+            console.error(
+              `Value is undefined for selected detail row\n
+              ...When rendering table field\n
+              ...${SerializedType}`,
+            );
+            return undefined;
+          }
 
-      return {
-        value,
-        ...recordRowState,
-        disabled: _.disabled,
-        bindings: _.bindings.set("local", value),
-        extraContext: _.extraContext,
-        identifiers: {
-          withLauncher: _.identifiers.withLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-          ),
-          withoutLauncher: _.identifiers.withoutLauncher.concat(
-            `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-          ),
-        },
-      };
-    })
-      .mapStateFromProps<AbstractTableRendererState>(([props, updater]) => {
-        return AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-          ValueInfiniteStreamState.Updaters.Template.updateChunkStateValue(
-            props.context.customFormState.selectedDetailRow[0],
-            props.context.customFormState.selectedDetailRow[1],
-          )((__) => {
-            const temp = RecordAbstractRendererState.Default.fieldState(__);
-            const updated = updater(temp);
-            const newState = updated.fieldStates;
-            return newState;
-          }),
-        );
-      })
-      .mapForeignMutationsFromProps<{
-        onChange: DispatchOnChange<PredicateValue>;
-      }>((props) => ({
-        onChange: (
-          _: BasicUpdater<ValueRecord>,
-          nestedDelta: DispatchDelta,
-        ) => {
-          props.setState(
-            AbstractTableRendererState.Updaters.Core.commonFormState.children
-              .modifiedByUser(replaceWith(true))
-              .then(
-                AbstractTableRendererState.Updaters.Core.customFormState.children.stream(
-                  ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
-                    props.context.customFormState.selectedDetailRow[0],
-                    props.context.customFormState.selectedDetailRow[1],
-                  )(_),
-                ),
-              ),
-          );
+          const rowState =
+            _.customFormState.rowStates.get(
+              _.customFormState.selectedDetailRow[1],
+            ) ?? RecordAbstractRendererState.Default.fieldState(Map());
 
-          // TODO, different delta for details
-          const delta: DispatchDelta = {
-            kind: "TableValue",
-            id: props.context.customFormState.selectedDetailRow,
-            nestedDelta: nestedDelta,
-            isWholeEntityMutation: false,
+          return {
+            value,
+            ...rowState,
+            disabled: _.disabled,
+            bindings: _.bindings.set("local", value),
+            extraContext: _.extraContext,
+            type: TableEntityType,
+            customPresentationContext: _.customPresentationContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
+        })
+          .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
+            if (props.context.customFormState.selectedDetailRow == undefined) {
+              console.error(
+                `Selected detail row is undefined\n
+                ...When rendering table detail view \n
+                ...${SerializedType}`,
+              );
+              return id;
+            }
 
-          props.foreignMutations.onChange(id, delta);
-        },
-      }));
+            return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+              MapRepo.Updaters.upsert(
+                props.context.customFormState.selectedDetailRow[1],
+                () => RecordAbstractRendererState.Default.fieldState(Map()),
+                updater,
+              ),
+            );
+          })
+          .mapForeignMutationsFromProps<
+            TableAbstractRendererForeignMutationsExpected<Flags>
+          >((props) => ({
+            onChange: (
+              _: Option<BasicUpdater<ValueRecord>>,
+              nestedDelta: DispatchDelta<Flags>,
+            ) => {
+              if (
+                props.context.customFormState.selectedDetailRow == undefined
+              ) {
+                console.error(
+                  `Selected detail row is undefined\n
+                  ...When rendering table field\n
+                  ...${SerializedType}`,
+                );
+                return id;
+              }
+              props.setState(
+                TableAbstractRendererState.Updaters.Core.commonFormState.children
+                  .modifiedByUser(replaceWith(true))
+                  .then(
+                    TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                      ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
+                        props.context.customFormState.selectedDetailRow[0],
+                        props.context.customFormState.selectedDetailRow[1],
+                      )(_.kind == "r" ? _.value : id),
+                    ),
+                  ),
+              );
+
+              // TODO, different delta for details
+              const delta: DispatchDelta<Flags> = {
+                kind: "TableValue",
+                id: props.context.customFormState.selectedDetailRow[1],
+                nestedDelta: nestedDelta,
+                flags,
+              };
+
+              props.foreignMutations.onChange(Option.Default.none(), delta);
+            },
+          }))
+    : undefined;
 
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),
@@ -248,26 +390,30 @@ export const TableAbstractRenderer = <
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
   return Template.Default<
-    AbstractTableRendererReadonlyContext & AbstractTableRendererState,
-    AbstractTableRendererState,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTable>;
-    },
-    any
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      TableAbstractRendererState,
+    TableAbstractRendererState,
+    TableAbstractRendererForeignMutationsExpected<Flags>,
+    TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
         `TableValue expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering table field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering table field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Table value expected for table but got ${JSON.stringify(
+          message={`${SerializedType}: Table value expected for table but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -292,9 +438,7 @@ export const TableAbstractRenderer = <
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Error while computing visible columns, check console`}
+          message={`${SerializedType}: Error while computing visible columns, check console`}
         />
       );
     }
@@ -325,9 +469,7 @@ export const TableAbstractRenderer = <
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Error while computing disabled column keys, check console`}
+          message={`${SerializedType}: Error while computing disabled column keys, check console`}
         />
       );
     }
@@ -336,7 +478,10 @@ export const TableAbstractRenderer = <
       disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const tableData =
+    const hasMoreValues =
+      props.context.customFormState.stream.loadedElements.last()?.hasMoreValues;
+
+    const embeddedTableData =
       props.context.customFormState.stream.loadedElements.flatMap(
         (chunk, chunkIndex) =>
           chunk.data.map((rowData, rowId) =>
@@ -362,18 +507,22 @@ export const TableAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              tableHeaders: visibleColumns.value.columns,
+              columnLabels: ColumnLabels,
+              hasMoreValues: !!hasMoreValues,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
               loadMore: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Template.loadMore(),
+                  TableAbstractRendererState.Updaters.Template.loadMore(),
                 ),
               selectDetailView: (rowId: string) => {
                 const chunkIndex =
@@ -382,7 +531,7 @@ export const TableAbstractRenderer = <
                     rowId,
                   );
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
                     chunkIndex.kind == "value"
                       ? replaceWith<[number, string] | undefined>([
                           chunkIndex.value,
@@ -394,43 +543,46 @@ export const TableAbstractRenderer = <
               },
               clearDetailView: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
                     replaceWith<[number, string] | undefined>(undefined),
                   ),
                 ),
               selectRow: (rowId: string) =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
                     (_) => (_.has(rowId) ? _.remove(rowId) : _.add(rowId)),
                   ),
                 ),
               selectAllRows: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
-                    replaceWith(Set(tableData.keySeq())),
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
+                    replaceWith(Set(embeddedTableData.keySeq())),
                   ),
                 ),
               clearRows: () =>
                 props.setState(
-                  AbstractTableRendererState.Updaters.Core.customFormState.children.selectedRows(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
                     replaceWith(Set()),
                   ),
                 ),
               add: !props.context.apiMethods.includes("add")
                 ? undefined
-                : () => {
-                    const delta: DispatchDelta = {
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
                       kind: "TableAddEmpty",
-                      isWholeEntityMutation: true,
+                      flags,
                     };
-                    props.foreignMutations.onChange(id, delta);
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
                     props.setState(
-                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ).then(
-                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                           true,
                         ),
                       ),
@@ -438,20 +590,23 @@ export const TableAbstractRenderer = <
                   },
               remove: !props.context.apiMethods.includes("remove")
                 ? undefined
-                : (k: string) => {
-                    const delta: DispatchDelta = {
+                : (k: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
                       kind: "TableRemove",
                       id: k,
-                      isWholeEntityMutation: true,
+                      flags,
                     };
-                    props.foreignMutations.onChange(id, delta);
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
                     props.setState(
-                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ).then(
-                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                           true,
                         ),
                       ),
@@ -459,21 +614,24 @@ export const TableAbstractRenderer = <
                   },
               moveTo: !props.context.apiMethods.includes("move")
                 ? undefined
-                : (k: string, to: string) => {
-                    const delta: DispatchDelta = {
+                : (k: string, to: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
                       kind: "TableMoveTo",
                       id: k,
                       to,
-                      isWholeEntityMutation: true,
+                      flags,
                     };
-                    props.foreignMutations.onChange(id, delta);
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
                     props.setState(
-                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ).then(
-                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                           true,
                         ),
                       ),
@@ -481,37 +639,38 @@ export const TableAbstractRenderer = <
                   },
               duplicate: !props.context.apiMethods.includes("duplicate")
                 ? undefined
-                : (k: string) => {
-                    const delta: DispatchDelta = {
+                : (k: string, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
                       kind: "TableDuplicate",
                       id: k,
-                      isWholeEntityMutation: true,
+                      flags,
                     };
-                    props.foreignMutations.onChange(id, delta);
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
                     props.setState(
-                      AbstractTableRendererState.Updaters.Core.commonFormState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ).then(
-                        AbstractTableRendererState.Updaters.Template.shouldReinitialize(
+                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
                           true,
                         ),
                       ),
                     );
                   },
             }}
-            TableHeaders={visibleColumns.value.columns}
-            ColumnLabels={ColumnLabels}
-            EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
+            TableData={embeddedTableData}
           />
         </IdProvider>
       </>
     );
   }).any([
-    TableRunner,
-    TableReinitialiseRunner,
-    EmbeddedValueInfiniteStreamTemplate,
+    InstantiatedTableRunner,
+    InstantiatedTableReinitialiseRunner,
+    InstantiatedEmbeddedValueInfiniteStreamTemplate,
   ]);
 };

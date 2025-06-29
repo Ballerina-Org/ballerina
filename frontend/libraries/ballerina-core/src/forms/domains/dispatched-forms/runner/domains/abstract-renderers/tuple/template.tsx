@@ -1,141 +1,135 @@
 import { Map } from "immutable";
 
-import { TupleAbstractRendererState, TupleAbstractRendererView } from "./state";
+import {
+  TupleAbstractRendererForeignMutationsExpected,
+  TupleAbstractRendererReadonlyContext,
+  TupleAbstractRendererState,
+  TupleAbstractRendererView,
+} from "./state";
 import {
   BasicUpdater,
   Bindings,
   DispatchCommonFormState,
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
-  MapRepo,
   PredicateValue,
   replaceWith,
   Template,
   Updater,
-  Value,
-  ValueTuple,
   DispatchOnChange,
-  getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
+  Option,
+  Unit,
+  CommonAbstractRendererState,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  StringSerializedType,
+} from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
-  ItemFormState extends { commonFormState: DispatchCommonFormState },
-  Context extends FormLabel & {
-    disabled: boolean;
-    type: DispatchParsedType<any>;
-    identifiers: { withLauncher: string; withoutLauncher: string };
-  },
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
-  ItemFormStates: Map<number, () => ItemFormState>,
+  ItemFormStates: Map<number, () => CommonAbstractRendererState>,
   itemTemplates: Map<
     number,
     Template<
-      Value<PredicateValue> & {
-        commonFormState: { modifiedByUser: boolean };
-        type: DispatchParsedType<any>;
-        bindings: Bindings;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
-      any,
-      {
-        onChange: DispatchOnChange<PredicateValue>;
-      }
+      CommonAbstractRendererReadonlyContext<
+        DispatchParsedType<any>,
+        PredicateValue,
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        CommonAbstractRendererState,
+      CommonAbstractRendererState,
+      CommonAbstractRendererForeignMutationsExpected<Flags>
     >
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
-  const embeddedItemTemplates = (itemIndex: number) =>
-    itemTemplates
-      .get(itemIndex)!
-      .mapContext(
-        (
-          _: Context &
-            Value<ValueTuple> &
-            TupleAbstractRendererState<ItemFormState> & {
-              bindings: Bindings;
-              extraContext: any;
-              identifiers: { withLauncher: string; withoutLauncher: string };
-            },
-        ): Value<PredicateValue> & {
-          commonFormState: { modifiedByUser: boolean };
-          type: DispatchParsedType<any>;
-          bindings: Bindings;
-          identifiers: { withLauncher: string; withoutLauncher: string };
-        } => ({
-          ..._,
-          ...(_.itemFormStates.get(itemIndex) ||
-            ItemFormStates.get(itemIndex)!()),
-          value: _.value.values.get(itemIndex)!,
-          disabled: _.disabled,
-          type: _.type,
-          bindings: _.bindings,
-          extraContext: _.extraContext,
-          identifiers: {
-            withLauncher: _.identifiers.withLauncher.concat(
-              `[${itemIndex + 1}]`,
+  const embeddedItemTemplates =
+    (itemIndex: number) => (flags: Flags | undefined) =>
+      itemTemplates
+        .get(itemIndex)!
+        .mapContext(
+          (
+            _: TupleAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
+              TupleAbstractRendererState,
+          ) => ({
+            ...(_.itemFormStates.get(itemIndex) ||
+              ItemFormStates.get(itemIndex)!()),
+            value: _.value.values.get(itemIndex)!,
+            disabled: _.disabled,
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            customPresentationContext: _.customPresentationContext,
+            type: _.type.args[itemIndex],
+            serializedTypeHierarchy: [`[${itemIndex + 1}]`].concat(
+              _.serializedTypeHierarchy,
             ),
-            withoutLauncher: _.identifiers.withoutLauncher.concat(
-              `[${itemIndex + 1}]`,
+          }),
+        )
+        .mapState(
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<TupleAbstractRendererState> =>
+            TupleAbstractRendererState.Updaters.Template.upsertItemFormState(
+              itemIndex,
+              ItemFormStates.get(itemIndex)!,
+              _,
             ),
-          },
-        }),
-      )
-      .mapState(
-        (
-          _: BasicUpdater<ItemFormState>,
-        ): Updater<TupleAbstractRendererState<ItemFormState>> =>
-          TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
-            itemIndex,
-            ItemFormStates.get(itemIndex)!,
-            _,
-          ),
-      )
-      .mapForeignMutationsFromProps<
-        ForeignMutationsExpected & {
-          onChange: DispatchOnChange<ValueTuple>;
-        }
-      >(
-        (
-          props,
-        ): {
-          onChange: DispatchOnChange<PredicateValue>;
-        } => ({
-          onChange: (elementUpdater, nestedDelta) => {
-            const delta: DispatchDelta = {
-              kind: "TupleCase",
-              item: [itemIndex, nestedDelta],
-              tupleType: props.context.type,
-              isWholeEntityMutation: false,
-            };
-            props.foreignMutations.onChange(
-              Updater((tuple) =>
-                tuple.values.has(itemIndex)
-                  ? PredicateValue.Default.tuple(
-                      tuple.values.update(
-                        itemIndex,
-                        PredicateValue.Default.unit(),
-                        elementUpdater,
+        )
+        .mapForeignMutationsFromProps<
+          TupleAbstractRendererForeignMutationsExpected<Flags>
+        >(
+          (
+            props,
+          ): {
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          } => ({
+            onChange: (elementUpdater, nestedDelta) => {
+              const delta: DispatchDelta<Flags> = {
+                kind: "TupleCase",
+                item: [itemIndex, nestedDelta],
+                tupleType: props.context.type,
+                flags,
+              };
+              props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some(
+                      Updater((tuple) =>
+                        tuple.values.has(itemIndex)
+                          ? PredicateValue.Default.tuple(
+                              tuple.values.update(
+                                itemIndex,
+                                PredicateValue.Default.unit(),
+                                elementUpdater.value,
+                              ),
+                            )
+                          : tuple,
                       ),
-                    )
-                  : tuple,
-              ),
-              delta,
-            );
+                    ),
+                delta,
+              );
 
-            props.setState(
-              TupleAbstractRendererState<ItemFormState>()
-                .Updaters.Core.commonFormState(
+              props.setState(
+                TupleAbstractRendererState.Updaters.Core.commonFormState(
                   DispatchCommonFormState.Updaters.modifiedByUser(
                     replaceWith(true),
                   ),
-                )
-                .then(
-                  TupleAbstractRendererState<ItemFormState>().Updaters.Template.upsertItemFormState(
+                ).then(
+                  TupleAbstractRendererState.Updaters.Template.upsertItemFormState(
                     itemIndex,
                     ItemFormStates.get(itemIndex)!,
                     (_) => ({
@@ -147,36 +141,36 @@ export const DispatchTupleAbstractRenderer = <
                     }),
                   ),
                 ),
-            );
-          },
-        }),
-      );
+              );
+            },
+          }),
+        );
 
   return Template.Default<
-    Context &
-      Value<ValueTuple> & {
-        disabled: boolean;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
-    TupleAbstractRendererState<ItemFormState>,
-    ForeignMutationsExpected & {
-      onChange: DispatchOnChange<ValueTuple>;
-    },
-    TupleAbstractRendererView<ItemFormState, Context, ForeignMutationsExpected>
+    TupleAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      TupleAbstractRendererState,
+    TupleAbstractRendererState,
+    TupleAbstractRendererForeignMutationsExpected<Flags>,
+    TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering tuple field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering tuple field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Tuple value expected for tuple but got ${JSON.stringify(
+          message={`${SerializedType}: Tuple value expected for tuple but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -185,12 +179,13 @@ export const DispatchTupleAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

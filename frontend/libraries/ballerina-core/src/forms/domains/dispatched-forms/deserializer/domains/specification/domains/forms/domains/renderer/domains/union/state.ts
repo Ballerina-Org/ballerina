@@ -1,5 +1,7 @@
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
+  isString,
   MapRepo,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -9,23 +11,28 @@ import { List, Map } from "immutable";
 import { Renderer } from "../../state";
 
 export type SerializedUnionRenderer = {
-  renderer: unknown;
+  renderer: string;
   cases: Map<string, unknown>;
 };
 
 export type UnionRenderer<T> = {
   kind: "unionRenderer";
-  renderer: Renderer<T>;
-  type: DispatchParsedType<T>;
+  concreteRenderer: string;
+  type: UnionType<T>;
   cases: Map<string, Renderer<T>>;
 };
 
 export const UnionRenderer = {
   Default: <T>(
-    type: DispatchParsedType<T>,
+    type: UnionType<T>,
     cases: Map<string, Renderer<T>>,
-    renderer: Renderer<T>,
-  ): UnionRenderer<T> => ({ kind: "unionRenderer", type, renderer, cases }),
+    concreteRenderer: string,
+  ): UnionRenderer<T> => ({
+    kind: "unionRenderer",
+    type,
+    cases,
+    concreteRenderer,
+  }),
   Operations: {
     hasCases: (_: unknown): _ is { cases: Record<string, object> } =>
       DispatchIsObject(_) && "cases" in _ && DispatchIsObject(_.cases),
@@ -40,14 +47,28 @@ export const UnionRenderer = {
           ? ValueOrErrors.Default.throwOne(
               `union form is missing the required renderer attribute`,
             )
-          : ValueOrErrors.Default.return({
-              ...serialized,
-              cases: Map(serialized.cases),
-            }),
-    Deserialize: <T>(
+          : !isString(serialized.renderer)
+            ? ValueOrErrors.Default.throwOne(
+                `union form is missing the required renderer attribute`,
+              )
+            : ValueOrErrors.Default.return({
+                renderer: serialized.renderer,
+                cases: Map(serialized.cases),
+              }),
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: UnionType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)
@@ -61,7 +82,8 @@ export const UnionRenderer = {
                   MapRepo.Operations.tryFindWithError(
                     caseName,
                     type.args,
-                    () => `case ${caseName} not found in type ${type.typeName}`,
+                    () =>
+                      `case ${caseName} not found in type ${JSON.stringify(type, null, 2)}`,
                   ).Then((caseType) =>
                     Renderer.Operations.Deserialize(
                       caseType,
@@ -74,11 +96,6 @@ export const UnionRenderer = {
                       concreteRenderers,
                       types,
                       undefined,
-                      (typeof caseRenderer == "object" &&
-                        caseRenderer !== null &&
-                        "renderer" in caseRenderer &&
-                        typeof caseRenderer.renderer != "string") ||
-                        typeof caseRenderer == "object",
                     ).Then((caseRenderer) =>
                       ValueOrErrors.Default.return([caseName, caseRenderer]),
                     ),
@@ -86,14 +103,11 @@ export const UnionRenderer = {
                 ),
             ),
           ).Then((caseTuples) =>
-            Renderer.Operations.Deserialize(
-              type,
-              validSerialized.renderer,
-              concreteRenderers,
-              types,
-            ).Then((renderer) =>
-              ValueOrErrors.Default.return(
-                UnionRenderer.Default(type, Map(caseTuples), renderer),
+            ValueOrErrors.Default.return(
+              UnionRenderer.Default(
+                type,
+                Map(caseTuples),
+                validSerialized.renderer,
               ),
             ),
           ),

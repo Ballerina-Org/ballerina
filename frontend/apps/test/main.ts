@@ -44,166 +44,166 @@ export type ValueTraversal<T, Res> = BasicFun<
   ValueOrErrors<Res, string>
 >;
 
-export const RendererTraversal = {
-  Operations: {
-    Run: <T, Res>(
-      type: DispatchParsedType<T>,
-      renderer: Renderer<T>,
-      traversalContext: TraversalContext<T, Res>,
-    ): ValueOrErrors<Option<ValueTraversal<T, Res>>, string> => {
-      const rec = RendererTraversal.Operations.Run<T, Res>;
+// export const RendererTraversal = {
+//   Operations: {
+//     Run: <T, Res>(
+//       type: DispatchParsedType<T>,
+//       renderer: Renderer<T>,
+//       traversalContext: TraversalContext<T, Res>,
+//     ): ValueOrErrors<Option<ValueTraversal<T, Res>>, string> => {
+//       const rec = RendererTraversal.Operations.Run<T, Res>;
 
-      const mapEvalContext = (
-        f: BasicUpdater<EvalContext<T, Res>>,
-      ): Updater<Option<ValueTraversal<T, Res>>> =>
-        Updater(
-          Option.Updaters.some<ValueTraversal<T, Res>>(
-            (v) => (ctx) => v(f(ctx)),
-          ),
-        );
+//       const mapEvalContext = (
+//         f: BasicUpdater<EvalContext<T, Res>>,
+//       ): Updater<Option<ValueTraversal<T, Res>>> =>
+//         Updater(
+//           Option.Updaters.some<ValueTraversal<T, Res>>(
+//             (v) => (ctx) => v(f(ctx)),
+//           ),
+//         );
 
-      const traverseNode = traversalContext.traverseSingleType(type);
-      if (type.kind == "primitive") {
-        return ValueOrErrors.Default.return(traverseNode);
-      }
-      if (type.kind == "lookup" && renderer.kind == "lookupRenderer") {
-        if (traversalContext.primitiveRendererNamesByType.has(type.name)) {
-          if (
-            traversalContext.primitiveRendererNamesByType
-              .get(type.name)!
-              .has(renderer.renderer)
-          ) {
-            return ValueOrErrors.Default.return(traverseNode);
-          }
-        }
-        if (traversalContext.forms.has(type.name)) {
-          // Bug here, we should use renderer.renderer instead of type.name
-          // this is a form lookup, so "local" changes here to the traversed value
-          return rec(
-            type, // Bug here, this type needs to be resolved from the types map
-            traversalContext.forms.get(type.name)!,
-            traversalContext,
-          ).Then((valueTraversal: Option<ValueTraversal<T, Res>>) => {
-            return ValueOrErrors.Default.return(
-              mapEvalContext((ctx) => ({
-                ...ctx,
-                local: ctx.traversalIterator,
-              }))(valueTraversal),
-            );
-          });
-        }
-        return ValueOrErrors.Default.throwOne(
-          `Error: cannot resolve lookup renderer ${renderer.renderer} for type ${type.name}.`,
-        );
-      }
-      if (type.kind == "record" && renderer.kind == "recordRenderer") {
-        return ValueOrErrors.Operations.All(
-          List(
-            type.fields
-              .map((fieldType, fieldName) =>
-                MapRepo.Operations.tryFindWithError(
-                  fieldName,
-                  renderer.fields,
-                  () =>
-                    `Error: cannot find field ${fieldName} in renderer for type ${type.name}`,
-                ).Then((fieldRenderer) =>
-                  rec(fieldType, fieldRenderer.renderer, traversalContext).Then(
-                    (fieldTraversal) => {
-                      return ValueOrErrors.Default.return({
-                        fieldName: fieldName,
-                        visibility: fieldRenderer.visible,
-                        fieldTraversal: fieldTraversal,
-                      });
-                    },
-                  ),
-                ),
-              )
-              .valueSeq(),
-          ),
-        ).Then((fieldTraversals) => {
-          if (
-            fieldTraversals.every((f) => f.fieldTraversal.kind == "l") &&
-            traverseNode.kind == "l"
-          ) {
-            return ValueOrErrors.Default.return(Option.Default.none());
-          }
-          return ValueOrErrors.Default.return(
-            Option.Default.some((evalContext: EvalContext<T, Res>) => {
-              if (
-                !PredicateValue.Operations.IsRecord(
-                  evalContext.traversalIterator,
-                )
-              )
-                return ValueOrErrors.Default.throwOne(
-                  `Error: traversal iterator is not a record, got ${evalContext.traversalIterator}`,
-                );
-              const traversalIteratorFields =
-                evalContext.traversalIterator.fields;
-              return ValueOrErrors.Operations.All(
-                fieldTraversals.flatMap((f) => {
-                  // should be a map and instead of [] a VoE.default.return([]) then an All on this and then a flatmap, everything is returned in a VoE, we do an all and then get a
-                  if (f.fieldTraversal.kind == "l") return [];
-                  if (f.visibility != undefined) {
-                    const visible = Expr.Operations.EvaluateAsBoolean(
-                      // bug here, should be evaulate, not as boolean
-                      Map([
-                        ["global", evalContext.global],
-                        ["local", evalContext.local],
-                        ["root", evalContext.root],
-                      ]),
-                    )(f.visibility);
-                    if (visible.kind == "value" && !visible.value) {
-                      return [];
-                    }
-                  }
-                  return [
-                    f.fieldTraversal.value({
-                      ...evalContext,
-                      traversalIterator: traversalIteratorFields.get(
-                        f.fieldName,
-                      )!,
-                    }),
-                  ];
-                }),
-              ).Then((fieldResults: List<Res>) =>
-                traverseNode.kind == "r"
-                  ? traverseNode
-                      .value(evalContext)
-                      .Then((nodeResult: Res) =>
-                        ValueOrErrors.Default.return(
-                          fieldResults.reduce(
-                            (acc, res) => traversalContext.joinRes([acc, res]),
-                            nodeResult,
-                          ),
-                        ),
-                      )
-                  : ValueOrErrors.Default.return(
-                      fieldResults.reduce((acc, res) =>
-                        traversalContext.joinRes([acc, res]),
-                      ),
-                    ),
-              );
-            }),
-          );
-        });
-      }
-      return null!;
-    },
-  },
-};
+//       const traverseNode = traversalContext.traverseSingleType(type);
+//       if (type.kind == "primitive") {
+//         return ValueOrErrors.Default.return(traverseNode);
+//       }
+//       if (type.kind == "lookup" && renderer.kind == "lookupRenderer") {
+//         if (traversalContext.primitiveRendererNamesByType.has(type.name)) {
+//           if (
+//             traversalContext.primitiveRendererNamesByType
+//               .get(type.name)!
+//               .has(renderer.renderer)
+//           ) {
+//             return ValueOrErrors.Default.return(traverseNode);
+//           }
+//         }
+//         if (traversalContext.forms.has(type.name)) {
+//           // Bug here, we should use renderer.renderer instead of type.name
+//           // this is a form lookup, so "local" changes here to the traversed value
+//           return rec(
+//             type, // Bug here, this type needs to be resolved from the types map
+//             traversalContext.forms.get(type.name)!,
+//             traversalContext,
+//           ).Then((valueTraversal: Option<ValueTraversal<T, Res>>) => {
+//             return ValueOrErrors.Default.return(
+//               mapEvalContext((ctx) => ({
+//                 ...ctx,
+//                 local: ctx.traversalIterator,
+//               }))(valueTraversal),
+//             );
+//           });
+//         }
+//         return ValueOrErrors.Default.throwOne(
+//           `Error: cannot resolve lookup renderer ${renderer.renderer} for type ${type.name}.`,
+//         );
+//       }
+//       if (type.kind == "record" && renderer.kind == "recordRenderer") {
+//         return ValueOrErrors.Operations.All(
+//           List(
+//             type.fields
+//               .map((fieldType, fieldName) =>
+//                 MapRepo.Operations.tryFindWithError(
+//                   fieldName,
+//                   renderer.fields,
+//                   () =>
+//                     `Error: cannot find field ${fieldName} in renderer for type ${type.name}`,
+//                 ).Then((fieldRenderer) =>
+//                   rec(fieldType, fieldRenderer.renderer, traversalContext).Then(
+//                     (fieldTraversal) => {
+//                       return ValueOrErrors.Default.return({
+//                         fieldName: fieldName,
+//                         visibility: fieldRenderer.visible,
+//                         fieldTraversal: fieldTraversal,
+//                       });
+//                     },
+//                   ),
+//                 ),
+//               )
+//               .valueSeq(),
+//           ),
+//         ).Then((fieldTraversals) => {
+//           if (
+//             fieldTraversals.every((f) => f.fieldTraversal.kind == "l") &&
+//             traverseNode.kind == "l"
+//           ) {
+//             return ValueOrErrors.Default.return(Option.Default.none());
+//           }
+//           return ValueOrErrors.Default.return(
+//             Option.Default.some((evalContext: EvalContext<T, Res>) => {
+//               if (
+//                 !PredicateValue.Operations.IsRecord(
+//                   evalContext.traversalIterator,
+//                 )
+//               )
+//                 return ValueOrErrors.Default.throwOne(
+//                   `Error: traversal iterator is not a record, got ${evalContext.traversalIterator}`,
+//                 );
+//               const traversalIteratorFields =
+//                 evalContext.traversalIterator.fields;
+//               return ValueOrErrors.Operations.All(
+//                 fieldTraversals.flatMap((f) => {
+//                   // should be a map and instead of [] a VoE.default.return([]) then an All on this and then a flatmap, everything is returned in a VoE, we do an all and then get a
+//                   if (f.fieldTraversal.kind == "l") return [];
+//                   if (f.visibility != undefined) {
+//                     const visible = Expr.Operations.EvaluateAsBoolean(
+//                       // bug here, should be evaulate, not as boolean
+//                       Map([
+//                         ["global", evalContext.global],
+//                         ["local", evalContext.local],
+//                         ["root", evalContext.root],
+//                       ]),
+//                     )(f.visibility);
+//                     if (visible.kind == "value" && !visible.value) {
+//                       return [];
+//                     }
+//                   }
+//                   return [
+//                     f.fieldTraversal.value({
+//                       ...evalContext,
+//                       traversalIterator: traversalIteratorFields.get(
+//                         f.fieldName,
+//                       )!,
+//                     }),
+//                   ];
+//                 }),
+//               ).Then((fieldResults: List<Res>) =>
+//                 traverseNode.kind == "r"
+//                   ? traverseNode
+//                       .value(evalContext)
+//                       .Then((nodeResult: Res) =>
+//                         ValueOrErrors.Default.return(
+//                           fieldResults.reduce(
+//                             (acc, res) => traversalContext.joinRes([acc, res]),
+//                             nodeResult,
+//                           ),
+//                         ),
+//                       )
+//                   : ValueOrErrors.Default.return(
+//                       fieldResults.reduce((acc, res) =>
+//                         traversalContext.joinRes([acc, res]),
+//                       ),
+//                     ),
+//               );
+//             }),
+//           );
+//         });
+//       }
+//       return null!;
+//     },
+//   },
+// };
 
-const testInvocation = RendererTraversal.Operations.Run<
-  any,
-  Array<PredicateValue>
->(null!, null!, {
-  types: null!,
-  forms: null!,
-  primitiveRendererNamesByType: null!,
-  joinRes: null!, // basically append or concat the arrays of the individual traversals
-  traverseSingleType: (t) =>
-    t.kind == "lookup" && t.name == "Evidence"
-      ? Option.Default.some((ctx: EvalContext<any, Array<PredicateValue>>) =>
-          ValueOrErrors.Default.return([ctx.traversalIterator]),
-        )
-      : Option.Default.none(),
-});
+// const testInvocation = RendererTraversal.Operations.Run<
+//   any,
+//   Array<PredicateValue>
+// >(null!, null!, {
+//   types: null!,
+//   forms: null!,
+//   primitiveRendererNamesByType: null!,
+//   joinRes: null!, // basically append or concat the arrays of the individual traversals
+//   traverseSingleType: (t) =>
+//     t.kind == "lookup" && t.name == "Evidence"
+//       ? Option.Default.some((ctx: EvalContext<any, Array<PredicateValue>>) =>
+//           ValueOrErrors.Default.return([ctx.traversalIterator]),
+//         )
+//       : Option.Default.none(),
+// });

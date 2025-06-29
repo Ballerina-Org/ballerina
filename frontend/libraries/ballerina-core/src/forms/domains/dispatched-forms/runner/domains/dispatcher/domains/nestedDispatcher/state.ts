@@ -1,44 +1,82 @@
-import { Template, ValueOrErrors } from "../../../../../../../../../main";
+import {
+  DispatchInjectablesTypes,
+  StringSerializedType,
+  Template,
+  ValueOrErrors,
+} from "../../../../../../../../../main";
 import { NestedRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import { Dispatcher } from "../../state";
 
 export const NestedDispatcher = {
   Operations: {
-    DispatchAs: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    DispatchAs: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       as: string,
-      formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
-        formName,
+        isInlined,
+        tableApi,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-      formName?: string,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       Dispatcher.Operations.Dispatch(
-        renderer.renderer.type,
         renderer.renderer,
         dispatcherContext,
         true,
-        formName,
+        isInlined,
+        tableApi,
       )
         .Then((template) =>
-          ValueOrErrors.Default.return(
-            template.mapContext((_: any) => ({
+          ValueOrErrors.Default.return<
+            [Template<any, any, any, any>, StringSerializedType],
+            string
+          >([
+            template[0].mapContext((_: any) => ({
               ..._,
               label: renderer.label,
               tooltip: renderer.tooltip,
               details: renderer.details,
             })),
-          ),
+            template[1],
+          ]),
         )
         .MapErrors((errors) =>
           errors.map(

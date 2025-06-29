@@ -161,6 +161,8 @@ export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-rend
 export * from "./src/forms/domains/dispatched-forms/runner/template";
 export * from "./src/forms/domains/dispatched-forms/runner/state";
 export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/types/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/lookup-type/template";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/lookup-type/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/record/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/record/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/record/state";

@@ -1,8 +1,10 @@
 import { Map } from "immutable";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   DispatchParsedType,
   isObject,
+  isString,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { MapType } from "../../../../../types/state";
@@ -10,14 +12,14 @@ import { NestedRenderer } from "../nestedRenderer/state";
 import { Renderer } from "../../state";
 
 export type SerializedMapRenderer = {
-  renderer: unknown;
+  renderer: string;
   keyRenderer: unknown;
   valueRenderer: unknown;
 };
 
 export type MapRenderer<T> = {
   kind: "mapRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   keyRenderer: NestedRenderer<T>;
   valueRenderer: NestedRenderer<T>;
   type: MapType<T>;
@@ -26,13 +28,13 @@ export type MapRenderer<T> = {
 export const MapRenderer = {
   Default: <T>(
     type: MapType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     keyRenderer: NestedRenderer<T>,
     valueRenderer: NestedRenderer<T>,
   ): MapRenderer<T> => ({
     kind: "mapRenderer",
     type,
-    renderer,
+    concreteRenderer,
     keyRenderer,
     valueRenderer,
   }),
@@ -46,15 +48,31 @@ export const MapRenderer = {
           )
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is missing`)
-          : !("keyRenderer" in serialized)
-            ? ValueOrErrors.Default.throwOne(`keyRenderer is missing`)
-            : !("valueRenderer" in serialized)
-              ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
-              : ValueOrErrors.Default.return(serialized),
-    Deserialize: <T>(
+          : !isString(serialized.renderer)
+            ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+            : !("keyRenderer" in serialized)
+              ? ValueOrErrors.Default.throwOne(`keyRenderer is missing`)
+              : !("valueRenderer" in serialized)
+                ? ValueOrErrors.Default.throwOne(`valueRenderer is missing`)
+                : ValueOrErrors.Default.return({
+                    renderer: serialized.renderer,
+                    keyRenderer: serialized.keyRenderer,
+                    valueRenderer: serialized.valueRenderer,
+                  }),
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: MapType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<MapRenderer<T>, string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
@@ -73,19 +91,12 @@ export const MapRenderer = {
               "Map value",
               types,
             ).Then((deserializedValueRenderer) =>
-              Renderer.Operations.Deserialize(
-                type,
-                renderer.renderer,
-                concreteRenderers,
-                types,
-              ).Then((deserializedRenderer) =>
-                ValueOrErrors.Default.return(
-                  MapRenderer.Default(
-                    type,
-                    deserializedRenderer,
-                    deserializedKeyRenderer,
-                    deserializedValueRenderer,
-                  ),
+              ValueOrErrors.Default.return(
+                MapRenderer.Default(
+                  type,
+                  renderer.renderer,
+                  deserializedKeyRenderer,
+                  deserializedValueRenderer,
                 ),
               ),
             ),

@@ -1,74 +1,106 @@
 import { ValueOrErrors } from "../../../../../../../../collections/domains/valueOrErrors/state";
-import { MapAbstractRenderer, Template } from "../../../../../../../../../main";
+import {
+  DispatchInjectablesTypes,
+  MapAbstractRenderer,
+  Template,
+} from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import { MapType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import {
+  MapType,
+  StringSerializedType,
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
-      type: MapType<T>,
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: MapRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.keyRenderer,
         dispatcherContext,
         "key",
-        "key",
+        isInlined,
+        tableApi,
       )
         .Then((keyTemplate) =>
           dispatcherContext
-            .defaultState(type.args[0], renderer.keyRenderer.renderer)
+            .defaultState(renderer.type.args[0], renderer.keyRenderer.renderer)
             .Then((defaultKeyState) =>
               dispatcherContext
-                .defaultValue(type.args[0], renderer.keyRenderer.renderer)
+                .defaultValue(
+                  renderer.type.args[0],
+                  renderer.keyRenderer.renderer,
+                )
                 .Then((defaultKeyValue) =>
                   NestedDispatcher.Operations.DispatchAs(
                     renderer.valueRenderer,
                     dispatcherContext,
                     "value",
-                    "value",
+                    isInlined,
+                    tableApi,
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(
-                        type.args[1],
+                        renderer.type.args[1],
                         renderer.valueRenderer.renderer,
                       )
                       .Then((defaultValueState) =>
                         dispatcherContext
                           .defaultValue(
-                            type.args[1],
+                            renderer.type.args[1],
                             renderer.valueRenderer.renderer,
                           )
                           .Then((defaultValueValue) =>
-                            renderer.renderer.kind != "lookupRenderer"
-                              ? ValueOrErrors.Default.throwOne<
-                                  Template<any, any, any, any>,
+                            dispatcherContext
+                              .getConcreteRenderer(
+                                "map",
+                                renderer.concreteRenderer,
+                              )
+                              .Then((concreteRenderer) => {
+                                const serializedType =
+                                  MapType.SerializeToString([
+                                    keyTemplate[1],
+                                    valueTemplate[1],
+                                  ]);
+                                return ValueOrErrors.Default.return<
+                                  [
+                                    Template<any, any, any, any>,
+                                    StringSerializedType,
+                                  ],
                                   string
-                                >(
-                                  `received non lookup renderer kind "${renderer.renderer.kind}" when resolving defaultState for map`,
-                                )
-                              : dispatcherContext
-                                  .getConcreteRenderer(
-                                    "map",
-                                    renderer.renderer.renderer,
-                                  )
-                                  .Then((concreteRenderer) =>
-                                    ValueOrErrors.Default.return(
-                                      MapAbstractRenderer(
-                                        () => defaultKeyState,
-                                        () => defaultKeyValue,
-                                        () => defaultValueState,
-                                        () => defaultValueValue,
-                                        keyTemplate,
-                                        valueTemplate,
-                                        dispatcherContext.IdProvider,
-                                        dispatcherContext.ErrorRenderer,
-                                      ).withView(concreteRenderer),
-                                    ),
-                                  ),
+                                >([
+                                  MapAbstractRenderer(
+                                    () => defaultKeyState,
+                                    () => defaultKeyValue,
+                                    () => defaultValueState,
+                                    () => defaultValueValue,
+                                    keyTemplate[0],
+                                    valueTemplate[0],
+                                    dispatcherContext.IdProvider,
+                                    dispatcherContext.ErrorRenderer,
+                                    serializedType,
+                                  ).withView(concreteRenderer),
+                                  serializedType,
+                                ]);
+                              }),
                           ),
                       ),
                   ),

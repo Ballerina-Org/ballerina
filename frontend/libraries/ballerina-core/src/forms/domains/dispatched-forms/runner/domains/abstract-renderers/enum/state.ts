@@ -1,14 +1,14 @@
-import { Value } from "../../../../../../../value/state";
 import {
-  PredicateValue,
   SimpleCallback,
   ValueOption,
-  DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  SingleSelectionType,
+  CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
-import { FormLabel } from "../../../../../../../../main";
 import { Synchronized } from "../../../../../../../async/domains/synchronized/state";
 import { Unit, unit } from "../../../../../../../fun/domains/unit/state";
 import { ValueRecord } from "../../../../../../../../main";
@@ -18,8 +18,19 @@ import { Guid } from "../../../../../../../../main";
 export type DispatchBaseEnumContext = {
   getOptions: () => Promise<OrderedMap<Guid, ValueRecord>>;
 };
-export type EnumAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
+
+export type EnumAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  SingleSelectionType<any>,
+  ValueOption,
+  CustomPresentationContext,
+  ExtraContext
+> &
+  DispatchBaseEnumContext;
+
+export type EnumAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     options: Synchronized<Unit, OrderedMap<Guid, ValueRecord>>;
     shouldLoad: boolean;
@@ -27,7 +38,7 @@ export type EnumAbstractRendererState = {
 };
 export const EnumAbstractRendererState = () => ({
   Default: (): EnumAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
+    ...CommonAbstractRendererState.Default(),
     customFormState: {
       options: Synchronized.Default(unit),
       shouldLoad: false,
@@ -35,20 +46,21 @@ export const EnumAbstractRendererState = () => ({
   }),
 });
 
+export type EnumAbstractRendererForeignMutationsExpected<Flags> = {
+  onChange: DispatchOnChange<ValueOption, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<Guid, Flags>;
+  loadOptions: SimpleCallback<void>;
+};
+
 export type EnumAbstractRendererView<
-  Context extends FormLabel & DispatchBaseEnumContext,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Context &
-    Value<ValueOption> &
-    EnumAbstractRendererState &
-    DomNodeIdReadonlyContext & {
+  EnumAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
+    EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-    } & { disabled: boolean },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   EnumAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<ValueOption>;
-    setNewValue: SimpleCallback<Guid>;
-    loadOptions: SimpleCallback<void>;
-  }
+  EnumAbstractRendererForeignMutationsExpected<Flags>
 >;

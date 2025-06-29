@@ -1,52 +1,55 @@
 import {
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
-  Value,
-  DispatchOnChange,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
+  Option,
+  Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import {
+  NumberAbstractRendererForeignMutationsExpected,
+  NumberAbstractRendererReadonlyContext,
   NumberAbstractRendererState,
   NumberAbstractRendererView,
 } from "./state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const NumberAbstractRenderer = <
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Context &
-      Value<number> & {
-        disabled: boolean;
-        type: DispatchParsedType<any>;
-        identifiers: { withLauncher: string; withoutLauncher: string };
-      },
+    NumberAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      NumberAbstractRendererState,
     NumberAbstractRendererState,
-    ForeignMutationsExpected & { onChange: DispatchOnChange<number> },
-    NumberAbstractRendererView<Context, ForeignMutationsExpected>
+    NumberAbstractRendererForeignMutationsExpected<Flags>,
+    NumberAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
         `Number expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering number field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering number field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Number value expected for number but got ${JSON.stringify(
+          message={`${SerializedType}: Number value expected for number but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -54,27 +57,31 @@ export const NumberAbstractRenderer = <
     }
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              setNewValue: (_) => {
-                const delta: DispatchDelta = {
+              setNewValue: (value, flags) => {
+                const delta: DispatchDelta<Flags> = {
                   kind: "NumberReplace",
-                  replace: _,
+                  replace: value,
                   state: {
                     commonFormState: props.context.commonFormState,
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                  isWholeEntityMutation: false,
+                  flags,
                 };
-                props.foreignMutations.onChange(replaceWith(_), delta);
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(value)),
+                  delta,
+                );
               },
             }}
           />

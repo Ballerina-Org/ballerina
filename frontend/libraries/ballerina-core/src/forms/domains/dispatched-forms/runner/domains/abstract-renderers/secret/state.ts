@@ -1,38 +1,52 @@
 import {
-  FormLabel,
-  SimpleCallback,
   Unit,
-  Value,
   View,
-  DispatchCommonFormState,
   DispatchOnChange,
-  DomNodeIdReadonlyContext,
+  ValueCallbackWithOptionalFlags,
+  CommonAbstractRendererReadonlyContext,
+  DispatchPrimitiveType,
+  CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
-export type SecretAbstractRendererState = {
-  commonFormState: DispatchCommonFormState;
-  customFormState: Unit;
-};
+export type SecretAbstractRendererReadonlyContext<
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  string,
+  CustomPresentationContext,
+  ExtraContext
+>;
+
+export type SecretAbstractRendererState = CommonAbstractRendererState;
 
 export const SecretAbstractRendererState = {
   Default: (): SecretAbstractRendererState => ({
-    commonFormState: DispatchCommonFormState.Default(),
-    customFormState: {},
+    ...CommonAbstractRendererState.Default(),
   }),
 };
 
+export type SecretAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+};
+
+export type SecretAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<string, Flags>;
+  setNewValue: ValueCallbackWithOptionalFlags<string, Flags>;
+};
+
 export type SecretAbstractRendererView<
-  Context extends FormLabel,
-  ForeignMutationsExpected,
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Context &
-    DomNodeIdReadonlyContext &
-    Value<string> & { commonFormState: DispatchCommonFormState } & {
-      disabled: boolean;
-    },
+  SecretAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    SecretAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   SecretAbstractRendererState,
-  ForeignMutationsExpected & {
-    onChange: DispatchOnChange<string>;
-    setNewValue: SimpleCallback<string>;
-  }
+  SecretAbstractRendererViewForeignMutationsExpected<Flags>
 >;

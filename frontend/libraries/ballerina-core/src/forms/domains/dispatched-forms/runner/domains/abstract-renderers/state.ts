@@ -1,40 +1,40 @@
 import {
   Bindings,
+  DispatchOnChange,
   DispatchParsedType,
   PredicateValue,
-  Value,
   simpleUpdater,
   simpleUpdaterWithChildren,
+  Unit,
 } from "../../../../../../../main";
-
-export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
-  const matches = [...identifier.matchAll(/\[([^\]]+)\]/g)];
-  if (matches.length === 0) return "";
-  return matches[matches.length - 1][1];
-};
-
-export type DomNodeIdReadonlyContext = {
-  domNodeId: string;
-};
 
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,
+  C = Unit,
+  ExtraContext = Unit,
 > = {
   value: V;
   disabled: boolean;
   bindings: Bindings;
-  extraContext: any;
-  identifiers: { withLauncher: string; withoutLauncher: string };
+  extraContext: ExtraContext;
   type: T;
   label?: string;
   tooltip?: string;
   details?: string;
+  customPresentationContext: C | undefined;
+  remoteEntityVersionIdentifier: string;
+  serializedTypeHierarchy: string[];
+};
+
+export type CommonAbstractRendererViewOnlyReadonlyContext = {
+  domNodeId: string;
+  completeSerializedTypeHierarchy: string[];
 };
 
 export type CommonAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
-  customFormState: any;
+  customFormState: unknown;
 };
 
 export const CommonAbstractRendererState = {
@@ -53,6 +53,10 @@ export const CommonAbstractRendererState = {
       })("commonFormState"),
     },
   },
+};
+
+export type CommonAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+  onChange: DispatchOnChange<PredicateValue, Flags>;
 };
 
 export type DispatchCommonFormState = {

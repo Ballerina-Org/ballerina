@@ -17,12 +17,13 @@ import {
   EditFormForeignMutationsExpected,
   FormLayout,
   RecordAbstractRendererView,
+  LookupTypeAbstractRendererView,
 } from "ballerina-core";
 
-export const DispatchPersonContainerFormView: RecordAbstractRendererView<
+export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
-> = (props) => {
+> = () => (props) => {
   return (
     <>
       <table>
@@ -46,7 +47,7 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
                       <>
                         {/* <>{console.debug("fieldName", fieldName)}</> */}
                         <td style={{ display: "block" }}>
-                          {props.EmbeddedFields.get(fieldName)!({
+                          {props.EmbeddedFields.get(fieldName)!(undefined)({
                             ...props,
                             context: {
                               ...props.context,
@@ -67,10 +68,10 @@ export const DispatchPersonContainerFormView: RecordAbstractRendererView<
   );
 };
 
-export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
+export const DispatchPersonNestedContainerFormView: () => RecordAbstractRendererView<
   { layout: FormLayout },
   Unit
-> = (props) => {
+> = () => (props) => {
   return (
     <>
       {/* {props.context.label && <h3>{props.context.label}</h3>} */}
@@ -87,7 +88,7 @@ export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
                     )
                     .map((fieldName) => (
                       <td style={{ display: "block" }}>
-                        {props.EmbeddedFields.get(fieldName)!({
+                        {props.EmbeddedFields.get(fieldName)!(undefined)({
                           ...props,
                           context: {
                             ...props.context,
@@ -103,6 +104,20 @@ export const DispatchPersonNestedContainerFormView: RecordAbstractRendererView<
           )}
         </tbody>
       </table>
+    </>
+  );
+};
+
+export const DispatchPersonLookupTypeRenderer: () => LookupTypeAbstractRendererView<
+  any,
+  any
+> = () => (props) => {
+  return (
+    <>
+      {props.embeddedTemplate({
+        ...props,
+        view: unit,
+      })}
     </>
   );
 };

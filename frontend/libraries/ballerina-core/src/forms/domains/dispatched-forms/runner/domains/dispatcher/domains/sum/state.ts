@@ -1,7 +1,11 @@
 import {
   DispatcherContext,
+  DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
+  StringSerializedType,
+  SumType,
+  DispatchParsedType,
 } from "../../../../../../../../../main";
 
 import { SumAbstractRenderer } from "../../../abstract-renderers/sum/template";
@@ -11,16 +15,32 @@ import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specifi
 
 export const SumDispatcher = {
   Operations: {
-    Dispatch: <T extends { [key in keyof T]: { type: any; state: any } }>(
+    Dispatch: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
-      dispatcherContext: DispatcherContext<T>,
-    ): ValueOrErrors<Template<any, any, any, any>, string> =>
+      dispatcherContext: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      isInlined: boolean,
+      tableApi: string | undefined,
+    ): ValueOrErrors<
+      [Template<any, any, any, any>, StringSerializedType],
+      string
+    > =>
       (renderer.kind == "sumRenderer"
         ? NestedDispatcher.Operations.DispatchAs(
             renderer.leftRenderer,
             dispatcherContext,
             "left",
-            "left",
+            isInlined,
+            tableApi,
           )
         : ValueOrErrors.Default.return<undefined, string>(undefined)
       )
@@ -30,47 +50,57 @@ export const SumDispatcher = {
                 renderer.rightRenderer,
                 dispatcherContext,
                 "right",
-                "right",
+                isInlined,
+                tableApi,
               )
             : ValueOrErrors.Default.return<undefined, string>(undefined)
-          ).Then((rightForm) =>
-            renderer.kind == "sumUnitDateRenderer" &&
-            renderer.renderer.kind == "lookupRenderer"
+          ).Then((rightForm) => {
+            const serializedType = SumType.SerializeToString([
+              leftForm?.[1] ??
+                DispatchParsedType.Operations.SerializeToString(
+                  renderer.type.args[0],
+                ),
+              rightForm?.[1] ??
+                DispatchParsedType.Operations.SerializeToString(
+                  renderer.type.args[1],
+                ),
+            ]);
+            return renderer.kind == "sumUnitDateRenderer"
               ? dispatcherContext
-                  .getConcreteRenderer(
-                    "sumUnitDate",
-                    renderer.renderer.renderer,
-                  )
+                  .getConcreteRenderer("sumUnitDate", renderer.concreteRenderer)
                   .Then((concreteRenderer) =>
-                    ValueOrErrors.Default.return(
+                    ValueOrErrors.Default.return<
+                      [Template<any, any, any, any>, StringSerializedType],
+                      string
+                    >([
                       SumAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
-                        leftForm,
-                        rightForm,
+                        serializedType,
+                        leftForm?.[0],
+                        rightForm?.[0],
                       ).withView(concreteRenderer),
-                    ),
+                      serializedType,
+                    ]),
                   )
-              : renderer.renderer.kind == "lookupRenderer"
-                ? dispatcherContext
-                    .getConcreteRenderer("sum", renderer.renderer.renderer)
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return(
-                        SumAbstractRenderer(
-                          dispatcherContext.IdProvider,
-                          dispatcherContext.ErrorRenderer,
-                          leftForm,
-                          rightForm,
-                        ).withView(concreteRenderer),
-                      ),
-                    )
-                : ValueOrErrors.Default.throwOne<
-                    Template<any, any, any, any>,
-                    string
-                  >(
-                    `received non lookup renderer kind for sum concrete renderer`,
-                  ),
-          ),
+              : dispatcherContext
+                  .getConcreteRenderer("sum", renderer.concreteRenderer)
+                  .Then((concreteRenderer) =>
+                    ValueOrErrors.Default.return<
+                      [Template<any, any, any, any>, StringSerializedType],
+                      string
+                    >([
+                      SumAbstractRenderer(
+                        dispatcherContext.IdProvider,
+                        dispatcherContext.ErrorRenderer,
+                        serializedType,
+                        leftForm?.[0],
+                        rightForm?.[0],
+                      ).withView(concreteRenderer),
+                      serializedType,
+                    ]),
+                  );
+          }),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When dispatching nested sum`),

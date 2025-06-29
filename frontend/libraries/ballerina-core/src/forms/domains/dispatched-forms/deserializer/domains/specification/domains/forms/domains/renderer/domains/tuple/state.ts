@@ -4,18 +4,20 @@ import { DispatchParsedType, TupleType } from "../../../../../types/state";
 import { Renderer } from "../../state";
 import { ValueOrErrors } from "../../../../../../../../../../../../collections/domains/valueOrErrors/state";
 import {
-  ConcreteRendererKinds,
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
   isObject,
+  isString,
 } from "../../../../../../../../../../../../../main";
 
 export type SerializedTupleRenderer = {
-  renderer: unknown;
+  renderer: string;
   itemRenderers: Array<unknown>;
 };
 
 export type TupleRenderer<T> = {
   kind: "tupleRenderer";
-  renderer: Renderer<T>;
+  concreteRenderer: string;
   itemRenderers: Array<NestedRenderer<T>>;
   type: TupleType<T>;
 };
@@ -23,12 +25,12 @@ export type TupleRenderer<T> = {
 export const TupleRenderer = {
   Default: <T>(
     type: TupleType<T>,
-    renderer: Renderer<T>,
+    concreteRenderer: string,
     itemRenderers: Array<NestedRenderer<T>>,
   ): TupleRenderer<T> => ({
     kind: "tupleRenderer",
     type,
-    renderer,
+    concreteRenderer,
     itemRenderers,
   }),
   Operations: {
@@ -39,26 +41,40 @@ export const TupleRenderer = {
         ? ValueOrErrors.Default.throwOne(`serialized must be an object`)
         : !("renderer" in serialized)
           ? ValueOrErrors.Default.throwOne(`renderer is required`)
-          : !("itemRenderers" in serialized)
-            ? ValueOrErrors.Default.throwOne(`itemRenderers is required`)
-            : !Array.isArray(serialized.itemRenderers)
-              ? ValueOrErrors.Default.throwOne(`itemRenderers must be an array`)
-              : serialized.itemRenderers.length == 0
+          : !isString(serialized.renderer)
+            ? ValueOrErrors.Default.throwOne(`renderer must be a string`)
+            : !("itemRenderers" in serialized)
+              ? ValueOrErrors.Default.throwOne(`itemRenderers is required`)
+              : !Array.isArray(serialized.itemRenderers)
                 ? ValueOrErrors.Default.throwOne(
-                    `itemRenderers must have at least one item`,
+                    `itemRenderers must be an array`,
                   )
-                : ValueOrErrors.Default.return({
-                    ...serialized,
-                    itemRenderers: serialized.itemRenderers,
-                  }),
-    Deserialize: <T>(
+                : serialized.itemRenderers.length == 0
+                  ? ValueOrErrors.Default.throwOne(
+                      `itemRenderers must have at least one item`,
+                    )
+                  : ValueOrErrors.Default.return({
+                      renderer: serialized.renderer,
+                      itemRenderers: serialized.itemRenderers,
+                    }),
+    Deserialize: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
       type: TupleType<T>,
       serialized: unknown,
-      concreteRenderers: Record<keyof ConcreteRendererKinds<T>, any>,
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
-      TupleRenderer.Operations.tryAsValidTupleRenderer(serialized).Then(
-        (validatedSerialized) =>
+      TupleRenderer.Operations.tryAsValidTupleRenderer(serialized)
+        .Then((validatedSerialized) =>
           ValueOrErrors.Operations.All(
             List<ValueOrErrors<NestedRenderer<T>, string>>(
               validatedSerialized.itemRenderers.map((itemRenderer, index) =>
@@ -73,28 +89,18 @@ export const TupleRenderer = {
                 ),
               ),
             ),
-          )
-            .Then((deserializedItemRenderers) =>
-              Renderer.Operations.Deserialize(
+          ).Then((deserializedItemRenderers) =>
+            ValueOrErrors.Default.return(
+              TupleRenderer.Default(
                 type,
                 validatedSerialized.renderer,
-                concreteRenderers,
-                types,
-              ).Then((deserializedRenderer) =>
-                ValueOrErrors.Default.return(
-                  TupleRenderer.Default(
-                    type,
-                    deserializedRenderer,
-                    deserializedItemRenderers.toArray(),
-                  ),
-                ),
-              ),
-            )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When parsing as Tuple renderer`,
+                deserializedItemRenderers.toArray(),
               ),
             ),
-      ),
+          ),
+        )
+        .MapErrors((errors) =>
+          errors.map((error) => `${error}\n...When parsing as Tuple renderer`),
+        ),
   },
 };

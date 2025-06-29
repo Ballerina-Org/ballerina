@@ -11,10 +11,10 @@ import {
   BasicFun,
   PredicateValue,
   ValueStreamPosition,
-  AbstractTableRendererState,
   DispatchTableApiSources,
   DispatchOneSource,
   DispatchLookupSources,
+  TableAbstractRendererState,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
 import { City } from "../../address/state";
@@ -146,7 +146,7 @@ const getActiveUsers: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -225,7 +225,7 @@ const getActiveFriends: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -352,7 +352,7 @@ const getChildren: DispatchTableApiSource = {
         from: res.From,
         to: res.To,
         hasMoreValues: res.HasMore,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
@@ -417,7 +417,7 @@ const getFriends: DispatchOneSource = {
         hasMoreValues: res.HasMore,
         to: res.To,
         from: res.From,
-        data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
           res.Values,
           fromApiRaw,
         ),
