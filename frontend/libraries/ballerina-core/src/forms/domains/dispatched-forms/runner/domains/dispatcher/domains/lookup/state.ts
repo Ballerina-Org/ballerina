@@ -49,7 +49,7 @@ export const LookupDispatcher = {
             )
             .Then((template) => {
               const serializedType = LookupType.SerializeToString(
-                renderer.type.name as string,
+                renderer.type.name,
               );
               return ValueOrErrors.Default.return<
                 [Template<any, any, any, any>, StringSerializedType],

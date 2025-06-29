@@ -339,15 +339,15 @@ export const MapType = {
 export type TableType<T> = {
   kind: "table";
   name: DispatchTypeName;
-  args: Array<RecordType<T>>;
+  arg: LookupType;
   typeName: DispatchTypeName;
 };
 
 export const TableType = {
   SerializeToString: (
-    serializedArgs: Array<StringSerializedType>,
+    serializedArg: StringSerializedType,
   ): StringSerializedType => {
-    return `[table; args: [${serializedArgs.join(", ")}]]`;
+    return `[table; arg: ${serializedArg}]`;
   },
 };
 
@@ -384,12 +384,12 @@ export const DispatchParsedType = {
   Default: {
     table: <T>(
       name: DispatchTypeName,
-      args: Array<RecordType<T>>,
+      arg: LookupType,
       typeName: DispatchTypeName,
     ): TableType<T> => ({
       kind: "table",
       name,
-      args,
+      arg,
       typeName,
     }),
     record: <T>(
@@ -640,9 +640,7 @@ export const DispatchParsedType = {
           );
         case "table":
           return TableType.SerializeToString(
-            type.args.map((v) =>
-              DispatchParsedType.Operations.SerializeToString(v),
-            ),
+            DispatchParsedType.Operations.SerializeToString(type.arg),
           );
         case "one":
           return OneType.SerializeToString([
@@ -1057,47 +1055,25 @@ export const DispatchParsedType = {
           );
         if (SerializedType.isTable(rawType)) {
           return DispatchParsedType.Operations.ParseRawType(
-            "TableType",
+            "TableArg",
             rawType.args[0],
             typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
-            parsedArg[0].kind == "lookup"
-              ? MapRepo.Operations.tryFindWithError(
-                  parsedArg[0].name,
-                  alreadyParsedTypes,
-                  () =>
-                    `cannot find lookup type ${parsedArg[0].name as string} in types`,
-                ).Then((resolvedType) =>
-                  resolvedType.Then((resolvedType) =>
-                    resolvedType.kind == "record"
-                      ? ValueOrErrors.Default.return([
-                          DispatchParsedType.Default.table(
-                            typeName,
-                            [resolvedType],
-                            typeName,
-                          ),
-                          alreadyParsedTypes,
-                        ])
-                      : ValueOrErrors.Default.throwOne(
-                          `Error: ${JSON.stringify(resolvedType)} is not a record type`,
-                        ),
-                  ),
+            parsedArg[0].kind != "lookup"
+              ? ValueOrErrors.Default.throwOne(
+                  `Error: ${JSON.stringify(parsedArg[0])} is not a lookup type`,
                 )
-              : parsedArg[0].kind == "record"
-                ? ValueOrErrors.Default.return([
-                    DispatchParsedType.Default.table(
-                      typeName,
-                      [parsedArg[0]],
-                      typeName,
-                    ),
-                    alreadyParsedTypes,
-                  ])
-                : ValueOrErrors.Default.throwOne(
-                    `Error: ${JSON.stringify(parsedArg[0])} is not a record type or lookup type to a record type`,
+              : ValueOrErrors.Default.return([
+                  DispatchParsedType.Default.table(
+                    typeName,
+                    parsedArg[0],
+                    typeName,
                   ),
+                  alreadyParsedTypes,
+                ]),
           );
         }
         if (SerializedType.isLookup(rawType, typeNames))

@@ -159,7 +159,15 @@ export const Specification = {
                   () => `form type ${form.type} not found in types`,
                 ).Then((formType) =>
                   Renderer.Operations.Deserialize(
-                    formType,
+                    "columns" in form
+                      ? DispatchParsedType.Default.table(
+                          "tableType",
+                          DispatchParsedType.Default.lookup(
+                            form.type as string,
+                          ),
+                          "tableType",
+                        )
+                      : formType,
                     form,
                     concreteRenderers,
                     types,

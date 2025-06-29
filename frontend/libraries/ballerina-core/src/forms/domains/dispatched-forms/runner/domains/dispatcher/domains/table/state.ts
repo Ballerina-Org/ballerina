@@ -10,6 +10,7 @@ import {
   StringSerializedType,
   PredicateValue,
   LookupType,
+  LookupTypeAbstractRenderer,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -85,7 +86,7 @@ export const TableDispatcher = {
       string
     > =>
       DispatchParsedType.Operations.ResolveLookupType(
-        renderer.type.args[0].typeName,
+        renderer.type.arg.typeName,
         dispatcherContext.types,
       )
         .Then((tableEntityType) =>
@@ -146,7 +147,17 @@ export const TableDispatcher = {
                                   >([
                                     columnName,
                                     {
-                                      template: template[0],
+                                      // Special attention - tables have a look up arg that represents the table entity type
+                                      template: LookupTypeAbstractRenderer(
+                                        template[0],
+                                        dispatcherContext.IdProvider,
+                                        dispatcherContext.ErrorRenderer,
+                                        LookupType.SerializeToString(
+                                          renderer.type.arg.name,
+                                        ),
+                                      ).withView(
+                                        dispatcherContext.lookupTypeRenderer(),
+                                      ),
                                       disabled: columnRenderer.disabled,
                                       label: columnRenderer.label,
                                       GetDefaultState: () => defaultState,
@@ -173,9 +184,9 @@ export const TableDispatcher = {
                         renderer.api ?? tableApi,
                         dispatcherContext,
                       ).Then((tableApiSource) => {
-                        const serializedType = TableType.SerializeToString([
-                          (renderer.type.args[0] as LookupType).name, // always a lookup,
-                        ]);
+                        const serializedType = TableType.SerializeToString(
+                          renderer.type.arg.name,
+                        );
                         return ValueOrErrors.Default.return<
                           [Template<any, any, any, any>, StringSerializedType],
                           string
@@ -187,6 +198,7 @@ export const TableDispatcher = {
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                             serializedType,
+                            tableEntityType,
                           )
                             .mapContext((_: any) => ({
                               ..._,
@@ -203,7 +215,7 @@ export const TableDispatcher = {
                               tableApiSource,
                               fromTableApiParser:
                                 dispatcherContext.parseFromApiByType(
-                                  renderer.type.args[0],
+                                  renderer.type.arg,
                                 ),
                             }))
                             .withView(concreteRenderer),

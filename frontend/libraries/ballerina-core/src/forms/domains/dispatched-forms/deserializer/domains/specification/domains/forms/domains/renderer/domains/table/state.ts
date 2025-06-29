@@ -114,7 +114,7 @@ export const TableRenderer = {
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedRenderer.Operations.DeserializeAs(
-            type.args[0],
+            type.arg,
             serialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
@@ -139,8 +139,8 @@ export const TableRenderer = {
         ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
         : TableRenderer.Operations.tryAsValidTableForm(serialized)
             .Then((validTableForm) =>
-              DispatchParsedType.Operations.AsResolvedType(
-                type.args[0],
+              DispatchParsedType.Operations.ResolveLookupType(
+                type.arg.name,
                 types,
               ).Then((resolvedType) =>
                 resolvedType.kind != "record"

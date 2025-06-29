@@ -266,9 +266,6 @@ export const TraversalDispatchTest = (props: {}) => {
           >(
             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
               "person-transparent",
-            )!.type,
-            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-              "person-transparent",
             )!.renderer,
             {
               types:

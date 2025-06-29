@@ -167,33 +167,13 @@ export const Renderer = {
         pass this information to the abstract renderer).
       */
 
-      type.kind == "lookup" // Lookup type
-        ? typeof serialized == "string" // lookup type and lookup renderer (case 1)
-          ? LookupRenderer.Operations.Deserialize(
-              SerializedLookup.Default.LookupTypeLookupRenderer(
-                type,
-                serialized,
-              ),
-              tableApi,
-              concreteRenderers,
-              types,
-            )
-          : LookupRenderer.Operations.Deserialize(
-              // lookup type and inlined renderer (case 2)
-              SerializedLookup.Default.LookupTypeInlinedRenderer(
-                type,
-                serialized,
-              ),
-              tableApi,
-              concreteRenderers,
-              types,
-            )
-        : typeof serialized == "string"
-          ? type.kind == "primitive" // special case
-            ? PrimitiveRenderer.Operations.Deserialize(type, serialized)
-            : // inlined type and lookup renderer (case 3)
-              LookupRenderer.Operations.Deserialize(
-                SerializedLookup.Default.InlinedTypeLookupRenderer(
+      {
+        console.debug("type", type);
+        console.debug("serialized", serialized);
+        return type.kind == "lookup" // Lookup type
+          ? typeof serialized == "string" // lookup type and lookup renderer (case 1)
+            ? LookupRenderer.Operations.Deserialize(
+                SerializedLookup.Default.LookupTypeLookupRenderer(
                   type,
                   serialized,
                 ),
@@ -201,93 +181,112 @@ export const Renderer = {
                 concreteRenderers,
                 types,
               )
-          : // All other cases are inlined renderers and inlined types (case 4)
-            Renderer.Operations.HasOptions(serialized) &&
-              (type.kind == "singleSelection" || type.kind == "multiSelection")
-            ? EnumRenderer.Operations.Deserialize(type, serialized)
-            : Renderer.Operations.HasStream(serialized) &&
+            : LookupRenderer.Operations.Deserialize(
+                // lookup type and inlined renderer (case 2)
+                SerializedLookup.Default.LookupTypeInlinedRenderer(
+                  type,
+                  serialized,
+                ),
+                tableApi,
+                concreteRenderers,
+                types,
+              )
+          : typeof serialized == "string"
+            ? type.kind == "primitive" // special case
+              ? PrimitiveRenderer.Operations.Deserialize(type, serialized)
+              : // inlined type and lookup renderer (case 3)
+                LookupRenderer.Operations.Deserialize(
+                  SerializedLookup.Default.InlinedTypeLookupRenderer(
+                    type,
+                    serialized,
+                  ),
+                  tableApi,
+                  concreteRenderers,
+                  types,
+                )
+            : // All other cases are inlined renderers and inlined types (case 4)
+              Renderer.Operations.HasOptions(serialized) &&
                 (type.kind == "singleSelection" ||
                   type.kind == "multiSelection")
-              ? StreamRenderer.Operations.Deserialize(type, serialized)
-              : Renderer.Operations.HasColumns(serialized) &&
-                  (type.kind == "table" || type.kind == "record")
-                ? TableRenderer.Operations.Deserialize(
+              ? EnumRenderer.Operations.Deserialize(type, serialized)
+              : Renderer.Operations.HasStream(serialized) &&
+                  (type.kind == "singleSelection" ||
+                    type.kind == "multiSelection")
+                ? StreamRenderer.Operations.Deserialize(type, serialized)
+                : Renderer.Operations.HasColumns(serialized) &&
                     type.kind == "table"
-                      ? type
-                      : DispatchParsedType.Default.table(
-                          "tableForm",
-                          [type],
-                          "tableForm",
-                        ),
-                    serialized,
-                    concreteRenderers,
-                    types,
-                    tableApi,
-                  )
-                : type.kind == "list"
-                  ? ListRenderer.Operations.Deserialize(
+                  ? TableRenderer.Operations.Deserialize(
                       type,
                       serialized,
                       concreteRenderers,
                       types,
+                      tableApi,
                     )
-                  : type.kind == "map"
-                    ? MapRenderer.Operations.Deserialize(
+                  : type.kind == "list"
+                    ? ListRenderer.Operations.Deserialize(
                         type,
                         serialized,
                         concreteRenderers,
                         types,
                       )
-                    : type.kind == "one"
-                      ? OneRenderer.Operations.Deserialize(
+                    : type.kind == "map"
+                      ? MapRenderer.Operations.Deserialize(
                           type,
                           serialized,
                           concreteRenderers,
                           types,
                         )
-                      : Renderer.Operations.IsSumUnitDate(
-                            serialized,
-                            concreteRenderers,
-                          ) && type.kind == "sum"
-                        ? BaseSumUnitDateRenderer.Operations.Deserialize(
+                      : type.kind == "one"
+                        ? OneRenderer.Operations.Deserialize(
                             type,
                             serialized,
+                            concreteRenderers,
+                            types,
                           )
-                        : type.kind == "sum"
-                          ? SumRenderer.Operations.Deserialize(
-                              type,
+                        : Renderer.Operations.IsSumUnitDate(
                               serialized,
                               concreteRenderers,
-                              types,
+                            ) && type.kind == "sum"
+                          ? BaseSumUnitDateRenderer.Operations.Deserialize(
+                              type,
+                              serialized,
                             )
-                          : type.kind == "record"
-                            ? RecordRenderer.Operations.Deserialize(
+                          : type.kind == "sum"
+                            ? SumRenderer.Operations.Deserialize(
                                 type,
                                 serialized,
                                 concreteRenderers,
                                 types,
                               )
-                            : type.kind == "union"
-                              ? UnionRenderer.Operations.Deserialize(
+                            : type.kind == "record"
+                              ? RecordRenderer.Operations.Deserialize(
                                   type,
                                   serialized,
                                   concreteRenderers,
                                   types,
                                 )
-                              : type.kind == "tuple"
-                                ? TupleRenderer.Operations.Deserialize(
+                              : type.kind == "union"
+                                ? UnionRenderer.Operations.Deserialize(
                                     type,
                                     serialized,
                                     concreteRenderers,
                                     types,
                                   )
-                                : ValueOrErrors.Default.throwOne<
-                                    Renderer<T>,
-                                    string
-                                  >(
-                                    `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
-                                      type.kind
-                                    }`,
-                                  ),
+                                : type.kind == "tuple"
+                                  ? TupleRenderer.Operations.Deserialize(
+                                      type,
+                                      serialized,
+                                      concreteRenderers,
+                                      types,
+                                    )
+                                  : ValueOrErrors.Default.throwOne<
+                                      Renderer<T>,
+                                      string
+                                    >(
+                                      `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
+                                        type.kind
+                                      }`,
+                                    );
+      },
   },
 };

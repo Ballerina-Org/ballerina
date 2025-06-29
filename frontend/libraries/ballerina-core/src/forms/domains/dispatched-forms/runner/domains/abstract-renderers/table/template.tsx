@@ -31,6 +31,7 @@ import {
   MapRepo,
   ValueTable,
   StringSerializedType,
+  RecordType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -86,6 +87,7 @@ export const TableAbstractRenderer = <
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
+  TableEntityType: RecordType<any>,
 ): Template<
   TableAbstractRendererReadonlyContext<CustomPresentationContext> &
     TableAbstractRendererState,
@@ -155,7 +157,7 @@ export const TableAbstractRenderer = <
                 `[${rowId}][${column}]`,
               ),
             },
-            type: _.type.args[0].fields.get(column)!,
+            type: TableEntityType.fields.get(column)!,
             CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(
               `[${rowId}][${column}]`,
@@ -226,7 +228,7 @@ export const TableAbstractRenderer = <
             const nestedRecordDelta: DispatchDelta<Flags> = {
               kind: "RecordField",
               field: [column, nestedDelta],
-              recordType: props.context.type.args[0],
+              recordType: TableEntityType,
               flags: undefined,
             };
 
@@ -303,7 +305,7 @@ export const TableAbstractRenderer = <
                 `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
               ),
             },
-            type: _.type.args[0],
+            type: TableEntityType,
             CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(
               `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,

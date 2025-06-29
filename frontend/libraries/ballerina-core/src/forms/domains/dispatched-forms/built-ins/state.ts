@@ -630,80 +630,44 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
             )
-          : typeof renderer.api == "string"
-            ? tableApiSources == undefined
+          : lookupSources == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `lookup sources referenced but no lookup sources are provided`,
+              )
+            : lookupSources(renderer.api[0]) == undefined
               ? ValueOrErrors.Default.throwOne(
-                  `table api sources referenced but no table api sources are provided`,
+                  `cannot find lookup source for ${renderer.api[0]}`,
                 )
-              : tableApiSources(renderer.api) == undefined
-                ? ValueOrErrors.Default.throwOne(
-                    `cannot find table api source for ${renderer.api}`,
-                  )
-                : t.args.kind !== "lookup"
-                  ? ValueOrErrors.Default.throwOne(
-                      `expected lookup type for one but got ${t.args}`,
-                    )
-                  : tableApiSources(renderer.api).Then((tableApiSource) =>
-                      MapRepo.Operations.tryFindWithError(
-                        t.args.name,
-                        types,
-                        () =>
-                          `cannot find lookup type ${JSON.stringify(
-                            t.args,
-                          )} in ${JSON.stringify(t)}`,
-                      ).Then((lookupType) =>
-                        ValueOrErrors.Default.return(
-                          OneAbstractRendererState.Default((_: string) =>
-                            tableApiSource.getMany(
-                              dispatchFromAPIRawValue(
-                                lookupType,
-                                types,
-                                converters,
-                                injectedPrimitives,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-            : lookupSources == undefined
-              ? ValueOrErrors.Default.throwOne(
-                  `lookup sources referenced but no lookup sources are provided`,
-                )
-              : lookupSources(renderer.api[0]) == undefined
-                ? ValueOrErrors.Default.throwOne(
-                    `cannot find lookup source for ${renderer.api[0]}`,
-                  )
-                : lookupSources(renderer.api[0]).Then((lookupSource) =>
-                    lookupSource.one == undefined
-                      ? ValueOrErrors.Default.throwOne(
-                          `one source not provided for ${renderer.api[0]}`,
-                        )
-                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
-                          .Then((oneSource) =>
-                            MapRepo.Operations.tryFindWithError(
-                              t.args.name,
-                              types,
-                              () =>
-                                `cannot find lookup type ${JSON.stringify(
-                                  t.args,
-                                )} in ${JSON.stringify(t)}`,
-                            ).Then((lookupType) =>
-                              ValueOrErrors.Default.return(
-                                OneAbstractRendererState.Default(
-                                  oneSource.getManyUnlinked(
-                                    dispatchFromAPIRawValue(
-                                      lookupType,
-                                      types,
-                                      converters,
-                                      injectedPrimitives,
-                                    ),
+              : lookupSources(renderer.api[0]).Then((lookupSource) =>
+                  lookupSource.one == undefined
+                    ? ValueOrErrors.Default.throwOne(
+                        `one source not provided for ${renderer.api[0]}`,
+                      )
+                    : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                        .Then((oneSource) =>
+                          MapRepo.Operations.tryFindWithError(
+                            t.args.name,
+                            types,
+                            () =>
+                              `cannot find lookup type ${JSON.stringify(
+                                t.args,
+                              )} in ${JSON.stringify(t)}`,
+                          ).Then((lookupType) =>
+                            ValueOrErrors.Default.return(
+                              OneAbstractRendererState.Default(
+                                oneSource.getManyUnlinked(
+                                  dispatchFromAPIRawValue(
+                                    lookupType,
+                                    types,
+                                    converters,
+                                    injectedPrimitives,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                  );
+                        ),
+                );
 
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
@@ -785,8 +749,6 @@ export const dispatchDefaultState =
       }
 
       if (t.kind == "table") {
-        console.debug("table type", t);
-        console.debug("table renderer", renderer);
         return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(TableAbstractRendererState.Default())
           : ValueOrErrors.Default.throwOne(
@@ -1250,42 +1212,41 @@ export const dispatchFromAPIRawValue =
           );
         }
         const converterResult = converters["Table"].fromAPIRawValue(raw);
-        const argType = t.args[0];
-        if (argType.kind != "record") {
-          return ValueOrErrors.Default.throwOne(
-            `expected record type for table arg, got ${JSON.stringify(
-              argType,
-            )}`,
-          );
-        }
-        return ValueOrErrors.Operations.All(
-          List<ValueOrErrors<[string, ValueRecord], string>>(
-            converterResult.data
-              .toArray()
-              .map(([key, record]) =>
-                dispatchFromAPIRawValue(
-                  argType,
-                  types,
-                  converters,
-                  injectedPrimitives,
-                )(record).Then((value) =>
-                  PredicateValue.Operations.IsRecord(value)
-                    ? ValueOrErrors.Default.return([key, value])
-                    : ValueOrErrors.Default.throwOne(
-                        `record expected but got ${PredicateValue.Operations.GetKind(
-                          value,
-                        )}`,
-                      ),
+        const argType = t.arg;
+
+        return DispatchParsedType.Operations.ResolveLookupType(
+          argType.name,
+          types,
+        ).Then((resolvedType) =>
+          ValueOrErrors.Operations.All(
+            List<ValueOrErrors<[string, ValueRecord], string>>(
+              converterResult.data
+                .toArray()
+                .map(([key, record]) =>
+                  dispatchFromAPIRawValue(
+                    resolvedType,
+                    types,
+                    converters,
+                    injectedPrimitives,
+                  )(record).Then((value) =>
+                    PredicateValue.Operations.IsRecord(value)
+                      ? ValueOrErrors.Default.return([key, value])
+                      : ValueOrErrors.Default.throwOne(
+                          `record expected but got ${PredicateValue.Operations.GetKind(
+                            value,
+                          )}`,
+                        ),
+                  ),
                 ),
+            ),
+          ).Then((values) =>
+            ValueOrErrors.Default.return(
+              ValueTable.Default.fromParsed(
+                converterResult.from,
+                converterResult.to,
+                converterResult.hasMoreValues,
+                OrderedMap(values),
               ),
-          ),
-        ).Then((values) =>
-          ValueOrErrors.Default.return(
-            ValueTable.Default.fromParsed(
-              converterResult.from,
-              converterResult.to,
-              converterResult.hasMoreValues,
-              OrderedMap(values),
             ),
           ),
         );
