@@ -17,7 +17,6 @@ import {
   RecordAbstractRendererState,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   TableAbstractRendererForeignMutationsExpected,
@@ -138,7 +137,7 @@ export const TableAbstractRenderer = <
             console.error(
               `Row value is undefined for row ${rowId} in chunk ${chunkIndex}\n
               ...When rendering table field\n
-              ...${_.identifiers.withLauncher}`,
+              ...${SerializedType}`,
             );
             return undefined;
           }
@@ -149,19 +148,8 @@ export const TableAbstractRenderer = <
             disabled: disabled || _.disabled,
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${rowId}][${column}]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${rowId}][${column}]`,
-              ),
-            },
             type: TableEntityType.fields.get(column)!,
             CustomPresentationContext: _.CustomPresentationContext,
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${rowId}][${column}]`,
-            ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[${column}]`, `[${rowId}]`].concat(
               _.serializedTypeHierarchy,
@@ -271,7 +259,7 @@ export const TableAbstractRenderer = <
             console.error(
               `Selected detail row is undefined\n
               ...When rendering table field\n
-              ...${_.identifiers.withLauncher}`,
+              ...${SerializedType}`,
             );
             return undefined;
           }
@@ -284,7 +272,7 @@ export const TableAbstractRenderer = <
             console.error(
               `Value is undefined for selected detail row\n
               ...When rendering table field\n
-              ...${_.identifiers.withLauncher}`,
+              ...${SerializedType}`,
             );
             return undefined;
           }
@@ -300,19 +288,8 @@ export const TableAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings.set("local", value),
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-              ),
-            },
             type: TableEntityType,
             CustomPresentationContext: _.CustomPresentationContext,
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
-            ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
@@ -322,7 +299,7 @@ export const TableAbstractRenderer = <
               console.error(
                 `Selected detail row is undefined\n
                 ...When rendering table detail view \n
-                ...${props.context.identifiers.withLauncher}`,
+                ...${SerializedType}`,
               );
               return id;
             }
@@ -348,7 +325,7 @@ export const TableAbstractRenderer = <
                 console.error(
                   `Selected detail row is undefined\n
                   ...When rendering table field\n
-                  ...${props.context.identifiers.withLauncher}`,
+                  ...${SerializedType}`,
                 );
                 return id;
               }
@@ -391,19 +368,21 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
         `TableValue expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering table field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering table field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Table value expected for table but got ${JSON.stringify(
+          message={`${SerializedType}: Table value expected for table but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -428,9 +407,7 @@ export const TableAbstractRenderer = <
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Error while computing visible columns, check console`}
+          message={`${SerializedType}: Error while computing visible columns, check console`}
         />
       );
     }
@@ -461,9 +438,7 @@ export const TableAbstractRenderer = <
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Error while computing disabled column keys, check console`}
+          message={`${SerializedType}: Error while computing disabled column keys, check console`}
         />
       );
     }
@@ -499,22 +474,18 @@ export const TableAbstractRenderer = <
           ),
       );
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
               tableHeaders: visibleColumns.value.columns,
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,
-              serializedTypeHierarchy,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -9,7 +9,6 @@ import {
   View,
   simpleUpdater,
   simpleUpdaterWithChildren,
-  DispatchCommonFormState,
   ValueInfiniteStreamState,
   CommonAbstractRendererReadonlyContext,
   OneType,
@@ -17,7 +16,6 @@ import {
   Guid,
   Synchronized,
   Unit,
-  unit,
   Template,
   ValueRecord,
   RecordAbstractRendererState,
@@ -31,6 +29,7 @@ import {
   DispatchOnChange,
   CommonAbstractRendererState,
   DispatchDelta,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -176,7 +175,7 @@ export type OneAbstractRendererView<
       } & OneAbstractRendererState & {
           kind: "initialized";
           hasMoreValues: boolean;
-        })
+        } & CommonAbstractRendererViewOnlyReadonlyContext)
     | {
         kind: "uninitialized";
         domNodeId: string;

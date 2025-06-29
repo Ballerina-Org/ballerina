@@ -23,7 +23,6 @@ import {
   Value,
   ValueRecord,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -102,38 +101,38 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       Flags
     >
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering searchable infinite stream multiselect field\n...${
-          props.context.identifiers.withLauncher
+          domNodeId
         }`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Record value expected for searchable infinite stream multiselect but got ${JSON.stringify(
+          message={`${domNodeId}: Record value expected for searchable infinite stream multiselect but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-    
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues == false

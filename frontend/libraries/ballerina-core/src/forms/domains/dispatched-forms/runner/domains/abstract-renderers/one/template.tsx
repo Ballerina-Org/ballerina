@@ -19,13 +19,10 @@ import {
   ValueUnit,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Debounced,
   Value,
   Option,
   Unit,
-  RecordAbstractRendererReadonlyContext,
-  RecordAbstractRendererForeignMutationsExpected,
   StringSerializedType,
 } from "../../../../../../../../main";
 import {
@@ -60,23 +57,12 @@ export const OneAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
 >(
-  DetailsRenderer: Template<
-    RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
-      RecordAbstractRendererState,
-    RecordAbstractRendererState,
-    RecordAbstractRendererForeignMutationsExpected<Flags>
-  >,
-  PreviewRenderer:
-    | Template<
-        RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
-          RecordAbstractRendererState,
-        RecordAbstractRendererState,
-        RecordAbstractRendererForeignMutationsExpected<Flags>
-      >
-    | undefined,
+  DetailsRenderer: Template<any, any, any, any>,
+  PreviewRenderer: Template<any, any, any, any> | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
+  oneEntityType: RecordType<any>,
 ) => {
   const typedInitializeOneRunner = initializeOneRunner<
     CustomPresentationContext,
@@ -134,15 +120,8 @@ export const OneAbstractRenderer = <
         disabled: _.disabled,
         bindings: _.bindings,
         extraContext: _.extraContext,
-        identifiers: {
-          withLauncher: _.identifiers.withLauncher.concat(`[details]`),
-          withoutLauncher: _.identifiers.withoutLauncher.concat(`[details]`),
-        },
-        // TODO: this is not correct, type is a lookup, need to resolve in dispatcher and
-        // correct type on RecordAbstractRendererReadonlyContext
-        type: _.type.args as RecordType<any>,
+        type: oneEntityType,
         CustomPresentationContext: _.CustomPresentationContext,
-        domNodeId: _.identifiers.withoutLauncher.concat(`[details]`),
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
         serializedTypeHierarchy: _.serializedTypeHierarchy,
       };
@@ -158,7 +137,10 @@ export const OneAbstractRenderer = <
       .mapForeignMutationsFromProps<
         OneAbstractRendererViewForeignMutationsExpected<Flags>
       >((props) => ({
-        onChange: (updater, nestedDelta) => {
+        onChange: (
+          updater: Option<BasicUpdater<ValueRecord>>,
+          nestedDelta: DispatchDelta<Flags>,
+        ) => {
           props.setState(
             OneAbstractRendererState.Updaters.Core.commonFormState.children
               .modifiedByUser(replaceWith(true))
@@ -248,14 +230,8 @@ export const OneAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(`[preview]`),
-              withoutLauncher:
-                _.identifiers.withoutLauncher.concat(`[preview]`),
-            },
-            type: _.type.args as RecordType<any>,
+            type: oneEntityType,
             CustomPresentationContext: _.CustomPresentationContext,
-            domNodeId: _.identifiers.withoutLauncher.concat(`[preview]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
@@ -346,6 +322,11 @@ export const OneAbstractRenderer = <
     OneAbstractRendererForeignMutationsExpected<Flags>,
     OneAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     const value = props.context.value;
     if (
       !PredicateValue.Operations.IsUnit(value) &&
@@ -355,9 +336,7 @@ export const OneAbstractRenderer = <
           !PredicateValue.Operations.IsRecord(value.value)))
     ) {
       <ErrorRenderer
-        message={`${getLeafIdentifierFromIdentifier(
-          props.context.identifiers.withoutLauncher,
-        )}: Option of record or unit expected but got ${JSON.stringify(
+        message={`${SerializedType}: Option of record or unit expected but got ${JSON.stringify(
           props.context.value,
         )}`}
       />;
@@ -366,33 +345,33 @@ export const OneAbstractRenderer = <
     const local = props.context.bindings.get("local");
     if (local == undefined) {
       console.error(
-        `local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`,
+        `local binding is undefined when intialising one\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`}
+          message={`local binding is undefined when intialising one\n...${SerializedType}`}
         />
       );
     }
 
     if (!PredicateValue.Operations.IsRecord(local)) {
       console.error(
-        `local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`,
+        `local binding is not a record when intialising one\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`}
+          message={`local binding is not a record when intialising one\n...${SerializedType}`}
         />
       );
     }
 
     if (!local.fields.has("Id")) {
       console.error(
-        `local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`,
+        `local binding is missing Id (check casing) when intialising one\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`}
+          message={`local binding is missing Id (check casing) when intialising one\n...${SerializedType}`}
         />
       );
     }
@@ -400,11 +379,11 @@ export const OneAbstractRenderer = <
     const Id = local.fields.get("Id")!; // safe because of above check;
     if (!PredicateValue.Operations.IsString(Id)) {
       console.error(
-        `local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`,
+        `local Id is not a string when intialising one\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`}
+          message={`local Id is not a string when intialising one\n...${SerializedType}`}
         />
       );
     }
@@ -416,12 +395,12 @@ export const OneAbstractRenderer = <
     ) {
       return (
         <>
-          <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+          <IdProvider domNodeId={domNodeId}>
             <props.view
               {...props}
               context={{
                 ...props.context,
-                domNodeId: props.context.identifiers.withoutLauncher,
+                domNodeId,
                 kind: "uninitialized",
               }}
               kind="uninitialized"
@@ -447,25 +426,21 @@ export const OneAbstractRenderer = <
     const syncValue =
       props.context.customFormState.selectedValue.sync.value.value;
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             kind="initialized"
             context={{
               ...props.context,
               kind: "initialized",
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
               value: syncValue,
               hasMoreValues:
                 !!props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues,
-              serializedTypeHierarchy,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
@@ -652,21 +627,21 @@ export const OneAbstractRenderer = <
       const local = props.context.bindings.get("local");
       if (local == undefined) {
         console.error(
-          `local binding is undefined when intialising one\n...${props.context.identifiers.withLauncher}`,
+          `local binding is undefined when intialising one\n...${SerializedType}`,
         );
         return undefined;
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
         console.error(
-          `local binding is not a record when intialising one\n...${props.context.identifiers.withLauncher}`,
+          `local binding is not a record when intialising one\n...${SerializedType}`,
         );
         return undefined;
       }
 
       if (!local.fields.has("Id")) {
         console.error(
-          `local binding is missing Id (check casing) when intialising one\n...${props.context.identifiers.withLauncher}`,
+          `local binding is missing Id (check casing) when intialising one\n...${SerializedType}`,
         );
         return undefined;
       }
@@ -674,7 +649,7 @@ export const OneAbstractRenderer = <
       const Id = local.fields.get("Id")!; // safe because of above check;
       if (!PredicateValue.Operations.IsString(Id)) {
         console.error(
-          `local Id is not a string when intialising one\n...${props.context.identifiers.withLauncher}`,
+          `local Id is not a string when intialising one\n...${SerializedType}`,
         );
         return undefined;
       }

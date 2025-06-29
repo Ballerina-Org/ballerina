@@ -11,6 +11,7 @@ import {
   DispatchOnChange,
   Unit,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -64,7 +65,8 @@ export type UnionAbstractRendererView<
   Flags = Unit,
 > = View<
   UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
-    UnionAbstractRendererState,
+    UnionAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   UnionAbstractRendererState,
   UnionAbstractRendererForeignMutationsExpected<Flags>,
   {

@@ -7,7 +7,6 @@ import {
   replaceWith,
   Synchronize,
   Unit,
-  getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
   Option,
   StringSerializedType,
@@ -47,38 +46,36 @@ export const EnumMultiselectAbstractRenderer = <
     EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>,
     EnumMultiselectAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering enum multiselect field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering enum multiselect field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Record value expected for enum multiselect but got ${JSON.stringify(
+          message={`${SerializedType}: Record value expected for enum multiselect but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
               selectedIds: props.context.value.fields.keySeq().toArray(),
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,

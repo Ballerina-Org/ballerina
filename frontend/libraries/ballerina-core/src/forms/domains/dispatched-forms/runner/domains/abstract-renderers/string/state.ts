@@ -1,14 +1,12 @@
 import {
-  FormLabel,
   Unit,
-  Value,
   View,
-  DispatchCommonFormState,
   DispatchOnChange,
   ValueCallbackWithOptionalFlags,
   CommonAbstractRendererState,
   DispatchPrimitiveType,
   CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type StringAbstractRendererReadonlyContext<
@@ -41,7 +39,8 @@ export type StringAbstractRendererView<
   Flags = Unit,
 > = View<
   StringAbstractRendererReadonlyContext<CustomPresentationContext> &
-    StringAbstractRendererState,
+    StringAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   StringAbstractRendererState,
   StringAbstractRendererViewForeignMutationsExpected<Flags>
 >;

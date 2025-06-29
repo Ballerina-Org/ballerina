@@ -9,6 +9,8 @@ import {
   ValueOrErrors,
   StringSerializedType,
   LookupType,
+  DispatchParsedType,
+  LookupTypeAbstractRenderer,
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
@@ -95,51 +97,79 @@ export const OneDispatcher = {
       [Template<any, any, any, any>, StringSerializedType],
       string
     > =>
-      OneDispatcher.Operations.DispatchPreviewRenderer(
-        renderer,
-        dispatcherContext,
-        isInlined,
-        tableApi,
-      ).Then((previewRenderer) =>
-        NestedDispatcher.Operations.DispatchAs(
-          renderer.detailsRenderer,
-          dispatcherContext,
-          "detailsRenderer",
-          isInlined,
-          tableApi,
-        ).Then((detailsRenderer) =>
-          OneDispatcher.Operations.GetApi(renderer.api, dispatcherContext).Then(
-            (getApi) =>
-              dispatcherContext
-                .getConcreteRenderer("one", renderer.concreteRenderer)
-                .Then((concreteRenderer) => {
-                  const serializedType = OneType.SerializeToString([
-                    (renderer.type.args as LookupType).name,
-                  ]);
-                  return ValueOrErrors.Default.return<
-                    [Template<any, any, any, any>, StringSerializedType],
-                    string
-                  >([
-                    OneAbstractRenderer(
-                      detailsRenderer[0],
-                      previewRenderer?.[0],
-                      dispatcherContext.IdProvider,
-                      dispatcherContext.ErrorRenderer,
-                      serializedType,
-                    )
-                      .mapContext((_: any) => ({
-                        ..._,
-                        getApi,
-                        fromApiParser: dispatcherContext.parseFromApiByType(
-                          renderer.type.args,
-                        ),
-                      }))
-                      .withView(concreteRenderer),
-                    serializedType,
-                  ]);
-                }),
-          ),
-        ),
+      DispatchParsedType.Operations.ResolveLookupType(
+        renderer.type.arg.name,
+        dispatcherContext.types,
+      ).Then((oneEntityType) =>
+        oneEntityType.kind != "record"
+          ? ValueOrErrors.Default.throwOne(
+              `expected a record type, but got a ${oneEntityType.kind} type`,
+            )
+          : OneDispatcher.Operations.DispatchPreviewRenderer(
+              renderer,
+              dispatcherContext,
+              isInlined,
+              tableApi,
+            ).Then((previewRenderer) =>
+              NestedDispatcher.Operations.DispatchAs(
+                renderer.detailsRenderer,
+                dispatcherContext,
+                "detailsRenderer",
+                isInlined,
+                tableApi,
+              ).Then((detailsRenderer) =>
+                OneDispatcher.Operations.GetApi(
+                  renderer.api,
+                  dispatcherContext,
+                ).Then((getApi) =>
+                  dispatcherContext
+                    .getConcreteRenderer("one", renderer.concreteRenderer)
+                    .Then((concreteRenderer) => {
+                      const serializedType = OneType.SerializeToString(
+                        renderer.type.arg.name,
+                      );
+                      return ValueOrErrors.Default.return<
+                        [Template<any, any, any, any>, StringSerializedType],
+                        string
+                      >([
+                        OneAbstractRenderer(
+                          LookupTypeAbstractRenderer(
+                            detailsRenderer[0],
+                            dispatcherContext.IdProvider,
+                            dispatcherContext.ErrorRenderer,
+                            LookupType.SerializeToString(
+                              renderer.type.arg.name,
+                            ),
+                          ).withView(dispatcherContext.lookupTypeRenderer()),
+                          previewRenderer
+                            ? LookupTypeAbstractRenderer(
+                                previewRenderer[0],
+                                dispatcherContext.IdProvider,
+                                dispatcherContext.ErrorRenderer,
+                                LookupType.SerializeToString(
+                                  renderer.type.arg.name,
+                                ),
+                              ).withView(dispatcherContext.lookupTypeRenderer())
+                            : undefined,
+                          dispatcherContext.IdProvider,
+                          dispatcherContext.ErrorRenderer,
+                          serializedType,
+                          oneEntityType,
+                        )
+                          .mapContext((_: any) => ({
+                            ..._,
+                            getApi,
+                            fromApiParser: dispatcherContext.parseFromApiByType(
+                              renderer.type.arg,
+                            ),
+                          }))
+                          .withView(concreteRenderer),
+                        serializedType,
+                      ]);
+                    }),
+                ),
+              ),
+            ),
       ),
   },
 };

@@ -58,31 +58,25 @@ const intializeOne = <CustomPresentationContext = Unit>() =>
 
       const local = current.bindings.get("local");
       if (local == undefined) {
-        console.error(
-          `local binding is undefined when intialising one\n...${current.identifiers.withLauncher}`,
-        );
+        console.error(`local binding is undefined when intialising one}`);
         return Co<CustomPresentationContext>().Wait(0);
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
-        console.error(
-          `local binding is not a record when intialising one\n...${current.identifiers.withLauncher}`,
-        );
+        console.error(`local binding is not a record when intialising one`);
         return Co<CustomPresentationContext>().Wait(0);
       }
 
       if (!local.fields.has("Id")) {
         console.error(
-          `local binding is missing Id (check casing) when intialising one\n...${current.identifiers.withLauncher}`,
+          `local binding is missing Id (check casing) when intialising one`,
         );
         return Co<CustomPresentationContext>().Wait(0);
       }
 
       const id = local.fields.get("Id")!; // safe because of above check;
       if (!PredicateValue.Operations.IsString(id)) {
-        console.error(
-          `local Id is not a string when intialising one\n...${current.identifiers.withLauncher}`,
-        );
+        console.error(`local Id is not a string when intialising one`);
         return Co<CustomPresentationContext>().Wait(0);
       }
 

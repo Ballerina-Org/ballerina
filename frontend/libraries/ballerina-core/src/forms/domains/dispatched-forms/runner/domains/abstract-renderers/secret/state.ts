@@ -1,17 +1,12 @@
 import {
-  FormLabel,
-  SimpleCallback,
   Unit,
-  Value,
   View,
-  DispatchCommonFormState,
   DispatchOnChange,
   ValueCallbackWithOptionalFlags,
-  ValueOption,
   CommonAbstractRendererReadonlyContext,
-  SingleSelectionType,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type SecretAbstractRendererReadonlyContext<
@@ -44,7 +39,8 @@ export type SecretAbstractRendererView<
   Flags = Unit,
 > = View<
   SecretAbstractRendererReadonlyContext<CustomPresentationContext> &
-    SecretAbstractRendererState,
+    SecretAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   SecretAbstractRendererState,
   SecretAbstractRendererViewForeignMutationsExpected<Flags>
 >;

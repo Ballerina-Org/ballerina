@@ -5,7 +5,6 @@ import {
   replaceWith,
   Template,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -32,36 +31,35 @@ export const NumberAbstractRenderer = <
     NumberAbstractRendererForeignMutationsExpected<Flags>,
     NumberAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
         `Number expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering number field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering number field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Number value expected for number but got ${JSON.stringify(
+          message={`${SerializedType}: Number value expected for number but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

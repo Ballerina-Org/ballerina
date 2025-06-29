@@ -10,6 +10,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   TupleType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../../main";
 import { simpleUpdater } from "../../../../../../../../main";
@@ -64,7 +65,8 @@ export type TupleAbstractRendererView<
   Flags = Unit,
 > = View<
   TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
-    TupleAbstractRendererState,
+    TupleAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   TupleAbstractRendererState,
   TupleAbstractRendererViewForeignMutationsExpected<Flags>,
   {

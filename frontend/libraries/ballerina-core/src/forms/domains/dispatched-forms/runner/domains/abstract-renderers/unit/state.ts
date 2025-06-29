@@ -4,12 +4,12 @@ import {
   DispatchCommonFormState,
   DispatchOnChange,
   DispatchPrimitiveType,
-  FormLabel,
   simpleUpdater,
   Unit,
   ValueUnit,
   View,
   VoidCallbackWithOptionalFlags,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type UnitAbstractRendererReadonlyContext<
@@ -50,7 +50,8 @@ export type UnitAbstractRendererView<
   Flags = Unit,
 > = View<
   UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
-    UnitAbstractRendererState,
+    UnitAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   UnitAbstractRendererState,
   UnitAbstractRendererViewForeignMutationsExpected<Flags>,
   Unit

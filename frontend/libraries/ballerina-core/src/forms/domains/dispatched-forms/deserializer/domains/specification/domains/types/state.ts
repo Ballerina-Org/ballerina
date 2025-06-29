@@ -7,7 +7,6 @@ import {
   DispatchGenericTypes,
   MapRepo,
   DispatchInjectedPrimitives,
-  OrderedMapUpdater,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -192,9 +191,7 @@ export type StringSerializedType = string;
 
 export type UnionType<T> = {
   kind: "union";
-  name: DispatchTypeName;
   args: Map<DispatchCaseName, DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const UnionType = {
@@ -207,9 +204,7 @@ export const UnionType = {
 
 export type RecordType<T> = {
   kind: "record";
-  name: DispatchTypeName;
   fields: OrderedMap<DispatchFieldName, DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const RecordType = {
@@ -223,7 +218,6 @@ export const RecordType = {
 export type LookupType = {
   kind: "lookup";
   name: string;
-  typeName: DispatchTypeName;
 };
 
 export const LookupType = {
@@ -235,7 +229,6 @@ export const LookupType = {
 export type DispatchPrimitiveType<T> = {
   kind: "primitive";
   name: DispatchPrimitiveTypeName<T>;
-  typeName: DispatchTypeName;
 };
 
 export const DispatchPrimitiveType = {
@@ -248,9 +241,7 @@ export const DispatchPrimitiveType = {
 
 export type SingleSelectionType<T> = {
   kind: "singleSelection";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const SingleSelectionType = {
@@ -263,9 +254,7 @@ export const SingleSelectionType = {
 
 export type MultiSelectionType<T> = {
   kind: "multiSelection";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const MultiSelectionType = {
@@ -278,9 +267,7 @@ export const MultiSelectionType = {
 
 export type ListType<T> = {
   kind: "list";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const ListType = {
@@ -293,9 +280,7 @@ export const ListType = {
 
 export type TupleType<T> = {
   kind: "tuple";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const TupleType = {
@@ -308,9 +293,7 @@ export const TupleType = {
 
 export type SumType<T> = {
   kind: "sum";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const SumType = {
@@ -323,9 +306,7 @@ export const SumType = {
 
 export type MapType<T> = {
   kind: "map";
-  name: DispatchTypeName;
   args: Array<DispatchParsedType<T>>;
-  typeName: DispatchTypeName;
 };
 
 export const MapType = {
@@ -338,9 +319,7 @@ export const MapType = {
 
 export type TableType<T> = {
   kind: "table";
-  name: DispatchTypeName;
   arg: LookupType;
-  typeName: DispatchTypeName;
 };
 
 export const TableType = {
@@ -353,16 +332,14 @@ export const TableType = {
 
 export type OneType<T> = {
   kind: "one";
-  name: DispatchTypeName;
-  args: DispatchParsedType<T>;
-  typeName: DispatchTypeName;
+  arg: LookupType;
 };
 
 export const OneType = {
   SerializeToString: (
-    serializedArgs: Array<StringSerializedType>,
+    serializedArg: StringSerializedType,
   ): StringSerializedType => {
-    return `[one; args: [${serializedArgs.join(", ")}]]`;
+    return `[one; arg: ${serializedArg}]`;
   },
 };
 
@@ -382,164 +359,109 @@ export type DispatchParsedType<T> =
 
 export const DispatchParsedType = {
   Default: {
-    table: <T>(
-      name: DispatchTypeName,
-      arg: LookupType,
-      typeName: DispatchTypeName,
-    ): TableType<T> => ({
+    table: <T>(arg: LookupType): TableType<T> => ({
       kind: "table",
-      name,
       arg,
-      typeName,
     }),
     record: <T>(
-      name: DispatchTypeName,
       fields: Map<DispatchFieldName, DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
     ): RecordType<T> => ({
       kind: "record",
-      name,
       fields,
-      typeName: typeName,
     }),
     primitive: <T>(
       name: DispatchPrimitiveTypeName<T>,
-      typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "primitive",
       name,
-      typeName: typeName,
     }),
     singleSelection: <T>(
-      name: DispatchTypeName,
       args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "singleSelection",
-      name,
       args,
-      typeName: typeName,
     }),
     multiSelection: <T>(
-      name: DispatchTypeName,
       args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "multiSelection",
-      name,
       args,
-      typeName: typeName,
     }),
-    list: <T>(
-      name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
-    ): DispatchParsedType<T> => ({
+    list: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "list",
-      name,
       args,
-      typeName: typeName,
     }),
-    tuple: <T>(
-      name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
-    ): DispatchParsedType<T> => ({
+    tuple: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "tuple",
-      name,
       args,
-      typeName: typeName,
     }),
-    sum: <T>(
-      name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
-    ): DispatchParsedType<T> => ({
+    sum: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "sum",
-      name,
       args,
-      typeName: typeName,
     }),
-    map: <T>(
-      name: DispatchTypeName,
-      args: Array<DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
-    ): DispatchParsedType<T> => ({
+    map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
-      name,
       args,
-      typeName: typeName,
     }),
     union: <T>(
-      name: DispatchTypeName,
       args: Map<DispatchCaseName, DispatchParsedType<T>>,
-      typeName: DispatchTypeName,
     ): DispatchParsedType<T> => ({
       kind: "union",
-      name,
       args,
-      typeName,
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
       name,
-      typeName: name,
     }),
-    one: <T>(
-      name: DispatchTypeName,
-      args: DispatchParsedType<T>,
-      typeName: DispatchTypeName,
-    ): OneType<T> => ({
+    one: <T>(arg: LookupType): OneType<T> => ({
       kind: "one",
-      name,
-      args,
-      typeName,
+      arg,
     }),
   },
   Operations: {
-    Equals: <T>(
-      fst: DispatchParsedType<T>,
-      snd: DispatchParsedType<T>,
-    ): boolean =>
-      fst.kind == "record" && snd.kind == "record"
-        ? fst.name == snd.name
-        : fst.kind == "table" && snd.kind == "table"
-          ? fst.name == snd.name
-          : fst.kind == "one" && snd.kind == "one"
-            ? fst.name == snd.name
-            : fst.kind == "lookup" && snd.kind == "lookup"
-              ? fst.name == snd.name
-              : fst.kind == "primitive" && snd.kind == "primitive"
-                ? fst.name == snd.name
-                : fst.kind == "list" && snd.kind == "list"
-                  ? fst.name == snd.name
-                  : fst.kind == "singleSelection" &&
-                      snd.kind == "singleSelection"
-                    ? fst.name == snd.name
-                    : fst.kind == "multiSelection" &&
-                        snd.kind == "multiSelection"
-                      ? fst.name == snd.name
-                      : fst.kind == "map" && snd.kind == "map"
-                        ? fst.name == snd.name
-                        : fst.kind == "sum" && snd.kind == "sum"
-                          ? fst.name == snd.name
-                          : fst.kind == "tuple" && snd.kind == "tuple"
-                            ? fst.name == snd.name &&
-                              fst.args.length == snd.args.length &&
-                              fst.args.every((v, i) =>
-                                DispatchParsedType.Operations.Equals(
-                                  v,
-                                  snd.args[i],
-                                ),
-                              )
-                            : fst.kind == "union" && snd.kind == "union"
-                              ? fst.args.size == snd.args.size &&
-                                fst.args.every(
-                                  (v, i) => v.name == snd.args.get(i)!.name,
-                                )
-                              : false,
+    // We don't use this at the moment, if we need it, then we can fix
+    // Equals: <T>(
+    //   fst: DispatchParsedType<T>,
+    //   snd: DispatchParsedType<T>,
+    // ): boolean =>
+    //   fst.kind == "record" && snd.kind == "record"
+    //     ? fst.name == snd.name
+    //     : fst.kind == "table" && snd.kind == "table"
+    //       ? fst.name == snd.name
+    //       : fst.kind == "one" && snd.kind == "one"
+    //         ? fst.name == snd.name
+    //         : fst.kind == "lookup" && snd.kind == "lookup"
+    //           ? fst.name == snd.name
+    //           : fst.kind == "primitive" && snd.kind == "primitive"
+    //             ? fst.name == snd.name
+    //             : fst.kind == "list" && snd.kind == "list"
+    //               ? fst.name == snd.name
+    //               : fst.kind == "singleSelection" &&
+    //                   snd.kind == "singleSelection"
+    //                 ? fst.name == snd.name
+    //                 : fst.kind == "multiSelection" &&
+    //                     snd.kind == "multiSelection"
+    //                   ? fst.name == snd.name
+    //                   : fst.kind == "map" && snd.kind == "map"
+    //                     ? fst.name == snd.name
+    //                     : fst.kind == "sum" && snd.kind == "sum"
+    //                       ? fst.name == snd.name
+    //                       : fst.kind == "tuple" && snd.kind == "tuple"
+    //                         ? fst.name == snd.name &&
+    //                           fst.args.length == snd.args.length &&
+    //                           fst.args.every((v, i) =>
+    //                             DispatchParsedType.Operations.Equals(
+    //                               v,
+    //                               snd.args[i],
+    //                             ),
+    //                           )
+    //                         : fst.kind == "union" && snd.kind == "union"
+    //                           ? fst.args.size == snd.args.size &&
+    //                             fst.args.every(
+    //                               (v, i) => v.name == snd.args.get(i)!.name,
+    //                             )
+    //                           : false,
     ParseRawKeyOf: <T>(
-      typeName: DispatchTypeName,
       rawType: ValidatedSerializedKeyOfType<T>,
       typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
@@ -604,7 +526,6 @@ export const DispatchParsedType = {
                 string
               >([
                 DispatchParsedType.Default.union(
-                  typeName,
                   Map(
                     parsingResult[0].fields
                       .keySeq()
@@ -612,13 +533,10 @@ export const DispatchParsedType = {
                       .map((key) => [
                         key,
                         DispatchParsedType.Default.record(
-                          key,
                           Map<string, DispatchParsedType<T>>(),
-                          typeName,
                         ),
                       ]),
                   ),
-                  typeName,
                 ),
                 parsingResult[1],
               ]),
@@ -643,9 +561,9 @@ export const DispatchParsedType = {
             DispatchParsedType.Operations.SerializeToString(type.arg),
           );
         case "one":
-          return OneType.SerializeToString([
-            DispatchParsedType.Operations.SerializeToString(type.args),
-          ]);
+          return OneType.SerializeToString(
+            DispatchParsedType.Operations.SerializeToString(type.arg),
+          );
         case "singleSelection":
           return SingleSelectionType.SerializeToString(
             type.args.map((v) =>
@@ -850,14 +768,12 @@ export const DispatchParsedType = {
                 .Then((parsedFieldsMap) =>
                   ValueOrErrors.Default.return<RecordType<T>, string>(
                     DispatchParsedType.Default.record(
-                      typeName,
                       parsedFieldsMap.merge(
                         parsedExtendedRecordTypesMap.reduce(
                           (acc, type) => acc.merge(type.fields),
                           Map<DispatchTypeName, DispatchParsedType<T>>(),
                         ),
                       ),
-                      typeName,
                     ),
                   ).Then((parsedRecord) =>
                     ValueOrErrors.Default.return<
@@ -908,7 +824,6 @@ export const DispatchParsedType = {
           return ValueOrErrors.Default.return([
             DispatchParsedType.Default.primitive(
               rawType == "guid" ? "string" : rawType,
-              typeName,
             ),
             alreadyParsedTypes,
           ]);
@@ -922,11 +837,7 @@ export const DispatchParsedType = {
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.singleSelection(
-                typeName,
-                [parsedArgs[0]],
-                typeName,
-              ),
+              DispatchParsedType.Default.singleSelection([parsedArgs[0]]),
               alreadyParsedTypes,
             ]),
           );
@@ -940,11 +851,7 @@ export const DispatchParsedType = {
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.multiSelection(
-                typeName,
-                [parsedArgs[0]],
-                typeName,
-              ),
+              DispatchParsedType.Default.multiSelection([parsedArgs[0]]),
               alreadyParsedTypes,
             ]),
           );
@@ -958,11 +865,7 @@ export const DispatchParsedType = {
             injectedPrimitives,
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.list(
-                typeName,
-                [parsedArgs[0]],
-                typeName,
-              ),
+              DispatchParsedType.Default.list([parsedArgs[0]]),
               alreadyParsedTypes,
             ]),
           );
@@ -983,9 +886,7 @@ export const DispatchParsedType = {
           ).Then((parsedArgs) =>
             ValueOrErrors.Default.return([
               DispatchParsedType.Default.tuple(
-                typeName,
                 parsedArgs.map(([parsedArg]) => parsedArg).toArray(),
-                typeName,
               ),
               alreadyParsedTypes,
             ]),
@@ -1008,11 +909,10 @@ export const DispatchParsedType = {
               injectedPrimitives,
             ).Then((parsedArgs1) =>
               ValueOrErrors.Default.return([
-                DispatchParsedType.Default.map(
-                  typeName,
-                  [parsedArgs0[0], parsedArgs1[0]],
-                  typeName,
-                ),
+                DispatchParsedType.Default.map([
+                  parsedArgs0[0],
+                  parsedArgs1[0],
+                ]),
                 alreadyParsedTypes,
               ]),
             ),
@@ -1035,11 +935,10 @@ export const DispatchParsedType = {
               injectedPrimitives,
             ).Then((parsedArgs1) =>
               ValueOrErrors.Default.return([
-                DispatchParsedType.Default.sum(
-                  typeName,
-                  [parsedArgs0[0], parsedArgs1[0]],
-                  typeName,
-                ),
+                DispatchParsedType.Default.sum([
+                  parsedArgs0[0],
+                  parsedArgs1[0],
+                ]),
                 alreadyParsedTypes,
               ]),
             ),
@@ -1067,11 +966,7 @@ export const DispatchParsedType = {
                   `Error: ${JSON.stringify(parsedArg[0])} is not a lookup type`,
                 )
               : ValueOrErrors.Default.return([
-                  DispatchParsedType.Default.table(
-                    typeName,
-                    parsedArg[0],
-                    typeName,
-                  ),
+                  DispatchParsedType.Default.table(parsedArg[0]),
                   alreadyParsedTypes,
                 ]),
           );
@@ -1083,7 +978,7 @@ export const DispatchParsedType = {
           ]);
         if (SerializedType.isUnit(rawType)) {
           return ValueOrErrors.Default.return([
-            DispatchParsedType.Default.primitive("unit", typeName),
+            DispatchParsedType.Default.primitive("unit"),
             alreadyParsedTypes,
           ]);
         }
@@ -1131,11 +1026,7 @@ export const DispatchParsedType = {
             ),
           ).Then((parsedUnionCases) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.union(
-                typeName,
-                Map(parsedUnionCases),
-                typeName,
-              ),
+              DispatchParsedType.Default.union(Map(parsedUnionCases)),
               alreadyParsedTypes,
             ]),
           );
@@ -1148,14 +1039,17 @@ export const DispatchParsedType = {
             alreadyParsedTypes,
             injectedPrimitives,
           ).Then((parsedArg) =>
-            ValueOrErrors.Default.return([
-              DispatchParsedType.Default.one(typeName, parsedArg[0], typeName),
-              alreadyParsedTypes,
-            ]),
+            parsedArg[0].kind != "lookup"
+              ? ValueOrErrors.Default.throwOne(
+                  `one content type ${JSON.stringify(parsedArg[0])} is not a lookup type`,
+                )
+              : ValueOrErrors.Default.return([
+                  DispatchParsedType.Default.one(parsedArg[0]),
+                  alreadyParsedTypes,
+                ]),
           );
         if (SerializedType.isKeyOf(rawType))
           return DispatchParsedType.Operations.ParseRawKeyOf(
-            typeName,
             rawType,
             typeNames,
             serializedTypes,

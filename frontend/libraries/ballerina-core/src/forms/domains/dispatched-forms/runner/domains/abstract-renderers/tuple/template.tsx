@@ -11,16 +11,12 @@ import {
   Bindings,
   DispatchCommonFormState,
   DispatchDelta,
-  FormLabel,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   Template,
   Updater,
-  Value,
-  ValueTuple,
   DispatchOnChange,
-  getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
   Option,
   Unit,
@@ -70,17 +66,6 @@ export const DispatchTupleAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${itemIndex + 1}]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${itemIndex + 1}]`,
-              ),
-            },
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${itemIndex + 1}]`,
-            ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             CustomPresentationContext: _.CustomPresentationContext,
             type: _.type.args[itemIndex],
@@ -163,38 +148,36 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererForeignMutationsExpected<Flags>,
     TupleAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering tuple field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering tuple field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Tuple value expected for tuple but got ${JSON.stringify(
+          message={`${SerializedType}: Tuple value expected for tuple but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
-              serializedTypeHierarchy,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

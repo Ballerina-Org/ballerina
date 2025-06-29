@@ -86,7 +86,7 @@ export const TableDispatcher = {
       string
     > =>
       DispatchParsedType.Operations.ResolveLookupType(
-        renderer.type.arg.typeName,
+        renderer.type.arg.name,
         dispatcherContext.types,
       )
         .Then((tableEntityType) =>
@@ -209,10 +209,6 @@ export const TableDispatcher = {
                                   : (dispatcherContext.specApis.tables?.get(
                                       tableApi!,
                                     )?.methods ?? []),
-                              identifiers: {
-                                withLauncher: `[${renderer.type.name}]`,
-                                withoutLauncher: `[${renderer.type.name}]`,
-                              },
                               tableApiSource,
                               fromTableApiParser:
                                 dispatcherContext.parseFromApiByType(

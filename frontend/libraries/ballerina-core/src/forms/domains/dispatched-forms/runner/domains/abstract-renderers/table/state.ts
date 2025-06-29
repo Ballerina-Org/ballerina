@@ -22,6 +22,7 @@ import {
   TableType,
   RecordAbstractRendererState,
   TableMethod,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -200,7 +201,7 @@ export type TableAbstractRendererView<
   TableAbstractRendererReadonlyContext<CustomPresentationContext> &
     TableAbstractRendererState & {
       hasMoreValues: boolean;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   TableAbstractRendererState,
   TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {

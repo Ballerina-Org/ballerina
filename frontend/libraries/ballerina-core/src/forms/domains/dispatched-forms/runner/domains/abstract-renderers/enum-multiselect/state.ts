@@ -7,6 +7,7 @@ import {
   Unit,
   CommonAbstractRendererReadonlyContext,
   MultiSelectionType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 import { View } from "../../../../../../../template/state";
@@ -40,7 +41,7 @@ export type EnumMultiselectAbstractRendererView<
     EnumMultiselectAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   EnumMultiselectAbstractRendererState,
   EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

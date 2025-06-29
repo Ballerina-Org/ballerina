@@ -18,6 +18,7 @@ import {
   simpleUpdater,
   BasicUpdater,
   Updater,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
@@ -109,7 +110,7 @@ export type SearchableInfiniteStreamMultiselectAbstractRendererView<
       isLoading: boolean;
       availableOptions: Array<CollectionReference>;
       disabled: boolean;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   SearchableInfiniteStreamMultiselectAbstractRendererState,
   SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

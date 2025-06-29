@@ -3,6 +3,7 @@ import {
   Bindings,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchCommonFormState,
   DispatchOnChange,
   ListType,
@@ -66,7 +67,8 @@ export type ListAbstractRendererView<
   Flags = Unit,
 > = View<
   ListAbstractRendererReadonlyContext<CustomPresentationContext> &
-    ListAbstractRendererState,
+    ListAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   ListAbstractRendererState,
   ListAbstractRendererViewForeignMutationsExpected<Flags>,
   {

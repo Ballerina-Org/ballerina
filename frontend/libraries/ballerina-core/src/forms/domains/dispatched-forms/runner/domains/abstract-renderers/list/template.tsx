@@ -8,7 +8,6 @@ import {
   replaceWith,
   Updater,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   CommonAbstractRendererState,
@@ -63,17 +62,6 @@ export const ListAbstractRenderer = <
               GetDefaultElementState()),
             bindings: _.bindings,
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${elementIndex}]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${elementIndex}]`,
-              ),
-            },
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}]`,
-            ),
             type: _.type.args[0],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
@@ -149,38 +137,36 @@ export const ListAbstractRenderer = <
     ListAbstractRendererForeignMutationsExpected<Flags>,
     ListAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple value expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering list field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering list field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Tuple value expected for list but got ${JSON.stringify(
+          message={`${SerializedType}: Tuple value expected for list but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

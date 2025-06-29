@@ -1,13 +1,8 @@
 import { Map } from "immutable";
 import {
-  BasicFun,
-  Bindings,
-  FormLabel,
-  DispatchCommonFormState,
   simpleUpdater,
   Template,
   Unit,
-  Value,
   ValueTuple,
   View,
   MapRepo,
@@ -18,6 +13,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   MapType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type MapAbstractRendererReadonlyContext<CustomPresentationContext> =
@@ -109,7 +105,8 @@ export type MapAbstractRendererView<
   Flags = Unit,
 > = View<
   MapAbstractRendererReadonlyContext<CustomPresentationContext> &
-    MapAbstractRendererState,
+    MapAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   MapAbstractRendererState,
   MapAbstractRendererForeignMutationsExpected<Flags>,
   {

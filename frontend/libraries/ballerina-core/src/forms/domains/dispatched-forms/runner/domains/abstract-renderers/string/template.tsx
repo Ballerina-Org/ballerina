@@ -12,7 +12,6 @@ import {
   replaceWith,
   Template,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -33,38 +32,36 @@ export const StringAbstractRenderer = <
     StringAbstractRendererForeignMutationsExpected<Flags>,
     StringAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering string field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering string field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: String value expected for string but got ${JSON.stringify(
+          message={`${SerializedType}: String value expected for string but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

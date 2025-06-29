@@ -11,6 +11,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type NumberAbstractRendererReadonlyContext<CustomPresentationContext> =
@@ -37,7 +38,8 @@ export type NumberAbstractRendererView<
   Flags = Unit,
 > = View<
   NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
-    NumberAbstractRendererState,
+    NumberAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   NumberAbstractRendererState,
   NumberAbstractRendererForeignMutationsExpected<Flags>
 >;

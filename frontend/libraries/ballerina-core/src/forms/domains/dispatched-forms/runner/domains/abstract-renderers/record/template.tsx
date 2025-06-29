@@ -15,7 +15,6 @@ import {
   DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   CommonAbstractRendererReadonlyContext,
@@ -86,12 +85,6 @@ export const RecordAbstractRenderer = <
             _: RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
               RecordAbstractRendererState,
           ) => ({
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(`[${fieldName}]`),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${fieldName}]`,
-              ),
-            },
             value: _.value.fields.get(fieldName)!,
             type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
@@ -100,11 +93,10 @@ export const RecordAbstractRenderer = <
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
             CustomPresentationContext: _.CustomPresentationContext,
-            domNodeId: _.identifiers.withoutLauncher.concat(`[${fieldName}]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [
-              `[${fieldName}]`,
-            ].concat(_.serializedTypeHierarchy),
+            serializedTypeHierarchy: [`[${fieldName}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           }),
         )
         .mapState(
@@ -190,19 +182,21 @@ export const RecordAbstractRenderer = <
     RecordAbstractRendererForeignMutationsExpected<Flags>,
     RecordAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering record\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering record\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Record value expected for record but got ${JSON.stringify(
+          message={`${SerializedType}: Record value expected for record but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -279,18 +273,14 @@ export const RecordAbstractRenderer = <
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
               layout: calculatedLayout.value,
             }}
             foreignMutations={{

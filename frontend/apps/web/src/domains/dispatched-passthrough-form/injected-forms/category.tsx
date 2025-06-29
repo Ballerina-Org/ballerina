@@ -7,7 +7,6 @@ import {
   simpleUpdaterWithChildren,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   DispatchDelta,
   DispatchOnChange,
   ValueCallbackWithOptionalFlags,
@@ -16,6 +15,7 @@ import {
   DispatchPrimitiveType,
   CommonAbstractRendererState,
   StringSerializedType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "ballerina-core";
 
 export type CategoryAbstractRendererReadonlyContext<
@@ -92,7 +92,8 @@ export type CategoryAbstractRendererView<
   Flags = Unit,
 > = View<
   CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
-    DispatchCategoryState,
+    DispatchCategoryState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchCategoryState,
   CategoryAbstractRendererViewForeignMutationsExpected<Flags>
 >;
@@ -112,30 +113,31 @@ export const CategoryAbstractRenderer = <
     CategoryAbstractRendererForeignMutationsExpected<Flags>,
     CategoryAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Expected dispatch category, got: ${JSON.stringify(
+          message={`${SerializedType}: Expected dispatch category, got: ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
 
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

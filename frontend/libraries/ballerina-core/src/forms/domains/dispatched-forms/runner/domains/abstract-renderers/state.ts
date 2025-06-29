@@ -8,12 +8,6 @@ import {
   Unit,
 } from "../../../../../../../main";
 
-export const getLeafIdentifierFromIdentifier = (identifier: string): string => {
-  const matches = [...identifier.matchAll(/\[([^\]]+)\]/g)];
-  if (matches.length === 0) return "";
-  return matches[matches.length - 1][1];
-};
-
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,
@@ -23,8 +17,6 @@ export type CommonAbstractRendererReadonlyContext<
   disabled: boolean;
   bindings: Bindings;
   extraContext: unknown;
-  identifiers: { withLauncher: string; withoutLauncher: string };
-  domNodeId: string;
   type: T;
   label?: string;
   tooltip?: string;
@@ -32,6 +24,11 @@ export type CommonAbstractRendererReadonlyContext<
   CustomPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   serializedTypeHierarchy: string[];
+};
+
+export type CommonAbstractRendererViewOnlyReadonlyContext = {
+  domNodeId: string;
+  completeSerializedTypeHierarchy: string[];
 };
 
 export type CommonAbstractRendererState = {

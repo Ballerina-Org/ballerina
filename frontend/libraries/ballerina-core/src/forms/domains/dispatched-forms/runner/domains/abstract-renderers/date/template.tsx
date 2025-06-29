@@ -5,7 +5,6 @@ import {
   PredicateValue,
   replaceWith,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -32,38 +31,36 @@ export const DateAbstractRenderer = <
     DateAbstractRendererForeignMutationsExpected<Flags>,
     DateAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(
         `Date expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering date field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering date field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Date value expected for date but got ${JSON.stringify(
+          message={`${SerializedType}: Date value expected for date but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

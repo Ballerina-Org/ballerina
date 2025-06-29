@@ -5,6 +5,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../../main";
 
@@ -32,7 +33,8 @@ export type Base64FileAbstractRendererView<
   Flags = Unit,
 > = View<
   Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
-    Base64FileAbstractRendererState,
+    Base64FileAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererForeignMutationsExpected<Flags>
 >;

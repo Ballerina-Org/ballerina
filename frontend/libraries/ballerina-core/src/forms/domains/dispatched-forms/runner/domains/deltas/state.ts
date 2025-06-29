@@ -1379,8 +1379,7 @@ export const DispatchDeltaTransfer = {
                 )} in OneReplace.`,
               );
             }
-            // TODO -- suspicious
-            return toRawObject(delta.replace, delta.type.args, unit).Then(
+            return toRawObject(delta.replace, delta.type.arg, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<
                   [
@@ -1416,8 +1415,8 @@ export const DispatchDeltaTransfer = {
                 )} in OneCreateValue.`,
               );
             }
-            // TODO -- suspicious
-            return toRawObject(delta.value, delta.type.args, unit).Then(
+            
+            return toRawObject(delta.value, delta.type.arg, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<
                   [

@@ -15,7 +15,6 @@ import {
   Value,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -101,38 +100,37 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       Flags
     >
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering searchable infinite stream field\n...${
-          props.context.identifiers.withLauncher
+          SerializedType
         }`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Option value expected for searchable infinite stream but got ${JSON.stringify(
+          message={`${SerializedType}: Option value expected for searchable infinite stream but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              completeSerializedTypeHierarchy,
+              domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues == false

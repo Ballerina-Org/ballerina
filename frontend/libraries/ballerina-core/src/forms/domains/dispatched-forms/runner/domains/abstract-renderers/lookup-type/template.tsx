@@ -3,7 +3,6 @@ import {
   IdWrapperProps,
   PredicateValue,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Unit,
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
@@ -45,17 +44,20 @@ export const LookupTypeAbstractRenderer = <
     CommonAbstractRendererForeignMutationsExpected<Flags>,
     LookupTypeAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
-    const serializedTypeHierarchy = [SerializedType].concat(
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,
     );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             embeddedTemplate={embeddedTemplate}
           />

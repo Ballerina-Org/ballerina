@@ -645,11 +645,11 @@ export const dispatchDefaultState =
                     : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
                         .Then((oneSource) =>
                           MapRepo.Operations.tryFindWithError(
-                            t.args.name,
+                            t.arg.name,
                             types,
                             () =>
                               `cannot find lookup type ${JSON.stringify(
-                                t.args,
+                                t.arg.name,
                               )} in ${JSON.stringify(t)}`,
                           ).Then((lookupType) =>
                             ValueOrErrors.Default.return(
@@ -983,7 +983,7 @@ export const dispatchDefaultValue =
             )
           : MapRepo.Operations.tryFirstWithError(
               t.args,
-              () => `union type ${t.name} has no cases`,
+              () => `union type ${JSON.stringify(t, null, 2)} has no cases`,
             ).Then((firstCaseType) =>
               MapRepo.Operations.tryFirstWithError(
                 renderer.cases,
@@ -1015,7 +1015,7 @@ export const dispatchDefaultValue =
     return result.MapErrors((errors) =>
       errors.map(
         (error) =>
-          `${error}\n...When resolving defaultValue for type of kind "${t.kind}" for "${t.typeName}" and renderer kind "${renderer.kind}"`,
+          `${error}\n...When resolving defaultValue for type "${JSON.stringify(t, null, 2)}" and renderer kind "${renderer.kind}"`,
       ),
     );
   };
@@ -1257,7 +1257,7 @@ export const dispatchFromAPIRawValue =
           return ValueOrErrors.Default.return(result);
         }
         return dispatchFromAPIRawValue(
-          t.args,
+          t.arg,
           types,
           converters,
           injectedPrimitives,
@@ -1681,7 +1681,7 @@ export const dispatchToAPIRawValue =
         }
 
         return dispatchToAPIRawValue(
-          t.args,
+          t.arg,
           types,
           converters,
           injectedPrimitives,

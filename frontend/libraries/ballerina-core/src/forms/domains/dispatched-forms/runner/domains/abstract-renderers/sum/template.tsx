@@ -9,7 +9,6 @@ import {
   Sum,
   DispatchOnChange,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   CommonAbstractRendererForeignMutationsExpected,
@@ -67,13 +66,8 @@ export const SumAbstractRenderer = <
               value: _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,
-              identifiers: {
-                withLauncher: _.identifiers.withLauncher.concat(`[left]`),
-                withoutLauncher: _.identifiers.withoutLauncher.concat(`[left]`),
-              },
               type: _.type.args[0],
               CustomPresentationContext: _.CustomPresentationContext,
-              domNodeId: _.identifiers.withoutLauncher.concat(`[left]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               serializedTypeHierarchy: _.serializedTypeHierarchy,
             }),
@@ -143,14 +137,8 @@ export const SumAbstractRenderer = <
               value: _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,
-              identifiers: {
-                withLauncher: _.identifiers.withLauncher.concat(`[right]`),
-                withoutLauncher:
-                  _.identifiers.withoutLauncher.concat(`[right]`),
-              },
               type: _.type.args[1],
               CustomPresentationContext: _.CustomPresentationContext,
-              domNodeId: _.identifiers.withoutLauncher.concat(`[right]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               serializedTypeHierarchy: _.serializedTypeHierarchy,
             }),
@@ -207,38 +195,36 @@ export const SumAbstractRenderer = <
     SumAbstractRendererForeignMutationsExpected<Flags>,
     SumAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsSum(props.context.value)) {
       console.error(
         `Sum expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering sum field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering sum field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Sum value expected for sum but got ${JSON.stringify(
+          message={`${domNodeId}: Sum value expected for sum but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
-              serializedTypeHierarchy,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

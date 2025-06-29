@@ -8,7 +8,6 @@ import {
   ValueUnionCase,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   DispatchDelta,
@@ -61,16 +60,9 @@ export const UnionAbstractRenderer = <
               defaultCaseStates.get(caseName)!()),
             value: _.value.fields,
             type: _.type.args.get(caseName)!,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(`[${caseName}]`),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${caseName}]`,
-              ),
-            },
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
-            domNodeId: _.domNodeId,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             CustomPresentationContext: _.CustomPresentationContext,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
@@ -123,34 +115,32 @@ export const UnionAbstractRenderer = <
       console.error(
         `UnionCase expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering union case field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering union case field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: UnionCase value expected for union case but got ${JSON.stringify(
+          message={`${SerializedType}: UnionCase value expected for union case but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,
     );
 
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
-              serializedTypeHierarchy,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

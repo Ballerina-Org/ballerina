@@ -7,6 +7,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   SingleSelectionType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { Synchronized } from "../../../../../../../async/domains/synchronized/state";
@@ -56,7 +57,7 @@ export type EnumAbstractRendererView<
   EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
     EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   EnumAbstractRendererState,
   EnumAbstractRendererForeignMutationsExpected<Flags>
 >;

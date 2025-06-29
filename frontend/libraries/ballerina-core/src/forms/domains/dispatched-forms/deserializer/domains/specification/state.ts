@@ -161,11 +161,9 @@ export const Specification = {
                   Renderer.Operations.Deserialize(
                     "columns" in form
                       ? DispatchParsedType.Default.table(
-                          "tableType",
                           DispatchParsedType.Default.lookup(
                             form.type as string,
                           ),
-                          "tableType",
                         )
                       : formType,
                     form,

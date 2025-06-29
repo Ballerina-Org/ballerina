@@ -11,7 +11,6 @@ import {
   Unit,
   ValueRecord,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   StringSerializedType,
 } from "../../../../../../../../main";
@@ -43,38 +42,36 @@ export const EnumAbstractRenderer = <
     EnumAbstractRendererForeignMutationsExpected<Flags>,
     EnumAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering enum field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering enum field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Option value expected for enum but got ${JSON.stringify(
+          message={`${SerializedType}: Option value expected for enum but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,
               )

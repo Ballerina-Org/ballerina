@@ -5,6 +5,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
@@ -32,7 +33,8 @@ export type BoolAbstractRendererView<
   Flags = Unit,
 > = View<
   BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
-    BoolAbstractRendererState,
+    BoolAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   BoolAbstractRendererState,
   BoolAbstractRendererForeignMutationsExpected<Flags>
 >;

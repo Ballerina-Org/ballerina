@@ -19,7 +19,6 @@ import {
   DispatchOnChange,
   IdWrapperProps,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   CommonAbstractRendererState,
@@ -80,21 +79,10 @@ export const MapAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${elementIndex}][key]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${elementIndex}][key]`,
-              ),
-            },
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}][key]`,
-            ),
             type: _.type.args[0],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[key]`,`[${elementIndex}]`].concat(
+            serializedTypeHierarchy: [`[key]`, `[${elementIndex}]`].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -185,21 +173,10 @@ export const MapAbstractRenderer = <
             disabled: _.disabled,
             bindings: _.bindings,
             extraContext: _.extraContext,
-            identifiers: {
-              withLauncher: _.identifiers.withLauncher.concat(
-                `[${elementIndex}][value]`,
-              ),
-              withoutLauncher: _.identifiers.withoutLauncher.concat(
-                `[${elementIndex}][value]`,
-              ),
-            },
-            domNodeId: _.identifiers.withoutLauncher.concat(
-              `[${elementIndex}][value]`,
-            ),
             type: _.type.args[1],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[value]`,`[${elementIndex}]`].concat(
+            serializedTypeHierarchy: [`[value]`, `[${elementIndex}]`].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -286,38 +263,35 @@ export const MapAbstractRenderer = <
     MapAbstractRendererForeignMutationsExpected<Flags>,
     MapAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering map field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering map field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Tuple value expected for map but got ${JSON.stringify(
+          message={`${SerializedType}: Tuple value expected for map but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -2,6 +2,7 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchParsedType,
   PredicateValue,
 } from "../../../../../../../../main";
@@ -19,7 +20,8 @@ export type LookupTypeAbstractRendererView<
     PredicateValue,
     CustomPresentationContext
   > &
-    CommonAbstractRendererState,
+    CommonAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected<Flags>,
   {

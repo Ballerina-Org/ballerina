@@ -104,10 +104,6 @@ export const UnionDispatcher = {
                       .mapContext((_: any) => ({
                         ..._,
                         type: renderer.type,
-                        identifiers: {
-                          withLauncher: `[${renderer.type.name}]`,
-                          withoutLauncher: `[${renderer.type.name}]`,
-                        },
                       }))
                       .withView(concreteRenderer),
                     serializedType,

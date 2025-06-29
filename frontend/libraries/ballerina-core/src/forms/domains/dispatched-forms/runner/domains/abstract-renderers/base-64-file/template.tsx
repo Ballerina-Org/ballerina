@@ -3,7 +3,6 @@ import {
   IdWrapperProps,
   PredicateValue,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   Option,
   Unit,
   StringSerializedType,
@@ -31,37 +30,36 @@ export const Base64FileAbstractRenderer = <
     Base64FileAbstractRendererForeignMutationsExpected<Flags>,
     Base64FileAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering base64 field\n...${
-          props.context.identifiers.withLauncher
-        }`,
+        )}\n...When rendering base64 field\n...${SerializedType}`,
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: String expected for base64 but got ${JSON.stringify(
+          message={`${SerializedType}: String expected for base64 but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
 
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              serializedTypeHierarchy,
-              domNodeId: props.context.identifiers.withoutLauncher,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -8,6 +8,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
@@ -49,7 +50,8 @@ export type DateAbstractRendererView<
   Flags = Unit,
 > = View<
   DateAbstractRendererReadonlyContext<CustomPresentationContext> &
-    DateAbstractRendererState,
+    DateAbstractRendererState &
+    CommonAbstractRendererViewOnlyReadonlyContext,
   DateAbstractRendererState,
   DateAbstractRendererForeignMutationsExpected<Flags>
 >;

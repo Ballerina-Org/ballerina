@@ -2,7 +2,6 @@ import {
   BasicFun,
   BasicUpdater,
   CollectionReference,
-  FormLabel,
   InfiniteStreamState,
   SimpleCallback,
   Updater,
@@ -10,7 +9,6 @@ import {
   View,
   simpleUpdater,
   simpleUpdaterWithChildren,
-  DispatchCommonFormState,
   DispatchOnChange,
   Unit,
   VoidCallbackWithOptionalFlags,
@@ -18,6 +16,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   SingleSelectionType,
   CommonAbstractRendererState,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { Value } from "../../../../../../../value/state";
@@ -113,7 +112,7 @@ export type SearchableInfiniteStreamAbstractRendererView<
   SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected<Flags>
 >;

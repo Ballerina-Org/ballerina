@@ -15,6 +15,7 @@ import {
   CommonAbstractRendererState,
   FormLayout,
   RecordType,
+  CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
 export type RecordAbstractRendererReadonlyContext<CustomPresentationContext> =
@@ -76,7 +77,7 @@ export type RecordAbstractRendererView<
   RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
     RecordAbstractRendererState & {
       layout: FormLayout;
-    },
+    } & CommonAbstractRendererViewOnlyReadonlyContext,
   RecordAbstractRendererState,
   RecordAbstractRendererForeignMutationsExpected<Flags>,
   {

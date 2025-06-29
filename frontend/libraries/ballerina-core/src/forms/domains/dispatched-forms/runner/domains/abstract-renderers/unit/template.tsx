@@ -7,7 +7,6 @@ import {
 import {
   DispatchDelta,
   ErrorRendererProps,
-  getLeafIdentifierFromIdentifier,
   IdWrapperProps,
   PredicateValue,
   Template,
@@ -32,6 +31,11 @@ export const UnitAbstractRenderer = <
     UnitAbstractRendererForeignMutationsExpected<Flags>,
     UnitAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const completeSerializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
+    const domNodeId = completeSerializedTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
         `Unit expected but got: ${JSON.stringify(
@@ -42,28 +46,22 @@ export const UnitAbstractRenderer = <
       );
       return (
         <ErrorRenderer
-          message={`${getLeafIdentifierFromIdentifier(
-            props.context.identifiers.withoutLauncher,
-          )}: Unit value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
       );
     }
 
-    const serializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
-        <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.identifiers.withoutLauncher,
-              serializedTypeHierarchy,
+              domNodeId,
+              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,
