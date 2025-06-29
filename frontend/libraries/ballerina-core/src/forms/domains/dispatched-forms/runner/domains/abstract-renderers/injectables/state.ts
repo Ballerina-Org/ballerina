@@ -15,7 +15,7 @@ import {
 export type InjectedAbstractRenderer = (
   IdWrapper: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  serializedType: StringSerializedType,
+  SerializedType: StringSerializedType,
 ) => Template<any, any, any, any>;
 
 export type DispatchInjectablePrimitive<T extends DispatchInjectablesTypes<T>> =

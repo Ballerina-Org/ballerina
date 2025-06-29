@@ -202,6 +202,7 @@ export const TableDispatcher = {
                           )
                             .mapContext((_: any) => ({
                               ..._,
+                              type: renderer.type,
                               apiMethods:
                                 tableApi == undefined
                                   ? []

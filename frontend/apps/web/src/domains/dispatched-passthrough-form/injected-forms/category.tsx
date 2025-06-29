@@ -103,7 +103,7 @@ export const CategoryAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  serializedType: StringSerializedType,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
@@ -123,6 +123,10 @@ export const CategoryAbstractRenderer = <
         />
       );
     }
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -130,6 +134,7 @@ export const CategoryAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
             }}
             foreignMutations={{

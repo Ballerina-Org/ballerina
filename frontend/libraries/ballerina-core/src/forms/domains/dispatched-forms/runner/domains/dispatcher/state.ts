@@ -208,11 +208,7 @@ export const Dispatcher = {
                                     tableApi,
                                   ).Then((template) =>
                                     ValueOrErrors.Default.return([
-                                      // TODO - investigate, why this is needed
-                                      template[0].mapContext((_: any) => ({
-                                        ..._,
-                                        type: renderer.type,
-                                      })),
+                                      template[0],
                                       template[1],
                                     ]),
                                   )

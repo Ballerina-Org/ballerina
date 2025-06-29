@@ -9,7 +9,6 @@ import {
 } from "../../../../../../../../../main";
 
 import {
-  DispatchParsedType,
   StringSerializedType,
   TupleType,
 } from "../../../../../deserializer/domains/specification/domains/types/state";
