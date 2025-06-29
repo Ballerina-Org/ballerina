@@ -144,6 +144,7 @@ export const OneAbstractRenderer = <
         CustomPresentationContext: _.CustomPresentationContext,
         domNodeId: _.identifiers.withoutLauncher.concat(`[details]`),
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+        serializedTypeHierarchy: _.serializedTypeHierarchy,
       };
     })
       .mapState(
@@ -256,6 +257,7 @@ export const OneAbstractRenderer = <
             CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(`[preview]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
         })
           .mapState(
@@ -445,6 +447,10 @@ export const OneAbstractRenderer = <
     const syncValue =
       props.context.customFormState.selectedValue.sync.value.value;
 
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -459,6 +465,7 @@ export const OneAbstractRenderer = <
               hasMoreValues:
                 !!props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -75,6 +75,7 @@ export const SumAbstractRenderer = <
               CustomPresentationContext: _.CustomPresentationContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[left]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              serializedTypeHierarchy: _.serializedTypeHierarchy,
             }),
           )
           .mapState(
@@ -151,6 +152,7 @@ export const SumAbstractRenderer = <
               CustomPresentationContext: _.CustomPresentationContext,
               domNodeId: _.identifiers.withoutLauncher.concat(`[right]`),
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              serializedTypeHierarchy: _.serializedTypeHierarchy,
             }),
           )
           .mapState(
@@ -224,6 +226,10 @@ export const SumAbstractRenderer = <
       );
     }
 
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -232,6 +238,7 @@ export const SumAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.identifiers.withoutLauncher,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

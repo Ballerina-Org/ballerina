@@ -62,8 +62,10 @@ export const EnumAbstractRenderer = <
       );
     }
 
-    console.debug("SerializedType", SerializedType);
-    
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -71,6 +73,7 @@ export const EnumAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,

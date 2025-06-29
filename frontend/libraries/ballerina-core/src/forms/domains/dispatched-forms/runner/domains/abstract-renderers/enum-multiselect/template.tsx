@@ -65,6 +65,11 @@ export const EnumMultiselectAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -72,6 +77,7 @@ export const EnumMultiselectAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
               selectedIds: props.context.value.fields.keySeq().toArray(),
               activeOptions: !AsyncState.Operations.hasValue(

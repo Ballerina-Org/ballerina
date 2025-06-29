@@ -94,6 +94,9 @@ export const MapAbstractRenderer = <
             type: _.type.args[0],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [`[key]`,`[${elementIndex}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           }),
         )
         .mapState(
@@ -196,6 +199,9 @@ export const MapAbstractRenderer = <
             type: _.type.args[1],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [`[value]`,`[${elementIndex}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           }),
         )
         .mapState(
@@ -298,6 +304,11 @@ export const MapAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -305,6 +316,7 @@ export const MapAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
             }}
             foreignMutations={{

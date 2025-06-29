@@ -77,6 +77,9 @@ export const ListAbstractRenderer = <
             type: _.type.args[0],
             CustomPresentationContext: _.CustomPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [`[${elementIndex}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           }),
         )
         .mapState((_) =>
@@ -164,6 +167,11 @@ export const ListAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -171,6 +179,7 @@ export const ListAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
             }}
             foreignMutations={{

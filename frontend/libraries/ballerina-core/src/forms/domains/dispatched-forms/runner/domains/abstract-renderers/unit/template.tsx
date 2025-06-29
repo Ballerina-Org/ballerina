@@ -50,6 +50,11 @@ export const UnitAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -58,6 +63,7 @@ export const UnitAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.identifiers.withoutLauncher,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

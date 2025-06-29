@@ -49,6 +49,10 @@ export const Base64FileAbstractRenderer = <
         />
       );
     }
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -56,6 +60,7 @@ export const Base64FileAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
             }}
             foreignMutations={{

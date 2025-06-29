@@ -45,10 +45,20 @@ export const LookupTypeAbstractRenderer = <
     CommonAbstractRendererForeignMutationsExpected<Flags>,
     LookupTypeAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
-          <props.view {...props} embeddedTemplate={embeddedTemplate} />
+          <props.view
+            {...props}
+            context={{
+              ...props.context,
+              serializedTypeHierarchy,
+            }}
+            embeddedTemplate={embeddedTemplate}
+          />
         </IdProvider>
       </>
     );

@@ -73,6 +73,7 @@ export const UnionAbstractRenderer = <
             domNodeId: _.domNodeId,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             CustomPresentationContext: _.CustomPresentationContext,
+            serializedTypeHierarchy: _.serializedTypeHierarchy,
           }),
         )
         .mapState(
@@ -136,6 +137,11 @@ export const UnionAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -144,6 +150,7 @@ export const UnionAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.identifiers.withoutLauncher,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

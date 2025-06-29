@@ -84,6 +84,9 @@ export const DispatchTupleAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             CustomPresentationContext: _.CustomPresentationContext,
             type: _.type.args[itemIndex],
+            serializedTypeHierarchy: [`[${itemIndex + 1}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           }),
         )
         .mapState(
@@ -179,6 +182,10 @@ export const DispatchTupleAbstractRenderer = <
       );
     }
 
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -187,6 +194,7 @@ export const DispatchTupleAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.identifiers.withoutLauncher,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -91,8 +91,6 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     },
   );
 
-  console.debug("SerializedType", SerializedType);
-  
   return Template.Default<
     SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
       SearchableInfiniteStreamAbstractRendererState,
@@ -121,6 +119,11 @@ export const SearchableInfiniteStreamAbstractRenderer = <
         />
       );
     }
+
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -128,6 +131,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()

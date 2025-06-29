@@ -102,6 +102,9 @@ export const RecordAbstractRenderer = <
             CustomPresentationContext: _.CustomPresentationContext,
             domNodeId: _.identifiers.withoutLauncher.concat(`[${fieldName}]`),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [
+              `[${fieldName}]`,
+            ].concat(_.serializedTypeHierarchy),
           }),
         )
         .mapState(
@@ -276,12 +279,17 @@ export const RecordAbstractRenderer = <
       disabledFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
           <props.view
             context={{
               ...props.context,
+              serializedTypeHierarchy,
               domNodeId: props.context.identifiers.withoutLauncher,
               layout: calculatedLayout.value,
             }}

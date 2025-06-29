@@ -163,6 +163,9 @@ export const TableAbstractRenderer = <
               `[${rowId}][${column}]`,
             ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: [`[${column}]`, `[${rowId}]`].concat(
+              _.serializedTypeHierarchy,
+            ),
           };
         })
 
@@ -311,6 +314,7 @@ export const TableAbstractRenderer = <
               `[${_.customFormState.selectedDetailRow[0]}][${_.customFormState.selectedDetailRow[1]}]`,
             ),
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
@@ -495,6 +499,10 @@ export const TableAbstractRenderer = <
           ),
       );
 
+    const serializedTypeHierarchy = [SerializedType].concat(
+      props.context.serializedTypeHierarchy,
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -506,6 +514,7 @@ export const TableAbstractRenderer = <
               tableHeaders: visibleColumns.value.columns,
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,
+              serializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -31,6 +31,7 @@ export type CommonAbstractRendererReadonlyContext<
   details?: string;
   CustomPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
+  serializedTypeHierarchy: string[];
 };
 
 export type CommonAbstractRendererState = {
