@@ -123,9 +123,15 @@ export const LookupRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: LookupRenderer<T>,
-      forms: DispatcherContext<T, Flags, CustomPresentationContexts>["forms"],
+      forms: DispatcherContext<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >["forms"],
     ): ValueOrErrors<Renderer<T>, string> =>
       renderer.kind == "lookupType-inlinedRenderer"
         ? ValueOrErrors.Default.return(renderer.inlinedRenderer)
@@ -139,13 +145,15 @@ export const LookupRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       serialized: SerializedLookup<T>,
       tableApi: string | undefined,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<LookupRenderer<T>, string> =>

@@ -12,12 +12,15 @@ import {
 } from "../../../../../../../../main";
 import { Maybe } from "../../../../../../../collections/domains/maybe/state";
 
-export type DateAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    Date,
-    CustomPresentationContext
-  >;
+export type DateAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  Date,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type DateAbstractRendererState = CommonAbstractRendererState & {
   customFormState: { possiblyInvalidInput: Maybe<string> };
@@ -48,8 +51,9 @@ export type DateAbstractRendererForeignMutationsExpected<Flags> = {
 export type DateAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  DateAbstractRendererReadonlyContext<CustomPresentationContext> &
+  DateAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     DateAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   DateAbstractRendererState,

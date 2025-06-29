@@ -34,6 +34,7 @@ import {
 export const RecordAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   FieldTemplates: Map<
     string,
@@ -42,7 +43,8 @@ export const RecordAbstractRenderer = <
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomPresentationContext
+          CustomPresentationContext,
+          ExtraContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -59,11 +61,14 @@ export const RecordAbstractRenderer = <
   isInlined: boolean,
   SerializedType: StringSerializedType,
 ): Template<
-  RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+  RecordAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     RecordAbstractRendererState,
   RecordAbstractRendererState,
   RecordAbstractRendererForeignMutationsExpected<Flags>,
-  RecordAbstractRendererView<CustomPresentationContext, Flags>
+  RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
 > => {
   const embedFieldTemplate =
     (
@@ -72,7 +77,8 @@ export const RecordAbstractRenderer = <
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomPresentationContext
+          CustomPresentationContext,
+          ExtraContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -82,7 +88,10 @@ export const RecordAbstractRenderer = <
       fieldTemplate
         .mapContext(
           (
-            _: RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: RecordAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               RecordAbstractRendererState,
           ) => ({
             value: _.value.fields.get(fieldName)!,
@@ -176,11 +185,14 @@ export const RecordAbstractRenderer = <
   );
 
   return Template.Default<
-    RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+    RecordAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       RecordAbstractRendererState,
     RecordAbstractRendererState,
     RecordAbstractRendererForeignMutationsExpected<Flags>,
-    RecordAbstractRendererView<CustomPresentationContext, Flags>
+    RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

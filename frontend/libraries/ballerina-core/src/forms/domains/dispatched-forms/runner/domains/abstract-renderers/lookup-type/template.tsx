@@ -18,12 +18,14 @@ import { LookupTypeAbstractRendererView } from "./state";
 export const LookupTypeAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   embeddedTemplate: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -37,12 +39,17 @@ export const LookupTypeAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>,
-    LookupTypeAbstractRendererView<CustomPresentationContext, Flags>
+    LookupTypeAbstractRendererView<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

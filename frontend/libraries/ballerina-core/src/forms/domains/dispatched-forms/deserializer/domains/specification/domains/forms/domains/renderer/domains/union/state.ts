@@ -59,13 +59,15 @@ export const UnionRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: UnionType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>

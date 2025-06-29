@@ -17,10 +17,12 @@ import { simpleUpdater } from "../../../../../../../../main";
 
 export type TupleAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   TupleType<any>,
   ValueTuple,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type TupleAbstractRendererState = CommonAbstractRendererState & {
@@ -63,8 +65,12 @@ export type TupleAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type TupleAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
+  TupleAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     TupleAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   TupleAbstractRendererState,
@@ -75,7 +81,10 @@ export type TupleAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
+      TupleAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         TupleAbstractRendererState,
       TupleAbstractRendererState,
       TupleAbstractRendererViewForeignMutationsExpected<Flags>

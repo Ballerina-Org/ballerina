@@ -21,12 +21,14 @@ export const OneDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isInlined: boolean,
       tableApi: string | undefined,
@@ -47,12 +49,14 @@ export const OneDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       api: string | string[],
       dispatcherContext: DispatcherContext<
         any,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
       typeof api == "string"
@@ -84,12 +88,14 @@ export const OneDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isInlined: boolean,
       tableApi: string | undefined,

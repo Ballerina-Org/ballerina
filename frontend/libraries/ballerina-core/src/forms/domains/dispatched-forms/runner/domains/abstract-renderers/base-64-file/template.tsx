@@ -18,17 +18,25 @@ import {
 export const Base64FileAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
+    Base64FileAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       Base64FileAbstractRendererState,
     Base64FileAbstractRendererState,
     Base64FileAbstractRendererForeignMutationsExpected<Flags>,
-    Base64FileAbstractRendererView<CustomPresentationContext, Flags>
+    Base64FileAbstractRendererView<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

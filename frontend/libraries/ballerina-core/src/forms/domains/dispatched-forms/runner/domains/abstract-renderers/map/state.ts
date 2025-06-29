@@ -16,12 +16,15 @@ import {
   CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
-export type MapAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    MapType<any>,
-    ValueTuple,
-    CustomPresentationContext
-  >;
+export type MapAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  MapType<any>,
+  ValueTuple,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type MapAbstractRendererState = CommonAbstractRendererState & {
   elementFormStates: Map<
@@ -103,8 +106,9 @@ export type MapAbstractRendererForeignMutationsExpected<Flags> = {
 export type MapAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+  MapAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     MapAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   MapAbstractRendererState,
@@ -115,7 +119,10 @@ export type MapAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+      MapAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         MapAbstractRendererState,
       MapAbstractRendererState,
       MapAbstractRendererForeignMutationsExpected<Flags>
@@ -125,7 +132,10 @@ export type MapAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+      MapAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         MapAbstractRendererState,
       MapAbstractRendererState,
       MapAbstractRendererForeignMutationsExpected<Flags>

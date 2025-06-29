@@ -18,12 +18,15 @@ import {
   CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
-export type RecordAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    RecordType<any>,
-    ValueRecord,
-    CustomPresentationContext
-  >;
+export type RecordAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  RecordType<any>,
+  ValueRecord,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type RecordAbstractRendererState = CommonAbstractRendererState & {
   fieldStates: Map<string, CommonAbstractRendererState>;
@@ -73,8 +76,12 @@ export type RecordAbstractRendererForeignMutationsExpected<Flags> = {
 export type RecordAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+  RecordAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     RecordAbstractRendererState & {
       layout: FormLayout;
     } & CommonAbstractRendererViewOnlyReadonlyContext,
@@ -86,7 +93,10 @@ export type RecordAbstractRendererView<
       (
         flags: Flags | undefined,
       ) => Template<
-        RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        > &
           RecordAbstractRendererState,
         RecordAbstractRendererState,
         RecordAbstractRendererForeignMutationsExpected<Flags>

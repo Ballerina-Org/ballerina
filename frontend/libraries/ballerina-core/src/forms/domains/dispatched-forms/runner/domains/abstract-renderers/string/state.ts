@@ -11,10 +11,12 @@ import {
 
 export type StringAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   DispatchPrimitiveType<any>,
   string,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type StringAbstractRendererState = CommonAbstractRendererState;
@@ -37,8 +39,12 @@ export type StringAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type StringAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  StringAbstractRendererReadonlyContext<CustomPresentationContext> &
+  StringAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     StringAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   StringAbstractRendererState,

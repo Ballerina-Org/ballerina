@@ -5,4 +5,11 @@ export const DispatchFormsParserTemplate = <
   T extends DispatchInjectablesTypes<T> = Unit,
   Flags = Unit,
   CustomPresentationContexts = Unit,
->() => LoadAndDeserializeSpecification<T, Flags, CustomPresentationContexts>();
+  ExtraContext = Unit,
+>() =>
+  LoadAndDeserializeSpecification<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >();

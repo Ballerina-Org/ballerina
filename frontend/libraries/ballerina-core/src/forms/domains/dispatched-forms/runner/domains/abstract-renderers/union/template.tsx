@@ -28,6 +28,7 @@ import { Map } from "immutable";
 export const UnionAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   defaultCaseStates: Map<string, () => CommonAbstractRendererState>,
   caseTemplates: Map<
@@ -36,7 +37,8 @@ export const UnionAbstractRenderer = <
       CommonAbstractRendererReadonlyContext<
         DispatchParsedType<any>,
         PredicateValue,
-        CustomPresentationContext
+        CustomPresentationContext,
+        ExtraContext
       > &
         CommonAbstractRendererState,
       CommonAbstractRendererState,
@@ -53,7 +55,10 @@ export const UnionAbstractRenderer = <
         .get(caseName)!
         .mapContext(
           (
-            _: UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: UnionAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               UnionAbstractRendererState,
           ) => ({
             ...(_.caseFormStates.get(caseName)! ??
@@ -105,11 +110,14 @@ export const UnionAbstractRenderer = <
         }));
 
   return Template.Default<
-    UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
+    UnionAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       UnionAbstractRendererState,
     UnionAbstractRendererState,
     UnionAbstractRendererForeignMutationsExpected<Flags>,
-    UnionAbstractRendererView<CustomPresentationContext, Flags>
+    UnionAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(

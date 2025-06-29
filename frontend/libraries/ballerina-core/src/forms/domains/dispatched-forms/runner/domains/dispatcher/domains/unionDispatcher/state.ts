@@ -11,7 +11,6 @@ import {
 } from "../../../../../../../../../main";
 
 import {
-  DispatchParsedType,
   StringSerializedType,
   UnionType,
 } from "../../../../../deserializer/domains/specification/domains/types/state";
@@ -24,12 +23,14 @@ export const UnionDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: UnionRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isNested: boolean,
       tableApi: string | undefined,

@@ -101,13 +101,15 @@ export const TableRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: TableType<T>,
       serialized: SerializedTableRenderer,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
@@ -124,13 +126,15 @@ export const TableRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: TableType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
       api: string | undefined,

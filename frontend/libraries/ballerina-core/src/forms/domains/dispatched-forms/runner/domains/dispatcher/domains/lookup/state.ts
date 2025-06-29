@@ -18,12 +18,14 @@ export const LookupDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: LookupRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       tableApi: string | undefined,
     ): ValueOrErrors<

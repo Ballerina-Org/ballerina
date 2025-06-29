@@ -29,22 +29,33 @@ import { OrderedMap } from "immutable";
 export const EnumMultiselectAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
-    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+    EnumMultiselectAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState
   >();
   return Template.Default<
-    EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+    EnumMultiselectAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       EnumMultiselectAbstractRendererState,
     EnumAbstractRendererState,
     EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>,
-    EnumMultiselectAbstractRendererView<CustomPresentationContext, Flags>
+    EnumMultiselectAbstractRendererView<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

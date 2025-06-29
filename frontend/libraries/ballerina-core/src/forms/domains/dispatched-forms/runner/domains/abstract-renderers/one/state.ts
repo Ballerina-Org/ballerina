@@ -33,16 +33,19 @@ import {
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
-export type OneAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    OneType<unknown>,
-    ValueOption | ValueUnit,
-    CustomPresentationContext
-  > & {
-    getApi: BasicFun<Guid, Promise<unknown>>;
-    fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
-    remoteEntityVersionIdentifier: string;
-  };
+export type OneAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  OneType<unknown>,
+  ValueOption | ValueUnit,
+  CustomPresentationContext,
+  ExtraContext
+> & {
+  getApi: BasicFun<Guid, Promise<unknown>>;
+  fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
+  remoteEntityVersionIdentifier: string;
+};
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
@@ -165,10 +168,14 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type OneAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
   (
     | (Omit<
-        OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+        OneAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        >,
         "value"
       > & {
         value: ValueRecord | ValueUnit;
@@ -193,7 +200,10 @@ export type OneAbstractRendererView<
       kind: "initialized";
       DetailsRenderer: (flags: Flags | undefined) => Template<
         Omit<
-          OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+          OneAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          >,
           "value"
         > & {
           value: ValueRecord | ValueUnit;
@@ -205,7 +215,10 @@ export type OneAbstractRendererView<
         flags: Flags | undefined,
       ) => Template<
         Omit<
-          OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+          OneAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          >,
           "value"
         > & {
           value: ValueRecord | ValueUnit;

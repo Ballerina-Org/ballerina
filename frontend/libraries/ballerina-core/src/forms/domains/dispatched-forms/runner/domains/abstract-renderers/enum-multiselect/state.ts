@@ -18,10 +18,12 @@ import {
 
 export type EnumMultiselectAbstractRendererReadonlyContext<
   CustomPresentationContext,
+  ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   MultiSelectionType<any>,
   ValueRecord,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 > &
   DispatchBaseEnumContext;
 
@@ -36,8 +38,12 @@ export type EnumMultiselectAbstractRendererForeignMutationsExpected<Flags> = {
 export type EnumMultiselectAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+  EnumMultiselectAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     EnumMultiselectAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;

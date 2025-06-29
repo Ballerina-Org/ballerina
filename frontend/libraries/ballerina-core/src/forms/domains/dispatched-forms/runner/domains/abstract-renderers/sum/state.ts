@@ -14,10 +14,12 @@ import { SumType } from "../../../../deserializer/domains/specification/domains/
 
 export type SumAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   SumType<any>,
   ValueSum,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type SumAbstractRendererState = CommonAbstractRendererState & {
@@ -59,8 +61,9 @@ export type SumAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type SumAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+  SumAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     SumAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   SumAbstractRendererState,
@@ -69,7 +72,10 @@ export type SumAbstractRendererView<
     embeddedLeftTemplate?: (
       flags: Flags | undefined,
     ) => Template<
-      SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+      SumAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         SumAbstractRendererState,
       SumAbstractRendererState,
       SumAbstractRendererForeignMutationsExpected<Flags>
@@ -78,7 +84,10 @@ export type SumAbstractRendererView<
     embeddedRightTemplate?: (
       flags: Flags | undefined,
     ) => Template<
-      SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+      SumAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         SumAbstractRendererState,
       SumAbstractRendererState,
       SumAbstractRendererForeignMutationsExpected<Flags>

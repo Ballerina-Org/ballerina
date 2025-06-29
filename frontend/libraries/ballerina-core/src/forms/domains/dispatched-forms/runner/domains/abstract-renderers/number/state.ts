@@ -14,12 +14,15 @@ import {
   CommonAbstractRendererViewOnlyReadonlyContext,
 } from "../../../../../../../../main";
 
-export type NumberAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    number,
-    CustomPresentationContext
-  >;
+export type NumberAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  number,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type NumberAbstractRendererState = CommonAbstractRendererState;
 
@@ -36,8 +39,12 @@ export type NumberAbstractRendererForeignMutationsExpected<Flags> = {
 export type NumberAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
+  NumberAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     NumberAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   NumberAbstractRendererState,

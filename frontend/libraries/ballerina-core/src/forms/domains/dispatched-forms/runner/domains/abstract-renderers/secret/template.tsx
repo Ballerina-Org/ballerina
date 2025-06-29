@@ -20,16 +20,20 @@ import {
 export const SecretAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    SecretAbstractRendererReadonlyContext<CustomPresentationContext>,
+    SecretAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SecretAbstractRendererState,
     SecretAbstractRendererForeignMutationsExpected<Flags>,
-    SecretAbstractRendererView<CustomPresentationContext, Flags>
+    SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

@@ -20,12 +20,14 @@ export const RecordDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       concreteRenderer: string | undefined,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isNested: boolean,
     ): ValueOrErrors<RecordAbstractRendererView<any, any>, string> =>
@@ -38,12 +40,14 @@ export const RecordDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: RecordRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isNested: boolean,
       isInlined: boolean,

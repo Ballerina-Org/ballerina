@@ -19,17 +19,21 @@ import { BoolAbstractRendererState } from "./state";
 export const BoolAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
+    BoolAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       BoolAbstractRendererState,
     BoolAbstractRendererState,
     BoolAbstractRendererForeignMutationsExpected<Flags>,
-    BoolAbstractRendererView<CustomPresentationContext, Flags>
+    BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

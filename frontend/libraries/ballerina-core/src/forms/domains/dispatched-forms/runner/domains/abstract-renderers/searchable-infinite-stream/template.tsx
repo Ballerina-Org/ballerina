@@ -29,17 +29,24 @@ import {
 export const SearchableInfiniteStreamAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext>,
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SearchableInfiniteStreamAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> & {
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > & {
       onDebounce: SimpleCallback<void>;
     },
     SearchableInfiniteStreamAbstractRendererState
@@ -91,13 +98,17 @@ export const SearchableInfiniteStreamAbstractRenderer = <
   );
 
   return Template.Default<
-    SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
+    SearchableInfiniteStreamAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererState,
     SearchableInfiniteStreamAbstractRendererForeignMutationsExpected<Flags>,
     SearchableInfiniteStreamAbstractRendererView<
       CustomPresentationContext,
-      Flags
+      Flags,
+      ExtraContext
     >
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(

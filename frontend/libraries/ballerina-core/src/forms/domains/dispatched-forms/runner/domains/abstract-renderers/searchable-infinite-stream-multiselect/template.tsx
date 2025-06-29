@@ -31,17 +31,24 @@ import {
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SearchableInfiniteStreamMultiselectAbstractRendererState
   >();
   const DebouncerCo = CoTypedFactory<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> & {
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > & {
       onDebounce: SimpleCallback<void>;
     },
     SearchableInfiniteStreamMultiselectAbstractRendererState
@@ -93,12 +100,16 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   );
 
   return Template.Default<
-    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext>,
+    SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     SearchableInfiniteStreamMultiselectAbstractRendererState,
     SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>,
     SearchableInfiniteStreamMultiselectAbstractRendererView<
       CustomPresentationContext,
-      Flags
+      Flags,
+      ExtraContext
     >
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(

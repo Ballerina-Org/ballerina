@@ -19,17 +19,21 @@ import {
 export const DateAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    DateAbstractRendererReadonlyContext<CustomPresentationContext> &
+    DateAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       DateAbstractRendererState,
     DateAbstractRendererState,
     DateAbstractRendererForeignMutationsExpected<Flags>,
-    DateAbstractRendererView<CustomPresentationContext, Flags>
+    DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

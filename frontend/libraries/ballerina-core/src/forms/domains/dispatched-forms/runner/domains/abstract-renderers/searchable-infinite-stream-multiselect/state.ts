@@ -23,10 +23,12 @@ import {
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   MultiSelectionType<unknown>,
   ValueRecord,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type SearchableInfiniteStreamMultiselectAbstractRendererState =
@@ -103,8 +105,12 @@ export type SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsE
 export type SearchableInfiniteStreamMultiselectAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &
+  SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     SearchableInfiniteStreamMultiselectAbstractRendererState & {
       hasMoreValues: boolean;
       isLoading: boolean;

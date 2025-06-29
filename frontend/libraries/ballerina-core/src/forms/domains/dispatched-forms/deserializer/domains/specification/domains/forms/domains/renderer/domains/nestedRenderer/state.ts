@@ -65,13 +65,15 @@ export const NestedRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: DispatchParsedType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
@@ -88,13 +90,15 @@ export const NestedRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: DispatchParsedType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>

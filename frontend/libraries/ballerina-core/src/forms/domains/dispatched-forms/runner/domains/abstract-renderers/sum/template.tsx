@@ -28,6 +28,7 @@ import {
 export const SumAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -36,7 +37,8 @@ export const SumAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -46,7 +48,8 @@ export const SumAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -58,7 +61,10 @@ export const SumAbstractRenderer = <
         leftTemplate
           .mapContext(
             (
-              _: SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+              _: SumAbstractRendererReadonlyContext<
+                CustomPresentationContext,
+                ExtraContext
+              > &
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.left,
@@ -129,7 +135,10 @@ export const SumAbstractRenderer = <
         rightTemplate
           .mapContext(
             (
-              _: SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+              _: SumAbstractRendererReadonlyContext<
+                CustomPresentationContext,
+                ExtraContext
+              > &
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.right,
@@ -189,11 +198,14 @@ export const SumAbstractRenderer = <
     : undefined;
 
   return Template.Default<
-    SumAbstractRendererReadonlyContext<CustomPresentationContext> &
+    SumAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       CommonAbstractRendererState,
     SumAbstractRendererState,
     SumAbstractRendererForeignMutationsExpected<Flags>,
-    SumAbstractRendererView<CustomPresentationContext, Flags>
+    SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

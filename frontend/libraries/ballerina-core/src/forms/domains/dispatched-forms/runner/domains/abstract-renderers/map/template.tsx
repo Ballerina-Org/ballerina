@@ -34,6 +34,7 @@ import {
 export const MapAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   GetDefaultKeyFormState: () => CommonAbstractRendererState,
   GetDefaultKeyFormValue: () => PredicateValue,
@@ -43,7 +44,8 @@ export const MapAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -53,7 +55,8 @@ export const MapAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -68,7 +71,10 @@ export const MapAbstractRenderer = <
       keyTemplate
         .mapContext(
           (
-            _: MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: MapAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               MapAbstractRendererState,
           ) => ({
             ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
@@ -161,7 +167,10 @@ export const MapAbstractRenderer = <
       valueTemplate
         .mapContext(
           (
-            _: MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: MapAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               MapAbstractRendererState,
           ) => ({
             ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
@@ -257,11 +266,14 @@ export const MapAbstractRenderer = <
         );
 
   return Template.Default<
-    MapAbstractRendererReadonlyContext<CustomPresentationContext> &
+    MapAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       MapAbstractRendererState,
     MapAbstractRendererState,
     MapAbstractRendererForeignMutationsExpected<Flags>,
-    MapAbstractRendererView<CustomPresentationContext, Flags>
+    MapAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

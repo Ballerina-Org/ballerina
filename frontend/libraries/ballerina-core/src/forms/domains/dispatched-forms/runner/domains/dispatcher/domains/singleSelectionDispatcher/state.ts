@@ -24,12 +24,14 @@ export const SingleSelectionDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],

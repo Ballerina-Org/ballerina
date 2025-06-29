@@ -72,8 +72,14 @@ export const injectedPrimitivesFromConcreteRenderers = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
   CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
 >(
-  concreteRenderers: ConcreteRenderers<T, Flags, CustomPresentationContexts>,
+  concreteRenderers: ConcreteRenderers<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >,
   injectables: DispatchInjectables<T>,
 ): ValueOrErrors<DispatchInjectedPrimitives<T>, string> =>
   ValueOrErrors.Operations.All(

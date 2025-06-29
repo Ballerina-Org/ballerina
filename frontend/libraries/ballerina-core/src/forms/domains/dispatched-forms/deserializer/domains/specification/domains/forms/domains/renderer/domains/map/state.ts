@@ -63,13 +63,15 @@ export const MapRenderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: MapType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<MapRenderer<T>, string> =>

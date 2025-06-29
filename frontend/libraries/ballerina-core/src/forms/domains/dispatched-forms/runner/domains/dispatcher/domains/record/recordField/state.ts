@@ -14,13 +14,15 @@ export const RecordFieldDispatcher = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
       dispatcherContext: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       isInlined: boolean,
       tableApi: string | undefined,

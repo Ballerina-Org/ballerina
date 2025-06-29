@@ -135,13 +135,15 @@ export const Specification = {
       T extends DispatchInjectablesTypes<T>,
       Flags = Unit,
       CustomPresentationContexts = Unit,
+      ExtraContext = Unit,
     >(
       forms: object,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       ValueOrErrors.Operations.All(
@@ -167,7 +169,11 @@ export const Specification = {
                         )
                       : formType,
                     form,
-                    concreteRenderers,
+                    concreteRenderers as unknown as ConcreteRenderers<
+                      T,
+                      Flags,
+                      CustomPresentationContexts
+                    >,
                     types,
                     undefined,
                   )
@@ -189,12 +195,14 @@ export const Specification = {
         T extends DispatchInjectablesTypes<T>,
         Flags = Unit,
         CustomPresentationContexts = Unit,
+        ExtraContext = Unit,
       >(
         apiConverters: DispatchApiConverters<T>,
         concreteRenderers: ConcreteRenderers<
           T,
           Flags,
-          CustomPresentationContexts
+          CustomPresentationContexts,
+          ExtraContext
         >,
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
@@ -231,7 +239,8 @@ export const Specification = {
                     : Specification.Operations.DeserializeForms<
                         T,
                         Flags,
-                        CustomPresentationContexts
+                        CustomPresentationContexts,
+                        ExtraContext
                       >(
                         serializedSpecifications.forms,
                         allTypes,

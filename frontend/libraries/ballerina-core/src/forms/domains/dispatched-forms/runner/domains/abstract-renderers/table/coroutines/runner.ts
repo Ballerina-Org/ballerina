@@ -11,21 +11,27 @@ import {
 import { TableAbstractRendererReadonlyContext } from "../../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../../../main";
 
-const Co = <CustomPresentationContext = Unit>() =>
+const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
   CoTypedFactory<
-    TableAbstractRendererReadonlyContext<CustomPresentationContext>,
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    >,
     TableAbstractRendererState
   >();
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
-const intialiseTable = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>()
+const intialiseTable = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
       if (current.value == undefined) {
-        return Co<CustomPresentationContext>().Wait(0);
+        return Co<CustomPresentationContext, ExtraContext>().Wait(0);
       }
       const initialData = current.value.data;
       const hasMoreValues = current.value.hasMoreValues;
@@ -35,7 +41,7 @@ const intialiseTable = <CustomPresentationContext = Unit>() =>
         current.fromTableApiParser,
       );
 
-      return Co<CustomPresentationContext>().SetState(
+      return Co<CustomPresentationContext, ExtraContext>().SetState(
         replaceWith(TableAbstractRendererState.Default()).then(
           TableAbstractRendererState.Updaters.Core.customFormState.children
             .stream(
@@ -85,11 +91,14 @@ const intialiseTable = <CustomPresentationContext = Unit>() =>
       );
     });
 
-const reinitialise = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>()
+const reinitialise = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((_) => {
-      return Co<CustomPresentationContext>().SetState(
+      return Co<CustomPresentationContext, ExtraContext>().SetState(
         TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
           replaceWith<
             TableAbstractRendererState["customFormState"]["initializationStatus"]
@@ -98,9 +107,12 @@ const reinitialise = <CustomPresentationContext = Unit>() =>
       );
     });
 
-export const TableReinitialiseRunner = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>().Template<any>(
-    reinitialise<CustomPresentationContext>(),
+export const TableReinitialiseRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>().Template<any>(
+    reinitialise<CustomPresentationContext, ExtraContext>(),
     {
       interval: 15,
       runFilter: (props) =>
@@ -111,9 +123,12 @@ export const TableReinitialiseRunner = <CustomPresentationContext = Unit>() =>
     },
   );
 
-export const TableRunner = <CustomPresentationContext = Unit>() =>
-  Co<CustomPresentationContext>().Template<any>(
-    intialiseTable<CustomPresentationContext>(),
+export const TableRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>().Template<any>(
+    intialiseTable<CustomPresentationContext, ExtraContext>(),
     {
       interval: 15,
       runFilter: (props) => {

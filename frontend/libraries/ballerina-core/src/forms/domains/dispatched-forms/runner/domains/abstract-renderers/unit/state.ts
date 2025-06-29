@@ -14,10 +14,12 @@ import {
 
 export type UnitAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   DispatchPrimitiveType<any>,
   ValueUnit,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type UnitAbstractRendererState = CommonAbstractRendererState & {
@@ -48,8 +50,9 @@ export type UnitAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type UnitAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  UnitAbstractRendererReadonlyContext<CustomPresentationContext> &
+  UnitAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     UnitAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   UnitAbstractRendererState,

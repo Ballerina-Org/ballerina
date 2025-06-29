@@ -32,10 +32,12 @@ import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-da
 
 export type TableAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   TableType<any>,
   ValueTable,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 > & {
   tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
@@ -199,8 +201,12 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type TableAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+  TableAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     TableAbstractRendererState & {
       hasMoreValues: boolean;
     } & CommonAbstractRendererViewOnlyReadonlyContext,
@@ -214,7 +220,10 @@ export type TableAbstractRendererView<
         (
           flags: Flags | undefined,
         ) => Template<
-          TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
             TableAbstractRendererState,
           TableAbstractRendererState,
           TableAbstractRendererForeignMutationsExpected<Flags>
@@ -224,7 +233,10 @@ export type TableAbstractRendererView<
     DetailsRenderer?: (
       flags: Flags | undefined,
     ) => Template<
-      TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+      TableAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         TableAbstractRendererState,
       TableAbstractRendererState,
       TableAbstractRendererForeignMutationsExpected<Flags>

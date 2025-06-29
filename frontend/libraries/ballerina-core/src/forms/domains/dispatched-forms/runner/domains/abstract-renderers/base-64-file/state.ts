@@ -11,10 +11,12 @@ import { Unit } from "../../../../../../../../main";
 
 export type Base64FileAbstractRendererReadonlyContext<
   CustomPresentationContext,
+  ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   DispatchPrimitiveType<any>,
   string,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type Base64FileAbstractRendererState = CommonAbstractRendererState;
@@ -31,8 +33,12 @@ export type Base64FileAbstractRendererForeignMutationsExpected<Flags> = {
 export type Base64FileAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &
+  Base64FileAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     Base64FileAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   Base64FileAbstractRendererState,

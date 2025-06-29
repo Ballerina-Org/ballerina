@@ -30,6 +30,7 @@ export const ListAbstractRenderer = <
   T,
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   GetDefaultElementState: () => CommonAbstractRendererState,
   GetDefaultElementValue: () => PredicateValue,
@@ -37,7 +38,8 @@ export const ListAbstractRenderer = <
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<T>,
       PredicateValue,
-      CustomPresentationContext
+      CustomPresentationContext,
+      ExtraContext
     > &
       CommonAbstractRendererState,
     CommonAbstractRendererState,
@@ -52,7 +54,10 @@ export const ListAbstractRenderer = <
       elementTemplate
         .mapContext(
           (
-            _: ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: ListAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               ListAbstractRendererState,
           ) => ({
             disabled: _.disabled,
@@ -131,11 +136,14 @@ export const ListAbstractRenderer = <
         }));
 
   return Template.Default<
-    ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+    ListAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       ListAbstractRendererState,
     ListAbstractRendererState,
     ListAbstractRendererForeignMutationsExpected<Flags>,
-    ListAbstractRendererView<CustomPresentationContext, Flags>
+    ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

@@ -1,7 +1,6 @@
 import {
   SimpleCallback,
   ValueOption,
-  DispatchCommonFormState,
   DispatchOnChange,
   ValueCallbackWithOptionalFlags,
   CommonAbstractRendererReadonlyContext,
@@ -20,13 +19,16 @@ export type DispatchBaseEnumContext = {
   getOptions: () => Promise<OrderedMap<Guid, ValueRecord>>;
 };
 
-export type EnumAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    SingleSelectionType<any>,
-    ValueOption,
-    CustomPresentationContext
-  > &
-    DispatchBaseEnumContext;
+export type EnumAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  SingleSelectionType<any>,
+  ValueOption,
+  CustomPresentationContext,
+  ExtraContext
+> &
+  DispatchBaseEnumContext;
 
 export type EnumAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
@@ -53,8 +55,9 @@ export type EnumAbstractRendererForeignMutationsExpected<Flags> = {
 export type EnumAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
+  EnumAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
     } & CommonAbstractRendererViewOnlyReadonlyContext,

@@ -30,6 +30,7 @@ import { PrimitiveRenderer } from "./domains/primitive/state";
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
+  Unit,
 } from "../../../../../../../../../../../main";
 
 export type CommonSerializedRendererProperties = {
@@ -79,12 +80,14 @@ export const Renderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
     ): boolean =>
       isObject(serialized) &&
@@ -95,13 +98,15 @@ export const Renderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: DispatchParsedType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
@@ -120,13 +125,15 @@ export const Renderer = {
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContexts,
+      ExtraContext,
     >(
       type: DispatchParsedType<T>,
       serialized: unknown,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts
+        CustomPresentationContexts,
+        ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer

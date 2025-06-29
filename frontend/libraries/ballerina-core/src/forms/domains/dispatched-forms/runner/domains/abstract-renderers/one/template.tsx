@@ -56,6 +56,7 @@ import {
 export const OneAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   DetailsRenderer: Template<any, any, any, any>,
   PreviewRenderer: Template<any, any, any, any> | undefined,
@@ -66,25 +67,32 @@ export const OneAbstractRenderer = <
 ) => {
   const typedInitializeOneRunner = initializeOneRunner<
     CustomPresentationContext,
-    Flags
+    Flags,
+    ExtraContext
   >();
   const typedReinitializeOneRunner = reinitializeOneRunner<
     CustomPresentationContext,
-    Flags
+    Flags,
+    ExtraContext
   >();
   const typedOneTableLoaderRunner = oneTableLoaderRunner<
     CustomPresentationContext,
-    Flags
+    Flags,
+    ExtraContext
   >();
   const typedOneTableDebouncerRunner = oneTableDebouncerRunner<
     CustomPresentationContext,
-    Flags
+    Flags,
+    ExtraContext
   >();
 
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
       Omit<
-        OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+        OneAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        >,
         "value"
       > & {
         value: ValueRecord | ValueUnit;
@@ -215,7 +223,10 @@ export const OneAbstractRenderer = <
     ? (value: ValueRecord) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
           Omit<
-            OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+            OneAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            >,
             "value"
           > & {
             value: ValueRecord | ValueUnit;
@@ -317,10 +328,10 @@ export const OneAbstractRenderer = <
     : undefined;
 
   return Template.Default<
-    OneAbstractRendererReadonlyContext<CustomPresentationContext>,
+    OneAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
     OneAbstractRendererState,
     OneAbstractRendererForeignMutationsExpected<Flags>,
-    OneAbstractRendererView<CustomPresentationContext, Flags>
+    OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

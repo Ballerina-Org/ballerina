@@ -16,12 +16,15 @@ import { View } from "../../../../../../../template/state";
 import { simpleUpdater } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
 import { ValueTuple } from "../../../../../../../../main";
 
-export type ListAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    ListType<any>,
-    ValueTuple,
-    CustomPresentationContext
-  >;
+export type ListAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  ListType<any>,
+  ValueTuple,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type ListAbstractRendererState = CommonAbstractRendererState & {
   elementFormStates: Map<number, CommonAbstractRendererState>;
@@ -65,8 +68,9 @@ export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
 export type ListAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+  ListAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     ListAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   ListAbstractRendererState,
@@ -77,7 +81,10 @@ export type ListAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      ListAbstractRendererReadonlyContext<CustomPresentationContext> &
+      ListAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         ListAbstractRendererState,
       ListAbstractRendererState,
       ListAbstractRendererForeignMutationsExpected<Flags>

@@ -13,11 +13,13 @@ import { View } from "../../../../../../../template/state";
 export type LookupTypeAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
   CommonAbstractRendererReadonlyContext<
     DispatchParsedType<any>,
     PredicateValue,
-    CustomPresentationContext
+    CustomPresentationContext,
+    ExtraContext
   > &
     CommonAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
@@ -28,7 +30,8 @@ export type LookupTypeAbstractRendererView<
       CommonAbstractRendererReadonlyContext<
         DispatchParsedType<any>,
         PredicateValue,
-        CustomPresentationContext
+        CustomPresentationContext,
+        ExtraContext
       > &
         CommonAbstractRendererState,
       CommonAbstractRendererState,

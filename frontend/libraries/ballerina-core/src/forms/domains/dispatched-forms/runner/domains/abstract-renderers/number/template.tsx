@@ -19,17 +19,21 @@ import {
 export const NumberAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
-    NumberAbstractRendererReadonlyContext<CustomPresentationContext> &
+    NumberAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       NumberAbstractRendererState,
     NumberAbstractRendererState,
     NumberAbstractRendererForeignMutationsExpected<Flags>,
-    NumberAbstractRendererView<CustomPresentationContext, Flags>
+    NumberAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

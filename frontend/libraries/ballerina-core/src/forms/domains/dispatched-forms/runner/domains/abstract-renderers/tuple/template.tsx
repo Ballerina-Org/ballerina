@@ -32,6 +32,7 @@ import {
 export const DispatchTupleAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   ItemFormStates: Map<number, () => CommonAbstractRendererState>,
   itemTemplates: Map<
@@ -40,7 +41,8 @@ export const DispatchTupleAbstractRenderer = <
       CommonAbstractRendererReadonlyContext<
         DispatchParsedType<any>,
         PredicateValue,
-        CustomPresentationContext
+        CustomPresentationContext,
+        ExtraContext
       > &
         CommonAbstractRendererState,
       CommonAbstractRendererState,
@@ -57,7 +59,10 @@ export const DispatchTupleAbstractRenderer = <
         .get(itemIndex)!
         .mapContext(
           (
-            _: TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
+            _: TupleAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
               TupleAbstractRendererState,
           ) => ({
             ...(_.itemFormStates.get(itemIndex) ||
@@ -142,11 +147,14 @@ export const DispatchTupleAbstractRenderer = <
         );
 
   return Template.Default<
-    TupleAbstractRendererReadonlyContext<CustomPresentationContext> &
+    TupleAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       TupleAbstractRendererState,
     TupleAbstractRendererState,
     TupleAbstractRendererForeignMutationsExpected<Flags>,
-    TupleAbstractRendererView<CustomPresentationContext, Flags>
+    TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

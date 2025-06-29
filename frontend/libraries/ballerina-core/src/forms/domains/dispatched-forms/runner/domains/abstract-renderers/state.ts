@@ -12,11 +12,12 @@ export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
   V extends PredicateValue,
   C = Unit,
+  ExtraContext = Unit,
 > = {
   value: V;
   disabled: boolean;
   bindings: Bindings;
-  extraContext: unknown;
+  extraContext: ExtraContext;
   type: T;
   label?: string;
   tooltip?: string;

@@ -39,9 +39,13 @@ import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
 const EmbeddedValueInfiniteStreamTemplate = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >() =>
   ValueInfiniteStreamTemplate.mapContext<
-    TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       TableAbstractRendererState
   >((_) => _.customFormState.stream)
     .mapState<TableAbstractRendererState>(
@@ -56,6 +60,7 @@ const EmbeddedValueInfiniteStreamTemplate = <
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 >(
   CellTemplates: Map<
     string,
@@ -64,7 +69,8 @@ export const TableAbstractRenderer = <
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomPresentationContext
+          CustomPresentationContext,
+          ExtraContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -77,7 +83,10 @@ export const TableAbstractRenderer = <
   >,
   DetailsRenderer:
     | Template<
-        RecordAbstractRendererReadonlyContext<CustomPresentationContext>,
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        >,
         RecordAbstractRendererState,
         RecordAbstractRendererForeignMutationsExpected<Flags>
       >
@@ -88,17 +97,29 @@ export const TableAbstractRenderer = <
   SerializedType: StringSerializedType,
   TableEntityType: RecordType<any>,
 ): Template<
-  TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+  TableAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     TableAbstractRendererState,
   TableAbstractRendererState,
   TableAbstractRendererForeignMutationsExpected<Flags>,
-  TableAbstractRendererView<CustomPresentationContext, Flags>
+  TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
 > => {
-  const InstantiatedTableRunner = TableRunner<CustomPresentationContext>();
-  const InstantiatedTableReinitialiseRunner =
-    TableReinitialiseRunner<CustomPresentationContext>();
+  const InstantiatedTableRunner = TableRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
+  const InstantiatedTableReinitialiseRunner = TableReinitialiseRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
   const InstantiatedEmbeddedValueInfiniteStreamTemplate =
-    EmbeddedValueInfiniteStreamTemplate<CustomPresentationContext, Flags>();
+    EmbeddedValueInfiniteStreamTemplate<
+      CustomPresentationContext,
+      Flags,
+      ExtraContext
+    >();
 
   const embedCellTemplate =
     (
@@ -107,7 +128,8 @@ export const TableAbstractRenderer = <
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
-          CustomPresentationContext
+          CustomPresentationContext,
+          ExtraContext
         >,
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
@@ -120,7 +142,10 @@ export const TableAbstractRenderer = <
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
-          TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
             TableAbstractRendererState
         >((_) => {
           const rowState = _.customFormState.rowStates.get(rowId);
@@ -252,7 +277,10 @@ export const TableAbstractRenderer = <
   const embedDetailsRenderer = DetailsRenderer
     ? (flags: Flags | undefined) =>
         DetailsRenderer.mapContext<
-          TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
             TableAbstractRendererState
         >((_) => {
           if (_.customFormState.selectedDetailRow == undefined) {
@@ -362,11 +390,14 @@ export const TableAbstractRenderer = <
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
   return Template.Default<
-    TableAbstractRendererReadonlyContext<CustomPresentationContext> &
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
       TableAbstractRendererState,
     TableAbstractRendererState,
     TableAbstractRendererForeignMutationsExpected<Flags>,
-    TableAbstractRendererView<CustomPresentationContext, Flags>
+    TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,

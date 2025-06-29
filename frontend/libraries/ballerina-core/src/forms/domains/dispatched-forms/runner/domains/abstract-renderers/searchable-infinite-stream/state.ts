@@ -23,10 +23,12 @@ import { Value } from "../../../../../../../value/state";
 
 export type SearchableInfiniteStreamAbstractRendererReadonlyContext<
   CustomPresentationContext,
+  ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   SingleSelectionType<unknown>,
   ValueOption,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type SearchableInfiniteStreamAbstractRendererState =
@@ -108,8 +110,12 @@ export type SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected
 export type SearchableInfiniteStreamAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
+  SearchableInfiniteStreamAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
     } & CommonAbstractRendererViewOnlyReadonlyContext,

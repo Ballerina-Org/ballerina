@@ -17,10 +17,12 @@ import { Map } from "immutable";
 
 export type UnionAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
+  ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   UnionType<any>,
   ValueUnionCase,
-  CustomPresentationContext
+  CustomPresentationContext,
+  ExtraContext
 >;
 
 export type UnionAbstractRendererState = CommonAbstractRendererState & {
@@ -63,8 +65,12 @@ export type UnionAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
 export type UnionAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
+  UnionAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     UnionAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   UnionAbstractRendererState,
@@ -75,7 +81,10 @@ export type UnionAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      UnionAbstractRendererReadonlyContext<CustomPresentationContext> &
+      UnionAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
         UnionAbstractRendererState,
       UnionAbstractRendererState,
       UnionAbstractRendererForeignMutationsExpected<Flags>

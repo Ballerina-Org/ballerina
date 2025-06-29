@@ -9,12 +9,15 @@ import {
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
-export type BoolAbstractRendererReadonlyContext<CustomPresentationContext> =
-  CommonAbstractRendererReadonlyContext<
-    DispatchPrimitiveType<any>,
-    boolean,
-    CustomPresentationContext
-  >;
+export type BoolAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  DispatchPrimitiveType<any>,
+  boolean,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type BoolAbstractRendererState = CommonAbstractRendererState;
 
@@ -31,8 +34,9 @@ export type BoolAbstractRendererForeignMutationsExpected<Flags> = {
 export type BoolAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
+  ExtraContext = Unit,
 > = View<
-  BoolAbstractRendererReadonlyContext<CustomPresentationContext> &
+  BoolAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     BoolAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext,
   BoolAbstractRendererState,
