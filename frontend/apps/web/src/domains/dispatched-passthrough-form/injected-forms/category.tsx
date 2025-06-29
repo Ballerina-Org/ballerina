@@ -15,6 +15,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
+  StringSerializedType,
 } from "ballerina-core";
 
 export type CategoryAbstractRendererReadonlyContext<
@@ -102,6 +103,7 @@ export const CategoryAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  serializedType: StringSerializedType,
 ) => {
   return Template.Default<
     CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
@@ -163,6 +165,7 @@ export type DispatchPassthroughFormInjectedTypes = {
   injectedCategory: {
     type: DispatchCategory;
     state: DispatchCategoryState;
+    abstractRenderer: typeof CategoryAbstractRenderer;
     view: CategoryAbstractRendererView<any, any>;
   };
 };

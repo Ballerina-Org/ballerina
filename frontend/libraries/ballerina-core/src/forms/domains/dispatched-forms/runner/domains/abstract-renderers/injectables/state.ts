@@ -9,16 +9,20 @@ import {
   Template,
   Unit,
   ValueOrErrors,
+  View,
 } from "../../../../../../../../main";
+
+export type InjectedAbstractRenderer = (
+  IdWrapper: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  serializedType: StringSerializedType,
+) => Template<any, any, any, any>;
 
 export type DispatchInjectablePrimitive<T extends DispatchInjectablesTypes<T>> =
   {
     name: keyof T;
     defaultValue: PredicateValue;
-    abstractRenderer: (
-      IdWrapper: (props: IdWrapperProps) => React.ReactNode,
-      ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    ) => Template<any, any, any, any>;
+    abstractRenderer: InjectedAbstractRenderer;
     defaultState?: any;
   };
 
@@ -26,21 +30,14 @@ export type DispatchInjectedPrimitive<T> = {
   name: Guid;
   renderers: Set<keyof T>;
   defaultValue: PredicateValue;
-  abstractRenderer: (
-    IdWrapper: (props: IdWrapperProps) => React.ReactNode,
-    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    serializedType: StringSerializedType,
-  ) => Template<any, any, any, any>;
+  abstractRenderer: InjectedAbstractRenderer;
   defaultState: any;
 };
 
 export const DispatchInjectedPrimitive = {
   Default: <T extends DispatchInjectablesTypes<T>>(
     name: keyof T,
-    abstractRenderer: (
-      IdWrapper: (props: IdWrapperProps) => React.ReactNode,
-      ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    ) => Template<any, any, any, any>,
+    abstractRenderer: InjectedAbstractRenderer,
     defaultValue: PredicateValue,
     defaultState?: any,
   ): DispatchInjectablePrimitive<T> => ({
@@ -54,6 +51,7 @@ export const DispatchInjectedPrimitive = {
 export type DispatchInjectableType = {
   type: any;
   state: any;
+  abstractRenderer: InjectedAbstractRenderer;
   view: any;
 };
 

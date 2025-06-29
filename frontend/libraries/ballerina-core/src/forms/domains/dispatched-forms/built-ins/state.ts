@@ -1,4 +1,4 @@
-import { Map, List, Set, OrderedMap } from "immutable";
+import { Map, List, OrderedMap } from "immutable";
 import {
   CollectionReference,
   EnumReference,
@@ -37,7 +37,6 @@ import {
   OneAbstractRendererView,
   TableAbstractRendererView,
   UnionAbstractRendererView,
-  View,
   DispatchInjectablesTypes,
 } from "../../../../../main";
 import {
