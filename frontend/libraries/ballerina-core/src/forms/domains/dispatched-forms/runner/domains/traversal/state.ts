@@ -76,27 +76,42 @@ export const RendererTraversal = {
         return ValueOrErrors.Default.return(traverseNode);
       }
 
-      if (renderer.type.kind == "lookup" && renderer.kind == "lookupRenderer") {
-        if (renderer.renderer.kind == "concreteLookup") {
-          return ValueOrErrors.Default.return(Option.Default.none());
+      if (
+        renderer.kind == "lookupType-lookupRenderer" ||
+        renderer.kind == "inlinedType-lookupRenderer" ||
+        renderer.kind == "lookupType-inlinedRenderer"
+      ) {
+        if (
+          renderer.kind == "lookupType-lookupRenderer" ||
+          renderer.kind == "inlinedType-lookupRenderer"
+        ) {
+          // renderer.renderer.renderer is the form name
+          // this is a form lookup, so "local" changes here to the traversed value
+          return LookupRenderer.Operations.ResolveRenderer(
+            renderer,
+            traversalContext.forms,
+          ).Then((resolvedRenderer) =>
+            rec(resolvedRenderer, traversalContext).Then(
+              (valueTraversal: Option<ValueTraversal<T, Res>>) =>
+                ValueOrErrors.Default.return(
+                  mapEvalContext((ctx) => ({
+                    ...ctx,
+                    local: ctx.traversalIterator,
+                  }))(valueTraversal),
+                ),
+            ),
+          );
         }
-        // renderer.renderer.renderer is the form name
-        // this is a form lookup, so "local" changes here to the traversed value
+        // otherwise the form is inlined, so the local doesn't change
         return LookupRenderer.Operations.ResolveRenderer(
           renderer,
           traversalContext.forms,
-        ).Then((resolvedRenderer) => {
-          return rec(resolvedRenderer, traversalContext).Then(
-            (valueTraversal: Option<ValueTraversal<T, Res>>) => {
-              return ValueOrErrors.Default.return(
-                mapEvalContext((ctx) => ({
-                  ...ctx,
-                  local: ctx.traversalIterator,
-                }))(valueTraversal),
-              );
-            },
-          );
-        });
+        ).Then((resolvedRenderer) =>
+          rec(resolvedRenderer, traversalContext).Then(
+            (valueTraversal: Option<ValueTraversal<T, Res>>) =>
+              ValueOrErrors.Default.return(valueTraversal),
+          ),
+        );
       }
       if (renderer.type.kind == "record" && renderer.kind == "recordRenderer") {
         return ValueOrErrors.Operations.All(
