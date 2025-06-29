@@ -55,12 +55,12 @@ export const ListDispatcher = {
                 )
                 .Then((defaultElementValue) =>
                   dispatcherContext
-                    .getConcreteRenderer(
-                      "list",
-                      renderer.concreteRenderer,
-                    )
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return<
+                    .getConcreteRenderer("list", renderer.concreteRenderer)
+                    .Then((concreteRenderer) => {
+                      const serializedType = ListType.SerializeToString([
+                        elementTemplate[1],
+                      ]);
+                      return ValueOrErrors.Default.return<
                         [Template<any, any, any, any>, StringSerializedType],
                         string
                       >([
@@ -70,10 +70,11 @@ export const ListDispatcher = {
                           elementTemplate[0],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
+                          serializedType,
                         ).withView(concreteRenderer),
-                        ListType.SerializeToString([elementTemplate[1]]),
-                      ]),
-                    ),
+                        serializedType,
+                      ]);
+                    }),
                 ),
             ),
         )

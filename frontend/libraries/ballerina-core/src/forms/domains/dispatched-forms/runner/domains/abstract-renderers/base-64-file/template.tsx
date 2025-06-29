@@ -6,6 +6,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import {
@@ -21,6 +22,7 @@ export const Base64FileAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     Base64FileAbstractRendererReadonlyContext<CustomPresentationContext> &

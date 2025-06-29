@@ -18,6 +18,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   SearchableInfiniteStreamAbstractRendererState,
@@ -32,6 +33,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext>,
@@ -89,6 +91,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     },
   );
 
+  console.debug("SerializedType", SerializedType);
+  
   return Template.Default<
     SearchableInfiniteStreamAbstractRendererReadonlyContext<CustomPresentationContext> &
       SearchableInfiniteStreamAbstractRendererState,

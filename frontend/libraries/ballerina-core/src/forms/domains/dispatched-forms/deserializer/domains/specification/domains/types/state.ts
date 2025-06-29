@@ -344,7 +344,9 @@ export type TableType<T> = {
 };
 
 export const TableType = {
-  SerializeToString: (serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[table; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -357,7 +359,9 @@ export type OneType<T> = {
 };
 
 export const OneType = {
-  SerializeToString: (serializedArgs: Array<string>): string => {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
     return `[one; args: [${serializedArgs.join(", ")}]]`;
   },
 };
@@ -622,34 +626,74 @@ export const DispatchParsedType = {
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing keyOf type`),
         ),
-    SerializeToString: <T>(type: DispatchParsedType<T>): StringSerializedType => {
-      switch(type.kind) {
+    SerializeToString: <T>(
+      type: DispatchParsedType<T>,
+    ): StringSerializedType => {
+      switch (type.kind) {
         case "primitive":
-          return DispatchPrimitiveType.SerializeToString(type.name)
+          return DispatchPrimitiveType.SerializeToString(type.name);
         case "record":
-          return RecordType.SerializeToString(type.fields.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return RecordType.SerializeToString(
+            type.fields.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "table":
-          return TableType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return TableType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "one":
-          return OneType.SerializeToString([DispatchParsedType.Operations.SerializeToString(type.args)])
+          return OneType.SerializeToString([
+            DispatchParsedType.Operations.SerializeToString(type.args),
+          ]);
         case "singleSelection":
-          return SingleSelectionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return SingleSelectionType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "multiSelection":
-          return MultiSelectionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return MultiSelectionType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "list":
-          return ListType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return ListType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "tuple":
-          return TupleType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return TupleType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "sum":
-          return SumType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return SumType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "map":
-          return MapType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return MapType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "union":
-          return UnionType.SerializeToString(type.args.map((v) => DispatchParsedType.Operations.SerializeToString(v)))
+          return UnionType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+          );
         case "lookup":
-          return LookupType.SerializeToString(type.name)
+          return LookupType.SerializeToString(type.name);
         default:
-          throw new Error(`Unknown type: ${JSON.stringify(type)}`)
+          throw new Error(`Unknown type: ${JSON.stringify(type)}`);
       }
     },
     ParseRecord: <T>(

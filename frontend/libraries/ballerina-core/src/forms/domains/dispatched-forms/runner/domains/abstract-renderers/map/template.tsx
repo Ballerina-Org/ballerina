@@ -29,6 +29,7 @@ import {
 import {
   DispatchParsedType,
   MapType,
+  StringSerializedType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const MapAbstractRenderer = <
@@ -61,6 +62,7 @@ export const MapAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const embeddedKeyTemplate =
     (elementIndex: number) => (flags: Flags | undefined) =>

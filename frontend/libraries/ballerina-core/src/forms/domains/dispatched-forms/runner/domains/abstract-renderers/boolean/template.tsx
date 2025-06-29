@@ -15,6 +15,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
@@ -25,6 +26,7 @@ export const BoolAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     BoolAbstractRendererReadonlyContext<CustomPresentationContext> &

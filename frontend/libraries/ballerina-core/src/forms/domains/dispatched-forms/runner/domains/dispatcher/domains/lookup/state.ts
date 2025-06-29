@@ -25,7 +25,6 @@ export const LookupDispatcher = {
         Flags,
         CustomPresentationContexts
       >,
-      isInlined: boolean,
       tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
@@ -48,8 +47,11 @@ export const LookupDispatcher = {
                 renderer.tableApi ?? tableApi,
               ),
             )
-            .Then((template) =>
-              ValueOrErrors.Default.return<
+            .Then((template) => {
+              const serializedType = LookupType.SerializeToString(
+                renderer.type.name as string,
+              );
+              return ValueOrErrors.Default.return<
                 [Template<any, any, any, any>, StringSerializedType],
                 string
               >([
@@ -57,10 +59,11 @@ export const LookupDispatcher = {
                   template[0],
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(dispatcherContext.lookupTypeRenderer()),
-                LookupType.SerializeToString(renderer.type.name as string),
-              ]),
-            )
+                serializedType,
+              ]);
+            })
             .MapErrors((errors) =>
               errors.map(
                 (error) => `${error}\n...When dispatching lookup renderer`,

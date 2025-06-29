@@ -10,7 +10,10 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  StringSerializedType,
+} from "../../../../deserializer/domains/specification/domains/types/state";
 import { LookupTypeAbstractRendererView } from "./state";
 
 export const LookupTypeAbstractRenderer = <
@@ -29,6 +32,7 @@ export const LookupTypeAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   _ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     CommonAbstractRendererReadonlyContext<
@@ -44,10 +48,7 @@ export const LookupTypeAbstractRenderer = <
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
-          <props.view
-            {...props}
-            embeddedTemplate={embeddedTemplate}
-          />
+          <props.view {...props} embeddedTemplate={embeddedTemplate} />
         </IdProvider>
       </>
     );

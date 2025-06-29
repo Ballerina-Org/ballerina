@@ -72,8 +72,11 @@ export const TupleDispatcher = {
           ).Then((ItemDefaultStates) =>
             dispatcherContext
               .getConcreteRenderer("tuple", renderer.concreteRenderer)
-              .Then((concreteRenderer) =>
-                ValueOrErrors.Default.return<
+              .Then((concreteRenderer) => {
+                const serializedType = TupleType.SerializeToString(
+                  templates.map((template) => template[2]).toArray(),
+                );
+                return ValueOrErrors.Default.return<
                   [Template<any, any, any, any>, StringSerializedType],
                   string
                 >([
@@ -84,12 +87,11 @@ export const TupleDispatcher = {
                     ),
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
+                    serializedType,
                   ).withView(concreteRenderer),
-                  TupleType.SerializeToString(
-                    templates.map((template) => template[2]).toArray(),
-                  ),
-                ]),
-              ),
+                  serializedType,
+                ]);
+              }),
           ),
         )
         .MapErrors((errors) =>

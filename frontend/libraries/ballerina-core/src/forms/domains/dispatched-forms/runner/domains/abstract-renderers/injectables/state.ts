@@ -5,6 +5,7 @@ import {
   Guid,
   IdWrapperProps,
   PredicateValue,
+  StringSerializedType,
   Template,
   Unit,
   ValueOrErrors,
@@ -28,6 +29,7 @@ export type DispatchInjectedPrimitive<T> = {
   abstractRenderer: (
     IdWrapper: (props: IdWrapperProps) => React.ReactNode,
     ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+    serializedType: StringSerializedType,
   ) => Template<any, any, any, any>;
   defaultState: any;
 };

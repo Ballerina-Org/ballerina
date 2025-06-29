@@ -63,44 +63,30 @@ export const Dispatcher = {
         CustomPresentationContexts
       >,
       isNested: boolean,
-      isInlined: boolean,
+      isInlined: boolean | undefined,
       tableApi: string | undefined,
     ): ValueOrErrors<
       [Template<any, any, any, any>, StringSerializedType],
       string
     > => {
+      // see the deserializer state file for a commeny explaining lookup renderers
       return renderer.kind == "primitiveRenderer"
         ? PrimitiveDispatcher.Operations.Dispatch(
             renderer,
             dispatcherContext,
           ).Then((template) =>
-            ValueOrErrors.Default.return([
-              template[0].mapContext((_: any) => ({
-                ..._,
-                type: renderer.type,
-              })),
-              template[1],
-            ]),
+            ValueOrErrors.Default.return([template[0], template[1]]),
           )
         : renderer.kind == "lookupType-lookupRenderer" ||
             renderer.kind == "lookupType-inlinedRenderer"
-          ? // TODO: pass some relevant information to the lookup dispatcher
-            LookupDispatcher.Operations.Dispatch(
+          ? LookupDispatcher.Operations.Dispatch(
               renderer,
               dispatcherContext,
-              isInlined,
               tableApi,
             ).Then((template) =>
-              ValueOrErrors.Default.return([
-                template[0].mapContext((_: any) => ({
-                  ..._,
-                  type: renderer.type,
-                })),
-                template[1],
-              ]),
+              ValueOrErrors.Default.return([template[0], template[1]]),
             )
-          : // TODO -- pass relevant non inline information
-            renderer.kind == "inlinedType-lookupRenderer"
+          : renderer.kind == "inlinedType-lookupRenderer"
             ? LookupRenderer.Operations.ResolveRenderer(
                 renderer,
                 dispatcherContext.forms,
@@ -118,46 +104,28 @@ export const Dispatcher = {
                   renderer,
                   dispatcherContext,
                   isNested,
-                  isInlined,
+                  isInlined ?? true,
                   tableApi,
                 ).Then((template) =>
-                  ValueOrErrors.Default.return([
-                    template[0].mapContext((_: any) => ({
-                      ..._,
-                      type: renderer.type,
-                    })),
-                    template[1],
-                  ]),
+                  ValueOrErrors.Default.return([template[0], template[1]]),
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(
                     renderer,
                     dispatcherContext,
-                    isInlined,
+                    isInlined ?? true,
                     tableApi,
                   ).Then((template) =>
-                    ValueOrErrors.Default.return([
-                      template[0].mapContext((_: any) => ({
-                        ..._,
-                        type: renderer.type,
-                      })),
-                      template[1],
-                    ]),
+                    ValueOrErrors.Default.return([template[0], template[1]]),
                   )
                 : renderer.kind == "mapRenderer"
                   ? MapDispatcher.Operations.Dispatch(
                       renderer,
                       dispatcherContext,
-                      isInlined,
+                      isInlined ?? true,
                       tableApi,
                     ).Then((template) =>
-                      ValueOrErrors.Default.return([
-                        template[0].mapContext((_: any) => ({
-                          ..._,
-                          type: renderer.type,
-                        })),
-                        template[1],
-                      ]),
+                      ValueOrErrors.Default.return([template[0], template[1]]),
                     )
                   : (renderer.kind == "enumRenderer" ||
                         renderer.kind == "streamRenderer") &&
@@ -167,10 +135,7 @@ export const Dispatcher = {
                         dispatcherContext,
                       ).Then((template) =>
                         ValueOrErrors.Default.return([
-                          template[0].mapContext((_: any) => ({
-                            ..._,
-                            type: renderer.type,
-                          })),
+                          template[0],
                           template[1],
                         ]),
                       )
@@ -182,10 +147,7 @@ export const Dispatcher = {
                           dispatcherContext,
                         ).Then((template) =>
                           ValueOrErrors.Default.return([
-                            template[0].mapContext((_: any) => ({
-                              ..._,
-                              type: renderer.type,
-                            })),
+                            template[0],
                             template[1],
                           ]),
                         )
@@ -193,14 +155,11 @@ export const Dispatcher = {
                         ? OneDispatcher.Operations.Dispatch(
                             renderer,
                             dispatcherContext,
-                            isInlined,
+                            isInlined ?? true,
                             tableApi,
                           ).Then((template) =>
                             ValueOrErrors.Default.return([
-                              template[0].mapContext((_: any) => ({
-                                ..._,
-                                type: renderer.type,
-                              })),
+                              template[0],
                               template[1],
                             ]),
                           )
@@ -209,14 +168,11 @@ export const Dispatcher = {
                           ? SumDispatcher.Operations.Dispatch(
                               renderer,
                               dispatcherContext,
-                              isInlined,
+                              isInlined ?? true,
                               tableApi,
                             ).Then((template) =>
                               ValueOrErrors.Default.return([
-                                template[0].mapContext((_: any) => ({
-                                  ..._,
-                                  type: renderer.type,
-                                })),
+                                template[0],
                                 template[1],
                               ]),
                             )
@@ -225,13 +181,10 @@ export const Dispatcher = {
                                 renderer,
                                 dispatcherContext,
                                 tableApi,
-                                isInlined,
+                                isInlined ?? true,
                               ).Then((template) =>
                                 ValueOrErrors.Default.return([
-                                  template[0].mapContext((_: any) => ({
-                                    ..._,
-                                    type: renderer.type,
-                                  })),
+                                  template[0],
                                   template[1],
                                 ]),
                               )
@@ -239,14 +192,11 @@ export const Dispatcher = {
                               ? TupleDispatcher.Operations.Dispatch(
                                   renderer,
                                   dispatcherContext,
-                                  isInlined,
+                                  isInlined ?? true,
                                   tableApi,
                                 ).Then((template) =>
                                   ValueOrErrors.Default.return([
-                                    template[0].mapContext((_: any) => ({
-                                      ..._,
-                                      type: renderer.type,
-                                    })),
+                                    template[0],
                                     template[1],
                                   ]),
                                 )
@@ -258,6 +208,7 @@ export const Dispatcher = {
                                     tableApi,
                                   ).Then((template) =>
                                     ValueOrErrors.Default.return([
+                                      // TODO - investigate, why this is needed
                                       template[0].mapContext((_: any) => ({
                                         ..._,
                                         type: renderer.type,

@@ -14,6 +14,7 @@ import {
   Unit,
   Option,
   replaceWith,
+  StringSerializedType,
 } from "../../../../../../../../main";
 
 export const UnitAbstractRenderer = <
@@ -22,6 +23,7 @@ export const UnitAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) =>
   Template.Default<
     UnitAbstractRendererReadonlyContext<CustomPresentationContext> &

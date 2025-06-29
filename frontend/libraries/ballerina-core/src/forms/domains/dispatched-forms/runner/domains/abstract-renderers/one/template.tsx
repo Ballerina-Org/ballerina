@@ -26,6 +26,7 @@ import {
   Unit,
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -75,6 +76,7 @@ export const OneAbstractRenderer = <
     | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const typedInitializeOneRunner = initializeOneRunner<
     CustomPresentationContext,

@@ -8,6 +8,7 @@ import {
   Template,
   ValueOrErrors,
   StringSerializedType,
+  LookupType,
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
@@ -111,8 +112,11 @@ export const OneDispatcher = {
             (getApi) =>
               dispatcherContext
                 .getConcreteRenderer("one", renderer.concreteRenderer)
-                .Then((concreteRenderer) =>
-                  ValueOrErrors.Default.return<
+                .Then((concreteRenderer) => {
+                  const serializedType = OneType.SerializeToString([
+                    (renderer.type.args as LookupType).name,
+                  ]);
+                  return ValueOrErrors.Default.return<
                     [Template<any, any, any, any>, StringSerializedType],
                     string
                   >([
@@ -121,6 +125,7 @@ export const OneDispatcher = {
                       previewRenderer?.[0],
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
+                      serializedType,
                     )
                       .mapContext((_: any) => ({
                         ..._,
@@ -130,11 +135,9 @@ export const OneDispatcher = {
                         ),
                       }))
                       .withView(concreteRenderer),
-                    OneType.SerializeToString([
-                      renderer.type.args as unknown as string,
-                    ]), // always a lookup
-                  ]),
-                ),
+                    serializedType,
+                  ]);
+                }),
           ),
         ),
       ),

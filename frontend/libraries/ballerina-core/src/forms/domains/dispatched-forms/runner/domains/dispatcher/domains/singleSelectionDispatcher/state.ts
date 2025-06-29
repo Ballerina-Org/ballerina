@@ -11,6 +11,7 @@ import {
   DispatchInjectablesTypes,
   StringSerializedType,
   SingleSelectionType,
+  LookupType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -54,6 +55,9 @@ export const SingleSelectionDispatcher = {
                         EnumAbstractRenderer(
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
+                          SingleSelectionType.SerializeToString([
+                            (renderer.type.args[0] as LookupType).name as string,
+                          ])
                         )
                           .mapContext((_: any) => ({
                             ..._,
@@ -73,7 +77,7 @@ export const SingleSelectionDispatcher = {
                           }))
                           .withView(concreteRenderer),
                         SingleSelectionType.SerializeToString([
-                          renderer.type.args[0] as unknown as string,
+                          (renderer.type.args[0] as LookupType).name as string,
                         ]), // always a lookup type
                       ]),
                     ),
@@ -99,10 +103,13 @@ export const SingleSelectionDispatcher = {
                       SearchableInfiniteStreamAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        SingleSelectionType.SerializeToString([
+                          (renderer.type.args[0] as LookupType).name as string,
+                        ])
                       ).withView(concreteRenderer),
                       SingleSelectionType.SerializeToString([
-                        renderer.type.args[0] as unknown as string,
-                      ]), // always a lookup type
+                        (renderer.type.args[0] as LookupType).name as string, // always a lookup type
+                      ]),
                     ]),
                   )
                   .MapErrors((errors) =>

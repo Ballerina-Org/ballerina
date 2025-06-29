@@ -9,12 +9,11 @@ import {
   replaceWith,
   Synchronize,
   Unit,
-  ValueOption,
   ValueRecord,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -30,6 +29,7 @@ export const EnumAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     EnumAbstractRendererReadonlyContext<CustomPresentationContext> &
@@ -61,6 +61,9 @@ export const EnumAbstractRenderer = <
         />
       );
     }
+
+    console.debug("SerializedType", SerializedType);
+    
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>

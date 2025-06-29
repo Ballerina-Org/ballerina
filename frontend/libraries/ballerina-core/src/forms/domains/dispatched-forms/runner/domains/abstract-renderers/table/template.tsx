@@ -30,6 +30,7 @@ import {
   RecordAbstractRendererForeignMutationsExpected,
   MapRepo,
   ValueTable,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -84,6 +85,7 @@ export const TableAbstractRenderer = <
   Layout: PredicateVisibleColumns,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ): Template<
   TableAbstractRendererReadonlyContext<CustomPresentationContext> &
     TableAbstractRendererState,

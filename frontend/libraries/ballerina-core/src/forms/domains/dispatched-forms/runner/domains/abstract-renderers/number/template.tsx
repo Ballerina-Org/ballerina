@@ -8,6 +8,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererForeignMutationsExpected,
@@ -22,6 +23,7 @@ export const NumberAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     NumberAbstractRendererReadonlyContext<CustomPresentationContext> &

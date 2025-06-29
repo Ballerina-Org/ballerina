@@ -10,6 +10,7 @@ import {
   getLeafIdentifierFromIdentifier,
   ErrorRendererProps,
   Option,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -32,6 +33,7 @@ export const EnumMultiselectAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     EnumMultiselectAbstractRendererReadonlyContext<CustomPresentationContext> &

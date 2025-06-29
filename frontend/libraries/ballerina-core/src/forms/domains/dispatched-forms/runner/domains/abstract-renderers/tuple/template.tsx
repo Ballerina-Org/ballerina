@@ -28,7 +28,10 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  StringSerializedType,
+} from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const DispatchTupleAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -50,6 +53,7 @@ export const DispatchTupleAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const embeddedItemTemplates =
     (itemIndex: number) => (flags: Flags | undefined) =>

@@ -72,8 +72,13 @@ export const MapDispatcher = {
                                 "map",
                                 renderer.concreteRenderer,
                               )
-                              .Then((concreteRenderer) =>
-                                ValueOrErrors.Default.return<
+                              .Then((concreteRenderer) => {
+                                const serializedType =
+                                  MapType.SerializeToString([
+                                    keyTemplate[1],
+                                    valueTemplate[1],
+                                  ]);
+                                return ValueOrErrors.Default.return<
                                   [
                                     Template<any, any, any, any>,
                                     StringSerializedType,
@@ -89,13 +94,11 @@ export const MapDispatcher = {
                                     valueTemplate[0],
                                     dispatcherContext.IdProvider,
                                     dispatcherContext.ErrorRenderer,
+                                    serializedType,
                                   ).withView(concreteRenderer),
-                                  MapType.SerializeToString([
-                                    keyTemplate[1],
-                                    valueTemplate[1],
-                                  ]),
-                                ]),
-                              ),
+                                  serializedType,
+                                ]);
+                              }),
                           ),
                       ),
                   ),

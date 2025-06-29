@@ -79,8 +79,13 @@ export const UnionDispatcher = {
             .Then((defaultState) =>
               dispatcherContext
                 .getConcreteRenderer("union", renderer.concreteRenderer)
-                .Then((concreteRenderer) =>
-                  ValueOrErrors.Default.return<
+                .Then((concreteRenderer) => {
+                  const serializedType = UnionType.SerializeToString(
+                    Map(
+                      templates.map((template) => [template[0], template[2]]),
+                    ),
+                  );
+                  return ValueOrErrors.Default.return<
                     [Template<any, any, any, any>, StringSerializedType],
                     string
                   >([
@@ -94,14 +99,11 @@ export const UnionDispatcher = {
                       ),
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
+                      serializedType,
                     ).withView(concreteRenderer),
-                    UnionType.SerializeToString(
-                      Map(
-                        templates.map((template) => [template[0], template[2]]),
-                      ),
-                    ),
-                  ]),
-                ),
+                    serializedType,
+                  ]);
+                }),
             ),
         )
         .MapErrors((errors) =>

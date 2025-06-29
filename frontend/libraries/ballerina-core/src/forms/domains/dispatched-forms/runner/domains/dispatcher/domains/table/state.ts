@@ -9,6 +9,7 @@ import {
   DispatchInjectablesTypes,
   StringSerializedType,
   PredicateValue,
+  LookupType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -171,8 +172,11 @@ export const TableDispatcher = {
                       TableDispatcher.Operations.GetApi(
                         renderer.api ?? tableApi,
                         dispatcherContext,
-                      ).Then((tableApiSource) =>
-                        ValueOrErrors.Default.return<
+                      ).Then((tableApiSource) => {
+                        const serializedType = TableType.SerializeToString([
+                          (renderer.type.args[0] as LookupType).name, // always a lookup,
+                        ]);
+                        return ValueOrErrors.Default.return<
                           [Template<any, any, any, any>, StringSerializedType],
                           string
                         >([
@@ -182,6 +186,7 @@ export const TableDispatcher = {
                             renderer.visibleColumns,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
+                            serializedType,
                           )
                             .mapContext((_: any) => ({
                               ..._,
@@ -202,11 +207,9 @@ export const TableDispatcher = {
                                 ),
                             }))
                             .withView(concreteRenderer),
-                          TableType.SerializeToString([
-                            renderer.type.args[0] as unknown as string, // always a lookup,
-                          ]),
-                        ]),
-                      ),
+                          serializedType,
+                        ]);
+                      }),
                     ),
                 ),
               )

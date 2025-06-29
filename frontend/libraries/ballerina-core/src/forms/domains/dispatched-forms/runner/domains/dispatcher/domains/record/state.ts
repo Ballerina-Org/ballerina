@@ -112,8 +112,15 @@ export const RecordDispatcher = {
             renderer.concreteRenderer,
             dispatcherContext,
             isNested,
-          ).Then((concreteRenderer) =>
-            ValueOrErrors.Default.return<
+          ).Then((concreteRenderer) => {
+            const serializedType = RecordType.SerializeToString(
+              OrderedMap(
+                fieldTemplates
+                  .toArray()
+                  .map((template) => [template[0], template[2]]),
+              ),
+            );
+            return ValueOrErrors.Default.return<
               [Template<any, any, any, any>, StringSerializedType],
               string
             >([
@@ -125,6 +132,7 @@ export const RecordDispatcher = {
                 dispatcherContext.IdProvider,
                 dispatcherContext.ErrorRenderer,
                 isInlined,
+                serializedType,
               )
                 .mapContext((_: any) => ({
                   ..._,
@@ -135,15 +143,9 @@ export const RecordDispatcher = {
                   },
                 }))
                 .withView(concreteRenderer),
-              RecordType.SerializeToString(
-                OrderedMap(
-                  fieldTemplates
-                    .toArray()
-                    .map((template) => [template[0], template[2]]),
-                ),
-              ),
-            ]),
-          ),
+              serializedType,
+            ]);
+          }),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When dispatching as record form`),

@@ -52,8 +52,18 @@ export const SumDispatcher = {
                 tableApi,
               )
             : ValueOrErrors.Default.return<undefined, string>(undefined)
-          ).Then((rightForm) =>
-            renderer.kind == "sumUnitDateRenderer"
+          ).Then((rightForm) => {
+            const serializedType = SumType.SerializeToString([
+              leftForm?.[1] ??
+                DispatchParsedType.Operations.SerializeToString(
+                  renderer.type.args[0],
+                ),
+              rightForm?.[1] ??
+                DispatchParsedType.Operations.SerializeToString(
+                  renderer.type.args[1],
+                ),
+            ]);
+            return renderer.kind == "sumUnitDateRenderer"
               ? dispatcherContext
                   .getConcreteRenderer("sumUnitDate", renderer.concreteRenderer)
                   .Then((concreteRenderer) =>
@@ -64,19 +74,11 @@ export const SumDispatcher = {
                       SumAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        serializedType,
                         leftForm?.[0],
                         rightForm?.[0],
                       ).withView(concreteRenderer),
-                      SumType.SerializeToString([
-                        leftForm?.[1] ??
-                          DispatchParsedType.Operations.SerializeToString(
-                            renderer.type.args[0],
-                          ),
-                        rightForm?.[1] ??
-                          DispatchParsedType.Operations.SerializeToString(
-                            renderer.type.args[1],
-                          ),
-                      ]),
+                      serializedType,
                     ]),
                   )
               : dispatcherContext
@@ -89,22 +91,14 @@ export const SumDispatcher = {
                       SumAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        serializedType,
                         leftForm?.[0],
                         rightForm?.[0],
                       ).withView(concreteRenderer),
-                      SumType.SerializeToString([
-                        leftForm?.[1] ??
-                          DispatchParsedType.Operations.SerializeToString(
-                            renderer.type.args[0],
-                          ),
-                        rightForm?.[1] ??
-                          DispatchParsedType.Operations.SerializeToString(
-                            renderer.type.args[1],
-                          ),
-                      ]),
+                      serializedType,
                     ]),
-                  ),
-          ),
+                  );
+          }),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When dispatching nested sum`),

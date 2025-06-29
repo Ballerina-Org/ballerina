@@ -15,6 +15,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 
 export const SecretAbstractRenderer = <
@@ -23,6 +24,7 @@ export const SecretAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     SecretAbstractRendererReadonlyContext<CustomPresentationContext>,

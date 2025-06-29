@@ -45,6 +45,9 @@ export const PrimitiveDispatcher = {
           return viewKindRes;
         }
         const viewKind = viewKindRes.value;
+        const serializedType = DispatchPrimitiveType.SerializeToString(
+          renderer.type.name as string,
+        );
         if (
           dispatcherContext.injectedPrimitives?.has(
             renderer.type.name as keyof T,
@@ -58,6 +61,7 @@ export const PrimitiveDispatcher = {
               `could not find injected primitive ${renderer.type.name as string}`,
             );
           }
+
           return dispatcherContext
             .getConcreteRenderer(
               viewKind as keyof ConcreteRenderers<T>,
@@ -69,11 +73,10 @@ export const PrimitiveDispatcher = {
                   .abstractRenderer(
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
+                    serializedType,
                   )
                   .withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -85,10 +88,9 @@ export const PrimitiveDispatcher = {
                 UnitAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -100,10 +102,9 @@ export const PrimitiveDispatcher = {
                 StringAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -115,10 +116,9 @@ export const PrimitiveDispatcher = {
                 NumberAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -130,10 +130,9 @@ export const PrimitiveDispatcher = {
                 BoolAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -145,10 +144,9 @@ export const PrimitiveDispatcher = {
                 SecretAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -160,10 +158,9 @@ export const PrimitiveDispatcher = {
                 Base64FileAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }
@@ -175,10 +172,9 @@ export const PrimitiveDispatcher = {
                 DateAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
+                  serializedType,
                 ).withView(concreteRenderer),
-                DispatchPrimitiveType.SerializeToString(
-                  renderer.type.name as string,
-                ),
+                serializedType,
               ]),
             );
         }

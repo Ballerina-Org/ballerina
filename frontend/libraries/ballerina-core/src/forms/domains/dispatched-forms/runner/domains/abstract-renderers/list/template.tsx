@@ -1,5 +1,4 @@
 import {
-  BasicUpdater,
   DispatchCommonFormState,
   DispatchDelta,
   IdWrapperProps,
@@ -8,7 +7,6 @@ import {
   PredicateValue,
   replaceWith,
   Updater,
-  DispatchOnChange,
   ErrorRendererProps,
   getLeafIdentifierFromIdentifier,
   Option,
@@ -20,7 +18,7 @@ import {
 import { Template } from "../../../../../../../template/state";
 import {
   DispatchParsedType,
-  ListType,
+  StringSerializedType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   ListAbstractRendererForeignMutationsExpected,
@@ -30,6 +28,7 @@ import {
 } from "./state";
 
 export const ListAbstractRenderer = <
+  T,
   CustomPresentationContext = Unit,
   Flags = Unit,
 >(
@@ -37,7 +36,7 @@ export const ListAbstractRenderer = <
   GetDefaultElementValue: () => PredicateValue,
   elementTemplate: Template<
     CommonAbstractRendererReadonlyContext<
-      DispatchParsedType<any>,
+      DispatchParsedType<T>,
       PredicateValue,
       CustomPresentationContext
     > &
@@ -47,6 +46,7 @@ export const ListAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const embeddedElementTemplate =
     (elementIndex: number) => (flags: Flags | undefined) =>
@@ -183,7 +183,7 @@ export const ListAbstractRenderer = <
                     commonFormState: props.context.commonFormState,
                     elementFormStates: props.context.elementFormStates,
                   },
-                  type: (props.context.type as ListType<any>).args[0],
+                  type: props.context.type.args[0],
                   flags,
                 };
                 props.foreignMutations.onChange(
@@ -291,7 +291,7 @@ export const ListAbstractRenderer = <
                   kind: "ArrayAddAt",
                   value: [_, GetDefaultElementValue()],
                   elementState: GetDefaultElementState(),
-                  elementType: (props.context.type as ListType<any>).args[0],
+                  elementType: props.context.type.args[0],
                   flags,
                 };
                 props.foreignMutations.onChange(

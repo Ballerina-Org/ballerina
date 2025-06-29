@@ -11,6 +11,7 @@ import {
   DispatchInjectablesTypes,
   StringSerializedType,
   MultiSelectionType,
+  LookupType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -46,14 +47,19 @@ export const MultiSelectionDispatcher = {
                 .Then((concreteRenderer) =>
                   dispatcherContext
                     .enumOptionsSources(renderer.options)
-                    .Then((optionsSource) =>
-                      ValueOrErrors.Default.return<
+                    .Then((optionsSource) => {
+                      const serializedType =
+                        MultiSelectionType.SerializeToString([
+                          (renderer.type.args[0] as LookupType).name as string,
+                        ]); // always a lookup type
+                      return ValueOrErrors.Default.return<
                         [Template<any, any, any, any>, StringSerializedType],
                         string
                       >([
                         EnumMultiselectAbstractRenderer(
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
+                          serializedType,
                         )
                           .mapContext((_: any) => ({
                             ..._,
@@ -72,11 +78,9 @@ export const MultiSelectionDispatcher = {
                               ),
                           }))
                           .withView(concreteRenderer),
-                        MultiSelectionType.SerializeToString([
-                          renderer.type.args[0] as unknown as string,
-                        ]), // always a lookup type
-                      ]),
-                    ),
+                        serializedType,
+                      ]);
+                    }),
                 )
                 .MapErrors((errors) =>
                   errors.map(
@@ -91,20 +95,22 @@ export const MultiSelectionDispatcher = {
                     "streamMultiSelection",
                     renderer.concreteRenderer,
                   )
-                  .Then((concreteRenderer) =>
-                    ValueOrErrors.Default.return<
+                  .Then((concreteRenderer) => {
+                    const serializedType = MultiSelectionType.SerializeToString(
+                      [(renderer.type.args[0] as LookupType).name as string],
+                    );
+                    return ValueOrErrors.Default.return<
                       [Template<any, any, any, any>, StringSerializedType],
                       string
                     >([
                       InfiniteMultiselectDropdownFormAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        serializedType,
                       ).withView(concreteRenderer),
-                      MultiSelectionType.SerializeToString([
-                        renderer.type.args[0] as unknown as string,
-                      ]), // always a lookup type]
-                    ]),
-                  )
+                      serializedType,
+                    ]);
+                  })
                   .MapErrors((errors) =>
                     errors.map(
                       (error) =>

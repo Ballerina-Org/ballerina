@@ -14,6 +14,7 @@ import {
   DispatchDelta,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -45,6 +46,7 @@ export const UnionAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const embeddedCaseTemplate =
     (caseName: string) => (flags: Flags | undefined) =>

@@ -21,6 +21,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
+  StringSerializedType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -57,6 +58,7 @@ export const RecordAbstractRenderer = <
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
+  SerializedType: StringSerializedType,
 ): Template<
   RecordAbstractRendererReadonlyContext<CustomPresentationContext> &
     RecordAbstractRendererState,

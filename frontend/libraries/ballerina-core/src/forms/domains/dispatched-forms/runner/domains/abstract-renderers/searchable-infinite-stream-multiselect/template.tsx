@@ -26,6 +26,7 @@ import {
   getLeafIdentifierFromIdentifier,
   Option,
   Unit,
+  StringSerializedType,
 } from "../../../../../../../../main";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
@@ -34,6 +35,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<CustomPresentationContext>,
