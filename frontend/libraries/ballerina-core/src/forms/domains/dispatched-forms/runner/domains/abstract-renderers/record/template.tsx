@@ -101,7 +101,7 @@ export const RecordAbstractRenderer = <
             disabled: _.disabled,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[${fieldName}]`].concat(
               _.serializedTypeHierarchy,

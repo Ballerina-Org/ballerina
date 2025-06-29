@@ -1063,7 +1063,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               ))}
             </ul>
           )}
-          {props.context.CustomPresentationContext?.listElement
+          {props.context.customPresentationContext?.listElement
             ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
@@ -1250,7 +1250,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               ))}
             </ul>
           )}
-          {props.context.CustomPresentationContext?.listElement
+          {props.context.customPresentationContext?.listElement
             ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
@@ -1703,7 +1703,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     ...props,
                     context: {
                       ...props.context,
-                      CustomPresentationContext: {
+                      customPresentationContext: {
                         listElement: {
                           isLastListElement:
                             elementIndex == props.context.value.values.size - 1,

@@ -129,7 +129,7 @@ export const OneAbstractRenderer = <
         bindings: _.bindings,
         extraContext: _.extraContext,
         type: oneEntityType,
-        CustomPresentationContext: _.CustomPresentationContext,
+        customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
         serializedTypeHierarchy: _.serializedTypeHierarchy,
       };
@@ -242,7 +242,7 @@ export const OneAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: oneEntityType,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
           };

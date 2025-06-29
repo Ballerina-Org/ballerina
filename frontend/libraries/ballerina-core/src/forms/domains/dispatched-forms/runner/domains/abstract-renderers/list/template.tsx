@@ -68,7 +68,7 @@ export const ListAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: _.type.args[0],
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[${elementIndex}]`].concat(
               _.serializedTypeHierarchy,

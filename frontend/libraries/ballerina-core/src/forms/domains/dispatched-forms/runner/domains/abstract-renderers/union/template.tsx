@@ -69,7 +69,7 @@ export const UnionAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
           }),
         )

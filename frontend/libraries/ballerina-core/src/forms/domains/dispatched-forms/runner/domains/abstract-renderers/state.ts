@@ -22,7 +22,7 @@ export type CommonAbstractRendererReadonlyContext<
   label?: string;
   tooltip?: string;
   details?: string;
-  CustomPresentationContext: C | undefined;
+  customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   serializedTypeHierarchy: string[];
 };

@@ -86,7 +86,7 @@ export const MapAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: _.type.args[0],
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[key]`, `[${elementIndex}]`].concat(
               _.serializedTypeHierarchy,
@@ -183,7 +183,7 @@ export const MapAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: _.type.args[1],
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[value]`, `[${elementIndex}]`].concat(
               _.serializedTypeHierarchy,

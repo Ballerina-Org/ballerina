@@ -72,7 +72,7 @@ export const DispatchTupleAbstractRenderer = <
             bindings: _.bindings,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             type: _.type.args[itemIndex],
             serializedTypeHierarchy: [`[${itemIndex + 1}]`].concat(
               _.serializedTypeHierarchy,

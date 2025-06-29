@@ -174,7 +174,7 @@ export const TableAbstractRenderer = <
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
             type: TableEntityType.fields.get(column)!,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: [`[${column}]`, `[${rowId}]`].concat(
               _.serializedTypeHierarchy,
@@ -317,7 +317,7 @@ export const TableAbstractRenderer = <
             bindings: _.bindings.set("local", value),
             extraContext: _.extraContext,
             type: TableEntityType,
-            CustomPresentationContext: _.CustomPresentationContext,
+            customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             serializedTypeHierarchy: _.serializedTypeHierarchy,
           };
