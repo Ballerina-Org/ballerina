@@ -73,6 +73,12 @@ export const UnionRenderer = {
                         : caseRenderer,
                       concreteRenderers,
                       types,
+                      undefined,
+                      (typeof caseRenderer == "object" &&
+                        caseRenderer !== null &&
+                        "renderer" in caseRenderer &&
+                        typeof caseRenderer.renderer != "string") ||
+                        typeof caseRenderer == "object",
                     ).Then((caseRenderer) =>
                       ValueOrErrors.Default.return([caseName, caseRenderer]),
                     ),
