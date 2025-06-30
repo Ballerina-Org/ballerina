@@ -199,144 +199,304 @@ export type ConcreteRenderers<
   ExtraContext = Unit,
 > = {
   unit: {
-    [_: string]: () => UnitAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | UnitAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          UnitAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   boolean: {
-    [_: string]: () => BoolAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | BoolAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          BoolAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   number: {
-    [_: string]: () => NumberAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | NumberAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          NumberAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   string: {
-    [_: string]: () => StringAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | StringAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          StringAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   base64File: {
-    [_: string]: () => Base64FileAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | Base64FileAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          Base64FileAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   secret: {
-    [_: string]: () => SecretAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | SecretAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          SecretAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   date: {
-    [_: string]: () => DateAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | DateAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          DateAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   enumSingleSelection: {
-    [_: string]: () => EnumAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | EnumAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          EnumAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   enumMultiSelection: {
-    [_: string]: () => EnumMultiselectAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | EnumMultiselectAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          EnumMultiselectAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   streamSingleSelection: {
-    [_: string]: () => SearchableInfiniteStreamAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | SearchableInfiniteStreamAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          SearchableInfiniteStreamAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   streamMultiSelection: {
-    [_: string]: () => SearchableInfiniteStreamMultiselectAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | SearchableInfiniteStreamMultiselectAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          SearchableInfiniteStreamMultiselectAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   list: {
-    [_: string]: () => ListAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | ListAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          ListAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   map: {
-    [_: string]: () => MapAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | MapAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          MapAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   tuple: {
-    [_: string]: () => TupleAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | TupleAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          TupleAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   sum: {
-    [_: string]: () => SumAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | SumAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          SumAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   sumUnitDate: {
-    [_: string]: () => SumAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | SumAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          RecordAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   record: {
-    [_: string]: () => RecordAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | RecordAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          RecordAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   table: {
-    [_: string]: () => TableAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | TableAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          TableAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   union: {
-    [_: string]: () => UnionAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | UnionAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          UnionAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
   one: {
-    [_: string]: () => OneAbstractRendererView<
-      RecursivePartial<CustomPresentationContexts>,
-      Flags,
-      ExtraContext
-    >;
+    [_: string]: () =>
+      | OneAbstractRendererView<
+          RecursivePartial<CustomPresentationContexts>,
+          Flags,
+          ExtraContext
+        >
+      | React.MemoExoticComponent<
+          OneAbstractRendererView<
+            RecursivePartial<CustomPresentationContexts>,
+            Flags,
+            ExtraContext
+          >
+        >;
   };
 } & {
   [key in keyof T]: { [_: string]: () => T[key]["view"] };

@@ -517,6 +517,7 @@ export const TableAbstractRenderer = <
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,
               completeSerializedTypeHierarchy,
+              tableEntityType: TableEntityType,
             }}
             foreignMutations={{
               ...props.foreignMutations,
