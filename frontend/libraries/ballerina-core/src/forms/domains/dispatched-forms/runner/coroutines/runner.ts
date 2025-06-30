@@ -15,10 +15,15 @@ export const DispatchFormRunner = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
   CustomPresentationContexts,
-  ExtraContext
+  ExtraContext,
 >() => {
   const Co = CoTypedFactory<
-    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+    DispatchFormRunnerContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
     DispatchFormRunnerState<T, Flags>
   >();
 

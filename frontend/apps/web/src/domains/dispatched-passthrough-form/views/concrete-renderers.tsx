@@ -14,9 +14,7 @@ import {
   ConcreteRenderers,
 } from "ballerina-core";
 import { OrderedMap, Set } from "immutable";
-import {
-  DispatchPassthroughFormInjectedTypes,
-} from "../injected-forms/category";
+import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 
 export type DispatchPassthroughFormFlags = {
   test: boolean;
@@ -29,7 +27,6 @@ export type ListElementCustomPresentationContext = {
 export type DispatchPassthroughFormExtraContext = {
   flags: Set<string>;
 };
-
 
 export type DispatchPassthroughFormCustomPresentationContext = {
   listElement: ListElementCustomPresentationContext;

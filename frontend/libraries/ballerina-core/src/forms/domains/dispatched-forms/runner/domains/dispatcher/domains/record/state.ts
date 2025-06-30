@@ -30,7 +30,14 @@ export const RecordDispatcher = {
         ExtraContext
       >,
       isNested: boolean,
-    ): ValueOrErrors<RecordAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>, string> =>
+    ): ValueOrErrors<
+      RecordAbstractRendererView<
+        CustomPresentationContexts,
+        Flags,
+        ExtraContext
+      >,
+      string
+    > =>
       concreteRenderer == undefined
         ? ValueOrErrors.Default.return(
             dispatcherContext.getDefaultRecordRenderer(isNested),

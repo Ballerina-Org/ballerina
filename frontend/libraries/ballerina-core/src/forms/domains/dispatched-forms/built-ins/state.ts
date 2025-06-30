@@ -627,8 +627,7 @@ export const getDefaultRecordRenderer = <
   CustomPresentationContexts,
   Flags,
   ExtraContext
-> =>
-  isNested ? defaultNestedRecordRenderer() : defaultRecordRenderer();
+> => (isNested ? defaultNestedRecordRenderer() : defaultRecordRenderer());
 
 export const dispatchDefaultState =
   <T extends DispatchInjectablesTypes<T>>(
