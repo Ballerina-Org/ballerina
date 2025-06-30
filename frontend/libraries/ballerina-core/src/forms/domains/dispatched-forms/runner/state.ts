@@ -53,7 +53,8 @@ export type DispatchFormRunnerContext<
     DispatchSpecificationDeserializationResult<
       T,
       Flags,
-      CustomPresentationContexts
+      CustomPresentationContexts,
+      ExtraContext
     >,
     JSX.Element
   >;

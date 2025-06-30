@@ -92,10 +92,18 @@ export type DispatcherContext<
       ExtraContext
     >
   >;
-  lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>;
+  lookupTypeRenderer: () => LookupTypeAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >;
   getDefaultRecordRenderer: (
     isNested: boolean,
-  ) => RecordAbstractRendererView<any, any>;
+  ) => RecordAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >;
   concreteRenderers: ConcreteRenderers<
     T,
     Flags,
@@ -209,9 +217,21 @@ export const parseDispatchFormsToLaunchers =
   >(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
-    lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>,
-    defaultRecordRenderer: () => RecordAbstractRendererView<any, any>,
-    defaultNestedRecordRenderer: () => RecordAbstractRendererView<any, any>,
+    lookupTypeRenderer: () => LookupTypeAbstractRendererView<
+      CustomPresentationContexts,
+      Flags,
+      ExtraContext
+    >,
+    defaultRecordRenderer: () => RecordAbstractRendererView<
+      CustomPresentationContexts,
+      Flags,
+      ExtraContext
+    >,
+    defaultNestedRecordRenderer: () => RecordAbstractRendererView<
+      CustomPresentationContexts,
+      Flags,
+      ExtraContext
+    >,
     concreteRenderers: ConcreteRenderers<
       T,
       Flags,
@@ -311,12 +331,7 @@ export const parseDispatchFormsToLaunchers =
             concreteRenderers,
             lookupTypeRenderer,
             getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
-            getConcreteRenderer: tryGetConcreteRenderer<
-              T,
-              Flags,
-              CustomPresentationContexts,
-              ExtraContext
-            >(concreteRenderers),
+            getConcreteRenderer: tryGetConcreteRenderer(concreteRenderers),
             getDefaultRecordRenderer: (isNested: boolean) =>
               getDefaultRecordRenderer(
                 isNested,
@@ -360,9 +375,21 @@ export type DispatchFormsParserContext<
   CustomPresentationContexts = Unit,
   ExtraContext = Unit,
 > = {
-  lookupTypeRenderer: () => LookupTypeAbstractRendererView<any, any>;
-  defaultRecordConcreteRenderer: any;
-  defaultNestedRecordConcreteRenderer: any;
+  lookupTypeRenderer: () => LookupTypeAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >;
+  defaultRecordConcreteRenderer: () => RecordAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >;
+  defaultNestedRecordConcreteRenderer: () => RecordAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >;
   concreteRenderers: ConcreteRenderers<
     T,
     Flags,

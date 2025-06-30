@@ -57,7 +57,11 @@ export const LookupDispatcher = {
                 [Template<any, any, any, any>, StringSerializedType],
                 string
               >([
-                LookupTypeAbstractRenderer(
+                LookupTypeAbstractRenderer<
+                  CustomPresentationContexts,
+                  Flags,
+                  ExtraContext
+                >(
                   template[0],
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,

@@ -10,19 +10,11 @@ import {
   Sum,
   SumAbstractRendererState,
   DispatchDelta,
-  Unit,
   Option,
   ConcreteRenderers,
-  ListAbstractRendererView,
-  StringAbstractRendererView,
-  UnitAbstractRendererView,
-  OneAbstractRendererView,
-  ValueOption,
-  TableMethod,
 } from "ballerina-core";
-import { OrderedMap } from "immutable";
+import { OrderedMap, Set } from "immutable";
 import {
-  CategoryAbstractRendererView,
   DispatchPassthroughFormInjectedTypes,
 } from "../injected-forms/category";
 
@@ -34,6 +26,11 @@ export type ListElementCustomPresentationContext = {
   isLastListElement: boolean;
 };
 
+export type DispatchPassthroughFormExtraContext = {
+  flags: Set<string>;
+};
+
+
 export type DispatchPassthroughFormCustomPresentationContext = {
   listElement: ListElementCustomPresentationContext;
 };
@@ -43,7 +40,8 @@ const SHOW_SERIALIZED_TYPE_HIERARCHY = false;
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext
 > = {
   one: {
     admin: () => (props) => {

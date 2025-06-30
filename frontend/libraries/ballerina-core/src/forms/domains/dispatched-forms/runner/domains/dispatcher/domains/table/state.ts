@@ -154,7 +154,11 @@ export const TableDispatcher = {
                                     columnName,
                                     {
                                       // Special attention - tables have a look up arg that represents the table entity type
-                                      template: LookupTypeAbstractRenderer(
+                                      template: LookupTypeAbstractRenderer<
+                                        CustomPresentationContexts,
+                                        Flags,
+                                        ExtraContext
+                                      >(
                                         template[0],
                                         dispatcherContext.IdProvider,
                                         dispatcherContext.ErrorRenderer,

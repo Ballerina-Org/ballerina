@@ -139,7 +139,11 @@ export const OneDispatcher = {
                         string
                       >([
                         OneAbstractRenderer(
-                          LookupTypeAbstractRenderer(
+                          LookupTypeAbstractRenderer<
+                            CustomPresentationContexts,
+                            Flags,
+                            ExtraContext
+                          >(
                             detailsRenderer[0],
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
@@ -148,7 +152,11 @@ export const OneDispatcher = {
                             ),
                           ).withView(dispatcherContext.lookupTypeRenderer()),
                           previewRenderer
-                            ? LookupTypeAbstractRenderer(
+                            ? LookupTypeAbstractRenderer<
+                                CustomPresentationContexts,
+                                Flags,
+                                ExtraContext
+                              >(
                                 previewRenderer[0],
                                 dispatcherContext.IdProvider,
                                 dispatcherContext.ErrorRenderer,

@@ -431,7 +431,7 @@ export type ConcreteRenderers<
           ExtraContext
         >
       | React.MemoExoticComponent<
-          RecordAbstractRendererView<
+          SumAbstractRendererView<
             RecursivePartial<CustomPresentationContexts>,
             Flags,
             ExtraContext
@@ -607,11 +607,27 @@ export const tryGetConcreteRenderer =
     );
   };
 
-export const getDefaultRecordRenderer = (
+export const getDefaultRecordRenderer = <
+  CustomPresentationContexts,
+  Flags,
+  ExtraContext,
+>(
   isNested: boolean,
-  defaultRecordRenderer: () => RecordAbstractRendererView<any, any>,
-  defaultNestedRecordRenderer: () => RecordAbstractRendererView<any, any>,
-): RecordAbstractRendererView<any, any> =>
+  defaultRecordRenderer: () => RecordAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >,
+  defaultNestedRecordRenderer: () => RecordAbstractRendererView<
+    CustomPresentationContexts,
+    Flags,
+    ExtraContext
+  >,
+): RecordAbstractRendererView<
+  CustomPresentationContexts,
+  Flags,
+  ExtraContext
+> =>
   isNested ? defaultNestedRecordRenderer() : defaultRecordRenderer();
 
 export const dispatchDefaultState =

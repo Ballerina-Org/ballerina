@@ -24,12 +24,11 @@ import {
   DispatchOnChange,
   AggregatedFlags,
 } from "ballerina-core";
-import { Set, Map, OrderedMap } from "immutable";
+import { Set, OrderedMap } from "immutable";
 import {
   DispatchPersonFromConfigApis,
   UsersSetupFromConfigApis,
 } from "playground-core";
-import { PersonFormInjectedTypes } from "./domains/person-from-config/injected-forms/category";
 import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
   DispatchPersonContainerFormView,
@@ -45,6 +44,7 @@ import {
   DispatchPassthroughFormConcreteRenderers,
   DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext,
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 
@@ -52,7 +52,8 @@ const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
     DispatchPassthroughFormInjectedTypes,
     DispatchPassthroughFormFlags,
-    DispatchPassthroughFormCustomPresentationContext
+    DispatchPassthroughFormCustomPresentationContext,
+    DispatchPassthroughFormExtraContext
   >,
 ) => (
   <div style={{ border: "red" }}>
@@ -72,13 +73,15 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext
 >();
 
 const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext
 >();
 
 export const DispatcherFormsAppTables = (props: {}) => {
@@ -86,7 +89,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
     DispatchFormsParserState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags,
-      DispatchPassthroughFormCustomPresentationContext
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
     >().Default(),
   );
 

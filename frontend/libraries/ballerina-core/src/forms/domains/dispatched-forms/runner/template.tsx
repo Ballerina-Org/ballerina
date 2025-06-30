@@ -20,9 +20,15 @@ export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
   CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
 >() =>
   Template.Default<
-    DispatchFormRunnerContext<T, Flags, CustomPresentationContexts> &
+    DispatchFormRunnerContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    > &
       DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected

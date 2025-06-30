@@ -41,6 +41,7 @@ import {
   DispatchPassthroughFormConcreteRenderers,
   DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext,
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
@@ -49,7 +50,8 @@ const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
     DispatchPassthroughFormInjectedTypes,
     DispatchPassthroughFormFlags,
-    DispatchPassthroughFormCustomPresentationContext
+    DispatchPassthroughFormCustomPresentationContext,
+    DispatchPassthroughFormExtraContext
   >,
 ) => (
   <div style={{ display: "flex", border: "red" }}>
@@ -86,13 +88,15 @@ const ErrorRenderer = ({ message }: ErrorRendererProps) => (
 const InstantiedPersonFormsParserTemplate = DispatchFormsParserTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext
 >();
 
 const InstantiedPersonDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext
 >();
 
 export const DispatcherFormsApp = (props: {}) => {
@@ -100,7 +104,8 @@ export const DispatcherFormsApp = (props: {}) => {
     DispatchFormsParserState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags,
-      DispatchPassthroughFormCustomPresentationContext
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
     >().Default(),
   );
 
@@ -357,6 +362,7 @@ export const DispatcherFormsApp = (props: {}) => {
 
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
+
   return (
     <div className="App">
       <h1>Ballerina 🩰</h1>
@@ -426,7 +432,9 @@ export const DispatcherFormsApp = (props: {}) => {
                       remoteEntityVersionIdentifier:
                         remoteConfigEntityVersionIdentifier,
                       showFormParsingErrors: ShowFormsParsingErrors,
-                      extraContext: {},
+                      extraContext: {
+                        flags: Set(["BC", "X"]),
+                      },
                     }}
                     setState={setPersonConfigState}
                     view={unit}

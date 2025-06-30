@@ -15,14 +15,19 @@ import {
   EditFormWritableState,
   EditFormContext,
   EditFormForeignMutationsExpected,
-  FormLayout,
   RecordAbstractRendererView,
   LookupTypeAbstractRendererView,
 } from "ballerina-core";
+import {
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormExtraContext,
+  DispatchPassthroughFormFlags,
+} from "./concrete-renderers";
 
 export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
-  { layout: FormLayout },
-  Unit
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
 > = () => (props) => {
   return (
     <>
@@ -69,8 +74,9 @@ export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
 };
 
 export const DispatchPersonNestedContainerFormView: () => RecordAbstractRendererView<
-  { layout: FormLayout },
-  Unit
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
 > = () => (props) => {
   return (
     <>
@@ -109,8 +115,9 @@ export const DispatchPersonNestedContainerFormView: () => RecordAbstractRenderer
 };
 
 export const DispatchPersonLookupTypeRenderer: () => LookupTypeAbstractRendererView<
-  any,
-  any
+  DispatchPassthroughFormCustomPresentationContext,
+  DispatchPassthroughFormFlags,
+  DispatchPassthroughFormExtraContext
 > = () => (props) => {
   return (
     <>
