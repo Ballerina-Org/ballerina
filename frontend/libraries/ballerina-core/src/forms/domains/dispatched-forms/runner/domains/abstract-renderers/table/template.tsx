@@ -364,6 +364,36 @@ export const TableAbstractRenderer = <
           ),
       );
 
+    // don't send to the renderer columns which do not exist in the embedded type
+    const validColumns: ValueOrErrors<string[], string> =
+      props.context.type.kind !== "table"
+        ? ValueOrErrors.Default.throwOne(
+            `"TableType" expected but got ${props.context.type.kind} when parsing table type valid columns`,
+          )
+        : props.context.type.args[0].kind !== "record"
+          ? ValueOrErrors.Default.throwOne(
+              `"RecordType" expected but got ${props.context.type.args[0].kind} when parsing table type valid columns`,
+            )
+          : ValueOrErrors.Default.return(
+              props.context.type.args[0].fields.keySeq().toArray(),
+            );
+
+    if (validColumns.kind == "errors") {
+      console.error(validColumns.errors.toArray().join("\n"));
+
+      return (
+        <ErrorRenderer
+          message={`${getLeafIdentifierFromIdentifier(
+            props.context.identifiers.withoutLauncher,
+          )}: Error while parsing type`}
+        />
+      );
+    }
+
+    const validVisibleColumns = visibleColumns.value.columns.filter(
+      (_) => !validColumns.value.length || validColumns.value.includes(_),
+    );
+
     return (
       <>
         <IdProvider domNodeId={props.context.identifiers.withoutLauncher}>
@@ -505,7 +535,7 @@ export const TableAbstractRenderer = <
                     );
                   },
             }}
-            TableHeaders={visibleColumns.value.columns}
+            TableHeaders={validVisibleColumns}
             ColumnLabels={ColumnLabels}
             EmbeddedTableData={tableData}
             DetailsRenderer={embedDetailsRenderer}
