@@ -120,7 +120,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
     );
 
     const domNodeId = domNodeTypeHierarchy.join(".");
-    
+
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
