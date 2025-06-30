@@ -7,11 +7,9 @@ import {replaceWith} from "ballerina-core";
 
 export const IDEApp = (props: {}) => {
     
-    const [ide, setIDE] = useState(IDE.Default([]));
+    const [ide, setIDE] = useState(IDE.Default());
     
     useEffect(() => {
-        setIDE(IDE.Updaters.Core.editor(
-            SpecEditor.Updaters.Template.inputString(replaceWith(JSON.stringify(SPEC)))))
     }, []);
     
     return (

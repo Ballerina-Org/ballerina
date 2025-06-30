@@ -21,13 +21,24 @@ import {Layout} from "./domains/layout/state";
 import {SpecRunner} from "./domains/spec-runner/state";
 import {IDEApi} from "./apis/spec";
 
+//TODO: split state further between spec-editor and spec-runner
 
 export type IDE = {
+
+    specNames: string[],
+    
+    specBody: Value<string>,
+    specName: Value<string>,
+    entityBody: Value<string>,
+    entityName: Option<Value<string>>,
+    launchers: string [],
+    launcherName: Option<Value<string>>,
+    entityNames: string [],
+    
+    //domains
     editor: SpecEditor,
     runner: SpecRunner,
-    layout: Layout, 
-    specNames: Synchronized<Unit, ValidationResultWithPayload<string[]>>,
-    spec: Option<Value<string>>,
+    layout: Layout,
 };
 
 const CoreUpdaters = {
@@ -35,42 +46,44 @@ const CoreUpdaters = {
     ...simpleUpdater<IDE>()("layout"),
     ...simpleUpdater<IDE>()("runner"),
     ...simpleUpdater<IDE>()("specNames"),
-    ...simpleUpdater<IDE>()("spec"),
+    ...simpleUpdater<IDE>()("specBody"),
+    ...simpleUpdater<IDE>()("specName"),
+    ...simpleUpdater<IDE>()("launchers"),
+    ...simpleUpdater<IDE>()("entityBody"),
+    ...simpleUpdater<IDE>()("entityNames"),
+    ...simpleUpdater<IDE>()("entityName"),
+    ...simpleUpdater<IDE>()("launcherName"),
 };
 
 export const IDE = {
-    Default: (_specs: any []): IDE => ({
-        editor: SpecEditor.Default(Option.Default.none()),
+    Default: (): IDE => ({
+        editor: SpecEditor.Default("New Spec"),
         layout: Layout.Default(),
         runner: SpecRunner.Default(),
-        specNames: Synchronized.Default({}),
-        spec: Option.Default.none()
+        specNames: [],
+        entityNames: [],
+        
+        specBody: { value: "{}" },
+        specName: { value: "New Spec"},
+        entityBody: { value: "{}" },
+        entityName: Option.Default.none(),
+        launchers: [],
+        launcherName: Option.Default.none(),
     }),
     Updaters: {
         Core: CoreUpdaters,
         Template: {
-
-            
-            //   Fun(Value.Updaters.value<string>).then(
-            //   Fun(Synchronized.Updaters.value<Value<string>, ValidationResultWithPayload<string>>).then(
-            //     Fun(
-            //       Debounced.Updaters.Template.value<
-            //         Synchronized<Value<string>, ValidationResultWithPayload<string>>
-            //       >,
-            //     ).then(CoreUpdaters.input),
-            //   ),
-            // ),
         },
         Coroutine: {
         },
     },
     Operations: {
-        changeSpec: (spec: string): Updater<IDE> =>
-
-
-          CoreUpdaters.spec(
-            replaceWith(Option.Default.some(Value.Default(spec)))
-          )
+        changeSpec: (name: string, spec: string): Updater<IDE> =>
+          CoreUpdaters.specBody(
+            replaceWith(Value.Default(spec))
+          ).then(CoreUpdaters.specName(
+            replaceWith(Value.Default(name))
+          ))
             .then(CoreUpdaters.editor(
               SpecEditor.Updaters.Core.input(
                 replaceWith(

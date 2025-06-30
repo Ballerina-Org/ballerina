@@ -192,8 +192,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
   {
     injectedCategory: {
       fromAPIRawValue: (_) => {
-        debugger
-        if (_ == undefined) {
+        if (_ == undefined || _?.fields?.kind == "custom") {
           return {
             kind: "custom",
             value: {
@@ -205,8 +204,8 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           return {
             kind: "custom",
             value: {
-              kind: _.kind,
-              extraSpecial: _.extraSpecial,
+              kind: _.fields.kind,
+              extraSpecial: _.fields.extraSpecial,
             },
           };
         }
@@ -217,15 +216,21 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
       }),
     },
     string: {
-      fromAPIRawValue: (_) => _,
+      fromAPIRawValue: (_) => {
+        return _;
+      },
       toAPIRawValue: ([_, __]) => _,
     },
     number: {
-      fromAPIRawValue: (_) => _,
+      fromAPIRawValue: (_) => {
+        return _.kind == "int" ? parseInt(_.value): parseFloat(_.Values)
+      },
       toAPIRawValue: ([_, __]) => _,
     },
     boolean: {
-      fromAPIRawValue: (_) => _,
+      fromAPIRawValue: (_) =>  {
+        return _;
+      },
       toAPIRawValue: ([_, __]) => _,
     },
     base64File: {
@@ -237,57 +242,67 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
       toAPIRawValue: ([_, isModified]) => (isModified ? _ : undefined),
     },
     Date: {
-      fromAPIRawValue: (_) =>
-        typeof _ == "string" ? new Date(Date.parse(_)) : _,
+      fromAPIRawValue: (_) => typeof _ == "string" ? new Date(Date.parse(_)) : _,
       toAPIRawValue: ([_, __]) => _,
     },
     union: {
       fromAPIRawValue: (_) => {
-        debugger
         if (_ == undefined) {
           return _;
         }
         if (
-          _.Discriminator == undefined ||
-          typeof _.Discriminator != "string"
+          _.fields.Case == undefined ||
+          typeof _.fields.Case != "string"
         ) {
           return _;
         }
         return {
-          caseName: _.Discriminator,
-          fields: _[_.Discriminator],
+          caseName: _.fields.Case,
+          fields: _.fields.Value.fields,
         };
       },
       toAPIRawValue: ([_, __]) => _,
     },
     SingleSelection: {
-      fromAPIRawValue: (_) =>
-        _?.IsSome == false
+      fromAPIRawValue: (_) => {
+    
+        return _.fields?.IsSome == false
           ? CollectionSelection().Default.right("no selection")
-          : CollectionSelection().Default.left(_.Value),
+          : CollectionSelection().Default.left(_.fields.Value)},
       toAPIRawValue: ([_, __]) =>
         _.kind == "r"
           ? { IsSome: false, Value: null }
           : { IsSome: true, Value: _.value },
     },
     MultiSelection: {
-      fromAPIRawValue: (_) =>
-        _ == undefined
+      fromAPIRawValue: (_) =>{
+     
+        const x = "elements" in _
+          ? _["elements"]
+          : _;
+        return x == undefined
           ? OrderedMap()
           : OrderedMap(
-            _.map((_: any) => ("Value" in _ ? [_.Value, _] : [_.Id, _])),
-          ),
+            x.map((_: any) => ("Value" in _? [_.Value, _] : [_.Id, _])),
+          )},
       toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
     },
     List: {
-      fromAPIRawValue: (_) => (Array.isArray(_) ? List(_) : _),
+      fromAPIRawValue: (_) =>
+      { 
+        debugger
+        return (Array.isArray(_.elements) ? List(_.elements) : _)},
       toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
     },
     Map: {
-      fromAPIRawValue: (_) =>
-        Array.isArray(_)
-          ? List(_.map((_: { Key: any; Value: any }) => [_.Key, _.Value]))
-          : _,
+      fromAPIRawValue: (_) =>{
+        debugger
+        const x = "elements" in _
+          ? _["elements"]
+          : _;
+        return Array.isArray(x)
+          ? List(x.map((_: { Key: any; Value: any }) => [_.Key, _.Value]))
+          : _},
       toAPIRawValue: ([_, __]) =>
         _.valueSeq()
           .toArray()
@@ -298,7 +313,6 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     },
     Tuple: {
       fromAPIRawValue: (_) => {
-        debugger
         if (_ == undefined) {
           return List();
         }
@@ -326,8 +340,9 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           ),
     },
     Sum: {
-      fromAPIRawValue: (_: any) =>
-        _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value),
+      fromAPIRawValue: (_: any) =>{
+    
+        return _.fields?.IsRight ? Sum.Default.right(_.fields?.Value) : Sum.Default.left(_.fields?.Value)},
       toAPIRawValue: ([_, __]) => ({
         IsRight: _.kind == "r",
         Value: _.value,
@@ -361,11 +376,19 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         Values: [],
       }),
     },
+    // One: {
+    //   fromAPIRawValue: (_) =>{
+    //     return _.fields.isRight
+    //       ? PredicateValue.Default.option(true, _.fields.right)
+    //       : PredicateValue.Default.option(false, PredicateValue.Default.unit())},
+    //   toAPIRawValue: ([_, __]) => _,
+    // },
     One: {
-      fromAPIRawValue: (_) =>
-        _.isRight
-          ? PredicateValue.Default.option(true, _.right)
-          : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
+      fromAPIRawValue: (_) =>{
+        debugger
+        return _.fields.One
+          ? PredicateValue.Default.option(true, _.fields.Value)
+          : PredicateValue.Default.option(false, PredicateValue.Default.unit())},
       toAPIRawValue: ([_, __]) => _,
     },
   };

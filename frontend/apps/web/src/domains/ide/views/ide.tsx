@@ -1,22 +1,23 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {style} from "./ide.styled.ts";
 import { style as editorStyle } from "../domains/spec-editor/json-editor.styled.ts";
-import {IDE, IDEView, SpecEditor, SpecEditorIndicator, SpecRunner, SpecRunnerIndicator} from "playground-core";
+import {IDE, IDEView, SpecEditor, SpecRunner, SpecRunnerIndicator} from "playground-core";
 import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
-import React from "react";
-import {HorizontalButtonContainer, Tab} from "../domains/spec-editor/tabs.tsx";
+import React, {useState} from "react";
 import {Actions} from "../domains/layout/actions"
 import {Messages} from "../domains/spec-runner/messages";
 import {FormDisplayTemplate} from "../domains/forms/form-display.tsx";
-import {replaceWith, ValueOrErrors} from "ballerina-core";
+import {replaceWith, Value, Option, ValueOrErrors} from "ballerina-core";
 import {Grid} from "./grid.tsx";
 import {IDEApi} from "playground-core/ide/apis/spec.ts";
-import {Option} from "ballerina-core";
 import RadioButtons from "../domains/layout/localisation.tsx";
 import {HorizontalDropdown} from "../domains/layout/spec-selector.tsx";
 
-export const IDELayout: IDEView = (props) => (
+
+export const IDELayout: IDEView = (props) =>{
+  const [key, setKey] = useState(0);
+return (
     <Grid 
         left={
         <>
@@ -27,65 +28,68 @@ export const IDELayout: IDEView = (props) => (
                       placeholder="spec name"
                       css={editorStyle.input}
                       value={props.context.editor.name.value}
-                      onChange={(e) => props.setState(IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.name(replaceWith({ value: e.target.value }))))}
+                      onChange={(e) => 
+                        props.setState(
+                          IDE.Updaters.Core.editor(
+                            SpecEditor.Updaters.Template.name(
+                              replaceWith({ value: e.target.value }))))}
                     />
-                    <label css={editorStyle.switchWrapper}>
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          //onChange={(e) => setIsChecked(e.target.checked)}
-                          css={editorStyle.visuallyHidden}
-                        />
-                        <span css={[editorStyle.switchTrack, true && editorStyle.switchTrackChecked]}>
-                          <span css={[editorStyle.switchThumb, true && editorStyle.switchThumbChecked]} />
-                        </span>
-                        <span css={editorStyle.labelText}>Preview</span>
-                    </label>
+
                   <Actions
                     //TODO: this Run does too much by sharing state internals on a view level
+                    
+                    onReload={()=> setKey(prev => prev + 1)}
+                    onNew={()=>{}} //TODO
                     onRun={ async () => {
-                      const _ = props.setState(IDE.Updaters.Core.runner(SpecRunner.Operations.updateStep(SpecRunnerIndicator.Default.validating())));
-                      await IDEApi.validateSpec({value: props.context.editor.input.value})
-                        .then(res =>
-                          props.setState(
-                            IDE.Updaters.Core.runner(SpecRunner.Operations.runEditor(props.context.editor.input.value, res))
-                          )
-                        )
-                    }}
-                    onSave={ async () =>
-                    {
-                      //const res = await IDEApi.lock(props.context.editor.input);
-                      const entity = await IDEApi.save(props.context.editor.name.value, props.context.editor.input.value)
+                      const _ = 
+                        props.setState(
+                          IDE.Updaters.Core.runner(
+                            SpecRunner.Operations.updateStep(
+                              SpecRunnerIndicator.Default.validating())));
+                      const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
+                      const seed = await IDEApi.seed(Value.Default(props.context.editor.input.value));
                       props.setState(
-                        IDE.Updaters.Core.runner(
-                          SpecRunner.Updaters.Core.indicator(
-                            replaceWith(SpecRunnerIndicator.Default.locked())
-                          )
-                        ).then (x =>{
-                          alert(entity);
-                          return x
-                        })
+                        IDE.Updaters.Core.entityBody(
+                          replaceWith({ value: seed.payload}))
+                          .then(
+                            IDE.Updaters.Core.runner(
+                              SpecRunner.Operations.runEditor(
+                                props.context.editor.input.value, props.context.entityBody.value, res
+                              )
+                            )
+                        )
                       )
+                    }}
+                    onSave={ async () => {
+                      const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
+
+                      if (res.isValid) {
+                        const entity = await IDEApi.save(props.context.editor.name.value, props.context.editor.input.value)
+                        const entityNames = await IDEApi.entity_names(props.context.specName.value);
+                        props.setState(
+                          IDE.Updaters.Core.runner(ide => {
+                            alert("Saved");
+                            return ide
+                          }).then(IDE.Updaters.Core.entityNames(
+                            replaceWith(entityNames.payload)
+                          ))
+                        )
+                      } else {
+                        props.setState(IDE.Updaters.Core.runner(SpecRunner.Updaters.Core.validation(
+                          replaceWith(
+                            Option.Default.some(ValueOrErrors.Default.throwOne(res.errors))
+                          )
+                        )));
+                      }
+
                     }
                     }
                   />
-                  <div css={editorStyle.dividerStyle} />
-                  <input
-                    type="text"
-                    placeholder="instance"
-                    css={editorStyle.input}
-                    value={props.context.editor.name.value}
-                    onChange={(e) => props.setState(IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.name(replaceWith({ value: e.target.value }))))}
-                  />
-                  <Actions onSave={async () => {}} 
-                  
-                  />
-                  
                 </div>
               
             </div>
-
-            <props.RawJsonEditor{...props} view={TmpJsonEditor} /></>}
+          
+            <props.RawJsonEditor{...props} view={TmpJsonEditor} /><p>{JSON.stringify(props.context.entityBody.value)}</p></>}
         header={
             <div css={style.headerParent}>
                 <div css={style.logoParent}>
@@ -95,44 +99,93 @@ export const IDELayout: IDEView = (props) => (
                         alt="Ballerina"
                     />
                     <p>IDE</p>
-                  {/*{props.context.specNames.sync.kind == "loaded" && <p>{props.context.specNames.sync.value.payload.join((", "))}</p>}*/}
                   <HorizontalDropdown 
-                          label={"Select a spec"} 
-                          onChange={async value =>{
-                       
-                            const t = await IDEApi.load(value)
-              
-                            props.setState(IDE.Operations.changeSpec(t.payload));
-                          }}
-                          options={props.context.specNames.sync.kind != "loaded" ? [] : props.context.specNames.sync.value.payload}/>
-                  {props.context.specNames.sync.kind == "reloading" && <p>Checking the database for new spec files ...</p>}
-                    {/*<p css={style.stepColor}>{props.context.layout.indicators.step.kind}...</p>*/}
+                      label={"Select spec"} 
+                      onChange={async name =>{
+                   
+                        const t = await IDEApi.load(name)
+
+                        props.setState(
+                          IDE.Operations.changeSpec(name, t.payload.spec).then(
+                            IDE.Updaters.Core.launchers(replaceWith(t.payload.launchers)))
+                            .then(
+                              IDE.Updaters.Core.editor(SpecEditor.Updaters.Template.inputString(
+                                replaceWith(t.payload.spec)
+                                ))
+                          )
+                        );
+                      }}
+                      options={props.context.specNames}/>
                 </div>
                 <div css={{ flex: 1 }} />
-              <RadioButtons />
+
             </div>}
         right={
             <>
-                <HorizontalButtonContainer>
-                  <Tab name="create-person" active={true} />
-                  <Tab name="edit-person" />
-                  <Tab name="person-transparent"  />
-                  <Tab name="person-config" />
-                </HorizontalButtonContainer>
                 <Messages
                     editorIndicator={props.context.editor.indicator}
                     runnerIndicator={props.context.runner.indicator}
-                    clientErrors={[]
-                        //props.context.runner.validation.kind == "errors" ? props.context.runner.validation.errors.toArray() : []}
+                    clientErrors={
+                        props.context.runner.validation.kind == "r" 
+                        &&  props.context.runner.validation.value.kind == "errors" 
+                        ? props.context.runner.validation.value.errors.toArray() : []
                     }
                     serverErrors={[]}
                     clientSuccess={[]}
                     serverSuccess={[]}
                 />
-              
-              {props.context.runner.validation.kind == "r" && props.context.runner.validation.value.kind == "value" && <FormDisplayTemplate 
+              <p>Entities:</p>
+              <RadioButtons
+                onChange={async (value) => {
+                  const launchers = await IDEApi.launcher_names(props.context.specName.value, value)
+                  props.setState(
+                    IDE.Updaters.Core.entityName(
+                      replaceWith(
+                        Option.Default.some(
+                          Value.Default(value)
+                        )
+                      )
+                    ).then(IDE.Updaters.Core.launchers(
+                          replaceWith(
+                            launchers.payload
+                          )
+                      ))
+                    
+                  )
+                }
+              }
+                options={
+                  Array.isArray(props.context.entityNames) ? props.context.entityNames.map( en => ({value: en, label: en})) : []}  />
+              <p>Launchers:</p>
+              { <RadioButtons 
+                onChange={async (value) => {
+               
+                  props.setState(
+                    IDE.Updaters.Core.launcherName(
+                      replaceWith(
+                        Option.Default.some(
+                          Value.Default(value)
+                        )
+                      )
+                    )
+
+                  )
+                }}
+                options={
+                  Array.isArray(props.context.launchers) ? props.context.launchers.map( launcher => ({value: launcher, label: launcher})) : []}  />
+
+              }
+              {props.context.runner.validation.kind == "r" 
+                && props.context.runner.validation.value.kind == "value" 
+                && props.context.entityName.kind == "r"
+                && props.context.launcherName.kind == "r"
+                && <FormDisplayTemplate key={key} 
+                    entityName={props.context.entityName.value.value} 
+                    launcherName={props.context.launcherName.value.value}
                     step={props.context.runner.indicator} 
+                    example={props.context.entityBody.value}
+                    specName={props.context.specName.value}
                     spec={props.context.runner.validation.value.value} />}
                 </>
         } />
-);
+)};

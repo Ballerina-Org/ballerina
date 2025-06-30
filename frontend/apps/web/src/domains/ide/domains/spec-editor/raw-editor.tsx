@@ -58,7 +58,7 @@ export const RawEditor: RawJsonEditorView = (props) => {
                 className="editor-input"
                 value={props.context.input.value}
                 onChange={(e) => {
-                    props.setState(SpecEditor.Updaters.Template.inputString(replaceWith({ value: e.target.value})))
+                    //props.setState(SpecEditor.Updaters.Template.inputString(replaceWith({ value: e.target.value})))
                 }}
                 id="editor">
         </textarea>

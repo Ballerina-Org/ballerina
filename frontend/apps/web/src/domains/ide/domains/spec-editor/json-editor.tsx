@@ -1,20 +1,15 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {
-  //EditorStep,
   SpecEditor,
   RawJsonEditorView,
-  SpecRunner,
-  IDE,
-  SpecRunnerIndicator,
   SpecEditorIndicator
 } from "playground-core";
 import {replaceWith} from "ballerina-core";
 import { JsonEditor, githubLightTheme,githubDarkTheme,psychedelicTheme,monoLightTheme } from 'json-edit-react';
 import {style} from "./json-editor.styled.ts";
 import React from "react";
-import {Actions} from "../layout/actions.tsx";
-import {IDEApi} from "playground-core/ide/apis/spec.ts";
-import {CheckCircle, Play, Edit, Delete, Check, SquareX, ArrowDown} from "lucide-react";
+import {CheckCircle, Edit, Delete, Check, SquareX, ArrowDown} from "lucide-react";
+
 export const TmpJsonEditor: RawJsonEditorView = (props) => (
     <>
 
@@ -30,12 +25,11 @@ export const TmpJsonEditor: RawJsonEditorView = (props) => (
                 add:<CheckCircle size={20}/>,
                 chevron:<ArrowDown size={20}/>,
                 copy:<CheckCircle size={20}/>,
-            }}
-              
-   
+              }}
+
               collapse={1}
               rootName="spec"
-              data={JSON.parse(props.context.input.value)}
+              data={props.context.input.value ? JSON.parse(props.context.input.value) : {}}
               theme={monoLightTheme}
               onDelete={ x =>
               {
@@ -56,16 +50,6 @@ export const TmpJsonEditor: RawJsonEditorView = (props) => (
               }}
             />
           </div>
-          <div>{ props.context.input.sync.kind == "loaded" &&
-              <JsonEditor
-                  rootName="example"
-                  collapse={2}
-                  data={props.context.input.sync.value.payload}
-                  theme={githubLightTheme}
-              />}
-          </div>
         </div>
-        
-      
     </>
 );

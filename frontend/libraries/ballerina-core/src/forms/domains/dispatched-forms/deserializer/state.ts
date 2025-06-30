@@ -219,31 +219,37 @@ export const parseDispatchFormsToLaunchers =
                     kind: "passthrough",
                     renderer: parsedForm,
                     type: parsedForm.type,
-                    parseEntityFromApi: (raw: any) =>
-                      dispatchFromAPIRawValue(
+                    parseEntityFromApi: (raw: any) => {
+                      const res =  dispatchFromAPIRawValue(
                         parsedForm.type,
                         specification.types,
                         apiConverters,
                         injectedPrimitives,
-                      )(raw),
-                    parseGlobalConfigurationFromApi: (raw: any) =>
-                      dispatchFromAPIRawValue(
+                      )(raw)
+                      const test = res.kind == "errors" ? res.errors.entrySeq().toArray() : []
+                      debugger
+                      return res
+                  },
+                    parseGlobalConfigurationFromApi: (raw: any) => {
+                   
+                      return dispatchFromAPIRawValue(
                         globalConfigType,
                         specification.types,
                         apiConverters,
                         injectedPrimitives,
-                      )(raw),
+                      )(raw)},
                     parseValueToApi: (
                       value: PredicateValue,
                       type: DispatchParsedType<T>,
                       state: any,
-                    ) =>
-                      dispatchToAPIRawValue(
+                    ) => {
+                 
+                      return dispatchToAPIRawValue(
                         type,
                         specification.types,
                         apiConverters,
                         injectedPrimitives,
-                      )(value, state),
+                      )(value, state)},
                     formName: launcher.form,
                   },
                 ]),

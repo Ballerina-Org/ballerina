@@ -846,16 +846,22 @@ export const dispatchFromAPIRawValue =
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
     const result: ValueOrErrors<PredicateValue, string> = (() => {
+
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
         if (t.name == "unit") {
           return ValueOrErrors.Default.return(PredicateValue.Default.unit());
         }
+        
+        var raw2 =
+          t.name === "number" && raw?.kind === "int"
+            ? parseInt(raw?.value)
+            : t.name === "number" && raw?.kind === "float"
+              ? parseFloat(raw?.value)
+              : raw;
 
-        if (
-          !PredicateValue.Operations.IsPrimitive(raw) &&
-          !injectedPrimitives?.keySeq().contains(t.name as keyof T)
-        ) {
+        if (!PredicateValue.Operations.IsPrimitive(raw2) &&
+          !injectedPrimitives?.keySeq().contains(t.name as keyof T)) {
           return ValueOrErrors.Default.throwOne(
             `primitive expected but got ${JSON.stringify(raw)}`,
           );
@@ -969,7 +975,9 @@ export const dispatchFromAPIRawValue =
       }
 
       if (t.kind == "tuple") {
-        const result = converters["Tuple"].fromAPIRawValue(raw);
+        //TODO -- added "fields" in raw ? raw.fields : raw isntead of raw but this shouldbe elsewhere
+        const result = converters["Tuple"].fromAPIRawValue("fields" in raw ? raw.fields : raw);
+        
         return ValueOrErrors.Operations.All(
           List<ValueOrErrors<PredicateValue, string>>(
             result.map((_, index) =>
@@ -1102,7 +1110,9 @@ export const dispatchFromAPIRawValue =
         let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
         t.fields.forEach((fieldType, fieldName) => {
-          const fieldValue = raw[fieldName];
+          const fieldValue = fieldName in raw
+            ? raw[fieldName]
+            : raw?.fields?.[fieldName];
           if (fieldValue !== null && fieldValue === undefined) {
             return;
           }

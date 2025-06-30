@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
 
-const icons = ["🍎", "🍌", "🍇", "🍉", "🍍", "🍒", "🥝", "🥥", "🍑"];
+const icons = [""];//🍎", "🍌", "🍇", "🍉", "🍍", "🍒", "🥝", "🥥", "🍑"];
 
 const Wrapper = styled.div`
     display: flex;

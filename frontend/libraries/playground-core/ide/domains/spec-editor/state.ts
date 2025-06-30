@@ -43,20 +43,11 @@ const CoreUpdaters = {
 };
 
 export const SpecEditor = {
-    Default: (json: Option<any>): SpecEditor => {
-        let inputString = `{}`;
-
-        switch (json.kind) {
-            case "l": break;
-            case "r":
-                inputString = JSON.stringify(json.value.value);
-                break;
-        }
-
+    Default: (specName: string): SpecEditor => {
         return {
-            input: Debounced.Default(Synchronized.Default(Value.Default(inputString))), 
+            input: Debounced.Default(Synchronized.Default(Value.Default("{}"))), 
             indicator: SpecEditorIndicator.Default.idle(),
-            name: Value.Default("Spec Name"),
+            name: Value.Default(specName),
         }},
     Updaters: {
         Core: CoreUpdaters,
@@ -84,8 +75,8 @@ export const SpecEditor = {
     }),
 };
 
-export type RawJsonEditorReadonlyContext = Unit;
-export type RawJsonEditorWritableState = SpecEditor;
+export type RawJsonEditorReadonlyContext = { entityBody: Value<string>};
+export type RawJsonEditorWritableState = SpecEditor ;
 
 export type RawJsonEditorForeignMutationsExpected = Unit
 

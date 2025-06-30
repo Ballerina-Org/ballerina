@@ -16,6 +16,4 @@ export const IDETemplate = Template.Default<
             {...props}
             RawJsonEditor={ChildTemplateEmbedded}
         />
-  ).any([
- SpecsObserver
-]);
+  ).any([ SpecsObserver]);

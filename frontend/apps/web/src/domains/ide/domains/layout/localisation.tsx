@@ -35,26 +35,31 @@ const checkedStyle: React.CSSProperties = {
   boxShadow: "inset 0 0 0 3px white",
 };
 
-const RadioButtons = () => {
+type Option = { value: string; label: string };
+
+type RadioButtonsProps = {
+  options: Option[];
+  onChange?: (value: string) => void;
+};
+
+const RadioButtons = (props: RadioButtonsProps) => {
   const [selected, setSelected] = useState("ch");
 
-  const options = [
-    { value: "de", label: "de" },
-    { value: "ch", label: "ch" },
-    { value: "en", label: "en" },
-    { value: "pl", label: "pl" },
-  ];
+  const handleChange = (value: string) => {
+    setSelected(value);
+    props.onChange?.(value); // invoke if provided
+  };
 
   return (
     <div style={radioGroupStyle}>
-      {options.map((opt) => (
+      {props.options.map((opt) => (
         <label key={opt.value} style={labelStyle}>
           <input
             type="radio"
             name="choice"
             value={opt.value}
             checked={selected === opt.value}
-            onChange={() => setSelected(opt.value)}
+            onChange={() => handleChange(opt.value)}
             style={selected === opt.value ? checkedStyle : inputStyle}
           />
           {opt.label}

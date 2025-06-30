@@ -16,7 +16,6 @@ import {IDEApi} from "../../apis/spec";
 export type SpecRunnerIndicator =
     | { kind : "idle" }
     | { kind : "validating" }
-    | { kind : "locked" }
     | { kind : "running" }
     | { kind : "editor-dirty" }
     | { kind : "ready-for-UI" }
@@ -26,7 +25,6 @@ export const SpecRunnerIndicator = {
         idle: (): SpecRunnerIndicator => ({ kind: "idle" }),
         validating: (): SpecRunnerIndicator => ({ kind: "validating" }),
         running: (): SpecRunnerIndicator => ({ kind: "running" }),
-        locked: (): SpecRunnerIndicator => ({ kind: "locked" }),
         readyForUI: (): SpecRunnerIndicator => ({ kind: "ready-for-UI" }),
         editorDirty: (): SpecRunnerIndicator => ({ kind: "editor-dirty" }),
     }
@@ -62,25 +60,25 @@ export const SpecRunner = ({
         SpecRunner.Updaters.Core.indicator(
             replaceWith(step)
         ),
-        runEditor: (spec: string, res: SpecValidationResult): Updater<SpecRunner> =>
+        runEditor: (spec: string, example: string, res: SpecValidationResult): Updater<SpecRunner> =>
     
-                SpecRunner.Updaters.Core.indicator(
-                    replaceWith(SpecRunnerIndicator.Default.running())
+            SpecRunner.Updaters.Core.indicator(
+                replaceWith(SpecRunnerIndicator.Default.running())
+            )
+            .then(
+                SpecRunner.Updaters.Core.lockedSpec(
+                    replaceWith(res.isValid ? Option.Default.some(spec) : Option.Default.none())
                 )
-                .then(
-                    SpecRunner.Updaters.Core.lockedSpec(
-                        replaceWith(res.isValid ? Option.Default.some(spec) : Option.Default.none())
+                .then(SpecRunner.Updaters.Core.validation(
+                    replaceWith(
+                        res.isValid ?
+                            Option.Default.some(ValueOrErrors.Default.return(spec)):
+                            Option.Default.none()
                     )
-                    .then(SpecRunner.Updaters.Core.validation(
-                        replaceWith(
-                            res.isValid ?
-                                Option.Default.some(ValueOrErrors.Default.return(spec)):
-                                Option.Default.none()
-                        )
-                    )).then(SpecRunner.Updaters.Core.indicator(
-                      replaceWith(SpecRunnerIndicator.Default.readyForUI())
-                    ))
-                )
+                )).then(SpecRunner.Updaters.Core.indicator(
+                  replaceWith(SpecRunnerIndicator.Default.readyForUI())
+                ))
+            )
             
     },
 })

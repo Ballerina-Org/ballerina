@@ -39,7 +39,7 @@ export const DispatchFormRunnerTemplate = <
         props.context.errorComponent ?? <>Error: Check console for details</>
       );
     }
-
+  
     if (config.value.kind == "errors") {
       console.error(config.value.errors.map((error) => error).join("\n"));
       return (
@@ -52,7 +52,8 @@ export const DispatchFormRunnerTemplate = <
       ["root", entity.value.value],
       ["local", entity.value.value],
     ]);
-    
+
+
     return props.context.status.kind == "loaded" ? (
       <props.context.status.Form
         context={{

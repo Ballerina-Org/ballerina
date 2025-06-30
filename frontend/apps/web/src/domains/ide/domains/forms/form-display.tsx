@@ -32,15 +32,14 @@ import {
     DispatchEntityContainerFormView,
     DispatchEntityNestedContainerFormView
 } from "../../../dispatched-passthrough-form/views/wrappers.tsx";
-import {DispatchFieldTypeConverters} from "../../../dispatched-passthrough-form/apis/field-converters.ts";
+import {DispatchFieldTypeConverters, PersonDispatchFieldTypeConverters} from "../../../dispatched-passthrough-form/apis/field-converters.ts";
 import {PersonConcreteRenderers} from "../../../dispatched-passthrough-form/views/concrete-renderers.tsx";
 import {DispatchFromConfigApis, SpecRunnerIndicator} from "playground-core";
 import {
     CategoryAbstractRenderer,
     DispatchCategoryState
 } from "../../../dispatched-passthrough-form/injected-forms/category.tsx";
-import { IdWrapper, ShowFormsParsingErrors, ErrorRenderer, GetLoadedValue} from "./form-display-shadow";
-import {IDEApi} from "playground-core/ide/apis/spec.ts";
+import { IdWrapper, ShowFormsParsingErrors, ErrorRenderer, GetLoadedValue} from "./form-display-peripheral";
 
 const InstantiatedDispatchFormRunnerTemplate =
     DispatchFormRunnerTemplate<EntityFormInjectedTypes>();
@@ -48,8 +47,14 @@ const InstantiatedDispatchFormRunnerTemplate =
 const InstantiatedFormsParserTemplate =
     DispatchFormsParserTemplate<EntityFormInjectedTypes>();
 
-
-export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndicator}) => {
+export const FormDisplayTemplate = (props: { 
+  spec: string, 
+  specName: string, 
+  step: SpecRunnerIndicator, 
+  example: any,
+  entityName: string,
+  launcherName: string
+}) => {
     const [entity, setEntity] = 
       useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
     const [config, setConfig] =
@@ -103,7 +108,6 @@ export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndic
     // TODO replace with delta transfer
     const [entityPath, setEntityPath] = useState<any>(null);
     const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] = useState(v4());
-    const [remoteConfigEntityVersionIdentifier, setRemoteConfigEntityVersionIdentifier] = useState(v4());
     
     
     const onEntityChange = (
@@ -113,7 +117,6 @@ export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndic
         if (entity.kind == "r" || entity.value.kind == "errors") {
             return;
         }
-
         const newEntity = updater(entity.value.value);
         console.log("patching entity", newEntity);
         setEntity(
@@ -140,44 +143,43 @@ export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndic
     };
     
     useEffect( () => {
-        //DispatchFromConfigApis.entityApis
-        //    .get("person")("")
-      IDEApi.entity("person", props.spec)
-            .then((raw) => {
-                GetLoadedValue<{
-                  launchers: DispatchParsedLaunchers<EntityFormInjectedTypes>
-                  dispatcherContext: DispatcherContext<EntityFormInjectedTypes>
-                }>(specificationDeserializer.deserializedSpecification).then(value =>{
-     
-                    const parsed = value.launchers.passthrough
-                      .get("person-transparent")!
-                      .parseEntityFromApi(raw);
-                    parsed.kind == "errors" ? console.error("parsed entity errors", parsed.errors): setEntity(Sum.Default.left(parsed));
 
-                  
-         })
-            });
-        DispatchFromConfigApis.entityApis
-            .get("person-config")("")
-            .then((raw) => {
-                if (
-                    specificationDeserializer.deserializedSpecification.sync.kind ==
-                    "loaded" &&
-                    specificationDeserializer.deserializedSpecification.sync.value.kind ==
-                    "value"
-                ) {
-                    const parsed =
-                        specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get("person-config")!
-                            .parseEntityFromApi(raw);
-                    if (parsed.kind == "errors") {
-                        console.error("parsed person config errors", parsed.errors);
-                    } else {
-                        setConfig(Sum.Default.left(parsed));
-                    }
-                }
-            });
-    }, [specificationDeserializer.deserializedSpecification.sync.kind, prevValue ]);
+              
+      const data = props.example
+      const fields = data.fields[props.entityName]?.fields;
+    
+      GetLoadedValue<{
+        launchers: DispatchParsedLaunchers<EntityFormInjectedTypes>
+        dispatcherContext: DispatcherContext<EntityFormInjectedTypes>
+      }>(specificationDeserializer.deserializedSpecification).then(value =>{
+          
+          const parsed = value.launchers.passthrough
+            .get(`${props.entityName}-transparent`)!
+            .parseEntityFromApi(fields);
+
+          parsed.kind == "errors" ? console.error("parsed entity errors", parsed.errors): setEntity(Sum.Default.left(parsed));
+      });
+ 
+          const config = data?.fields[`${props.entityName}Config`]
+          if (
+            specificationDeserializer.deserializedSpecification.sync.kind ==
+            "loaded" &&
+            specificationDeserializer.deserializedSpecification.sync.value.kind ==
+            "value"
+          ) {
+            debugger
+            const parsed =
+              specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+                .get(`${props.entityName}-config`)!
+                .parseEntityFromApi(config?.fields);
+            if (parsed.kind == "errors") {
+              console.error("parsed person config errors", parsed.errors);
+            } else {
+              setConfig(Sum.Default.left(parsed));
+            }
+          }
+      
+    }, [specificationDeserializer.deserializedSpecification.sync.kind, prevValue, props.example ]);
     
     return (<div>
         <div className="App">
@@ -223,7 +225,7 @@ export const FormDisplayTemplate = (props: { spec: string, step: SpecRunnerIndic
                     ...specificationDeserializer,
                     ...passthroughFormState,
                     launcherRef: {
-                        name: "person-transparent",
+                        name: props.launcherName,
                         kind: "passthrough",
                         entity: entity,
                         config,
