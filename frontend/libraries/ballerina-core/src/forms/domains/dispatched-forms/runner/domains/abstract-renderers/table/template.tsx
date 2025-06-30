@@ -1,4 +1,4 @@
-import { List, Map, Set } from "immutable";
+import { List, Map, OrderedMap, Set } from "immutable";
 import {
   BasicUpdater,
   id,

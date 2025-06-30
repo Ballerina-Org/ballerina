@@ -175,8 +175,6 @@ export const Renderer = {
       */
 
       {
-        console.debug("type", type);
-        console.debug("serialized", serialized);
         return type.kind == "lookup" // Lookup type
           ? typeof serialized == "string" // lookup type and lookup renderer (case 1)
             ? LookupRenderer.Operations.Deserialize(

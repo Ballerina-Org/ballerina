@@ -382,8 +382,6 @@ export const Specification = {
                                           );
                                     });
 
-                                    console.debug("forms", forms.toJS());
-
                                     return ValueOrErrors.Default.return({
                                       types: allTypes,
                                       forms,
