@@ -88,7 +88,12 @@ export const MapAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[key]`, `[${elementIndex}]`].concat(
+            domNodeTypeHierarchy: [
+              `[key]`,
+              `[${elementIndex}]`,
+              SerializedType,
+            ].concat(_.domNodeTypeHierarchy),
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -185,7 +190,12 @@ export const MapAbstractRenderer = <
             type: _.type.args[1],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[value]`, `[${elementIndex}]`].concat(
+            domNodeTypeHierarchy: [
+              `[value]`,
+              `[${elementIndex}]`,
+              SerializedType,
+            ].concat(_.domNodeTypeHierarchy),
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -279,7 +289,11 @@ export const MapAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(

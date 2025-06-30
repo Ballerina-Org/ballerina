@@ -61,7 +61,11 @@ export const EnumMultiselectAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

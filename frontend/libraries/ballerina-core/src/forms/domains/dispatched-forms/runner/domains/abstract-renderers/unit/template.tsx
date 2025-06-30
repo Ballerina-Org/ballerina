@@ -39,7 +39,12 @@ export const UnitAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
+
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
         `Unit expected but got: ${JSON.stringify(

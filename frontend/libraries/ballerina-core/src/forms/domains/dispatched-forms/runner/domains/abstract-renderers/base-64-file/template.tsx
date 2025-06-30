@@ -42,7 +42,11 @@ export const Base64FileAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

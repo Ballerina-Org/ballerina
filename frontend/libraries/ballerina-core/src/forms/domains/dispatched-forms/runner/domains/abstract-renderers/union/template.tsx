@@ -70,7 +70,12 @@ export const UnionAbstractRenderer = <
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             customPresentationContext: _.customPresentationContext,
-            serializedTypeHierarchy: _.serializedTypeHierarchy,
+            serializedTypeHierarchy: [SerializedType].concat(
+              _.serializedTypeHierarchy,
+            ),
+            domNodeTypeHierarchy: [`[${caseName}]`, SerializedType].concat(
+              _.domNodeTypeHierarchy,
+            ),
           }),
         )
         .mapState(
@@ -138,7 +143,11 @@ export const UnionAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     return (
       <>

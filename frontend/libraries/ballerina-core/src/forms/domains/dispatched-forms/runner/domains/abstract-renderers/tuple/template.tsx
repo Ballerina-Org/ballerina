@@ -74,8 +74,11 @@ export const DispatchTupleAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             customPresentationContext: _.customPresentationContext,
             type: _.type.args[itemIndex],
-            serializedTypeHierarchy: [`[${itemIndex + 1}]`].concat(
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
+            ),
+            domNodeTypeHierarchy: [`[${itemIndex + 1}]`, SerializedType].concat(
+              _.domNodeTypeHierarchy,
             ),
           }),
         )
@@ -160,7 +163,11 @@ export const DispatchTupleAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

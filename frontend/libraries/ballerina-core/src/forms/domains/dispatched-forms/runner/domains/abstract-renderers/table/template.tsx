@@ -176,9 +176,14 @@ export const TableAbstractRenderer = <
             type: TableEntityType.fields.get(column)!,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[${column}]`, `[${rowId}]`].concat(
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
+            domNodeTypeHierarchy: [
+              `[${column}]`,
+              `[${rowId}]`,
+              SerializedType,
+            ].concat(_.domNodeTypeHierarchy),
           };
         })
 
@@ -319,7 +324,12 @@ export const TableAbstractRenderer = <
             type: TableEntityType,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: _.serializedTypeHierarchy,
+            serializedTypeHierarchy: [SerializedType].concat(
+              _.serializedTypeHierarchy,
+            ),
+            domNodeTypeHierarchy: ["[details]", SerializedType].concat(
+              _.domNodeTypeHierarchy,
+            ),
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
@@ -403,7 +413,12 @@ export const TableAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
+
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(

@@ -103,7 +103,10 @@ export const RecordAbstractRenderer = <
             extraContext: _.extraContext,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[${fieldName}]`].concat(
+            domNodeTypeHierarchy: [`[${fieldName}]`, SerializedType].concat(
+              _.domNodeTypeHierarchy,
+            ),
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -198,7 +201,11 @@ export const RecordAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

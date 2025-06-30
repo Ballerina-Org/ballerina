@@ -151,7 +151,7 @@ export const DispatcherFormsApp = (props: {}) => {
       ) => ValueOrErrors<DeltaTransfer<T>, string>,
     ) =>
     (
-      deltaCustom: DispatchDeltaCustom,
+      deltaCustom: DispatchDeltaCustom<DispatchPassthroughFormFlags>,
     ): ValueOrErrors<
       [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
       string

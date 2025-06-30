@@ -115,7 +115,12 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
+    
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(

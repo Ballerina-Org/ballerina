@@ -131,7 +131,12 @@ export const OneAbstractRenderer = <
         type: oneEntityType,
         customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-        serializedTypeHierarchy: _.serializedTypeHierarchy,
+        serializedTypeHierarchy: [SerializedType].concat(
+          _.serializedTypeHierarchy,
+        ),
+        domNodeTypeHierarchy: ["[details]", SerializedType].concat(
+          _.domNodeTypeHierarchy,
+        ),
       };
     })
       .mapState(
@@ -244,7 +249,12 @@ export const OneAbstractRenderer = <
             type: oneEntityType,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: _.serializedTypeHierarchy,
+            serializedTypeHierarchy: [SerializedType].concat(
+              _.serializedTypeHierarchy,
+            ),
+            domNodeTypeHierarchy: ["[preview]", SerializedType].concat(
+              _.domNodeTypeHierarchy,
+            ),
           };
         })
           .mapState(
@@ -337,7 +347,12 @@ export const OneAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
+
     const value = props.context.value;
     if (
       !PredicateValue.Operations.IsUnit(value) &&

@@ -75,7 +75,12 @@ export const SumAbstractRenderer = <
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              serializedTypeHierarchy: _.serializedTypeHierarchy,
+              serializedTypeHierarchy: [SerializedType].concat(
+                _.serializedTypeHierarchy,
+              ),
+              domNodeTypeHierarchy: ["[left]", SerializedType].concat(
+                _.domNodeTypeHierarchy,
+              ),
             }),
           )
           .mapState(
@@ -149,7 +154,12 @@ export const SumAbstractRenderer = <
               type: _.type.args[1],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              serializedTypeHierarchy: _.serializedTypeHierarchy,
+              serializedTypeHierarchy: [SerializedType].concat(
+                _.serializedTypeHierarchy,
+              ),
+              domNodeTypeHierarchy: ["[right]", SerializedType].concat(
+                _.domNodeTypeHierarchy,
+              ),
             }),
           )
           .mapState(
@@ -211,7 +221,11 @@ export const SumAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsSum(props.context.value)) {
       console.error(

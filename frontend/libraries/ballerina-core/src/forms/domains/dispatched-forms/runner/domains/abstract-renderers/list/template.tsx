@@ -70,7 +70,10 @@ export const ListAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [`[${elementIndex}]`].concat(
+            domNodeTypeHierarchy: [`[${elementIndex}]`, SerializedType].concat(
+              _.domNodeTypeHierarchy,
+            ),
+            serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
           }),
@@ -149,7 +152,11 @@ export const ListAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeTypeHierarchy = [SerializedType].concat(
+      props.context.domNodeTypeHierarchy,
+    );
+
+    const domNodeId = domNodeTypeHierarchy.join(".");
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
