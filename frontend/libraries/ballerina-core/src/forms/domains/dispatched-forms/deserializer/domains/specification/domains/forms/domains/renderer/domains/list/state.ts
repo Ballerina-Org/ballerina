@@ -127,15 +127,16 @@ export const ListRenderer = {
             ListMethods.Operations.fromRawValue(
               serializedRenderer.actions,
             ).Then((methods) =>
-            ValueOrErrors.Default.return(
-              ListRenderer.Default(
-                type,
-                serializedRenderer.renderer,
-                elementRenderer,
-                methods,
+              ValueOrErrors.Default.return(
+                ListRenderer.Default(
+                  type,
+                  serializedRenderer.renderer,
+                  elementRenderer,
+                  methods,
+                ),
               ),
             ),
-          )),
+          ),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing as List`),

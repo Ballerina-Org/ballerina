@@ -64,12 +64,16 @@ const intializeOne = <
 
       const local = current.bindings.get("local");
       if (local == undefined) {
-        console.error(`local binding is undefined when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`);
+        console.error(
+          `local binding is undefined when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
+        );
         return Co<CustomPresentationContext, ExtraContext>().Wait(0);
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
-        console.error(`local binding is not a record when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`);
+        console.error(
+          `local binding is not a record when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
+        );
         return Co<CustomPresentationContext, ExtraContext>().Wait(0);
       }
 
@@ -82,7 +86,9 @@ const intializeOne = <
 
       const id = local.fields.get("Id")!; // safe because of above check;
       if (!PredicateValue.Operations.IsString(id)) {
-        console.error(`local Id is not a string when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`);
+        console.error(
+          `local Id is not a string when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
+        );
         return Co<CustomPresentationContext, ExtraContext>().Wait(0);
       }
 

@@ -116,7 +116,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = props.context.domNodeAncestorPath + "[searchableInfiniteStreamMultiselect]";
+    const domNodeId =
+      props.context.domNodeAncestorPath +
+      "[searchableInfiniteStreamMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

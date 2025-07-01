@@ -115,7 +115,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = props.context.domNodeAncestorPath + "[searchableInfiniteStream]";
+    const domNodeId =
+      props.context.domNodeAncestorPath + "[searchableInfiniteStream]";
 
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

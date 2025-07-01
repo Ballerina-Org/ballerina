@@ -55,15 +55,14 @@ export const LookupTypeAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-
     return (
       <>
-        <IdProvider domNodeId={props.context.domNodeAncestorPath} >
+        <IdProvider domNodeId={props.context.domNodeAncestorPath}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId : props.context.domNodeAncestorPath,
+              domNodeId: props.context.domNodeAncestorPath,
               completeSerializedTypeHierarchy,
             }}
             embeddedTemplate={embeddedTemplate}
