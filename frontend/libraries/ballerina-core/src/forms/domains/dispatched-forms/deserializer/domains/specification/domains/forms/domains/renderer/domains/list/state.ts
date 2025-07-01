@@ -28,13 +28,13 @@ export const ListMethods = {
   Operations: {
     fromRawValue: (value: unknown): ValueOrErrors<ListMethods, string> =>
       typeof value === "undefined"
-        ? ValueOrErrors.Default.return([] as ListMethods)
+        ? ValueOrErrors.Default.return([])
         : typeof value !== "object" || value == null
           ? ValueOrErrors.Default.throwOne(
               `expected an object for list methods, got ${typeof value}`,
             )
           : Object.keys(value).length == 0
-            ? ValueOrErrors.Default.return([] as ListMethods)
+            ? ValueOrErrors.Default.return([])
             : Object.keys(value).find(
                   (_) => !ListMethod[_ as keyof typeof ListMethod],
                 )
