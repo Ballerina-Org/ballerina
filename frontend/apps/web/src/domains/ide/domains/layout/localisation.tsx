@@ -12,7 +12,7 @@ const labelStyle: React.CSSProperties = {
   gap: "0.5rem",
   cursor: "pointer",
   border: "1px solid #ccc",
-  padding: "0.5rem 1rem",
+  padding: "0.3rem 0.5rem",
   borderRadius: "8px",
   backgroundColor: "#f9f9f9",
   transition: "0.2s ease",

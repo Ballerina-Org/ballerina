@@ -96,7 +96,6 @@ export const IDEApi = {
         return Object.assign("valid", { payload: result }) as "valid" & { payload: typeof result };
     },
     async searchCities(searchText: string): Promise<ValidationResultWithPayload<CollectionReference[]>> {
-
         const response = 
           await fetch(`${url}/search/getMany?specName=Spec Name&page=0&size=10&name=CityRef`, get);
 

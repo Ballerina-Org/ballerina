@@ -13,9 +13,12 @@ export const ShowFormsParsingErrors = (
   </div>
 );
 
-export const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
-  <div id={domNodeId}>{children}</div>
-);
+export const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => {
+
+  return (
+    <div id={domNodeId}>{children}</div>
+  )
+} ;
 
 export const ErrorRenderer = ({ message }: ErrorRendererProps) => (
   <div

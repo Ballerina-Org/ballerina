@@ -40,6 +40,7 @@ return (
                     
                     onReload={()=> setKey(prev => prev + 1)}
                     onNew={()=>{}} //TODO
+                    onRunCondition={props.context.launcherName.kind == "r"}
                     onRun={ async () => {
                       const _ = 
                         props.setState(
@@ -68,7 +69,6 @@ return (
                         const entityNames = await IDEApi.entity_names(props.context.specName.value);
                         props.setState(
                           IDE.Updaters.Core.runner(ide => {
-                            alert("Saved");
                             return ide
                           }).then(IDE.Updaters.Core.entityNames(
                             replaceWith(entityNames.payload)

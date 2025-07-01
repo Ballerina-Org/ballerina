@@ -7,9 +7,10 @@ export const Actions: React.FC<{
   onReload?: () => void;
   onNew?: () => void;
     onRun?: () => void;
+    onRunCondition: boolean;
     onDownload?: () => void;
     onSave: () => void;
-}> = ({onNew, onReload,onRun,onDownload,onSave,}) => (
+}> = ({onNew, onReload,onRun,onDownload,onSave, onRunCondition}) => (
     <div css={style.layout}>
         <div css={style.buttonSection}>
           <button css={style.iconButton} onClick={onReload}>
@@ -21,7 +22,7 @@ export const Actions: React.FC<{
             <button css={style.iconButton} onClick={onSave}>
                 <SaveIcon size={14}  />
             </button>
-          {onRun && <button css={style.iconButton} onClick={onRun}>
+          {onRun && onRunCondition && <button css={style.iconButton} onClick={onRun}>
                 <Play size={14} />
             </button>}
 

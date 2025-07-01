@@ -9,7 +9,7 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { Dispatcher } from "../../../../../../main";
+import {Dispatcher, PredicateValue, ValueOrErrors} from "../../../../../../main";
 
 export const DispatchFormRunner = <
   T extends { [key in keyof T]: { type: any; state: any } },
@@ -18,7 +18,7 @@ export const DispatchFormRunner = <
     DispatchFormRunnerContext<T>,
     DispatchFormRunnerState<T>
   >();
-
+ 
   return Co.Template<DispatchFormRunnerForeignMutationsExpected>(
     Co.Seq([
       Co.SetState(
@@ -30,12 +30,14 @@ export const DispatchFormRunner = <
         !AsyncState.Operations.hasValue(current.deserializedSpecification.sync)
           ? Co.Wait(0)
           : Co.UpdateState((_) => {
+              const launcherRef = current.launcherRef;
+              
               if (
                 !AsyncState.Operations.hasValue(
                   current.deserializedSpecification.sync,
                 ) ||
-                current.launcherRef.entity.kind == "r" ||
-                current.launcherRef.config.kind == "r"
+                launcherRef.entity.kind == "r" ||
+                launcherRef.config.kind == "r"
               )
                 return id;
 
@@ -47,11 +49,11 @@ export const DispatchFormRunner = <
                   }),
                 );
 
-              if (current.launcherRef.entity.value.kind == "errors") {
+              if (launcherRef.entity.value.kind == "errors") {
                 console.error(
                   `Error parsing entity for form '${
                     current.launcherRef.name
-                  }': ${current.launcherRef.entity.value.errors
+                  }': ${launcherRef.entity.value.errors
                     .valueSeq()
                     .toArray()
                     .join("\n")}`,
@@ -59,16 +61,16 @@ export const DispatchFormRunner = <
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
-                    errors: current.launcherRef.entity.value.errors,
+                    errors: launcherRef.entity.value.errors,
                   }),
                 );
               }
 
-              if (current.launcherRef.config.value.kind == "errors") {
+              if (launcherRef.config.value.kind == "errors") {
                 console.error(
                   `Error parsing global configuration for form '${
                     current.launcherRef.name
-                  }': ${current.launcherRef.config.value.errors
+                  }': ${launcherRef.config.value.errors
                     .valueSeq()
                     .toArray()
                     .join("\n")}`,
@@ -76,12 +78,12 @@ export const DispatchFormRunner = <
                 return DispatchFormRunnerState<T>().Updaters.status(
                   replaceWith<DispatchFormRunnerStatus<T>>({
                     kind: "error",
-                    errors: current.launcherRef.config.value.errors,
+                    errors: launcherRef.config.value.errors,
                   }),
                 );
               }
 
-              const launcherRef = current.launcherRef;
+              
               const dispatcherContext =
                 current.deserializedSpecification.sync.value.value
                   .dispatcherContext;

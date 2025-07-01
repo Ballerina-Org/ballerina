@@ -24,8 +24,11 @@
   ValueOrErrors
 } from "ballerina-core";
 
-import {PersonFormInjectedTypes as EntityFormInjectedTypes} from "../../../person-from-config/injected-forms/category.tsx";
-import {Set} from "immutable";
+import {
+  PersonFormInjectedTypes,
+  PersonFormInjectedTypes as EntityFormInjectedTypes
+} from "../../../person-from-config/injected-forms/category.tsx";
+import {OrderedMap, Set} from "immutable";
 import {useEffect, useState} from "react";
 import {v4} from "uuid";
 import {
@@ -58,20 +61,13 @@ export const FormDisplayTemplate = (props: {
     const [entity, setEntity] = 
       useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
     const [config, setConfig] =
-      useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));    
-    
-    const [localValue, setLocalValue] = useState<string>(props.spec);
-    const [prevValue, setPrevValue] = useState<string>(props.spec);
-    useEffect(() => {
-
-      if (props.spec !== localValue) {
-        setPrevValue(localValue);
-        setLocalValue(props.spec);
-      }
-    }, [props.spec]);
+      useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
     
     const [specificationDeserializer, setSpecificationDeserializer] = useState(DispatchFormsParserState<EntityFormInjectedTypes>().Default());
     const [passthroughFormState, setPassthroughFormState] = useState(DispatchFormRunnerState<EntityFormInjectedTypes>().Default());
+    const [personConfigState, setPersonConfigState] = useState(
+      DispatchFormRunnerState<EntityFormInjectedTypes>().Default(),
+    );
     const parseCustomDelta =
         <T,>(
             toRawObject: (
@@ -108,79 +104,114 @@ export const FormDisplayTemplate = (props: {
     // TODO replace with delta transfer
     const [entityPath, setEntityPath] = useState<any>(null);
     const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] = useState(v4());
-    
-    
+
+    const [remoteConfigEntityVersionIdentifier,setRemoteConfigEntityVersionIdentifier] = useState(v4());
+
+
     const onEntityChange = (
-        updater: Updater<any>,
-        delta: DispatchDelta,
+          updater: Updater<any>,
+          delta: DispatchDelta,
+      ): void => {
+          if (entity.kind == "r" || entity.value.kind == "errors") {
+              return;
+          }
+          const newEntity = updater(entity.value.value);
+          console.log("patching entity", newEntity);
+          setEntity(
+              replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
+          );
+          if (
+              specificationDeserializer.deserializedSpecification.sync.kind ==
+              "loaded" &&
+              specificationDeserializer.deserializedSpecification.sync.value.kind ==
+              "value"
+          ) {
+              const toApiRawParser =
+                  specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
+                      "person-transparent",
+                  )!.parseValueToApi;
+              setEntityPath(
+                  DispatchDeltaTransfer.Default.FromDelta(
+                      toApiRawParser as any, //TODO - fix type issue if worth it
+                      parseCustomDelta,
+                  )(delta),
+              );
+              setRemoteEntityVersionIdentifier(v4());
+          }
+      };
+
+    const onPersonConfigChange = (
+      updater: Updater<any>,
+      delta: DispatchDelta,
     ): void => {
-        if (entity.kind == "r" || entity.value.kind == "errors") {
-            return;
-        }
-        const newEntity = updater(entity.value.value);
-        console.log("patching entity", newEntity);
-        setEntity(
-            replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
-        );
-        if (
-            specificationDeserializer.deserializedSpecification.sync.kind ==
-            "loaded" &&
-            specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
-        ) {
-            const toApiRawParser =
-                specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                    "person-transparent",
-                )!.parseValueToApi;
-            setEntityPath(
-                DispatchDeltaTransfer.Default.FromDelta(
-                    toApiRawParser as any, //TODO - fix type issue if worth it
-                    parseCustomDelta,
-                )(delta),
-            );
-            setRemoteEntityVersionIdentifier(v4());
-        }
+      if (config.kind == "r" || config.value.kind == "errors") {
+        return;
+      }
+  
+      const newConfig = updater(config.value.value);
+      console.log("patching config", newConfig);
+      setConfig(
+        replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
+      );
+      // if (
+      //   specificationDeserializer.deserializedSpecification.sync.kind ==
+      //   "loaded" &&
+      //   specificationDeserializer.deserializedSpecification.sync.value.kind ==
+      //   "value"
+      // ) {
+      //   const toApiRawParser =
+      //     specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
+      //       "person-config",
+      //     )!.parseValueToApi;
+      //   setEntityPath(
+      //     DispatchDeltaTransfer.Default.FromDelta(
+      //       toApiRawParser as any, //TODO - fix type issue if worth it
+      //       parseCustomDelta,
+      //     )(delta),
+      //   );
+      //   setRemoteConfigEntityVersionIdentifier(v4());
+      // }
     };
     
     useEffect( () => {
 
               
       const data = props.example
-      const fields = data.fields[props.entityName]?.fields;
-    
+      const entity = data.fields[props.entityName]?.fields;
+      const config = data?.fields[`${props.entityName}Config`]?.fields
+     
       GetLoadedValue<{
         launchers: DispatchParsedLaunchers<EntityFormInjectedTypes>
         dispatcherContext: DispatcherContext<EntityFormInjectedTypes>
       }>(specificationDeserializer.deserializedSpecification).then(value =>{
-          
+
+
+        const parsedConfig =
+          value.launchers.passthrough
+            .get(`${props.entityName}-config`)!
+            .parseEntityFromApi(config);
+        parsedConfig.kind == "errors"?
+          console.error("parsed person config errors", parsedConfig.errors)
+          : setConfig(Sum.Default.left(parsedConfig));
+        
           const parsed = value.launchers.passthrough
             .get(`${props.entityName}-transparent`)!
-            .parseEntityFromApi(fields);
+            .parseEntityFromApi(entity);
 
-          parsed.kind == "errors" ? console.error("parsed entity errors", parsed.errors): setEntity(Sum.Default.left(parsed));
-      });
- 
-          const config = data?.fields[`${props.entityName}Config`]
-          if (
-            specificationDeserializer.deserializedSpecification.sync.kind ==
-            "loaded" &&
-            specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
-          ) {
-            debugger
-            const parsed =
-              specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                .get(`${props.entityName}-config`)!
-                .parseEntityFromApi(config?.fields);
-            if (parsed.kind == "errors") {
-              console.error("parsed person config errors", parsed.errors);
-            } else {
-              setConfig(Sum.Default.left(parsed));
-            }
-          }
+          parsed.kind == "errors" ? 
+            console.error("parsed entity errors", parsed.errors)
+            : setEntity(Sum.Default.left(parsed));
+          
       
-    }, [specificationDeserializer.deserializedSpecification.sync.kind, prevValue, props.example ]);
-    
+
+            
+      });
+      
+    }, [specificationDeserializer.deserializedSpecification.sync.kind, props.example ]);
+  const data = props.example
+  // const entity2 = Sum.Default.left(ValueOrErrors.Default.return(data.fields[props.entityName]?.fields));
+  // const config2 = Sum.Default.left(ValueOrErrors.Default.return(data?.fields[`${props.entityName}Config`]?.fields));
+
     return (<div>
         <div className="App">
             <InstantiatedFormsParserTemplate
@@ -197,8 +228,7 @@ export const FormDisplayTemplate = (props: {
                     lookupSources: DispatchFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() =>
                     {
-                      return JSON.parse(localValue)}),
-                    parentSpecification: { current: localValue, prev: prevValue },  
+                      return JSON.parse(props.spec)}),
                   IdWrapper,
                     ErrorRenderer,
                     injectedPrimitives: [
@@ -220,15 +250,58 @@ export const FormDisplayTemplate = (props: {
                 view={unit}
                 foreignMutations={unit}
             />
+          <h4>Config</h4>
+          <div style={{ border: "2px dashed lightblue" }}>
+            {/*<InstantiatedDispatchFormRunnerTemplate*/}
+            {/*  context={{*/}
+            {/*    ...specificationDeserializer,*/}
+            {/*    ...personConfigState,*/}
+            {/*    launcherRef: {*/}
+            {/*      name: props.launcherName,*/}
+            {/*      kind: "passthrough",*/}
+            {/*      entity: config,*/}
+            {/*      config: Sum.Default.left(*/}
+            {/*        ValueOrErrors.Default.return(*/}
+            {/*          PredicateValue.Default.record(OrderedMap()),*/}
+            {/*        ),*/}
+            {/*      ),*/}
+            {/*      onEntityChange: onPersonConfigChange,*/}
+            {/*    },*/}
+            {/*    remoteEntityVersionIdentifier:*/}
+            {/*    remoteConfigEntityVersionIdentifier,*/}
+            {/*    showFormParsingErrors: ShowFormsParsingErrors,*/}
+            {/*    extraContext: {},*/}
+            {/*  }}*/}
+            {/*  setState={setPersonConfigState}*/}
+            {/*  view={unit}*/}
+            {/*  foreignMutations={unit}*/}
+            {/*/>*/}
+          </div>
+          {entityPath && entityPath.kind == "value" && (
+            <pre
+              style={{
+                display: "inline-block",
+                verticalAlign: "top",
+                textAlign: "left",
+              }}
+            >
+                    {JSON.stringify(entityPath.value, null, 2)}
+                  </pre>
+          )}
+          {entityPath && entityPath.kind == "errors" && (
+            <p>
+              DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
+            </p>
+          )}
             <InstantiatedDispatchFormRunnerTemplate
                 context={{
                     ...specificationDeserializer,
                     ...passthroughFormState,
                     launcherRef: {
-                        name: props.launcherName,
+                        name: `${props.entityName}-transparent`,
                         kind: "passthrough",
                         entity: entity,
-                        config,
+                        config: config,
                         onEntityChange: onEntityChange,
                     },
                     remoteEntityVersionIdentifier,

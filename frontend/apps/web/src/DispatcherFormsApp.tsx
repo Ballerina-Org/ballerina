@@ -36,7 +36,7 @@ import {
   DispatchCategoryState,
 } from "./domains/dispatched-passthrough-form/injected-forms/category";
 import { PersonConcreteRenderers } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
-import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
+import { PersonDispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 
 const ShowFormsParsingErrors = (
@@ -327,7 +327,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     ...specificationDeserializer,
                     defaultRecordConcreteRenderer:
                       DispatchEntityContainerFormView,
-                    fieldTypeConverters: DispatchFieldTypeConverters,
+                    fieldTypeConverters: PersonDispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
                       DispatchEntityNestedContainerFormView,
                     concreteRenderers: PersonConcreteRenderers,

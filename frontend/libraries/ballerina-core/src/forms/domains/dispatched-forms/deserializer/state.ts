@@ -227,7 +227,6 @@ export const parseDispatchFormsToLaunchers =
                         injectedPrimitives,
                       )(raw)
                       const test = res.kind == "errors" ? res.errors.entrySeq().toArray() : []
-                      debugger
                       return res
                   },
                     parseGlobalConfigurationFromApi: (raw: any) => {
@@ -326,7 +325,7 @@ export type DispatchFormsParserContext<
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
   tableApiSources?: DispatchTableApiSources;
-  parentSpecification?: { current: string, prev: string}
+  //parentSpecification?: { current: string, prev: string}
 };
 export type DispatchFormsParserState<
   T extends { [key in keyof T]: { type: any; state: any } },
