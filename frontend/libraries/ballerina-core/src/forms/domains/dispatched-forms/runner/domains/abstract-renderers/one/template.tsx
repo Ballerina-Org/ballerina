@@ -134,9 +134,7 @@ export const OneAbstractRenderer = <
         serializedTypeHierarchy: [SerializedType].concat(
           _.serializedTypeHierarchy,
         ),
-        domNodeTypeHierarchy: ["[details]", SerializedType].concat(
-          _.domNodeTypeHierarchy,
-        ),
+        domNodeAncestorPath: _.domNodeAncestorPath + "[details]",
       };
     })
       .mapState(
@@ -252,9 +250,7 @@ export const OneAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeTypeHierarchy: ["[preview]", SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + "[preview]",
           };
         })
           .mapState(
@@ -347,11 +343,7 @@ export const OneAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[one]";
 
     const value = props.context.value;
     if (
@@ -362,7 +354,7 @@ export const OneAbstractRenderer = <
           !PredicateValue.Operations.IsRecord(value.value)))
     ) {
       <ErrorRenderer
-        message={`${SerializedType}: Option of record or unit expected but got ${JSON.stringify(
+        message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(
           props.context.value,
         )}`}
       />;
@@ -371,33 +363,35 @@ export const OneAbstractRenderer = <
     const local = props.context.bindings.get("local");
     if (local == undefined) {
       console.error(
-        `local binding is undefined when intialising one\n...${SerializedType}`,
+        `local binding is undefined when intialising one\n
+        ...when rendering \n
+        ...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is undefined when intialising one\n...${SerializedType}`}
+          message={`local binding is undefined when intialising one\n...${domNodeId}`}
         />
       );
     }
 
     if (!PredicateValue.Operations.IsRecord(local)) {
       console.error(
-        `local binding is not a record when intialising one\n...${SerializedType}`,
+        `local binding is not a record when intialising one\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is not a record when intialising one\n...${SerializedType}`}
+          message={`local binding is not a record when intialising one\n...${domNodeId}`}
         />
       );
     }
 
     if (!local.fields.has("Id")) {
       console.error(
-        `local binding is missing Id (check casing) when intialising one\n...${SerializedType}`,
+        `local binding is missing Id (check casing) when intialising one\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`local binding is missing Id (check casing) when intialising one\n...${SerializedType}`}
+          message={`local binding is missing Id (check casing) when intialising one\n...${domNodeId}`}
         />
       );
     }
@@ -405,11 +399,11 @@ export const OneAbstractRenderer = <
     const Id = local.fields.get("Id")!; // safe because of above check;
     if (!PredicateValue.Operations.IsString(Id)) {
       console.error(
-        `local Id is not a string when intialising one\n...${SerializedType}`,
+        `local Id is not a string when intialising one\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`local Id is not a string when intialising one\n...${SerializedType}`}
+          message={`local Id is not a string when intialising one\n...${domNodeId}`}
         />
       );
     }
@@ -653,21 +647,21 @@ export const OneAbstractRenderer = <
       const local = props.context.bindings.get("local");
       if (local == undefined) {
         console.error(
-          `local binding is undefined when intialising one\n...${SerializedType}`,
+          `local binding is undefined when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
         );
         return undefined;
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
         console.error(
-          `local binding is not a record when intialising one\n...${SerializedType}`,
+          `local binding is not a record when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
         );
         return undefined;
       }
 
       if (!local.fields.has("Id")) {
         console.error(
-          `local binding is missing Id (check casing) when intialising one\n...${SerializedType}`,
+          `local binding is missing Id (check casing) when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
         );
         return undefined;
       }
@@ -675,7 +669,7 @@ export const OneAbstractRenderer = <
       const Id = local.fields.get("Id")!; // safe because of above check;
       if (!PredicateValue.Operations.IsString(Id)) {
         console.error(
-          `local Id is not a string when intialising one\n...${SerializedType}`,
+          `local Id is not a string when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
         );
         return undefined;
       }

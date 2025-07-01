@@ -40,21 +40,17 @@ export const StringAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[string]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering string field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: String value expected for string but got ${JSON.stringify(
+          message={`${domNodeId}: String value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

@@ -39,21 +39,17 @@ export const SecretAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[secret]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering secret field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: String value expected for secret but got ${JSON.stringify(
+          message={`${domNodeId}: String value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

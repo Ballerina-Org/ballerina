@@ -115,23 +115,17 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[searchableInfiniteStream]";
 
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering searchable infinite stream field\n...${
-          SerializedType
-        }`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Option value expected for searchable infinite stream but got ${JSON.stringify(
+          message={`${domNodeId}: Option value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

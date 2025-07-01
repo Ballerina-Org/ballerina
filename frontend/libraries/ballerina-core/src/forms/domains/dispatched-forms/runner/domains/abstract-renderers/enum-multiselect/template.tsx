@@ -61,21 +61,17 @@ export const EnumMultiselectAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[enumMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering enum multiselect field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Record value expected for enum multiselect but got ${JSON.stringify(
+          message={`${domNodeId}: Record value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

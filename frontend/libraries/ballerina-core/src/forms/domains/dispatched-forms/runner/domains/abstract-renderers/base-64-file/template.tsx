@@ -42,21 +42,17 @@ export const Base64FileAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[base64File]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering base64 field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: String expected for base64 but got ${JSON.stringify(
+          message={`${domNodeId}: String expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

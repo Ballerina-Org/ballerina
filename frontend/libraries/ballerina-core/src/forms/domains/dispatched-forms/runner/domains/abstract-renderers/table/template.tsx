@@ -179,11 +179,8 @@ export const TableAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeTypeHierarchy: [
-              `[${column}]`,
-              `[${rowId}]`,
-              SerializedType,
-            ].concat(_.domNodeTypeHierarchy),
+            domNodeAncestorPath:
+              _.domNodeAncestorPath + `[${column}][${rowId}]`,
           };
         })
 
@@ -327,9 +324,7 @@ export const TableAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeTypeHierarchy: ["[details]", SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + "[details]",
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
@@ -413,21 +408,17 @@ export const TableAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[table]";
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
         `TableValue expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering table field\n...${SerializedType}`,
+        )}\n...When rendering table field\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Table value expected for table but got ${JSON.stringify(
+          message={`${domNodeId}: Table value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

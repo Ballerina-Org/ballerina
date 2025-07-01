@@ -39,21 +39,17 @@ export const DateAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[date]";
 
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(
         `Date expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering date field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Date value expected for date but got ${JSON.stringify(
+          message={`${domNodeId}: Date value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

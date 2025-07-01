@@ -103,9 +103,7 @@ export const RecordAbstractRenderer = <
             extraContext: _.extraContext,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeTypeHierarchy: [`[${fieldName}]`, SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${fieldName}]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
@@ -201,21 +199,17 @@ export const RecordAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[record]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering record\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Record value expected for record but got ${JSON.stringify(
+          message={`${domNodeId}: Record value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

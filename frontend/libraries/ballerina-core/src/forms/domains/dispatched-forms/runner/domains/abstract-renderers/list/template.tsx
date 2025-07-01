@@ -70,9 +70,7 @@ export const ListAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeTypeHierarchy: [`[${elementIndex}]`, SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
@@ -152,21 +150,17 @@ export const ListAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[list]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple value expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering list field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Tuple value expected for list but got ${JSON.stringify(
+          message={`${domNodeId}: Tuple value expected for list but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

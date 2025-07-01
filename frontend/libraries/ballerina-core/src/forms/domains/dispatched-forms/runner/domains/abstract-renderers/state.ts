@@ -24,7 +24,7 @@ export type CommonAbstractRendererReadonlyContext<
   details?: string;
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
-  domNodeTypeHierarchy: string[];
+  domNodeAncestorPath: string;
   serializedTypeHierarchy: string[];
 };
 

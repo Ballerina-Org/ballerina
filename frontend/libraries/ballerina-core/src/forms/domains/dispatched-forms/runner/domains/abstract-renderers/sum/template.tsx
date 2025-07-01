@@ -78,9 +78,7 @@ export const SumAbstractRenderer = <
               serializedTypeHierarchy: [SerializedType].concat(
                 _.serializedTypeHierarchy,
               ),
-              domNodeTypeHierarchy: ["[left]", SerializedType].concat(
-                _.domNodeTypeHierarchy,
-              ),
+              domNodeAncestorPath: _.domNodeAncestorPath + "[left]",
             }),
           )
           .mapState(
@@ -157,9 +155,7 @@ export const SumAbstractRenderer = <
               serializedTypeHierarchy: [SerializedType].concat(
                 _.serializedTypeHierarchy,
               ),
-              domNodeTypeHierarchy: ["[right]", SerializedType].concat(
-                _.domNodeTypeHierarchy,
-              ),
+              domNodeAncestorPath: _.domNodeAncestorPath + "[right]",
             }),
           )
           .mapState(
@@ -221,21 +217,17 @@ export const SumAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[sum]";
 
     if (!PredicateValue.Operations.IsSum(props.context.value)) {
       console.error(
         `Sum expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering sum field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Sum value expected for sum but got ${JSON.stringify(
+          message={`${domNodeId}: Sum value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

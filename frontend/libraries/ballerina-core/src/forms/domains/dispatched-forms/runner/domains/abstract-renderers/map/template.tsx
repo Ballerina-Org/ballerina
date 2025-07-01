@@ -88,11 +88,7 @@ export const MapAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeTypeHierarchy: [
-              `[key]`,
-              `[${elementIndex}]`,
-              SerializedType,
-            ].concat(_.domNodeTypeHierarchy),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}][key]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
@@ -190,11 +186,7 @@ export const MapAbstractRenderer = <
             type: _.type.args[1],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeTypeHierarchy: [
-              `[value]`,
-              `[${elementIndex}]`,
-              SerializedType,
-            ].concat(_.domNodeTypeHierarchy),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}][value]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
@@ -289,20 +281,17 @@ export const MapAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
+    const domNodeId = props.context.domNodeAncestorPath + "[map]";
 
-    const domNodeId = domNodeTypeHierarchy.join(".");
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering map field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Tuple value expected for map but got ${JSON.stringify(
+          message={`${domNodeId}: Tuple value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

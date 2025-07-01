@@ -77,9 +77,7 @@ export const DispatchTupleAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeTypeHierarchy: [`[${itemIndex + 1}]`, SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${itemIndex + 1}]`,
           }),
         )
         .mapState(
@@ -163,11 +161,7 @@ export const DispatchTupleAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[tuple]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -177,7 +171,7 @@ export const DispatchTupleAbstractRenderer = <
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Tuple value expected for tuple but got ${JSON.stringify(
+          message={`${SerializedType}: Tuple value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

@@ -117,7 +117,7 @@ export const CategoryAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeId = completeSerializedTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[injectedCategory]";
 
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (

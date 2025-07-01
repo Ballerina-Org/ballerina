@@ -73,9 +73,7 @@ export const UnionAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeTypeHierarchy: [`[${caseName}]`, SerializedType].concat(
-              _.domNodeTypeHierarchy,
-            ),
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${caseName}]`,
           }),
         )
         .mapState(
@@ -124,15 +122,17 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererForeignMutationsExpected<Flags>,
     UnionAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const domNodeId = props.context.domNodeAncestorPath + "[union]";
+
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(
         `UnionCase expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering union case field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: UnionCase value expected for union case but got ${JSON.stringify(
+          message={`${domNodeId}: UnionCase value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -142,12 +142,6 @@ export const UnionAbstractRenderer = <
     const completeSerializedTypeHierarchy = [SerializedType].concat(
       props.context.serializedTypeHierarchy,
     );
-
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
 
     return (
       <>

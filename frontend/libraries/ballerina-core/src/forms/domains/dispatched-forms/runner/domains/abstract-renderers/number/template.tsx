@@ -39,21 +39,17 @@ export const NumberAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[number]";
 
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
         `Number expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering number field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Number value expected for number but got ${JSON.stringify(
+          message={`${domNodeId}: Number value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

@@ -39,21 +39,17 @@ export const BoolAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[boolean]";
 
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
       console.error(
         `Boolean expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering boolean field\n...${SerializedType}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Boolean expected for boolean but got ${JSON.stringify(
+          message={`${domNodeId}: Boolean expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

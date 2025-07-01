@@ -39,19 +39,13 @@ export const UnitAbstractRenderer = <
       props.context.serializedTypeHierarchy,
     );
 
-    const domNodeTypeHierarchy = [SerializedType].concat(
-      props.context.domNodeTypeHierarchy,
-    );
-
-    const domNodeId = domNodeTypeHierarchy.join(".");
+    const domNodeId = props.context.domNodeAncestorPath + "[unit]";
 
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
         `Unit expected but got: ${JSON.stringify(
           props.context.value,
-        )}\n...When rendering unit field with label: ${JSON.stringify(
-          props.context?.label,
-        )}`,
+        )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
