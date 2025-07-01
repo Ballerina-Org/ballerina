@@ -70,6 +70,7 @@ export const ListDispatcher = {
                           () => defaultElementState,
                           () => defaultElementValue,
                           elementTemplate[0],
+                          renderer.methods ?? [],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           serializedType,

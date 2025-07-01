@@ -58,11 +58,11 @@ export type ListAbstractRendererForeignMutationsExpected<Flags> = {
 
 export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   onChange: DispatchOnChange<ValueTuple, Flags>;
-  add: VoidCallbackWithOptionalFlags<Flags>;
-  remove: ValueCallbackWithOptionalFlags<number, Flags>;
-  move: (elementIndex: number, to: number, flags: Flags | undefined) => void;
-  duplicate: ValueCallbackWithOptionalFlags<number, Flags>;
-  insert: ValueCallbackWithOptionalFlags<number, Flags>;
+  add?: VoidCallbackWithOptionalFlags<Flags>;
+  remove?: ValueCallbackWithOptionalFlags<number, Flags>;
+  move?: (elementIndex: number, to: number, flags: Flags | undefined) => void;
+  duplicate?: ValueCallbackWithOptionalFlags<number, Flags>;
+  insert?: ValueCallbackWithOptionalFlags<number, Flags>;
 };
 
 export type ListAbstractRendererView<
