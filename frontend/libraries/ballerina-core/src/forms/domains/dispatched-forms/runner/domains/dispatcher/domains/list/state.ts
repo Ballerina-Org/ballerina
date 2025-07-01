@@ -46,7 +46,12 @@ export const ListDispatcher = {
                               elementTemplate,
                               dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
-                            ).withView(concreteRenderer),
+                            )
+                              .mapContext((_: any) => ({
+                                ..._,
+                                methods: renderer.methods ?? [],
+                              }))
+                              .withView(concreteRenderer),
                           ),
                         ),
                 ),

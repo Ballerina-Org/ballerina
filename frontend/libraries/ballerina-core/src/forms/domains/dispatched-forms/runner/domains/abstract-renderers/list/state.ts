@@ -52,11 +52,11 @@ export type ListAbstractRendererView<
   ListAbstractRendererState,
   ForeignMutationsExpected & {
     onChange: DispatchOnChange<ValueTuple>;
-    add: SimpleCallback<Unit>;
-    remove: SimpleCallback<number>;
-    move: (elementIndex: number, to: number) => void;
-    duplicate: SimpleCallback<number>;
-    insert: SimpleCallback<number>;
+    add?: SimpleCallback<Unit>;
+    remove?: SimpleCallback<number>;
+    move?: (elementIndex: number, to: number) => void;
+    duplicate?: SimpleCallback<number>;
+    insert?: SimpleCallback<number>;
   },
   {
     embeddedElementTemplate: BasicFun<
