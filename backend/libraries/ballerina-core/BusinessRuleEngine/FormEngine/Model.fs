@@ -4,6 +4,7 @@ module Model =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
+  open Ballerina.State.WithError
 
   type CodeGenConfig =
     { Int: CodegenConfigTypeDef
@@ -36,7 +37,8 @@ module Model =
       EnumNotFoundError: CodegenConfigErrorDef
       InvalidEnumValueCombinationError: CodegenConfigErrorDef
       StreamNotFoundError: CodegenConfigErrorDef
-      ContainerRenderers: Set<string> }
+      ContainerRenderers: Set<string>
+      GenerateReplace: Set<string> }
 
   and GenericType =
     | Option
@@ -158,6 +160,13 @@ module Model =
   and CodegenConfigRecordDef =
     { SupportedRenderers: Map<string, Set<string>> }
 
+  type TableMethod =
+    | Add
+    | Remove
+    | Duplicate
+    | Move
+
+
   type CrudMethod =
     | Create
     | Delete
@@ -257,7 +266,7 @@ module Model =
     { Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Entities: Map<string, EntityApi * Set<CrudMethod>>
-      Tables: Map<string, TableApi>
+      Tables: Map<string, TableApi * Set<TableMethod>>
       Lookups: Map<string, LookupApi> }
 
     static member Empty =
@@ -315,6 +324,7 @@ module Model =
          //  Preview: Option<FormBody>
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
+         MethodLabels: Map<TableMethod, string>
          RowType: ExprType |}
 
     static member FormDeclarationType(self: FormBody<'ExprExtension, 'ValueExtension>) =
@@ -389,7 +399,8 @@ module Model =
          None: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | ListRenderer of
       {| List: Renderer<'ExprExtension, 'ValueExtension>
-         Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+         Element: NestedRenderer<'ExprExtension, 'ValueExtension>
+         MethodLabels: Map<TableMethod, string> |}
     | OneRenderer of
       {| One: Renderer<'ExprExtension, 'ValueExtension>
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
@@ -450,6 +461,9 @@ module Model =
         PrimitiveRendererId = r.PrimitiveRendererId }
 
   // and RendererChildren = { Fields: Map<string, FieldConfig> }
+
+  type FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension> =
+    { ConstBool: bool -> Expr<'ExprExtension, 'ValueExtension> }
 
   type FormPredicateValidationHistoryItem =
     { Form: FormConfigId

@@ -7,8 +7,7 @@ open FSharp.Data
 open NUnit.Framework
 open Common
 
-let private parseExprType json =
-  (ExprType.Parse contextActions json).run ((), ())
+let private parseExprType json = ExprType.Parse json
 
 [<Test>]
 let ``Should parse boolean`` () =
@@ -16,7 +15,7 @@ let ``Should parse boolean`` () =
 
   let result = parseExprType json
 
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.BoolType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.BoolType)
 
 [<Test>]
 let ``Should parse union`` () =
@@ -40,50 +39,49 @@ let ``Should parse union`` () =
           { CaseName = "Second" },
           { CaseName = "Second"
             Fields = ExprType.UnitType } ]
-     ),
-     None)
+    ))
 
 [<Test>]
 let ``Should parse string`` () =
   let json = JsonValue.String "string"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.StringType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.StringType)
 
 [<Test>]
 let ``Should parse int (backward compatibility)`` () =
   let json = JsonValue.String "number"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType)
 
 [<Test>]
 let ``Should parse int`` () =
   let json = JsonValue.String "int"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.IntType)
 
 [<Test>]
 let ``Should parse float`` () =
   let json = JsonValue.String "float"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.FloatType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.FloatType)
 
 [<Test>]
 let ``Should parse date`` () =
   let json = JsonValue.String "Date"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.DateOnlyType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.DateOnlyType)
 
 [<Test>]
 let ``Should parse guid`` () =
   let json = JsonValue.String "guid"
   let result = parseExprType json
-  assertSuccess result (ExprType.PrimitiveType PrimitiveType.GuidType, None)
+  assertSuccess result (ExprType.PrimitiveType PrimitiveType.GuidType)
 
 [<Test>]
 let ``Should parse unit`` () =
   let json = JsonValue.String "unit"
   let result = parseExprType json
-  assertSuccess result (ExprType.UnitType, None)
+  assertSuccess result (ExprType.UnitType)
 
 [<Test>]
 let ``Should parse option`` () =
@@ -93,7 +91,7 @@ let ``Should parse option`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse list`` () =
@@ -103,7 +101,7 @@ let ``Should parse list`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse set`` () =
@@ -113,7 +111,7 @@ let ``Should parse set`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.SetType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.SetType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse map`` () =
@@ -126,8 +124,7 @@ let ``Should parse map`` () =
 
   assertSuccess
     result
-    (ExprType.MapType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType),
-     None)
+    (ExprType.MapType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType))
 
 [<Test>]
 let ``Should parse sum`` () =
@@ -140,8 +137,7 @@ let ``Should parse sum`` () =
 
   assertSuccess
     result
-    (ExprType.SumType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType),
-     None)
+    (ExprType.SumType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType))
 
 [<Test>]
 let ``Should parse tuple`` () =
@@ -162,8 +158,7 @@ let ``Should parse tuple`` () =
       [ ExprType.PrimitiveType PrimitiveType.StringType
         ExprType.PrimitiveType PrimitiveType.IntType
         ExprType.PrimitiveType PrimitiveType.BoolType ]
-     ),
-     None)
+    ))
 
 [<Test>]
 let ``Should parse one`` () =
@@ -173,7 +168,7 @@ let ``Should parse one`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.OneType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.OneType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse many`` () =
@@ -183,7 +178,7 @@ let ``Should parse many`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse table`` () =
@@ -193,4 +188,4 @@ let ``Should parse table`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-  assertSuccess result (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType), None)
+  assertSuccess result (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType))

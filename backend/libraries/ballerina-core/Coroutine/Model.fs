@@ -97,8 +97,17 @@ module Model =
 
     member _.Any(ps: List<Coroutine<'a, 's, 'c, 'event, 'err>>) =
       Co(fun _ -> Left(CoroutineResult.Any(ps), None, None))
-    // member _.All(ps:List<Coroutine<'a, 's, 'c, 'event, 'err>>) =
-    //   Co(fun _ -> CoroutineResult.Any(ps), None, None)
+
+    member co.All(ps: List<Coroutine<'a, 's, 'c, 'event, 'err>>) =
+      match ps with
+      | [] -> co.Return []
+      | p :: ps ->
+        co {
+          let! x = p
+          let! xs = ps |> co.All
+          return x :: xs
+        }
+
     member co.YieldAfter(p: Coroutine<_, _, _, _, _>) =
       // co.Bind(p, fun x -> co.Bind(co.Wait(TimeSpan.FromSeconds 0.0), fun _ -> co.Return(x)))
       p

@@ -349,6 +349,16 @@
           "FSharp.SystemTextJson": "[1.3.13, )",
           "Microsoft.EntityFrameworkCore": "[9.0.5, )"
         }
+      },
+      "unbound-core": {
+        "type": "Project",
+        "dependencies": {
+          "Ballerina.Core": "[1.0.0, )",
+          "FSharp.Core": "[9.0.300, )",
+          "FSharp.Data": "[6.6.0, )",
+          "FSharp.SystemTextJson": "[1.3.13, )",
+          "Microsoft.EntityFrameworkCore": "[9.0.5, )"
+        }
       }
     },
     "net9.0/linux-arm64": {

@@ -15,6 +15,7 @@ module Validator =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
+  open System
 
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
@@ -74,7 +75,7 @@ module Validator =
         | Renderer.TableFormRenderer(f, _, tableApiId) ->
           let! _ = ctx.TryFindForm f.FormName
           let! api = ctx.TryFindTableApi tableApiId.TableName
-          let! apiRowType = ctx.TryFindType api.TypeId.TypeName
+          let! apiRowType = api |> fst |> (fun a -> ctx.TryFindType a.TypeId.VarName)
 
           do!
             ExprType.Unify
@@ -93,7 +94,7 @@ module Validator =
             match l.OneApiId with
             | Choice2Of2(apiTypeId, apiName) ->
               sum {
-                let! (_, oneApiMethods) = ctx.TryFindOne apiTypeId.TypeName apiName
+                let! (_, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
                 return oneApiMethods
               }
             | Choice1Of2(_) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
@@ -118,7 +119,7 @@ module Validator =
           do! !l.Details.Renderer |> Sum.map ignore
 
           let (apiTypeId, apiName) = l.ManyApiId
-          let! _, manyApiMethods = ctx.TryFindMany apiTypeId.TypeName apiName
+          let! _, manyApiMethods = ctx.TryFindMany apiTypeId.VarName apiName
 
           match l.Preview with
           | Some preview ->
@@ -126,7 +127,7 @@ module Validator =
               return!
                 sum.Throw(
                   Errors.Singleton
-                    $"Error: 'many' api {apiTypeId.TypeName} - {apiName} is used in a preview but has no 'GetMany' method."
+                    $"Error: 'many' api {apiTypeId.VarName} - {apiName} is used in a preview but has no 'GetMany' method."
                 )
             else
               return ()
@@ -179,6 +180,7 @@ module Validator =
         | Renderer.TupleRenderer t ->
           do! t.Elements |> Seq.map (fun e -> !e.Renderer) |> sum.All |> Sum.map ignore
 
+
           return fr.Type
       // | Renderer.UnionRenderer r ->
 
@@ -195,29 +197,39 @@ module Validator =
     static member ValidatePredicates
       validateFormConfigPredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
       (r: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
-        do! Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType r.Renderer
+        do!
+          Renderer.ValidatePredicates
+            validateFormConfigPredicates
+            ctx
+            typeCheck
+            globalType
+            rootType
+            localType
+            r.Renderer
       }
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member ValidatePredicates
       validateFormConfigPredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
       (r: Renderer<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       let (!) =
-        Renderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
+        Renderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
 
       let (!!) =
-        NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx globalType rootType localType
+        NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
 
       state {
         match r with
@@ -235,7 +247,7 @@ module Validator =
               | ExprType.TableType row -> row
               | _ -> formType
 
-          do! FormBody.ValidatePredicates ctx globalType rootType formType i.Body
+          do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType i.Body
         | Renderer.PrimitiveRenderer _ -> return ()
         | Renderer.EnumRenderer(_, e) -> return! !e
         | Renderer.TupleRenderer e ->
@@ -289,17 +301,17 @@ module Validator =
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! _ = state.GetState()
 
-          do! validateFormConfigPredicates ctx globalType rootType f
+          do! validateFormConfigPredicates ctx typeCheck globalType rootType f
 
         | Renderer.TableFormRenderer(f, _, _) ->
           // let! f = ctx.TryFindForm f.FormName |> state.OfSum
           // let! api = ctx.TryFindTableApi tableApiId.TableName |> state.OfSum
-          // let! apiRowType = ctx.TryFindType api.TypeId.TypeName |> state.OfSum
+          // let! apiRowType = ctx.TryFindType api.TypeId.VarName |> state.OfSum
 
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! _ = state.GetState()
 
-          do! validateFormConfigPredicates ctx globalType rootType f
+          do! validateFormConfigPredicates ctx typeCheck globalType rootType f
       // | Renderer.UnionRenderer cs ->
       //   do! !cs.Union
 
@@ -348,6 +360,7 @@ module Validator =
 
     static member ValidatePredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
@@ -365,7 +378,7 @@ module Validator =
           |> Map.ofSeq
 
         let! visibleExprType =
-          Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars fc.Visible
+          typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars fc.Visible
           |> state.OfSum
         // do System.Console.WriteLine $"{fc.Visible.ToFSharpString}"
         // do System.Console.WriteLine $"{visibleExprType}"
@@ -381,7 +394,7 @@ module Validator =
         match fc.Disabled with
         | Some disabled ->
           let! disabledExprType =
-            Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars disabled
+            typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars disabled
             |> state.OfSum
 
           do!
@@ -394,13 +407,22 @@ module Validator =
             |> state.OfSum
         | _ -> return ()
 
-        do! Renderer.ValidatePredicates FormConfig.ValidatePredicates ctx globalType rootType localType fc.Renderer
+        do!
+          Renderer.ValidatePredicates
+            FormConfig.ValidatePredicates
+            ctx
+            typeCheck
+            globalType
+            rootType
+            localType
+            fc.Renderer
       }
       |> state.WithErrorContext $"...when validating field predicates for {fc.FieldName}"
 
   and FormFields<'ExprExtension, 'ValueExtension> with
     static member ValidatePredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
@@ -409,7 +431,7 @@ module Validator =
       state {
         for f in formFields.Fields do
           do!
-            FieldConfig.ValidatePredicates ctx globalType rootType localType true f.Value
+            FieldConfig.ValidatePredicates ctx typeCheck globalType rootType localType true f.Value
             |> state.Map ignore
 
         for tab in formFields.Tabs.FormTabs |> Map.values do
@@ -423,7 +445,7 @@ module Validator =
                   |> Map.ofSeq
 
                 let! eType =
-                  Expr.typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars e
+                  typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars e
                   |> state.OfSum
 
                 let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
@@ -431,7 +453,7 @@ module Validator =
 
                 let! eTypeRef =
                   ctx.Types
-                  |> Map.tryFindWithError eTypeRefId.TypeName "types" "types"
+                  |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
                   |> state.OfSum
 
                 let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
@@ -441,7 +463,7 @@ module Validator =
 
                 let! eTypeEnum =
                   ctx.Types
-                  |> Map.tryFindWithError eTypeEnumId.TypeName "types" "types"
+                  |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
                   |> state.OfSum
 
                 let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
@@ -451,7 +473,7 @@ module Validator =
                   return!
                     state.Throw(
                       Errors.Singleton
-                        $"Error: all cases of {eTypeEnum.TypeId.TypeName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
+                        $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
                     )
                 | _ ->
                   let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
@@ -459,15 +481,22 @@ module Validator =
                   let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
 
                   let missingFields = caseNames - fields
+                  let missingCaseNames = fields - caseNames
+
+                  let warn (msg: string) =
+                    do Console.ForegroundColor <- ConsoleColor.DarkMagenta
+                    Console.WriteLine msg
+                    do Console.ResetColor()
 
                   if missingFields |> Set.isEmpty |> not then
-                    return!
-                      state.Throw(
-                        Errors.Singleton
-                          $"Error: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so cannot be part of the visibility!"
-                      )
-                  else
-                    return ()
+                    warn
+                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so enabling that field will have no effect!"
+
+                  if missingCaseNames |> Set.isEmpty |> not then
+                    warn
+                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
+
+                  return ()
               | _ -> return ()
       }
 
@@ -573,6 +602,7 @@ module Validator =
 
     static member ValidatePredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
@@ -580,7 +610,8 @@ module Validator =
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         match body with
-        | FormBody.Record fields -> do! FormFields.ValidatePredicates ctx globalType rootType localType fields.Fields
+        | FormBody.Record fields ->
+          do! FormFields.ValidatePredicates ctx typeCheck globalType rootType localType fields.Fields
         | FormBody.Union cases ->
           let! typeCases = localType |> ExprType.AsUnion |> state.OfSum
 
@@ -595,6 +626,7 @@ module Validator =
               NestedRenderer.ValidatePredicates
                 FormConfig.ValidatePredicates
                 ctx
+                typeCheck
                 globalType
                 rootType
                 typeCase.Fields
@@ -609,7 +641,8 @@ module Validator =
               |> Map.tryFindWithError (column.Key) "fields" "fields"
               |> state.OfSum
 
-            do! FieldConfig.ValidatePredicates ctx globalType rootType columnType false column.Value.FieldConfig
+            do!
+              FieldConfig.ValidatePredicates ctx typeCheck globalType rootType columnType false column.Value.FieldConfig
 
             match table.Details with
             | Some details ->
@@ -617,6 +650,7 @@ module Validator =
                 NestedRenderer.ValidatePredicates
                   FormConfig.ValidatePredicates
                   ctx
+                  typeCheck
                   globalType
                   rootType
                   localType
@@ -634,10 +668,7 @@ module Validator =
               [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
 
             let! eType =
-              Expr.typeCheck
-                (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq)
-                vars
-                visibleExpr
+              typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars visibleExpr
               |> state.OfSum
 
             let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
@@ -645,7 +676,7 @@ module Validator =
 
             let! eTypeRef =
               ctx.Types
-              |> Map.tryFindWithError eTypeRefId.TypeName "types" "types"
+              |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
               |> state.OfSum
 
             let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
@@ -655,7 +686,7 @@ module Validator =
 
             let! eTypeEnum =
               ctx.Types
-              |> Map.tryFindWithError eTypeEnumId.TypeName "types" "types"
+              |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
               |> state.OfSum
 
             let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
@@ -665,7 +696,7 @@ module Validator =
               return!
                 state.Throw(
                   Errors.Singleton
-                    $"Error: all cases of {eTypeEnum.TypeId.TypeName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
+                    $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
                 )
             | _ ->
               let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
@@ -673,15 +704,22 @@ module Validator =
               let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
 
               let missingFields = caseNames - fields
+              let missingCaseNames = fields - caseNames
+
+              let warn (msg: string) =
+                do Console.ForegroundColor <- ConsoleColor.DarkMagenta
+                Console.WriteLine msg
+                do Console.ResetColor()
 
               if missingFields |> Set.isEmpty |> not then
-                return!
-                  state.Throw(
-                    Errors.Singleton
-                      $"Error: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so cannot be part of the visibility!"
-                  )
-              else
-                return ()
+                warn
+                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so toggling that field will have no effect!"
+
+              if missingCaseNames |> Set.isEmpty |> not then
+                warn
+                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
+
+              return ()
 
       }
 
@@ -711,6 +749,7 @@ module Validator =
 
     static member ValidatePredicates
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (globalType: ExprType)
       (rootType: ExprType)
       (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
@@ -728,7 +767,7 @@ module Validator =
 
           let formType = formConfig.Body |> FormBody.FormDeclarationType
 
-          do! FormBody.ValidatePredicates ctx globalType rootType formType formConfig.Body
+          do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType formConfig.Body
 
           return ()
         else
@@ -741,6 +780,7 @@ module Validator =
   and FormLauncher with
     static member Validate
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       (formLauncher: FormLauncher)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
@@ -754,11 +794,11 @@ module Validator =
         | FormLauncherMode.Edit({ EntityApi = entityApi
                                   ConfigEntityApi = configEntityApi }) ->
           let! entityApi = ctx.TryFindEntityApi entityApi.EntityName |> state.OfSum
-          let! entityApiType = ctx.TryFindType (entityApi |> fst).TypeId.TypeName |> state.OfSum
+          let! entityApiType = ctx.TryFindType (entityApi |> fst).TypeId.VarName |> state.OfSum
           let! configEntityApi = ctx.TryFindEntityApi configEntityApi.EntityName |> state.OfSum
 
           if Set.ofList [ CrudMethod.Get ] |> Set.isSuperset (configEntityApi |> snd) then
-            let! configEntityApiType = ctx.TryFindType (configEntityApi |> fst).TypeId.TypeName |> state.OfSum
+            let! configEntityApiType = ctx.TryFindType (configEntityApi |> fst).TypeId.VarName |> state.OfSum
 
             do!
               ExprType.Unify
@@ -770,7 +810,7 @@ module Validator =
               |> state.OfSum
 
             do!
-              FormConfig.ValidatePredicates ctx configEntityApiType.Type entityApiType.Type formConfig
+              FormConfig.ValidatePredicates ctx typeCheck configEntityApiType.Type entityApiType.Type formConfig
               |> state.Map ignore
 
             match formLauncher.Mode with
@@ -820,17 +860,17 @@ module Validator =
               )
               |> state.OfSum
         | FormLauncherMode.Passthrough m ->
-          let! configEntityType = ctx.TryFindType m.ConfigType.TypeName |> state.OfSum
+          let! configEntityType = ctx.TryFindType m.ConfigType.VarName |> state.OfSum
 
           let entityType = (formConfig.Body |> FormBody.FormDeclarationType)
 
           do!
-            FormConfig.ValidatePredicates ctx configEntityType.Type entityType formConfig
+            FormConfig.ValidatePredicates ctx typeCheck configEntityType.Type entityType formConfig
             |> state.Map ignore
         | FormLauncherMode.PassthroughTable m ->
-          let! configEntityType = ctx.TryFindType m.ConfigType.TypeName |> state.OfSum
+          let! configEntityType = ctx.TryFindType m.ConfigType.VarName |> state.OfSum
           let! api = ctx.TryFindTableApi m.TableApi.TableName |> state.OfSum
-          let! apiType = ctx.TryFindType api.TypeId.TypeName |> state.OfSum
+          let! (apiType: TypeBinding) = api |> fst |> (fun a -> ctx.TryFindType a.TypeId.VarName) |> state.OfSum
           let apiType = apiType.Type
 
           do!
@@ -845,7 +885,7 @@ module Validator =
           let entityType = (formConfig.Body |> FormBody.FormDeclarationType)
 
           do!
-            FormConfig.ValidatePredicates ctx configEntityType.Type entityType formConfig
+            FormConfig.ValidatePredicates ctx typeCheck configEntityType.Type entityType formConfig
             |> state.Map ignore
       }
       |> state.WithErrorContext $"...when validating launcher {formLauncher.LauncherName}"
@@ -860,7 +900,6 @@ module Validator =
       |> Seq.fold (+) Set.empty
 
     static member GetTypesFreeVars(fa: FormApis) : Set<ExprTypeId> =
-
       FormApis.extractTypes fa.Enums
       + FormApis.extractTypes fa.Streams
       + FormApis.extractTypes (fa.Entities |> Map.map (fun _ -> fst))
@@ -912,7 +951,7 @@ module Validator =
             |> Errors.Singleton
           )
 
-        let! id, displayName = sum.All2((fields |> sum.TryFindField "Id"), (fields |> sum.TryFindField "DisplayValue"))
+        let! id, displayName = sum.All2 (fields |> sum.TryFindField "Id") (fields |> sum.TryFindField "DisplayValue")
 
         match id, displayName with
         | ExprType.PrimitiveType(PrimitiveType.GuidType), ExprType.PrimitiveType(PrimitiveType.StringType)
@@ -926,16 +965,17 @@ module Validator =
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (tableApi: TableApi)
+      (tableApi: TableApi * Set<TableMethod>)
       : Sum<Unit, Errors> =
       sum {
-        let! tableType = ExprType.Find ctx.Types tableApi.TypeId
+        let tableApiFst = tableApi |> fst
+        let! tableType = ExprType.Find ctx.Types tableApiFst.TypeId
         let! tableType = ExprType.ResolveLookup ctx.Types tableType
         let! fields = ExprType.GetFields tableType
 
         let error =
           sum.Throw(
-            $$"""Error: type {{tableType}} in table {{tableApi.TableName}} is invalid: expected field id:(Guid|string) but found {{fields}}"""
+            $$"""Error: type {{tableType}} in table {{tableApiFst.TableName}} is invalid: expected field id:(Guid|string) but found {{fields}}"""
             |> Errors.Singleton
           )
 
@@ -946,7 +986,7 @@ module Validator =
         | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
         | _ -> return! error
       }
-      |> sum.WithErrorContext $"...when validating table {tableApi.TableName}"
+      |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
 
   type LookupApi with
     static member Validate<'ExprExtension, 'ValueExtension>
@@ -958,22 +998,23 @@ module Validator =
         let! lookupType = ctx.TryFindType lookupApi.EntityName
 
         let! (idField: ExprType) =
-          sum.Any2(
-            sum {
+          sum.Any2
+            (sum {
               let! fields = lookupType.Type |> ExprType.AsRecord
 
               return!
-                sum.Any2(fields |> Map.tryFindWithError "id" "key" "id", fields |> Map.tryFindWithError "Id" "key" "Id")
-            },
-            sum {
+                sum.Any2
+                  (fields |> Map.tryFindWithError "id" "key" "id")
+                  (fields |> Map.tryFindWithError "Id" "key" "Id")
+            })
+            (sum {
               let! fields = lookupType.Type |> ExprType.AsTuple
 
               return!
                 fields
                 |> Seq.tryHead
                 |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
-            }
-          )
+            })
 
         match idField with
         | ExprType.PrimitiveType(PrimitiveType.GuidType)
@@ -993,6 +1034,7 @@ module Validator =
     static member Validate
       codegenTargetConfig
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         do!
@@ -1051,6 +1093,6 @@ module Validator =
           |> state.OfSum
 
         for launcher in ctx.Launchers |> Map.values do
-          do! FormLauncher.Validate ctx launcher
+          do! FormLauncher.Validate ctx typeCheck launcher
       }
       |> state.WithErrorContext $"...when validating spec"

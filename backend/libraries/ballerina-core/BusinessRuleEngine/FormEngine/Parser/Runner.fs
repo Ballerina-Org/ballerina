@@ -3,6 +3,7 @@ namespace Ballerina.DSL.FormEngine.Parser
 module Runner =
   open Model
   open Ballerina.DSL.Parser.Patterns
+  open Ballerina.DSL.Parser.Expr
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Parser.ExprType
   open Renderers
@@ -20,6 +21,7 @@ module Runner =
   open Ballerina.Core.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Expr.Extensions.Primitives
 
   type FormLauncher with
     static member Parse<'ExprExtension, 'ValueExtension>
@@ -81,7 +83,7 @@ module Runner =
           return
             FormLauncherMode.PassthroughTable
               {| ConfigType = configType.TypeId
-                 TableApi = api |> TableApi.Id |},
+                 TableApi = api |> fst |> TableApi.Id |},
             form |> FormConfig<'ExprExtension, 'ValueExtension>.Id
         else
           return!
@@ -109,6 +111,8 @@ module Runner =
       }
 
     static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (formName: string)
       (json: JsonValue)
       : State<
@@ -126,7 +130,7 @@ module Runner =
         let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
         let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! typeBinding = s.TryFindType typeName |> state.OfSum
-        let! body = FormBody.Parse fields typeBinding.TypeId
+        let! body = FormBody.Parse primitivesExt exprParser fields typeBinding.TypeId
 
         return
           {| TypeId = typeBinding.TypeId
@@ -142,7 +146,7 @@ module Runner =
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
 
       state {
-        let! enumType = ExprType.Parse ParsedFormsContext.ContextOperations enumTypeJson
+        let! enumType = ExprType.Parse enumTypeJson |> state.OfSum
         let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
         let! (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! enumType = ExprType.ResolveLookup ctx.Types enumType |> state.OfSum
@@ -176,7 +180,7 @@ module Runner =
       (streamTypeJson: JsonValue)
       : State<StreamApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
-        let! streamType = ExprType.Parse ParsedFormsContext.ContextOperations streamTypeJson
+        let! streamType = ExprType.Parse streamTypeJson |> state.OfSum
         let! streamTypeId = streamType |> ExprType.AsLookupId |> state.OfSum
 
         return
@@ -212,22 +216,65 @@ module Runner =
         )
       )
 
+  type TableMethod with
+    static member Parse
+      (tableMethodJson: JsonValue)
+      : State<TableMethod, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      let tableCase name value =
+        state {
+          do!
+            tableMethodJson
+            |> JsonValue.AsEnum(Set.singleton name)
+            |> state.OfSum
+            |> state.Map ignore
+
+          return value
+        }
+
+      state.Any(
+        NonEmptyList.OfList(
+          tableCase "add" TableMethod.Add,
+          [ tableCase "remove" TableMethod.Remove
+            tableCase "duplicate" TableMethod.Duplicate
+            tableCase "move" TableMethod.Move ]
+        )
+      )
+
   type TableApi with
     static member Parse
       (tableName: string)
       (tableTypeJson: JsonValue)
-      : State<TableApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      : State<TableApi * Set<TableMethod>, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
-        let! typeJson = (tableTypeFieldJsons |> state.TryFindField "type")
+        let! typeJson = tableTypeFieldJsons |> state.TryFindField "type"
 
-        let! tableType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
+        let! methodsJson =
+          state.Either
+            (state {
+              let! methodsJson = tableTypeFieldJsons |> state.TryFindField "methods"
+              return Option.Some methodsJson
+            })
+            (state { return Option.None })
+
+        let! methods =
+          state {
+            match methodsJson with
+            | None -> return Set.empty
+            | Some methodsJson ->
+              let! methods = methodsJson |> JsonValue.AsArray |> state.OfSum
+              let! methods = methods |> Seq.map TableMethod.Parse |> state.All |> state.Map Set.ofSeq
+              return methods
+          }
+
+        let! tableType = ExprType.Parse typeJson |> state.OfSum
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
 
         let tableApi =
-          ({ TableApi.TypeId = tableTypeId
-             TableName = tableName })
+          { TableApi.TypeId = tableTypeId
+            TableName = tableName },
+          methods
 
         return tableApi
       }
@@ -246,7 +293,7 @@ module Runner =
             (tableTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! tableType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
+        let! tableType = ExprType.Parse typeJson |> state.OfSum
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -273,7 +320,7 @@ module Runner =
             (entityTypeFieldJsons |> state.TryFindField "methods")
 
         let! methodsJson = methodsJson |> JsonValue.AsArray |> state.OfSum
-        let! entityType = ExprType.Parse ParsedFormsContext.ContextOperations typeJson
+        let! entityType = ExprType.Parse typeJson |> state.OfSum
         let! entityTypeId = entityType |> ExprType.AsLookupId |> state.OfSum
         let! methods = methodsJson |> Seq.map CrudMethod.Parse |> state.All |> state.Map Set.ofSeq
 
@@ -387,6 +434,8 @@ module Runner =
       ExprType.ParseTypes<'context> typesJson
 
     static member ParseForms
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (formsJson: (string * JsonValue)[])
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
@@ -426,7 +475,7 @@ module Runner =
             )
 
         for formName, formJson in formsJson do
-          let! formBody = FormConfig.Parse formName formJson
+          let! formBody = FormConfig.Parse primitivesExt exprParser formName formJson
           let! form = state.TryFindForm formName
 
           do! state.SetState(ParsedFormsContext.Updaters.Forms(Map.add formName { form with Body = formBody.Body }))
@@ -500,6 +549,8 @@ module Runner =
       }
 
     static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       generatedLanguageSpecificConfig
       (jsons: List<JsonValue>)
       : State<TopLevel, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
@@ -526,7 +577,7 @@ module Runner =
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot parse generic type {tstring}")
             |> state.OfSum
 
-          let! t = ExprType.Parse ParsedFormsContext.ContextOperations tjson
+          let! t = ExprType.Parse tjson |> state.OfSum
 
           do!
             state.SetState(
@@ -538,7 +589,7 @@ module Runner =
 
         let! _ = state.GetState()
         do! ParsedFormsContext.ParseApis generatedLanguageSpecificConfig.EnumValueFieldName topLevel
-        do! ParsedFormsContext.ParseForms topLevel.Forms
+        do! ParsedFormsContext.ParseForms primitivesExt exprParser topLevel.Forms
         do! ParsedFormsContext.ParseLaunchers topLevel.Launchers
         return topLevel
       }

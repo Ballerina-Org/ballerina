@@ -14,6 +14,7 @@
     <Compile Include="BusinessRuleEngine/Parser/Expr.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/TypeCheck.fs" />
     <Compile Include="BusinessRuleEngine/ExprType/Unification.fs" />
+    <Compile Include="BusinessRuleEngine/ExprType/Next.fs" />
     <Compile Include="BusinessRuleEngine/Expr/Model.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -36,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../libraries/unbound-core/unbound-core.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-core/ballerina-core.fsproj" />
   </ItemGroup>
 </Project>

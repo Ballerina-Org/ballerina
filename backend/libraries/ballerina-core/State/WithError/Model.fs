@@ -11,6 +11,8 @@ module WithError =
 
     member this.run(c, s) = let (State p) = this in p (c, s)
 
+    static member Run (input: 'c * 's) (p: State<'a, 'c, 's, 'e>) = p.run input
+
     // For the uncultured swine:
     // ∇ = narrowing
     // Δ = widening
@@ -188,12 +190,15 @@ module WithError =
       =
       state {
         let! v1 = p1 |> state.Catch
-        let! v2 = p2 |> state.Catch
 
-        match v1, v2 with
-        | Left v, _
-        | _, Left v -> return v
-        | Right e1, Right e2 -> return! state.Throw('e.Concat(e1, e2))
+        match v1 with
+        | Left v -> return v
+        | Right e1 ->
+          let! v2 = p2 |> state.Catch
+
+          match v2 with
+          | Left v -> return v
+          | Right e2 -> return! state.Throw('e.Concat(e1, e2))
       }
 
     member inline state.Either3 (p1: State<'a, 'c, 's, 'e>) (p2: State<'a, 'c, 's, 'e>) (p3: State<'a, 'c, 's, 'e>) =
