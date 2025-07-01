@@ -31,7 +31,7 @@ module Patterns =
 
   type ExprType with
     static member Find (ctx: TypeContext) (typeId: ExprTypeId) : Sum<ExprType, Errors> =
-      sum { return! TypeContext.TryFindType ctx typeId.TypeName |> Sum.map (fun tb -> tb.Type) }
+      sum { return! TypeContext.TryFindType ctx typeId.VarName |> Sum.map (fun tb -> tb.Type) }
 
     static member ResolveLookup (ctx: TypeContext) (t: ExprType) : Sum<ExprType, Errors> =
       sum {

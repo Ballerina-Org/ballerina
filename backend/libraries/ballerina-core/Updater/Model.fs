@@ -12,6 +12,7 @@ module Fun =
     | _ -> None
 
   type Updater<'s> = U<'s>
+
   let replaceWith (v: 'a) : U<'a> = fun _ -> v
   let curry f x y = f (x, y)
   let uncurry f (x, y) = f x y

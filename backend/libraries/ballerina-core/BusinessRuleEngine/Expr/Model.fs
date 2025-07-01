@@ -17,31 +17,31 @@ module Model =
 
   and Value<'ExprExtension, 'ValueExtension> =
     | Unit
-    | ConstInt of int
-    | ConstFloat of decimal
-    | ConstString of string
-    | ConstBool of bool
-    | ConstGuid of Guid
     | Var of VarName
     | CaseCons of string * Value<'ExprExtension, 'ValueExtension>
     | Tuple of List<Value<'ExprExtension, 'ValueExtension>>
     | Record of Map<string, Value<'ExprExtension, 'ValueExtension>>
-    | Lambda of VarName * Expr<'ExprExtension, 'ValueExtension>
+    | Lambda of VarName * option<ExprType> * option<ExprType> * Expr<'ExprExtension, 'ValueExtension>
     | GenericLambda of ExprTypeId * Expr<'ExprExtension, 'ValueExtension>
-    | List of List<Value<'ExprExtension, 'ValueExtension>>
     | Extension of 'ValueExtension
 
     override v.ToString() =
       match v with
       | Value.Unit -> "()"
       | Value.CaseCons(c, v) -> $"{c}({v})"
-      | Value.ConstBool v -> v.ToString()
-      | Value.ConstGuid v -> v.ToString()
-      | Value.ConstInt v -> v.ToString()
-      | Value.ConstFloat v -> v.ToString()
-      | Value.ConstString v -> v.ToString()
-      | Value.Lambda(v, b) -> $"fun {v.VarName} -> {b.ToString()}"
-      | Value.GenericLambda(v, b) -> $"FUN {v.TypeName} => {b.ToString()}"
+      | Value.Lambda(v, t, returnType, b) ->
+        let t =
+          t
+          |> Option.map (fun exprType -> $":{exprType.ToString()}")
+          |> Option.defaultValue ""
+
+        let returnType =
+          returnType
+          |> Option.map (fun exprType -> $":{exprType.ToString()}")
+          |> Option.defaultValue ""
+
+        $"fun ({v.VarName}{t}){returnType} -> {b.ToString()}"
+      | Value.GenericLambda(v, b) -> $"FUN {v.VarName} => {b.ToString()}"
       | Value.Record fs ->
         let formattedFields =
           fs
@@ -54,17 +54,11 @@ module Model =
         let formattedValues = vs |> Seq.map (fun v -> v.ToString())
         $"""({String.Join(", ", formattedValues)})"""
       | Value.Var(v) -> v.VarName
-      | Value.List vs ->
-        let formattedValues = vs |> Seq.map (fun v -> v.ToString())
-        $"""[{String.Join(", ", formattedValues)}]"""
       | Value.Extension ext -> ext.ToString()
 
-  // | Field of FieldDescriptor
   and Expr<'ExprExtension, 'ValueExtension> =
     | Value of Value<'ExprExtension, 'ValueExtension>
     | Apply of Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
-    | Binary of BinaryOperator * Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
-    | Unary of UnaryOperator * Expr<'ExprExtension, 'ValueExtension>
     | VarLookup of VarName
     | MakeRecord of Map<string, Expr<'ExprExtension, 'ValueExtension>>
     | RecordFieldLookup of Expr<'ExprExtension, 'ValueExtension> * string
@@ -81,8 +75,6 @@ module Model =
 
     override e.ToString() =
       match e with
-      | Binary(op, e1, e2) -> $"({e1.ToString()} {op.ToString()} {e2.ToString()})"
-      | Unary(op, e) -> $"({op.ToString()}{e.ToString()}"
       | VarLookup v -> v.VarName
       | Value v -> v.ToString()
       | Apply(f, a) -> $"({f.ToString()})({a.ToString()})"
@@ -114,21 +106,6 @@ module Model =
       | Annotate(e, t) -> $"{e} : {t}"
       | Extension ext -> ext.ToString()
 
-  and UnaryOperator =
-    | Not
-    | Minus
-
-  and BinaryOperator =
-    | Plus
-    | Minus
-    | GreaterThan
-    | Equals
-    | GreaterThanEquals
-    | Times
-    | DividedBy
-    | And
-    | Or
-
   and PrimitiveType =
     | DateOnlyType
     | DateTimeType
@@ -148,7 +125,7 @@ module Model =
       | PrimitiveType.IntType -> "Int"
       | PrimitiveType.StringType -> "String"
 
-  and ExprTypeId = { TypeName: string }
+  and ExprTypeId = VarName
 
   and ExprTypeKind =
     | Star
@@ -166,6 +143,7 @@ module Model =
     | CustomType of string
     | VarType of VarName
     | LookupType of ExprTypeId
+    | KeyOf of ExprType
     | PrimitiveType of PrimitiveType
     | RecordType of Map<string, ExprType>
     | UnionType of Map<CaseName, UnionCase>
@@ -187,7 +165,8 @@ module Model =
 
       match t with
       | ExprType.CustomType l -> l
-      | ExprType.LookupType l -> l.TypeName
+      | ExprType.LookupType l -> l.VarName
+      | ExprType.KeyOf t -> $"KeyOf<{!t}>"
       | ExprType.PrimitiveType p -> p.ToString()
       | ExprType.UnitType -> "()"
       | ExprType.VarType v -> v.VarName
@@ -211,7 +190,7 @@ module Model =
               |> Seq.map ((fun kv -> kv.Key, kv.Value) >> printField)
               |> fun s -> String.Join(';', s)} }}"
       | ExprType.ArrowType(l, r) -> $"({!l}) -> {!r}"
-      | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} = {!exprType}"
+      | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} => {!exprType}"
       | GenericApplicationType(f, a) -> $"{!f} {!a}"
 
   and UnionCase = { CaseName: string; Fields: ExprType }
@@ -219,22 +198,12 @@ module Model =
   and VarTypes = Map<VarName, ExprType>
 
 
-  type Value<'ExprExtension, 'ValueExtension> with
-    member self.toObject =
-      match self with
-      | Value.ConstInt v -> Some(v :> obj)
-      | Value.ConstBool v -> Some(v :> obj)
-      | Value.ConstFloat v -> Some(v :> obj)
-      | Value.ConstGuid v -> Some(v :> obj)
-      | Value.ConstString v -> Some(v :> obj)
-      | _ -> None
-
-  type Expr<'ExprExtension, 'ValueExtension> with
-    static member op_BooleanOr(e1: Expr<'ExprExtension, 'ValueExtension>, e2: Expr<'ExprExtension, 'ValueExtension>) =
-      Binary(Or, e1, e2)
-
-    static member (+)(e1: Expr<'ExprExtension, 'ValueExtension>, e2: Expr<'ExprExtension, 'ValueExtension>) =
-      Binary(Plus, e1, e2)
-
-    static member op_GreaterThan(e1: Expr<'ExprExtension, 'ValueExtension>, e2: Expr<'ExprExtension, 'ValueExtension>) =
-      Binary(GreaterThan, e1, e2)
+// type Value<'ExprExtension, 'ValueExtension> with
+//   member self.toObject =
+//     match self with
+//     | Value.ConstInt v -> Some(v :> obj)
+//     | Value.ConstBool v -> Some(v :> obj)
+//     | Value.ConstFloat v -> Some(v :> obj)
+//     | Value.ConstGuid v -> Some(v :> obj)
+//     | Value.ConstString v -> Some(v :> obj)
+//     | _ -> None

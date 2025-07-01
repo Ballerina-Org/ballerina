@@ -46,6 +46,7 @@ module Sum =
 
   type SumBuilder() =
     member _.MapError f p = p |> Sum.mapRight f
+    member _.Map f p = p |> Sum.map f
 
     member _.Catch h p =
       match p with
@@ -72,7 +73,7 @@ module Sum =
       | One p -> p
       | Many(p, ps) -> ps |> Seq.fold merge p
 
-    member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(p1: Sum<'a, 'b>, p2: Sum<'a, 'b>) =
+    member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)> (p1: Sum<'a, 'b>) (p2: Sum<'a, 'b>) =
       match p1, p2 with
       | Left v, _
       | _, Left v -> Left v
@@ -92,11 +93,14 @@ module Sum =
 
       ps |> Seq.fold merge (Left [])
 
-    member inline sum.All<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: seq<Sum<'a, 'b>>) =
+    member inline sum.All<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (ps: seq<Sum<'a, 'b>>)
+      : Sum<List<'a>, 'b> =
       ps |> List.ofSeq |> sum.All
 
     member inline _.All2<'a1, 'a2, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
-      (p1: Sum<'a1, 'b>, p2: Sum<'a2, 'b>)
+      (p1: Sum<'a1, 'b>)
+      (p2: Sum<'a2, 'b>)
       =
       match p1, p2 with
       | Left v1, Left v2 -> Left(v1, v2)
@@ -112,6 +116,19 @@ module Sum =
         let! b = p2
         return f a b
       }
+
+    member inline sum.AllMap<'k, 'v, 'b when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
+      (ps: Map<'k, Sum<'v, 'b>>)
+      : Sum<Map<'k, 'v>, 'b> =
+      ps
+      |> Map.map (fun k p ->
+        sum {
+          let! v = p
+          return (k, v)
+        })
+      |> Map.values
+      |> sum.All
+      |> sum.Map(Map.ofList)
 
   let sum = SumBuilder()
 

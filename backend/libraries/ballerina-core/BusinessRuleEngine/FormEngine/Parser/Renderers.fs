@@ -209,7 +209,7 @@ module Renderers =
               let! optionJson = parentJsonFields |> sum.TryFindField "options" |> state.OfSum
               let! enumName = optionJson |> JsonValue.AsString |> state.OfSum
               let! enum = formsState.TryFindEnum enumName |> state.OfSum
-              let! enumType = formsState.TryFindType enum.TypeId.TypeName |> state.OfSum
+              let! enumType = formsState.TryFindType enum.TypeId.VarName |> state.OfSum
 
               return
                 EnumRenderer(
@@ -264,7 +264,7 @@ module Renderers =
                     return!
                       state {
                         let! stream = formsState.TryFindStream streamName |> state.OfSum
-                        let! streamType = formsState.TryFindType stream.TypeId.TypeName |> state.OfSum
+                        let! streamType = formsState.TryFindType stream.TypeId.VarName |> state.OfSum
                         return StreamRendererApi.Stream(StreamApi.Id stream), streamType
                       }
                       |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -280,7 +280,7 @@ module Renderers =
                             (streamName |> JsonValue.AsString |> state.OfSum)
 
                         let! stream = formsState.TryFindLookupStream streamTypeName streamName |> state.OfSum
-                        let! streamType = formsState.TryFindType stream.TypeId.TypeName |> state.OfSum
+                        let! streamType = formsState.TryFindType stream.TypeId.VarName |> state.OfSum
                         let! lookupType = formsState.TryFindType streamTypeName |> state.OfSum
 
                         return
@@ -490,7 +490,7 @@ module Renderers =
                     let! entityApiNameJson = apiRendererJson |> JsonValue.AsString |> state.OfSum
 
                     let! entityApi = formsState.TryFindTableApi entityApiNameJson |> state.OfSum
-                    return Choice1Of2(entityApi |> TableApi.Id)
+                    return Choice1Of2(entityApi |> fst |> TableApi.Id)
                   })
                   (state {
                     let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
@@ -501,7 +501,7 @@ module Renderers =
                         (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
 
                     let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-                    let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.TypeName oneApiName |> state.OfSum
+                    let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.VarName oneApiName |> state.OfSum
                     return Choice2Of2(apiType.TypeId, oneApi.EntityName)
                   })
 
@@ -568,7 +568,7 @@ module Renderers =
                   (manyApiNameJson |> JsonValue.AsString |> state.OfSum)
 
               let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-              let! (manyApi, _) = formsState.TryFindMany apiType.TypeId.TypeName manyApiName |> state.OfSum
+              let! (manyApi, _) = formsState.TryFindMany apiType.TypeId.VarName manyApiName |> state.OfSum
 
               return
                 ManyRenderer
@@ -609,8 +609,17 @@ module Renderers =
           return!
             state {
               let! (_: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+              let! (_: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
               let! elementRendererJson = parentJsonFields |> sum.TryFindField "elementRenderer" |> state.OfSum
               let! elementRenderer = parseNestedRenderer elementRendererJson
+
+              let! actionLabelsJson =
+                parentJsonFields
+                |> state.TryFindField "actionLabels"
+                |> state.Catch
+                |> state.Map Sum.toOption
+
+              let! actionLabels = Renderer.ParseActionLabels actionLabelsJson
 
               return
                 ListRenderer
@@ -619,7 +628,8 @@ module Renderers =
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
                           Type = ExprType.ListType elementRenderer.Renderer.Type }
-                     Element = elementRenderer |}
+                     Element = elementRenderer
+                     MethodLabels = actionLabels |}
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -627,7 +637,7 @@ module Renderers =
             state.Throw(Errors.Singleton $"Error: cannot parse list renderer from {json.ToString().ReasonablyClamped}")
       }
 
-  type Renderer<'ExprExtension, 'ValueExtension> with
+  and Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseCustomRenderer
       (_)
       (_: (string * JsonValue)[])
@@ -663,8 +673,240 @@ module Renderers =
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
-  type Renderer<'ExprExtension, 'ValueExtension> with
+  and FormBody<'ExprExtension, 'ValueExtension> with
     static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
+      (fields: (string * JsonValue)[])
+      (formTypeId: ExprTypeId)
+      =
+      state.Either3
+        (state {
+          let! casesJson = fields |> state.TryFindField "cases"
+
+          return!
+            state {
+              let! casesJson = casesJson |> JsonValue.AsRecord |> state.OfSum
+              let! rendererJson = fields |> state.TryFindField "renderer"
+              let! renderer = JsonValue.AsString rendererJson |> state.OfSum
+              let! ctx = state.GetContext()
+
+              let! _ =
+                fields
+                |> state.TryFindField "containerRenderer"
+                |> state.Catch
+                |> state.Map(Sum.toOption)
+
+              if ctx.Union.SupportedRenderers |> Set.contains renderer |> not then
+                return! state.Throw(Errors.Singleton $"Error: cannot find union renderer {renderer}")
+              else
+                let! t = state.TryFindType formTypeId.VarName
+
+                let! cases =
+                  casesJson
+                  |> Seq.map (fun (caseName, caseJson) ->
+                    state.Either
+                      (state {
+                        let! caseBody = Renderer.Parse primitivesExt exprParser [||] caseJson
+
+                        return
+                          caseName,
+                          { Label = None
+                            Tooltip = None
+                            Details = None
+                            Renderer = caseBody }
+                      })
+                      (state {
+                        let! caseBody = NestedRenderer.Parse primitivesExt exprParser caseJson
+
+                        return caseName, caseBody
+                      })
+                    |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
+                  |> state.All
+                  |> state.Map(Map.ofSeq)
+
+                return
+                  {| Cases = cases
+                     Renderer =
+                      PrimitiveRenderer
+                        { PrimitiveRendererName = renderer
+                          PrimitiveRendererId = Guid.CreateVersion7()
+                          Type = t.Type }
+
+                     UnionType = t.Type |}
+                  |> FormBody.Union
+            }
+            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+        })
+        (state {
+          let! columnsJson = fields |> state.TryFindField "columns"
+
+          return!
+            state {
+              let! columnsJson = columnsJson |> JsonValue.AsRecord |> state.OfSum
+              let! rendererJson = fields |> state.TryFindField "renderer"
+
+              let! detailsJson =
+                fields
+                |> state.TryFindField "detailsRenderer"
+                |> state.Catch
+                |> state.Map Sum.toOption
+
+              let! actionLabelsJson =
+                fields
+                |> state.TryFindField "actionLabels"
+                |> state.Catch
+                |> state.Map Sum.toOption
+
+              // parse actionLabelsJson as a map of TableMethod to string
+              let! actionLabels = Renderer.ParseActionLabels actionLabelsJson
+
+              // let! previewJson =
+              //   fields
+              //   |> state.TryFindField "previewRenderer"
+              //   |> state.Catch
+              //   |> state.Map(Sum.toOption)
+
+              let! renderer = rendererJson |> JsonValue.AsString |> state.OfSum
+              let! (config: CodeGenConfig) = state.GetContext()
+              let! t = state.TryFindType formTypeId.VarName
+
+              let! details =
+                detailsJson
+                |> Option.map (fun detailsJson ->
+                  state { return! NestedRenderer.Parse primitivesExt exprParser detailsJson })
+                |> state.RunOption
+
+              // let! preview =
+              //   previewJson
+              //   |> Option.map (fun previewJson ->
+              //     state {
+              //       let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
+
+              //       return! FormBody.Parse previewFields formTypeId
+              //     })
+              //   |> state.RunOption
+
+              if config.Table.SupportedRenderers |> Set.contains renderer |> not then
+                return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
+              else
+                let! columns =
+                  columnsJson
+                  |> Seq.map (fun (columnName, columnJson) ->
+                    state {
+                      let! columnFields = columnJson |> JsonValue.AsRecord |> state.OfSum
+                      let! columnBody = FieldConfig.Parse primitivesExt exprParser columnName columnJson
+
+                      let! isFilterable =
+                        state.Either
+                          (columnFields |> sum.TryFindField "isFilterable" |> state.OfSum)
+                          (JsonValue.Boolean true |> state.Return)
+
+                      let! isSortable =
+                        state.Either
+                          (columnFields |> sum.TryFindField "isSortable" |> state.OfSum)
+                          (JsonValue.Boolean true |> state.Return)
+
+                      let! isFilterable, isSortable =
+                        state.All2
+                          (isFilterable |> JsonValue.AsBoolean |> state.OfSum)
+                          (isSortable |> JsonValue.AsBoolean |> state.OfSum)
+
+                      return
+                        columnName,
+                        { FieldConfig = columnBody
+                          IsFilterable = isFilterable
+                          IsSortable = isSortable }
+                    }
+                    |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing table column {columnName}")))
+                  |> state.All
+                  |> state.Map(Map.ofSeq)
+
+                let! visibleColumnsJson = fields |> state.TryFindField "visibleColumns"
+
+                let! visibleColumns =
+                  FormBody.ParseGroup
+                    primitivesExt
+                    exprParser
+                    "visibleColumns"
+                    (columns |> Map.map (fun _ c -> c.FieldConfig))
+                    visibleColumnsJson
+
+                return
+                  {| Columns = columns
+                     RowType = t.Type
+                     Details = details
+                     //  Preview = preview
+                     Renderer = renderer
+                     MethodLabels = actionLabels
+                     VisibleColumns = visibleColumns |}
+                  |> FormBody.Table
+            }
+            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+        })
+        (state {
+          let! formFields = FormFields<'ExprExtension, 'ValueExtension>.Parse primitivesExt exprParser fields
+          let! t = state.TryFindType formTypeId.VarName
+
+          let! rendererJson =
+            fields
+            |> state.TryFindField "renderer"
+            |> state.Catch
+            |> state.Map(Sum.toOption)
+
+          let! renderer =
+            rendererJson
+            |> Option.map (JsonValue.AsString >> state.OfSum)
+            |> state.RunOption
+
+          return
+            FormBody.Record
+              {| Renderer = renderer
+                 Fields = formFields
+                 RecordType = t.Type |}
+        })
+      |> state.MapError(Errors.HighestPriority)
+
+  and Renderer<'ExprExtension, 'ValueExtension> with
+    static member ParseActionLabels(actionLabelsJson: option<JsonValue>) =
+      state {
+        let! actionLabels =
+          actionLabelsJson
+          |> Option.map (fun actionLabelsJson ->
+            state {
+              let! actionLabelsMap = actionLabelsJson |> JsonValue.AsRecord |> state.OfSum
+
+              return!
+                actionLabelsMap
+                |> Seq.map (fun (k, v) ->
+                  state {
+                    let! method =
+                      state {
+                        return!
+                          Map.ofSeq
+                            [ "add", TableMethod.Add
+                              "remove", TableMethod.Remove
+                              "duplicate", TableMethod.Duplicate
+                              "move", TableMethod.Move ]
+                          |> Map.tryFindWithError k "TableMethod" k
+                          |> sum.MapError(Errors.Map(String.appendNewline $"...when parsing actionLabels"))
+                          |> state.OfSum
+                      }
+
+                    let! label = v |> JsonValue.AsString |> state.OfSum
+                    return method, label
+                  })
+                |> state.All
+                |> state.Map Map.ofSeq
+            })
+          |> state.RunOption
+
+        return actionLabels |> Option.defaultValue Map.empty
+      }
+
+    static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -691,13 +933,13 @@ module Renderers =
                   Renderer.ParseStringRenderer parentJsonFields json
                   Renderer.ParseEnumRenderer parentJsonFields json
                   Renderer.ParseStreamRenderer parentJsonFields json
-                  Renderer.ParseMapRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseSumRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseOptionRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseOneRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseManyRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseListRenderer NestedRenderer.Parse parentJsonFields json
-                  Renderer.ParseCustomRenderer NestedRenderer.Parse parentJsonFields json
+                  Renderer.ParseMapRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseSumRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseOptionRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseOneRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseListRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseCustomRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
 
                   state {
                     return!
@@ -742,7 +984,10 @@ module Renderers =
 
                                   let! itemRenderersJson = itemRenderersJson |> JsonValue.AsArray |> state.OfSum
 
-                                  let! itemRenderers = itemRenderersJson |> Seq.map (NestedRenderer.Parse) |> state.All
+                                  let! itemRenderers =
+                                    itemRenderersJson
+                                    |> Seq.map (NestedRenderer.Parse primitivesExt exprParser)
+                                    |> state.All
 
                                   if itemRenderers.Length <> tupleConfig.Ariety then
                                     return!
@@ -776,7 +1021,16 @@ module Renderers =
 
                                     return
                                       FormRenderer(form |> FormConfig<'ExprExtension, 'ValueExtension>.Id, formType)
+
+                                    return
+                                      FormRenderer(form |> FormConfig<'ExprExtension, 'ValueExtension>.Id, formType)
                                   | FormBody.Record fields ->
+                                    return
+                                      FormRenderer(
+                                        form |> FormConfig<'ExprExtension, 'ValueExtension>.Id,
+                                        fields.RecordType
+                                      )
+
                                     return
                                       FormRenderer(
                                         form |> FormConfig<'ExprExtension, 'ValueExtension>.Id,
@@ -787,13 +1041,13 @@ module Renderers =
                                     let! tableApiName = tableApiNameJson |> JsonValue.AsString |> state.OfSum
                                     let! tableApi = formsState.TryFindTableApi tableApiName |> state.OfSum
 
-                                    let! tableType = formsState.TryFindType tableApi.TypeId.TypeName |> state.OfSum
+                                    let! tableType = formsState.TryFindType (fst tableApi).TypeId.VarName |> state.OfSum
 
                                     return
                                       TableFormRenderer(
                                         form |> FormConfig<'ExprExtension, 'ValueExtension>.Id,
                                         tableType.Type |> ExprType.TableType,
-                                        tableApi |> TableApi.Id
+                                        tableApi |> fst |> TableApi.Id
                                       )
                                 }
                                 |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -812,6 +1066,7 @@ module Renderers =
         (state {
           let! _ = state.GetContext()
           let! (_: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+          let! (_: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
 
           let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
@@ -826,7 +1081,9 @@ module Renderers =
                     let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
                     let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
                     let! typeBinding = s.TryFindType typeName |> state.OfSum
-                    let! formBody = FormBody.Parse fields typeBinding.TypeId
+
+                    let! formBody =
+                      FormBody<'ExprExtension, 'ValueExtension>.Parse primitivesExt exprParser fields typeBinding.TypeId
                     // do Console.WriteLine $"found record for type {typeName}/{typeBinding.Type}"
                     // do Console.ReadLine() |> ignore
 
@@ -854,7 +1111,7 @@ module Renderers =
                   fields
                   |> Seq.map (fun (fieldName, fieldJson) ->
                     state {
-                      let! parsedField = NestedRenderer.Parse fieldJson
+                      let! parsedField = NestedRenderer.Parse primitivesExt exprParser fieldJson
                       return fieldName, parsedField
                     })
                   |> state.All
@@ -878,6 +1135,8 @@ module Renderers =
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (json: JsonValue)
       : State<
           NestedRenderer<'ExprExtension, 'ValueExtension>,
@@ -911,7 +1170,7 @@ module Renderers =
           |> state.RunOption
 
         let! rendererJson = jsonFields |> state.TryFindField "renderer"
-        let! renderer = Renderer.Parse jsonFields rendererJson
+        let! renderer = Renderer.Parse primitivesExt exprParser jsonFields rendererJson
 
         return
           { Label = label
@@ -923,6 +1182,8 @@ module Renderers =
 
   and FieldConfig<'ExprExtension, 'ValueExtension> with
     static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (fieldName: string)
       (json: JsonValue)
       : State<
@@ -961,18 +1222,17 @@ module Renderers =
 
         let! disabledJson = sum.TryFindField "disabled" fields |> state.OfSum |> state.Catch
         let disabledJson = disabledJson |> Sum.toOption
-        let! renderer = Renderer.Parse fields rendererJson
+        let! renderer = Renderer.Parse primitivesExt exprParser fields rendererJson
 
         let! visible =
           visibleJson
           |> Sum.toOption
-          |> Option.map (Expr.Parse >> state.OfSum)
+          |> Option.map (exprParser >> state.OfSum)
           |> state.RunOption
 
-        let visible =
-          visible |> Option.defaultWith (fun () -> Expr.Value(Value.ConstBool true))
+        let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
 
-        let! disabled = disabledJson |> Option.map (Expr.Parse >> state.OfSum) |> state.RunOption
+        let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
 
         let fc =
           { FieldName = fieldName
@@ -989,7 +1249,11 @@ module Renderers =
       |> state.WithErrorContext $"...when parsing field {fieldName}"
 
   and FormFields<'ExprExtension, 'ValueExtension> with
-    static member Parse(fields: (string * JsonValue)[]) =
+    static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
+      (fields: (string * JsonValue)[])
+      =
       state {
         let! fieldsJson, tabsJson =
           state.All2 (fields |> state.TryFindField "fields") (fields |> state.TryFindField "tabs")
@@ -1031,14 +1295,18 @@ module Renderers =
               formFields
               |> Seq.map (fun (fieldName, fieldJson) ->
                 state {
-                  let! parsedField = FieldConfig<'ExprExtension, 'ValueExtension>.Parse fieldName fieldJson
+                  let! parsedField =
+                    FieldConfig<'ExprExtension, 'ValueExtension>.Parse primitivesExt exprParser fieldName fieldJson
+
                   return fieldName, parsedField
                 })
               |> state.All<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors>
 
             let fieldConfigs = fieldConfigs |> Map.ofSeq
             let fieldConfigs = Map.mergeMany (fun x _ -> x) (fieldConfigs :: extendedFields)
-            let! tabs = FormBody<'ExprExtension, 'ValueExtension>.ParseTabs fieldConfigs tabsJson
+
+            let! tabs =
+              FormBody<'ExprExtension, 'ValueExtension>.ParseTabs primitivesExt exprParser fieldConfigs tabsJson
 
             return
               { FormFields.Fields = fieldConfigs
@@ -1049,6 +1317,8 @@ module Renderers =
 
   and FormBody<'ExprExtension, 'ValueExtension> with
     static member ParseTabs
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       fieldConfigs
       (json: JsonValue)
       : State<
@@ -1066,7 +1336,7 @@ module Renderers =
             for tabName, tabJson in tabs do
               yield
                 state {
-                  let! column = FormBody.ParseTab tabName fieldConfigs tabJson
+                  let! column = FormBody.ParseTab primitivesExt exprParser tabName fieldConfigs tabJson
                   return tabName, column
                 }
           }
@@ -1077,182 +1347,9 @@ module Renderers =
       }
       |> state.WithErrorContext $"...when parsing tabs"
 
-    static member Parse (fields: (string * JsonValue)[]) (formTypeId: ExprTypeId) =
-      state.Either3
-        (state {
-          let! casesJson = fields |> state.TryFindField "cases"
-
-          return!
-            state {
-              let! casesJson = casesJson |> JsonValue.AsRecord |> state.OfSum
-              let! rendererJson = fields |> state.TryFindField "renderer"
-              let! renderer = JsonValue.AsString rendererJson |> state.OfSum
-              let! ctx = state.GetContext()
-
-              let! _ =
-                fields
-                |> state.TryFindField "containerRenderer"
-                |> state.Catch
-                |> state.Map(Sum.toOption)
-
-              if ctx.Union.SupportedRenderers |> Set.contains renderer |> not then
-                return! state.Throw(Errors.Singleton $"Error: cannot find union renderer {renderer}")
-              else
-                let! t = state.TryFindType formTypeId.TypeName
-
-                let! cases =
-                  casesJson
-                  |> Seq.map (fun (caseName, caseJson) ->
-                    state.Either
-                      (state {
-                        let! caseBody = Renderer.Parse [||] caseJson
-
-                        return
-                          caseName,
-                          { Label = None
-                            Tooltip = None
-                            Details = None
-                            Renderer = caseBody }
-                      })
-                      (state {
-                        let! caseBody = NestedRenderer.Parse caseJson
-
-                        return caseName, caseBody
-                      })
-                    |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
-                  |> state.All
-                  |> state.Map(Map.ofSeq)
-
-                return
-                  {| Cases = cases
-                     Renderer =
-                      PrimitiveRenderer
-                        { PrimitiveRendererName = renderer
-                          PrimitiveRendererId = Guid.CreateVersion7()
-                          Type = t.Type }
-
-                     UnionType = t.Type |}
-                  |> FormBody.Union
-            }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
-        })
-        (state {
-          let! columnsJson = fields |> state.TryFindField "columns"
-
-          return!
-            state {
-              let! columnsJson = columnsJson |> JsonValue.AsRecord |> state.OfSum
-              let! rendererJson = fields |> state.TryFindField "renderer"
-
-              let! detailsJson =
-                fields
-                |> state.TryFindField "detailsRenderer"
-                |> state.Catch
-                |> state.Map(Sum.toOption)
-
-              // let! previewJson =
-              //   fields
-              //   |> state.TryFindField "previewRenderer"
-              //   |> state.Catch
-              //   |> state.Map(Sum.toOption)
-
-              let! renderer = rendererJson |> JsonValue.AsString |> state.OfSum
-              let! (config: CodeGenConfig) = state.GetContext()
-              let! t = state.TryFindType formTypeId.TypeName
-
-              let! details =
-                detailsJson
-                |> Option.map (fun detailsJson -> state { return! NestedRenderer.Parse detailsJson })
-                |> state.RunOption
-
-              // let! preview =
-              //   previewJson
-              //   |> Option.map (fun previewJson ->
-              //     state {
-              //       let! previewFields = previewJson |> JsonValue.AsRecord |> state.OfSum
-
-              //       return! FormBody.Parse previewFields formTypeId
-              //     })
-              //   |> state.RunOption
-
-              if config.Table.SupportedRenderers |> Set.contains renderer |> not then
-                return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
-              else
-                let! columns =
-                  columnsJson
-                  |> Seq.map (fun (columnName, columnJson) ->
-                    state {
-                      let! columnFields = columnJson |> JsonValue.AsRecord |> state.OfSum
-                      let! columnBody = FieldConfig.Parse columnName columnJson
-
-                      let! isFilterable =
-                        state.Either
-                          (columnFields |> sum.TryFindField "isFilterable" |> state.OfSum)
-                          (JsonValue.Boolean true |> state.Return)
-
-                      let! isSortable =
-                        state.Either
-                          (columnFields |> sum.TryFindField "isSortable" |> state.OfSum)
-                          (JsonValue.Boolean true |> state.Return)
-
-                      let! isFilterable, isSortable =
-                        state.All2
-                          (isFilterable |> JsonValue.AsBoolean |> state.OfSum)
-                          (isSortable |> JsonValue.AsBoolean |> state.OfSum)
-
-                      return
-                        columnName,
-                        { FieldConfig = columnBody
-                          IsFilterable = isFilterable
-                          IsSortable = isSortable }
-                    }
-                    |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing table column {columnName}")))
-                  |> state.All
-                  |> state.Map(Map.ofSeq)
-
-                let! visibleColumnsJson = fields |> state.TryFindField "visibleColumns"
-
-                let! visibleColumns =
-                  FormBody.ParseGroup
-                    "visibleColumns"
-                    (columns |> Map.map (fun _ c -> c.FieldConfig))
-                    visibleColumnsJson
-
-                return
-                  {| Columns = columns
-                     RowType = t.Type
-                     Details = details
-                     //  Preview = preview
-                     Renderer = renderer
-                     VisibleColumns = visibleColumns |}
-                  |> FormBody.Table
-            }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
-        })
-        (state {
-          let! formFields = FormFields<'ExprExtension, 'ValueExtension>.Parse fields
-          let! t = state.TryFindType formTypeId.TypeName
-
-          let! rendererJson =
-            fields
-            |> state.TryFindField "renderer"
-            |> state.Catch
-            |> state.Map(Sum.toOption)
-
-          let! renderer =
-            rendererJson
-            |> Option.map (JsonValue.AsString >> state.OfSum)
-            |> state.RunOption
-
-          return
-            FormBody.Record
-              {| Renderer = renderer
-                 Fields = formFields
-                 RecordType = t.Type |}
-        })
-      |> state.MapError(Errors.HighestPriority)
-
     static member ParseGroup
+      (_primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (groupName: string)
       (fieldConfigs: Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>)
       (json: JsonValue)
@@ -1286,12 +1383,14 @@ module Renderers =
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         })
         (state {
-          let! expr = json |> Expr.Parse |> state.OfSum
+          let! expr = json |> exprParser |> state.OfSum
           return FormGroup.Computed expr
         })
       |> state.WithErrorContext $"...when parsing group {groupName}"
 
     static member ParseColumn
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (columnName: string)
       fieldConfigs
       (json: JsonValue)
@@ -1312,7 +1411,7 @@ module Renderers =
               for groupName, groupJson in groups do
                 yield
                   state {
-                    let! column = FormBody.ParseGroup groupName fieldConfigs groupJson
+                    let! column = FormBody.ParseGroup primitivesExt exprParser groupName fieldConfigs groupJson
                     return groupName, column
                   }
             }
@@ -1329,6 +1428,8 @@ module Renderers =
       |> state.WithErrorContext $"...when parsing column {columnName}"
 
     static member ParseTab
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (tabName: string)
       fieldConfigs
       (json: JsonValue)
@@ -1349,7 +1450,7 @@ module Renderers =
               for columnName, columnJson in columns do
                 yield
                   state {
-                    let! column = FormBody.ParseColumn columnName fieldConfigs columnJson
+                    let! column = FormBody.ParseColumn primitivesExt exprParser columnName fieldConfigs columnJson
                     return columnName, column
                   }
             }

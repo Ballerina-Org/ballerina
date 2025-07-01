@@ -5,10 +5,12 @@ module Eval =
   open System.Linq
   open Ballerina.Fun
   open Ballerina.Core.Object
+  open Ballerina.Core.Object
   open Ballerina.Coroutines.Model
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr
   open Ballerina.DSL.Expr.Model
+  open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Patterns
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.TypeCheck
@@ -25,45 +27,87 @@ module Eval =
 
   type ExprEvalState = unit
 
+  type ExprEval<'ExprExtension, 'ValueExtension> =
+    (Expr<'ExprExtension, 'ValueExtension>)
+      -> Coroutine<
+        Value<'ExprExtension, 'ValueExtension>,
+        ExprEvalState,
+        ExprEvalContext<'ExprExtension, 'ValueExtension>,
+        Unit,
+        Errors
+       >
+
+  type EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail> =
+    'ExprExtensionTail
+      -> Coroutine<
+        Value<'ExprExtension, 'ValueExtension>,
+        ExprEvalState,
+        ExprEvalContext<'ExprExtension, 'ValueExtension>,
+        Unit,
+        Errors
+       >
+
   type Expr<'ExprExtension, 'ValueExtension> with
     static member eval
-      (e: Expr<'ExprExtension, 'ValueExtension>)
-      : Coroutine<
-          Value<'ExprExtension, 'ValueExtension>,
-          ExprEvalState,
-          ExprEvalContext<'ExprExtension, 'ValueExtension>,
-          Unit,
-          Errors
-         >
-      =
-      let (!) = Expr.eval
+      : (ExprEval<'ExprExtension, 'ValueExtension> -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtension>)
+          -> ExprEval<'ExprExtension, 'ValueExtension> =
+      fun evalExtension e ->
+        let (!) = Expr.eval evalExtension
 
-      co {
-        match e with
-        | Apply(f, arg) ->
-          let! fValue = !f
-          let! arg = !arg
+        co {
+          match e with
+          | Apply(f, arg) ->
+            let! fValue = !f
+            let! arg = !arg
 
-          match fValue with
-          | Value.Lambda(v, b) -> return! !b |> co.mapContext (ExprEvalContext.Update.Vars(Map.add v arg))
-          | _ ->
-            return!
-              $"runtime error: {fValue} should be a function because it is applied"
-              |> Errors.Singleton
-              |> co.Throw
+            match fValue with
+            | Value.Lambda(v, _, _, b) -> return! !b |> co.mapContext (ExprEvalContext.Update.Vars(Map.add v arg))
+            | _ ->
+              return!
+                $"runtime error: {fValue} should be a function because it is applied"
+                |> Errors.Singleton
+                |> co.Throw
 
-        | VarLookup varName ->
-          let! ctx = co.GetContext()
-          let! varValue = ctx.Vars |> Map.tryFindWithError varName "var" varName.VarName |> co.ofSum
+          | VarLookup varName ->
+            let! ctx = co.GetContext()
+            let! varValue = ctx.Vars |> Map.tryFindWithError varName "var" varName.VarName |> co.ofSum
 
-          return varValue
-        | Value v -> return v
-        | Binary(Plus, e1, e2) ->
-          let! v1 = !e1
-          let! v2 = !e2
-          let! v1 = v1 |> Value.AsInt |> co.ofSum
-          let! v2 = v2 |> Value.AsInt |> co.ofSum
-          return Value.ConstInt(v1 + v2)
+            return varValue
+          | Value v -> return v
+          | Let(x, expr, in_) ->
+            let! expr = !expr
+            return! !in_ |> co.mapContext (ExprEvalContext.Update.Vars(Map.add x expr))
 
-        | e -> return! $"not implemented Expr evaluator for {e}" |> Errors.Singleton |> co.Throw
-      }
+          | MatchCase(value, caseHandlers) ->
+            let! value = !value
+
+            match value with
+            | Value.CaseCons(caseName, caseValue) ->
+              let! varName, handler = caseHandlers |> Map.tryFindWithError caseName "case name" caseName |> co.ofSum
+
+              return!
+                !handler
+                |> co.mapContext (ExprEvalContext.Update.Vars(Map.add varName caseValue))
+            | _ ->
+              return!
+                $"runtime error: {value} should be a case constructor because it is matched"
+                |> Errors.Singleton
+                |> co.Throw
+
+          | MakeCase(caseName, value) ->
+            let! value = !value
+            return Value.CaseCons(caseName, value)
+
+          | Expr.GenericApply(e, _) ->
+            let! e = !e
+
+            match e with
+            | Value.GenericLambda(_, b) -> return! !b
+            | _ ->
+              return!
+                $"runtime error: {e} should be a generic lambda because it is applied"
+                |> Errors.Singleton
+                |> co.Throw
+          | Expr.Extension e -> return! evalExtension (Expr.eval evalExtension) e
+          | e -> return! $"runtime error: eval({e}) not implemented" |> Errors.Singleton |> co.Throw
+        }
