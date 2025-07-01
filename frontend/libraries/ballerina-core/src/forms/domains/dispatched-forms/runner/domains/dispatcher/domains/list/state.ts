@@ -44,14 +44,10 @@ export const ListDispatcher = {
                               () => defaultElementState,
                               () => defaultElementValue,
                               elementTemplate,
+                              renderer.methods ?? [],
                               dispatcherContext.IdProvider,
                               dispatcherContext.ErrorRenderer,
-                            )
-                              .mapContext((_: any) => ({
-                                ..._,
-                                methods: renderer.methods ?? [],
-                              }))
-                              .withView(concreteRenderer),
+                            ).withView(concreteRenderer),
                           ),
                         ),
                 ),

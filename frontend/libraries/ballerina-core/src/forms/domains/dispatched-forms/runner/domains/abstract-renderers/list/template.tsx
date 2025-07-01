@@ -43,6 +43,7 @@ export const ListAbstractRenderer = <
       onChange: DispatchOnChange<PredicateValue>;
     }
   >,
+  methods: ListMethods,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -141,7 +142,7 @@ export const ListAbstractRenderer = <
       );
 
   return Template.Default<
-    Context & Value<ValueTuple> & { disabled: boolean; methods: ListMethods },
+    Context & Value<ValueTuple> & { disabled: boolean },
     ListAbstractRendererState,
     ForeignMutationsExpected & {
       onChange: DispatchOnChange<ValueTuple>;
@@ -177,7 +178,7 @@ export const ListAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              add: !props.context.methods.includes("add")
+              add: !methods.includes("add")
                 ? undefined
                 : (_) => {
                     const delta: DispatchDelta = {
@@ -208,7 +209,7 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
-              remove: !props.context.methods.includes("remove")
+              remove: !methods.includes("remove")
                 ? undefined
                 : (_) => {
                     const delta: DispatchDelta = {
@@ -234,7 +235,7 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
-              move: !props.context.methods.includes("move")
+              move: !methods.includes("move")
                 ? undefined
                 : (index, to) => {
                     const delta: DispatchDelta = {
@@ -262,7 +263,7 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
-              duplicate: !props.context.methods.includes("duplicate")
+              duplicate: !methods.includes("duplicate")
                 ? undefined
                 : (_) => {
                     const delta: DispatchDelta = {
@@ -288,7 +289,7 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
-              insert: !props.context.methods.includes("add")
+              insert: !methods.includes("add")
                 ? undefined
                 : (_) => {
                     const delta: DispatchDelta = {
