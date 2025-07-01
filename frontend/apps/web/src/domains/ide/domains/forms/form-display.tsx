@@ -35,7 +35,7 @@ import {
     DispatchEntityContainerFormView,
     DispatchEntityNestedContainerFormView
 } from "../../../dispatched-passthrough-form/views/wrappers.tsx";
-import {DispatchFieldTypeConverters, PersonDispatchFieldTypeConverters} from "../../../dispatched-passthrough-form/apis/field-converters.ts";
+import {DispatchFieldTypeConverters2, PersonDispatchFieldTypeConverters} from "../../../dispatched-passthrough-form/apis/field-converters.ts";
 import {PersonConcreteRenderers} from "../../../dispatched-passthrough-form/views/concrete-renderers.tsx";
 import {DispatchFromConfigApis, SpecRunnerIndicator} from "playground-core";
 import {
@@ -193,7 +193,7 @@ export const FormDisplayTemplate = (props: {
         parsedConfig.kind == "errors"?
           console.error("parsed person config errors", parsedConfig.errors)
           : setConfig(Sum.Default.left(parsedConfig));
-        
+          debugger
           const parsed = value.launchers.passthrough
             .get(`${props.entityName}-transparent`)!
             .parseEntityFromApi(entity);
@@ -209,6 +209,7 @@ export const FormDisplayTemplate = (props: {
       
     }, [specificationDeserializer.deserializedSpecification.sync.kind, props.example ]);
   const data = props.example
+  console.log(JSON.stringify(data));
   // const entity2 = Sum.Default.left(ValueOrErrors.Default.return(data.fields[props.entityName]?.fields));
   // const config2 = Sum.Default.left(ValueOrErrors.Default.return(data?.fields[`${props.entityName}Config`]?.fields));
 
@@ -218,7 +219,7 @@ export const FormDisplayTemplate = (props: {
                 context={{
                     ...specificationDeserializer,
                     defaultRecordConcreteRenderer: DispatchEntityContainerFormView,
-                    fieldTypeConverters: DispatchFieldTypeConverters,
+                    fieldTypeConverters: DispatchFieldTypeConverters2,
                     defaultNestedRecordConcreteRenderer: DispatchEntityNestedContainerFormView,
                     concreteRenderers: PersonConcreteRenderers,
                     infiniteStreamSources: DispatchFromConfigApis.streamApis,

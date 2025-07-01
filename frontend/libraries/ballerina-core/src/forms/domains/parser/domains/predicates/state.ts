@@ -396,7 +396,7 @@ export const BinaryOperatorsSet = Set(BinaryOperators);
 export type BinaryOperator = (typeof BinaryOperators)[number];
 
 export type Bindings = Map<string, PredicateValue>;
-
+export type StructuredNumber = { kind: "int" | "float"; value: string };
 export const PredicateValue = {
   Default: {
     string: () => "",
@@ -453,9 +453,10 @@ export const PredicateValue = {
             : ValueOrErrors.Default.throwOne("invalid")
         : ValueOrErrors.Default.return(typeof value),
     IsPrimitive: (
-      value: PredicateValue | Expr,
-    ): value is boolean | number | string | Date => {
+      value: PredicateValue | Expr | StructuredNumber,
+    ): value is boolean | number | string | Date | StructuredNumber => {
       return (
+        PredicateValue.Operations.IsStructuredNumber(value) ||
         PredicateValue.Operations.IsBoolean(value) ||
         PredicateValue.Operations.IsNumber(value) ||
         PredicateValue.Operations.IsString(value) ||
@@ -464,6 +465,14 @@ export const PredicateValue = {
     },
     IsBoolean: (value: PredicateValue | Expr): value is boolean => {
       return typeof value == "boolean";
+    },
+    IsStructuredNumber(value: any): value is StructuredNumber {
+      return (
+        typeof value === "object" &&
+        value !== null &&
+        (value.kind === "int" || value.kind === "float") &&
+        typeof value.value === "string"
+      );
     },
     IsNumber: (value: PredicateValue | Expr): value is number => {
       return typeof value == "number";

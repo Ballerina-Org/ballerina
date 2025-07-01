@@ -403,24 +403,24 @@ function convertStructuredValue(value: any): any {
     return value;
   }
 
-  if ("kind" in value && "fields" in value) {
+  if ("kind" in value && ("fields" in value || "value" in value) || "elements" in value) {
     const kind = value.kind;
     const fields = value.fields;
+    const elements = value.elements;
+    const value = value.value;
 
     switch (kind) {
       case "int":
       case "float":
-      case "string":
-      case "boolean":
-        return fields;
-
-      case "array":
-        return Array.isArray(fields)
-          ? List(fields.map(convertStructuredValue))
-          : List();
+        return value;
+      case "unit": return {};
+      // case "array":
+      //   return Array.isArray(fields)
+      //     ? List(fields.map(convertStructuredValue))
+      //     : List();
 
       case "tuple":
-        return List(fields.map(convertStructuredValue));
+        return List(elements.map(convertStructuredValue));
 
       case "record":
         return Map(
@@ -430,37 +430,8 @@ function convertStructuredValue(value: any): any {
           ])
         );
 
-      case "union":
-        return {
-          caseName: fields.Discriminator,
-          fields: convertStructuredValue(fields[fields.Discriminator])
-        };
-
-      case "option":
-        return fields == null
-          ? PredicateValue.Default.option(false, PredicateValue.Default.unit())
-          : PredicateValue.Default.option(true, convertStructuredValue(fields));
-
-      case "sum":
-        return fields?.IsRight
-          ? Sum.Default.right(convertStructuredValue(fields.Value))
-          : Sum.Default.left(convertStructuredValue(fields.Value));
-
-      case "selection":
-        return fields?.IsSome == false
-          ? CollectionSelection().Default.right("no selection")
-          : CollectionSelection().Default.left(convertStructuredValue(fields.Value));
-
-      case "map":
-        return Array.isArray(fields)
-          ? List(fields.map((_: { Key: any; Value: any }) => [_.Key, convertStructuredValue(_.Value)]))
-          : fields;
-
-      case "date":
-        return typeof fields == "string" ? new Date(Date.parse(fields)) : fields;
-
       default:
-        return fields;
+        return value
     }
   }
 

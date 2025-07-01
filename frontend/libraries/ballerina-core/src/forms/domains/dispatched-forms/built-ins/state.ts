@@ -852,15 +852,15 @@ export const dispatchFromAPIRawValue =
         if (t.name == "unit") {
           return ValueOrErrors.Default.return(PredicateValue.Default.unit());
         }
-        
-        var raw2 =
-          t.name === "number" && raw?.kind === "int"
-            ? parseInt(raw?.value)
-            : t.name === "number" && raw?.kind === "float"
-              ? parseFloat(raw?.value)
-              : raw;
 
-        if (!PredicateValue.Operations.IsPrimitive(raw2) &&
+        // var raw2 =
+        //   t.name === "number" && raw?.kind === "int"
+        //     ? parseInt(raw?.value)
+        //     : t.name === "number" && raw?.kind === "float"
+        //       ? parseFloat(raw?.value)
+        //       : raw;
+
+        if (!PredicateValue.Operations.IsPrimitive(raw) &&
           !injectedPrimitives?.keySeq().contains(t.name as keyof T)) {
           return ValueOrErrors.Default.throwOne(
             `primitive expected but got ${JSON.stringify(raw)}`,

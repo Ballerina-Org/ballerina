@@ -1,0 +1,14 @@
+﻿{
+  "compilerOptions": {
+    "jsx": "react-jsx",        // ✅ required for JSX (React 17+ style)
+    "module": "ESNext",
+    "target": "ES6",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["jest"]
+  },
+  "include": ["tests/**/*"]
+}
