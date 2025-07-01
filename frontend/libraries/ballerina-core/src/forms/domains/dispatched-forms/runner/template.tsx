@@ -69,6 +69,7 @@ export const DispatchFormRunnerTemplate = <
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
+          domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
         }}
         setState={(_: BasicUpdater<any>) =>
           props.setState(
