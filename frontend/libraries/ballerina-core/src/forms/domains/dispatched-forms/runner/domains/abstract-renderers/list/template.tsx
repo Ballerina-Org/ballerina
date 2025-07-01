@@ -70,7 +70,7 @@ export const ListAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[list][${elementIndex}]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),

@@ -73,7 +73,7 @@ export const UnionAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${caseName}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[union][${caseName}]`,
           }),
         )
         .mapState(

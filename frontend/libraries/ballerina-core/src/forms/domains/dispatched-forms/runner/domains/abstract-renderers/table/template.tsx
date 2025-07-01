@@ -180,7 +180,7 @@ export const TableAbstractRenderer = <
               _.serializedTypeHierarchy,
             ),
             domNodeAncestorPath:
-              _.domNodeAncestorPath + `[${column}][${rowId}]`,
+              _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
           };
         })
 
@@ -324,7 +324,7 @@ export const TableAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeAncestorPath: _.domNodeAncestorPath + "[details]",
+            domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {

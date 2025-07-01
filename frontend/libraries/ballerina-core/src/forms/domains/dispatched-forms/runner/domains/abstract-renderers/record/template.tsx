@@ -103,7 +103,7 @@ export const RecordAbstractRenderer = <
             extraContext: _.extraContext,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${fieldName}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[record][${fieldName}]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),

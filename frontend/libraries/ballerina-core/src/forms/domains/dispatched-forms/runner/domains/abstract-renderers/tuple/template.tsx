@@ -77,7 +77,7 @@ export const DispatchTupleAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${itemIndex + 1}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
           }),
         )
         .mapState(

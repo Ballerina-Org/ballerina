@@ -88,7 +88,7 @@ export const MapAbstractRenderer = <
             type: _.type.args[0],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}][key]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
@@ -186,7 +186,7 @@ export const MapAbstractRenderer = <
             type: _.type.args[1],
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}][value]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),

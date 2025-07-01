@@ -78,7 +78,7 @@ export const SumAbstractRenderer = <
               serializedTypeHierarchy: [SerializedType].concat(
                 _.serializedTypeHierarchy,
               ),
-              domNodeAncestorPath: _.domNodeAncestorPath + "[left]",
+              domNodeAncestorPath: _.domNodeAncestorPath + "[sum][left]",
             }),
           )
           .mapState(
@@ -155,7 +155,7 @@ export const SumAbstractRenderer = <
               serializedTypeHierarchy: [SerializedType].concat(
                 _.serializedTypeHierarchy,
               ),
-              domNodeAncestorPath: _.domNodeAncestorPath + "[right]",
+              domNodeAncestorPath: _.domNodeAncestorPath + "[sum][right]",
             }),
           )
           .mapState(

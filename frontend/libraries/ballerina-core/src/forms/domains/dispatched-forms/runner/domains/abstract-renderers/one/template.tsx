@@ -134,7 +134,7 @@ export const OneAbstractRenderer = <
         serializedTypeHierarchy: [SerializedType].concat(
           _.serializedTypeHierarchy,
         ),
-        domNodeAncestorPath: _.domNodeAncestorPath + "[details]",
+        domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
       };
     })
       .mapState(
@@ -250,7 +250,7 @@ export const OneAbstractRenderer = <
             serializedTypeHierarchy: [SerializedType].concat(
               _.serializedTypeHierarchy,
             ),
-            domNodeAncestorPath: _.domNodeAncestorPath + "[preview]",
+            domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
           };
         })
           .mapState(
