@@ -50,6 +50,7 @@ export type OneAbstractRendererReadonlyContext<
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
+    previewStates: Map<string, RecordAbstractRendererState>;
     selectedValue: Synchronized<
       ValueUnit,
       ValueOrErrors<ValueRecord | ValueUnit, string>
@@ -77,6 +78,7 @@ export const OneAbstractRendererState = {
     ...CommonAbstractRendererState.Default(),
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
+      previewStates: Map(),
       selectedValue: Synchronized.Default(ValueUnit.Default()),
       streamParams: Debounced.Default(Value.Default(Map())),
       status: "closed",
@@ -113,6 +115,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "initializationStatus",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "previewStates",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -211,7 +216,7 @@ export type OneAbstractRendererView<
         OneAbstractRendererState,
         OneAbstractRendererViewForeignMutationsExpected<Flags>
       >;
-      PreviewRenderer?: (value: ValueRecord) => (
+      PreviewRenderer?: (value: ValueRecord) => (id: string) => (
         flags: Flags | undefined,
       ) => Template<
         Omit<

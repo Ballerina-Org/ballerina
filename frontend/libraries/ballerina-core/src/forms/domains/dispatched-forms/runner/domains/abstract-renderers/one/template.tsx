@@ -24,6 +24,7 @@ import {
   Option,
   Unit,
   StringSerializedType,
+  MapRepo,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -223,7 +224,7 @@ export const OneAbstractRenderer = <
       }));
 
   const embeddedPreviewRenderer = PreviewRenderer
-    ? (value: ValueRecord) => (flags: Flags | undefined) =>
+    ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
           Omit<
             OneAbstractRendererReadonlyContext<
@@ -236,7 +237,7 @@ export const OneAbstractRenderer = <
           } & OneAbstractRendererState
         >((_) => {
           const state =
-            _.customFormState?.detailsState ??
+            _.customFormState?.previewStates.get(id) ??
             RecordAbstractRendererState.Default.zero();
           return {
             ...state,
@@ -254,8 +255,16 @@ export const OneAbstractRenderer = <
           };
         })
           .mapState(
-            OneAbstractRendererState.Updaters.Core.customFormState.children
-              .detailsState,
+            (
+              _: BasicUpdater<RecordAbstractRendererState>,
+            ): BasicUpdater<OneAbstractRendererState> =>
+              OneAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
+                MapRepo.Updaters.upsert(
+                  id,
+                  () => RecordAbstractRendererState.Default.zero(),
+                  _,
+                ),
+              ),
           )
           .mapForeignMutationsFromProps<
             OneAbstractRendererViewForeignMutationsExpected<Flags>
