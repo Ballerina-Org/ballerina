@@ -1,0 +1,295 @@
+﻿{
+  "types": {
+    "GlobalConfiguration": {
+      "extends": [],
+      "fields": {
+        "IsAdmin": "boolean",
+        "ERP": "ERPConfig",
+        "ActiveAddressFields": {
+          "fun": "MultiSelection",
+          "args": [
+            "AddressesFieldRef"
+          ]
+        }
+      }
+    },
+    "ERPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "ERPSAP",
+          "fields": {
+            "Value": "SAPConfig"
+          }
+        },
+        {
+          "caseName": "ERPBC",
+          "fields": {}
+        },
+        {
+          "caseName": "ERPFAndO",
+          "fields": {}
+        }
+      ]
+    },
+    "SAPConfig": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "SAPS2",
+          "fields": {
+            "S2OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS3",
+          "fields": {
+            "S3OnlyField": "boolean"
+          }
+        },
+        {
+          "caseName": "SAPS4",
+          "fields": {
+            "S4OnlyField": "boolean"
+          }
+        }
+      ]
+    },
+    "AddressConfigConfig": {
+      "fields": {}
+    },
+    "AddressesFieldsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Departments",
+          "fields": {}
+        },
+        {
+          "caseName": "SchoolAddress",
+          "fields": {}
+        },
+        {
+          "caseName": "MainAddress",
+          "fields": {}
+        },
+        {
+          "caseName": "AddressesAndAddressesWithLabel",
+          "fields": {}
+        },
+        {
+          "caseName": "AddressesWithColorLabel",
+          "fields": {}
+        },
+        {
+          "caseName": "AddressesBy",
+          "fields": {}
+        },
+        {
+          "caseName": "Permissions",
+          "fields": {}
+        },
+        {
+          "caseName": "CityByDepartment",
+          "fields": {}
+        },
+        {
+          "caseName": "Holidays",
+          "fields": {}
+        }
+      ]
+    },
+    "AddressesFieldRef": {
+      "fields": {
+        "Value": "AddressesFieldsEnum"
+      }
+    },
+    "PersonConfig": {
+      "fields": {
+        "IsAdmin": "boolean",
+        "ERP": "ERPConfig",
+        "ActiveAddressFields": {
+          "fun": "MultiSelection",
+          "args": [
+            "AddressesFieldRef"
+          ]
+        }
+      }
+    },
+    "CollectionReference": {
+      "extends": [],
+      "fields": {
+        "DisplayValue": "string",
+        "Id": "guid"
+      }
+    },
+    "ColorsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Red",
+          "fields": {}
+        },
+        {
+          "caseName": "Green",
+          "fields": {}
+        },
+        {
+          "caseName": "Blue",
+          "fields": {}
+        }
+      ]
+    },
+    "ColorRef": {
+      "fields": {
+        "Value": "ColorsEnum"
+      }
+    },
+    "Person": {
+      "fields": {
+        "Id": "guid",
+        "SubscribeToNewsletter": "boolean",
+        "Emails": {
+          "fun": "List",
+          "args": [
+            "string"
+          ]
+        },
+        "ShoeColours": {
+          "fun": "MultiSelection",
+          "args": [
+            "ColorRef"
+          ]
+        }
+      }
+    }
+  },
+  "apis": {
+    "lookups": {},
+    "enumOptions": {
+      "addressesFields": "AddressesFieldRef",
+      "colors": "ColorRef"
+    },
+    "searchableStreams": {},
+    "tables": {},
+    "entities": 
+{
+  "person": {
+    "type": "Person",
+    "methods": [
+      "create",
+      "get",
+      "update",
+      "default"
+    ]
+  },
+  "personConfig": {
+    "type": "PersonConfig",
+    "methods": [
+      "get"
+    ]
+  },
+  "globalConfiguration": {
+    "type": "GlobalConfiguration",
+    "methods": [
+      "get"
+    ]
+  }
+}
+  },
+  "forms": {
+    "personConfig": {
+      "type": "PersonConfig",
+      "fields": {
+        "ActiveAddressFields": {
+          "label": "addresses tab field selection",
+          "renderer": "defaultEnumMultiselect",
+          "options": "addressesFields"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": [
+                  "ActiveAddressFields"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "person": {
+      "type": "Person",
+      "renderer": "personDetails",
+      "fields": {
+        "SubscribeToNewsletter": {
+          "label": "subscribe to newsletter",
+          "renderer": "defaultBoolean"
+        },
+        "Emails": {
+          "label": "Emails",
+          "renderer": "defaultList",
+          "elementRenderer": {
+            "label": "email",
+            "renderer": "defaultString"
+          }
+        },
+        "ShoeColours": {
+          "label": "shoe colours",
+          "renderer": "defaultEnumMultiselect",
+          "options": "colors"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "demographics": {
+              "groups": {
+                "main": [
+                  "Emails",
+                  "ShoeColours"
+                ]
+              }
+            },
+            "mailing": {
+              "groups": {
+                "main": [
+                  "SubscribeToNewsletter"
+                ]
+              }
+            },
+            "addresses": {
+              "groups": {
+                "main": {
+                  "kind": "fieldLookup",
+                  "operands": [
+                    {
+                      "kind": "varLookup",
+                      "varName": "global"
+                    },
+                    "ActiveAddressFields"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "person-transparent": {
+      "kind": "passthrough",
+      "form": "person",
+      "configType": "PersonConfig"
+    },
+    "person-config": {
+      "kind": "passthrough",
+      "form": "personConfig",
+      "configType": "AddressConfigConfig"
+    }
+  }
+}

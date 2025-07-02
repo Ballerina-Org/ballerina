@@ -1203,13 +1203,15 @@ export const PersonConcreteRenderers = {
                 onClick={() => props.foreignMutations.loadOptions()}
               >
                 <>
-                  {props.context.value.fields.map((o) => (
+                  {props.context.value.fields.map((o) => {
+                    debugger
+                    return (
                     <option
                       value={(o as ValueRecord).fields.get("Value")! as string}
                     >
                       {(o as ValueRecord).fields.get("Value") as string}
                     </option>
-                  ))}
+                  )})}
                 </>
               </select>
             ) : (

@@ -1,0 +1,368 @@
+﻿{
+  "kind": "record",
+  "fields": {
+    "AddressConfigConfig": {
+      "kind": "record",
+      "fields": {
+      }
+    },
+    "AddressesFieldRef": {
+      "kind": "record",
+      "fields": {
+        "Value": {
+          "kind": "record",
+          "fields": {
+            "Case": "Holidays",
+            "Value": {
+              "kind": "unit"
+            }
+          }
+        }
+      }
+    },
+    "AddressesFieldsEnum": {
+      "kind": "record",
+      "fields": {
+        "Case": "Permissions",
+        "Value": {
+          "kind": "unit"
+        }
+      }
+    },
+    "CollectionReference": {
+      "kind": "record",
+      "fields": {
+        "DisplayValue": "Modi nobis ratione sint officiis voluptatem consequatur.",
+        "Id": "76613e28-7422-479d-8989-bfcce749d645"
+      }
+    },
+    "ColorRef": {
+      "kind": "record",
+      "fields": {
+        "Value": {
+          "kind": "record",
+          "fields": {
+            "Case": "Green",
+            "Value": {
+              "kind": "unit"
+            }
+          }
+        }
+      }
+    },
+    "ColorsEnum": {
+      "kind": "record",
+      "fields": {
+        "Case": "Green",
+        "Value": {
+          "kind": "unit"
+        }
+      }
+    },
+    "ERPConfig": {
+      "kind": "record",
+      "fields": {
+        "Case": "ERPSAP",
+        "Value": {
+          "kind": "record",
+          "fields": {
+            "Value": {
+              "kind": "record",
+              "fields": {
+                "Case": "SAPS3",
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "S3OnlyField": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "GlobalConfiguration": {
+      "kind": "record",
+      "fields": {
+        "ActiveAddressFields": {
+          "kind": "tuple",
+          "elements": [
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "SchoolAddress",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "AddressesAndAddressesWithLabel",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "SchoolAddress",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "SchoolAddress",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Permissions",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Permissions",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "ERP": {
+          "kind": "record",
+          "fields": {
+            "Case": "ERPSAP",
+            "Value": {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "SAPS4",
+                    "Value": {
+                      "kind": "record",
+                      "fields": {
+                        "S4OnlyField": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "IsAdmin": true
+      }
+    },
+    "Person": {
+      "kind": "record",
+      "fields": {
+        "Emails": {
+          "kind": "tuple",
+          "elements": [
+            "Kathryn.Lemke@gmail.com",
+            "Nayeli43@yahoo.com",
+            "Santos.Purdy94@gmail.com"
+          ]
+        },
+        "Id": "493be4e4-1c70-439d-9826-0a962346e34d",
+        "ShoeColours": {
+          "kind": "tuple",
+          "elements": [
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Blue",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Green",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Green",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Red",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Red",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "SubscribeToNewsletter": true
+      }
+    },
+    "PersonConfig": {
+      "kind": "record",
+      "fields": {
+        "ActiveAddressFields": {
+          "kind": "tuple",
+          "elements": [
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "MainAddress",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "Holidays",
+                    "Value": {
+                      "kind": "unit"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "ERP": {
+          "kind": "record",
+          "fields": {
+            "Case": "ERPSAP",
+            "Value": {
+              "kind": "record",
+              "fields": {
+                "Value": {
+                  "kind": "record",
+                  "fields": {
+                    "Case": "SAPS2",
+                    "Value": {
+                      "kind": "record",
+                      "fields": {
+                        "S2OnlyField": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "IsAdmin": true
+      }
+    },
+    "SAPConfig": {
+      "kind": "record",
+      "fields": {
+        "Case": "SAPS2",
+        "Value": {
+          "kind": "record",
+          "fields": {
+            "S2OnlyField": true
+          }
+        }
+      }
+    }
+  }
+}

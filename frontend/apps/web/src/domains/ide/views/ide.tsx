@@ -42,11 +42,11 @@ return (
                     onNew={()=>{}} //TODO
                     onRunCondition={props.context.launcherName.kind == "r"}
                     onRun={ async () => {
-                      const _ = 
-                        props.setState(
-                          IDE.Updaters.Core.runner(
-                            SpecRunner.Operations.updateStep(
-                              SpecRunnerIndicator.Default.validating())));
+                      // const _ = 
+                      //   props.setState(
+                      //     IDE.Updaters.Core.runner(
+                      //       SpecRunner.Operations.updateStep(
+                      //         SpecRunnerIndicator.Default.validating())));
                       const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
                       const seed = await IDEApi.seed(Value.Default(props.context.editor.input.value));
                       props.setState(

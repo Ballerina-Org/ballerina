@@ -1110,9 +1110,7 @@ export const dispatchFromAPIRawValue =
         let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
         t.fields.forEach((fieldType, fieldName) => {
-          const fieldValue = fieldName in raw
-            ? raw[fieldName]
-            : raw?.fields?.[fieldName];
+          const fieldValue = raw[fieldName];
           if (fieldValue !== null && fieldValue === undefined) {
             return;
           }

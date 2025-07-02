@@ -398,119 +398,325 @@ export const DispatchFieldTypeConverters2: DispatchApiConverters<DispatchPassthr
     },
   };
 
-function convertStructuredValue(value: any): any {
-  if (value == null || typeof value !== "object") {
-    return value;
+function convertStructuredValue(arg: any): any {
+  debugger
+  if (arg == null || typeof arg !== "object") {
+    return arg;
   }
 
-  if ("kind" in value && ("fields" in value || "value" in value) || "elements" in value) {
-    const kind = value.kind;
-    const fields = value.fields;
-    const elements = value.elements;
-    const value = value.value;
+  if ("kind" in arg && ("fields" in arg || "value" in arg) || "elements" in arg) {
+    const kind = arg.kind;
+    const fields = arg.fields;
+    const elements = arg.elements;
+    const value = arg.value;
 
     switch (kind) {
-      case "int":
-      case "float":
-        return value;
+      case "int": return parseFloat(value);
+      case "float": return parseFloat(value);
       case "unit": return {};
-      // case "array":
-      //   return Array.isArray(fields)
-      //     ? List(fields.map(convertStructuredValue))
-      //     : List();
-
-      case "tuple":
-        return List(elements.map(convertStructuredValue));
-
+      case "tuple": {
+        const tmp = elements.map(convertStructuredValue);
+        debugger 
+        return List(tmp);}
       case "record":
-        return Map(
-          fields.map((field: { Key: any; Value: any }) => [
-            field.Key,
+        if ("Value" in fields && "Case" in fields) {
+          return convertStructuredValue(fields.Value)
+        } 
+        else if ("kind" in fields) {
+          return convertStructuredValue(fields)
+        }
+        else if (Array.isArray(fields) && fields.every(item =>
+        item && typeof item === "object" && "Key" in item && "Value" in item)
+      ) {
+          return  Map(fields.map((field: { Key: any; Value: any }) => [
+            convertStructuredValue(field.Key),
             convertStructuredValue(field.Value),
-          ])
-        );
+          ]))
+        }
+        return  convertStructuredValue(fields);
 
       default:
+        //TODO: rather fail that allow unexpected
         return value
     }
   }
-
-  return value;
 }
 
-export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> = {
-  injectedCategory: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => ({ kind: _.value.kind, extraSpecial: _.value.extraSpecial }),
-  },
-  string: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  number: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  boolean: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  base64File: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  secret: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, isModified]) => (isModified ? _ : undefined),
-  },
-  Date: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  union: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-  SingleSelection: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _.kind == "r" ? { IsSome: false, Value: null } : { IsSome: true, Value: _.value },
-  },
-  MultiSelection: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
-  },
-  List: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
-  },
-  Map: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) =>
-      _.valueSeq()
-        .toArray()
-        .map((_: any) => ({ Key: _[0], Value: _[1] })),
-  },
-  Tuple: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) =>
-      _.valueSeq()
-        .toArray()
-        .reduce((acc, value, index) => ({ ...acc, [`Item${index + 1}`]: value }), {}),
-  },
-  Sum: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => ({ IsRight: _.kind == "r", Value: _.value }),
-  },
-  SumUnitDate: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => ({ IsRight: _.kind == "r", Value: _.value }),
-  },
-  Table: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => ({ From: 0, To: 0, HasMore: false, Values: [] }),
-  },
-  One: {
-    fromAPIRawValue: (_) => convertStructuredValue(_),
-    toAPIRawValue: ([_, __]) => _,
-  },
-};
+// export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> = {
+//   injectedCategory: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => ({ kind: _.value.kind, extraSpecial: _.value.extraSpecial }),
+//   },
+//   string: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   number: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   boolean: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   base64File: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   secret: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, isModified]) => (isModified ? _ : undefined),
+//   },
+//   Date: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   union: {
+//     fromAPIRawValue: (_) =>{
+//       if ("Value" in _.fields && "Case" in _.fields)
+//         return { caseName: _.fields.Case, fields: _.fields.Value };
+//       else if ("fields" in _ && "kind" in _) 
+//         return convertStructuredValue(_.fields);
+//       else convertStructuredValue(_);},
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+//   SingleSelection: {
+//     fromAPIRawValue: (_) => {
+//       debugger 
+//       convertStructuredValue(_) },
+//     toAPIRawValue: ([_, __]) => _.kind == "r" ? { IsSome: false, Value: null } : { IsSome: true, Value: _.value },
+//   },
+//   MultiSelection: {
+//     fromAPIRawValue: (_) => {
+//       debugger
+//      
+//       return convertStructuredValue(_)},
+//     toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
+//   },
+//   List: {
+//     fromAPIRawValue: (_) => {
+//       debugger
+//       return convertStructuredValue(_)},
+//     toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
+//   },
+//   Map: {
+//     fromAPIRawValue: (_) => {
+//       debugger
+//       return convertStructuredValue(_)
+//     },
+//     toAPIRawValue: ([_, __]) =>
+//       _.valueSeq()
+//         .toArray()
+//         .map((_: any) => ({ Key: _[0], Value: _[1] })),
+//   },
+//   Tuple: {
+//     fromAPIRawValue: (_) =>{
+//       debugger 
+//       return convertStructuredValue(_)},
+//     toAPIRawValue: ([_, __]) =>
+//       _.valueSeq()
+//         .toArray()
+//         .reduce((acc, value, index) => ({ ...acc, [`Item${index + 1}`]: value }), {}),
+//   },
+//   Sum: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => ({ IsRight: _.kind == "r", Value: _.value }),
+//   },
+//   SumUnitDate: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => ({ IsRight: _.kind == "r", Value: _.value }),
+//   },
+//   Table: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => ({ From: 0, To: 0, HasMore: false, Values: [] }),
+//   },
+//   One: {
+//     fromAPIRawValue: (_) => convertStructuredValue(_),
+//     toAPIRawValue: ([_, __]) => _,
+//   },
+// };
+
+export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> =
+  {
+    injectedCategory: {
+      fromAPIRawValue: (_) => {
+        debugger
+        if (_.fields == undefined) {
+          return {
+            kind: "custom",
+            value: {
+              kind: "adult",
+              extraSpecial: false,
+            },
+          };
+        } else {
+          return {
+            kind: "custom",
+            value: {
+              kind: _.fields.kind,
+              extraSpecial: _.fields.value,
+            },
+          };
+        }
+      },
+      toAPIRawValue: ([_, __]) => ({
+        kind: _.value.kind,
+        extraSpecial: _.value.value,
+      }),
+    },
+    string: {
+      fromAPIRawValue: (_) => convertStructuredValue(_),
+      toAPIRawValue: ([_, __]) => _,
+    },
+    number: {
+      fromAPIRawValue: (_) => convertStructuredValue(_),
+      toAPIRawValue: ([_, __]) => _,
+    },
+    boolean: {
+      fromAPIRawValue: (_) => convertStructuredValue(_),
+      toAPIRawValue: ([_, __]) => _,
+    },
+    base64File: {
+      fromAPIRawValue: (_) => _,
+      toAPIRawValue: ([_, __]) => _,
+    },
+    secret: {
+      fromAPIRawValue: (_) => _,
+      toAPIRawValue: ([_, isModified]) => (isModified ? _ : undefined),
+    },
+    Date: {
+      fromAPIRawValue: (_) =>{
+        debugger
+        return typeof _ == "string" ? new Date(Date.parse(_)) : _ },
+      toAPIRawValue: ([_, __]) => _,
+    },
+    union: {
+      fromAPIRawValue: (_) => {
+        debugger
+        if (_ == undefined) {
+          return _;
+        }
+        if (
+          _.fields.Case == undefined ||
+          typeof _.fields.Case != "string"
+        ) {
+          return _;
+        }
+        return {
+          caseName: _.fields.Case,
+          fields: convertStructuredValue(_.fields.Value),
+        };
+      },
+      toAPIRawValue: ([_, __]) => _,
+    },
+    SingleSelection: {
+      fromAPIRawValue: (_) =>{
+        debugger
+        return _.fields.IsSome == false
+          ? CollectionSelection().Default.right("no selection")
+          : CollectionSelection().Default.left(_.fields.Value)},
+      toAPIRawValue: ([_, __]) =>
+        _.kind == "r"
+          ? { IsSome: false, Value: null }
+          : { IsSome: true, Value: _.value },
+    },
+    MultiSelection: {
+      fromAPIRawValue: (_) => convertStructuredValue(_),
+      toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
+    },
+    List: {
+      fromAPIRawValue: (_) => {
+        debugger
+        return (Array.isArray(_) ? List(_) : _)},
+      toAPIRawValue: ([_, __]) => _.valueSeq().toArray(),
+    },
+    Map: {
+      fromAPIRawValue: (_) =>{
+        debugger
+        return Array.isArray(_)
+          ? List(_.map((_: { Key: any; Value: any }) => [_.Key, _.Value]))
+          : _},
+      toAPIRawValue: ([_, __]) =>
+        _.valueSeq()
+          .toArray()
+          .map((_: any) => ({
+            Key: _[0],
+            Value: _[1],
+          })),
+    },
+    Tuple: {
+      fromAPIRawValue: (_) => {
+        debugger
+        if (_.fields == undefined) {
+          return List();
+        }
+        const prefix = "Item";
+        let index = 1;
+        const result: any[] = [];
+        for (const __ in Object.keys(_.fields)) {
+          const key = `${prefix}${index}`;
+          if (key in _) {
+            result.push(_[key]);
+          }
+          index++;
+        }
+        return List(result);
+      },
+      toAPIRawValue: ([_, __]) =>
+        _.valueSeq()
+          .toArray()
+          .reduce(
+            (acc, value, index) => ({
+              ...acc,
+              [`Item${index + 1}`]: value,
+            }),
+            {},
+          ),
+    },
+    Sum: {
+      fromAPIRawValue: (_: any) =>{
+        debugger
+        return _?.fields.IsRight ? Sum.Default.right(_.fields.Value) : Sum.Default.left(_.fields.Value)},
+      toAPIRawValue: ([_, __]) => ({
+        IsRight: _.kind == "r",
+        Value: _.value,
+      }),
+    },
+    SumUnitDate: {
+      fromAPIRawValue: (_: any) =>{
+        debugger
+        return _?.IsRight ? Sum.Default.right(_.Value) : Sum.Default.left(_.Value)},
+      toAPIRawValue: ([_, __]) => ({
+        IsRight: _.kind == "r",
+        Value: _.value,
+      }),
+    },
+    Table: {
+      fromAPIRawValue: (_) => {
+        debugger
+        if (_ == undefined) {
+          return { data: Map(), hasMoreValues: false, from: 0, to: 0 };
+        }
+        return {
+          data: OrderedMap(_.Values),
+          hasMoreValues: _.HasMore,
+          from: _.From,
+          to: _.To,
+        };
+      },
+      toAPIRawValue: ([_, __]) => ({
+        From: 0,
+        To: 0,
+        HasMore: false,
+        Values: [],
+      }),
+    },
+    One: {
+      fromAPIRawValue: (_) =>{
+        debugger
+        return _.fields.One
+          ? PredicateValue.Default.option(true, _.fields.Value)
+          : PredicateValue.Default.option(false, PredicateValue.Default.unit())},
+      toAPIRawValue: ([_, __]) => _,
+    },
+  };
