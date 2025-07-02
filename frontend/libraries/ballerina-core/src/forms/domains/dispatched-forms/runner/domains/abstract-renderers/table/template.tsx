@@ -94,7 +94,6 @@ export const TableAbstractRenderer = <
   Layout: PredicateVisibleColumns,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
   TableEntityType: RecordType<any>,
 ): Template<
   TableAbstractRendererReadonlyContext<
@@ -161,8 +160,8 @@ export const TableAbstractRenderer = <
           if (rowValue == undefined) {
             console.error(
               `Row value is undefined for row ${rowId} in chunk ${chunkIndex}\n
-              ...When rendering table field\n
-              ...${SerializedType}`,
+              ...When rendering table field ${column}\n
+              ...${_.domNodeAncestorPath}`,
             );
             return undefined;
           }
@@ -176,8 +175,8 @@ export const TableAbstractRenderer = <
             type: TableEntityType.fields.get(column)!,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
@@ -289,7 +288,7 @@ export const TableAbstractRenderer = <
             console.error(
               `Selected detail row is undefined\n
               ...When rendering table field\n
-              ...${SerializedType}`,
+              ...${_.domNodeAncestorPath}`,
             );
             return undefined;
           }
@@ -302,7 +301,7 @@ export const TableAbstractRenderer = <
             console.error(
               `Value is undefined for selected detail row\n
               ...When rendering table field\n
-              ...${SerializedType}`,
+              ...${_.domNodeAncestorPath}`,
             );
             return undefined;
           }
@@ -321,8 +320,8 @@ export const TableAbstractRenderer = <
             type: TableEntityType,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
           };
@@ -332,7 +331,7 @@ export const TableAbstractRenderer = <
               console.error(
                 `Selected detail row is undefined\n
                 ...When rendering table detail view \n
-                ...${SerializedType}`,
+                ...${props.context.domNodeAncestorPath}`,
               );
               return id;
             }
@@ -358,7 +357,7 @@ export const TableAbstractRenderer = <
                 console.error(
                   `Selected detail row is undefined\n
                   ...When rendering table field\n
-                  ...${SerializedType}`,
+                  ...${props.context.domNodeAncestorPath}`,
                 );
                 return id;
               }
@@ -404,10 +403,6 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[table]";
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
@@ -443,7 +438,7 @@ export const TableAbstractRenderer = <
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Error while computing visible columns, check console`}
+          message={`${domNodeId}: Error while computing visible columns, check console`}
         />
       );
     }
@@ -474,7 +469,7 @@ export const TableAbstractRenderer = <
       console.error(disabledColumnKeys.errors.map((error) => error).join("\n"));
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Error while computing disabled column keys, check console`}
+          message={`${domNodeId}: Error while computing disabled column keys, check console`}
         />
       );
     }
@@ -529,7 +524,6 @@ export const TableAbstractRenderer = <
               tableHeaders: validVisibleColumns,
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,
-              completeSerializedTypeHierarchy,
               tableEntityType: TableEntityType,
             }}
             foreignMutations={{

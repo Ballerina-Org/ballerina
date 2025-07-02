@@ -9,7 +9,6 @@ import {
   RecordAbstractRenderer,
   DispatchInjectablesTypes,
   RecordAbstractRendererView,
-  StringSerializedType,
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
@@ -59,10 +58,7 @@ export const RecordDispatcher = {
       isNested: boolean,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<
           ValueOrErrors<
@@ -75,7 +71,6 @@ export const RecordDispatcher = {
                 label?: string;
                 GetDefaultState: () => any;
               },
-              StringSerializedType,
             ],
             string
           >
@@ -97,7 +92,7 @@ export const RecordDispatcher = {
                   dispatcherContext,
                   isInlined,
                   tableApi,
-                ).Then(([template, serializedType]) =>
+                ).Then((template) =>
                   dispatcherContext
                     .defaultState(fieldType, fieldRenderer.renderer)
                     .Then((defaultState) =>
@@ -110,7 +105,6 @@ export const RecordDispatcher = {
                           label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
-                        serializedType,
                       ]),
                     ),
                 ),
@@ -123,18 +117,8 @@ export const RecordDispatcher = {
             renderer.concreteRenderer,
             dispatcherContext,
             isNested,
-          ).Then((concreteRenderer) => {
-            const serializedType = RecordType.SerializeToString(
-              OrderedMap(
-                fieldTemplates
-                  .toArray()
-                  .map((template) => [template[0], template[2]]),
-              ),
-            );
-            return ValueOrErrors.Default.return<
-              [Template<any, any, any, any>, StringSerializedType],
-              string
-            >([
+          ).Then((concreteRenderer) =>
+            ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
               RecordAbstractRenderer<
                 CustomPresentationContexts,
                 Flags,
@@ -147,16 +131,14 @@ export const RecordDispatcher = {
                 dispatcherContext.IdProvider,
                 dispatcherContext.ErrorRenderer,
                 isInlined,
-                serializedType,
               )
                 .mapContext((_: any) => ({
                   ..._,
                   type: renderer.type,
                 }))
                 .withView(concreteRenderer),
-              serializedType,
-            ]);
-          }),
+            ),
+          ),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When dispatching as record form`),

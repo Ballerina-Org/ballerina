@@ -25,7 +25,6 @@ export const StringAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     StringAbstractRendererReadonlyContext<
@@ -36,10 +35,6 @@ export const StringAbstractRenderer = <
     StringAbstractRendererForeignMutationsExpected<Flags>,
     StringAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[string]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
@@ -64,7 +59,6 @@ export const StringAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
-              completeSerializedTypeHierarchy,
               domNodeId,
             }}
             foreignMutations={{

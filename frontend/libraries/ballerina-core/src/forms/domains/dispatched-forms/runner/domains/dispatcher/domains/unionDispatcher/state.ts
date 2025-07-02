@@ -10,10 +10,6 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 
-import {
-  StringSerializedType,
-  UnionType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
 import { Dispatcher } from "../../state";
 
@@ -34,17 +30,9 @@ export const UnionDispatcher = {
       >,
       isNested: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
-        List<
-          ValueOrErrors<
-            [string, Template<any, any, any, any>, StringSerializedType],
-            string
-          >
-        >(
+        List<ValueOrErrors<[string, Template<any, any, any, any>], string>>(
           renderer.type.args
             .entrySeq()
             .map(([caseName]) =>
@@ -62,13 +50,9 @@ export const UnionDispatcher = {
                   tableApi,
                 ).Then((template) =>
                   ValueOrErrors.Default.return<
-                    [
-                      string,
-                      Template<any, any, any, any>,
-                      StringSerializedType,
-                    ],
+                    [string, Template<any, any, any, any>],
                     string
-                  >([caseName, template[0], template[1]]),
+                  >([caseName, template]),
                 ),
               ),
             ),
@@ -80,16 +64,11 @@ export const UnionDispatcher = {
             .Then((defaultState) =>
               dispatcherContext
                 .getConcreteRenderer("union", renderer.concreteRenderer)
-                .Then((concreteRenderer) => {
-                  const serializedType = UnionType.SerializeToString(
-                    Map(
-                      templates.map((template) => [template[0], template[2]]),
-                    ),
-                  );
-                  return ValueOrErrors.Default.return<
-                    [Template<any, any, any, any>, StringSerializedType],
+                .Then((concreteRenderer) =>
+                  ValueOrErrors.Default.return<
+                    Template<any, any, any, any>,
                     string
-                  >([
+                  >(
                     UnionAbstractRenderer(
                       // TODO better typing for state and consider this pattern for other dispatchers
                       (
@@ -100,16 +79,14 @@ export const UnionDispatcher = {
                       ),
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
-                      serializedType,
                     )
                       .mapContext((_: any) => ({
                         ..._,
                         type: renderer.type,
                       }))
                       .withView(concreteRenderer),
-                    serializedType,
-                  ]);
-                }),
+                  ),
+                ),
             ),
         )
         .MapErrors((errors) =>

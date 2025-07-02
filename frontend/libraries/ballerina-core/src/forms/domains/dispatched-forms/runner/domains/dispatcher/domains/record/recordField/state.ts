@@ -1,7 +1,6 @@
 import {
   DispatchInjectablesTypes,
   DispatcherContext,
-  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../../main";
@@ -26,10 +25,7 @@ export const RecordFieldDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,

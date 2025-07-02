@@ -154,7 +154,7 @@ export const DispatchFormRunner = <
                   DispatchFormRunnerState<T, Flags>().Updaters.status(
                     replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                       kind: "loaded",
-                      Form: Form.value[0],
+                      Form: Form.value,
                     }),
                   ),
                 );

@@ -4,8 +4,6 @@ import {
   ValueOrErrors,
   ConcreteRenderers,
   DispatchInjectablesTypes,
-  StringSerializedType,
-  DispatchPrimitiveType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 
@@ -32,12 +30,9 @@ export const PrimitiveDispatcher = {
         CustomPresentationContexts,
         ExtraContext
       >,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > => {
+    ): ValueOrErrors<Template<any, any, any, any>, string> => {
       const result: ValueOrErrors<
-        [Template<any, any, any, any>, StringSerializedType],
+        Template<any, any, any, any>,
         string
       > = (() => {
         const viewKindRes = dispatcherContext.getConcreteRendererKind(
@@ -47,9 +42,6 @@ export const PrimitiveDispatcher = {
           return viewKindRes;
         }
         const viewKind = viewKindRes.value;
-        const serializedType = DispatchPrimitiveType.SerializeToString(
-          renderer.type.name as string,
-        );
         if (
           dispatcherContext.injectedPrimitives?.has(
             renderer.type.name as keyof T,
@@ -70,114 +62,98 @@ export const PrimitiveDispatcher = {
               renderer.concreteRenderer,
             )
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 injectedPrimitive
                   .abstractRenderer(
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
-                    serializedType,
                   )
                   .withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "unit") {
           return dispatcherContext
             .getConcreteRenderer("unit", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 UnitAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "string") {
           return dispatcherContext
             .getConcreteRenderer("string", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 StringAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "number") {
           return dispatcherContext
             .getConcreteRenderer("number", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 NumberAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "boolean") {
           return dispatcherContext
             .getConcreteRenderer("boolean", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 BoolAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "secret") {
           return dispatcherContext
             .getConcreteRenderer("secret", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 SecretAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "base64File") {
           return dispatcherContext
             .getConcreteRenderer("base64File", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 Base64FileAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         if (viewKind == "date") {
           return dispatcherContext
             .getConcreteRenderer("date", renderer.concreteRenderer)
             .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return([
+              ValueOrErrors.Default.return(
                 DateAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(concreteRenderer),
-                serializedType,
-              ]),
+              ),
             );
         }
         return ValueOrErrors.Default.throwOne(

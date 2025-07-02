@@ -59,7 +59,6 @@ export const RecordAbstractRenderer = <
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
-  SerializedType: StringSerializedType,
 ): Template<
   RecordAbstractRendererReadonlyContext<
     CustomPresentationContext,
@@ -105,8 +104,8 @@ export const RecordAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[record][${fieldName}]`,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
           }),
         )
@@ -196,10 +195,6 @@ export const RecordAbstractRenderer = <
     RecordAbstractRendererForeignMutationsExpected<Flags>,
     RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[record]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
@@ -293,7 +288,6 @@ export const RecordAbstractRenderer = <
           <props.view
             context={{
               ...props.context,
-              completeSerializedTypeHierarchy,
               domNodeId,
               layout: calculatedLayout.value,
             }}

@@ -192,6 +192,7 @@ export type StringSerializedType = string;
 export type UnionType<T> = {
   kind: "union";
   args: Map<DispatchCaseName, DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const UnionType = {
@@ -205,6 +206,7 @@ export const UnionType = {
 export type RecordType<T> = {
   kind: "record";
   fields: OrderedMap<DispatchFieldName, DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const RecordType = {
@@ -218,6 +220,7 @@ export const RecordType = {
 export type LookupType = {
   kind: "lookup";
   name: string;
+  asString: () => StringSerializedType;
 };
 
 export const LookupType = {
@@ -229,6 +232,7 @@ export const LookupType = {
 export type DispatchPrimitiveType<T> = {
   kind: "primitive";
   name: DispatchPrimitiveTypeName<T>;
+  asString: () => StringSerializedType;
 };
 
 export const DispatchPrimitiveType = {
@@ -242,6 +246,7 @@ export const DispatchPrimitiveType = {
 export type SingleSelectionType<T> = {
   kind: "singleSelection";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const SingleSelectionType = {
@@ -255,6 +260,7 @@ export const SingleSelectionType = {
 export type MultiSelectionType<T> = {
   kind: "multiSelection";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const MultiSelectionType = {
@@ -268,6 +274,7 @@ export const MultiSelectionType = {
 export type ListType<T> = {
   kind: "list";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const ListType = {
@@ -281,6 +288,7 @@ export const ListType = {
 export type TupleType<T> = {
   kind: "tuple";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const TupleType = {
@@ -294,6 +302,7 @@ export const TupleType = {
 export type SumType<T> = {
   kind: "sum";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const SumType = {
@@ -307,6 +316,7 @@ export const SumType = {
 export type MapType<T> = {
   kind: "map";
   args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
 };
 
 export const MapType = {
@@ -320,6 +330,7 @@ export const MapType = {
 export type TableType<T> = {
   kind: "table";
   arg: LookupType;
+  asString: () => StringSerializedType;
 };
 
 export const TableType = {
@@ -333,6 +344,7 @@ export const TableType = {
 export type OneType<T> = {
   kind: "one";
   arg: LookupType;
+  asString: () => StringSerializedType;
 };
 
 export const OneType = {
@@ -362,60 +374,84 @@ export const DispatchParsedType = {
     table: <T>(arg: LookupType): TableType<T> => ({
       kind: "table",
       arg,
+      asString: () => TableType.SerializeToString(arg.asString()),
     }),
     record: <T>(
       fields: Map<DispatchFieldName, DispatchParsedType<T>>,
     ): RecordType<T> => ({
       kind: "record",
       fields,
+      asString: () =>
+        RecordType.SerializeToString(fields.map((v) => v.asString())),
     }),
     primitive: <T>(
       name: DispatchPrimitiveTypeName<T>,
     ): DispatchParsedType<T> => ({
       kind: "primitive",
       name,
+      asString: () => DispatchPrimitiveType.SerializeToString(name),
     }),
     singleSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "singleSelection",
       args,
+      asString: () =>
+        SingleSelectionType.SerializeToString(
+          args.map((v) => v.asString()),
+        ),
     }),
     multiSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "multiSelection",
       args,
+      asString: () =>
+        MultiSelectionType.SerializeToString(
+          args.map((v) => v.asString()),
+        ),
     }),
     list: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "list",
       args,
+      asString: () =>
+        ListType.SerializeToString(args.map((v) => v.asString())),
     }),
     tuple: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "tuple",
       args,
+      asString: () =>
+        TupleType.SerializeToString(args.map((v) => v.asString())),
     }),
     sum: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "sum",
       args,
+      asString: () =>
+        SumType.SerializeToString(args.map((v) => v.asString())),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
       args,
+      asString: () =>
+        MapType.SerializeToString(args.map((v) => v.asString())),
     }),
     union: <T>(
       args: Map<DispatchCaseName, DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "union",
       args,
+      asString: () =>
+        UnionType.SerializeToString(args.map((v) => v.asString())),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
       name,
+      asString: () => LookupType.SerializeToString(name),
     }),
     one: <T>(arg: LookupType): OneType<T> => ({
       kind: "one",
       arg,
+      asString: () => OneType.SerializeToString(arg.asString()),
     }),
   },
   Operations: {

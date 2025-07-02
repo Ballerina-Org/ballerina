@@ -8,10 +8,7 @@ import {
   DispatchInjectablesTypes,
 } from "../../../../../../../../../main";
 
-import {
-  StringSerializedType,
-  TupleType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
+import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { TupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/tuple/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
@@ -32,17 +29,9 @@ export const TupleDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
-        List<
-          ValueOrErrors<
-            [number, Template<any, any, any, any>, StringSerializedType],
-            string
-          >
-        >(
+        List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(
           renderer.type.args.map((_, index) =>
             NestedDispatcher.Operations.DispatchAs(
               renderer.itemRenderers[index],
@@ -51,10 +40,7 @@ export const TupleDispatcher = {
               isInlined,
               tableApi,
             ).Then((template) =>
-              ValueOrErrors.Default.return<
-                [number, Template<any, any, any, any>, StringSerializedType],
-                string
-              >([index, template[0], template[1]]),
+              ValueOrErrors.Default.return([index, template]),
             ),
           ),
         ),
@@ -73,14 +59,8 @@ export const TupleDispatcher = {
           ).Then((ItemDefaultStates) =>
             dispatcherContext
               .getConcreteRenderer("tuple", renderer.concreteRenderer)
-              .Then((concreteRenderer) => {
-                const serializedType = TupleType.SerializeToString(
-                  templates.map((template) => template[2]).toArray(),
-                );
-                return ValueOrErrors.Default.return<
-                  [Template<any, any, any, any>, StringSerializedType],
-                  string
-                >([
+              .Then((concreteRenderer) =>
+                ValueOrErrors.Default.return(
                   DispatchTupleAbstractRenderer(
                     Map(ItemDefaultStates).map((state) => () => state),
                     Map(
@@ -88,11 +68,9 @@ export const TupleDispatcher = {
                     ),
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
-                    serializedType,
                   ).withView(concreteRenderer),
-                  serializedType,
-                ]);
-              }),
+                ),
+              ),
           ),
         )
         .MapErrors((errors) =>

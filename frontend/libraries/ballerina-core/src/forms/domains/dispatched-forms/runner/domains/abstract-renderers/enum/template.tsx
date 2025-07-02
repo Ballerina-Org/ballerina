@@ -29,7 +29,6 @@ export const EnumAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     EnumAbstractRendererReadonlyContext<
@@ -49,10 +48,6 @@ export const EnumAbstractRenderer = <
     EnumAbstractRendererForeignMutationsExpected<Flags>,
     EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[enum]";
 
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
@@ -78,7 +73,6 @@ export const EnumAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,
               )

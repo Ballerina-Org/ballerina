@@ -1,11 +1,5 @@
-import {
-  DispatchParsedType,
-  ListType,
-  StringSerializedType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import {
-  Dispatcher,
   DispatchInjectablesTypes,
   ListAbstractRenderer,
   Template,
@@ -32,10 +26,7 @@ export const ListDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,
         dispatcherContext,
@@ -58,26 +49,18 @@ export const ListDispatcher = {
                 .Then((defaultElementValue) =>
                   dispatcherContext
                     .getConcreteRenderer("list", renderer.concreteRenderer)
-                    .Then((concreteRenderer) => {
-                      const serializedType = ListType.SerializeToString([
-                        elementTemplate[1],
-                      ]);
-                      return ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
+                    .Then((concreteRenderer) => 
+                      ValueOrErrors.Default.return(
                         ListAbstractRenderer(
                           () => defaultElementState,
                           () => defaultElementValue,
-                          elementTemplate[0],
+                          elementTemplate,
                           renderer.methods ?? [],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
-                          serializedType,
                         ).withView(concreteRenderer),
-                        serializedType,
-                      ]);
-                    }),
+                      ),
+                    ),
                 ),
             ),
         )

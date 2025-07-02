@@ -7,7 +7,6 @@ import {
   ValueOrErrors,
   TableAbstractRenderer,
   DispatchInjectablesTypes,
-  StringSerializedType,
   PredicateValue,
   LookupType,
   LookupTypeAbstractRenderer,
@@ -59,10 +58,7 @@ export const TableDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      undefined | [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.DispatchAs(
@@ -87,10 +83,7 @@ export const TableDispatcher = {
       >,
       tableApi: string | undefined,
       isInlined: boolean,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       DispatchParsedType.Operations.ResolveLookupType(
         renderer.type.arg.name,
         dispatcherContext.types,
@@ -159,12 +152,9 @@ export const TableDispatcher = {
                                         Flags,
                                         ExtraContext
                                       >(
-                                        template[0],
+                                        template,
                                         dispatcherContext.IdProvider,
                                         dispatcherContext.ErrorRenderer,
-                                        LookupType.SerializeToString(
-                                          renderer.type.arg.name,
-                                        ),
                                       ).withView(
                                         dispatcherContext.lookupTypeRenderer(),
                                       ),
@@ -193,21 +183,14 @@ export const TableDispatcher = {
                       TableDispatcher.Operations.GetApi(
                         renderer.api ?? tableApi,
                         dispatcherContext,
-                      ).Then((tableApiSource) => {
-                        const serializedType = TableType.SerializeToString(
-                          renderer.type.arg.name,
-                        );
-                        return ValueOrErrors.Default.return<
-                          [Template<any, any, any, any>, StringSerializedType],
-                          string
-                        >([
+                      ).Then((tableApiSource) =>
+                        ValueOrErrors.Default.return(
                           TableAbstractRenderer(
                             Map(cellTemplates),
-                            detailsRenderer?.[0],
+                            detailsRenderer,
                             renderer.visibleColumns,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
-                            serializedType,
                             tableEntityType,
                           )
                             .mapContext((_: any) => ({
@@ -226,14 +209,13 @@ export const TableDispatcher = {
                                 ),
                             }))
                             .withView(concreteRenderer),
-                          serializedType,
-                        ]);
-                      }),
+                        ),
+                      ),
                     ),
                 ),
               )
             : ValueOrErrors.Default.throwOne<
-                [Template<any, any, any, any>, StringSerializedType],
+                Template<any, any, any, any>,
                 string
               >(
                 `expected a record type, but got a ${tableEntityType.kind} type`,

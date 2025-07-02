@@ -5,10 +5,6 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import {
-  MapType,
-  StringSerializedType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
 import { DispatcherContext } from "../../../../../deserializer/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
@@ -29,10 +25,7 @@ export const MapDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.keyRenderer,
         dispatcherContext,
@@ -74,33 +67,20 @@ export const MapDispatcher = {
                                 "map",
                                 renderer.concreteRenderer,
                               )
-                              .Then((concreteRenderer) => {
-                                const serializedType =
-                                  MapType.SerializeToString([
-                                    keyTemplate[1],
-                                    valueTemplate[1],
-                                  ]);
-                                return ValueOrErrors.Default.return<
-                                  [
-                                    Template<any, any, any, any>,
-                                    StringSerializedType,
-                                  ],
-                                  string
-                                >([
+                              .Then((concreteRenderer) =>
+                                ValueOrErrors.Default.return(
                                   MapAbstractRenderer(
                                     () => defaultKeyState,
                                     () => defaultKeyValue,
                                     () => defaultValueState,
                                     () => defaultValueValue,
-                                    keyTemplate[0],
-                                    valueTemplate[0],
+                                    keyTemplate,
+                                    valueTemplate,
                                     dispatcherContext.IdProvider,
                                     dispatcherContext.ErrorRenderer,
-                                    serializedType,
                                   ).withView(concreteRenderer),
-                                  serializedType,
-                                ]);
-                              }),
+                                ),
+                              ),
                           ),
                       ),
                   ),

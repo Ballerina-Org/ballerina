@@ -40,10 +40,7 @@ export const Dispatcher = {
       isNested: boolean,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
@@ -69,26 +66,16 @@ export const Dispatcher = {
       isNested: boolean,
       isInlined: boolean | undefined,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > => {
+    ): ValueOrErrors<Template<any, any, any, any>, string> => {
       // see the deserializer state file for a commeny explaining lookup renderers
       return renderer.kind == "primitiveRenderer"
-        ? PrimitiveDispatcher.Operations.Dispatch(
-            renderer,
-            dispatcherContext,
-          ).Then((template) =>
-            ValueOrErrors.Default.return([template[0], template[1]]),
-          )
+        ? PrimitiveDispatcher.Operations.Dispatch(renderer, dispatcherContext)
         : renderer.kind == "lookupType-lookupRenderer" ||
             renderer.kind == "lookupType-inlinedRenderer"
           ? LookupDispatcher.Operations.Dispatch(
               renderer,
               dispatcherContext,
               tableApi,
-            ).Then((template) =>
-              ValueOrErrors.Default.return([template[0], template[1]]),
             )
           : renderer.kind == "inlinedType-lookupRenderer"
             ? LookupRenderer.Operations.ResolveRenderer(
@@ -110,8 +97,6 @@ export const Dispatcher = {
                   isNested,
                   isInlined ?? true,
                   tableApi,
-                ).Then((template) =>
-                  ValueOrErrors.Default.return([template[0], template[1]]),
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(
@@ -119,8 +104,6 @@ export const Dispatcher = {
                     dispatcherContext,
                     isInlined ?? true,
                     tableApi,
-                  ).Then((template) =>
-                    ValueOrErrors.Default.return([template[0], template[1]]),
                   )
                 : renderer.kind == "mapRenderer"
                   ? MapDispatcher.Operations.Dispatch(
@@ -128,8 +111,6 @@ export const Dispatcher = {
                       dispatcherContext,
                       isInlined ?? true,
                       tableApi,
-                    ).Then((template) =>
-                      ValueOrErrors.Default.return([template[0], template[1]]),
                     )
                   : (renderer.kind == "enumRenderer" ||
                         renderer.kind == "streamRenderer") &&
@@ -137,11 +118,6 @@ export const Dispatcher = {
                     ? SingleSelectionDispatcher.Operations.Dispatch(
                         renderer,
                         dispatcherContext,
-                      ).Then((template) =>
-                        ValueOrErrors.Default.return([
-                          template[0],
-                          template[1],
-                        ]),
                       )
                     : (renderer.kind == "enumRenderer" ||
                           renderer.kind == "streamRenderer") &&
@@ -149,11 +125,6 @@ export const Dispatcher = {
                       ? MultiSelectionDispatcher.Operations.Dispatch(
                           renderer,
                           dispatcherContext,
-                        ).Then((template) =>
-                          ValueOrErrors.Default.return([
-                            template[0],
-                            template[1],
-                          ]),
                         )
                       : renderer.kind == "oneRenderer"
                         ? OneDispatcher.Operations.Dispatch(
@@ -161,11 +132,6 @@ export const Dispatcher = {
                             dispatcherContext,
                             isInlined ?? true,
                             tableApi,
-                          ).Then((template) =>
-                            ValueOrErrors.Default.return([
-                              template[0],
-                              template[1],
-                            ]),
                           )
                         : renderer.kind == "sumRenderer" ||
                             renderer.kind == "sumUnitDateRenderer"
@@ -174,11 +140,6 @@ export const Dispatcher = {
                               dispatcherContext,
                               isInlined ?? true,
                               tableApi,
-                            ).Then((template) =>
-                              ValueOrErrors.Default.return([
-                                template[0],
-                                template[1],
-                              ]),
                             )
                           : renderer.kind == "tableRenderer"
                             ? TableDispatcher.Operations.Dispatch(
@@ -186,11 +147,6 @@ export const Dispatcher = {
                                 dispatcherContext,
                                 tableApi,
                                 isInlined ?? true,
-                              ).Then((template) =>
-                                ValueOrErrors.Default.return([
-                                  template[0],
-                                  template[1],
-                                ]),
                               )
                             : renderer.kind == "tupleRenderer"
                               ? TupleDispatcher.Operations.Dispatch(
@@ -198,11 +154,6 @@ export const Dispatcher = {
                                   dispatcherContext,
                                   isInlined ?? true,
                                   tableApi,
-                                ).Then((template) =>
-                                  ValueOrErrors.Default.return([
-                                    template[0],
-                                    template[1],
-                                  ]),
                                 )
                               : renderer.kind == "unionRenderer"
                                 ? UnionDispatcher.Operations.Dispatch(
@@ -210,11 +161,6 @@ export const Dispatcher = {
                                     dispatcherContext,
                                     isNested,
                                     tableApi,
-                                  ).Then((template) =>
-                                    ValueOrErrors.Default.return([
-                                      template[0],
-                                      template[1],
-                                    ]),
                                   )
                                 : ValueOrErrors.Default.throwOne(
                                     `unknown renderer ${renderer.kind}`,

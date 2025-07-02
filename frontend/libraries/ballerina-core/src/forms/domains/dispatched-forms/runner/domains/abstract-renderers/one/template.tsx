@@ -23,8 +23,8 @@ import {
   Value,
   Option,
   Unit,
-  StringSerializedType,
   MapRepo,
+  DispatchParsedType,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -63,7 +63,6 @@ export const OneAbstractRenderer = <
   PreviewRenderer: Template<any, any, any, any> | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
   oneEntityType: RecordType<any>,
 ) => {
   const typedInitializeOneRunner = initializeOneRunner<
@@ -132,8 +131,8 @@ export const OneAbstractRenderer = <
         type: oneEntityType,
         customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-        serializedTypeHierarchy: [SerializedType].concat(
-          _.serializedTypeHierarchy,
+        typeAncestors: [_.type as DispatchParsedType<any>].concat(
+          _.typeAncestors,
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
       };
@@ -248,8 +247,8 @@ export const OneAbstractRenderer = <
             type: oneEntityType,
             customPresentationContext: _.customPresentationContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
           };
@@ -348,10 +347,6 @@ export const OneAbstractRenderer = <
     OneAbstractRendererForeignMutationsExpected<Flags>,
     OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[one]";
 
     const value = props.context.value;
@@ -469,7 +464,6 @@ export const OneAbstractRenderer = <
               hasMoreValues:
                 !!props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

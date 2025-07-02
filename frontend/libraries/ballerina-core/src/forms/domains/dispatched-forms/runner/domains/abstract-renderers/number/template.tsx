@@ -23,7 +23,6 @@ export const NumberAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     NumberAbstractRendererReadonlyContext<
@@ -35,10 +34,6 @@ export const NumberAbstractRenderer = <
     NumberAbstractRendererForeignMutationsExpected<Flags>,
     NumberAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[number]";
 
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
@@ -63,7 +58,6 @@ export const NumberAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

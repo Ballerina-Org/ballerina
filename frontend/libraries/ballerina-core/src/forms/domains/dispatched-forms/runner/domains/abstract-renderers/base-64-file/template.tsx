@@ -22,7 +22,6 @@ export const Base64FileAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     Base64FileAbstractRendererReadonlyContext<
@@ -38,10 +37,6 @@ export const Base64FileAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[base64File]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
@@ -67,7 +62,6 @@ export const Base64FileAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -35,7 +35,6 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     SearchableInfiniteStreamMultiselectAbstractRendererReadonlyContext<
@@ -112,10 +111,6 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId =
       props.context.domNodeAncestorPath +
       "[searchableInfiniteStreamMultiselect]";
@@ -144,7 +139,6 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
-              completeSerializedTypeHierarchy,
               domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()

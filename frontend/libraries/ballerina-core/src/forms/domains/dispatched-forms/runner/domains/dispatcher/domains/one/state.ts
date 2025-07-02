@@ -3,12 +3,9 @@ import {
   DispatcherContext,
   Guid,
   OneAbstractRenderer,
-  OneType,
   DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
-  StringSerializedType,
-  LookupType,
   DispatchParsedType,
   LookupTypeAbstractRenderer,
 } from "../../../../../../../../../main";
@@ -32,10 +29,7 @@ export const OneDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      undefined | [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
         : NestedDispatcher.Operations.DispatchAs(
@@ -99,10 +93,7 @@ export const OneDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       DispatchParsedType.Operations.ResolveLookupType(
         renderer.type.arg.name,
         dispatcherContext.types,
@@ -130,26 +121,17 @@ export const OneDispatcher = {
                 ).Then((getApi) =>
                   dispatcherContext
                     .getConcreteRenderer("one", renderer.concreteRenderer)
-                    .Then((concreteRenderer) => {
-                      const serializedType = OneType.SerializeToString(
-                        renderer.type.arg.name,
-                      );
-                      return ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
+                    .Then((concreteRenderer) =>
+                      ValueOrErrors.Default.return(
                         OneAbstractRenderer(
                           LookupTypeAbstractRenderer<
                             CustomPresentationContexts,
                             Flags,
                             ExtraContext
                           >(
-                            detailsRenderer[0],
+                            detailsRenderer,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
-                            LookupType.SerializeToString(
-                              renderer.type.arg.name,
-                            ),
                           ).withView(dispatcherContext.lookupTypeRenderer()),
                           previewRenderer
                             ? LookupTypeAbstractRenderer<
@@ -157,17 +139,13 @@ export const OneDispatcher = {
                                 Flags,
                                 ExtraContext
                               >(
-                                previewRenderer[0],
+                                previewRenderer,
                                 dispatcherContext.IdProvider,
                                 dispatcherContext.ErrorRenderer,
-                                LookupType.SerializeToString(
-                                  renderer.type.arg.name,
-                                ),
                               ).withView(dispatcherContext.lookupTypeRenderer())
                             : undefined,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
-                          serializedType,
                           oneEntityType,
                         )
                           .mapContext((_: any) => ({
@@ -178,9 +156,8 @@ export const OneDispatcher = {
                             ),
                           }))
                           .withView(concreteRenderer),
-                        serializedType,
-                      ]);
-                    }),
+                      ),
+                    ),
                 ),
               ),
             ),

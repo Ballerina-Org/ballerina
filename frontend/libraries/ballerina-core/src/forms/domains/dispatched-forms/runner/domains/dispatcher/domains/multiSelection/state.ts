@@ -9,9 +9,6 @@ import {
   ValueRecord,
   unit,
   DispatchInjectablesTypes,
-  StringSerializedType,
-  MultiSelectionType,
-  LookupType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
@@ -33,10 +30,7 @@ export const MultiSelectionDispatcher = {
         CustomPresentationContexts,
         ExtraContext
       >,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       dispatcherContext
         .getConcreteRendererKind(renderer.concreteRenderer)
         .Then((viewKind) =>
@@ -49,19 +43,11 @@ export const MultiSelectionDispatcher = {
                 .Then((concreteRenderer) =>
                   dispatcherContext
                     .enumOptionsSources(renderer.options)
-                    .Then((optionsSource) => {
-                      const serializedType =
-                        MultiSelectionType.SerializeToString([
-                          (renderer.type.args[0] as LookupType).name as string,
-                        ]); // always a lookup type
-                      return ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
-                        string
-                      >([
+                    .Then((optionsSource) =>
+                      ValueOrErrors.Default.return(
                         EnumMultiselectAbstractRenderer(
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
-                          serializedType,
                         )
                           .mapContext((_: any) => ({
                             ..._,
@@ -80,9 +66,8 @@ export const MultiSelectionDispatcher = {
                               ),
                           }))
                           .withView(concreteRenderer),
-                        serializedType,
-                      ]);
-                    }),
+                      ),
+                    ),
                 )
                 .MapErrors((errors) =>
                   errors.map(
@@ -97,32 +82,21 @@ export const MultiSelectionDispatcher = {
                     "streamMultiSelection",
                     renderer.concreteRenderer,
                   )
-                  .Then((concreteRenderer) => {
-                    const serializedType = MultiSelectionType.SerializeToString(
-                      [(renderer.type.args[0] as LookupType).name as string],
-                    );
-                    return ValueOrErrors.Default.return<
-                      [Template<any, any, any, any>, StringSerializedType],
-                      string
-                    >([
+                  .Then((concreteRenderer) =>
+                    ValueOrErrors.Default.return(
                       InfiniteMultiselectDropdownFormAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
-                        serializedType,
                       ).withView(concreteRenderer),
-                      serializedType,
-                    ]);
-                  })
+                    ),
+                  )
                   .MapErrors((errors) =>
                     errors.map(
                       (error) =>
                         `${error}\n...When dispatching nested stream multi selection: ${renderer}`,
                     ),
                   )
-              : ValueOrErrors.Default.throwOne<
-                  [Template<any, any, any, any>, StringSerializedType],
-                  string
-                >(
+              : ValueOrErrors.Default.throwOne(
                   `could not resolve multi selection concrete renderer for ${viewKind}`,
                 ),
         ),

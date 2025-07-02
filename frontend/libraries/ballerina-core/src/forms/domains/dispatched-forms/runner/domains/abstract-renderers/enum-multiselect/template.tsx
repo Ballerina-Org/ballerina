@@ -33,7 +33,6 @@ export const EnumMultiselectAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     EnumMultiselectAbstractRendererReadonlyContext<
@@ -57,10 +56,6 @@ export const EnumMultiselectAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[enumMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
@@ -86,7 +81,6 @@ export const EnumMultiselectAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
               selectedIds: props.context.value.fields.keySeq().toArray(),
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,

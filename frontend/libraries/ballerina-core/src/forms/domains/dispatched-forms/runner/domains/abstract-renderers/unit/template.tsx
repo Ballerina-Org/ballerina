@@ -23,7 +23,6 @@ export const UnitAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) =>
   Template.Default<
     UnitAbstractRendererReadonlyContext<
@@ -35,10 +34,6 @@ export const UnitAbstractRenderer = <
     UnitAbstractRendererForeignMutationsExpected<Flags>,
     UnitAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[unit]";
 
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
@@ -64,7 +59,6 @@ export const UnitAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -28,7 +28,7 @@ import {
 } from "./state";
 
 export const ListAbstractRenderer = <
-  T,
+  T extends DispatchParsedType<T>,
   CustomPresentationContext = Unit,
   Flags = Unit,
   ExtraContext = Unit,
@@ -49,7 +49,6 @@ export const ListAbstractRenderer = <
   methods: ListMethods,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const embeddedElementTemplate =
     (elementIndex: number) => (flags: Flags | undefined) =>
@@ -74,8 +73,8 @@ export const ListAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[list][${elementIndex}]`,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<T>].concat(
+              _.typeAncestors,
             ),
           }),
         )
@@ -149,10 +148,6 @@ export const ListAbstractRenderer = <
     ListAbstractRendererForeignMutationsExpected<Flags>,
     ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[list]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
@@ -178,7 +173,6 @@ export const ListAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

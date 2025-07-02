@@ -1,4 +1,3 @@
-import { List } from "immutable";
 import {
   SecretAbstractRendererForeignMutationsExpected,
   SecretAbstractRendererReadonlyContext,
@@ -14,7 +13,6 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
 
 export const SecretAbstractRenderer = <
@@ -24,7 +22,6 @@ export const SecretAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     SecretAbstractRendererReadonlyContext<
@@ -35,10 +32,6 @@ export const SecretAbstractRenderer = <
     SecretAbstractRendererForeignMutationsExpected<Flags>,
     SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[secret]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
@@ -63,7 +56,6 @@ export const SecretAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
-              completeSerializedTypeHierarchy,
               domNodeId,
             }}
             foreignMutations={{

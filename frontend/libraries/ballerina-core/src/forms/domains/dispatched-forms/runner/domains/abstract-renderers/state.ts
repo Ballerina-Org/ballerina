@@ -25,12 +25,11 @@ export type CommonAbstractRendererReadonlyContext<
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
-  serializedTypeHierarchy: string[];
+  typeAncestors: DispatchParsedType<any>[];
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {
   domNodeId: string;
-  completeSerializedTypeHierarchy: string[];
 };
 
 export type CommonAbstractRendererState = {

@@ -9,7 +9,6 @@ import {
   EnumReference,
   PredicateValue,
   DispatchInjectablesTypes,
-  StringSerializedType,
   SingleSelectionType,
   LookupType,
 } from "../../../../../../../../../main";
@@ -33,10 +32,7 @@ export const SingleSelectionDispatcher = {
         CustomPresentationContexts,
         ExtraContext
       >,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       dispatcherContext
         .getConcreteRendererKind(renderer.concreteRenderer)
         .Then((viewKind) =>
@@ -51,16 +47,12 @@ export const SingleSelectionDispatcher = {
                     .enumOptionsSources(renderer.options)
                     .Then((optionsSource) =>
                       ValueOrErrors.Default.return<
-                        [Template<any, any, any, any>, StringSerializedType],
+                        Template<any, any, any, any>,
                         string
-                      >([
+                      >(
                         EnumAbstractRenderer(
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
-                          SingleSelectionType.SerializeToString([
-                            (renderer.type.args[0] as LookupType)
-                              .name as string,
-                          ]),
                         )
                           .mapContext((_: any) => ({
                             ..._,
@@ -79,10 +71,7 @@ export const SingleSelectionDispatcher = {
                               ),
                           }))
                           .withView(concreteRenderer),
-                        SingleSelectionType.SerializeToString([
-                          (renderer.type.args[0] as LookupType).name as string,
-                        ]), // always a lookup type
-                      ]),
+                      ),
                     ),
                 )
                 .MapErrors((errors) =>
@@ -100,20 +89,14 @@ export const SingleSelectionDispatcher = {
                   )
                   .Then((concreteRenderer) =>
                     ValueOrErrors.Default.return<
-                      [Template<any, any, any, any>, StringSerializedType],
+                      Template<any, any, any, any>,
                       string
-                    >([
+                    >(
                       SearchableInfiniteStreamAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
-                        SingleSelectionType.SerializeToString([
-                          (renderer.type.args[0] as LookupType).name as string,
-                        ]),
                       ).withView(concreteRenderer),
-                      SingleSelectionType.SerializeToString([
-                        (renderer.type.args[0] as LookupType).name as string, // always a lookup type
-                      ]),
-                    ]),
+                    ),
                   )
                   .MapErrors((errors) =>
                     errors.map(

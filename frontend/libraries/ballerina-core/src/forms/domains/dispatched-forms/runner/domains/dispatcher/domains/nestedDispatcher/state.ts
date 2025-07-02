@@ -1,6 +1,5 @@
 import {
   DispatchInjectablesTypes,
-  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -26,10 +25,7 @@ export const NestedDispatcher = {
       as: string,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
@@ -53,10 +49,7 @@ export const NestedDispatcher = {
       >,
       isInlined: boolean,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         renderer.renderer,
         dispatcherContext,
@@ -65,18 +58,14 @@ export const NestedDispatcher = {
         tableApi,
       )
         .Then((template) =>
-          ValueOrErrors.Default.return<
-            [Template<any, any, any, any>, StringSerializedType],
-            string
-          >([
-            template[0].mapContext((_: any) => ({
+          ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
+            template.mapContext((_: any) => ({
               ..._,
               label: renderer.label,
               tooltip: renderer.tooltip,
               details: renderer.details,
             })),
-            template[1],
-          ]),
+          ),
         )
         .MapErrors((errors) =>
           errors.map(

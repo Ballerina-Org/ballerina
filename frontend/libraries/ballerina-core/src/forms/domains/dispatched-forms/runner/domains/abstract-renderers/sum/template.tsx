@@ -14,10 +14,7 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
-import {
-  DispatchParsedType,
-  StringSerializedType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   SumAbstractRendererForeignMutationsExpected,
   SumAbstractRendererReadonlyContext,
@@ -32,7 +29,6 @@ export const SumAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
   leftTemplate?: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
@@ -75,10 +71,10 @@ export const SumAbstractRenderer = <
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              serializedTypeHierarchy: [SerializedType].concat(
-                _.serializedTypeHierarchy,
-              ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[sum][left]",
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
             }),
           )
           .mapState(
@@ -152,10 +148,10 @@ export const SumAbstractRenderer = <
               type: _.type.args[1],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              serializedTypeHierarchy: [SerializedType].concat(
-                _.serializedTypeHierarchy,
-              ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[sum][right]",
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
             }),
           )
           .mapState(
@@ -213,10 +209,6 @@ export const SumAbstractRenderer = <
     SumAbstractRendererForeignMutationsExpected<Flags>,
     SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[sum]";
 
     if (!PredicateValue.Operations.IsSum(props.context.value)) {
@@ -242,7 +234,6 @@ export const SumAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

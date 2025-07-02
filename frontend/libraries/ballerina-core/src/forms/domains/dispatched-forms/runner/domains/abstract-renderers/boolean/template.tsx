@@ -23,7 +23,6 @@ export const BoolAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     BoolAbstractRendererReadonlyContext<
@@ -35,10 +34,6 @@ export const BoolAbstractRenderer = <
     BoolAbstractRendererForeignMutationsExpected<Flags>,
     BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[boolean]";
 
     if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
@@ -64,7 +59,6 @@ export const BoolAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

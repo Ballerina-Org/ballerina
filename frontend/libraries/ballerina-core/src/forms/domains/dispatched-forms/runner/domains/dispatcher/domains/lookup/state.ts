@@ -2,7 +2,6 @@ import {
   DispatchInjectablesTypes,
   LookupType,
   LookupTypeAbstractRenderer,
-  StringSerializedType,
   Template,
 } from "../../../../../../../../../main";
 import {
@@ -28,10 +27,7 @@ export const LookupDispatcher = {
         ExtraContext
       >,
       tableApi: string | undefined,
-    ): ValueOrErrors<
-      [Template<any, any, any, any>, StringSerializedType],
-      string
-    > =>
+    ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.kind == "inlinedType-lookupRenderer"
         ? ValueOrErrors.Default.throwOne(
             `inlined type lookup renderer should not have been dispatched to a lookup renderer`,
@@ -49,27 +45,19 @@ export const LookupDispatcher = {
                 renderer.tableApi ?? tableApi,
               ),
             )
-            .Then((template) => {
-              const serializedType = LookupType.SerializeToString(
-                renderer.type.name,
-              );
-              return ValueOrErrors.Default.return<
-                [Template<any, any, any, any>, StringSerializedType],
-                string
-              >([
+            .Then((template) =>
+              ValueOrErrors.Default.return(
                 LookupTypeAbstractRenderer<
                   CustomPresentationContexts,
                   Flags,
                   ExtraContext
                 >(
-                  template[0],
+                  template,
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                  serializedType,
                 ).withView(dispatcherContext.lookupTypeRenderer()),
-                serializedType,
-              ]);
-            })
+              ),
+            )
             .MapErrors((errors) =>
               errors.map(
                 (error) => `${error}\n...When dispatching lookup renderer`,

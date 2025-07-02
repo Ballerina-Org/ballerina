@@ -47,7 +47,6 @@ export const UnionAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const embeddedCaseTemplate =
     (caseName: string) => (flags: Flags | undefined) =>
@@ -70,8 +69,8 @@ export const UnionAbstractRenderer = <
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             customPresentationContext: _.customPresentationContext,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + `[union][${caseName}]`,
           }),
@@ -139,10 +138,6 @@ export const UnionAbstractRenderer = <
       );
     }
 
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     return (
       <>
         <IdProvider domNodeId={domNodeId}>
@@ -151,7 +146,6 @@ export const UnionAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -28,7 +28,6 @@ import {
 import {
   DispatchParsedType,
   MapType,
-  StringSerializedType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
 
 export const MapAbstractRenderer = <
@@ -64,7 +63,6 @@ export const MapAbstractRenderer = <
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const embeddedKeyTemplate =
     (elementIndex: number) => (flags: Flags | undefined) =>
@@ -90,8 +88,8 @@ export const MapAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
           }),
         )
@@ -189,8 +187,8 @@ export const MapAbstractRenderer = <
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
-            serializedTypeHierarchy: [SerializedType].concat(
-              _.serializedTypeHierarchy,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
             ),
           }),
         )
@@ -279,10 +277,6 @@ export const MapAbstractRenderer = <
     MapAbstractRendererForeignMutationsExpected<Flags>,
     MapAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[map]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
@@ -308,7 +302,6 @@ export const MapAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

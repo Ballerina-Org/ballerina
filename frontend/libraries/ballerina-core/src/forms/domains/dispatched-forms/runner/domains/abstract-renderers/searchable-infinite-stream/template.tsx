@@ -17,7 +17,6 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   SearchableInfiniteStreamAbstractRendererState,
@@ -33,7 +32,6 @@ export const SearchableInfiniteStreamAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   const Co = CoTypedFactory<
     SearchableInfiniteStreamAbstractRendererReadonlyContext<
@@ -111,10 +109,6 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId =
       props.context.domNodeAncestorPath + "[searchableInfiniteStream]";
 
@@ -140,7 +134,6 @@ export const SearchableInfiniteStreamAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
-              completeSerializedTypeHierarchy,
               domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()
