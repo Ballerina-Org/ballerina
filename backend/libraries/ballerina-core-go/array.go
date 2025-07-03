@@ -17,7 +17,6 @@ func DefaultArray[T any]() Array[T] {
 type DeltaArrayEffectsEnum string
 
 const (
-	ArrayReplace     DeltaArrayEffectsEnum = "ArrayReplace"
 	ArrayValue       DeltaArrayEffectsEnum = "ArrayValue"
 	ArrayAddAt       DeltaArrayEffectsEnum = "ArrayAddAt"
 	ArrayRemoveAt    DeltaArrayEffectsEnum = "ArrayRemoveAt"
@@ -26,14 +25,13 @@ const (
 	ArrayAdd         DeltaArrayEffectsEnum = "ArrayAdd"
 )
 
-var AllDeltaArrayEffectsEnumCases = [...]DeltaArrayEffectsEnum{ArrayReplace, ArrayValue, ArrayAddAt, ArrayRemoveAt, ArrayMoveFromTo, ArrayDuplicateAt, ArrayAdd}
+var AllDeltaArrayEffectsEnumCases = [...]DeltaArrayEffectsEnum{ArrayValue, ArrayAddAt, ArrayRemoveAt, ArrayMoveFromTo, ArrayDuplicateAt, ArrayAdd}
 
 func DefaultDeltaArrayEffectsEnum() DeltaArrayEffectsEnum { return AllDeltaArrayEffectsEnumCases[0] }
 
 type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
 	Discriminator DeltaArrayEffectsEnum
-	Replace       Array[a]
 	Value         Tuple2[int, deltaA]
 	AddAt         Tuple2[int, a]
 	RemoveAt      int
@@ -42,12 +40,6 @@ type DeltaArray[a any, deltaA any] struct {
 	Add           a
 }
 
-func NewDeltaArrayReplace[a any, deltaA any](value Array[a]) DeltaArray[a, deltaA] {
-	return DeltaArray[a, deltaA]{
-		Discriminator: ArrayReplace,
-		Replace:       value,
-	}
-}
 func NewDeltaArrayValue[a any, deltaA any](index int, delta deltaA) DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
 		Discriminator: ArrayValue,
@@ -86,7 +78,6 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 }
 
 func MatchDeltaArray[a any, deltaA any, Result any](
-	onReplace func(Array[a]) (Result, error),
 	onValue func(Tuple2[int, deltaA]) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
@@ -97,8 +88,6 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 	return func(delta DeltaArray[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "ArrayReplace":
-			return onReplace(delta.Replace)
 		case "ArrayValue":
 			return onValue(delta.Value)
 		case "ArrayAddAt":
