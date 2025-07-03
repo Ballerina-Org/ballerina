@@ -182,166 +182,156 @@ export const ListAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              add:
-                //  !methods.includes("add")
-                //   ? undefined
-                //   :
-                (flags) => {
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "ArrayAdd",
-                    value: GetDefaultElementValue(),
-                    state: {
-                      commonFormState: props.context.commonFormState,
-                      elementFormStates: props.context.elementFormStates,
-                    },
-                    type: props.context.type.args[0],
-                    flags,
-                  };
-                  props.foreignMutations.onChange(
-                    Option.Default.some(
-                      Updater((list) =>
-                        PredicateValue.Default.tuple(
-                          ListRepo.Updaters.push<PredicateValue>(
-                            GetDefaultElementValue(),
-                          )(list.values),
-                        ),
-                      ),
-                    ),
-                    delta,
-                  );
-                  props.setState(
-                    ListAbstractRendererState.Updaters.Core.commonFormState(
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      ),
-                    ),
-                  );
-                },
-              remove:
-                //  !methods.includes("remove")
-                //   ? undefined
-                //   :
-                (_, flags) => {
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "ArrayRemoveAt",
-                    index: _,
-                    flags,
-                  };
-                  props.foreignMutations.onChange(
-                    Option.Default.some(
-                      Updater((list) =>
-                        PredicateValue.Default.tuple(
-                          ListRepo.Updaters.remove<PredicateValue>(_)(
-                            list.values,
+              add: !methods.includes("add")
+                ? undefined
+                : (flags) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayAdd",
+                      value: GetDefaultElementValue(),
+                      state: {
+                        commonFormState: props.context.commonFormState,
+                        elementFormStates: props.context.elementFormStates,
+                      },
+                      type: props.context.type.args[0],
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.some(
+                        Updater((list) =>
+                          PredicateValue.Default.tuple(
+                            ListRepo.Updaters.push<PredicateValue>(
+                              GetDefaultElementValue(),
+                            )(list.values),
                           ),
                         ),
                       ),
-                    ),
-                    delta,
-                  );
-                  props.setState(
-                    ListAbstractRendererState.Updaters.Core.commonFormState(
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      ),
-                    ),
-                  );
-                },
-              move:
-                // !methods.includes("move")
-                //   ? undefined
-                //   :
-                (index, to, flags) => {
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "ArrayMoveFromTo",
-                    from: index,
-                    to: to,
-                    flags,
-                  };
-                  props.foreignMutations.onChange(
-                    Option.Default.some(
-                      Updater((list) =>
-                        PredicateValue.Default.tuple(
-                          ListRepo.Updaters.move<PredicateValue>(
-                            index,
-                            to,
-                          )(list.values),
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
                         ),
                       ),
-                    ),
-                    delta,
-                  );
-                  props.setState(
-                    ListAbstractRendererState.Updaters.Core.commonFormState(
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      ),
-                    ),
-                  );
-                },
-              duplicate:
-                // !methods.includes("duplicate")
-                //   ? undefined
-                //   :
-                (_, flags) => {
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "ArrayDuplicateAt",
-                    index: _,
-                    flags,
-                  };
-                  props.foreignMutations.onChange(
-                    Option.Default.some(
-                      Updater((list) =>
-                        PredicateValue.Default.tuple(
-                          ListRepo.Updaters.duplicate<PredicateValue>(_)(
-                            list.values,
+                    );
+                  },
+              remove: !methods.includes("remove")
+                ? undefined
+                : (_, flags) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayRemoveAt",
+                      index: _,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.some(
+                        Updater((list) =>
+                          PredicateValue.Default.tuple(
+                            ListRepo.Updaters.remove<PredicateValue>(_)(
+                              list.values,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    delta,
-                  );
-                  props.setState(
-                    ListAbstractRendererState.Updaters.Core.commonFormState(
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      ),
-                    ),
-                  );
-                },
-              insert:
-                // !methods.includes("add")
-                //   ? undefined
-                //   :
-                (_, flags) => {
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "ArrayAddAt",
-                    value: [_, GetDefaultElementValue()],
-                    elementState: GetDefaultElementState(),
-                    elementType: props.context.type.args[0],
-                    flags,
-                  };
-                  props.foreignMutations.onChange(
-                    Option.Default.some(
-                      Updater((list) =>
-                        PredicateValue.Default.tuple(
-                          ListRepo.Updaters.insert<PredicateValue>(
-                            _,
-                            GetDefaultElementValue(),
-                          )(list.values),
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
                         ),
                       ),
-                    ),
-                    delta,
-                  );
-                  props.setState(
-                    ListAbstractRendererState.Updaters.Core.commonFormState(
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
+                    );
+                  },
+              move: !methods.includes("move")
+                ? undefined
+                : (index, to, flags) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayMoveFromTo",
+                      from: index,
+                      to: to,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.some(
+                        Updater((list) =>
+                          PredicateValue.Default.tuple(
+                            ListRepo.Updaters.move<PredicateValue>(
+                              index,
+                              to,
+                            )(list.values),
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
+              duplicate: !methods.includes("duplicate")
+                ? undefined
+                : (_, flags) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayDuplicateAt",
+                      index: _,
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.some(
+                        Updater((list) =>
+                          PredicateValue.Default.tuple(
+                            ListRepo.Updaters.duplicate<PredicateValue>(_)(
+                              list.values,
+                            ),
+                          ),
+                        ),
+                      ),
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
+              insert: !methods.includes("add")
+                ? undefined
+                : (_, flags) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayAddAt",
+                      value: [_, GetDefaultElementValue()],
+                      elementState: GetDefaultElementState(),
+                      elementType: props.context.type.args[0],
+                      flags,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.some(
+                        Updater((list) =>
+                          PredicateValue.Default.tuple(
+                            ListRepo.Updaters.insert<PredicateValue>(
+                              _,
+                              GetDefaultElementValue(),
+                            )(list.values),
+                          ),
+                        ),
+                      ),
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
             }}
             embeddedElementTemplate={embeddedElementTemplate}
           />

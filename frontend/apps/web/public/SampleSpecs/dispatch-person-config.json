@@ -880,6 +880,12 @@
           "renderer": "defaultList",
           "elementRenderer": {
             "renderer": "defaultString"
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         }
       },
@@ -1336,6 +1342,12 @@
             "label": "one relative",
             "tooltip": "relative",
             "renderer": "defaultCategory"
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         },
         "SubscribeToNewsletter": {
@@ -1499,6 +1511,12 @@
           "elementRenderer": {
             "label": "cut off date",
             "renderer": "maybeDate"
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         },
         "Emails": {
@@ -1507,6 +1525,12 @@
           "elementRenderer": {
             "label": "email",
             "renderer": "defaultString"
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         },
         "AddressesAndAddressesWithLabel": {
@@ -1534,6 +1558,12 @@
                     true
                   ]
                 }
+              },
+              "actions": {
+                "add": "add",
+                "remove": "remove",
+                "move": "move",
+                "duplicate": "duplicate"
               }
             },
             {
@@ -1626,6 +1656,12 @@
           "elementRenderer": {
             "label": "holiday",
             "renderer": "defaultDate"
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         },
         "FriendsAddresses": {
@@ -1642,6 +1678,12 @@
               "label": "address",
               "renderer": "address"
             }
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
           }
         },
         "BestFriend": {

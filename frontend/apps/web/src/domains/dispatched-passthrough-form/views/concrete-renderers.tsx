@@ -105,7 +105,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           <p>PreviewRenderer</p>
           <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
             {propsLocal?.PreviewRenderer &&
-              propsLocal?.PreviewRenderer(ctx.value)(undefined)?.({
+              propsLocal.PreviewRenderer(ctx.value)("unique-id")(undefined)?.({
                 ...propsLocal,
                 context: {
                   ...ctx,
@@ -132,8 +132,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               />
               <ul>
                 {ctx.customFormState.stream.loadedElements
-                  .valueSeq()
-                  .map((chunk: any) =>
+                  .entrySeq()
+                  .map((chunk: any, key) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
@@ -150,18 +150,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                               }}
                             />
                             {propsLocal?.PreviewRenderer &&
-                              propsLocal?.PreviewRenderer(element)(undefined)?.(
-                                {
-                                  ...propsLocal,
-                                  context: {
-                                    ...ctx,
-                                  },
-                                  foreignMutations: {
-                                    ...fm,
-                                  },
-                                  view: unit,
+                              propsLocal.PreviewRenderer(element)(
+                                key.toString(),
+                              )(undefined)?.({
+                                ...propsLocal,
+                                context: {
+                                  ...ctx,
                                 },
-                              )}
+                                foreignMutations: {
+                                  ...fm,
+                                },
+                                view: unit,
+                              })}
                           </button>
                         </li>
                       );
@@ -249,9 +249,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 />
                 <ul>
                   {ctx.customFormState.stream.loadedElements
-                    .valueSeq()
-                    .map((chunk: any) =>
-                      chunk.data.valueSeq().map((element: any) => {
+                    .entrySeq()
+                    .map((chunk: any, key) =>
+                      chunk.data.valueSeq().map((element: any, idx: number) => {
                         return (
                           <li>
                             <button
@@ -268,8 +268,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                               />
                               {propsLocal?.PreviewRenderer &&
                                 propsLocal?.PreviewRenderer(element)(
-                                  undefined,
-                                )?.({
+                                  key.toString(),
+                                )(undefined)?.({
                                   ...propsLocal,
                                   context: {
                                     ...ctx,
@@ -325,7 +325,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           <p>PreviewRenderer</p>
           <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
             {propsLocal?.PreviewRenderer &&
-              propsLocal?.PreviewRenderer(ctx.value)(undefined)?.({
+              propsLocal.PreviewRenderer(ctx.value)("unique-id")(undefined)?.({
                 ...propsLocal,
                 context: {
                   ...ctx,
@@ -352,8 +352,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               />
               <ul>
                 {ctx.customFormState.stream.loadedElements
-                  .valueSeq()
-                  .map((chunk: any) =>
+                  .entrySeq()
+                  .map((chunk: any, key) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
@@ -370,18 +370,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                               }}
                             />
                             {propsLocal?.PreviewRenderer &&
-                              propsLocal?.PreviewRenderer(element)(undefined)?.(
-                                {
-                                  ...propsLocal,
-                                  context: {
-                                    ...ctx,
-                                  },
-                                  foreignMutations: {
-                                    ...fm,
-                                  },
-                                  view: unit,
+                              propsLocal.PreviewRenderer(element)(
+                                key.toString(),
+                              )(undefined)?.({
+                                ...propsLocal,
+                                context: {
+                                  ...ctx,
                                 },
-                              )}
+                                foreignMutations: {
+                                  ...fm,
+                                },
+                                view: unit,
+                              })}
                           </button>
                         </li>
                       );
@@ -468,7 +468,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           <li>
             <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
               {propsLocal?.PreviewRenderer &&
-                propsLocal?.PreviewRenderer(ctx.value)(undefined)?.({
+                propsLocal?.PreviewRenderer(ctx.value)("unique-id")(
+                  undefined,
+                )?.({
                   ...propsLocal,
                   context: {
                     ...ctx,
@@ -496,8 +498,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               />
               <ul>
                 {ctx.customFormState.stream.loadedElements
-                  .valueSeq()
-                  .map((chunk: any) =>
+                  .entrySeq()
+                  .map((chunk: any, key) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
@@ -514,18 +516,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                               }}
                             />
                             {propsLocal?.PreviewRenderer &&
-                              propsLocal?.PreviewRenderer(element)(undefined)?.(
-                                {
-                                  ...propsLocal,
-                                  context: {
-                                    ...ctx,
-                                  },
-                                  foreignMutations: {
-                                    ...fm,
-                                  },
-                                  view: unit,
+                              propsLocal.PreviewRenderer(element)(
+                                key.toString(),
+                              )(undefined)?.({
+                                ...propsLocal,
+                                context: {
+                                  ...ctx,
                                 },
-                              )}
+                                foreignMutations: {
+                                  ...fm,
+                                },
+                                view: unit,
+                              })}
                           </button>
                         </li>
                       );
@@ -1708,73 +1710,88 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     view: unit,
                   })}
                   <div style={{ display: "flex" }}>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.remove(elementIndex, undefined)
-                      }
-                      disabled={props.context.disabled}
-                    >
-                      ❌
-                    </button>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.move(
-                          elementIndex,
-                          elementIndex - 1,
-                          undefined,
-                        )
-                      }
-                      disabled={props.context.disabled}
-                    >
-                      ⬆️
-                    </button>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.move(
-                          elementIndex,
-                          elementIndex + 1,
-                          undefined,
-                        )
-                      }
-                      disabled={props.context.disabled}
-                    >
-                      ⬇️
-                    </button>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.duplicate(
-                          elementIndex,
-                          undefined,
-                        )
-                      }
-                      disabled={props.context.disabled}
-                    >
-                      📑
-                    </button>
-                    <button
-                      onClick={() =>
-                        props.foreignMutations.insert(
-                          elementIndex + 1,
-                          undefined,
-                        )
-                      }
-                      disabled={props.context.disabled}
-                    >
-                      ➕
-                    </button>
+                    {props.foreignMutations.remove && (
+                      <button
+                        onClick={() =>
+                          props.foreignMutations.remove!(
+                            elementIndex,
+                            undefined,
+                          )
+                        }
+                        disabled={props.context.disabled}
+                      >
+                        ❌
+                      </button>
+                    )}
+                    {props.foreignMutations.move && (
+                      <button
+                        onClick={() =>
+                          props.foreignMutations.move!(
+                            elementIndex,
+                            elementIndex - 1,
+                            undefined,
+                          )
+                        }
+                        disabled={props.context.disabled}
+                      >
+                        ⬆️
+                      </button>
+                    )}
+                    {props.foreignMutations.move && (
+                      <button
+                        onClick={() =>
+                          props.foreignMutations.move!(
+                            elementIndex,
+                            elementIndex + 1,
+                            undefined,
+                          )
+                        }
+                        disabled={props.context.disabled}
+                      >
+                        ⬇️
+                      </button>
+                    )}
+                    {props.foreignMutations.duplicate && (
+                      <button
+                        onClick={() =>
+                          props.foreignMutations.duplicate!(
+                            elementIndex,
+                            undefined,
+                          )
+                        }
+                        disabled={props.context.disabled}
+                      >
+                        📑
+                      </button>
+                    )}
+                    {props.foreignMutations.add && (
+                      <button
+                        onClick={() =>
+                          props.foreignMutations.insert!(
+                            elementIndex + 1,
+                            undefined,
+                          )
+                        }
+                        disabled={props.context.disabled}
+                      >
+                        ➕
+                      </button>
+                    )}
                   </div>
                 </li>
               );
             })}
           </ul>
-          <button
-            onClick={() => {
-              props.foreignMutations.add({ test: false });
-            }}
-            disabled={props.context.disabled}
-          >
-            ➕
-          </button>
+          {props.foreignMutations.add && (
+            <button
+              onClick={() => {
+                props.foreignMutations.add!({ test: false });
+              }}
+              disabled={props.context.disabled}
+            >
+              ➕
+            </button>
+          )}
         </div>
       );
     },
