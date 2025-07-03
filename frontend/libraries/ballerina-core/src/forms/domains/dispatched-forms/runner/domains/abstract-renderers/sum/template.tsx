@@ -65,6 +65,7 @@ export const SumAbstractRenderer = <
             ) => ({
               ..._.customFormState.left,
               disabled: _.disabled,
+              locked: _.locked,
               value: _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,
@@ -142,6 +143,7 @@ export const SumAbstractRenderer = <
             ) => ({
               ..._.customFormState.right,
               disabled: _.disabled,
+              locked: _.locked,
               value: _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,

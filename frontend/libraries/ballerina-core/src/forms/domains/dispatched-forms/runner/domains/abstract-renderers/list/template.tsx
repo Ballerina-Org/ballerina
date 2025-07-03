@@ -62,6 +62,7 @@ export const ListAbstractRenderer = <
               ListAbstractRendererState,
           ) => ({
             disabled: _.disabled,
+            locked: _.locked,
             value:
               _.value.values?.get(elementIndex) || GetDefaultElementValue(),
             ...(_.elementFormStates?.get(elementIndex) ||

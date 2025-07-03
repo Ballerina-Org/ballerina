@@ -68,6 +68,7 @@ export const DispatchTupleAbstractRenderer = <
               ItemFormStates.get(itemIndex)!()),
             value: _.value.values.get(itemIndex)!,
             disabled: _.disabled,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,

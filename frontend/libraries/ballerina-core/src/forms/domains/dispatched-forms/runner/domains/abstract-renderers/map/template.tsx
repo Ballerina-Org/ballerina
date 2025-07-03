@@ -81,6 +81,7 @@ export const MapAbstractRenderer = <
               (_.value.values.get(elementIndex) as ValueTuple)?.values.get(0) ||
               GetDefaultKeyFormValue(),
             disabled: _.disabled,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: _.type.args[0],
@@ -180,6 +181,7 @@ export const MapAbstractRenderer = <
                 1,
               ) || GetDefaultValueFormValue(),
             disabled: _.disabled,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: _.type.args[1],

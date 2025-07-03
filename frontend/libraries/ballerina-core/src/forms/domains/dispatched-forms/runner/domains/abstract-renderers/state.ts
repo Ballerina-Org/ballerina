@@ -15,6 +15,7 @@ export type CommonAbstractRendererReadonlyContext<
   ExtraContext = Unit,
 > = {
   value: V;
+  locked: boolean;
   disabled: boolean;
   bindings: Bindings;
   extraContext: ExtraContext;

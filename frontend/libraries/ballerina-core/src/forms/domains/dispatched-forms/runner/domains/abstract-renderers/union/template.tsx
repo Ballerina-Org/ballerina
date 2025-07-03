@@ -65,6 +65,7 @@ export const UnionAbstractRenderer = <
             value: _.value.fields,
             type: _.type.args.get(caseName)!,
             disabled: _.disabled,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
