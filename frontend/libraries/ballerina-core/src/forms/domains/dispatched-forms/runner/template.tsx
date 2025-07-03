@@ -65,6 +65,7 @@ export const DispatchFormRunnerTemplate = <
         context={{
           ...props.context.formState,
           value: entity.value.value,
+          disabled: false,
           bindings,
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
