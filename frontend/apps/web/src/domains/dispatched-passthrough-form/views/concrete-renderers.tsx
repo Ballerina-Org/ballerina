@@ -133,7 +133,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <ul>
                 {ctx.customFormState.stream.loadedElements
                   .entrySeq()
-                  .map((chunk: any, key) =>
+                  .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
@@ -250,7 +250,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 <ul>
                   {ctx.customFormState.stream.loadedElements
                     .entrySeq()
-                    .map((chunk: any, key) =>
+                    .map(([key, chunk]) =>
                       chunk.data.valueSeq().map((element: any, idx: number) => {
                         return (
                           <li>
@@ -353,7 +353,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <ul>
                 {ctx.customFormState.stream.loadedElements
                   .entrySeq()
-                  .map((chunk: any, key) =>
+                  .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
@@ -499,7 +499,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <ul>
                 {ctx.customFormState.stream.loadedElements
                   .entrySeq()
-                  .map((chunk: any, key) =>
+                  .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
