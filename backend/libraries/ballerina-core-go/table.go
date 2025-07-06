@@ -34,7 +34,6 @@ func DefaultTable[T any]() Table[T] {
 type DeltaTableEffectsEnum string
 
 const (
-	TableReplace     DeltaTableEffectsEnum = "TableReplace"
 	TableValue       DeltaTableEffectsEnum = "TableValue"
 	TableAddAt       DeltaTableEffectsEnum = "TableAddAt"
 	TableRemoveAt    DeltaTableEffectsEnum = "TableRemoveAt"
@@ -44,14 +43,13 @@ const (
 	TableAddEmpty    DeltaTableEffectsEnum = "TableAddEmpty"
 )
 
-var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableReplace, TableValue, TableAddAt, TableRemoveAt, TableMoveFromTo, TableDuplicateAt, TableAdd, TableAddEmpty}
+var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableValue, TableAddAt, TableRemoveAt, TableMoveFromTo, TableDuplicateAt, TableAdd, TableAddEmpty}
 
 func DefaultDeltaTableEffectsEnum() DeltaTableEffectsEnum { return AllDeltaTableEffectsEnumCases[0] }
 
 type DeltaTable[a any, deltaA any] struct {
 	DeltaBase
 	Discriminator DeltaTableEffectsEnum
-	Replace       Table[a]
 	Value         Tuple2[uuid.UUID, deltaA]
 	AddAt         Tuple2[uuid.UUID, a]
 	RemoveAt      uuid.UUID
@@ -60,12 +58,6 @@ type DeltaTable[a any, deltaA any] struct {
 	Add           a
 }
 
-func NewDeltaTableReplace[a any, deltaA any](value Table[a]) DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
-		Discriminator: TableReplace,
-		Replace:       value,
-	}
-}
 func NewDeltaTableValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaTable[a, deltaA] {
 	return DeltaTable[a, deltaA]{
 		Discriminator: TableValue,
@@ -109,7 +101,6 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 }
 
 func MatchDeltaTable[a any, deltaA any, Result any](
-	onReplace func(Table[a]) (Result, error),
 	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
@@ -121,8 +112,6 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 	return func(delta DeltaTable[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "TableReplace":
-			return onReplace(delta.Replace)
 		case "TableValue":
 			return onValue(delta.Value)
 		case "TableAddAt":

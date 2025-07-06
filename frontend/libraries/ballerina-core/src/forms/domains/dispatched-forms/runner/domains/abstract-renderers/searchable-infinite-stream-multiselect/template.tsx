@@ -236,7 +236,14 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                       ),
                       {
                         kind: "SetRemove",
-                        value: elementRecord,
+                        value: PredicateValue.Default.record(
+                          OrderedMap([
+                            [
+                              elementRecord.fields.get("Id")! as string,
+                              elementRecord,
+                            ],
+                          ]),
+                        ),
                         state: {
                           commonFormState: props.context.commonFormState,
                           customFormState: props.context.customFormState,
@@ -254,7 +261,14 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                       ),
                       {
                         kind: "SetAdd",
-                        value: elementRecord,
+                        value: PredicateValue.Default.record(
+                          OrderedMap([
+                            [
+                              elementRecord.fields.get("Id")! as string,
+                              elementRecord,
+                            ],
+                          ]),
+                        ),
                         state: {
                           commonFormState: props.context.commonFormState,
                           customFormState: props.context.customFormState,

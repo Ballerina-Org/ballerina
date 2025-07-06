@@ -285,7 +285,7 @@ export const oneTableLoaderRunner = <
   Co<CustomPresentationContext, ExtraContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(
-    ValueInfiniteStreamLoader.embed(
+    ValueInfiniteStreamLoader().embed(
       (_) => _.customFormState.stream,
       OneAbstractRendererState.Updaters.Core.customFormState.children.stream,
     ),

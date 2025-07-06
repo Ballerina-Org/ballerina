@@ -155,29 +155,21 @@ func NewTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any](it
 type DeltaTuple2EffectsEnum string
 
 const (
-	Tuple2Replace DeltaTuple2EffectsEnum = "Tuple2Replace"
-	Tuple2Item1   DeltaTuple2EffectsEnum = "Tuple2Item1"
-	Tuple2Item2   DeltaTuple2EffectsEnum = "Tuple2Item2"
+	Tuple2Item1 DeltaTuple2EffectsEnum = "Tuple2Item1"
+	Tuple2Item2 DeltaTuple2EffectsEnum = "Tuple2Item2"
 )
 
-var AllDeltaTuple2EffectsEnumCases = [...]DeltaTuple2EffectsEnum{Tuple2Replace, Tuple2Item1, Tuple2Item2}
+var AllDeltaTuple2EffectsEnumCases = [...]DeltaTuple2EffectsEnum{Tuple2Item1, Tuple2Item2}
 
 func DefaultDeltaTuple2EffectsEnum() DeltaTuple2EffectsEnum { return AllDeltaTuple2EffectsEnumCases[0] }
 
 type DeltaTuple2[a any, b any, deltaA any, deltaB any] struct {
 	DeltaBase
 	Discriminator DeltaTuple2EffectsEnum
-	Replace       Tuple2[a, b]
 	Item1         deltaA
 	Item2         deltaB
 }
 
-func NewDeltaTuple2Replace[a any, b any, deltaA any, deltaB any](value Tuple2[a, b]) DeltaTuple2[a, b, deltaA, deltaB] {
-	return DeltaTuple2[a, b, deltaA, deltaB]{
-		Discriminator: Tuple2Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple2Item1[a any, b any, deltaA any, deltaB any](delta deltaA) DeltaTuple2[a, b, deltaA, deltaB] {
 	return DeltaTuple2[a, b, deltaA, deltaB]{
 		Discriminator: Tuple2Item1,
@@ -191,15 +183,12 @@ func NewDeltaTuple2Item2[a any, b any, deltaA any, deltaB any](delta deltaB) Del
 	}
 }
 func MatchDeltaTuple2[a any, b any, deltaA any, deltaB any, Result any](
-	onReplace func(Tuple2[a, b]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 ) func(DeltaTuple2[a, b, deltaA, deltaB]) (Result, error) {
 	return func(delta DeltaTuple2[a, b, deltaA, deltaB]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple2Replace":
-			return onReplace(delta.Replace)
 		case "Tuple2Item1":
 			return onItem1(delta.Item1)
 		case "Tuple2Item2":
@@ -212,31 +201,23 @@ func MatchDeltaTuple2[a any, b any, deltaA any, deltaB any, Result any](
 type DeltaTuple3EffectsEnum string
 
 const (
-	Tuple3Replace DeltaTuple3EffectsEnum = "Tuple3Replace"
-	Tuple3Item1   DeltaTuple3EffectsEnum = "Tuple3Item1"
-	Tuple3Item2   DeltaTuple3EffectsEnum = "Tuple3Item2"
-	Tuple3Item3   DeltaTuple3EffectsEnum = "Tuple3Item3"
+	Tuple3Item1 DeltaTuple3EffectsEnum = "Tuple3Item1"
+	Tuple3Item2 DeltaTuple3EffectsEnum = "Tuple3Item2"
+	Tuple3Item3 DeltaTuple3EffectsEnum = "Tuple3Item3"
 )
 
-var AllDeltaTuple3EffectsEnumCases = [...]DeltaTuple3EffectsEnum{Tuple3Replace, Tuple3Item1, Tuple3Item2, Tuple3Item3}
+var AllDeltaTuple3EffectsEnumCases = [...]DeltaTuple3EffectsEnum{Tuple3Item1, Tuple3Item2, Tuple3Item3}
 
 func DefaultDeltaTuple3EffectsEnum() DeltaTuple3EffectsEnum { return AllDeltaTuple3EffectsEnumCases[0] }
 
 type DeltaTuple3[a any, b any, c any, deltaA any, deltaB any, deltaC any] struct {
 	DeltaBase
 	Discriminator DeltaTuple3EffectsEnum
-	Replace       Tuple3[a, b, c]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
 }
 
-func NewDeltaTuple3Replace[a any, b any, c any, deltaA any, deltaB any, deltaC any](value Tuple3[a, b, c]) DeltaTuple3[a, b, c, deltaA, deltaB, deltaC] {
-	return DeltaTuple3[a, b, c, deltaA, deltaB, deltaC]{
-		Discriminator: Tuple3Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple3Item1[a any, b any, c any, deltaA any, deltaB any, deltaC any](delta deltaA) DeltaTuple3[a, b, c, deltaA, deltaB, deltaC] {
 	return DeltaTuple3[a, b, c, deltaA, deltaB, deltaC]{
 		Discriminator: Tuple3Item1,
@@ -256,7 +237,6 @@ func NewDeltaTuple3Item3[a any, b any, c any, deltaA any, deltaB any, deltaC any
 	}
 }
 func MatchDeltaTuple3[a any, b any, c any, deltaA any, deltaB any, deltaC any, Result any](
-	onReplace func(Tuple3[a, b, c]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -264,8 +244,6 @@ func MatchDeltaTuple3[a any, b any, c any, deltaA any, deltaB any, deltaC any, R
 	return func(delta DeltaTuple3[a, b, c, deltaA, deltaB, deltaC]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple3Replace":
-			return onReplace(delta.Replace)
 		case "Tuple3Item1":
 			return onItem1(delta.Item1)
 		case "Tuple3Item2":
@@ -280,33 +258,25 @@ func MatchDeltaTuple3[a any, b any, c any, deltaA any, deltaB any, deltaC any, R
 type DeltaTuple4EffectsEnum string
 
 const (
-	Tuple4Replace DeltaTuple4EffectsEnum = "Tuple4Replace"
-	Tuple4Item1   DeltaTuple4EffectsEnum = "Tuple4Item1"
-	Tuple4Item2   DeltaTuple4EffectsEnum = "Tuple4Item2"
-	Tuple4Item3   DeltaTuple4EffectsEnum = "Tuple4Item3"
-	Tuple4Item4   DeltaTuple4EffectsEnum = "Tuple4Item4"
+	Tuple4Item1 DeltaTuple4EffectsEnum = "Tuple4Item1"
+	Tuple4Item2 DeltaTuple4EffectsEnum = "Tuple4Item2"
+	Tuple4Item3 DeltaTuple4EffectsEnum = "Tuple4Item3"
+	Tuple4Item4 DeltaTuple4EffectsEnum = "Tuple4Item4"
 )
 
-var AllDeltaTuple4EffectsEnumCases = [...]DeltaTuple4EffectsEnum{Tuple4Replace, Tuple4Item1, Tuple4Item2, Tuple4Item3, Tuple4Item4}
+var AllDeltaTuple4EffectsEnumCases = [...]DeltaTuple4EffectsEnum{Tuple4Item1, Tuple4Item2, Tuple4Item3, Tuple4Item4}
 
 func DefaultDeltaTuple4EffectsEnum() DeltaTuple4EffectsEnum { return AllDeltaTuple4EffectsEnumCases[0] }
 
 type DeltaTuple4[a any, b any, c any, d any, deltaA any, deltaB any, deltaC any, deltaD any] struct {
 	DeltaBase
 	Discriminator DeltaTuple4EffectsEnum
-	Replace       Tuple4[a, b, c, d]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
 	Item4         deltaD
 }
 
-func NewDeltaTuple4Replace[a any, b any, c any, d any, deltaA any, deltaB any, deltaC any, deltaD any](value Tuple4[a, b, c, d]) DeltaTuple4[a, b, c, d, deltaA, deltaB, deltaC, deltaD] {
-	return DeltaTuple4[a, b, c, d, deltaA, deltaB, deltaC, deltaD]{
-		Discriminator: Tuple4Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple4Item1[a any, b any, c any, d any, deltaA any, deltaB any, deltaC any, deltaD any](delta deltaA) DeltaTuple4[a, b, c, d, deltaA, deltaB, deltaC, deltaD] {
 	return DeltaTuple4[a, b, c, d, deltaA, deltaB, deltaC, deltaD]{
 		Discriminator: Tuple4Item1,
@@ -332,7 +302,6 @@ func NewDeltaTuple4Item4[a any, b any, c any, d any, deltaA any, deltaB any, del
 	}
 }
 func MatchDeltaTuple4[a any, b any, c any, d any, deltaA any, deltaB any, deltaC any, deltaD any, Result any](
-	onReplace func(Tuple4[a, b, c, d]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -341,8 +310,6 @@ func MatchDeltaTuple4[a any, b any, c any, d any, deltaA any, deltaB any, deltaC
 	return func(delta DeltaTuple4[a, b, c, d, deltaA, deltaB, deltaC, deltaD]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple4Replace":
-			return onReplace(delta.Replace)
 		case "Tuple4Item1":
 			return onItem1(delta.Item1)
 		case "Tuple4Item2":
@@ -359,22 +326,20 @@ func MatchDeltaTuple4[a any, b any, c any, d any, deltaA any, deltaB any, deltaC
 type DeltaTuple5EffectsEnum string
 
 const (
-	Tuple5Replace DeltaTuple5EffectsEnum = "Tuple5Replace"
-	Tuple5Item1   DeltaTuple5EffectsEnum = "Tuple5Item1"
-	Tuple5Item2   DeltaTuple5EffectsEnum = "Tuple5Item2"
-	Tuple5Item3   DeltaTuple5EffectsEnum = "Tuple5Item3"
-	Tuple5Item4   DeltaTuple5EffectsEnum = "Tuple5Item4"
-	Tuple5Item5   DeltaTuple5EffectsEnum = "Tuple5Item5"
+	Tuple5Item1 DeltaTuple5EffectsEnum = "Tuple5Item1"
+	Tuple5Item2 DeltaTuple5EffectsEnum = "Tuple5Item2"
+	Tuple5Item3 DeltaTuple5EffectsEnum = "Tuple5Item3"
+	Tuple5Item4 DeltaTuple5EffectsEnum = "Tuple5Item4"
+	Tuple5Item5 DeltaTuple5EffectsEnum = "Tuple5Item5"
 )
 
-var AllDeltaTuple5EffectsEnumCases = [...]DeltaTuple5EffectsEnum{Tuple5Replace, Tuple5Item1, Tuple5Item2, Tuple5Item3, Tuple5Item4, Tuple5Item5}
+var AllDeltaTuple5EffectsEnumCases = [...]DeltaTuple5EffectsEnum{Tuple5Item1, Tuple5Item2, Tuple5Item3, Tuple5Item4, Tuple5Item5}
 
 func DefaultDeltaTuple5EffectsEnum() DeltaTuple5EffectsEnum { return AllDeltaTuple5EffectsEnumCases[0] }
 
 type DeltaTuple5[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any] struct {
 	DeltaBase
 	Discriminator DeltaTuple5EffectsEnum
-	Replace       Tuple5[a, b, c, d, e]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
@@ -382,12 +347,6 @@ type DeltaTuple5[a any, b any, c any, d any, e any, deltaA any, deltaB any, delt
 	Item5         deltaE
 }
 
-func NewDeltaTuple5Replace[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](value Tuple5[a, b, c, d, e]) DeltaTuple5[a, b, c, d, e, deltaA, deltaB, deltaC, deltaD, deltaE] {
-	return DeltaTuple5[a, b, c, d, e, deltaA, deltaB, deltaC, deltaD, deltaE]{
-		Discriminator: Tuple5Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple5Item1[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaA) DeltaTuple5[a, b, c, d, e, deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[a, b, c, d, e, deltaA, deltaB, deltaC, deltaD, deltaE]{
 		Discriminator: Tuple5Item1,
@@ -419,7 +378,6 @@ func NewDeltaTuple5Item5[a any, b any, c any, d any, e any, deltaA any, deltaB a
 	}
 }
 func MatchDeltaTuple5[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, Result any](
-	onReplace func(Tuple5[a, b, c, d, e]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -429,8 +387,6 @@ func MatchDeltaTuple5[a any, b any, c any, d any, e any, deltaA any, deltaB any,
 	return func(delta DeltaTuple5[a, b, c, d, e, deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple5Replace":
-			return onReplace(delta.Replace)
 		case "Tuple5Item1":
 			return onItem1(delta.Item1)
 		case "Tuple5Item2":
@@ -449,23 +405,21 @@ func MatchDeltaTuple5[a any, b any, c any, d any, e any, deltaA any, deltaB any,
 type DeltaTuple6EffectsEnum string
 
 const (
-	Tuple6Replace DeltaTuple6EffectsEnum = "Tuple6Replace"
-	Tuple6Item1   DeltaTuple6EffectsEnum = "Tuple6Item1"
-	Tuple6Item2   DeltaTuple6EffectsEnum = "Tuple6Item2"
-	Tuple6Item3   DeltaTuple6EffectsEnum = "Tuple6Item3"
-	Tuple6Item4   DeltaTuple6EffectsEnum = "Tuple6Item4"
-	Tuple6Item5   DeltaTuple6EffectsEnum = "Tuple6Item5"
-	Tuple6Item6   DeltaTuple6EffectsEnum = "Tuple6Item6"
+	Tuple6Item1 DeltaTuple6EffectsEnum = "Tuple6Item1"
+	Tuple6Item2 DeltaTuple6EffectsEnum = "Tuple6Item2"
+	Tuple6Item3 DeltaTuple6EffectsEnum = "Tuple6Item3"
+	Tuple6Item4 DeltaTuple6EffectsEnum = "Tuple6Item4"
+	Tuple6Item5 DeltaTuple6EffectsEnum = "Tuple6Item5"
+	Tuple6Item6 DeltaTuple6EffectsEnum = "Tuple6Item6"
 )
 
-var AllDeltaTuple6EffectsEnumCases = [...]DeltaTuple6EffectsEnum{Tuple6Replace, Tuple6Item1, Tuple6Item2, Tuple6Item3, Tuple6Item4, Tuple6Item5, Tuple6Item6}
+var AllDeltaTuple6EffectsEnumCases = [...]DeltaTuple6EffectsEnum{Tuple6Item1, Tuple6Item2, Tuple6Item3, Tuple6Item4, Tuple6Item5, Tuple6Item6}
 
 func DefaultDeltaTuple6EffectsEnum() DeltaTuple6EffectsEnum { return AllDeltaTuple6EffectsEnumCases[0] }
 
 type DeltaTuple6[a any, b any, c any, d any, e any, f any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any] struct {
 	DeltaBase
 	Discriminator DeltaTuple6EffectsEnum
-	Replace       Tuple6[a, b, c, d, e, f]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
@@ -474,12 +428,6 @@ type DeltaTuple6[a any, b any, c any, d any, e any, f any, deltaA any, deltaB an
 	Item6         deltaF
 }
 
-func NewDeltaTuple6Replace[a any, b any, c any, d any, e any, f any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](value Tuple6[a, b, c, d, e, f]) DeltaTuple6[a, b, c, d, e, f, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
-	return DeltaTuple6[a, b, c, d, e, f, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		Discriminator: Tuple6Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple6Item1[a any, b any, c any, d any, e any, f any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaA) DeltaTuple6[a, b, c, d, e, f, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[a, b, c, d, e, f, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
 		Discriminator: Tuple6Item1,
@@ -517,7 +465,6 @@ func NewDeltaTuple6Item6[a any, b any, c any, d any, e any, f any, deltaA any, d
 	}
 }
 func MatchDeltaTuple6[a any, b any, c any, d any, e any, f any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, Result any](
-	onReplace func(Tuple6[a, b, c, d, e, f]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -528,8 +475,6 @@ func MatchDeltaTuple6[a any, b any, c any, d any, e any, f any, deltaA any, delt
 	return func(delta DeltaTuple6[a, b, c, d, e, f, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple6Replace":
-			return onReplace(delta.Replace)
 		case "Tuple6Item1":
 			return onItem1(delta.Item1)
 		case "Tuple6Item2":
@@ -550,24 +495,22 @@ func MatchDeltaTuple6[a any, b any, c any, d any, e any, f any, deltaA any, delt
 type DeltaTuple7EffectsEnum string
 
 const (
-	Tuple7Replace DeltaTuple7EffectsEnum = "Tuple7Replace"
-	Tuple7Item1   DeltaTuple7EffectsEnum = "Tuple7Item1"
-	Tuple7Item2   DeltaTuple7EffectsEnum = "Tuple7Item2"
-	Tuple7Item3   DeltaTuple7EffectsEnum = "Tuple7Item3"
-	Tuple7Item4   DeltaTuple7EffectsEnum = "Tuple7Item4"
-	Tuple7Item5   DeltaTuple7EffectsEnum = "Tuple7Item5"
-	Tuple7Item6   DeltaTuple7EffectsEnum = "Tuple7Item6"
-	Tuple7Item7   DeltaTuple7EffectsEnum = "Tuple7Item7"
+	Tuple7Item1 DeltaTuple7EffectsEnum = "Tuple7Item1"
+	Tuple7Item2 DeltaTuple7EffectsEnum = "Tuple7Item2"
+	Tuple7Item3 DeltaTuple7EffectsEnum = "Tuple7Item3"
+	Tuple7Item4 DeltaTuple7EffectsEnum = "Tuple7Item4"
+	Tuple7Item5 DeltaTuple7EffectsEnum = "Tuple7Item5"
+	Tuple7Item6 DeltaTuple7EffectsEnum = "Tuple7Item6"
+	Tuple7Item7 DeltaTuple7EffectsEnum = "Tuple7Item7"
 )
 
-var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Replace, Tuple7Item1, Tuple7Item2, Tuple7Item3, Tuple7Item4, Tuple7Item5, Tuple7Item6}
+var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Item1, Tuple7Item2, Tuple7Item3, Tuple7Item4, Tuple7Item5, Tuple7Item6}
 
 func DefaultDeltaTuple7EffectsEnum() DeltaTuple7EffectsEnum { return AllDeltaTuple7EffectsEnumCases[0] }
 
 type DeltaTuple7[a any, b any, c any, d any, e any, f any, g any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any] struct {
 	DeltaBase
 	Discriminator DeltaTuple7EffectsEnum
-	Replace       Tuple7[a, b, c, d, e, f, g]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
@@ -577,12 +520,6 @@ type DeltaTuple7[a any, b any, c any, d any, e any, f any, g any, deltaA any, de
 	Item7         deltaG
 }
 
-func NewDeltaTuple7Replace[a any, b any, c any, d any, e any, f any, g any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](value Tuple7[a, b, c, d, e, f, g]) DeltaTuple7[a, b, c, d, e, f, g, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
-	return DeltaTuple7[a, b, c, d, e, f, g, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		Discriminator: Tuple7Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple7Item1[a any, b any, c any, d any, e any, f any, g any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaA) DeltaTuple7[a, b, c, d, e, f, g, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[a, b, c, d, e, f, g, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
 		Discriminator: Tuple7Item1,
@@ -626,7 +563,6 @@ func NewDeltaTuple7Item7[a any, b any, c any, d any, e any, f any, g any, deltaA
 	}
 }
 func MatchDeltaTuple7[a any, b any, c any, d any, e any, f any, g any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, Result any](
-	onReplace func(Tuple7[a, b, c, d, e, f, g]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -638,8 +574,6 @@ func MatchDeltaTuple7[a any, b any, c any, d any, e any, f any, g any, deltaA an
 	return func(delta DeltaTuple7[a, b, c, d, e, f, g, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple7Replace":
-			return onReplace(delta.Replace)
 		case "Tuple7Item1":
 			return onItem1(delta.Item1)
 		case "Tuple7Item2":
@@ -662,25 +596,23 @@ func MatchDeltaTuple7[a any, b any, c any, d any, e any, f any, g any, deltaA an
 type DeltaTuple8EffectsEnum string
 
 const (
-	Tuple8Replace DeltaTuple8EffectsEnum = "Tuple8Replace"
-	Tuple8Item1   DeltaTuple8EffectsEnum = "Tuple8Item1"
-	Tuple8Item2   DeltaTuple8EffectsEnum = "Tuple8Item2"
-	Tuple8Item3   DeltaTuple8EffectsEnum = "Tuple8Item3"
-	Tuple8Item4   DeltaTuple8EffectsEnum = "Tuple8Item4"
-	Tuple8Item5   DeltaTuple8EffectsEnum = "Tuple8Item5"
-	Tuple8Item6   DeltaTuple8EffectsEnum = "Tuple8Item6"
-	Tuple8Item7   DeltaTuple8EffectsEnum = "Tuple8Item7"
-	Tuple8Item8   DeltaTuple8EffectsEnum = "Tuple8Item8"
+	Tuple8Item1 DeltaTuple8EffectsEnum = "Tuple8Item1"
+	Tuple8Item2 DeltaTuple8EffectsEnum = "Tuple8Item2"
+	Tuple8Item3 DeltaTuple8EffectsEnum = "Tuple8Item3"
+	Tuple8Item4 DeltaTuple8EffectsEnum = "Tuple8Item4"
+	Tuple8Item5 DeltaTuple8EffectsEnum = "Tuple8Item5"
+	Tuple8Item6 DeltaTuple8EffectsEnum = "Tuple8Item6"
+	Tuple8Item7 DeltaTuple8EffectsEnum = "Tuple8Item7"
+	Tuple8Item8 DeltaTuple8EffectsEnum = "Tuple8Item8"
 )
 
-var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Replace, Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6}
+var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6}
 
 func DefaultDeltaTuple8EffectsEnum() DeltaTuple8EffectsEnum { return AllDeltaTuple8EffectsEnumCases[0] }
 
 type DeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any] struct {
 	DeltaBase
 	Discriminator DeltaTuple8EffectsEnum
-	Replace       Tuple8[a, b, c, d, e, f, g, h]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
@@ -691,12 +623,6 @@ type DeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, deltaA 
 	Item8         deltaH
 }
 
-func NewDeltaTuple8Replace[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](value Tuple8[a, b, c, d, e, f, g, h]) DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
-	return DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		Discriminator: Tuple8Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple8Item1[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaA) DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
 		Discriminator: Tuple8Item1,
@@ -746,7 +672,6 @@ func NewDeltaTuple8Item8[a any, b any, c any, d any, e any, f any, g any, h any,
 	}
 }
 func MatchDeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, Result any](
-	onReplace func(Tuple8[a, b, c, d, e, f, g, h]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -759,8 +684,6 @@ func MatchDeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, de
 	return func(delta DeltaTuple8[a, b, c, d, e, f, g, h, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple8Replace":
-			return onReplace(delta.Replace)
 		case "Tuple8Item1":
 			return onItem1(delta.Item1)
 		case "Tuple8Item2":
@@ -785,26 +708,24 @@ func MatchDeltaTuple8[a any, b any, c any, d any, e any, f any, g any, h any, de
 type DeltaTuple9EffectsEnum string
 
 const (
-	Tuple9Replace DeltaTuple9EffectsEnum = "Tuple9Replace"
-	Tuple9Item1   DeltaTuple9EffectsEnum = "Tuple9Item1"
-	Tuple9Item2   DeltaTuple9EffectsEnum = "Tuple9Item2"
-	Tuple9Item3   DeltaTuple9EffectsEnum = "Tuple9Item3"
-	Tuple9Item4   DeltaTuple9EffectsEnum = "Tuple9Item4"
-	Tuple9Item5   DeltaTuple9EffectsEnum = "Tuple9Item5"
-	Tuple9Item6   DeltaTuple9EffectsEnum = "Tuple9Item6"
-	Tuple9Item7   DeltaTuple9EffectsEnum = "Tuple9Item7"
-	Tuple9Item8   DeltaTuple9EffectsEnum = "Tuple9Item8"
-	Tuple9Item9   DeltaTuple9EffectsEnum = "Tuple9Item9"
+	Tuple9Item1 DeltaTuple9EffectsEnum = "Tuple9Item1"
+	Tuple9Item2 DeltaTuple9EffectsEnum = "Tuple9Item2"
+	Tuple9Item3 DeltaTuple9EffectsEnum = "Tuple9Item3"
+	Tuple9Item4 DeltaTuple9EffectsEnum = "Tuple9Item4"
+	Tuple9Item5 DeltaTuple9EffectsEnum = "Tuple9Item5"
+	Tuple9Item6 DeltaTuple9EffectsEnum = "Tuple9Item6"
+	Tuple9Item7 DeltaTuple9EffectsEnum = "Tuple9Item7"
+	Tuple9Item8 DeltaTuple9EffectsEnum = "Tuple9Item8"
+	Tuple9Item9 DeltaTuple9EffectsEnum = "Tuple9Item9"
 )
 
-var AllDeltaTuple9EffectsEnumCases = [...]DeltaTuple9EffectsEnum{Tuple9Replace, Tuple9Item1, Tuple9Item2, Tuple9Item3, Tuple9Item4, Tuple9Item5, Tuple9Item6}
+var AllDeltaTuple9EffectsEnumCases = [...]DeltaTuple9EffectsEnum{Tuple9Item1, Tuple9Item2, Tuple9Item3, Tuple9Item4, Tuple9Item5, Tuple9Item6}
 
 func DefaultDeltaTuple9EffectsEnum() DeltaTuple9EffectsEnum { return AllDeltaTuple9EffectsEnumCases[0] }
 
 type DeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any] struct {
 	DeltaBase
 	Discriminator DeltaTuple9EffectsEnum
-	Replace       Tuple9[a, b, c, d, e, f, g, h, i]
 	Item1         deltaA
 	Item2         deltaB
 	Item3         deltaC
@@ -815,12 +736,6 @@ type DeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, 
 	Item8         deltaH
 }
 
-func NewDeltaTuple9Replace[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](value Tuple9[a, b, c, d, e, f, g, h, i]) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
-	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		Discriminator: Tuple9Replace,
-		Replace:       value,
-	}
-}
 func NewDeltaTuple9Item1[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaA) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
 		Discriminator: Tuple9Item1,
@@ -876,7 +791,6 @@ func NewDeltaTuple9Item9[a any, b any, c any, d any, e any, f any, g any, h any,
 	}
 }
 func MatchDeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, Result any](
-	onReplace func(Tuple9[a, b, c, d, e, f, g, h, i]) (Result, error),
 	onItem1 func(deltaA) (Result, error),
 	onItem2 func(deltaB) (Result, error),
 	onItem3 func(deltaC) (Result, error),
@@ -889,8 +803,6 @@ func MatchDeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i 
 	return func(delta DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "Tuple9Replace":
-			return onReplace(delta.Replace)
 		case "Tuple9Item1":
 			return onItem1(delta.Item1)
 		case "Tuple9Item2":

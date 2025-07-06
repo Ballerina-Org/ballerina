@@ -34,7 +34,6 @@ func DefaultMany[T any]() Many[T] {
 type DeltaManyEffectsEnum string
 
 const (
-	ManyReplace     DeltaManyEffectsEnum = "ManyReplace"
 	ManyValue       DeltaManyEffectsEnum = "ManyValue"
 	ManyAddAt       DeltaManyEffectsEnum = "ManyAddAt"
 	ManyRemoveAt    DeltaManyEffectsEnum = "ManyRemoveAt"
@@ -43,14 +42,13 @@ const (
 	ManyAdd         DeltaManyEffectsEnum = "ManyAdd"
 )
 
-var AllDeltaManyEffectsEnumCases = [...]DeltaManyEffectsEnum{ManyReplace, ManyValue, ManyAddAt, ManyRemoveAt, ManyMoveFromTo, ManyDuplicateAt, ManyAdd}
+var AllDeltaManyEffectsEnumCases = [...]DeltaManyEffectsEnum{ManyValue, ManyAddAt, ManyRemoveAt, ManyMoveFromTo, ManyDuplicateAt, ManyAdd}
 
 func DefaultDeltaManyEffectsEnum() DeltaManyEffectsEnum { return AllDeltaManyEffectsEnumCases[0] }
 
 type DeltaMany[a any, deltaA any] struct {
 	DeltaBase
 	Discriminator DeltaManyEffectsEnum
-	Replace       Many[a]
 	Value         Tuple2[uuid.UUID, deltaA]
 	AddAt         Tuple2[uuid.UUID, a]
 	RemoveAt      uuid.UUID
@@ -59,12 +57,6 @@ type DeltaMany[a any, deltaA any] struct {
 	Add           a
 }
 
-func NewDeltaManyReplace[a any, deltaA any](value Many[a]) DeltaMany[a, deltaA] {
-	return DeltaMany[a, deltaA]{
-		Discriminator: ManyReplace,
-		Replace:       value,
-	}
-}
 func NewDeltaManyValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaMany[a, deltaA] {
 	return DeltaMany[a, deltaA]{
 		Discriminator: ManyValue,
@@ -103,7 +95,6 @@ func NewDeltaManyAdd[a any, deltaA any](newElement a) DeltaMany[a, deltaA] {
 }
 
 func MatchDeltaMany[a any, deltaA any, Result any](
-	onReplace func(Many[a]) (Result, error),
 	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
@@ -114,8 +105,6 @@ func MatchDeltaMany[a any, deltaA any, Result any](
 	return func(delta DeltaMany[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "ManyReplace":
-			return onReplace(delta.Replace)
 		case "ManyValue":
 			return onValue(delta.Value)
 		case "ManyAddAt":

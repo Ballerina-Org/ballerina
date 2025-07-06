@@ -14,33 +14,25 @@ func DefaultMap[k comparable, v any]() Map[k, v] {
 type DeltaMapEffectsEnum string
 
 const (
-	MapReplace DeltaMapEffectsEnum = "MapReplace"
-	MapKey     DeltaMapEffectsEnum = "MapKey"
-	MapValue   DeltaMapEffectsEnum = "MapValue"
-	MapAdd     DeltaMapEffectsEnum = "MapAdd"
-	MapRemove  DeltaMapEffectsEnum = "MapRemove"
+	MapKey    DeltaMapEffectsEnum = "MapKey"
+	MapValue  DeltaMapEffectsEnum = "MapValue"
+	MapAdd    DeltaMapEffectsEnum = "MapAdd"
+	MapRemove DeltaMapEffectsEnum = "MapRemove"
 )
 
-var AllDeltaMapEffectsEnumCases = [...]DeltaMapEffectsEnum{MapReplace, MapKey, MapValue, MapAdd, MapRemove}
+var AllDeltaMapEffectsEnumCases = [...]DeltaMapEffectsEnum{MapKey, MapValue, MapAdd, MapRemove}
 
 func DefaultDeltaMapEffectsEnum() DeltaMapEffectsEnum { return AllDeltaMapEffectsEnumCases[0] }
 
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 	DeltaBase
 	Discriminator DeltaMapEffectsEnum
-	Replace       Map[k, v]
 	Key           Tuple2[int, deltaK]
 	Value         Tuple2[int, deltaV]
 	Add           Tuple2[k, v]
 	Remove        int
 }
 
-func NewDeltaMapReplace[k comparable, v any, deltaK any, deltaV any](value Map[k, v]) DeltaMap[k, v, deltaK, deltaV] {
-	return DeltaMap[k, v, deltaK, deltaV]{
-		Discriminator: MapReplace,
-		Replace:       value,
-	}
-}
 func NewDeltaMapKey[k comparable, v any, deltaK any, deltaV any](index int, delta deltaK) DeltaMap[k, v, deltaK, deltaV] {
 	return DeltaMap[k, v, deltaK, deltaV]{
 		Discriminator: MapKey,
@@ -67,7 +59,6 @@ func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) D
 }
 
 func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
-	onReplace func(Map[k, v]) (Result, error),
 	onKey func(Tuple2[int, deltaK]) (Result, error),
 	onValue func(Tuple2[int, deltaV]) (Result, error),
 	onAdd func(Tuple2[k, v]) (Result, error),
@@ -76,8 +67,6 @@ func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
 	return func(delta DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "MapReplace":
-			return onReplace(delta.Replace)
 		case "MapKey":
 			return onKey(delta.Key)
 		case "MapValue":

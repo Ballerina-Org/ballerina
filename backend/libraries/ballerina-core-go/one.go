@@ -29,31 +29,23 @@ func MapOne[a any, b any](self One[a], f func(a) b) One[b] {
 type DeltaOneEffectsEnum string
 
 const (
-	OneReplace     DeltaOneEffectsEnum = "OneReplace"
 	OneValue       DeltaOneEffectsEnum = "OneValue"
 	OneCreateValue DeltaOneEffectsEnum = "OneCreateValue"
 	OneDeleteValue DeltaOneEffectsEnum = "OneDeleteValue"
 )
 
-var AllDeltaOneEffectsEnumCases = [...]DeltaOneEffectsEnum{OneReplace, OneValue, OneCreateValue, OneDeleteValue}
+var AllDeltaOneEffectsEnumCases = [...]DeltaOneEffectsEnum{OneValue, OneCreateValue, OneDeleteValue}
 
 func DefaultDeltaOneEffectsEnum() DeltaOneEffectsEnum { return AllDeltaOneEffectsEnumCases[0] }
 
 type DeltaOne[a any, deltaA any] struct {
 	DeltaBase
 	Discriminator DeltaOneEffectsEnum
-	Replace       a
 	Value         deltaA
 	CreateValue   a
 	DeleteValue   Unit
 }
 
-func NewDeltaOneReplace[a any, deltaA any](value a) DeltaOne[a, deltaA] {
-	return DeltaOne[a, deltaA]{
-		Discriminator: OneReplace,
-		Replace:       value,
-	}
-}
 func NewDeltaOneValue[a any, deltaA any](delta deltaA) DeltaOne[a, deltaA] {
 	return DeltaOne[a, deltaA]{
 		Discriminator: OneValue,
@@ -73,7 +65,6 @@ func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
 	}
 }
 func MatchDeltaOne[a any, deltaA any, Result any](
-	onReplace func(a) (Result, error),
 	onValue func(deltaA) (Result, error),
 	onCreateValue func(a) (Result, error),
 	onDeleteValue func() (Result, error),
@@ -81,8 +72,6 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 	return func(delta DeltaOne[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
-		case "OneReplace":
-			return onReplace(delta.Replace)
 		case "OneValue":
 			return onValue(delta.Value)
 		case "OneCreateValue":
