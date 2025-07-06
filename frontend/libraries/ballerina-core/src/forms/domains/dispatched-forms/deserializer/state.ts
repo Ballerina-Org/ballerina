@@ -143,6 +143,11 @@ export type DispatchSpecificationDeserializationResult<
       CustomPresentationContexts,
       ExtraContext
     >;
+    parseValueToApi: (
+      value: PredicateValue,
+      type: DispatchParsedType<T>,
+      state: any,
+    ) => ValueOrErrors<any, string>;
   },
   string
 >;
@@ -363,6 +368,17 @@ export const parseDispatchFormsToLaunchers =
             IdProvider,
             ErrorRenderer,
           },
+          parseValueToApi: (
+            value: PredicateValue,
+            type: DispatchParsedType<T>,
+            state: any,
+          ) =>
+            dispatchToAPIRawValue(
+              type,
+              specification.types,
+              apiConverters,
+              injectedPrimitives,
+            )(value, state),
         }),
       )
       .MapErrors((errors) =>
