@@ -66,21 +66,29 @@ func FoldWithError[L any, R any, O any](e Sum[L, R], leftMap func(L) (O, error),
 type DeltaSumEffectsEnum string
 
 const (
-	SumLeft  DeltaSumEffectsEnum = "SumLeft"
-	SumRight DeltaSumEffectsEnum = "SumRight"
+	SumReplace DeltaSumEffectsEnum = "SumReplace"
+	SumLeft    DeltaSumEffectsEnum = "SumLeft"
+	SumRight   DeltaSumEffectsEnum = "SumRight"
 )
 
-var AllDeltaSumEffectsEnumCases = [...]DeltaSumEffectsEnum{SumLeft, SumRight}
+var AllDeltaSumEffectsEnumCases = [...]DeltaSumEffectsEnum{SumReplace, SumLeft, SumRight}
 
 func DefaultDeltaSumEffectsEnum() DeltaSumEffectsEnum { return AllDeltaSumEffectsEnumCases[0] }
 
 type DeltaSum[a any, b any, deltaA any, deltaB any] struct {
 	DeltaBase
 	Discriminator DeltaSumEffectsEnum
+	Replace       Sum[a, b]
 	Left          deltaA
 	Right         deltaB
 }
 
+func NewDeltaSumReplace[a any, b any, deltaA any, deltaB any](value Sum[a, b]) DeltaSum[a, b, deltaA, deltaB] {
+	return DeltaSum[a, b, deltaA, deltaB]{
+		Discriminator: SumReplace,
+		Replace:       value,
+	}
+}
 func NewDeltaSumLeft[a any, b any, deltaA any, deltaB any](delta deltaA) DeltaSum[a, b, deltaA, deltaB] {
 	return DeltaSum[a, b, deltaA, deltaB]{
 		Discriminator: SumLeft,
@@ -94,12 +102,15 @@ func NewDeltaSumRight[a any, b any, deltaA any, deltaB any](delta deltaB) DeltaS
 	}
 }
 func MatchDeltaSum[a any, b any, deltaA any, deltaB any, Result any](
+	onReplace func(Sum[a, b]) (Result, error),
 	onLeft func(deltaA) (Result, error),
 	onRight func(deltaB) (Result, error),
 ) func(DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
 	return func(delta DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
+		case "SumReplace":
+			return onReplace(delta.Replace)
 		case "SumLeft":
 			return onLeft(delta.Left)
 		case "SumRight":

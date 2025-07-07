@@ -29,19 +29,27 @@ func MapOption[a any, b any](self Option[a], f func(a) b) Option[b] {
 type DeltaOptionEffectsEnum string
 
 const (
-	OptionValue DeltaOptionEffectsEnum = "OptionValue"
+	OptionReplace DeltaOptionEffectsEnum = "OptionReplace"
+	OptionValue   DeltaOptionEffectsEnum = "OptionValue"
 )
 
-var AllDeltaOptionEffectsEnumCases = [...]DeltaOptionEffectsEnum{OptionValue}
+var AllDeltaOptionEffectsEnumCases = [...]DeltaOptionEffectsEnum{OptionReplace, OptionValue}
 
 func DefaultDeltaOptionEffectsEnum() DeltaOptionEffectsEnum { return AllDeltaOptionEffectsEnumCases[0] }
 
 type DeltaOption[a any, deltaA any] struct {
 	DeltaBase
 	Discriminator DeltaOptionEffectsEnum
+	Replace       a
 	Value         deltaA
 }
 
+func NewDeltaOptionReplace[a any, deltaA any](value a) DeltaOption[a, deltaA] {
+	return DeltaOption[a, deltaA]{
+		Discriminator: OptionReplace,
+		Replace:       value,
+	}
+}
 func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
 		Discriminator: OptionValue,
@@ -49,11 +57,14 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 	}
 }
 func MatchDeltaOption[a any, deltaA any, Result any](
+	onReplace func(a) (Result, error),
 	onValue func(deltaA) (Result, error),
 ) func(DeltaOption[a, deltaA]) (Result, error) {
 	return func(delta DeltaOption[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.Discriminator {
+		case "OptionReplace":
+			return onReplace(delta.Replace)
 		case "OptionValue":
 			return onValue(delta.Value)
 		}
