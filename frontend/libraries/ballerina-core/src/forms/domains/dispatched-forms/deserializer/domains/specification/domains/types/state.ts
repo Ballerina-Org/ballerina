@@ -225,7 +225,7 @@ export type LookupType = {
 
 export const LookupType = {
   SerializeToString: (name: string): StringSerializedType => {
-    return `[lookup; name: ${name}]`;
+    return `${name}`;
   },
 };
 
