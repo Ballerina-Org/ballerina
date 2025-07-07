@@ -197,6 +197,7 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
+  reinitialize: SimpleCallback<void>;
 };
 
 export type TableAbstractRendererView<

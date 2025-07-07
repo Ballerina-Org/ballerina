@@ -117,9 +117,7 @@ export const TableReinitialiseRunner = <
       interval: 15,
       runFilter: (props) =>
         props.context.customFormState.initializationStatus === "initialized" &&
-        props.context.customFormState.shouldReinitialize &&
-        props.context.remoteEntityVersionIdentifier !==
-          props.context.customFormState.previousRemoteEntityVersionIdentifier,
+        props.context.customFormState.shouldReinitialize
     },
   );
 

@@ -104,7 +104,6 @@ export const CategoryAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  SerializedType: StringSerializedType,
 ) => {
   return Template.Default<
     CategoryAbstractRendererReadonlyContext<CustomPresentationContext> &
@@ -113,16 +112,12 @@ export const CategoryAbstractRenderer = <
     CategoryAbstractRendererForeignMutationsExpected<Flags>,
     CategoryAbstractRendererView<CustomPresentationContext, Flags>
   >((props) => {
-    const completeSerializedTypeHierarchy = [SerializedType].concat(
-      props.context.serializedTypeHierarchy,
-    );
-
     const domNodeId = props.context.domNodeAncestorPath + "[injectedCategory]";
 
     if (!DispatchCategory.Operations.IsDispatchCategory(props.context.value)) {
       return (
         <ErrorRenderer
-          message={`${SerializedType}: Expected dispatch category, got: ${JSON.stringify(
+          message={`Expected dispatch category, got: ${JSON.stringify(
             props.context.value,
           )}`}
         />
@@ -137,7 +132,6 @@ export const CategoryAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              completeSerializedTypeHierarchy,
             }}
             foreignMutations={{
               ...props.foreignMutations,

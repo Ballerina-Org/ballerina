@@ -422,7 +422,10 @@ export const TableAbstractRenderer = <
       );
     }
 
-    if (props.context.customFormState.initializationStatus !== "initialized") {
+    if (
+      props.context.customFormState.initializationStatus !== "initialized" &&
+      props.context.customFormState.initializationStatus !== "reinitializing"
+    ) {
       return <></>;
     }
 
@@ -591,10 +594,6 @@ export const TableAbstractRenderer = <
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ).then(
-                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                          true,
-                        ),
                       ),
                     );
                   },
@@ -614,10 +613,6 @@ export const TableAbstractRenderer = <
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
-                        ),
-                      ).then(
-                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                          true,
                         ),
                       ),
                     );
@@ -640,10 +635,6 @@ export const TableAbstractRenderer = <
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ).then(
-                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                          true,
-                        ),
                       ),
                     );
                   },
@@ -664,13 +655,15 @@ export const TableAbstractRenderer = <
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ).then(
-                        TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                          true,
-                        ),
                       ),
                     );
                   },
+              reinitialize: () =>
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+                    true,
+                  ),
+                ),
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
