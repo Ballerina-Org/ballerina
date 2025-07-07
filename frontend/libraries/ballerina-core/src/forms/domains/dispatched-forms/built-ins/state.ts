@@ -268,7 +268,7 @@ export type ConcreteRenderers<
   secret: {
     [_: string]: () =>
       | SecretAbstractRendererView<
-              CustomPresentationContexts,
+          CustomPresentationContexts,
           Flags,
           ExtraContext
         >
@@ -349,7 +349,7 @@ export type ConcreteRenderers<
         >
       | React.MemoExoticComponent<
           SearchableInfiniteStreamMultiselectAbstractRendererView<
-              CustomPresentationContexts,
+            CustomPresentationContexts,
             Flags,
             ExtraContext
           >
@@ -372,11 +372,7 @@ export type ConcreteRenderers<
   };
   map: {
     [_: string]: () =>
-      | MapAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | MapAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
       | React.MemoExoticComponent<
           MapAbstractRendererView<
             CustomPresentationContexts,
@@ -402,11 +398,7 @@ export type ConcreteRenderers<
   };
   sum: {
     [_: string]: () =>
-      | SumAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | SumAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
       | React.MemoExoticComponent<
           SumAbstractRendererView<
             CustomPresentationContexts,
@@ -417,11 +409,7 @@ export type ConcreteRenderers<
   };
   sumUnitDate: {
     [_: string]: () =>
-      | SumAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | SumAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
       | React.MemoExoticComponent<
           SumAbstractRendererView<
             CustomPresentationContexts,
@@ -433,7 +421,7 @@ export type ConcreteRenderers<
   record: {
     [_: string]: () =>
       | RecordAbstractRendererView<
-              CustomPresentationContexts,
+          CustomPresentationContexts,
           Flags,
           ExtraContext
         >
@@ -477,11 +465,7 @@ export type ConcreteRenderers<
   };
   one: {
     [_: string]: () =>
-      | OneAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | OneAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
       | React.MemoExoticComponent<
           OneAbstractRendererView<
             CustomPresentationContexts,

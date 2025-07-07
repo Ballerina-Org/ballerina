@@ -49,7 +49,7 @@ export const ListDispatcher = {
                 .Then((defaultElementValue) =>
                   dispatcherContext
                     .getConcreteRenderer("list", renderer.concreteRenderer)
-                    .Then((concreteRenderer) => 
+                    .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
                         ListAbstractRenderer(
                           () => defaultElementState,

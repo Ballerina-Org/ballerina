@@ -397,9 +397,7 @@ export const DispatchParsedType = {
       kind: "singleSelection",
       args,
       asString: () =>
-        SingleSelectionType.SerializeToString(
-          args.map((v) => v.asString()),
-        ),
+        SingleSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     multiSelection: <T>(
       args: Array<DispatchParsedType<T>>,
@@ -407,15 +405,12 @@ export const DispatchParsedType = {
       kind: "multiSelection",
       args,
       asString: () =>
-        MultiSelectionType.SerializeToString(
-          args.map((v) => v.asString()),
-        ),
+        MultiSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     list: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "list",
       args,
-      asString: () =>
-        ListType.SerializeToString(args.map((v) => v.asString())),
+      asString: () => ListType.SerializeToString(args.map((v) => v.asString())),
     }),
     tuple: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "tuple",
@@ -426,14 +421,12 @@ export const DispatchParsedType = {
     sum: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "sum",
       args,
-      asString: () =>
-        SumType.SerializeToString(args.map((v) => v.asString())),
+      asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
       args,
-      asString: () =>
-        MapType.SerializeToString(args.map((v) => v.asString())),
+      asString: () => MapType.SerializeToString(args.map((v) => v.asString())),
     }),
     union: <T>(
       args: Map<DispatchCaseName, DispatchParsedType<T>>,
