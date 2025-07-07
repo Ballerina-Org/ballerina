@@ -36,10 +36,10 @@ export const QueueCoroutine = <Context, State>(
               .then((_) =>
                 // alert(`${JSON.stringify(k)} => ${_}\n`)
                 k.postprocess(_).then(() => {
-                  if (_ == "completed") {
-                    return Co.Return({});
-                  } else {
+                  if (_ == "should be enqueued again") {
                     return k.reenqueue;
+                  } else {
+                    return Co.Return({});
                   }
                 }),
               )
