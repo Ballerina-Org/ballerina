@@ -1120,17 +1120,7 @@ export const dispatchDefaultValue =
 
       if (t.kind == "sum")
         return renderer.kind == "sumRenderer"
-          ? // ? dispatchDefaultValue(
-            //     injectedPrimitives,
-            //     types,
-            //     forms,
-            //   )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
-            //     ValueOrErrors.Default.return(
-            //       PredicateValue.Default.sum(Sum.Default.left(left)),
-            //     ),
-            //   )
-            // : renderer.kind == "sumUnitDateRenderer"
-            dispatchDefaultValue(
+          ? dispatchDefaultValue(
               injectedPrimitives,
               types,
               forms,
