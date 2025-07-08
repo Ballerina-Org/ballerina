@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+
+        <!-- NuGet package metadata -->
+        <PackageId>Ballerina.Lang</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Dr. Giuseppe Maggiore</Authors>
+        <Company>Ballerina-Org</Company>
+        <Description>Language library for Ballerina</Description>
+
+        <!-- Repository info -->
+        <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RootNamespace>Ballerinca.Forms</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Expr/Model.fs" />
+        <Compile Include="Expr/Patterns.fs" />
+        <Compile Include="ExprType/Next/Next.fs" />
+        <Compile Include="ExprType/Next/EquivalenceClass.fs" />
+        <Compile Include="ExprType/Next/Unification.fs" />
+        <Compile Include="ExprType/Model.fs" />
+        <Compile Include="ExprType/Patterns.fs" />
+        <Compile Include="ExprType/Unification.fs" />
+        <Compile Include="ExprType/TypeCheck.fs" />
+        <Compile Include="Expr/Eval.fs" />
+        <Compile Include="Parser/Patterns.fs" />
+        <Compile Include="Parser/ExprType.fs" />
+        <Compile Include="Parser/Expr.fs" />
+        <Compile Include="Extensions/Primitives/Model.fs" />
+        <Compile Include="Extensions/Collections/Model.fs" />
+        <Compile Include="Expr/Extension.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.300" />
+        <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
+      <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+    </ItemGroup>
+
+</Project>
