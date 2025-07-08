@@ -10,8 +10,8 @@ _SumR = TypeVar("_SumR")
 
 _CASE_KEY = "case"
 _VALUE_KEY = "value"
-_LEFT_VALUE = "left"
-_RIGHT_VALUE = "right"
+_LEFT_VALUE = "Sum.Left"
+_RIGHT_VALUE = "Sum.Right"
 
 
 def sum_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
