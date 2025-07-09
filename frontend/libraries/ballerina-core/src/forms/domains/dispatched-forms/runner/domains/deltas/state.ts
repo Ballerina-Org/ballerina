@@ -1085,8 +1085,8 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "Replace",
-                    Replace: value,
+                    Discriminator: lookupName,
+                    [lookupName]: value,
                   },
                   `[${lookupName}Replace]`,
                   delta.flags ? [[delta.flags, `[${lookupName}Replace]`]] : [],
