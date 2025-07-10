@@ -1,4 +1,4 @@
-import { List, Map, OrderedMap, Set } from "immutable";
+import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   id,
@@ -29,7 +29,6 @@ import {
   RecordAbstractRendererForeignMutationsExpected,
   MapRepo,
   ValueTable,
-  StringSerializedType,
   RecordType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";

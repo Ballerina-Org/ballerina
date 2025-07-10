@@ -17,13 +17,15 @@ export type LookupTypeAbstractRendererView<
   ExtraContext = Unit,
 > = View<
   CommonAbstractRendererReadonlyContext<
-    LookupType,
+    DispatchParsedType<any>,
     PredicateValue,
     CustomPresentationContext,
     ExtraContext
   > &
     CommonAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext & {
+      lookupType: LookupType;
+    },
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected<Flags>,
   {

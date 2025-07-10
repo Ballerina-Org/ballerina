@@ -31,12 +31,13 @@ export const LookupTypeAbstractRenderer = <
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
+  lookupType: LookupType,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   _ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   return Template.Default<
     CommonAbstractRendererReadonlyContext<
-      LookupType,
+      DispatchParsedType<any>,
       PredicateValue,
       CustomPresentationContext,
       ExtraContext
@@ -60,8 +61,9 @@ export const LookupTypeAbstractRenderer = <
               domNodeId: props.context.domNodeAncestorPath,
               lookupTypeAncestorNames: [
                 ...props.context.lookupTypeAncestorNames,
-                props.context.type.asString(),
+                lookupType.asString(),
               ],
+              lookupType: lookupType,
             }}
             embeddedTemplate={embeddedTemplate}
           />

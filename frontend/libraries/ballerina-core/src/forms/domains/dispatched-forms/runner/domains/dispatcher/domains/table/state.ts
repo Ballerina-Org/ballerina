@@ -153,6 +153,7 @@ export const TableDispatcher = {
                                         ExtraContext
                                       >(
                                         template,
+                                        renderer.type.arg,
                                         dispatcherContext.IdProvider,
                                         dispatcherContext.ErrorRenderer,
                                       ).withView(

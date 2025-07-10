@@ -53,6 +53,7 @@ export const LookupDispatcher = {
                   ExtraContext
                 >(
                   template,
+                  renderer.type,
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(dispatcherContext.lookupTypeRenderer()),

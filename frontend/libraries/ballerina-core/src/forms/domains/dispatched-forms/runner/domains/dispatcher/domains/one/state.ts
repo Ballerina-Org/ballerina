@@ -130,6 +130,7 @@ export const OneDispatcher = {
                             ExtraContext
                           >(
                             detailsRenderer,
+                            renderer.type.arg,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                           ).withView(dispatcherContext.lookupTypeRenderer()),
@@ -140,6 +141,7 @@ export const OneDispatcher = {
                                 ExtraContext
                               >(
                                 previewRenderer,
+                                renderer.type.arg,
                                 dispatcherContext.IdProvider,
                                 dispatcherContext.ErrorRenderer,
                               ).withView(dispatcherContext.lookupTypeRenderer())
