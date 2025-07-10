@@ -27,6 +27,7 @@ export type CommonAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
   typeAncestors: DispatchParsedType<any>[];
+  lookupTypeAncestorNames: string[];
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {

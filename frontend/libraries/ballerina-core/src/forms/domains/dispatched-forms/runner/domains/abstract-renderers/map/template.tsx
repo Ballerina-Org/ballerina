@@ -92,6 +92,7 @@ export const MapAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState(
@@ -113,6 +114,8 @@ export const MapAbstractRenderer = <
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
               flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -192,6 +195,7 @@ export const MapAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState(
@@ -218,6 +222,8 @@ export const MapAbstractRenderer = <
                 kind: "MapValue",
                 value: [elementIndex, nestedDelta],
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
               props.foreignMutations.onChange(
                 elementUpdater.kind == "l"
@@ -319,6 +325,8 @@ export const MapAbstractRenderer = <
                   valueState: GetDefaultValueFormState(),
                   valueType: (props.context.type as MapType<any>).args[1],
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -350,6 +358,8 @@ export const MapAbstractRenderer = <
                   kind: "MapRemove",
                   index,
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(

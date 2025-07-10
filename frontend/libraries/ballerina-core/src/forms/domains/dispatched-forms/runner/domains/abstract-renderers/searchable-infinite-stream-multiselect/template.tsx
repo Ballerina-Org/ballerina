@@ -183,6 +183,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                   flags,
                 };
                 props.foreignMutations.onChange(
@@ -217,6 +219,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                   flags,
                 };
                 props.foreignMutations.onChange(
@@ -250,6 +254,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                         },
                         type: props.context.type,
                         flags,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
                       },
                     )
                   : props.foreignMutations.onChange(
@@ -275,6 +281,8 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                         },
                         type: props.context.type,
                         flags,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
                       },
                     );
               },

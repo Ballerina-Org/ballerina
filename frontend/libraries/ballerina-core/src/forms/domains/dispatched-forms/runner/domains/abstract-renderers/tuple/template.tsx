@@ -79,6 +79,7 @@ export const DispatchTupleAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState(
@@ -105,6 +106,8 @@ export const DispatchTupleAbstractRenderer = <
                 item: [itemIndex, nestedDelta],
                 tupleType: props.context.type,
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
               props.foreignMutations.onChange(
                 elementUpdater.kind == "l"

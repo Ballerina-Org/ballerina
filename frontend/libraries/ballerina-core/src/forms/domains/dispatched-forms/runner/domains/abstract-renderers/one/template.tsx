@@ -135,6 +135,7 @@ export const OneAbstractRenderer = <
           _.typeAncestors,
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
+        lookupTypeAncestorNames: _.lookupTypeAncestorNames,
       };
     })
       .mapState(
@@ -201,6 +202,8 @@ export const OneAbstractRenderer = <
             kind: "OneValue",
             nestedDelta,
             flags,
+            sourceAncestorLookupTypeNames:
+              nestedDelta.sourceAncestorLookupTypeNames,
           };
 
           // The Option component of the one is a lazy load signal. Either the value is provided initially,
@@ -251,6 +254,7 @@ export const OneAbstractRenderer = <
               _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           };
         })
           .mapState(
@@ -322,6 +326,8 @@ export const OneAbstractRenderer = <
                 kind: "OneValue",
                 nestedDelta,
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
 
               props.foreignMutations.onChange(
@@ -535,6 +541,8 @@ export const OneAbstractRenderer = <
                 const delta: DispatchDelta<Flags> = {
                   kind: "OneDeleteValue",
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.delete &&
                   (props.foreignMutations.delete(delta),
@@ -563,6 +571,8 @@ export const OneAbstractRenderer = <
                   replace: value,
                   flags,
                   type: props.context.type,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
 
                 const updater = replaceWith<ValueUnit | ValueOption>(
@@ -602,6 +612,8 @@ export const OneAbstractRenderer = <
                   value,
                   flags,
                   type: props.context.type,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
 
                 const updater = replaceWith<ValueUnit | ValueOption>(

@@ -174,6 +174,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   },
                   type: props.context.type,
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(
@@ -215,6 +217,8 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                   },
                   type: props.context.type,
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(value)),

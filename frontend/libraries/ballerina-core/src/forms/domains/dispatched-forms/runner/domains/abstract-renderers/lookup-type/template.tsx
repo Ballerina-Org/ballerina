@@ -9,7 +9,10 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import {
+  DispatchParsedType,
+  LookupType,
+} from "../../../../deserializer/domains/specification/domains/types/state";
 import { LookupTypeAbstractRendererView } from "./state";
 
 export const LookupTypeAbstractRenderer = <
@@ -33,7 +36,7 @@ export const LookupTypeAbstractRenderer = <
 ) => {
   return Template.Default<
     CommonAbstractRendererReadonlyContext<
-      DispatchParsedType<any>,
+      LookupType,
       PredicateValue,
       CustomPresentationContext,
       ExtraContext
@@ -55,6 +58,10 @@ export const LookupTypeAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
+              lookupTypeAncestorNames: [
+                ...props.context.lookupTypeAncestorNames,
+                props.context.type.asString(),
+              ],
             }}
             embeddedTemplate={embeddedTemplate}
           />

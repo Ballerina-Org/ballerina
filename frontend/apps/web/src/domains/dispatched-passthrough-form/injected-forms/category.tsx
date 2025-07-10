@@ -148,6 +148,8 @@ export const CategoryAbstractRenderer = <
                     type: props.context.type,
                   },
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(_)),

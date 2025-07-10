@@ -108,6 +108,7 @@ export const RecordAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState(
@@ -137,6 +138,8 @@ export const RecordAbstractRenderer = <
                 field: [fieldName, nestedDelta],
                 recordType: props.context.type,
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
 
               props.foreignMutations.onChange(

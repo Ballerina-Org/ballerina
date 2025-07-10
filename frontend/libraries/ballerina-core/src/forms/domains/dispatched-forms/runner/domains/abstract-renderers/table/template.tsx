@@ -181,6 +181,7 @@ export const TableAbstractRenderer = <
             ),
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           };
         })
 
@@ -248,6 +249,8 @@ export const TableAbstractRenderer = <
               field: [column, nestedDelta],
               recordType: TableEntityType,
               flags: undefined,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
             };
 
             const delta: DispatchDelta<Flags> = {
@@ -255,6 +258,8 @@ export const TableAbstractRenderer = <
               id: rowId,
               nestedDelta: nestedRecordDelta,
               flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
             };
 
             const updater =
@@ -326,6 +331,7 @@ export const TableAbstractRenderer = <
               _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
@@ -382,6 +388,8 @@ export const TableAbstractRenderer = <
                 id: props.context.customFormState.selectedDetailRow[1],
                 nestedDelta: nestedDelta,
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
 
               props.foreignMutations.onChange(Option.Default.none(), delta);
@@ -584,6 +592,8 @@ export const TableAbstractRenderer = <
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableAddEmpty",
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.none(),
@@ -604,6 +614,8 @@ export const TableAbstractRenderer = <
                       kind: "TableRemove",
                       id: k,
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.none(),
@@ -625,7 +637,9 @@ export const TableAbstractRenderer = <
                       id: k,
                       to,
                       flags,
-                    };
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                      };
                     props.foreignMutations.onChange(
                       Option.Default.none(),
                       delta,
@@ -645,6 +659,8 @@ export const TableAbstractRenderer = <
                       kind: "TableDuplicate",
                       id: k,
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.none(),

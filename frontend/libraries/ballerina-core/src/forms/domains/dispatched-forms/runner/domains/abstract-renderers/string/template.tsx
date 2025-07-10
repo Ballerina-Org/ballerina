@@ -77,6 +77,8 @@ export const StringAbstractRenderer = <
                   },
                   type: props.context.type,
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(value)),

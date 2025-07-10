@@ -74,6 +74,7 @@ export const UnionAbstractRenderer = <
               _.typeAncestors,
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + `[union][${caseName}]`,
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState(
@@ -100,6 +101,8 @@ export const UnionAbstractRenderer = <
               kind: "UnionCase",
               caseName: [caseName, nestedDelta],
               flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
             };
             const caseUpdater =
               updater.kind == "r"

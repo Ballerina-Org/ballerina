@@ -30,6 +30,7 @@ export type DispatchDeltaPrimitive<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "StringReplace";
@@ -37,6 +38,7 @@ export type DispatchDeltaPrimitive<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "BoolReplace";
@@ -44,6 +46,7 @@ export type DispatchDeltaPrimitive<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TimeReplace";
@@ -51,6 +54,7 @@ export type DispatchDeltaPrimitive<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "GuidReplace";
@@ -58,6 +62,7 @@ export type DispatchDeltaPrimitive<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 
 export type DispatchDeltaUnit<T = Unit> = {
@@ -66,6 +71,7 @@ export type DispatchDeltaUnit<T = Unit> = {
   state: any;
   type: DispatchParsedType<any>;
   flags: T | undefined;
+  sourceAncestorLookupTypeNames: string[];
 };
 export type DispatchDeltaOption<T = Unit> =
   | {
@@ -74,8 +80,14 @@ export type DispatchDeltaOption<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
-  | { kind: "OptionValue"; value: DispatchDelta<T>; flags: T | undefined };
+  | {
+      kind: "OptionValue";
+      value: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    };
 export type DispatchDeltaSum<T = Unit> =
   | {
       kind: "SumReplace";
@@ -83,9 +95,20 @@ export type DispatchDeltaSum<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
-  | { kind: "SumLeft"; value: DispatchDelta<T>; flags: T | undefined }
-  | { kind: "SumRight"; value: DispatchDelta<T>; flags: T | undefined };
+  | {
+      kind: "SumLeft";
+      value: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "SumRight";
+      value: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    };
 export type DispatchDeltaList<T = Unit> =
   | {
       kind: "ArrayReplace";
@@ -93,11 +116,13 @@ export type DispatchDeltaList<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "ArrayValue";
       value: [number, DispatchDelta<T>];
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "ArrayAdd";
@@ -105,6 +130,7 @@ export type DispatchDeltaList<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "ArrayAddAt";
@@ -112,10 +138,27 @@ export type DispatchDeltaList<T = Unit> =
       elementState: any;
       elementType: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
-  | { kind: "ArrayRemoveAt"; index: number; flags: T | undefined }
-  | { kind: "ArrayMoveFromTo"; from: number; to: number; flags: T | undefined }
-  | { kind: "ArrayDuplicateAt"; index: number; flags: T | undefined };
+  | {
+      kind: "ArrayRemoveAt";
+      index: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ArrayMoveFromTo";
+      from: number;
+      to: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ArrayDuplicateAt";
+      index: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    };
 export type DispatchDeltaSet<T = Unit> =
   | {
       kind: "SetReplace";
@@ -123,6 +166,7 @@ export type DispatchDeltaSet<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "SetValue";
@@ -130,6 +174,7 @@ export type DispatchDeltaSet<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "SetAdd";
@@ -137,6 +182,7 @@ export type DispatchDeltaSet<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "SetRemove";
@@ -144,6 +190,7 @@ export type DispatchDeltaSet<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaMap<T = Unit> =
   | {
@@ -152,16 +199,19 @@ export type DispatchDeltaMap<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "MapKey";
       value: [number, DispatchDelta<T>];
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "MapValue";
       value: [number, DispatchDelta<T>];
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "MapAdd";
@@ -171,8 +221,14 @@ export type DispatchDeltaMap<T = Unit> =
       valueState: any;
       valueType: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
-  | { kind: "MapRemove"; index: number; flags: T | undefined };
+  | {
+      kind: "MapRemove";
+      index: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    };
 export type DispatchDeltaRecord<T = Unit> =
   | {
       kind: "RecordReplace";
@@ -180,12 +236,14 @@ export type DispatchDeltaRecord<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "RecordField";
       field: [string, DispatchDelta<T>];
       recordType: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "RecordAdd";
@@ -193,6 +251,7 @@ export type DispatchDeltaRecord<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaUnion<T = Unit> =
   | {
@@ -201,11 +260,13 @@ export type DispatchDeltaUnion<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "UnionCase";
       caseName: [string, DispatchDelta<T>];
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaTuple<T = Unit> =
   | {
@@ -214,12 +275,14 @@ export type DispatchDeltaTuple<T = Unit> =
       state: any;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TupleCase";
       item: [number, DispatchDelta<T>];
       tupleType: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaTable<T = Unit> =
   | {
@@ -227,26 +290,31 @@ export type DispatchDeltaTable<T = Unit> =
       id: string;
       nestedDelta: DispatchDelta<T>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TableAddEmpty";
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TableRemove";
       id: string;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TableMoveTo";
       id: string;
       to: string;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "TableDuplicate";
       id: string;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaOne<T = Unit> =
   | {
@@ -254,21 +322,25 @@ export type DispatchDeltaOne<T = Unit> =
       replace: PredicateValue;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "OneValue";
       nestedDelta: DispatchDelta<T>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "OneCreateValue";
       value: PredicateValue;
       type: DispatchParsedType<any>;
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "OneDeleteValue";
       flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 
 export type DispatchDeltaCustom<T = Unit> = {
@@ -278,6 +350,7 @@ export type DispatchDeltaCustom<T = Unit> = {
     [key: string]: any;
   };
   flags: T | undefined;
+  sourceAncestorLookupTypeNames: string[];
 };
 
 export type DispatchTransferTuple2<a, b> = { Item1: a; Item2: b };

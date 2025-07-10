@@ -80,6 +80,8 @@ export const DateAbstractRenderer = <
                     },
                     type: props.context.type,
                     flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
                   };
                   setTimeout(() => {
                     props.foreignMutations.onChange(

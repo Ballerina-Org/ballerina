@@ -76,6 +76,7 @@ export const SumAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             }),
           )
           .mapState(
@@ -95,6 +96,8 @@ export const SumAbstractRenderer = <
                   kind: "SumLeft",
                   value: nestedDelta,
                   flags: flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
                 };
                 props.foreignMutations.onChange(
                   elementUpdater.kind == "l"
@@ -154,6 +157,7 @@ export const SumAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             }),
           )
           .mapState(
@@ -168,6 +172,8 @@ export const SumAbstractRenderer = <
                 kind: "SumRight",
                 value: nestedDelta,
                 flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
               };
               props.foreignMutations.onChange(
                 elementUpdater.kind == "l"

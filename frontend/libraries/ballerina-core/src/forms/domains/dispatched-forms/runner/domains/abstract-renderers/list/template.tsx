@@ -77,6 +77,7 @@ export const ListAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<T>].concat(
               _.typeAncestors,
             ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           }),
         )
         .mapState((_) =>
@@ -96,6 +97,8 @@ export const ListAbstractRenderer = <
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
               flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
             };
             props.foreignMutations.onChange(
               elementUpdater.kind == "l"
@@ -189,6 +192,8 @@ export const ListAbstractRenderer = <
                       },
                       type: props.context.type.args[0],
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.some(
@@ -217,6 +222,8 @@ export const ListAbstractRenderer = <
                       kind: "ArrayRemoveAt",
                       index: _,
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.some(
@@ -246,6 +253,8 @@ export const ListAbstractRenderer = <
                       from: index,
                       to: to,
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.some(
@@ -275,6 +284,8 @@ export const ListAbstractRenderer = <
                       kind: "ArrayDuplicateAt",
                       index: _,
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.some(
@@ -305,6 +316,8 @@ export const ListAbstractRenderer = <
                       elementState: GetDefaultElementState(),
                       elementType: props.context.type.args[0],
                       flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.some(

@@ -32,8 +32,6 @@ export type DispatchPassthroughFormCustomPresentationContext = {
   listElement: ListElementCustomPresentationContext;
 };
 
-const SHOW_SERIALIZED_TYPE_HIERARCHY = false;
-
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
   DispatchPassthroughFormFlags,
@@ -81,16 +79,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             gap: "10px",
           }}
         >
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {ctx.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <p>DetailsRenderer</p>
           {propsLocal.DetailsRenderer(undefined)({
             ...propsLocal,
@@ -208,16 +196,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       if (PredicateValue.Operations.IsUnit(ctx.value)) {
         return (
           <>
-            {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-              <ul>
-                <p>SerializedTypeHierarchy</p>
-                {ctx.serializedTypeHierarchy.map((_) => (
-                  <li>
-                    <p>{_}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
             <p>one admin renderer</p>
             <p>DetailsRenderer</p>
             {propsLocal.DetailsRenderer(undefined)({
@@ -300,16 +278,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {ctx.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <p>one admin renderer</p>
           <p>DetailsRenderer</p>
           {propsLocal.DetailsRenderer(undefined)({
@@ -442,16 +410,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             margin: "auto",
           }}
         >
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {ctx.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <h2>{ctx.label}</h2>
           <li>
             {propsLocal.DetailsRenderer(undefined)({
@@ -551,16 +509,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     personCases: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.embeddedCaseTemplate(props.context.value.caseName)(undefined)({
             ...props,
@@ -572,16 +520,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     job: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.embeddedCaseTemplate(props.context.value.caseName)(undefined)({
             ...props,
@@ -595,16 +533,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     personDetails: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <table>
             <tbody>
               {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
@@ -644,16 +572,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     userDetails: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.layout.valueSeq().map((tab) =>
             tab.columns.valueSeq().map((column) => (
               <div style={{ display: "block", float: "left" }}>
@@ -687,16 +605,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     friendsDetails: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.layout.valueSeq().map((tab) =>
             tab.columns.valueSeq().map((column) => (
               <div style={{ display: "block", float: "left" }}>
@@ -730,16 +638,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     preview: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.layout.valueSeq().map((tab) =>
             tab.columns.valueSeq().map((column) => (
               <div style={{ display: "flex" }}>
@@ -773,16 +671,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     address: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <table>
             <tbody>
               {props.context.layout.valueSeq().map((tab) =>
@@ -821,16 +709,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     finiteTable: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <table>
             <thead style={{ border: "1px solid black" }}>
               <tr style={{ border: "1px solid black" }}>
@@ -865,16 +743,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     streamingTable: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           <h3>{props.context.label}</h3>
           <div
             style={{
@@ -1050,16 +918,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultCategory: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.customPresentationContext?.listElement
             ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1139,16 +997,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   boolean: {
     defaultBoolean: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
           <p>
@@ -1170,16 +1018,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
     secondBoolean: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
           <p>
@@ -1203,16 +1041,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   number: {
     defaultNumber: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
           <p>
@@ -1237,16 +1065,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultString: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.customPresentationContext?.listElement
             ?.isLastListElement && <p>Last</p>}
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1271,16 +1089,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     otherString: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1308,16 +1116,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         : props.context.value?.toISOString().slice(0, 10);
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1350,16 +1148,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.details && (
             <p>
@@ -1406,16 +1194,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultEnumMultiselect: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.details && (
             <p>
@@ -1469,16 +1247,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   streamSingleSelection: {
     defaultInfiniteStream: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.tooltip && <p>{props.context.tooltip}</p>}
         {props.context.details && (
@@ -1559,16 +1327,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultInfiniteStreamMultiselect: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.details && (
             <p>
@@ -1667,16 +1425,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultList: () => (props) => {
       return (
         <div style={{ border: "1px solid darkblue" }}>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
@@ -1799,16 +1547,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   base64File: {
     defaultBase64File: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
           <p>
@@ -1828,16 +1566,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   secret: {
     defaultSecret: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
           <p>
@@ -1857,16 +1585,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   map: {
     defaultMap: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.tooltip && <p>{props.context.tooltip}</p>}
         {props.context.details && (
@@ -1910,16 +1628,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   tuple: {
     defaultTuple2: () => (props) => (
       <>
-        {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-          <ul>
-            <p>SerializedTypeHierarchy</p>
-            {props.context.serializedTypeHierarchy.map((_) => (
-              <li>
-                <p>{_}</p>
-              </li>
-            ))}
-          </ul>
-        )}
         {props.context.label && <h3>{props.context.label}</h3>}
         <div>
           {props.context.value.values.map((_, elementIndex) => {
@@ -1938,16 +1646,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultTuple3: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           <div>
             {props.embeddedItemTemplates(0)(undefined)({
@@ -1973,16 +1671,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultSum: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.value.value.kind == "l"
             ? props?.embeddedLeftTemplate?.(undefined)({
                 ...props,
@@ -1998,16 +1686,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     alwaysRight: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props?.embeddedRightTemplate?.(undefined)({
             ...props,
             context: {
@@ -2059,6 +1737,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             flags: {
               test: true,
             },
+            sourceAncestorLookupTypeNames:
+              props.context.lookupTypeAncestorNames,
           };
           setTimeout(() => {
             props.foreignMutations.onChange(
@@ -2096,6 +1776,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           flags: {
             test: true,
           },
+          sourceAncestorLookupTypeNames: props.context.lookupTypeAncestorNames,
         };
         setTimeout(() => {
           props.foreignMutations.onChange(
@@ -2113,16 +1794,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           <input
             disabled={props.context.disabled}
@@ -2144,16 +1815,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     defaultUnit: () => (props) => {
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           Unit field
         </>
@@ -2199,6 +1860,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             flags: {
               test: true,
             },
+            sourceAncestorLookupTypeNames:
+              props.context.lookupTypeAncestorNames,
           };
           setTimeout(() => {
             props.foreignMutations.onChange(
@@ -2236,6 +1899,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           flags: {
             test: true,
           },
+          sourceAncestorLookupTypeNames: props.context.lookupTypeAncestorNames,
         };
         setTimeout(() => {
           props.foreignMutations.onChange(
@@ -2253,16 +1917,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       return (
         <>
-          {SHOW_SERIALIZED_TYPE_HIERARCHY && (
-            <ul>
-              <p>SerializedTypeHierarchy</p>
-              {props.context.serializedTypeHierarchy.map((_) => (
-                <li>
-                  <p>{_}</p>
-                </li>
-              ))}
-            </ul>
-          )}
           {props.context.label && <h3>{props.context.label}</h3>}
           <input
             disabled={props.context.disabled}

@@ -120,6 +120,8 @@ export const EnumMultiselectAbstractRenderer = <
                   },
                   type: props.context.type,
                   flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.onChange(
                   Option.Default.some(

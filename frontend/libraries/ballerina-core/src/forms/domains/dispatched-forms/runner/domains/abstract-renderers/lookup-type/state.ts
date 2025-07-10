@@ -4,6 +4,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchParsedType,
+  LookupType,
   PredicateValue,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
@@ -16,7 +17,7 @@ export type LookupTypeAbstractRendererView<
   ExtraContext = Unit,
 > = View<
   CommonAbstractRendererReadonlyContext<
-    DispatchParsedType<any>,
+    LookupType,
     PredicateValue,
     CustomPresentationContext,
     ExtraContext

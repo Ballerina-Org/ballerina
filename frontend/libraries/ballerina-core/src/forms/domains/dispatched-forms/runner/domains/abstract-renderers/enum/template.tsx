@@ -105,6 +105,8 @@ export const EnumAbstractRenderer = <
                     },
                     type: props.context.type,
                     flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
                   };
                   return props.foreignMutations.onChange(
                     Option.Default.some(
@@ -127,6 +129,8 @@ export const EnumAbstractRenderer = <
                     },
                     type: props.context.type,
                     flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
                   };
                   return props.foreignMutations.onChange(
                     Option.Default.some(
