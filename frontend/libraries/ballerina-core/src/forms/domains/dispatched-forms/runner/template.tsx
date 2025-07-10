@@ -72,6 +72,7 @@ export const DispatchFormRunnerTemplate = <
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
+          lookupTypeAncestorNames: [],
           // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
         }}
         setState={(_: BasicUpdater<any>) =>
