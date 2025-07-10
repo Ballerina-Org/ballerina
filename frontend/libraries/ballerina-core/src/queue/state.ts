@@ -4,7 +4,11 @@ import { CoTypedFactory } from "../coroutines/builder";
 import { Coroutine } from "../coroutines/state";
 import { BasicFun } from "../fun/state";
 
-export const QueueCoroutine = <Context, State>(
+export const QueueCoroutine = <
+  Context,
+  State,
+  OperationResult = SynchronizationResult,
+>(
   removeItem: BasicFun<Guid, Coroutine<Context & State, State, Unit>>,
   getItemsToProcess: BasicFun<
     Context & State,
@@ -12,9 +16,9 @@ export const QueueCoroutine = <Context, State>(
       Guid,
       {
         preprocess: Coroutine<Context & State, State, Unit>;
-        operation: Coroutine<Context & State, State, SynchronizationResult>;
+        operation: Coroutine<Context & State, State, OperationResult>;
         postprocess: BasicFun<
-          SynchronizationResult,
+          OperationResult,
           Coroutine<Context & State, State, Unit>
         >;
         reenqueue: Coroutine<Context & State, State, Unit>;
@@ -34,7 +38,6 @@ export const QueueCoroutine = <Context, State>(
             k.preprocess
               .then(() => k.operation)
               .then((_) =>
-                // alert(`${JSON.stringify(k)} => ${_}\n`)
                 k.postprocess(_).then(() => {
                   if (_ == "should be enqueued again") {
                     return k.reenqueue;
