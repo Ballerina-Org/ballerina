@@ -639,7 +639,7 @@ export const TableAbstractRenderer = <
                       flags,
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
-                      };
+                    };
                     props.foreignMutations.onChange(
                       Option.Default.none(),
                       delta,
