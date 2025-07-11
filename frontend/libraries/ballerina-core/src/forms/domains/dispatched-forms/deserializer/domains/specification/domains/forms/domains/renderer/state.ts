@@ -10,6 +10,7 @@ import { ListRenderer, SerializedListRenderer } from "./domains/list/state";
 import { LookupRenderer, SerializedLookup } from "./domains/lookup/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
+import { ReadOnlyRenderer, SerializedReadOnlyRenderer } from "./domains/readOnly/state";
 import {
   SerializedStreamRenderer,
   StreamRenderer,
@@ -45,6 +46,7 @@ export type SerializedRenderer =
   | SerializedListRenderer
   | SerializedMapRenderer
   | SerializedOneRenderer
+  | SerializedReadOnlyRenderer
   | SerializedStreamRenderer
   | SerializedSumRenderer
   | SerializedSumUnitDateBaseRenderer
@@ -60,6 +62,7 @@ export type Renderer<T> =
   | ListRenderer<T>
   | MapRenderer<T>
   | OneRenderer<T>
+  | ReadOnlyRenderer<T>
   | StreamRenderer<T>
   | SumRenderer<T>
   | BaseSumUnitDateRenderer<T>
@@ -248,7 +251,14 @@ export const Renderer = {
                             concreteRenderers,
                             types,
                           )
-                        : Renderer.Operations.IsSumUnitDate(
+                        : type.kind == "readOnly"
+                          ? ReadOnlyRenderer.Operations.Deserialize(
+                              type,
+                              serialized,
+                              concreteRenderers,
+                              types,
+                            )
+                          : Renderer.Operations.IsSumUnitDate(
                               serialized,
                               concreteRenderers,
                             ) && type.kind == "sum"

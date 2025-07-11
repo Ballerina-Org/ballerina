@@ -35,6 +35,7 @@ import {
   RecordAbstractRendererView,
   SearchableInfiniteStreamMultiselectAbstractRendererView,
   OneAbstractRendererView,
+  ReadOnlyAbstractRendererView,
   TableAbstractRendererView,
   UnionAbstractRendererView,
   DispatchInjectablesTypes,
@@ -158,6 +159,7 @@ export const DispatchGenericTypes = [
   "KeyOf",
   "Table",
   "One",
+  "ReadOnly",
 ] as const;
 export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
 
@@ -474,6 +476,17 @@ export type ConcreteRenderers<
           >
         >;
   };
+  readOnly: {
+    [_: string]: () =>
+      | ReadOnlyAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | React.MemoExoticComponent<
+          ReadOnlyAbstractRendererView<
+            CustomPresentationContexts,
+            Flags,
+            ExtraContext
+          >
+        >;
+  };
 } & {
   [key in keyof T]: { [_: string]: () => T[key]["view"] };
 };
@@ -488,6 +501,7 @@ export type ConcreteRenderer<T> =
   | MapAbstractRendererView<any, any>
   | NumberAbstractRendererView<any, any>
   | OneAbstractRendererView<any, any>
+  | ReadOnlyAbstractRendererView<any, any>
   | RecordAbstractRendererView<any, any>
   | SearchableInfiniteStreamAbstractRendererView<any, any>
   | SearchableInfiniteStreamMultiselectAbstractRendererView<any, any>
@@ -878,6 +892,23 @@ export const dispatchDefaultState =
                         ),
                 );
 
+      if (t.kind == "readOnly")
+        return renderer.kind != "readOnlyRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non readOnly renderer kind "${renderer.kind}" when resolving defaultState for readOnly`,
+            )
+          : dispatchDefaultState(
+              infiniteStreamSources,
+              injectedPrimitives,
+              types,
+              forms,
+              converters,
+              lookupSources,
+              tableApiSources,
+            )(t.args[0], renderer.childRenderer.renderer).Then((childState) =>
+              ValueOrErrors.Default.return(childState),
+            );
+
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
           ? ValueOrErrors.Operations.All(
@@ -1149,6 +1180,18 @@ export const dispatchDefaultValue =
             )
           : ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultValue for one`,
+            );
+      }
+
+      if (t.kind == "readOnly") {
+        return renderer.kind == "readOnlyRenderer"
+          ? dispatchDefaultValue(
+              injectedPrimitives,
+              types,
+              forms,
+            )(t.args[0], renderer.childRenderer.renderer)
+          : ValueOrErrors.Default.throwOne(
+              `received non readOnly renderer kind "${renderer.kind}" when resolving defaultValue for readOnly`,
             );
       }
 
@@ -1476,6 +1519,15 @@ export const dispatchFromAPIRawValue =
             PredicateValue.Default.option(true, value),
           ),
         );
+      }
+
+      if (t.kind == "readOnly") {
+        return dispatchFromAPIRawValue(
+          t.args[0],
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw);
       }
 
       // TODO -- this can be more functional
@@ -1905,6 +1957,15 @@ export const dispatchToAPIRawValue =
             );
           },
         );
+      }
+
+      if (t.kind == "readOnly") {
+        return dispatchToAPIRawValue(
+          t.args[0],
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw, formState);
       }
 
       if (t.kind == "table") {
