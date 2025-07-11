@@ -295,6 +295,17 @@ let ``Should parse predict (AI extension)`` () =
   assertSuccess result expectedExpr
 
 [<Test>]
+let ``Should parse chat (AI extension)`` () =
+  let json = JsonValue.Record [| "kind", JsonValue.String "chat" |]
+
+  let result = Expr.Parse blpLanguageExtension.parse json
+
+  let expectedExpr =
+    AIValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
+
+  assertSuccess result expectedExpr
+
+[<Test>]
 let ``Should parse let type`` () =
   let json =
     JsonValue.Record
@@ -327,6 +338,27 @@ let ``Should convert type applied predict (AI extension) to JSON as expression``
     JsonValue.Record
       [| "kind", JsonValue.String "Apply"
          "function", JsonValue.Record [| "kind", JsonValue.String "predict" |]
+         "argument", JsonValue.String "unit" |]
+
+  assertSuccess convertedJson expectedJson
+
+[<Test>]
+let ``Should convert type applied chat (AI extension) to JSON as expression`` () =
+  let value =
+    AIValueExtension.TypeAppliedChat
+      { OutputType = ExprType.UnitType
+        Refs = Map.empty }
+    |> blpLanguageExtension.aiExtension.toValue
+    |> Expr.Value
+
+  let convertedJson =
+    value
+    |> Expr.ToJson blpLanguageExtension.toJson.expr blpLanguageExtension.toJson.value
+
+  let expectedJson =
+    JsonValue.Record
+      [| "kind", JsonValue.String "Apply"
+         "function", JsonValue.Record [| "kind", JsonValue.String "chat" |]
          "argument", JsonValue.String "unit" |]
 
   assertSuccess convertedJson expectedJson
@@ -674,6 +706,14 @@ let ``Should convert predict (AI extension) to and from Json`` () =
     AIValueExtension.Predict
     |> blpLanguageExtension.aiExtension.toValue
     |> Expr.Value
+
+  let result = toAndFromJson expr
+  assertSuccess result expr
+
+[<Test>]
+let ``Should convert chat (AI extension) to and from Json`` () =
+  let expr =
+    AIValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
 
   let result = toAndFromJson expr
   assertSuccess result expr
