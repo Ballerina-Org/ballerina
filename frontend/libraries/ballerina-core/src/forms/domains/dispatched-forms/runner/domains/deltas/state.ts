@@ -1453,8 +1453,8 @@ export const DispatchDeltaTransfer = {
               );
             }
             return toRawObject(delta.replace, delta.type.arg, unit).Then(
-              (value) =>
-                ValueOrErrors.Default.return<
+              (value) => {
+                return ValueOrErrors.Default.return<
                   [
                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
                     DispatchDeltaTransferComparand,
@@ -1467,10 +1467,9 @@ export const DispatchDeltaTransfer = {
                     Replace: value,
                   },
                   `[OneReplace]`,
-                  delta.flags
-                    ? [[delta.flags, `[OneReplace]`], ...value[2]]
-                    : value[2],
-                ]),
+                  delta.flags ? [[delta.flags, `[OneReplace]`]] : [],
+                ]);
+              },
             );
           }
           if (delta.kind == "OneCreateValue") {
@@ -1504,9 +1503,7 @@ export const DispatchDeltaTransfer = {
                     CreateValue: value,
                   },
                   `[OneCreateValue]`,
-                  delta.flags
-                    ? [[delta.flags, `[OneCreateValue]`], ...value[2]]
-                    : value[2],
+                  delta.flags ? [[delta.flags, `[OneCreateValue]`]] : [],
                 ]),
             );
           }
