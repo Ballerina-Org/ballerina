@@ -553,6 +553,9 @@ const entityApis: EntityApis = {
                 Id: v4(),
                 Name: "John",
                 Surname: "Doe",
+                SuperSecretNumber: {
+                  Value: 123
+                },
                 Birthday: "1990-01-01",
                 Email: "john.doe@example.com",
                 SubscribeToNewsletter: true,

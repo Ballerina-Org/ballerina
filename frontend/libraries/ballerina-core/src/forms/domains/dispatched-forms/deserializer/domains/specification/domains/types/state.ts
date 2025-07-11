@@ -185,6 +185,10 @@ export const SerializedType = {
     _: SerializedType<T>,
   ): _ is { fun: "One"; args: Array<SerializedType<T>> } =>
     SerializedType.isApplication(_) && _.fun == "One" && _.args.length == 1,
+  isReadOnly: <T>(
+    _: SerializedType<T>,
+  ): _ is { fun: "ReadOnly"; args: Array<SerializedType<T>> } =>
+    SerializedType.isApplication(_) && _.fun == "ReadOnly" && _.args.length == 1,
 };
 
 export type StringSerializedType = string;
@@ -341,6 +345,20 @@ export const TableType = {
   },
 };
 
+export type ReadOnlyType<T> = {
+  kind: "readOnly";
+  args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
+};
+
+export const ReadOnlyType = {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+  ): StringSerializedType => {
+    return `[readOnly; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type OneType<T> = {
   kind: "one";
   arg: LookupType;
@@ -367,7 +385,8 @@ export type DispatchParsedType<T> =
   | SumType<T>
   | MapType<T>
   | TableType<T>
-  | OneType<T>;
+  | OneType<T>
+  | ReadOnlyType<T>;
 
 export const DispatchParsedType = {
   Default: {
@@ -435,6 +454,11 @@ export const DispatchParsedType = {
       args,
       asString: () =>
         UnionType.SerializeToString(args.map((v) => v.asString())),
+    }),
+    readOnly: <T>(args: Array<DispatchParsedType<T>>): ReadOnlyType<T> => ({
+      kind: "readOnly",
+      args,
+      asString: () => ReadOnlyType.SerializeToString(args.map((v) => v.asString())),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
@@ -1076,6 +1100,20 @@ export const DispatchParsedType = {
                   DispatchParsedType.Default.one(parsedArg[0]),
                   alreadyParsedTypes,
                 ]),
+          );
+        if (SerializedType.isReadOnly(rawType))
+          return DispatchParsedType.Operations.ParseRawType(
+            "ReadOnly:Element",
+            rawType.args[0],
+            typeNames,
+            serializedTypes,
+            alreadyParsedTypes,
+            injectedPrimitives,
+          ).Then((parsedArg) =>
+            ValueOrErrors.Default.return([
+              DispatchParsedType.Default.readOnly([parsedArg[0]]),
+              alreadyParsedTypes,
+            ]),
           );
         if (SerializedType.isKeyOf(rawType))
           return DispatchParsedType.Operations.ParseRawKeyOf(

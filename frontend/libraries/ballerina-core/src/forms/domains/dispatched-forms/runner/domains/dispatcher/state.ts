@@ -11,6 +11,7 @@ import { ListDispatcher } from "./domains/list/state";
 import { MapDispatcher } from "./domains/map/state";
 import { MultiSelectionDispatcher } from "./domains/multiSelection/state";
 import { OneDispatcher } from "./domains/one/state";
+import { ReadOnlyDispatcher } from "./domains/readOnly/state";
 import { RecordDispatcher } from "./domains/record/state";
 import { LookupDispatcher } from "./domains/lookup/state";
 import { SingleSelectionDispatcher } from "./domains/singleSelectionDispatcher/state";
@@ -133,7 +134,14 @@ export const Dispatcher = {
                             isInlined ?? true,
                             tableApi,
                           )
-                        : renderer.kind == "sumRenderer" ||
+                        : renderer.kind == "readOnlyRenderer"
+                          ? ReadOnlyDispatcher.Operations.Dispatch(
+                              renderer,
+                              dispatcherContext,
+                              isInlined ?? true,
+                              tableApi,
+                            )
+                          : renderer.kind == "sumRenderer" ||
                             renderer.kind == "sumUnitDateRenderer"
                           ? SumDispatcher.Operations.Dispatch(
                               renderer,
