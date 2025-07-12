@@ -13,26 +13,34 @@ module Model =
   type TypeParameter = { Name: string; Kind: Kind }
 
   and Kind =
+    | Symbol
     | Star
     | Arrow of Kind * Kind
 
   and TypeIdentifier = { Name: string }
 
+  and TypeSymbol = { Name: string; Guid: Guid }
+
   and TypeVar =
+    { Name: string
+      Guid: Guid }
+
+    override v.ToString() = v.Name
+
+  and TypeVarIdentifier =
     { Name: string }
 
     override v.ToString() = v.Name
 
   and TypeExpr =
     | Primitive of PrimitiveType
-    | Var of TypeVar
-    | Lookup of TypeIdentifier
+    | Lookup of string
     | Apply of TypeExpr * TypeExpr
     | Lambda of TypeParameter * TypeExpr
     | Arrow of TypeExpr * TypeExpr
-    | Record of Map<string, TypeExpr>
+    | Record of Map<TypeExpr, TypeExpr>
     | Tuple of List<TypeExpr>
-    | Union of Map<string, TypeExpr>
+    | Union of Map<TypeExpr, TypeExpr>
     | List of TypeExpr
     | Set of TypeExpr
     | Map of TypeExpr * TypeExpr
@@ -56,9 +64,9 @@ module Model =
     | Lookup of TypeIdentifier
     | Lambda of TypeParameter * TypeExpr
     | Arrow of TypeValue * TypeValue
-    | Record of Map<string, TypeValue>
+    | Record of Map<TypeSymbol, TypeValue>
     | Tuple of List<TypeValue>
-    | Union of Map<string, TypeValue>
+    | Union of Map<TypeSymbol, TypeValue>
     | Sum of List<TypeValue>
     | List of TypeValue
     | Set of TypeValue
@@ -78,7 +86,17 @@ module Model =
     static member Create(name: string) : TypeIdentifier = { Name = name }
 
   type TypeVar with
-    static member Create(name: string) : TypeVar = { Name = name }
+    static member Create(name: string) : TypeVar =
+      { Name = name
+        Guid = Guid.CreateVersion7() }
+
+  type TypeSymbol with
+    static member Create(name: string) : TypeSymbol =
+      { Name = name
+        Guid = Guid.CreateVersion7() }
+
+  type TypeVarIdentifier with
+    static member Create(name: string) : TypeVarIdentifier = { Name = name }
 
   type TypeParameter with
     static member Create(name: string, kind: Kind) : TypeParameter = { Name = name; Kind = kind }
@@ -91,39 +109,68 @@ module Model =
         | _ -> return! $"Error: expected type lookup, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
-    static member AsValue(t: TypeExpr) : Sum<TypeValue, Errors> =
+    static member AsValue
+      (tryFind: string -> Sum<TypeValue, Errors>)
+      (tryFindSymbol: string -> Sum<TypeSymbol, Errors>)
+      (t: TypeExpr)
+      : Sum<TypeValue, Errors> =
+      let (!) = TypeExpr.AsValue tryFind tryFindSymbol
+
       sum {
         match t with
         | TypeExpr.Primitive p -> return TypeValue.Primitive p
-        | TypeExpr.Var v -> return TypeValue.Var v
-        | TypeExpr.Lookup id -> return TypeValue.Lookup id
+        | TypeExpr.Lookup v -> return! tryFind v
         | TypeExpr.Lambda(param, body) -> return TypeValue.Lambda(param, body)
         | TypeExpr.Arrow(input, output) ->
-          let! input = input |> TypeExpr.AsValue
-          let! output = output |> TypeExpr.AsValue
+          let! input = !input
+          let! output = !output
           return TypeValue.Arrow(input, output)
 
         | Record(fields) ->
-          let! fields = fields |> Map.map (fun _k -> TypeExpr.AsValue) |> sum.AllMap
+          let! fields =
+            fields
+            |> Map.toSeq
+            |> Seq.map (fun (k, v) ->
+              sum {
+                let! k = TypeExpr.AsLookup k
+                let! k = tryFindSymbol k
+                let! v = !v
+                return (k, v)
+              })
+            |> sum.All
+            |> sum.Map(Map.ofSeq)
+
           return TypeValue.Record(fields)
         | Tuple(fields) ->
-          let! items = fields |> List.map (TypeExpr.AsValue) |> sum.All
+          let! items = fields |> List.map (!) |> sum.All
           return TypeValue.Tuple(items)
-        | Union(fields) ->
-          let! cases = fields |> Map.map (fun _k -> TypeExpr.AsValue) |> sum.AllMap
+        | Union(cases) ->
+          let! cases =
+            cases
+            |> Map.toSeq
+            |> Seq.map (fun (k, v) ->
+              sum {
+                let! k = TypeExpr.AsLookup k
+                let! k = tryFindSymbol k
+                let! v = !v
+                return (k, v)
+              })
+            |> sum.All
+            |> sum.Map(Map.ofSeq)
+
           return TypeValue.Union(cases)
         | Sum(fields) ->
-          let! variants = fields |> List.map (TypeExpr.AsValue) |> sum.All
+          let! variants = fields |> List.map (!) |> sum.All
           return TypeValue.Sum(variants)
         | TypeExpr.Map(key, value) ->
-          let! key = key |> TypeExpr.AsValue
-          let! value = value |> TypeExpr.AsValue
+          let! key = !key
+          let! value = !value
           return TypeValue.Map(key, value)
         | TypeExpr.List(element) ->
-          let! element = element |> TypeExpr.AsValue
+          let! element = !element
           return TypeValue.List(element)
         | TypeExpr.Set(element) ->
-          let! element = element |> TypeExpr.AsValue
+          let! element = !element
           return TypeValue.Set(element)
         | _ -> return! $"Error: expected type value, got {t}" |> Errors.Singleton |> sum.Throw
       }
@@ -164,75 +211,127 @@ module Model =
 
 
   // Eval.fs
-  type TypeBindings = Map<TypeIdentifier, TypeValue>
-  type VarBindings = Map<TypeVar, TypeValue>
+  type TypeBindings = Map<string, TypeValue>
+  type TypeSymbols = Map<string, TypeSymbol>
 
   type TypeExprEvalContext =
-    { Types: TypeBindings
-      Vars: VarBindings }
+    { Bindings: TypeBindings
+      Symbols: TypeSymbols }
 
   type TypeExprEvalResult = ReaderWithError<TypeExprEvalContext, TypeValue, Errors>
   type TypeExprEval = TypeExpr -> TypeExprEvalResult
+  type TypeExprSymbolEvalResult = ReaderWithError<TypeExprEvalContext, TypeSymbol, Errors>
+  type TypeExprSymbolEval = TypeExpr -> TypeExprSymbolEvalResult
 
   type TypeExprEvalContext with
-    static member Empty: TypeExprEvalContext = { Types = Map.empty; Vars = Map.empty }
-    static member Create(types: TypeBindings, vars: VarBindings) : TypeExprEvalContext = { Types = types; Vars = vars }
+    static member Empty: TypeExprEvalContext =
+      { Bindings = Map.empty
+        Symbols = Map.empty }
 
-    static member CreateFromTypes(types: TypeBindings) : TypeExprEvalContext =
+    static member Create(bindings: TypeBindings, symbols: TypeSymbols) : TypeExprEvalContext =
       { TypeExprEvalContext.Empty with
-          Types = types }
+          Bindings = bindings
+          Symbols = symbols }
 
-    static member CreateFromVars(vars: VarBindings) : TypeExprEvalContext =
+    static member CreateFromSymbols(symbols: TypeSymbols) : TypeExprEvalContext =
       { TypeExprEvalContext.Empty with
-          Vars = vars }
+          Symbols = symbols }
+
+    static member tryFindType(v: string) : ReaderWithError<TypeExprEvalContext, TypeValue, Errors> =
+      ReaderWithError(fun ctx -> ctx.Bindings |> Map.tryFindWithError v "bindings" v)
+
+    static member tryFindSymbol(v: string) : ReaderWithError<TypeExprEvalContext, TypeSymbol, Errors> =
+      ReaderWithError(fun ctx -> ctx.Symbols |> Map.tryFindWithError v "symbols" v)
 
     static member Updaters =
-      {| Types = fun u (c: TypeExprEvalContext) -> { c with Types = c.Types |> u }
-         Vars = fun u (c: TypeExprEvalContext) -> { c with Vars = c.Vars |> u } |}
-
-    static member LookupType(id: TypeIdentifier) : ReaderWithError<TypeExprEvalContext, TypeValue, Errors> =
-      reader {
-        let! context = reader.GetContext()
-        return! context.Types |> Map.tryFindWithError id "types" id.Name |> reader.OfSum
-      }
-
-    static member LookupVar(id: TypeVar) : ReaderWithError<TypeExprEvalContext, TypeValue, Errors> =
-      reader {
-        let! context = reader.GetContext()
-        return! context.Vars |> Map.tryFindWithError id "vars" id.Name |> reader.OfSum
-      }
+      {| Bindings = fun u (c: TypeExprEvalContext) -> { c with Bindings = c.Bindings |> u }
+         Symbols = fun u (c: TypeExprEvalContext) -> { c with Symbols = c.Symbols |> u } |}
 
   type TypeExpr with
-    static member Eval: TypeExprEval =
+    static member EvalAsSymbol: TypeExprSymbolEval =
       fun t ->
         reader {
-          let (!) = TypeExpr.Eval
+          let (!) = TypeExpr.EvalAsSymbol
+          let (!!) = TypeExpr.Eval
 
           match t with
-          | TypeExpr.Primitive p -> return TypeValue.Primitive p
-          | TypeExpr.Var v -> return! TypeExprEvalContext.LookupVar(v)
-          | TypeExpr.Lookup id -> return! TypeExprEvalContext.LookupType(id)
+          | TypeExpr.Lookup v -> return! TypeExprEvalContext.tryFindSymbol v
           | TypeExpr.Apply(f, a) ->
-            let! f = !f
-            let! a = !a
+            let! f = !!f
+            let! a = !!a
             let! (param, body) = f |> TypeValue.AsLambda |> reader.OfSum
 
             return!
               !body
-              |> reader.MapContext(Map.add (TypeVar.Create(param.Name)) a |> TypeExprEvalContext.Updaters.Vars)
+              |> reader.MapContext(Map.add param.Name a |> TypeExprEvalContext.Updaters.Bindings)
+          | _ ->
+            return!
+              $"Error: invalid type expression when evaluating for symbol, got {t}"
+              |> Errors.Singleton
+              |> reader.Throw
+        }
+
+    static member Eval: TypeExprEval =
+      fun t ->
+        reader {
+          let (!) = TypeExpr.Eval
+          let (!!) = TypeExpr.EvalAsSymbol
+
+          match t with
+          | TypeExpr.Primitive p -> return TypeValue.Primitive p
+          | TypeExpr.Lookup v -> return! TypeExprEvalContext.tryFindType v
+          | TypeExpr.Apply(f, a) ->
+            let! f = !f
+            let! (param, body) = f |> TypeValue.AsLambda |> reader.OfSum
+
+            match param.Kind with
+            | Kind.Symbol ->
+              let! a = !!a
+
+              return!
+                !body
+                |> reader.MapContext(Map.add param.Name a |> TypeExprEvalContext.Updaters.Symbols)
+            | _ ->
+              let! a = !a
+
+              return!
+                !body
+                |> reader.MapContext(Map.add param.Name a |> TypeExprEvalContext.Updaters.Bindings)
           | TypeExpr.Lambda(param, body) -> return TypeValue.Lambda(param, body)
           | TypeExpr.Arrow(input, output) ->
             let! input = !input
             let! output = !output
             return TypeValue.Arrow(input, output)
           | TypeExpr.Record(fields) ->
-            let! fields = fields |> Map.map (fun _k -> (!)) |> reader.AllMap
+            let! fields =
+              fields
+              |> Map.toSeq
+              |> Seq.map (fun (k, v) ->
+                reader {
+                  let! k = !!k
+                  let! v = !v
+                  return (k, v)
+                })
+              |> reader.All
+              |> reader.Map(Map.ofSeq)
+
             return TypeValue.Record(fields)
           | TypeExpr.Tuple(items) ->
             let! items = items |> List.map (!) |> reader.All
             return TypeValue.Tuple(items)
           | TypeExpr.Union(cases) ->
-            let! cases = cases |> Map.map (fun _k -> (!)) |> reader.AllMap
+            let! cases =
+              cases
+              |> Map.toSeq
+              |> Seq.map (fun (k, v) ->
+                reader {
+                  let! k = !!k
+                  let! v = !v
+                  return (k, v)
+                })
+              |> reader.All
+              |> reader.Map(Map.ofSeq)
+
             return TypeValue.Union(cases)
           | TypeExpr.List(element) ->
             let! element = !element
@@ -275,8 +374,15 @@ module Model =
                     let! cases1 = type1 |> TypeValue.AsUnion |> reader.OfSum
                     let! cases2 = type2 |> TypeValue.AsUnion |> reader.OfSum
 
-                    let cases1 = cases1 |> Map.toSeq |> Seq.map (fun (k, v) -> (name1 + "." + k, v))
-                    let cases2 = cases2 |> Map.toSeq |> Seq.map (fun (k, v) -> (name2 + "." + k, v))
+                    let cases1 =
+                      cases1
+                      |> Map.toSeq
+                      |> Seq.map (fun (k, v) -> (name1 + "." + k.Name |> TypeSymbol.Create, v))
+
+                    let cases2 =
+                      cases2
+                      |> Map.toSeq
+                      |> Seq.map (fun (k, v) -> (name2 + "." + k.Name |> TypeSymbol.Create, v))
 
                     return cases1 |> Seq.append cases2 |> Map.ofSeq |> TypeValue.Union
                   })
@@ -284,8 +390,15 @@ module Model =
                     let! fields1 = type1 |> TypeValue.AsRecord |> reader.OfSum
                     let! fields2 = type2 |> TypeValue.AsRecord |> reader.OfSum
 
-                    let fields1 = fields1 |> Map.toSeq |> Seq.map (fun (k, v) -> (name1 + "." + k, v))
-                    let fields2 = fields2 |> Map.toSeq |> Seq.map (fun (k, v) -> (name2 + "." + k, v))
+                    let fields1 =
+                      fields1
+                      |> Map.toSeq
+                      |> Seq.map (fun (k, v) -> (name1 + "." + k.Name |> TypeSymbol.Create, v))
+
+                    let fields2 =
+                      fields2
+                      |> Map.toSeq
+                      |> Seq.map (fun (k, v) -> (name2 + "." + k.Name |> TypeSymbol.Create, v))
 
                     return fields1 |> Seq.append fields2 |> Map.ofSeq |> TypeValue.Record
                   })
@@ -330,4 +443,106 @@ module Model =
 
                   return fields |> TypeValue.Union
                 })
+        }
+
+  type KindCheckContext = { Kinds: Map<string, Kind> }
+  type KindChecker = TypeExpr -> ReaderWithError<KindCheckContext, Kind, Errors>
+
+  type KindCheckContext with
+    static member Empty: KindCheckContext = { Kinds = Map.empty }
+
+    static member Create(kinds: Map<string, Kind>) : KindCheckContext =
+      { KindCheckContext.Empty with
+          Kinds = kinds }
+
+    static member tryFindKind(name: string) : ReaderWithError<KindCheckContext, Kind, Errors> =
+      ReaderWithError(fun ctx -> ctx.Kinds |> Map.tryFindWithError name "kinds" name)
+
+  type TypeExpr with
+    static member KindCheck: KindChecker =
+      fun t ->
+        let (!) = TypeExpr.KindCheck
+
+        reader {
+          match t with
+          | TypeExpr.Lookup id -> return! KindCheckContext.tryFindKind id
+          | TypeExpr.Lambda(p, body) ->
+            let! body = !body
+            return Kind.Arrow(p.Kind, body)
+          | TypeExpr.Apply(f, a) ->
+            let! f = TypeExpr.KindCheck f
+            let! a = TypeExpr.KindCheck a
+
+            match f with
+            | Kind.Arrow(input, output) ->
+              if input = a then
+                return output
+              else
+                return!
+                  $"Error: type mismatch in application, expected {input}, got {a}"
+                  |> Errors.Singleton
+                  |> reader.Throw
+            | _ -> return! $"Error: expected function type, got {f}" |> Errors.Singleton |> reader.Throw
+          | TypeExpr.Arrow(t1, t2)
+          | TypeExpr.Exclude(t1, t2)
+          | TypeExpr.Flatten { Left = { Identifier = _; Type = t1 }
+                               Right = { Identifier = _; Type = t2 } }
+          | TypeExpr.Map(t1, t2) ->
+            let! t1 = !t1
+            let! t2 = !t2
+
+            if t1 <> Kind.Star || t2 <> Kind.Star then
+              return!
+                $"Error: expected star type, got {t1} and {t2}"
+                |> Errors.Singleton
+                |> reader.Throw
+            else
+              return Kind.Star
+          | TypeExpr.Primitive _ -> return Kind.Star
+          | TypeExpr.Sum args
+          | TypeExpr.Tuple args ->
+            do!
+              args
+              |> Seq.map (fun a ->
+                reader {
+                  let! a = !a
+
+                  if a = Kind.Star then
+                    return Kind.Star
+                  else
+                    return! $"Error: expected star type, got {a}" |> Errors.Singleton |> reader.Throw
+                })
+              |> reader.All
+              |> reader.Ignore
+
+            return Kind.Star
+          | TypeExpr.Union args
+          | TypeExpr.Record args ->
+            let args = args |> Map.values
+
+            do!
+              args
+              |> Seq.map (fun a ->
+                reader {
+                  let! a = !a
+
+                  if a = Kind.Star then
+                    return Kind.Star
+                  else
+                    return! $"Error: expected star type, got {a}" |> Errors.Singleton |> reader.Throw
+                })
+              |> reader.All
+              |> reader.Ignore
+
+            return Kind.Star
+          | TypeExpr.List arg
+          | TypeExpr.Set arg
+          | TypeExpr.KeyOf arg
+          | TypeExpr.Rotate arg ->
+            let! arg = !arg
+
+            if arg = Kind.Star then
+              return Kind.Star
+            else
+              return! $"Error: expected star type, got {arg}" |> Errors.Singleton |> reader.Throw
         }
