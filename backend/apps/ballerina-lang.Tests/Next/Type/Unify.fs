@@ -146,13 +146,13 @@ let ``LangNext-Unify unifies types without variables`` () =
           TypeValue.Primitive PrimitiveType.String ]
       )
       TypeValue.Record(
-        [ "a", TypeValue.Primitive PrimitiveType.Int
-          "b", TypeValue.Primitive PrimitiveType.String ]
+        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int
+          "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       )
       TypeValue.Union(
-        [ "a", TypeValue.Primitive PrimitiveType.Int
-          "b", TypeValue.Primitive PrimitiveType.String ]
+        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int
+          "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       ) ]
 
@@ -214,3 +214,354 @@ let ``LangNext-Unify unifies lists of tuples`` () =
   | Sum.Left((), Some(actual)) when actual <> expected -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | _ -> ()
+
+[<Test>]
+let ``LangNext-Unify unifies type values inside type lambdas`` () =
+  let a1 = TypeParameter.Create("a1", Kind.Star)
+  let b1 = TypeParameter.Create("b1", Kind.Star)
+
+  let inputs =
+    TypeValue.Lambda(a1, TypeExpr.Arrow(TypeExpr.Lookup a1.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b1, TypeExpr.Arrow(TypeExpr.Lookup b1.Name, TypeExpr.Primitive PrimitiveType.String))
+
+  let actual =
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let expected: EquivalenceClasses<_, _> =
+    { Classes = Map.empty
+      Variables = Map.empty }
+
+  match actual with
+  | Sum.Left((), Some(actual)) when actual <> expected -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
+  | _ -> ()
+
+[<Test>]
+let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
+  let a1 = TypeParameter.Create("a1", Kind.Star)
+  let a2 = TypeParameter.Create("a2", Kind.Star)
+  let b1 = TypeParameter.Create("b1", Kind.Star)
+  let b2 = TypeParameter.Create("b2", Kind.Star)
+
+  let inputs =
+    TypeValue.Lambda(
+      a1,
+      TypeExpr.Lambda(
+        a2,
+        TypeExpr.Arrow(
+          TypeExpr.Tuple([ TypeExpr.Lookup a1.Name; TypeExpr.Lookup a2.Name ]),
+          TypeExpr.Primitive PrimitiveType.String
+        )
+      )
+    ),
+    TypeValue.Lambda(
+      b1,
+      TypeExpr.Lambda(
+        b2,
+        TypeExpr.Arrow(
+          TypeExpr.Tuple([ TypeExpr.Lookup b1.Name; TypeExpr.Lookup b2.Name ]),
+          TypeExpr.Primitive PrimitiveType.String
+        )
+      )
+    )
+
+  let actual =
+    TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty)
+
+  let expected: EquivalenceClasses<_, _> =
+    { Classes = Map.empty
+      Variables = Map.empty }
+
+  match actual with
+  | Sum.Left((), Some(actual)) when actual <> expected -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
+  | _ -> ()
+
+[<Test>]
+let ``LangNext-Unify fails to unify incompatible type values inside type lambdas`` () =
+  let a = TypeParameter.Create("a", Kind.Star)
+  let b = TypeParameter.Create("b", Kind.Star)
+
+  let inputs =
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+
+  let actual =
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual with
+  | Sum.Right _ -> Assert.Pass()
+  | Sum.Left((), result) -> Assert.Fail $"Expected unification to fail but it succeeded with {result}"
+
+
+[<Test>]
+let ``LangNext-Unify fails to unify incompatible params of type lambdas`` () =
+  let a = TypeParameter.Create("a", Kind.Star)
+  let b = TypeParameter.Create("b", Kind.Symbol)
+
+  let inputs =
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.String))
+
+  let actual =
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual with
+  | Sum.Right _ -> Assert.Pass()
+  | Sum.Left((), result) -> Assert.Fail $"Expected unification to fail but it succeeded with {result}"
+
+[<Test>]
+let ``LangNext-Unify fails to unify type expressions inside type lambdas`` () =
+  let a = TypeParameter.Create("a", Kind.Star)
+  let b = TypeParameter.Create("b", Kind.Star)
+
+  let inputs =
+    TypeValue.Lambda(a, TypeExpr.Exclude(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Exclude(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+
+  let actual =
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual with
+  | Sum.Right _ -> Assert.Pass()
+  | Sum.Left((), result) -> Assert.Fail $"Expected unification to fail but it succeeded with {result}"
+
+[<Test>]
+let ``LangNext-Unify unifies structurally and symbolically identical records and unions`` () =
+  let s1 = TypeSymbol.Create "s1"
+  let s2 = TypeSymbol.Create "s2"
+
+  let inputs1 =
+    TypeValue.Record(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    ),
+    TypeValue.Record(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual1 =
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let inputs2 =
+    TypeValue.Union(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    ),
+    TypeValue.Union(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual2 =
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual1, actual2 with
+  | Sum.Left((), None), Sum.Left((), None) -> Assert.Pass()
+  | Sum.Right err, _ -> Assert.Fail $"Expected success but got error: {err}"
+  | _, Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
+  | res -> Assert.Fail $"Expected success but got : {res}"
+
+[<Test>]
+let ``LangNext-Unify does not unify structurally different records and unions`` () =
+  let s1 = TypeSymbol.Create "s1"
+  let s2 = TypeSymbol.Create "s2"
+
+  let inputs1 =
+    TypeValue.Record(
+      [ s1, TypeValue.Primitive PrimitiveType.Int
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    ),
+    TypeValue.Record(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual1 =
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let inputs2 =
+    TypeValue.Union(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Decimal ]
+      |> Map.ofList
+    ),
+    TypeValue.Union(
+      [ s1, TypeValue.Primitive PrimitiveType.String
+        s2, TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual2 =
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual1, actual2 with
+  | Sum.Right _, Sum.Right _ -> Assert.Pass()
+  | res -> Assert.Fail $"Expected failure but got : {res}"
+
+[<Test>]
+let ``LangNext-Unify does not unify structurally identical but symbolically different records and unions`` () =
+
+  let inputs1 =
+    TypeValue.Record(
+      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    ),
+    TypeValue.Record(
+      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual1 =
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let inputs2 =
+    TypeValue.Union(
+      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    ),
+    TypeValue.Union(
+      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+      |> Map.ofList
+    )
+
+  let actual2 =
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual1, actual2 with
+  | Sum.Right _, Sum.Right _ -> Assert.Pass()
+  | res -> Assert.Fail $"Expected failure but got : {res}"
+
+[<Test>]
+let ``LangNext-Unify unifies structurally and symbolically identical tuples and sums`` () =
+  let inputs1 =
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    ),
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    )
+
+  let actual1 =
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let inputs2 =
+    TypeValue.Sum(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    ),
+    TypeValue.Sum(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    )
+
+  let actual2 =
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual1, actual2 with
+  | Sum.Left((), None), Sum.Left((), None) -> Assert.Pass()
+  | Sum.Right err, _ -> Assert.Fail $"Expected success but got error: {err}"
+  | _, Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
+  | res -> Assert.Fail $"Expected success but got : {res}"
+
+[<Test>]
+let ``LangNext-Unify does not unify structurally different tuples and sums`` () =
+  let inputs1 =
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Decimal ]
+    ),
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    )
+
+  let actual1 =
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  let inputs2 =
+    TypeValue.Sum(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Decimal ]
+    ),
+    TypeValue.Sum(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Int ]
+    )
+
+  let actual2 =
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+
+  match actual1, actual2 with
+  | Sum.Right _, Sum.Right _ -> Assert.Pass()
+  | res -> Assert.Fail $"Expected failure but got : {res}"
+
+[<Test>]
+let ``LangNext-TypeEval unifies can look lookups up`` () =
+  let inputs =
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Decimal ]
+    ),
+    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+
+  let actual =
+    (TypeValue
+      .Unify(inputs)
+      .run (UnificationContext.Create([ "T1", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+
+  match actual with
+  | Sum.Left _ -> Assert.Pass()
+  | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+[<Test>]
+let ``LangNext-TypeEval unifies can look lookups up and fail on structure`` () =
+  let inputs =
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Decimal ]
+    ),
+    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+
+  let actual =
+    (TypeValue
+      .Unify(inputs)
+      .run (
+        UnificationContext.Create([ "T1", TypeValue.Primitive PrimitiveType.Decimal ] |> Map.ofList, Map.empty),
+        EquivalenceClasses.Empty
+      ))
+
+  match actual with
+  | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"
+  | Sum.Right _ -> Assert.Pass()
+
+[<Test>]
+let ``LangNext-TypeEval unifies can look lookups up and fail on missing identifier`` () =
+  let inputs =
+    TypeValue.Tuple(
+      [ TypeValue.Primitive PrimitiveType.String
+        TypeValue.Primitive PrimitiveType.Decimal ]
+    ),
+    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+
+  let actual =
+    (TypeValue
+      .Unify(inputs)
+      .run (UnificationContext.Create([ "T2", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+
+  match actual with
+  | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"
+  | Sum.Right _ -> Assert.Pass()

@@ -12,26 +12,9 @@ module Unification =
   open Ballerina.DSL.Next.Model
   open Ballerina.DSL.Next.EquivalenceClasses
 
-  type UnificationContext =
-    { Vars: Map<TypeVar, TypeValue>
-      Bindings: Map<TypeIdentifier, TypeValue> }
+  type UnificationContext = TypeExprEvalContext
 
   type UnificationState = EquivalenceClasses<TypeVar, TypeValue>
-
-  type UnificationContext with
-    static member Empty =
-      { Vars = Map.empty
-        Bindings = Map.empty }
-
-    static member tryFindVar (ctx: UnificationContext) (v: TypeVar) : Sum<TypeValue, Errors> =
-      ctx.Vars |> Map.tryFindWithError v "vars" v.Name
-
-    static member tryFindType(v: TypeIdentifier) : ReaderWithError<UnificationContext, TypeValue, Errors> =
-      ReaderWithError(fun ctx -> ctx.Bindings |> Map.tryFindWithError v "bindings" v.Name)
-
-    static member Updaters =
-      {| Vars = fun f (ctx: UnificationContext) -> { ctx with Vars = f ctx.Vars }
-         Bindings = fun f (ctx: UnificationContext) -> { ctx with Bindings = f ctx.Bindings } |}
 
   type TypeValue with
     static member Unify(left: TypeValue, right: TypeValue) : State<Unit, UnificationContext, UnificationState, Errors> =
@@ -69,17 +52,69 @@ module Unification =
         | Lookup l1, Lookup l2 when l1 = l2 -> return ()
         | Lookup l, t2
         | t2, Lookup l ->
-          let! t1 = UnificationContext.tryFindType l |> state.OfReader
+          let! t1 = UnificationContext.tryFindType l.Name |> state.OfReader
           return! TypeValue.Unify(t1, t2)
         | Var v, t
-        | t, Var v -> return! bind (v, t)
+        | t, Var v ->
+          // let! ctx = state.GetContext()
+          // let! s = state.GetState()
+          // do Console.WriteLine($"Binding variable {v} to type {t}")
+          // do Console.WriteLine($"Context = {ctx.ToFSharpString} and state = {s.ToFSharpString}")
+          // do Console.ReadLine() |> ignore
+          return! bind (v, t)
         | Lambda(p1, t1), Lambda(p2, t2) ->
-          let! v1 = t1 |> TypeExpr.AsValue |> state.OfSum
-          let! v2 = t2 |> TypeExpr.AsValue |> state.OfSum
-          let! s = state.GetState()
-          do! bind (p1.Name |> TypeVar.Create, p2.Name |> TypeVar.Create |> TypeValue.Var)
-          do! TypeValue.Unify(v1, v2)
-          do! state.SetState(replaceWith s)
+          if p1.Kind <> p2.Kind then
+            return!
+              $"Cannot unify type parameters: {p1} and {p2}"
+              |> Errors.Singleton
+              |> state.Throw
+          else
+            let! ctx = state.GetContext()
+            let! s = state.GetState()
+
+            let! ctx, ctx1, ctx2 =
+              state {
+
+                if p1.Kind = Kind.Star then
+                  let v1 = p1.Name |> TypeVar.Create
+                  let v2 = p2.Name |> TypeVar.Create
+                  do! bind (v1, v2 |> TypeValue.Var)
+                  let v1 = TypeValue.Var v1
+                  let v2 = TypeValue.Var v2
+
+                  ctx
+                  |> UnificationContext.Updaters.Bindings(Map.add p1.Name v1 >> Map.add p2.Name v2),
+                  ctx |> UnificationContext.Updaters.Bindings(Map.add p1.Name v1),
+                  ctx |> UnificationContext.Updaters.Bindings(Map.add p2.Name v2)
+                else
+                  let s1 = TypeSymbol.Create p1.Name
+                  let s2 = TypeSymbol.Create p2.Name
+
+                  ctx
+                  |> UnificationContext.Updaters.Symbols(Map.add p1.Name s1 >> Map.add p2.Name s2),
+                  ctx |> UnificationContext.Updaters.Symbols(Map.add p1.Name s1),
+                  ctx |> UnificationContext.Updaters.Symbols(Map.add p2.Name s2)
+              }
+
+            let! v1 =
+              t1
+              |> TypeExpr.AsValue
+                (UnificationContext.tryFindType >> ReaderWithError.Run ctx1)
+                (UnificationContext.tryFindSymbol >> ReaderWithError.Run ctx1)
+              |> state.OfSum
+
+            let! v2 =
+              t2
+              |> TypeExpr.AsValue
+                (UnificationContext.tryFindType >> ReaderWithError.Run ctx2)
+                (UnificationContext.tryFindSymbol >> ReaderWithError.Run ctx2)
+              |> state.OfSum
+
+            // do Console.WriteLine($"Unifying lambda types: {v1} and {v2}")
+            // do Console.ReadLine() |> ignore
+
+            do! TypeValue.Unify(v1, v2) |> state.MapContext(replaceWith ctx)
+            do! state.SetState(replaceWith s)
         | Arrow(l1, r1), Arrow(l2, r2)
         | Map(l1, r1), Map(l2, r2) ->
           do! TypeValue.Unify(l1, l2)
@@ -93,7 +128,7 @@ module Unification =
         | Record(e1), Record(e2)
         | Union(e1), Union(e2) when Map.count e1 = Map.count e2 ->
           for (k1, v1) in e1 |> Map.toSeq do
-            let! v2 = e2 |> Map.tryFindWithError k1 "record" k1 |> state.OfSum
+            let! v2 = e2 |> Map.tryFindWithError k1 "record" k1.Name |> state.OfSum
             do! TypeValue.Unify(v1, v2)
         | _ -> return! $"Cannot unify types: {left} and {right}" |> Errors.Singleton |> state.Throw
       }

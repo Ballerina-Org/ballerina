@@ -88,6 +88,9 @@ module WithError =
     member _.Map<'c, 'a, 'b, 'e>(f: 'a -> 'b) : ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c, 'b, 'e> =
       ReaderWithError.map f
 
+    member _.Ignore<'c, 'a, 'e>(r: ReaderWithError<'c, 'a, 'e>) : ReaderWithError<'c, Unit, 'e> =
+      ReaderWithError.map (fun _ -> ()) r
+
     member _.GetContext() : ReaderWithError<'c, 'c, 'e> =
       ReaderWithError(fun c -> sum { return c })
 
