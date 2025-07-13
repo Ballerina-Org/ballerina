@@ -16,7 +16,7 @@ let private typeCheck (expr: Expr<BLPExprExtension, BLPValueExtension>) : Sum<Ex
       blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
     (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
       blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-    Map.empty
+    blpLanguageExtension.typeCheck.typeBindings
     Map.empty
     expr
 
@@ -136,7 +136,7 @@ let ``Should typecheck var lookup`` () =
         blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
       (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
         blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-      Map.empty
+      blpLanguageExtension.typeCheck.typeBindings
       inputVarTypes
       expr
   with
@@ -155,7 +155,7 @@ let ``Should typecheck var lookup should fail if not in seen variables`` () =
         blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
       (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
         blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-      Map.empty
+      blpLanguageExtension.typeCheck.typeBindings
       vars
       expr
   with

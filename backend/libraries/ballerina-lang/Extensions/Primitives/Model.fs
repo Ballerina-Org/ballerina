@@ -324,6 +324,8 @@ module Primitives =
       | PrimitivesExprExtension.Rest t -> return! toJsonExprTail t
     }
 
+  let primitivesTypeBindings: TypeBindings = Map.empty
+
   let typeCheckExprPrimitives
     (_ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (typeCheckTail: TypeChecker<'ExprExtensionTail>)

@@ -19,6 +19,7 @@
         <Compile Include="Core\String\Model.fs" />
         <Compile Include="Core\StringBuilder\Model.fs" />
         <Compile Include="Core\Object\Model.fs" />
+        <Compile Include="Core\Map\Model.fs" />
         <Compile Include="Errors\Model.fs" />
         <Compile Include="Core\Json\Model.fs" />
         <Compile Include="Range\Model.fs" />
@@ -27,11 +28,11 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="9.0.300" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
     </ItemGroup>
 
 </Project>

@@ -20,14 +20,16 @@ module TypeCheck =
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member typeCheck
-      : (TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
+      (typeCheckExprExtension:
+        (TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
           -> TypeChecker<Value<'ExprExtension, 'ValueExtension>>
-          -> TypeChecker<'ExprExtension>)
-          -> (TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
-            -> TypeChecker<Value<'ExprExtension, 'ValueExtension>>
-            -> TypeChecker<'ValueExtension>)
-          -> TypeChecker<Expr<'ExprExtension, 'ValueExtension>> =
-      fun typeCheckExprExtension typeCheckValueExtension typeBindings vars e ->
+          -> TypeChecker<'ExprExtension>))
+      (typeCheckValueExtension:
+        (TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
+          -> TypeChecker<Value<'ExprExtension, 'ValueExtension>>
+          -> TypeChecker<'ValueExtension>))
+      : TypeChecker<Expr<'ExprExtension, 'ValueExtension>> =
+      fun (typeBindings: TypeBindings) (vars: VarTypes) (e: Expr<'ExprExtension, 'ValueExtension>) ->
         let lookup (t: ExprType) : Sum<ExprType, Errors> =
           sum {
             match t with

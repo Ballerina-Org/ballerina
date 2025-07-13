@@ -13,6 +13,7 @@ module Collections =
   open Ballerina.DSL.Expr.Types.TypeCheck
   open Ballerina.DSL.Expr.Types.Unification
   open System
+  open Ballerina.DSL.Expr.Types.Model
 
   type CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     | List of List<Expr<'ExprExtension, 'ValueExtension>>
@@ -169,6 +170,8 @@ module Collections =
                "elements", jsonElements |> Array.ofList |> JsonValue.Array |]
       | CollectionsExprExtension.Rest t -> return! toJsonExprTail t
     }
+
+  let collectionsTypeBindings: TypeBindings = Map.empty
 
   let typeCheckExprCollections
     (_ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
