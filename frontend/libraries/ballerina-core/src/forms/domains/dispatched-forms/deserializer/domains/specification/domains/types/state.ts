@@ -188,7 +188,9 @@ export const SerializedType = {
   isReadOnly: <T>(
     _: SerializedType<T>,
   ): _ is { fun: "ReadOnly"; args: Array<SerializedType<T>> } =>
-    SerializedType.isApplication(_) && _.fun == "ReadOnly" && _.args.length == 1,
+    SerializedType.isApplication(_) &&
+    _.fun == "ReadOnly" &&
+    _.args.length == 1,
 };
 
 export type StringSerializedType = string;
@@ -458,7 +460,8 @@ export const DispatchParsedType = {
     readOnly: <T>(args: Array<DispatchParsedType<T>>): ReadOnlyType<T> => ({
       kind: "readOnly",
       args,
-      asString: () => ReadOnlyType.SerializeToString(args.map((v) => v.asString())),
+      asString: () =>
+        ReadOnlyType.SerializeToString(args.map((v) => v.asString())),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",

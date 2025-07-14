@@ -50,7 +50,9 @@ export const ReadOnlyDispatcher = {
             ),
         )
         .MapErrors((errors) =>
-          errors.map((error) => `${error}\n...When dispatching nested readOnly`),
+          errors.map(
+            (error) => `${error}\n...When dispatching nested readOnly`,
+          ),
         ),
   },
-}; 
+};

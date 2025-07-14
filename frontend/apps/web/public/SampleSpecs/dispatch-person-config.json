@@ -7,9 +7,7 @@
         "ERP": "ERPConfig",
         "ActiveAddressFields": {
           "fun": "MultiSelection",
-          "args": [
-            "AddressesFieldRef"
-          ]
+          "args": ["AddressesFieldRef"]
         }
       }
     },
@@ -66,9 +64,7 @@
       }
     },
     "FullNamed": {
-      "extends": [
-        "Named"
-      ],
+      "extends": ["Named"],
       "fields": {
         "Surname": "string"
       }
@@ -105,9 +101,7 @@
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
-          "args": [
-            "ColorRef"
-          ]
+          "args": ["ColorRef"]
         }
       }
     },
@@ -121,44 +115,31 @@
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
-          "args": [
-            "ColorRef"
-          ]
+          "args": ["ColorRef"]
         }
       }
     },
     "User": {
-      "extends": [
-        "FullNamed",
-        "Identifiable"
-      ],
+      "extends": ["FullNamed", "Identifiable"],
       "fields": {
         "Birthday": "Date",
         "Email": "string",
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
-          "args": [
-            "ColorRef"
-          ]
+          "args": ["ColorRef"]
         },
         "Friends": {
           "fun": "Table",
-          "args": [
-            "Friend"
-          ]
+          "args": ["Friend"]
         },
         "Children": {
           "fun": "Table",
-          "args": [
-            "Child"
-          ]
+          "args": ["Child"]
         },
         "City": {
           "fun": "SingleSelection",
-          "args": [
-            "CityRef"
-          ]
+          "args": ["CityRef"]
         },
         "StreetNumberAndCity": {
           "fun": "Tuple",
@@ -167,9 +148,7 @@
             "number",
             {
               "fun": "SingleSelection",
-              "args": [
-                "CityRef"
-              ]
+              "args": ["CityRef"]
             }
           ]
         }
@@ -212,9 +191,7 @@
     },
     "AddressesFieldsEnum": {
       "fun": "KeyOf",
-      "args": [
-        "AddressFields"
-      ]
+      "args": ["AddressFields"]
     },
     "AddressesFieldRef": {
       "fields": {
@@ -227,9 +204,7 @@
         "ERP": "ERPConfig",
         "ActiveAddressFields": {
           "fun": "MultiSelection",
-          "args": [
-            "AddressesFieldRef"
-          ]
+          "args": ["AddressesFieldRef"]
         }
       }
     },
@@ -241,9 +216,7 @@
       }
     },
     "CityRef": {
-      "extends": [
-        "CollectionReference"
-      ],
+      "extends": ["CollectionReference"],
       "fields": {}
     },
     "LandArea": {
@@ -266,9 +239,7 @@
             "number",
             {
               "fun": "SingleSelection",
-              "args": [
-                "CityRef"
-              ]
+              "args": ["CityRef"]
             }
           ]
         }
@@ -349,9 +320,7 @@
       }
     },
     "DepartmentRef": {
-      "extends": [
-        "CollectionReference"
-      ],
+      "extends": ["CollectionReference"],
       "fields": {}
     },
     "BaseJob": {
@@ -361,24 +330,18 @@
       }
     },
     "DeveloperJob": {
-      "extends": [
-        "BaseJob"
-      ],
+      "extends": ["BaseJob"],
       "fields": {
         "Language": "string"
       }
     },
     "DesignerJob": {
-      "extends": [
-        "BaseJob"
-      ],
+      "extends": ["BaseJob"],
       "fields": {
         "DesignTool": "string",
         "Certifications": {
           "fun": "List",
-          "args": [
-            "string"
-          ]
+          "args": ["string"]
         }
       }
     },
@@ -402,24 +365,17 @@
         "Category": "injectedCategory",
         "FullName": {
           "fun": "Tuple",
-          "args": [
-            "string",
-            "string"
-          ]
+          "args": ["string", "string"]
         },
         "Birthday": "Date",
         "SuperSecretNumber": {
           "fun": "ReadOnly",
-          "args": [
-            "number"
-          ]
+          "args": ["number"]
         },
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
-          "args": [
-            "ColorRef"
-          ]
+          "args": ["ColorRef"]
         },
         "Gender": {
           "fun": "Sum",
@@ -427,49 +383,33 @@
             "unit",
             {
               "fun": "SingleSelection",
-              "args": [
-                "GenderRef"
-              ]
+              "args": ["GenderRef"]
             }
           ]
         },
         "Dependants": {
           "fun": "Map",
-          "args": [
-            "string",
-            "injectedCategory"
-          ]
+          "args": ["string", "injectedCategory"]
         },
         "FriendsByCategory": {
           "fun": "Map",
-          "args": [
-            "injectedCategory",
-            "string"
-          ]
+          "args": ["injectedCategory", "string"]
         },
         "Relatives": {
           "fun": "List",
-          "args": [
-            "injectedCategory"
-          ]
+          "args": ["injectedCategory"]
         },
         "Interests": {
           "fun": "MultiSelection",
-          "args": [
-            "InterestRef"
-          ]
+          "args": ["InterestRef"]
         },
         "Departments": {
           "fun": "MultiSelection",
-          "args": [
-            "DepartmentRef"
-          ]
+          "args": ["DepartmentRef"]
         },
         "Emails": {
           "fun": "List",
-          "args": [
-            "string"
-          ]
+          "args": ["string"]
         },
         "SchoolAddress": "Address",
         "MainAddress": {
@@ -478,10 +418,7 @@
             "string",
             {
               "fun": "Tuple",
-              "args": [
-                "Address",
-                "PlotInfo"
-              ]
+              "args": ["Address", "PlotInfo"]
             }
           ]
         },
@@ -490,16 +427,11 @@
           "args": [
             {
               "fun": "List",
-              "args": [
-                "Address"
-              ]
+              "args": ["Address"]
             },
             {
               "fun": "Map",
-              "args": [
-                "string",
-                "Address"
-              ]
+              "args": ["string", "Address"]
             }
           ]
         },
@@ -508,29 +440,21 @@
           "args": [
             {
               "fun": "SingleSelection",
-              "args": [
-                "CityRef"
-              ]
+              "args": ["CityRef"]
             },
             "Address"
           ]
         },
         "ImportantDate": {
           "fun": "Sum",
-          "args": [
-            "unit",
-            "Date"
-          ]
+          "args": ["unit", "Date"]
         },
         "CutOffDates": {
           "fun": "List",
           "args": [
             {
               "fun": "Sum",
-              "args": [
-                "unit",
-                "Date"
-              ]
+              "args": ["unit", "Date"]
             }
           ]
         },
@@ -542,19 +466,14 @@
               "args": [
                 {
                   "fun": "SingleSelection",
-                  "args": [
-                    "ColorRef"
-                  ]
+                  "args": ["ColorRef"]
                 },
                 "Address"
               ]
             },
             {
               "fun": "Map",
-              "args": [
-                "string",
-                "Address"
-              ]
+              "args": ["string", "Address"]
             }
           ]
         },
@@ -563,9 +482,7 @@
           "args": [
             {
               "fun": "SingleSelection",
-              "args": [
-                "ColorRef"
-              ]
+              "args": ["ColorRef"]
             },
             "Address"
           ]
@@ -575,9 +492,7 @@
           "args": [
             {
               "fun": "SingleSelection",
-              "args": [
-                "PermissionRef"
-              ]
+              "args": ["PermissionRef"]
             },
             "boolean"
           ]
@@ -587,36 +502,25 @@
           "args": [
             {
               "fun": "SingleSelection",
-              "args": [
-                "DepartmentRef"
-              ]
+              "args": ["DepartmentRef"]
             },
             {
               "fun": "SingleSelection",
-              "args": [
-                "CityRef"
-              ]
+              "args": ["CityRef"]
             }
           ]
         },
         "ShoeColours": {
           "fun": "MultiSelection",
-          "args": [
-            "ColorRef"
-          ]
+          "args": ["ColorRef"]
         },
         "FriendsBirthdays": {
           "fun": "Map",
-          "args": [
-            "string",
-            "Date"
-          ]
+          "args": ["string", "Date"]
         },
         "Holidays": {
           "fun": "List",
-          "args": [
-            "Date"
-          ]
+          "args": ["Date"]
         },
         "FriendsAddresses": {
           "fun": "Map",
@@ -624,29 +528,21 @@
             "string",
             {
               "fun": "List",
-              "args": [
-                "Address"
-              ]
+              "args": ["Address"]
             }
           ]
         },
         "Friends": {
           "fun": "Table",
-          "args": [
-            "User"
-          ]
+          "args": ["User"]
         },
         "Children": {
           "fun": "Table",
-          "args": [
-            "User"
-          ]
+          "args": ["User"]
         },
         "BestFriend": {
           "fun": "One",
-          "args": [
-            "User"
-          ]
+          "args": ["User"]
         }
       }
     }
@@ -657,10 +553,7 @@
         "one": {
           "BestFriendApi": {
             "type": "User",
-            "methods": [
-              "get",
-              "getManyUnlinked"
-            ]
+            "methods": ["get", "getManyUnlinked"]
           }
         }
       }
@@ -679,16 +572,11 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User",
-        "methods": [
-          "move",
-          "duplicate"
-        ]
+        "methods": ["move", "duplicate"]
       },
       "ActiveFriendsApi": {
         "type": "Friend",
-        "methods": [
-          "remove"
-        ]
+        "methods": ["remove"]
       },
       "ChildrenApi": {
         "type": "User"
@@ -697,18 +585,11 @@
     "entities": {
       "person": {
         "type": "Person",
-        "methods": [
-          "create",
-          "get",
-          "update",
-          "default"
-        ]
+        "methods": ["create", "get", "update", "default"]
       },
       "globalConfiguration": {
         "type": "GlobalConfiguration",
-        "methods": [
-          "get"
-        ]
+        "methods": ["get"]
       }
     }
   },
@@ -730,10 +611,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "Name",
-                  "Surname"
-                ]
+                "main": ["Name", "Surname"]
               }
             }
           }
@@ -788,11 +666,7 @@
                 "options": "colors"
               }
             },
-            "visibleColumns": [
-              "Name",
-              "Surname",
-              "FavoriteColor"
-            ]
+            "visibleColumns": ["Name", "Surname", "FavoriteColor"]
           },
           "api": "ActiveUsersApi"
         }
@@ -834,10 +708,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "X",
-                  "Y"
-                ]
+                "main": ["X", "Y"]
               }
             }
           }
@@ -857,9 +728,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "LandArea"
-                ]
+                "main": ["LandArea"]
               }
             }
           }
@@ -950,9 +819,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "StreetNumberAndCity"
-                ]
+                "main": ["StreetNumberAndCity"]
               }
             }
           }
@@ -973,9 +840,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "ActiveAddressFields"
-                ]
+                "main": ["ActiveAddressFields"]
               }
             }
           }
@@ -1001,11 +866,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "Name",
-                  "Salary",
-                  "Language"
-                ]
+                "main": ["Name", "Salary", "Language"]
               }
             }
           }
@@ -1043,12 +904,7 @@
           "columns": {
             "main": {
               "groups": {
-                "main": [
-                  "Name",
-                  "Salary",
-                  "DesignTool",
-                  "Certifications"
-                ]
+                "main": ["Name", "Salary", "DesignTool", "Certifications"]
               }
             }
           }
@@ -1073,11 +929,7 @@
           "options": "colors"
         }
       },
-      "visibleColumns": [
-        "Name",
-        "Surname",
-        "FavoriteColor"
-      ],
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"],
       "detailsRenderer": {
         "renderer": "userDetails"
       }
@@ -1100,11 +952,7 @@
           "options": "colors"
         }
       },
-      "visibleColumns": [
-        "Name",
-        "Surname",
-        "FavoriteColor"
-      ]
+      "visibleColumns": ["Name", "Surname", "FavoriteColor"]
     },
     "person": {
       "type": "Person",
@@ -1199,11 +1047,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name",
-                            "Surname",
-                            "Friends"
-                          ]
+                          "main": ["Name", "Surname", "Friends"]
                         }
                       }
                     }
@@ -1299,11 +1143,7 @@
                     "columns": {
                       "main": {
                         "groups": {
-                          "main": [
-                            "Name",
-                            "Surname",
-                            "Friends"
-                          ]
+                          "main": ["Name", "Surname", "Friends"]
                         }
                       }
                     }
@@ -1339,11 +1179,7 @@
                       "columns": {
                         "main": {
                           "groups": {
-                            "main": [
-                              "Name",
-                              "Salary",
-                              "Language"
-                            ]
+                            "main": ["Name", "Salary", "Language"]
                           }
                         }
                       }
@@ -1909,9 +1745,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": [
-                          "Name"
-                        ]
+                        "main": ["Name"]
                       }
                     }
                   }
@@ -1938,11 +1772,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": [
-                          "Name",
-                          "Surname",
-                          "Email"
-                        ]
+                        "main": ["Name", "Surname", "Email"]
                       }
                     }
                   }
@@ -1950,10 +1780,7 @@
               }
             }
           },
-          "api": [
-            "User",
-            "BestFriendApi"
-          ]
+          "api": ["User", "BestFriendApi"]
         }
       },
       "tabs": {
@@ -1984,11 +1811,7 @@
             },
             "mailing": {
               "groups": {
-                "main": [
-                  "SubscribeToNewsletter",
-                  "Interests",
-                  "FavoriteColor"
-                ]
+                "main": ["SubscribeToNewsletter", "Interests", "FavoriteColor"]
               }
             },
             "addresses": {

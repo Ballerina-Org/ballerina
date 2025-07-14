@@ -53,7 +53,10 @@ export type ReadOnlyAbstractRendererView<
   Flags = Unit,
   ExtraContext = Unit,
 > = View<
-  ReadOnlyAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
+  ReadOnlyAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
     ReadOnlyAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext & {
       readOnlyType: ReadOnlyType<any>;
@@ -71,4 +74,4 @@ export type ReadOnlyAbstractRendererView<
       CommonAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
->; 
+>;

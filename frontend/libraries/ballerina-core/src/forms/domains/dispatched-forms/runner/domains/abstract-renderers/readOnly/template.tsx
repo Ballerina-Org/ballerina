@@ -17,7 +17,7 @@ import {
   DispatchParsedType,
   ReadOnlyType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
-import { 
+import {
   ReadOnlyAbstractRendererView,
   ReadOnlyAbstractRendererReadonlyContext,
   ReadOnlyAbstractRendererState,
@@ -83,7 +83,9 @@ export const ReadOnlyAbstractRenderer = <
           elementUpdater: Option<BasicUpdater<PredicateValue>>,
           nestedDelta: DispatchDelta<Flags>,
         ) => {
-          console.debug("ReadOnly field onChange intercepted - no changes allowed");
+          console.debug(
+            "ReadOnly field onChange intercepted - no changes allowed",
+          );
         },
       }),
     );
@@ -96,11 +98,7 @@ export const ReadOnlyAbstractRenderer = <
       ReadOnlyAbstractRendererState,
     ReadOnlyAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>,
-    ReadOnlyAbstractRendererView<
-      CustomPresentationContext,
-      Flags,
-      ExtraContext
-    >
+    ReadOnlyAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     return (
       <>
@@ -118,4 +116,4 @@ export const ReadOnlyAbstractRenderer = <
       </>
     );
   }).any([]);
-}; 
+};

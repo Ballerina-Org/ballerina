@@ -78,7 +78,10 @@ export const ReadOnlyRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
     ): ValueOrErrors<ReadOnlyRenderer<T>, string> =>
-      ReadOnlyRenderer.Operations.tryAsValidBaseReadOnlyRenderer(serialized, type)
+      ReadOnlyRenderer.Operations.tryAsValidBaseReadOnlyRenderer(
+        serialized,
+        type,
+      )
         .Then((serializedRenderer) =>
           NestedRenderer.Operations.DeserializeAs(
             type.args[0],
@@ -100,4 +103,4 @@ export const ReadOnlyRenderer = {
           errors.map((error) => `${error}\n...When parsing as ReadOnly`),
         ),
   },
-}; 
+};

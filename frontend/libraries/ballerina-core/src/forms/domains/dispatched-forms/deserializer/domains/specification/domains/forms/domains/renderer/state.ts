@@ -10,7 +10,10 @@ import { ListRenderer, SerializedListRenderer } from "./domains/list/state";
 import { LookupRenderer, SerializedLookup } from "./domains/lookup/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
-import { ReadOnlyRenderer, SerializedReadOnlyRenderer } from "./domains/readOnly/state";
+import {
+  ReadOnlyRenderer,
+  SerializedReadOnlyRenderer,
+} from "./domains/readOnly/state";
 import {
   SerializedStreamRenderer,
   StreamRenderer,
@@ -259,49 +262,49 @@ export const Renderer = {
                               types,
                             )
                           : Renderer.Operations.IsSumUnitDate(
-                              serialized,
-                              concreteRenderers,
-                            ) && type.kind == "sum"
-                          ? BaseSumUnitDateRenderer.Operations.Deserialize(
-                              type,
-                              serialized,
-                            )
-                          : type.kind == "sum"
-                            ? SumRenderer.Operations.Deserialize(
-                                type,
                                 serialized,
                                 concreteRenderers,
-                                types,
+                              ) && type.kind == "sum"
+                            ? BaseSumUnitDateRenderer.Operations.Deserialize(
+                                type,
+                                serialized,
                               )
-                            : type.kind == "record"
-                              ? RecordRenderer.Operations.Deserialize(
+                            : type.kind == "sum"
+                              ? SumRenderer.Operations.Deserialize(
                                   type,
                                   serialized,
                                   concreteRenderers,
                                   types,
                                 )
-                              : type.kind == "union"
-                                ? UnionRenderer.Operations.Deserialize(
+                              : type.kind == "record"
+                                ? RecordRenderer.Operations.Deserialize(
                                     type,
                                     serialized,
                                     concreteRenderers,
                                     types,
                                   )
-                                : type.kind == "tuple"
-                                  ? TupleRenderer.Operations.Deserialize(
+                                : type.kind == "union"
+                                  ? UnionRenderer.Operations.Deserialize(
                                       type,
                                       serialized,
                                       concreteRenderers,
                                       types,
                                     )
-                                  : ValueOrErrors.Default.throwOne<
-                                      Renderer<T>,
-                                      string
-                                    >(
-                                      `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
-                                        type.kind
-                                      }`,
-                                    );
+                                  : type.kind == "tuple"
+                                    ? TupleRenderer.Operations.Deserialize(
+                                        type,
+                                        serialized,
+                                        concreteRenderers,
+                                        types,
+                                      )
+                                    : ValueOrErrors.Default.throwOne<
+                                        Renderer<T>,
+                                        string
+                                      >(
+                                        `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
+                                          type.kind
+                                        }`,
+                                      );
       },
   },
 };

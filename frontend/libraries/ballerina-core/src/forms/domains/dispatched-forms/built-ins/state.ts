@@ -695,7 +695,6 @@ export const dispatchDefaultState =
         );
       }
 
-
       if (t.kind == "primitive")
         return t.name == "unit"
           ? ValueOrErrors.Default.return(UnitAbstractRendererState.Default())
@@ -1970,13 +1969,13 @@ export const dispatchToAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(raw, formState).Then((childValue) => 
+        )(raw, formState).Then((childValue) =>
           ValueOrErrors.Default.return(
             converters["ReadOnly"].toAPIRawValue([
               childValue,
               formState?.commonFormState?.modifiedByUser ?? false,
-            ])
-          )
+            ]),
+          ),
         );
       }
 
