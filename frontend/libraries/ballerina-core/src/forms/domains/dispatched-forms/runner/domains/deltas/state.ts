@@ -435,7 +435,7 @@ export type DispatchDeltaTransferRecord<DispatchDeltaTransferCustom> =
     });
 export type DispatchDeltaTransferUnion<DispatchDeltaTransferCustom> =
   | { Discriminator: "UnionReplace"; Replace: any }
-  | ({ Discriminator: "UnionCase" } & {
+  | ({ Discriminator: string } & {
       [caseName: string]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     });
 export type DispatchDeltaTransferTuple<DispatchDeltaTransferCustom> =
@@ -1236,10 +1236,10 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "UnionCase",
+                  Discriminator: delta.caseName[0],
                   [delta.caseName[0]]: value[0],
                 } as {
-                  Discriminator: "UnionCase";
+                  Discriminator: string;
                 } & {
                   [
                     caseName: string
