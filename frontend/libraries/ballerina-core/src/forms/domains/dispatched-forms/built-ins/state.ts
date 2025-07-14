@@ -1526,19 +1526,13 @@ export const dispatchFromAPIRawValue =
       }
 
       if (t.kind == "readOnly") {
-        // Require the value to be inside a ReadOnly field
-        if (typeof raw !== "object" || raw === null || !("ReadOnly" in raw)) {
-          return ValueOrErrors.Default.throwOne(
-            `ReadOnly type requires value to be wrapped in ReadOnly field, but got ${JSON.stringify(raw)}`
-          );
-        }
-        
+        const readOnlyResult = converters["ReadOnly"].fromAPIRawValue(raw);
         return dispatchFromAPIRawValue(
           t.args[0],
           types,
           converters,
           injectedPrimitives,
-        )(raw.ReadOnly);
+        )(readOnlyResult);
       }
 
       // TODO -- this can be more functional
@@ -1977,9 +1971,12 @@ export const dispatchToAPIRawValue =
           converters,
           injectedPrimitives,
         )(raw, formState).Then((childValue) => 
-          ValueOrErrors.Default.return({
-            ReadOnly: childValue
-          })
+          ValueOrErrors.Default.return(
+            converters["ReadOnly"].toAPIRawValue([
+              childValue,
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ])
+          )
         );
       }
 

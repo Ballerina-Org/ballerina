@@ -187,4 +187,19 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
       toAPIRawValue: ([_, __]) => _,
     },
+    ReadOnly: {
+      fromAPIRawValue: (_) => {
+        // Extract value from ReadOnly field structure
+        if (typeof _ !== "object" || _ === null || !("ReadOnly" in _)) {
+          throw new Error(`ReadOnly type requires value to be wrapped in ReadOnly field, but got ${JSON.stringify(_)}`);
+        }
+        return _.ReadOnly;
+      },
+      toAPIRawValue: ([_, __]) => {
+        // Wrap value in ReadOnly field structure
+        return {
+          ReadOnly: _
+        };
+      },
+    },
   };
