@@ -10,34 +10,64 @@ import {
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
 import { View } from "../../../../../../../template/state";
+import { simpleUpdater } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
+
+export type ReadOnlyAbstractRendererReadonlyContext<
+  CustomPresentationContext,
+  ExtraContext,
+> = CommonAbstractRendererReadonlyContext<
+  ReadOnlyType<any>,
+  PredicateValue,
+  CustomPresentationContext,
+  ExtraContext
+>;
+
+export type ReadOnlyAbstractRendererState = CommonAbstractRendererState & {
+  childFormState: CommonAbstractRendererState;
+};
+
+export const ReadOnlyAbstractRendererState = {
+  Default: {
+    zero: () => ({
+      ...CommonAbstractRendererState.Default(),
+      childFormState: CommonAbstractRendererState.Default(),
+    }),
+    childFormState: (
+      childFormState: CommonAbstractRendererState,
+    ): ReadOnlyAbstractRendererState => ({
+      ...CommonAbstractRendererState.Default(),
+      childFormState,
+    }),
+  },
+  Updaters: {
+    Core: {
+      ...simpleUpdater<ReadOnlyAbstractRendererState>()("commonFormState"),
+      ...simpleUpdater<ReadOnlyAbstractRendererState>()("childFormState"),
+    },
+    Template: {},
+  },
+};
 
 export type ReadOnlyAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
   ExtraContext = Unit,
 > = View<
-  CommonAbstractRendererReadonlyContext<
-    ReadOnlyType<any>,
-    PredicateValue,
-    CustomPresentationContext,
-    ExtraContext
-  > &
-    CommonAbstractRendererState &
+  ReadOnlyAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
+    ReadOnlyAbstractRendererState &
     CommonAbstractRendererViewOnlyReadonlyContext & {
       readOnlyType: ReadOnlyType<any>;
     },
-  CommonAbstractRendererState,
+  ReadOnlyAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected<Flags>,
   {
     embeddedTemplate: Template<
-      CommonAbstractRendererReadonlyContext<
-        DispatchParsedType<any>,
-        PredicateValue,
+      ReadOnlyAbstractRendererReadonlyContext<
         CustomPresentationContext,
         ExtraContext
       > &
-        CommonAbstractRendererState,
-      CommonAbstractRendererState,
+        ReadOnlyAbstractRendererState,
+      ReadOnlyAbstractRendererState,
       CommonAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
