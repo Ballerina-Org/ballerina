@@ -1,5 +1,6 @@
 import { DispatcherContext } from "../../../../../deserializer/state";
 import {
+  CommonAbstractRendererState,
   DispatchInjectablesTypes,
   ReadOnlyAbstractRenderer,
   Template,
@@ -39,6 +40,7 @@ export const ReadOnlyDispatcher = {
             .Then((concreteRenderer) =>
               ValueOrErrors.Default.return(
                 ReadOnlyAbstractRenderer(
+                  () => CommonAbstractRendererState.Default(),
                   childTemplate,
                   renderer.type,
                   dispatcherContext.IdProvider,
