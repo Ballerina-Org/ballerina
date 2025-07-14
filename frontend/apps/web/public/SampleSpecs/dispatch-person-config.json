@@ -1360,9 +1360,9 @@
           "renderer": "defaultCategory"
         },
         "SuperSecretNumber": {
-          "label": "Super Secret Number",
           "renderer": "ReadOnly",
           "childRenderer": {
+            "label": "Super Secret Number",
             "renderer": "defaultNumber"
           }
         },
