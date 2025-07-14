@@ -1969,6 +1969,7 @@
                   "Category",
                   "FullName",
                   "Birthday",
+                  "SuperSecretNumber",
                   "Gender",
                   "Emails",
                   "Dependants",

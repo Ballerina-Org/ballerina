@@ -553,9 +553,6 @@ const entityApis: EntityApis = {
                 Id: v4(),
                 Name: "John",
                 Surname: "Doe",
-                SuperSecretNumber: {
-                  Value: 123
-                },
                 Birthday: "1990-01-01",
                 Email: "john.doe@example.com",
                 SubscribeToNewsletter: true,
@@ -595,6 +592,9 @@ const entityApis: EntityApis = {
             Birthday: new Date(
               Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
             ).toISOString(),
+            SuperSecretNumber: {
+              ReadOnly: 123123
+            },
             SubscribeToNewsletter: Math.random() > 0.5,
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },

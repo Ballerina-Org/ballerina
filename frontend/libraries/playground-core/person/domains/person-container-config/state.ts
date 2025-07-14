@@ -11,6 +11,7 @@ export type PersonConfig = {
   person: {
     name: string;
     surname: string;
+    superSecretNumber: { Value: number };
     birthday: Date;
     departments: OrderedMap<Guid, Department>;
     gender: CollectionSelection<Gender>;
@@ -27,6 +28,7 @@ export const PersonConfig = {
     person: {
       name: faker.person.firstName(),
       surname: faker.person.lastName(),
+      superSecretNumber: { Value: 123123 },
       birthday: new Date(
         Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 365 * 45,
       ),
