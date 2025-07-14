@@ -7,6 +7,10 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  DispatchOnChange,
+  Option,
+  BasicUpdater,
+  DispatchDelta,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -51,6 +55,41 @@ export const ReadOnlyAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
+    const configuredChildTemplate = embeddedTemplate
+      .mapContext(
+        (
+          _: CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            CommonAbstractRendererState,
+        ) => ({
+          ..._,
+          value: props.context.value,
+          type: readOnlyType.args[0],
+          domNodeAncestorPath: props.context.domNodeAncestorPath + `[readOnly]`,
+          typeAncestors: [props.context.type as DispatchParsedType<any>].concat(
+            props.context.typeAncestors,
+          ),
+        }),
+      )
+      .mapForeignMutationsFromProps<{
+        onChange: DispatchOnChange<PredicateValue, Flags>;
+      }>(
+        (): {
+          onChange: DispatchOnChange<PredicateValue, Flags>;
+        } => ({
+          onChange: (
+            elementUpdater: Option<BasicUpdater<PredicateValue>>,
+            nestedDelta: DispatchDelta<Flags>,
+          ) => {
+            console.debug("ReadOnly field onChange intercepted - no changes allowed");
+          },
+        }),
+      );
+
     return (
       <>
         <IdProvider domNodeId={props.context.domNodeAncestorPath}>
@@ -61,7 +100,7 @@ export const ReadOnlyAbstractRenderer = <
               domNodeId: props.context.domNodeAncestorPath,
               readOnlyType: readOnlyType,
             }}
-            embeddedTemplate={embeddedTemplate}
+            embeddedTemplate={configuredChildTemplate}
           />
         </IdProvider>
       </>
