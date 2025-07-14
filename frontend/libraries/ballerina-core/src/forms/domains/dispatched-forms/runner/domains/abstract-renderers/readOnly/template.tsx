@@ -59,7 +59,6 @@ export const ReadOnlyAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
-              disabled: true, // FIXME: Just for now we set it to always disabled
               readOnlyType: readOnlyType,
             }}
             embeddedTemplate={embeddedTemplate}

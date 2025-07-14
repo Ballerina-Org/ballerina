@@ -1821,6 +1821,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
   },
+  readOnly: {
+    ReadOnly: () => (props) => {
+      return (
+        <>
+          {props.embeddedTemplate({
+            ...props,
+            view: unit,
+          })}
+        </>
+      );
+    },
+  },
   sumUnitDate: {
     maybeDate: () => (props) => {
       const displayValue =

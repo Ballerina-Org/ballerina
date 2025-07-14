@@ -184,6 +184,7 @@ type BuiltInApiConverters = {
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
   One: ApiConverter<ValueOption>;
+  ReadOnly: ApiConverter<any>;
 };
 
 export type ConcreteRenderers<
@@ -478,7 +479,11 @@ export type ConcreteRenderers<
   };
   readOnly: {
     [_: string]: () =>
-      | ReadOnlyAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | ReadOnlyAbstractRendererView<
+          CustomPresentationContexts,
+          Flags,
+          ExtraContext
+        >
       | React.MemoExoticComponent<
           ReadOnlyAbstractRendererView<
             CustomPresentationContexts,
@@ -689,6 +694,7 @@ export const dispatchDefaultState =
             )(renderer.type, resolvedRenderer),
         );
       }
+
 
       if (t.kind == "primitive")
         return t.name == "unit"
@@ -905,9 +911,7 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
-            )(t.args[0], renderer.childRenderer.renderer).Then((childState) =>
-              ValueOrErrors.Default.return(childState),
-            );
+            )(t.args[0], renderer.childRenderer.renderer);
 
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
