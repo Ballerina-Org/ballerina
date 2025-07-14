@@ -51,20 +51,25 @@ const RadioButtons = (props: RadioButtonsProps) => {
   };
 
   return (
-    <div style={radioGroupStyle}>
-      {props.options.map((opt) => (
-        <label key={opt.value} style={labelStyle}>
-          <input
-            type="radio"
-            name="choice"
-            value={opt.value}
-            checked={selected === opt.value}
-            onChange={() => handleChange(opt.value)}
-            style={selected === opt.value ? checkedStyle : inputStyle}
-          />
-          {opt.label}
-        </label>
-      ))}
+    // <div style={radioGroupStyle}>
+    //   {props.options.map((opt) => (
+    //     <label key={opt.value} style={labelStyle}>
+    //       <input
+    //         type="radio"
+    //         name="choice"
+    //         value={opt.value}
+    //         checked={selected === opt.value}
+    //         onChange={() => handleChange(opt.value)}
+    //         style={selected === opt.value ? checkedStyle : inputStyle}
+    //       />
+    //       {opt.label}
+    //     </label>
+    //   ))}
+    // </div>
+    <div className="join m-5">
+
+      {props.options.map((opt) => (<input onChange={() => handleChange(opt.value)} className="join-item btn" type="radio" name="options" aria-label={opt.value} checked={selected === opt.value} />))}
+
     </div>
   );
 };

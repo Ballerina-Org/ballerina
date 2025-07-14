@@ -852,16 +852,11 @@ export const dispatchFromAPIRawValue =
         if (t.name == "unit") {
           return ValueOrErrors.Default.return(PredicateValue.Default.unit());
         }
-
-        // var raw2 =
-        //   t.name === "number" && raw?.kind === "int"
-        //     ? parseInt(raw?.value)
-        //     : t.name === "number" && raw?.kind === "float"
-        //       ? parseFloat(raw?.value)
-        //       : raw;
+        
 
         if (!PredicateValue.Operations.IsPrimitive(raw) &&
           !injectedPrimitives?.keySeq().contains(t.name as keyof T)) {
+          console.error(`Error -> ${raw} is not a primitive type`)
           return ValueOrErrors.Default.throwOne(
             `primitive expected but got ${JSON.stringify(raw)}`,
           );
@@ -873,19 +868,23 @@ export const dispatchFromAPIRawValue =
       if (t.kind == "union") {
         const result = converters["union"].fromAPIRawValue(raw);
         const caseType = t.args.get(result.caseName);
-        if (caseType == undefined)
+        if (caseType == undefined) {
+          console.error(`Error -> case type is undefined: ${raw}`)
           return ValueOrErrors.Default.throwOne(
             `union case ${result.caseName} not found in type ${JSON.stringify(
               t,
             )}`,
           );
-
-        if (caseType.kind != "record" && caseType.kind != "lookup")
+        }
+        
+        if (caseType.kind != "record" && caseType.kind != "lookup") {
+          console.error(`Error -> case type is neither record or lookup: ${raw}`)
           return ValueOrErrors.Default.throwOne(
             `union case ${
               result.caseName
             } expected record or lookup type, got ${JSON.stringify(caseType)}`,
           );
+        }
 
         return dispatchFromAPIRawValue(
           caseType,
@@ -895,15 +894,13 @@ export const dispatchFromAPIRawValue =
         )(result.fields).Then((value) =>
           PredicateValue.Operations.IsRecord(value)
             ? ValueOrErrors.Default.return(
-                PredicateValue.Default.unionCase(result.caseName, value),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `union case ${
-                  result.caseName
-                } expected record, got ${PredicateValue.Operations.GetKind(
-                  value,
-                )}`,
-              ),
+              PredicateValue.Default.unionCase(result.caseName, value)
+            )
+            : (() => {
+              const msg = "Expected a record but got something else";
+              console.error(msg); // log the message
+              return ValueOrErrors.Default.throwOne(msg);
+            })()
         );
       }
 
@@ -923,6 +920,7 @@ export const dispatchFromAPIRawValue =
         const values = result.map((_) =>
           PredicateValue.Default.record(OrderedMap(_)),
         );
+
         return ValueOrErrors.Default.return(
           PredicateValue.Default.record(OrderedMap(values)),
         );
@@ -976,7 +974,7 @@ export const dispatchFromAPIRawValue =
 
       if (t.kind == "tuple") {
         //TODO -- added "fields" in raw ? raw.fields : raw isntead of raw but this shouldbe elsewhere
-        const result = converters["Tuple"].fromAPIRawValue("fields" in raw ? raw.fields : raw);
+        const result = converters["Tuple"].fromAPIRawValue(raw) //"fields" in raw ? raw.fields : raw);
         
         return ValueOrErrors.Operations.All(
           List<ValueOrErrors<PredicateValue, string>>(

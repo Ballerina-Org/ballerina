@@ -11,48 +11,32 @@ export const Messages: React.FC<{
   clientSuccess?: string[];
   serverSuccess?: string[];
   runnerIndicator: SpecRunnerIndicator;
-}> = ({
+}> =
+
+ ({
         editorIndicator,
         clientErrors = [],
         serverErrors = [],
         clientSuccess = [],
         serverSuccess = [],
         runnerIndicator
-      }) => (<div css={style.messageLayout}>
-    <div
-        css={css`
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;  // right-align all children in this column
-  `}
-    >
-      {editorIndicator.kind == "editing" && <p>⚠️ Editor is dirty</p>}
-        <p>{runnerIndicator.kind}</p>
-        {clientErrors.map((msg, i) => (
-            <div key={`client-error-${i}`} css={style.messageBox("error")}>
-                <User size={60} />
-                <span>{msg}</span>
-            </div>
-        ))}
-        {serverErrors.map((msg, i) => (
-            <div key={`server-error-${i}`} css={style.messageBox("error")}>
-                <Server size={20} />
-                <span>{msg}</span>
-            </div>
-        ))}
-    </div>
-    <div>
-        {clientSuccess.map((msg, i) => (
-            <div key={`client-success-${i}`} css={style.messageBox("success")}>
-                <User size={20} />
-                <span>{msg}</span>
-            </div>
-        ))}
-        {serverSuccess.map((msg, i) => (
-            <div key={`server-success-${i}`} css={style.messageBox("success")}>
-                <Server size={20} />
-                <span>{msg}</span>
-            </div>
-        ))}
-    </div>
-</div>)
+      }) =>
+
+ { 
+
+   return (
+  <div className="w-full">
+    {clientErrors.map((msg, i) => (
+      <div role="alert" className="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>{i+1}: {msg}</span>
+      </div>
+    ))}
+
+  </div>
+)
+ }

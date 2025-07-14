@@ -66,7 +66,7 @@ import {
 } from "ballerina-core";
 import { CategoryAbstractRendererView } from "../injected-forms/category";
 import { Map, OrderedMap } from "immutable";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { v4 } from "uuid";
 
 export const PersonConcreteRenderers = {
@@ -465,6 +465,7 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected
       > =>
       (props) => {
+        debugger
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
@@ -742,6 +743,7 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected,
       >(): AbstractTableRendererView<Context, ForeignMutationsExpected> =>
       (props) => {
+  
         return (
           <>
             <h3>{props.context.label}</h3>
@@ -931,13 +933,9 @@ export const PersonConcreteRenderers = {
                 <em>{props.context.details}</em>
               </p>
             )}
-            <button
-              style={
-                props.context.value.value.kind == "child"
-                  ? { borderColor: "red" }
-                  : {}
-              }
-              onClick={(_) =>
+            <div className="join m-5">
+
+              <input onChange={(_) =>
                 props.foreignMutations.setNewValue({
                   kind: "custom",
                   value: {
@@ -945,17 +943,8 @@ export const PersonConcreteRenderers = {
                     extraSpecial: false,
                   },
                 })
-              }
-            >
-              child
-            </button>
-            <button
-              style={
-                props.context.value.value.kind == "adult"
-                  ? { borderColor: "red" }
-                  : {}
-              }
-              onClick={(_) =>
+              } className={["join-item btn", props.context.value.value.kind == "child" ? "btn-primary" : ""].join(" ")} type="radio" name="options" aria-label="child"  />
+              <input onChange={(_) =>
                 props.foreignMutations.setNewValue({
                   kind: "custom",
                   value: {
@@ -963,17 +952,9 @@ export const PersonConcreteRenderers = {
                     extraSpecial: false,
                   },
                 })
-              }
-            >
-              adult
-            </button>
-            <button
-              style={
-                props.context.value.value.kind == "senior"
-                  ? { borderColor: "red" }
-                  : {}
-              }
-              onClick={(_) =>
+              } className={["join-item btn", props.context.value.value.kind == "adult" ? "btn-primary" : ""].join(" ")} type="radio" name="options" aria-label="adult"   />
+
+              <input onChange={(_) =>
                 props.foreignMutations.setNewValue({
                   kind: "custom",
                   value: {
@@ -981,10 +962,64 @@ export const PersonConcreteRenderers = {
                     extraSpecial: false,
                   },
                 })
-              }
-            >
-              senior
-            </button>
+              } className={["join-item btn", props.context.value.value.kind == "senior" ? "btn-primary" : ""].join(" ")} type="radio" name="options" aria-label="senior" />
+
+
+            </div>
+            {/*<button*/}
+            {/*  style={*/}
+            {/*    props.context.value.value.kind == "child"*/}
+            {/*      ? {borderColor: "red"}*/}
+            {/*      : {}*/}
+            {/*  }*/}
+            {/*  onClick={(_) =>*/}
+            {/*    props.foreignMutations.setNewValue({*/}
+            {/*      kind: "custom",*/}
+            {/*      value: {*/}
+            {/*        kind: "child",*/}
+            {/*        extraSpecial: false,*/}
+            {/*      },*/}
+            {/*    })*/}
+            {/*  }*/}
+            {/*>*/}
+            {/*  child*/}
+            {/*</button>*/}
+            {/*<button*/}
+            {/*  style={*/}
+            {/*    props.context.value.value.kind == "adult"*/}
+            {/*      ? {borderColor: "red"}*/}
+            {/*      : {}*/}
+            {/*  }*/}
+            {/*  onClick={(_) =>*/}
+            {/*    props.foreignMutations.setNewValue({*/}
+            {/*      kind: "custom",*/}
+            {/*      value: {*/}
+            {/*        kind: "adult",*/}
+            {/*        extraSpecial: false,*/}
+            {/*      },*/}
+            {/*    })*/}
+            {/*  }*/}
+            {/*>*/}
+            {/*  adult*/}
+            {/*</button>*/}
+            {/*<button*/}
+            {/*  style={*/}
+            {/*    props.context.value.value.kind == "senior"*/}
+            {/*      ? {borderColor: "red"}*/}
+            {/*      : {}*/}
+            {/*  }*/}
+            {/*  onClick={(_) =>*/}
+            {/*    props.foreignMutations.setNewValue({*/}
+            {/*      kind: "custom",*/}
+            {/*      value: {*/}
+            {/*        kind: "senior",*/}
+            {/*        extraSpecial: false,*/}
+            {/*      },*/}
+            {/*    })*/}
+            {/*  }*/}
+            {/*>*/}
+            {/*  senior*/}
+            {/*</button>*/}
           </>
         );
       },
@@ -995,9 +1030,9 @@ export const PersonConcreteRenderers = {
         Context extends FormLabel,
         ForeignMutationsExpected,
       >(): BoolAbstractRendererView<Context, ForeignMutationsExpected> =>
-      (props) => (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
+        (props) => (
+          <>
+            {props.context.label && <h3>{props.context.label}</h3>}
           {props.context.details && (
             <p>
               <em>{props.context.details}</em>
@@ -1187,6 +1222,7 @@ export const PersonConcreteRenderers = {
         ForeignMutationsExpected
       > =>
       (props) => {
+     
         return (
           <>
             {props.context.label && <h3>{props.context.label}</h3>}
@@ -1204,7 +1240,7 @@ export const PersonConcreteRenderers = {
               >
                 <>
                   {props.context.value.fields.map((o) => {
-                    debugger
+            
                     return (
                     <option
                       value={(o as ValueRecord).fields.get("Value")! as string}

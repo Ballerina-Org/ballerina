@@ -12,6 +12,7 @@
     "@emotion/styled": "^11.14.0",
     "@faker-js/faker": "^8.4.1",
     "ballerina-core": "*",
+    "daisyui": "^5.0.46",
     "i18next": "^23.11.5",
     "immutable": "^5.0.0-beta.5",
     "json-edit-react": "^1.27.0",
@@ -19,6 +20,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.4",
+    "theme-change": "^2.5.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -29,12 +31,15 @@
     "@types/react-dom": "^18.2.18",
     "@types/react-grid-layout": "^1.3.3",
     "@types/uuid": "^9.0.8",
+    "autoprefixer": "^10.4.21",
     "ballerina-core": "*",
     "create-domain": "*",
     "link": "^2.1.0",
     "playground-core": "*",
+    "postcss": "^8.5.6",
     "react-data-debugger": "1.1.0",
     "react-refresh": "^0.14.0",
+    "tailwindcss": "^4.1.11",
     "typescript": "^5.4.5"
   }
 }

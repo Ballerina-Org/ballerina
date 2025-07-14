@@ -467,6 +467,7 @@ export const PredicateValue = {
       return typeof value == "boolean";
     },
     IsStructuredNumber(value: any): value is StructuredNumber {
+
       return (
         typeof value === "object" &&
         value !== null &&

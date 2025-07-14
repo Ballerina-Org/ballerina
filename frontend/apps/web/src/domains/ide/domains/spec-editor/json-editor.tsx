@@ -14,7 +14,7 @@ export const TmpJsonEditor: RawJsonEditorView = (props) => (
     <>
 
         <div css={style.editor.container}>
-          <p>{props.context.indicator.kind}</p>
+          {/*<p>{props.context.indicator.kind}</p>*/}
           <div css={style.editor.left}>
             <JsonEditor
               icons={{

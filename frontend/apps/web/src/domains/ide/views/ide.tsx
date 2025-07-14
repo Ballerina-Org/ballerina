@@ -1,7 +1,7 @@
 ﻿/** @jsxImportSource @emotion/react */
 import {style} from "./ide.styled.ts";
 import { style as editorStyle } from "../domains/spec-editor/json-editor.styled.ts";
-import {IDE, IDEView, SpecEditor, SpecRunner, SpecRunnerIndicator} from "playground-core";
+import {IDE, IdeStep, IDEView, SpecEditor, SpecRunner, SpecRunnerIndicator} from "playground-core";
 import {TmpJsonEditor} from "../domains/spec-editor/json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -13,12 +13,22 @@ import {Grid} from "./grid.tsx";
 import {IDEApi} from "playground-core/ide/apis/spec.ts";
 import RadioButtons from "../domains/layout/localisation.tsx";
 import {HorizontalDropdown} from "../domains/layout/spec-selector.tsx";
-
-
+import { themeChange } from 'theme-change'
+import { useEffect } from 'react'
+import {LucideBugOff} from "lucide-react";
 export const IDELayout: IDEView = (props) =>{
   const [key, setKey] = useState(0);
+  const [theme, setTheme] = useState("lemonade");
+  useEffect(() => {
+    
+    const t = props.context.runner.validation.value
+
+    themeChange(false)
+    // 👆 false parameter is required for react project
+  }, [])
 return (
     <Grid 
+      theme={theme}
         left={
         <>
             <div css={editorStyle.container}>
@@ -49,7 +59,11 @@ return (
                       //         SpecRunnerIndicator.Default.validating())));
                       const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
                       const seed = await IDEApi.seed(Value.Default(props.context.editor.input.value));
+                      debugger
                       props.setState(
+                        IDE.Updaters.Core.loading(
+                          replaceWith(true)
+                        ).then(
                         IDE.Updaters.Core.entityBody(
                           replaceWith({ value: seed.payload}))
                           .then(
@@ -57,28 +71,44 @@ return (
                               SpecRunner.Operations.runEditor(
                                 props.context.editor.input.value, props.context.entityBody.value, res
                               )
+                            ).then(
+                              IDE.Updaters.Core.step(
+                                replaceWith(IdeStep.Default.actions())
+                              ).then(
+                                IDE.Updaters.Core.loading(
+                                  replaceWith(false)
+                                ))
                             )
-                        )
+                        ))
                       )
                     }}
                     onSave={ async () => {
+                      const ste= props.setState(
+                        IDE.Updaters.Core.loading(replaceWith(true)
+                        )
+                      )
                       const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
 
                       if (res.isValid) {
                         const entity = await IDEApi.save(props.context.editor.name.value, props.context.editor.input.value)
                         const entityNames = await IDEApi.entity_names(props.context.specName.value);
                         props.setState(
-                          IDE.Updaters.Core.runner(ide => {
-                            return ide
-                          }).then(IDE.Updaters.Core.entityNames(
+                          IDE.Updaters.Core.runner(SpecRunner.Updaters.Core.validation(
+                            replaceWith(
+                              Option.Default.some(ValueOrErrors.Default.return(props.context.editor.input.value))
+                            )
+                          )).then(IDE.Updaters.Core.entityNames(
                             replaceWith(entityNames.payload)
-                          ))
+                          ).then( IDE.Updaters.Core.loading(replaceWith(false)
+                          )).then( IDE.Updaters.Core.step(replaceWith(IdeStep.Default.entity())
+                          )))
                         )
                       } else {
                         props.setState(IDE.Updaters.Core.runner(SpecRunner.Updaters.Core.validation(
                           replaceWith(
                             Option.Default.some(ValueOrErrors.Default.throwOne(res.errors))
                           )
+                        )).then( IDE.Updaters.Core.loading(replaceWith(false)
                         )));
                       }
 
@@ -89,7 +119,7 @@ return (
               
             </div>
           
-            <props.RawJsonEditor{...props} view={TmpJsonEditor} /><p>{JSON.stringify(props.context.entityBody.value)}</p></>}
+            <props.RawJsonEditor{...props} view={TmpJsonEditor} /></>}
         header={
             <div css={style.headerParent}>
                 <div css={style.logoParent}>
@@ -119,6 +149,26 @@ return (
                 </div>
                 <div css={{ flex: 1 }} />
 
+              <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+                <option value="wireframe">Wireframe</option>
+                <option value="dark">Dark</option>
+                <option value="pink">Pink</option>
+                <option value="luxury">Luxury</option>
+                <option value="fantasy">Fantasy</option>
+                <option value="caramellatte">Caramellatte</option>
+                <option value="lemonade">Lemonade</option>
+                <option value="sim">Sim</option>
+                <option value="dilk">Dilk</option>
+                <option value="acid">Acid</option>
+                <option value="sunset">Sunset</option>
+                <option value="winter">Winter</option>
+                <option value="dracula">Dracula</option>
+                <option value="corporate">Corporate</option>
+                <option value="valentine">Valentine</option>
+                <option value="dark">Dark</option>
+                <option value="business">Business</option>
+              </select>
+
             </div>}
         right={
             <>
@@ -134,7 +184,19 @@ return (
                     clientSuccess={[]}
                     serverSuccess={[]}
                 />
-              <p>Entities:</p>
+              <div className="overflow-x-auto m-5">
+                <ul className="steps">
+                  <li className={props.context.step.kind == "start" ? "step step-warning":"step"}>start</li>
+                  <li className={props.context.step.kind == "entity" ? "step step-warning":"step"}>entity</li>
+                  <li className={props.context.step.kind == "launcher" ? "step step-warning":"step"}>launcher</li>
+                  <li className={props.context.step.kind == "actions" ? "step step-warning":"step"}>actions</li>
+                  <li className="step">deploy</li>
+                </ul>
+              </div>
+
+     
+              {props.context.step.kind == IdeStep.Default.entity().kind &&
+              <div>
               <RadioButtons
                 onChange={async (value) => {
                   const launchers = await IDEApi.launcher_names(props.context.specName.value, value)
@@ -145,47 +207,111 @@ return (
                           Value.Default(value)
                         )
                       )
-                    ).then(IDE.Updaters.Core.launchers(
+                    ).then(IDE.Updaters.Core.step(
+                      replaceWith(
+                        IdeStep.Default.launcher()
+                    )).then(IDE.Updaters.Core.launchers(
                           replaceWith(
                             launchers.payload
                           )
-                      ))
+                      )))
                     
                   )
                 }
               }
                 options={
                   Array.isArray(props.context.entityNames) ? props.context.entityNames.map( en => ({value: en, label: en})) : []}  />
-              <p>Launchers:</p>
-              { <RadioButtons 
-                onChange={async (value) => {
-               
-                  props.setState(
-                    IDE.Updaters.Core.launcherName(
-                      replaceWith(
-                        Option.Default.some(
-                          Value.Default(value)
-                        )
-                      )
-                    )
+              </div>}
+             
+              {props.context.step.kind == IdeStep.Default.launcher().kind && <>
+                  <div className="card bg-base-100 w-full shadow-sm">
+                      {/*<figure>*/}
+                      {/*    <img*/}
+                      {/*        src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"*/}
+                      {/*        alt="Shoes"/>*/}
+                      {/*</figure>*/}
+                      <div className="card-body">
+                          <h2 className="card-title">
+                              Available launchers
+                              {/*<div className="badge badge-secondary"></div>*/}
+                          </h2>
+                          <p>Please select an appropriate launcher config</p>
 
-                  )
-                }}
-                options={
-                  Array.isArray(props.context.launchers) ? props.context.launchers.map( launcher => ({value: launcher, label: launcher})) : []}  />
+                          <RadioButtons
+                              onChange={async (value) => {
+                                debugger
+                                props.setState(
+                                  IDE.Updaters.Core.launcherName(
+                                    replaceWith(
+                                      Option.Default.some(
+                                        Value.Default(value)
+                                      )
+                                    )
+                                  )
+                                )
+                              }}
+                              options={
+                                Array.isArray(props.context.launchers) ? props.context.launchers.map(launcher => ({
+                                  value: launcher,
+                                  label: launcher
+                                })) : []}
 
-              }
-              {props.context.runner.validation.kind == "r" 
-                && props.context.runner.validation.value.kind == "value" 
+                          />
+                        <div className="card-actions justify-end">
+                            <div className="badge badge-outline">Cancel</div>
+                            <div className="badge badge-outline" onClick={async () => {
+                              // const _ = 
+                              //   props.setState(
+                              //     IDE.Updaters.Core.runner(
+                              //       SpecRunner.Operations.updateStep(
+                              //         SpecRunnerIndicator.Default.validating())));
+                            debugger                            
+                            const res = await IDEApi.validateSpec({value: props.context.editor.input.value});
+                              const seed = await IDEApi.seed(Value.Default(props.context.editor.input.value));
+                              
+                              props.setState(
+                              IDE.Updaters.Core.loading(
+                              replaceWith(true)
+                              ).then(
+                              IDE.Updaters.Core.entityBody(
+                              replaceWith({ value: seed.payload}))
+                              .then(
+                              IDE.Updaters.Core.runner(
+                              SpecRunner.Operations.runEditor(
+                              props.context.editor.input.value, props.context.entityBody.value, res
+                              )
+                              ).then(
+                              IDE.Updaters.Core.step(
+                              replaceWith(IdeStep.Default.actions())
+                              ).then(
+                              IDE.Updaters.Core.loading(
+                              replaceWith(false)
+                              ))
+                              )
+                              ))
+                              )
+                            }}>Run</div>
+                        </div>
+
+                      </div>
+                  </div>
+        
+              </>}
+
+
+              {props.context.loading && <span className="loading loading-ring loading-xl"></span>}
+              {props.context.runner.validation.kind == "r"
+                && props.context.runner.validation.value.kind == "value"
                 && props.context.entityName.kind == "r"
                 && props.context.launcherName.kind == "r"
-                && <FormDisplayTemplate key={key} 
-                    entityName={props.context.entityName.value.value} 
-                    launcherName={props.context.launcherName.value.value}
-                    step={props.context.runner.indicator} 
+                && <FormDisplayTemplate key={key}
+                                        entityName={props.context.entityName.value.value}
+                                        launcherName={props.context.launcherName.value.value}
+                                        step={props.context.runner.indicator} 
                     example={props.context.entityBody.value}
                     specName={props.context.specName.value}
                     spec={props.context.runner.validation.value.value} />}
-                </>
-        } />
+              </>
+               
+        } /> 
 )};

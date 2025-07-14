@@ -22,9 +22,9 @@ export const Actions: React.FC<{
             <button css={style.iconButton} onClick={onSave}>
                 <SaveIcon size={14}  />
             </button>
-          {onRun && onRunCondition && <button css={style.iconButton} onClick={onRun}>
-                <Play size={14} />
-            </button>}
+          {/*{onRun && onRunCondition && <button css={style.iconButton} onClick={onRun}>*/}
+          {/*      <Play size={14} />*/}
+          {/*  </button>}*/}
 
         </div>
     </div>

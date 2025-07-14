@@ -7,6 +7,7 @@ export * from "./ide/domains/spec-runner/state";
 export * from "./ide/domains/layout/domains/actions/state";
 export * from "./ide/domains/layout/domains/indicators/state";
 export * from "./ide/domains/spec-runner/state";
+export * from "./ide/apis/data-unmock";
 
 export * from "./uncle/state";
 export * from "./uncle/template";

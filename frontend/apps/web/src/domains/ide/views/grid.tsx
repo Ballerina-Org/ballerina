@@ -3,10 +3,11 @@ import "react-grid-layout/css/styles.css";
 import React, {useEffect, useRef} from "react";
 import { style } from "./grid.styled";
 export const Grid: React.FC<{
+    theme: string;
     header: React.ReactNode;
     left: React.ReactNode;
     right: React.ReactNode;
-}> = ({ header, left, right }) => {
+}> = ({ theme, header, left, right }) => {
     const leftRef = useRef<HTMLDivElement>(null);
     const dividerRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +51,7 @@ export const Grid: React.FC<{
     }, []);
 
     return (
-        <div css={style.parent}>
+        <div css={style.parent}  data-theme={theme}>
             <div css={style.header}>{header}</div>
             <div css={style.divider}>
                 <div

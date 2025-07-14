@@ -24,7 +24,7 @@ const post = (body: string) => ({
 
 export const IDEApi = {
     async validateSpec(spec: Value<string>): Promise<SpecValidationResult> {
-
+   
         const response = 
           await fetch(
             `${url}/spec/validate`, 

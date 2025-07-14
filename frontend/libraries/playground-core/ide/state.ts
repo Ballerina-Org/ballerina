@@ -39,7 +39,26 @@ export type IDE = {
     editor: SpecEditor,
     runner: SpecRunner,
     layout: Layout,
+    step: IdeStep,
+    loading: boolean,
 };
+
+export type IdeStep = 
+    | { "kind": "start"}
+    | { "kind": "entity" }
+    | { "kind": "launcher" }
+    | { "kind": "actions" }
+    | { "kind": "deploy" }
+
+export const IdeStep = {
+    Default: {
+        start: (): IdeStep => ({ kind: "start" }),
+        launcher: (): IdeStep => ({ kind: "launcher" }),
+        entity: (): IdeStep => ({ kind: "entity" }),
+        actions: (): IdeStep => ({ kind: "actions" }),
+        deploy: (): IdeStep => ({ kind: "deploy" }),
+    }
+}
 
 const CoreUpdaters = {
     ...simpleUpdater<IDE>()("editor"),
@@ -53,6 +72,8 @@ const CoreUpdaters = {
     ...simpleUpdater<IDE>()("entityNames"),
     ...simpleUpdater<IDE>()("entityName"),
     ...simpleUpdater<IDE>()("launcherName"),
+    ...simpleUpdater<IDE>()("step"),
+    ...simpleUpdater<IDE>()("loading"),
 };
 
 export const IDE = {
@@ -62,13 +83,14 @@ export const IDE = {
         runner: SpecRunner.Default(),
         specNames: [],
         entityNames: [],
-        
+        step: IdeStep.Default.start(),
         specBody: { value: "{}" },
         specName: { value: "New Spec"},
         entityBody: { value: "{}" },
         entityName: Option.Default.none(),
         launchers: [],
         launcherName: Option.Default.none(),
+        loading: false
     }),
     Updaters: {
         Core: CoreUpdaters,

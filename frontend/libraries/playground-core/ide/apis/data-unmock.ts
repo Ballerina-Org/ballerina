@@ -1,4 +1,4 @@
-import { faker } from "@faker-js/faker";
+﻿import { faker } from "@faker-js/faker";
 import {
   PromiseRepo,
   EntityApis,
@@ -11,409 +11,90 @@ import {
   BasicFun,
   PredicateValue,
   ValueStreamPosition,
+  AbstractTableRendererState,
   DispatchTableApiSources,
   DispatchOneSource,
-  DispatchLookupSources,
-  AbstractTableRendererState
+  DispatchLookupSources, SearchableInfiniteStreamState, OrderedMapRepo,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
-import { City } from "../../address/state";
-import { AddressApi } from "../../address/apis/mocks";
+
+
 import { v4 } from "uuid";
-import { PersonApi } from "../../../apis/mocks";
 
-const permissions = ["Create", "Read", "Update", "Delete"];
-const colors = ["Red", "Green", "Blue"];
-const genders = ["M", "F", "X"];
-const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
+import {IdeEnumsApi} from "./enums";
+import {IdeSearchesApi} from "./searches";
+import {IdeTablesApi} from "./tables";
+import {IdeOnesApi} from "./ones";
 
-const getActiveUsers: DispatchTableApiSource = {
+const getApiData = (apiName: string) : DispatchTableApiSource => ({
+    get: (id: Guid) => {
+      const api = () => IdeTablesApi.get("persona", apiName)
+      return api().then(res => {
+  
+        const data = res.payload;
+        return PromiseRepo.Default.mock(() => data);
+      })
+    },
+    getMany:
+      (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+        (streamParams: Map<string, string>) =>
+          ([streamPosition]: [ValueStreamPosition]) => {
+            const api = () => IdeTablesApi.getMany("persona", streamPosition.chunkIndex, streamPosition.chunkSize, apiName)
+            return api().then(res => {
+  
+              const data = res.payload;
+              const byId = data.reduce((acc, item) => {
+                acc[item.fields.Id] = item.fields
+                return acc
+              }, {} as Record<string, any>)
+              return PromiseRepo.Default.mock(() =>
+                ({
+                  Values: byId,
+                  HasMore: true,
+                  From: 1,
+                  To: 2,
+                }))
+                .then((res) =>
+                  ({
+                    from: res.From,
+                    to: res.To,
+                    hasMoreValues: res.HasMore,
+                    data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
+                      res.Values,
+                      fromApiRaw,
+                    ),
+                  })
+                )
+            })
+    }});
+
+const getOneByApiName = (apiName:string): DispatchOneSource => ({
   get: (id: Guid) => {
-    return PromiseRepo.Default.mock(() => ({
-      Id: id,
-      Name: "Jane",
-      Surname: "Doe",
-      Birthday: "1990-01-01",
-      Email: "jane.doe@example.com",
-      SubscribeToNewsletter: true,
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
-      },
-      City: {
-        IsSome: true,
-        Value: {
-          ...City.Default(v4(), faker.location.city()),
-        },
-      },
-      StreetNumberAndCity: {
-        Item1: faker.location.street(),
-        Item2: 100,
-        Item3: {
-          IsSome: true,
-          Value: {
-            ...City.Default(v4(), faker.location.city()),
-          },
-        },
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
-    }));
-  },
-  getMany:
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (streamParams: Map<string, string>) =>
-        ([streamPosition]: [ValueStreamPosition]) => {
-          return PromiseRepo.Default.mock(() => ({
-            Values: {
-              [v4()]: {
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-              [v4()]: {
-                Id: v4(),
-                Name: "John",
-                Surname: "Doe",
-                Birthday: "1990-01-01",
-                Email: "john.doe@example.com",
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: {},
-                  IsSome: false,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-            },
-            HasMore: true,
-            From: 1,
-            To: 2,
-          })).then((res) => ({
-            from: res.From,
-            to: res.To,
-            hasMoreValues: res.HasMore,
-            data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-              res.Values,
-              fromApiRaw,
-            ),
-          }));
-        },
-};
-
-const getActiveFriends: DispatchTableApiSource = {
-  get: (id: Guid) => {
-    return PromiseRepo.Default.mock(() => ({
-      Id: v4(),
-      Name: faker.person.firstName(),
-      Surname: faker.person.lastName(),
-      Birthday: faker.date.birthdate().toISOString(),
-      Email: faker.internet.email(),
-      SubscribeToNewsletter: faker.datatype.boolean(),
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
-    }));
-  },
-  getMany:
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (streamParams: Map<string, string>) =>
-        ([streamPosition]: [ValueStreamPosition]) => {
-          return PromiseRepo.Default.mock(() => ({
-            Values: {
-              [v4()]: {
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: faker.datatype.boolean(),
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-              [v4()]: {
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: faker.datatype.boolean(),
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-            },
-            HasMore: true,
-            From: 1,
-            To: 2,
-          })).then((res) => ({
-            from: res.From,
-            to: res.To,
-            hasMoreValues: res.HasMore,
-            data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-              res.Values,
-              fromApiRaw,
-            ),
-          }));
-        },
-};
-
-const getChildren: DispatchTableApiSource = {
-  get: (id: Guid) => {
-    return PromiseRepo.Default.mock(() => ({
-      Id: id,
-      Name: "Jane",
-      Surname: "Doe",
-      Birthday: "1990-01-01",
-      Email: "jane.doe@example.com",
-      SubscribeToNewsletter: true,
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
-      },
-      City: {
-        IsSome: true,
-        Value: {
-          ...City.Default(v4(), faker.location.city()),
-        },
-      },
-      StreetNumberAndCity: {
-        Item1: faker.location.street(),
-        Item2: 100,
-        Item3: {
-          IsSome: true,
-          Value: {
-            ...City.Default(v4(), faker.location.city()),
-          },
-        },
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
-    }));
-  },
-  getMany:
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-      (streamParams: Map<string, string>) =>
-        ([streamPosition]: [ValueStreamPosition]) => {
-          return PromiseRepo.Default.mock(() => ({
-            Values: {
-              [v4()]: {
-                Id: v4(),
-                Name: faker.person.firstName(),
-                Surname: faker.person.lastName(),
-                Birthday: faker.date.birthdate().toISOString(),
-                Email: faker.internet.email(),
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                  IsSome: true,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-              [v4()]: {
-                Id: v4(),
-                Name: "John",
-                Surname: "Doe",
-                Birthday: "1990-01-01",
-                Email: "john.doe@example.com",
-                SubscribeToNewsletter: true,
-                FavoriteColor: {
-                  Value: {},
-                  IsSome: false,
-                },
-                City: {
-                  IsSome: true,
-                  Value: {
-                    ...City.Default(v4(), faker.location.city()),
-                  },
-                },
-                StreetNumberAndCity: {
-                  Item1: faker.location.street(),
-                  Item2: 100,
-                  Item3: {
-                    IsSome: true,
-                    Value: {
-                      ...City.Default(v4(), faker.location.city()),
-                    },
-                  },
-                },
-                Friends: {
-                  From: 0,
-                  To: 0,
-                  HasMore: true,
-                  Values: {},
-                },
-              },
-            },
-            HasMore: true,
-            From: 1,
-            To: 2,
-          })).then((res) => ({
-            from: res.From,
-            to: res.To,
-            hasMoreValues: res.HasMore,
-            data: AbstractTableRendererState.Operations.tableValuesToValueRecord(
-              res.Values,
-              fromApiRaw,
-            ),
-          }));
-        },
-};
-
-const getFriends: DispatchOneSource = {
-  get: (id: Guid) => {
-    return PromiseRepo.Default.mock(() => ({
-      Id: v4(),
-      Name: "Tim",
-      Surname: "Pool",
-      Birthday: "1990-01-01",
-      Email: "tim.pool@example.com",
-      SubscribeToNewsletter: true,
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
-    }));
-  },
+    const api = () => IdeOnesApi.get("persona", apiName)
+    return api().then(res =>{
+      const data = res.payload;
+      return PromiseRepo.Default.mock(() => (data));
+    })},
   getManyUnlinked:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
       (id: Guid) =>
         (streamParams: Map<string, string>) =>
           ([streamPosition]: [ValueStreamPosition]) => {
-            return PromiseRepo.Default.mock(() => ({
-              Values: Range(1, 5)
-                .map((_) => ({
-                  Id: v4(),
-                  Name: faker.person.firstName(),
-                  Surname: faker.person.lastName(),
-                  Birthday: faker.date.birthdate().toISOString(),
-                  Email: faker.internet.email(),
-                  SubscribeToNewsletter: faker.datatype.boolean(),
-                  FavoriteColor: {
-                    Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                    IsSome: true,
-                  },
-                  Friends: {
-                    From: 0,
-                    To: 0,
-                    HasMore: true,
-                    Values: {},
-                  },
-                }))
-                .reduce((acc, curr) => {
-                  acc[curr.Id] = curr;
-                  return acc;
-                }, {} as any),
-              HasMore: false,
-              From: 1,
-              To: 5,
-            })).then((res) => ({
+            debugger
+            const api = () => IdeOnesApi.getMany("persona", apiName)
+            return api().then(res =>{
+
+              const data = res.payload;
+              const byId = data.reduce((acc, item) => {
+                acc[item.fields.Id] = item.fields
+                return acc
+              }, {} as Record<string, any>)
+              return PromiseRepo.Default.mock(() => ({
+                Values: byId,
+                HasMore: false,
+                From: 1,
+                To: 5,
+              }))}).then((res) => ({
               hasMoreValues: res.HasMore,
               to: res.To,
               from: res.From,
@@ -423,100 +104,51 @@ const getFriends: DispatchOneSource = {
               ),
             }));
           },
-};
+});
 
-const lookupSources: DispatchLookupSources = (typeName: string) =>
-  typeName == "User"
+const lookupSources: DispatchLookupSources = (typeName: string) => {
+  debugger
+  return typeName == "User"
     ? ValueOrErrors.Default.return({
-      one: (apiName: string) =>
-        apiName == "BestFriendApi"
-          ? ValueOrErrors.Default.return(getFriends)
-          : ValueOrErrors.Default.throwOne(
-            `can't find api ${apiName} when getting lookup api sources`,
-          ),
+      one: (apiName: string) => ValueOrErrors.Default.return(getOneByApiName(apiName))
     })
     : ValueOrErrors.Default.throwOne(
       `can't find type ${typeName} when getting lookup api source`,
     );
+}
 
-const tableApiSources: DispatchTableApiSources = (streamName: string) =>
-  streamName == "ActiveUsersApi"
-    ? ValueOrErrors.Default.return(getActiveUsers)
-    : streamName == "ActiveFriendsApi"
-      ? ValueOrErrors.Default.return(getActiveFriends)
-      : streamName == "ChildrenApi"
-        ? ValueOrErrors.Default.return(getChildren)
-        : ValueOrErrors.Default.throwOne(`Cannot find table API ${streamName}`);
+const tableApiSources: DispatchTableApiSources = 
+  (streamName: string) => ValueOrErrors.Default.return(getApiData(streamName));
 
-const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
-  streamName == "departments"
-    ? ValueOrErrors.Default.return(PersonApi.getDepartments())
-    : streamName == "cities"
-      ? ValueOrErrors.Default.return(AddressApi.getCities())
-      : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
+const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
 
-const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
-  enumName == "colors"
-    ? ValueOrErrors.Default.return(() =>
-      PromiseRepo.Default.mock(
-        () => colors.map((_) => ({ Value: _ })),
-        undefined,
-        1,
-        0,
-      ),
-    )
-    : enumName == "permissions"
-      ? ValueOrErrors.Default.return(() =>
-        PromiseRepo.Default.mock(
-          () => permissions.map((_) => ({ Value: _ })),
-          undefined,
-          1,
-          0,
-        ),
-      )
-      : enumName == "genders"
-        ? ValueOrErrors.Default.return(() =>
-          PromiseRepo.Default.mock(
-            () => genders.map((_) => ({ Value: _ })),
-            undefined,
-            1,
-            0,
-          ),
-        )
-        : enumName == "interests"
-          ? ValueOrErrors.Default.return(() =>
-            PromiseRepo.Default.mock(
-              () => interests.map((_) => ({ Value: _ })),
-              undefined,
-              1,
-              0,
-            ),
-          )
-          : enumName == "addressesFields"
-            ? ValueOrErrors.Default.return(() =>
-              PromiseRepo.Default.mock(
-                () =>
-                  [
-                    "AddressesByCity",
-                    "Departments",
-                    "SchoolAddress",
-                    "MainAddress",
-                    "AddressesAndAddressesWithLabel",
-                    "AddressesWithColorLabel",
-                    "AddressesBy",
-                    "Permissions",
-                    "CityByDepartment",
-                    "Holidays",
-                    "FriendsAddresses",
-                  ].map((_) => ({ Value: _ })),
-                undefined,
-                1,
-                0,
-              ),
-            )
-            : ValueOrErrors.Default.throwOne(
-              `Cannot find enum API ${enumName}`,
-            );
+  const api = (page: number, size: number) => IdeSearchesApi.get("persona", streamName, page, size).then(x => x.payload);
+  const f = (): SearchableInfiniteStreamState["customFormState"]["getChunk"] =>
+    (_searchText) =>
+      (_streamPosition) =>{
+        debugger
+        return api(_streamPosition[0].chunkIndex,_streamPosition[0].chunkSize).then(x =>{
+
+
+          return (
+            {
+              data: OrderedMapRepo.Default.fromIdentifiables(x.elements.map( e => e.fields)),
+              hasMoreValues: Math.random() > 0.5
+            }
+          )})}
+
+  return ValueOrErrors.Default.return(f());
+}
+
+const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
+
+  const api = IdeEnumsApi.get("persona", enumName).then(x => x.payload);
+  return ValueOrErrors.Default.return(() =>
+    api.then(x => x.map((_) => ({Value: _})),
+    ),
+  )
+};
+
 const entityApis: EntityApis = {
   create: (apiName: string) =>
     apiName == "person"
@@ -533,6 +165,7 @@ const entityApis: EntityApis = {
         return Promise.reject();
       },
   get: (apiName: string) => {
+    debugger
     switch (apiName) {
       case "person":
         return (id: Guid) => {
@@ -1070,10 +703,10 @@ const entityApis: EntityApis = {
       },
 };
 
-export const DispatchPersonFromConfigApis = {
+export const DispatchFromConfigApisUnmocked = {
   streamApis,
   enumApis,
-  entityApis,
+ // entityApis,
   tableApiSources,
   lookupSources,
 };
