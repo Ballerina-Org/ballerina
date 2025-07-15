@@ -36,16 +36,20 @@ export const ReadOnlyDispatcher = {
       )
         .Then((childTemplate) =>
           dispatcherContext
-            .getConcreteRenderer("readOnly", renderer.concreteRenderer)
-            .Then((concreteRenderer) =>
-              ValueOrErrors.Default.return(
-                ReadOnlyAbstractRenderer(
-                  () => CommonAbstractRendererState.Default(),
-                  childTemplate,
-                  dispatcherContext.IdProvider,
-                  dispatcherContext.ErrorRenderer,
-                ).withView(concreteRenderer),
-              ),
+            .defaultState(renderer.type.arg, renderer.childRenderer.renderer)
+            .Then((defaultChildState) =>
+              dispatcherContext
+                .getConcreteRenderer("readOnly", renderer.concreteRenderer)
+                .Then((concreteRenderer) =>
+                  ValueOrErrors.Default.return(
+                    ReadOnlyAbstractRenderer(
+                      () => defaultChildState,
+                      childTemplate,
+                      dispatcherContext.IdProvider,
+                      dispatcherContext.ErrorRenderer,
+                    ).withView(concreteRenderer),
+                  ),
+                ),
             ),
         )
         .MapErrors((errors) =>
