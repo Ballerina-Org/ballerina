@@ -129,3 +129,14 @@ func (err *InvalidDiscriminatorError) Error() string {
 func NewInvalidDiscriminatorError(discriminatorValue string, typeName string) error {
 	return &InvalidDiscriminatorError{DiscriminatorValue: discriminatorValue, TypeName: typeName}
 }
+
+type ReadOnlyDeltaCalledError struct {
+}
+
+func (err *ReadOnlyDeltaCalledError) Error() string {
+	return "read-only, delta calls are not allowed"
+}
+
+func NewReadOnlyDeltaCalledError() error {
+	return &ReadOnlyDeltaCalledError{}
+}
