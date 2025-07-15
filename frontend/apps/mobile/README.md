@@ -44,7 +44,6 @@ If you want to run a local build, we recommend using Expo EAS to run a local bui
 - to build a local build
   - `eas build -p ios --profile preview --local`
 - run it on a simulator
-
   - recommend: download expo orbit
 
 - Common isuses can be mostly resolved by following this guide:
