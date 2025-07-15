@@ -595,6 +595,17 @@ const entityApis: EntityApis = {
             SuperSecretNumber: {
               ReadOnly: 123123,
             },
+            MoreSecretNumbers: [
+              {
+                ReadOnly: 15651,
+              },
+              {
+                ReadOnly: 15651,
+              },
+              {
+                ReadOnly: 15651,
+              },
+            ],
             SubscribeToNewsletter: Math.random() > 0.5,
             FavoriteColor: {
               Value: { Value: colors[Math.round(Math.random() * 10) % 3] },

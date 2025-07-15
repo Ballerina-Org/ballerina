@@ -372,6 +372,15 @@
           "fun": "ReadOnly",
           "args": ["number"]
         },
+        "MoreSecretNumbers": {
+          "fun": "List",
+          "args": [
+            {
+              "fun": "ReadOnly",
+              "args": ["number"]
+            }
+          ]
+        },
         "SubscribeToNewsletter": "boolean",
         "FavoriteColor": {
           "fun": "SingleSelection",
@@ -1202,6 +1211,17 @@
             "renderer": "defaultNumber"
           }
         },
+        "MoreSecretNumbers": {
+          "label": "More Secret Numbers",
+          "renderer": "defaultList",
+          "elementRenderer": {
+            "renderer": "ReadOnly",
+            "childRenderer": {
+              "label": "Super Secret Number",
+              "renderer": "defaultNumber"
+            }
+          }
+        },
         "FullName": {
           "label": "full Name",
           "renderer": "defaultTuple2",
@@ -1797,6 +1817,7 @@
                   "FullName",
                   "Birthday",
                   "SuperSecretNumber",
+                  "MoreSecretNumbers",
                   "Gender",
                   "Emails",
                   "Dependants",
