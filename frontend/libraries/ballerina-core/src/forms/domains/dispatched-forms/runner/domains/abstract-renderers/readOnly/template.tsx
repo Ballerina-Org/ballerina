@@ -60,7 +60,7 @@ export const ReadOnlyAbstractRenderer = <
         ...(_.childFormState || GetDefaultChildState()),
         bindings: _.bindings,
         extraContext: _.extraContext,
-        type: readOnlyType.args[0],
+        type: readOnlyType.arg,
         customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
         domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,

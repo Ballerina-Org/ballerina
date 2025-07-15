@@ -349,15 +349,15 @@ export const TableType = {
 
 export type ReadOnlyType<T> = {
   kind: "readOnly";
-  args: Array<DispatchParsedType<T>>;
+  arg: DispatchParsedType<T>;
   asString: () => StringSerializedType;
 };
 
 export const ReadOnlyType = {
   SerializeToString: (
-    serializedArgs: Array<StringSerializedType>,
+    serializedArg: StringSerializedType,
   ): StringSerializedType => {
-    return `[readOnly; args: [${serializedArgs.join(", ")}]]`;
+    return `[readOnly; arg: ${serializedArg}]`;
   },
 };
 
@@ -457,11 +457,10 @@ export const DispatchParsedType = {
       asString: () =>
         UnionType.SerializeToString(args.map((v) => v.asString())),
     }),
-    readOnly: <T>(args: Array<DispatchParsedType<T>>): ReadOnlyType<T> => ({
+    readOnly: <T>(arg: DispatchParsedType<T>): ReadOnlyType<T> => ({
       kind: "readOnly",
-      args,
-      asString: () =>
-        ReadOnlyType.SerializeToString(args.map((v) => v.asString())),
+      arg,
+      asString: () => ReadOnlyType.SerializeToString(arg.asString()),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
@@ -1112,9 +1111,9 @@ export const DispatchParsedType = {
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArg) =>
+          ).Then(([parsedArg, _]) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.readOnly([parsedArg[0]]),
+              DispatchParsedType.Default.readOnly(parsedArg),
               alreadyParsedTypes,
             ]),
           );

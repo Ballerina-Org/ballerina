@@ -84,7 +84,7 @@ export const ReadOnlyRenderer = {
       )
         .Then((serializedRenderer) =>
           NestedRenderer.Operations.DeserializeAs(
-            type.args[0],
+            type.arg,
             serializedRenderer.childRenderer,
             concreteRenderers,
             "readOnly child",

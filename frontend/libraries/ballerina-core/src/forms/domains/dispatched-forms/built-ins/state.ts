@@ -911,7 +911,7 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
-            )(t.args[0], renderer.childRenderer.renderer).Then((childState) =>
+            )(t.arg, renderer.childRenderer.renderer).Then((childState) =>
               ValueOrErrors.Default.return(
                 ReadOnlyAbstractRendererState.Default.childFormState(
                   childState,
@@ -1199,7 +1199,7 @@ export const dispatchDefaultValue =
               injectedPrimitives,
               types,
               forms,
-            )(t.args[0], renderer.childRenderer.renderer).Then((childValue) =>
+            )(t.arg, renderer.childRenderer.renderer).Then((childValue) =>
               ValueOrErrors.Default.return(
                 PredicateValue.Default.readonly(childValue),
               ),
@@ -1538,7 +1538,7 @@ export const dispatchFromAPIRawValue =
       if (t.kind == "readOnly") {
         const readOnlyResult = converters["ReadOnly"].fromAPIRawValue(raw);
         return dispatchFromAPIRawValue(
-          t.args[0],
+          t.arg,
           types,
           converters,
           injectedPrimitives,
@@ -1976,7 +1976,7 @@ export const dispatchToAPIRawValue =
 
       if (t.kind == "readOnly") {
         return dispatchToAPIRawValue(
-          t.args[0],
+          t.arg,
           types,
           converters,
           injectedPrimitives,
