@@ -1542,7 +1542,7 @@ export const dispatchFromAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(readOnlyResult);
+        )(readOnlyResult.ReadOnly);
       }
 
       // TODO -- this can be more functional
