@@ -73,6 +73,9 @@ import {
   SecretAbstractRendererView,
 } from "../runner/domains/abstract-renderers/secret/state";
 import {
+  ReadOnlyAbstractRendererState,
+} from "../runner/domains/abstract-renderers/readOnly/state";
+import {
   MapAbstractRendererState,
   MapAbstractRendererView,
 } from "../runner/domains/abstract-renderers/map/state";
@@ -910,7 +913,11 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
-            )(t.args[0], renderer.childRenderer.renderer);
+            )(t.args[0], renderer.childRenderer.renderer).Then((childState) =>
+              ValueOrErrors.Default.return(
+                ReadOnlyAbstractRendererState.Default.childFormState(childState),
+              ),
+            );
 
       if (t.kind == "record")
         return renderer.kind == "recordRenderer"
@@ -1192,7 +1199,11 @@ export const dispatchDefaultValue =
               injectedPrimitives,
               types,
               forms,
-            )(t.args[0], renderer.childRenderer.renderer)
+            )(t.args[0], renderer.childRenderer.renderer).Then((childValue) =>
+              ValueOrErrors.Default.return(
+                PredicateValue.Default.readonly(childValue),
+              ),
+            )
           : ValueOrErrors.Default.throwOne(
               `received non readOnly renderer kind "${renderer.kind}" when resolving defaultValue for readOnly`,
             );
