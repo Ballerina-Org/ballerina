@@ -72,9 +72,7 @@ import {
   SecretAbstractRendererState,
   SecretAbstractRendererView,
 } from "../runner/domains/abstract-renderers/secret/state";
-import {
-  ReadOnlyAbstractRendererState,
-} from "../runner/domains/abstract-renderers/readOnly/state";
+import { ReadOnlyAbstractRendererState } from "../runner/domains/abstract-renderers/readOnly/state";
 import {
   MapAbstractRendererState,
   MapAbstractRendererView,
@@ -915,7 +913,9 @@ export const dispatchDefaultState =
               tableApiSources,
             )(t.args[0], renderer.childRenderer.renderer).Then((childState) =>
               ValueOrErrors.Default.return(
-                ReadOnlyAbstractRendererState.Default.childFormState(childState),
+                ReadOnlyAbstractRendererState.Default.childFormState(
+                  childState,
+                ),
               ),
             );
 
