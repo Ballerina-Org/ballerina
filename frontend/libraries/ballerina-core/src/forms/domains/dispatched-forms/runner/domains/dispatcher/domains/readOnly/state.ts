@@ -42,7 +42,6 @@ export const ReadOnlyDispatcher = {
                 ReadOnlyAbstractRenderer(
                   () => CommonAbstractRendererState.Default(),
                   childTemplate,
-                  renderer.type,
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 ).withView(concreteRenderer),

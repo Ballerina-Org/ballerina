@@ -6,6 +6,7 @@ import {
   DispatchParsedType,
   PredicateValue,
   ReadOnlyType,
+  ValueReadOnly,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
@@ -17,7 +18,7 @@ export type ReadOnlyAbstractRendererReadonlyContext<
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   ReadOnlyType<any>,
-  PredicateValue,
+  ValueReadOnly,
   CustomPresentationContext,
   ExtraContext
 >;
@@ -58,9 +59,7 @@ export type ReadOnlyAbstractRendererView<
     ExtraContext
   > &
     ReadOnlyAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext & {
-      readOnlyType: ReadOnlyType<any>;
-    },
+    CommonAbstractRendererViewOnlyReadonlyContext,
   ReadOnlyAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected<Flags>,
   {

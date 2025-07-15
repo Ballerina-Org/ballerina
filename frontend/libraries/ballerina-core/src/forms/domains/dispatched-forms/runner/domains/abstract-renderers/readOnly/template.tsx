@@ -41,7 +41,6 @@ export const ReadOnlyAbstractRenderer = <
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
-  readOnlyType: ReadOnlyType<any>,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   _ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -60,7 +59,7 @@ export const ReadOnlyAbstractRenderer = <
         ...(_.childFormState || GetDefaultChildState()),
         bindings: _.bindings,
         extraContext: _.extraContext,
-        type: readOnlyType.arg,
+        type: _.type.arg,
         customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
         domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
@@ -108,7 +107,6 @@ export const ReadOnlyAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
-              readOnlyType: readOnlyType,
             }}
             embeddedTemplate={configuredChildTemplate}
           />
