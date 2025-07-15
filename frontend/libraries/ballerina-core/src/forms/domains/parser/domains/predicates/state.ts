@@ -334,7 +334,7 @@ export type ValueTable = {
 
 export type ValueReadOnly = {
   kind: "readOnly";
-  value: PredicateValue;
+  ReadOnly: PredicateValue;
 };
 
 export const ValueTable = {
@@ -457,7 +457,7 @@ export const PredicateValue = {
     }),
     readonly: (value: PredicateValue): ValueReadOnly => ({
       kind: "readOnly",
-      value,
+      ReadOnly: value,
     }),
   },
   Operations: {

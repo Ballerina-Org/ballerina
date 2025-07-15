@@ -1975,15 +1975,20 @@ export const dispatchToAPIRawValue =
       }
 
       if (t.kind == "readOnly") {
+        if (!PredicateValue.Operations.IsReadOnly(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `ReadOnly expected but got ${JSON.stringify(raw)}`,
+          );
+        }
         return dispatchToAPIRawValue(
           t.arg,
           types,
           converters,
           injectedPrimitives,
-        )(raw, formState).Then((childValue) =>
+        )(raw.ReadOnly, formState).Then((childValue) =>
           ValueOrErrors.Default.return(
             converters["ReadOnly"].toAPIRawValue([
-              childValue,
+              { ReadOnly: childValue },
               formState?.commonFormState?.modifiedByUser ?? false,
             ]),
           ),
