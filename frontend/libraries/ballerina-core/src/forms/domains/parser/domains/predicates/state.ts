@@ -332,6 +332,11 @@ export type ValueTable = {
   hasMoreValues: boolean;
 };
 
+export type ValueReadOnly = {
+  kind: "readOnly";
+  value: PredicateValue;
+};
+
 export const ValueTable = {
   Default: {
     empty: (): ValueTable => ({
@@ -368,7 +373,8 @@ export type PredicateValue =
   | ValueVarLookup
   | ValueSum
   | ValueCustom
-  | ValueTable;
+  | ValueTable
+  | ValueReadOnly;
 
 export type ExprLambda = { kind: "lambda"; parameter: string; body: Expr };
 export type ExprMatchCase = {
@@ -448,6 +454,10 @@ export const PredicateValue = {
       to,
       data,
       hasMoreValues,
+    }),
+    readonly: (value: PredicateValue): ValueReadOnly => ({
+      kind: "readOnly",
+      value,
     }),
   },
   Operations: {
@@ -547,6 +557,13 @@ export const PredicateValue = {
         typeof value == "object" &&
         !PredicateValue.Operations.IsDate(value) &&
         value.kind == "custom"
+      );
+    },
+    IsReadOnly: (value: PredicateValue | Expr): value is ValueReadOnly => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "readOnly"
       );
     },
     ParseAsDate: (json: any): ValueOrErrors<PredicateValue, string> => {
