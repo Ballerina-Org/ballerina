@@ -42,4 +42,4 @@ def sum_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_Su
             case _:
                 return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
 
-    return lambda value: from_json(value).map_left(ParsingError.append("Parsing sum:"))
+    return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing sum:"))

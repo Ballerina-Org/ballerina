@@ -26,7 +26,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
-    return lambda value: from_json(value).map_left(ParsingError.append("Parsing tuple:"))
+    return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
 
 def tuple_2_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B]) -> ToJson[tuple[_A, _B]]:

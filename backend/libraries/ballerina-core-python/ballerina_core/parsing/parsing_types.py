@@ -23,8 +23,11 @@ class ParsingError:
         return ParsingError([context])
 
     @staticmethod
-    def append(context: str) -> Callable[[ParsingError], ParsingError]:
-        return lambda error: ParsingError([*error._context, context])  # noqa: SLF001
+    def with_context(context: str) -> Callable[[ParsingError], ParsingError]:
+        def add_context(error: ParsingError, /) -> ParsingError:
+            return ParsingError([context, *error._context])
+
+        return add_context
 
 
 _ToJsonType = TypeVar("_ToJsonType")

@@ -43,4 +43,4 @@ def option_from_json(some_from_json: FromJson[_Option], none_from_json: FromJson
             case _:
                 return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
 
-    return lambda value: from_json(value).map_left(ParsingError.append("Parsing option:"))
+    return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing option:"))
