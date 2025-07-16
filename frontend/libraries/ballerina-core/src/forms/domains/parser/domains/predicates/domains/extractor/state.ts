@@ -69,6 +69,7 @@ export const PredicateValueExtractor = {
                   List(
                     traverseRecordFields
                       .entrySeq()
+                      .filter(([k, _]) => v.fields.has(k))
                       .map(([k, traverseField]) =>
                         traverseField(v.fields.get(k)!),
                       ),
