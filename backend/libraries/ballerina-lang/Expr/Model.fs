@@ -157,6 +157,7 @@ module Model =
     | TupleType of List<ExprType>
     | OptionType of ExprType
     | OneType of ExprType
+    | ReadOnlyType of ExprType
     | ManyType of ExprType
     | ListType of ExprType
     | TableType of ExprType
@@ -180,6 +181,7 @@ module Model =
       | ExprType.SetType t -> $"Set<{!t}>"
       | ExprType.OptionType t -> $"Option<{!t}>"
       | ExprType.OneType t -> $"One<{!t}>"
+      | ExprType.ReadOnlyType t -> $"ReadOnly<{!t}>"
       | ExprType.ManyType t -> $"Many<{!t}>"
       | ExprType.MapType(k, v) -> $"Map<{!k},{!v}>"
       | ExprType.SumType(l, r) -> $"Sum<{!l},{!r}>"

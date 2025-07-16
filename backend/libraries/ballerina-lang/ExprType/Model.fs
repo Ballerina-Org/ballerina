@@ -56,6 +56,7 @@ module Model =
       | ExprType.SetType t
       | ExprType.OptionType t
       | ExprType.OneType t
+      | ExprType.ReadOnlyType t
       | ExprType.ManyType t -> !t
       | ExprType.LookupType t -> Set.singleton t
       | ExprType.MapType(k, v) -> !k + !v
@@ -88,6 +89,7 @@ module Model =
       | ExprType.SetType t -> ExprType.SetType(!t)
       | ExprType.OptionType t -> ExprType.OptionType(!t)
       | ExprType.OneType t -> ExprType.OneType(!t)
+      | ExprType.ReadOnlyType t -> ExprType.ReadOnlyType(!t)
       | ExprType.ManyType t -> ExprType.ManyType(!t)
       | ExprType.MapType(k, v) -> ExprType.MapType(!k, !v)
       | ExprType.SumType(l, r) -> ExprType.SumType(!l, !r)
@@ -118,6 +120,8 @@ module Model =
       | ExprType.OptionType t ->
         JsonValue.Record [| "fun", JsonValue.String "Option"; "args", JsonValue.Array [| !t |] |]
       | ExprType.OneType t -> JsonValue.Record [| "fun", JsonValue.String "One"; "args", JsonValue.Array [| !t |] |]
+      | ExprType.ReadOnlyType t ->
+        JsonValue.Record [| "fun", JsonValue.String "ReadOnly"; "args", JsonValue.Array [| !t |] |]
       | ExprType.ManyType t -> JsonValue.Record [| "fun", JsonValue.String "Many"; "args", JsonValue.Array [| !t |] |]
       | ExprType.SetType t ->
         JsonValue.Record [| "fun", JsonValue.String "MultiSelection"; "args", JsonValue.Array [| !t |] |]

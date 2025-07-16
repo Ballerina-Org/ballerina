@@ -19,6 +19,7 @@ module Model =
       Table: CodegenConfigTableDef
       One: CodegenConfigOneDef
       Many: CodegenConfigManyDef
+      ReadOnly: CodegenConfigReadOnlyDef
       Map: CodegenConfigMapDef
       Sum: CodegenConfigSumDef
       Tuple: List<TupleCodegenConfigTypeDef>
@@ -99,6 +100,13 @@ module Model =
       SupportedRenderers: Set<string>
       DefaultConstructor: string
       MappingFunction: string }
+
+  and CodegenConfigReadOnlyDef =
+    { GeneratedTypeName: string
+      RequiredImport: Option<string>
+      DeltaTypeName: string
+      SupportedRenderers: Set<string>
+      DefaultConstructor: string }
 
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
@@ -411,6 +419,10 @@ module Model =
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
          Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          ManyApiId: ExprTypeId * string |}
+
+    | ReadOnlyRenderer of
+      {| ReadOnly: Renderer<'ExprExtension, 'ValueExtension>
+         Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer

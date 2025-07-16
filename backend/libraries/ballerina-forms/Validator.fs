@@ -136,6 +136,11 @@ module Validator =
           | _ -> return ()
 
           return fr.Type
+        | Renderer.ReadOnlyRenderer(l) ->
+          do! !l.ReadOnly |> Sum.map ignore
+          do! !l.Value.Renderer |> Sum.map ignore
+
+          return fr.Type
         | Renderer.OptionRenderer(l) ->
           do! !l.Option |> Sum.map ignore
           do! !l.None.Renderer |> Sum.map ignore
@@ -276,6 +281,10 @@ module Validator =
           do! !e.Option
           do! !!e.None
           do! !!e.Some
+
+        | Renderer.ReadOnlyRenderer e ->
+          do! !e.ReadOnly
+          do! !!e.Value
 
         | Renderer.ListRenderer e ->
           do! !e.List

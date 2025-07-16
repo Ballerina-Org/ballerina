@@ -193,6 +193,16 @@ let ``Should parse table`` () =
   assertSuccess result (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
+let ``Should parse readonly`` () =
+  let json =
+    JsonValue.Record
+      [| "fun", JsonValue.String "ReadOnly"
+         "args", JsonValue.Array [| JsonValue.String "string" |] |]
+
+  let result = parseExprType json
+  assertSuccess result (ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType))
+
+[<Test>]
 let ``Should parse record`` () =
   let json =
     JsonValue.Record [| "fields", JsonValue.Record [| "a", JsonValue.String "string"; "b", JsonValue.String "unit" |] |]
@@ -330,9 +340,69 @@ module ExprTypeToAndFromJsonTests =
     assertSuccess result expr
 
   [<Test>]
+  let ``Should convert readonly to and from Json`` () =
+    let expr = ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
+    let result = toAndFromJson expr
+    assertSuccess result expr
+
+  [<Test>]
   let ``Should convert record to and from Json`` () =
     let expr =
       ExprType.RecordType(Map.ofList [ "a", ExprType.PrimitiveType PrimitiveType.StringType; "b", ExprType.UnitType ])
 
     let result = toAndFromJson expr
     assertSuccess result expr
+
+module ReadOnlyTypeStringRepresentationTests =
+  [<Test>]
+  let ``Should generate correct string representation for ReadOnlyType`` () =
+    let expr = ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
+    let result = expr.ToString()
+    Assert.That(result, Is.EqualTo "ReadOnly<String>")
+
+  [<Test>]
+  let ``Should generate correct string representation for nested ReadOnlyType`` () =
+    let expr =
+      ExprType.ReadOnlyType(ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.IntType))
+
+    let result = expr.ToString()
+    Assert.That(result, Is.EqualTo "ReadOnly<Option<Int>>")
+
+  [<Test>]
+  let ``Should generate correct string representation for ReadOnlyType with complex inner type`` () =
+    let expr =
+      ExprType.ReadOnlyType(ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType))
+
+    let result = expr.ToString()
+    Assert.That(result, Is.EqualTo "ReadOnly<List<String>>")
+
+module ReadOnlyTypeModelTests =
+  [<Test>]
+  let ``Should extract free type variables from ReadOnlyType`` () =
+    let typeVar = { VarName = "TestType" }
+    let readOnlyType = ExprType.ReadOnlyType(ExprType.LookupType typeVar)
+
+    let freeVars = ExprType.GetTypesFreeVars readOnlyType
+
+    Assert.That(freeVars, Does.Contain typeVar)
+
+  [<Test>]
+  let ``Should substitute types in ReadOnlyType`` () =
+    let typeVar = { VarName = "T" }
+    let originalType = ExprType.ReadOnlyType(ExprType.VarType typeVar)
+    let substitutionType = ExprType.PrimitiveType PrimitiveType.StringType
+    let substitutions = Map.ofList [ typeVar, substitutionType ]
+
+    let result = ExprType.Substitute substitutions originalType
+
+    let expectedType = ExprType.ReadOnlyType(substitutionType)
+    Assert.That(result, Is.EqualTo expectedType)
+
+  [<Test>]
+  let ``Should handle ReadOnlyType with no free variables`` () =
+    let readOnlyType =
+      ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
+
+    let freeVars = ExprType.GetTypesFreeVars readOnlyType
+
+    Assert.That(freeVars, Is.Empty)

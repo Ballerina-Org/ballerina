@@ -307,6 +307,22 @@ module ExprType =
                           sum {
                             do!
                               funJson
+                              |> JsonValue.AsEnum(Set.singleton "ReadOnly")
+
+                              |> sum.Map(ignore)
+
+                            return!
+                              sum {
+                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! arg = JsonValue.AsSingleton argsJson
+                                let! arg = !arg
+                                return ExprType.ReadOnlyType arg
+                              }
+                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+                          }
+                          sum {
+                            do!
+                              funJson
                               |> JsonValue.AsEnum(Set.singleton "Map")
 
                               |> sum.Map(ignore)

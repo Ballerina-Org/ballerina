@@ -524,6 +524,46 @@ module Renderers =
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
+    static member ParseReadOnlyRenderer
+      (parseNestedRenderer)
+      (parentJsonFields: (string * JsonValue)[])
+      (json: JsonValue)
+      : State<
+          Renderer<'ExprExtension, 'ValueExtension>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
+      state {
+        let! config = state.GetContext()
+        let! s = json |> JsonValue.AsString |> state.OfSum
+
+        if config.ReadOnly.SupportedRenderers |> Set.contains s then
+          return!
+            state {
+              let! valueRendererJson = parentJsonFields |> state.TryFindField "childRenderer"
+              let! valueRenderer = parseNestedRenderer valueRendererJson
+
+              return
+                ReadOnlyRenderer
+                  {| ReadOnly =
+                      PrimitiveRenderer
+                        { PrimitiveRendererName = s
+                          PrimitiveRendererId = Guid.CreateVersion7()
+                          Type = ExprType.ReadOnlyType valueRenderer.Renderer.Type }
+
+                     Value = valueRenderer |}
+            }
+            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+        else
+          return!
+            state.Throw(
+              Errors.Singleton $"Error: cannot parse read only renderer from {json.ToString().ReasonablyClamped}"
+            )
+      }
+
+  type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseManyRenderer
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
@@ -582,6 +622,7 @@ module Renderers =
                      Details = details
                      Preview = preview |}
             }
+
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
           return!
@@ -938,6 +979,7 @@ module Renderers =
                   Renderer.ParseOptionRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseOneRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseManyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseReadOnlyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseListRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseCustomRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
 

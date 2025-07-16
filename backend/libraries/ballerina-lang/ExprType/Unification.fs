@@ -88,6 +88,7 @@ module Unification =
                 Errors.Singleton($"Error: types {t1} and {t2}/{t} and {tn} cannot be unified under typedefs {typedefs}")
               )
           | Some t' -> return! t =?= t'
+        | ExprType.ReadOnlyType(t1), ExprType.ReadOnlyType(t2)
         | ExprType.ListType(t1), ExprType.ListType(t2)
         | ExprType.SetType(t1), ExprType.SetType(t2)
         | ExprType.OptionType(t1), ExprType.OptionType(t2)
