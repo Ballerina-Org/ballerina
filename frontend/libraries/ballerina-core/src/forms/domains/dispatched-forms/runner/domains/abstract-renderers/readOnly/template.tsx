@@ -42,7 +42,7 @@ export const ReadOnlyAbstractRenderer = <
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
-  _ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
   const configuredChildTemplate = embeddedTemplate
     .mapContext(
@@ -99,14 +99,29 @@ export const ReadOnlyAbstractRenderer = <
     CommonAbstractRendererForeignMutationsExpected<Flags>,
     ReadOnlyAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+    const domNodeId = props.context.domNodeAncestorPath + "[readOnly]";
+    if (!PredicateValue.Operations.IsReadOnly(props.context.value)) {
+      console.error(
+        `ReadOnly value expected but got: ${JSON.stringify(
+          props.context.value,
+        )}\n...When rendering \n...${domNodeId}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`${domNodeId}: ReadOnly value expected for list but got ${JSON.stringify(
+            props.context.value,
+          )}`}
+        />
+      );
+    }
     return (
       <>
-        <IdProvider domNodeId={props.context.domNodeAncestorPath}>
+        <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
             context={{
               ...props.context,
-              domNodeId: props.context.domNodeAncestorPath,
+              domNodeId,
             }}
             embeddedTemplate={configuredChildTemplate}
           />
