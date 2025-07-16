@@ -9,9 +9,8 @@ open Ballerina.Collections.Sum
 open Ballerina.Collections.NonEmptyList
 open Ballerina.Errors
 open Ballerina.DSL.Extensions.BLPLang
-open Ballerina.DSL.Expr.Extensions.Primitives
-open Ballerina.DSL.Expr.Extensions.Collections
-open Unbound.AI.Extensions.AI
+open Ballerina.DSL.Expr.Extensions
+open Unbound.AI.Extensions
 
 module ExprParserTests =
 
@@ -30,7 +29,7 @@ module ExprParserTests =
     assertSuccess
       result
       (Expr.Value(
-        PrimitivesValueExtension.ConstBool true
+        Primitives.ValueExtension.ConstBool true
         |> blpLanguageExtension.primitivesExtension.toValue
       ))
 
@@ -42,7 +41,7 @@ module ExprParserTests =
     assertSuccess
       result
       (Expr.Value(
-        PrimitivesValueExtension.ConstString "string"
+        Primitives.ValueExtension.ConstString "string"
         |> blpLanguageExtension.primitivesExtension.toValue
       ))
 
@@ -56,7 +55,7 @@ module ExprParserTests =
     assertSuccess
       result
       (Expr.Value(
-        PrimitivesValueExtension.ConstInt 1
+        Primitives.ValueExtension.ConstInt 1
         |> blpLanguageExtension.primitivesExtension.toValue
       ))
 
@@ -69,7 +68,7 @@ module ExprParserTests =
     assertSuccess
       result
       (Expr.Value(
-        PrimitivesValueExtension.ConstInt 2
+        Primitives.ValueExtension.ConstInt 2
         |> blpLanguageExtension.primitivesExtension.toValue
       ))
 
@@ -84,14 +83,14 @@ module ExprParserTests =
 
     assertSuccess
       result
-      (PrimitivesExprExtension.Binary(
-        BinaryOperator.And,
+      (Primitives.ExprExtension.Binary(
+        Primitives.BinaryOperator.And,
         Expr.Value(
-          PrimitivesValueExtension.ConstBool true
+          Primitives.ValueExtension.ConstBool true
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         Expr.Value(
-          PrimitivesValueExtension.ConstBool false
+          Primitives.ValueExtension.ConstBool false
           |> blpLanguageExtension.primitivesExtension.toValue
         )
        )
@@ -133,14 +132,14 @@ module ExprParserTests =
       result
       (Expr.MatchCase(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "test"
+          Primitives.ValueExtension.ConstString "test"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         Map.ofList
           [ ("case1",
              ({ VarName = "x" },
               Expr.Value(
-                PrimitivesValueExtension.ConstBool true
+                Primitives.ValueExtension.ConstBool true
                 |> blpLanguageExtension.primitivesExtension.toValue
               ))) ]
       ))
@@ -158,7 +157,7 @@ module ExprParserTests =
       result
       (Expr.RecordFieldLookup(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "record"
+          Primitives.ValueExtension.ConstString "record"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         "fieldName"
@@ -186,7 +185,7 @@ module ExprParserTests =
       result
       (Expr.Project(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "array"
+          Primitives.ValueExtension.ConstString "array"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         2
@@ -208,11 +207,11 @@ module ExprParserTests =
       Expr.MakeRecord(
         Map.ofList
           [ ("name",
-             PrimitivesValueExtension.ConstString "Alice"
+             Primitives.ValueExtension.ConstString "Alice"
              |> blpLanguageExtension.primitivesExtension.toValue
              |> Expr.Value)
             ("age",
-             PrimitivesValueExtension.ConstInt 30
+             Primitives.ValueExtension.ConstInt 30
              |> blpLanguageExtension.primitivesExtension.toValue
              |> Expr.Value) ]
       )
@@ -232,7 +231,7 @@ module ExprParserTests =
     let expectedExpr =
       Expr.MakeCase(
         "caseName",
-        PrimitivesValueExtension.ConstString "abc"
+        Primitives.ValueExtension.ConstString "abc"
         |> blpLanguageExtension.primitivesExtension.toValue
         |> Expr.Value
       )
@@ -250,10 +249,10 @@ module ExprParserTests =
 
     let expectedExpr =
       Expr.MakeTuple(
-        [ PrimitivesValueExtension.ConstString "a"
+        [ Primitives.ValueExtension.ConstString "a"
           |> blpLanguageExtension.primitivesExtension.toValue
           |> Expr.Value
-          PrimitivesValueExtension.ConstString "b"
+          Primitives.ValueExtension.ConstString "b"
           |> blpLanguageExtension.primitivesExtension.toValue
           |> Expr.Value ]
       )
@@ -270,13 +269,13 @@ module ExprParserTests =
     let result = Expr.Parse blpLanguageExtension.parse json
 
     let expectedExpr =
-      [ PrimitivesValueExtension.ConstString "a"
+      [ Primitives.ValueExtension.ConstString "a"
         |> blpLanguageExtension.primitivesExtension.toValue
         |> Expr.Value
-        PrimitivesValueExtension.ConstString "b"
+        Primitives.ValueExtension.ConstString "b"
         |> blpLanguageExtension.primitivesExtension.toValue
         |> Expr.Value ]
-      |> CollectionsExprExtension.List
+      |> Collections.ExprExtension.List
       |> blpLanguageExtension.collectionsExtension.toExpr
 
     assertSuccess result expectedExpr
@@ -288,7 +287,7 @@ let ``Should parse predict (AI extension)`` () =
   let result = Expr.Parse blpLanguageExtension.parse json
 
   let expectedExpr =
-    AIValueExtension.Predict
+    AI.ValueExtension.Predict
     |> blpLanguageExtension.aiExtension.toValue
     |> Expr.Value
 
@@ -301,7 +300,7 @@ let ``Should parse chat (AI extension)`` () =
   let result = Expr.Parse blpLanguageExtension.parse json
 
   let expectedExpr =
-    AIValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
+    AI.ValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
 
   assertSuccess result expectedExpr
 
@@ -324,15 +323,13 @@ let ``Should parse let type`` () =
 [<Test>]
 let ``Should convert type applied predict (AI extension) to JSON as expression`` () =
   let value =
-    AIValueExtension.TypeAppliedPredict
+    AI.ValueExtension.TypeAppliedPredict
       { OutputType = ExprType.UnitType
         Refs = Map.empty }
     |> blpLanguageExtension.aiExtension.toValue
     |> Expr.Value
 
-  let convertedJson =
-    value
-    |> Expr.ToJson blpLanguageExtension.toJson.expr blpLanguageExtension.toJson.value
+  let convertedJson = value |> blpLanguageExtension.toJson
 
   let expectedJson =
     JsonValue.Record
@@ -345,15 +342,13 @@ let ``Should convert type applied predict (AI extension) to JSON as expression``
 [<Test>]
 let ``Should convert type applied chat (AI extension) to JSON as expression`` () =
   let value =
-    AIValueExtension.TypeAppliedChat
+    AI.ValueExtension.TypeAppliedChat
       { OutputType = ExprType.UnitType
         Refs = Map.empty }
     |> blpLanguageExtension.aiExtension.toValue
     |> Expr.Value
 
-  let convertedJson =
-    value
-    |> Expr.ToJson blpLanguageExtension.toJson.expr blpLanguageExtension.toJson.value
+  let convertedJson = value |> blpLanguageExtension.toJson
 
   let expectedJson =
     JsonValue.Record
@@ -367,7 +362,7 @@ let toAndFromJson
   (expr: Expr<BLPExprExtension, BLPValueExtension>)
   : Sum<Expr<BLPExprExtension, BLPValueExtension>, Errors> =
   expr
-  |> Expr.ToJson blpLanguageExtension.toJson.expr blpLanguageExtension.toJson.value
+  |> blpLanguageExtension.toJson
   |> Sum.bind (Expr.Parse blpLanguageExtension.parse)
 
 module ExprToAndFromJsonTests =
@@ -381,7 +376,7 @@ module ExprToAndFromJsonTests =
   let ``Should convert boolean to and from Json`` () =
     let expr =
       Expr.Value(
-        PrimitivesValueExtension.ConstBool true
+        Primitives.ValueExtension.ConstBool true
         |> blpLanguageExtension.primitivesExtension.toValue
       )
 
@@ -393,7 +388,7 @@ module ExprToAndFromJsonTests =
   let ``Should convert string to and from Json`` () =
     let expr =
       Expr.Value(
-        PrimitivesValueExtension.ConstString "string"
+        Primitives.ValueExtension.ConstString "string"
         |> blpLanguageExtension.primitivesExtension.toValue
       )
 
@@ -405,7 +400,7 @@ module ExprToAndFromJsonTests =
   let ``Should convert int to and from Json`` () =
     let expr =
       Expr.Value(
-        PrimitivesValueExtension.ConstInt 42
+        Primitives.ValueExtension.ConstInt 42
         |> blpLanguageExtension.primitivesExtension.toValue
       )
 
@@ -416,14 +411,14 @@ module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert binary operation to and from Json`` () =
     let expr =
-      PrimitivesExprExtension.Binary(
-        BinaryOperator.Or,
+      Primitives.ExprExtension.Binary(
+        Primitives.BinaryOperator.Or,
         Expr.Value(
-          PrimitivesValueExtension.ConstBool true
+          Primitives.ValueExtension.ConstBool true
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         Expr.Value(
-          PrimitivesValueExtension.ConstBool false
+          Primitives.ValueExtension.ConstBool false
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       )
@@ -445,7 +440,7 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.Project(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "array"
+          Primitives.ValueExtension.ConstString "array"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         2
@@ -465,7 +460,7 @@ module ExprToAndFromJsonTests =
           Some ExprType.UnitType,
           None,
           Expr.Value(
-            PrimitivesValueExtension.ConstBool true
+            Primitives.ValueExtension.ConstBool true
             |> blpLanguageExtension.primitivesExtension.toValue
           )
         )
@@ -484,7 +479,7 @@ module ExprToAndFromJsonTests =
           Some ExprType.UnitType,
           Some(ExprType.PrimitiveType PrimitiveType.BoolType),
           Expr.Value(
-            PrimitivesValueExtension.ConstBool true
+            Primitives.ValueExtension.ConstBool true
             |> blpLanguageExtension.primitivesExtension.toValue
           )
         )
@@ -499,14 +494,14 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.MatchCase(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "test"
+          Primitives.ValueExtension.ConstString "test"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         Map.ofList
           [ ("case1",
              ({ VarName = "x" },
               Expr.Value(
-                PrimitivesValueExtension.ConstBool true
+                Primitives.ValueExtension.ConstBool true
                 |> blpLanguageExtension.primitivesExtension.toValue
               ))) ]
       )
@@ -520,7 +515,7 @@ module ExprToAndFromJsonTests =
     let expr =
       Expr.RecordFieldLookup(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "record"
+          Primitives.ValueExtension.ConstString "record"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         "fieldName"
@@ -536,11 +531,11 @@ module ExprToAndFromJsonTests =
       Expr.MakeRecord(
         Map.ofList
           [ ("name",
-             PrimitivesValueExtension.ConstString "Alice"
+             Primitives.ValueExtension.ConstString "Alice"
              |> blpLanguageExtension.primitivesExtension.toValue
              |> Expr.Value)
             ("age",
-             PrimitivesValueExtension.ConstInt 30
+             Primitives.ValueExtension.ConstInt 30
              |> blpLanguageExtension.primitivesExtension.toValue
              |> Expr.Value) ]
       )
@@ -563,10 +558,10 @@ module ExprToAndFromJsonTests =
   let ``Should convert tuple to and from Json`` () =
     let expr =
       Expr.MakeTuple(
-        [ PrimitivesValueExtension.ConstString "a"
+        [ Primitives.ValueExtension.ConstString "a"
           |> blpLanguageExtension.primitivesExtension.toValue
           |> Expr.Value
-          PrimitivesValueExtension.ConstString "b"
+          Primitives.ValueExtension.ConstString "b"
           |> blpLanguageExtension.primitivesExtension.toValue
           |> Expr.Value ]
       )
@@ -578,13 +573,13 @@ module ExprToAndFromJsonTests =
   [<Test>]
   let ``Should convert list to and from Json`` () =
     let expr =
-      [ PrimitivesValueExtension.ConstString "a"
+      [ Primitives.ValueExtension.ConstString "a"
         |> blpLanguageExtension.primitivesExtension.toValue
         |> Expr.Value
-        PrimitivesValueExtension.ConstString "b"
+        Primitives.ValueExtension.ConstString "b"
         |> blpLanguageExtension.primitivesExtension.toValue
         |> Expr.Value ]
-      |> CollectionsExprExtension.List
+      |> Collections.ExprExtension.List
       |> blpLanguageExtension.collectionsExtension.toExpr
 
     let result = toAndFromJson expr
@@ -598,16 +593,16 @@ module ExprToAndFromJsonRecursiveExpressions =
     let expr =
       Expr.MatchCase(
         Expr.Value(
-          PrimitivesValueExtension.ConstString "test"
+          Primitives.ValueExtension.ConstString "test"
           |> blpLanguageExtension.primitivesExtension.toValue
         ),
         Map.ofList
           [ ("case1",
              ({ VarName = "x" },
-              PrimitivesExprExtension.Binary(
-                BinaryOperator.And,
+              Primitives.ExprExtension.Binary(
+                Primitives.BinaryOperator.And,
                 Expr.Value(
-                  PrimitivesValueExtension.ConstBool true
+                  Primitives.ValueExtension.ConstBool true
                   |> blpLanguageExtension.primitivesExtension.toValue
                 ),
                 Expr.VarLookup { VarName = "x" }
@@ -623,14 +618,14 @@ module ExprToAndFromJsonRecursiveExpressions =
   let ``Should convert nested field lookup to and from Json`` () =
     let expr =
       Expr.RecordFieldLookup(
-        PrimitivesExprExtension.Binary(
-          BinaryOperator.Or,
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
           Expr.Value(
-            PrimitivesValueExtension.ConstString "record1"
+            Primitives.ValueExtension.ConstString "record1"
             |> blpLanguageExtension.primitivesExtension.toValue
           ),
           Expr.Value(
-            PrimitivesValueExtension.ConstString "record2"
+            Primitives.ValueExtension.ConstString "record2"
             |> blpLanguageExtension.primitivesExtension.toValue
           )
         )
@@ -645,18 +640,18 @@ module ExprToAndFromJsonRecursiveExpressions =
   [<Test>]
   let ``Should convert deeply nested binary operations to and from Json`` () =
     let expr =
-      PrimitivesExprExtension.Binary(
-        BinaryOperator.And,
-        PrimitivesExprExtension.Binary(
-          BinaryOperator.Or,
+      Primitives.ExprExtension.Binary(
+        Primitives.BinaryOperator.And,
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
           Expr.Value(
-            PrimitivesValueExtension.ConstBool true
+            Primitives.ValueExtension.ConstBool true
             |> blpLanguageExtension.primitivesExtension.toValue
           ),
-          PrimitivesExprExtension.Binary(
-            BinaryOperator.And,
+          Primitives.ExprExtension.Binary(
+            Primitives.BinaryOperator.And,
             Expr.Value(
-              PrimitivesValueExtension.ConstBool false
+              Primitives.ValueExtension.ConstBool false
               |> blpLanguageExtension.primitivesExtension.toValue
             ),
             Expr.VarLookup { VarName = "x" }
@@ -665,7 +660,7 @@ module ExprToAndFromJsonRecursiveExpressions =
         )
         |> blpLanguageExtension.primitivesExtension.toExpr,
         Expr.Value(
-          PrimitivesValueExtension.ConstBool true
+          Primitives.ValueExtension.ConstBool true
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       )
@@ -689,7 +684,7 @@ module ExprToAndFromJsonRecursiveExpressions =
               [ ("case1",
                  ({ VarName = "y" },
                   Expr.Value(
-                    PrimitivesValueExtension.ConstBool true
+                    Primitives.ValueExtension.ConstBool true
                     |> blpLanguageExtension.primitivesExtension.toValue
                   ))) ]
           )
@@ -703,7 +698,7 @@ module ExprToAndFromJsonRecursiveExpressions =
 [<Test>]
 let ``Should convert predict (AI extension) to and from Json`` () =
   let expr =
-    AIValueExtension.Predict
+    AI.ValueExtension.Predict
     |> blpLanguageExtension.aiExtension.toValue
     |> Expr.Value
 
@@ -713,7 +708,7 @@ let ``Should convert predict (AI extension) to and from Json`` () =
 [<Test>]
 let ``Should convert chat (AI extension) to and from Json`` () =
   let expr =
-    AIValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
+    AI.ValueExtension.Chat |> blpLanguageExtension.aiExtension.toValue |> Expr.Value
 
   let result = toAndFromJson expr
   assertSuccess result expr
@@ -730,7 +725,7 @@ let ``Should convert let type to and from Json`` () =
 let ``Should convert generic apply to and from Json`` () =
   let expr =
     Expr.GenericApply(
-      AIValueExtension.Predict
+      AI.ValueExtension.Predict
       |> blpLanguageExtension.aiExtension.toValue
       |> Expr.Value,
       ExprType.UnitType
@@ -760,7 +755,7 @@ module ExprParserErrorTests =
         { VarName = "name" },
         Expr.Value Value.Unit,
         Expr.Value(
-          PrimitivesValueExtension.ConstString "value"
+          Primitives.ValueExtension.ConstString "value"
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       )

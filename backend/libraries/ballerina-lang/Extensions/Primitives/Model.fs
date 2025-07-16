@@ -1,10 +1,10 @@
 namespace Ballerina.DSL.Expr.Extensions
 
+[<RequireQualifiedAccess>]
 module Primitives =
   open Ballerina.StdLib.Json
   open Ballerina.DSL.Expr.Model
   open FSharp.Data
-  open Ballerina.Fun
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Types.Model
@@ -33,7 +33,7 @@ module Primitives =
     | Or
 
 
-  type PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     | Binary of BinaryOperator * Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
     | Unary of UnaryOperator * Expr<'ExprExtension, 'ValueExtension>
     | Rest of 'ExprExtensionTail
@@ -45,7 +45,7 @@ module Primitives =
       | Rest t -> t.ToString()
 
 
-  type PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail> =
+  type ValueExtension<'ExprExtensionTail, 'ValueExtensionTail> =
     | ConstInt of int
     | ConstFloat of decimal
     | ConstString of string
@@ -62,21 +62,16 @@ module Primitives =
       | ConstString v -> v.ToString()
       | Rest e -> e.ToString()
 
-  type PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     { fromExpr:
         Expr<'ExprExtension, 'ValueExtension>
-          -> Sum<
-            PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>,
-            Errors
-           >
+          -> Sum<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>, Errors>
       toExpr:
-        PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
           -> Expr<'ExprExtension, 'ValueExtension>
       fromValue:
-        Value<'ExprExtension, 'ValueExtension>
-          -> Sum<PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail>, Errors>
-      toValue:
-        PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail> -> Value<'ExprExtension, 'ValueExtension> }
+        Value<'ExprExtension, 'ValueExtension> -> Sum<ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>, Errors>
+      toValue: ValueExtension<'ExprExtensionTail, 'ValueExtensionTail> -> Value<'ExprExtension, 'ValueExtension> }
 
   type BinaryOperator with
     static member ByName =
@@ -99,43 +94,43 @@ module Primitives =
 
     static member AllNames = BinaryOperator.ByName |> Map.keys |> Set.ofSeq
 
-  type PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail> with
+  type ValueExtension<'ExprExtensionTail, 'ValueExtensionTail> with
     static member AsInt
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (v: Value<'ExprExtension, 'ValueExtension>)
       : Sum<int, Errors> =
       sum {
         let! v = ctx.fromValue v
 
         match v with
-        | PrimitivesValueExtension.ConstInt v -> return v
+        | ValueExtension.ConstInt v -> return v
         | _ -> return! sum.Throw(Errors.Singleton $"Error: expected int, found {v.ToString()}")
       }
 
     static member AsFloat
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (v: Value<'ExprExtension, 'ValueExtension>)
       : Sum<decimal, Errors> =
       sum {
         let! v = ctx.fromValue v
 
         match v with
-        | PrimitivesValueExtension.ConstFloat v -> return v
+        | ValueExtension.ConstFloat v -> return v
         | _ -> return! sum.Throw(Errors.Singleton $"Error: expected float, found {v.ToString()}")
       }
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member private ParseIntForBackwardCompatibility
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
         let! v = JsonValue.AsNumber json
-        return PrimitivesValueExtension.ConstInt(int v) |> ctx.toValue |> Expr.Value
+        return ValueExtension.ConstInt(int v) |> ctx.toValue |> Expr.Value
       }
 
     static member private ParseFloat
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
@@ -147,14 +142,14 @@ module Primitives =
             let! value = JsonValue.AsString valueJson
 
             match System.Decimal.TryParse value with
-            | true, v -> return PrimitivesValueExtension.ConstFloat v |> ctx.toValue |> Expr.Value
+            | true, v -> return ValueExtension.ConstFloat v |> ctx.toValue |> Expr.Value
             | false, _ -> return! sum.Throw(Errors.Singleton $"Error: could not parse {value} as float")
           }
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
     static member private ParseInt
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
@@ -166,33 +161,33 @@ module Primitives =
             let! value = JsonValue.AsString valueJson
 
             match System.Int32.TryParse value with
-            | true, v -> return PrimitivesValueExtension.ConstInt v |> ctx.toValue |> Expr.Value
+            | true, v -> return ValueExtension.ConstInt v |> ctx.toValue |> Expr.Value
             | false, _ -> return! sum.Throw(Errors.Singleton $"Error: could not parse {value} as int")
           }
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
     static member private ParseBool
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
         let! v = JsonValue.AsBoolean json
-        return PrimitivesValueExtension.ConstBool v |> ctx.toValue |> Expr.Value
+        return ValueExtension.ConstBool v |> ctx.toValue |> Expr.Value
       }
 
     static member private ParseString
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
         let! v = JsonValue.AsString json
-        return PrimitivesValueExtension.ConstString v |> ctx.toValue |> Expr.Value
+        return ValueExtension.ConstString v |> ctx.toValue |> Expr.Value
       }
 
     static member private ParseBinaryOperator
       (parseRoot: ExprParser<'ExprExtension, 'ValueExtension>)
-      (ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
       sum {
@@ -211,14 +206,14 @@ module Primitives =
               BinaryOperator.ByName
               |> Map.tryFindWithError operator "binary operator" operator
 
-            return PrimitivesExprExtension.Binary(operator, first, second) |> ctx.toExpr
+            return ExprExtension.Binary(operator, first, second) |> ctx.toExpr
           }
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
 
       }
 
-  let parsePrimitives
-    : PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+  let parse
+    : ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
         -> ExprParser<'ExprExtension, 'ValueExtension>
         -> JsonValue
         -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
@@ -235,14 +230,14 @@ module Primitives =
         |> NonEmptyList.map (fun f -> f ctx jsonValue)
       )
 
-  let evalPrimitives
-    : PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+  let eval
+    : ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
         -> (ExprEval<'ExprExtension, 'ValueExtension> -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail>)
         -> ExprEval<'ExprExtension, 'ValueExtension>
         -> EvalFrom<
           'ExprExtension,
           'ValueExtension,
-          PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+          ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
          > =
     fun ctx evalTail evalRoot e ->
       let (!) = evalRoot
@@ -256,33 +251,33 @@ module Primitives =
           return!
             co.Any
               [ co {
-                  let! v1 = v1 |> PrimitivesValueExtension.AsInt ctx |> co.ofSum
-                  let! v2 = v2 |> PrimitivesValueExtension.AsInt ctx |> co.ofSum
+                  let! v1 = v1 |> ValueExtension.AsInt ctx |> co.ofSum
+                  let! v2 = v2 |> ValueExtension.AsInt ctx |> co.ofSum
 
-                  let res = PrimitivesValueExtension.ConstInt(v1 + v2)
+                  let res = ValueExtension.ConstInt(v1 + v2)
                   let res = res |> ctx.toValue
                   return res
                 }
                 co {
-                  let! v1 = v1 |> PrimitivesValueExtension.AsFloat ctx |> co.ofSum
-                  let! v2 = v2 |> PrimitivesValueExtension.AsFloat ctx |> co.ofSum
+                  let! v1 = v1 |> ValueExtension.AsFloat ctx |> co.ofSum
+                  let! v2 = v2 |> ValueExtension.AsFloat ctx |> co.ofSum
 
-                  let res = PrimitivesValueExtension.ConstFloat(v1 + v2)
+                  let res = ValueExtension.ConstFloat(v1 + v2)
                   let res = res |> ctx.toValue
                   return res
                 } ]
 
-        | PrimitivesExprExtension.Rest tail -> return! evalTail evalRoot tail
+        | ExprExtension.Rest tail -> return! evalTail evalRoot tail
         | e -> return! $"Error: unsupported eval for expression {e}" |> Errors.Singleton |> co.Throw
 
       }
 
-  let toJsonPrimitivesValue
+  let toJsonValue
     (_toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors>)
     (toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors>)
     (_toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
     (_toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
-    (value: PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail>)
+    (value: ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>)
     : Sum<JsonValue, Errors> =
     sum {
       match value with
@@ -299,12 +294,12 @@ module Primitives =
       | Rest t -> return! toJsonValueTail t
     }
 
-  let toJsonPrimitivesExpr
+  let toJsonExpr
     (toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors>)
     (_toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors>)
     (toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
     (_toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
-    (expr: PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (expr: ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     : Sum<JsonValue, Errors> =
     sum {
       match expr with
@@ -321,17 +316,17 @@ module Primitives =
             [| "kind", JsonValue.String operatorName
                "operands", JsonValue.Array [| jsonL; jsonR |] |]
       | Unary _ -> return! sum.Throw(Errors.Singleton "Error: Unary not implemented")
-      | PrimitivesExprExtension.Rest t -> return! toJsonExprTail t
+      | ExprExtension.Rest t -> return! toJsonExprTail t
     }
 
-  let primitivesTypeBindings: TypeBindings = Map.empty
+  let initialTypeBindings: TypeBindings = Map.empty
 
-  let typeCheckExprPrimitives
-    (_ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+  let typeCheckExpr
+    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (typeCheckTail: TypeChecker<'ExprExtensionTail>)
     (typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (_typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
-    : TypeChecker<PrimitivesExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
+    : TypeChecker<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
     fun typeBindings vars e ->
       let notImplementedError exprName =
         sum.Throw(Errors.Singleton $"Error: not implemented Expr type checker for expression {exprName}")
@@ -383,17 +378,17 @@ module Primitives =
 
       sum {
         match e with
-        | PrimitivesExprExtension.Binary(op, e1, e2) -> return! typeCheckBinaryOperator vars op e1 e2
-        | PrimitivesExprExtension.Unary(_, _) -> return! notImplementedError "Unary"
-        | PrimitivesExprExtension.Rest t -> return! typeCheckTail typeBindings vars t
+        | ExprExtension.Binary(op, e1, e2) -> return! typeCheckBinaryOperator vars op e1 e2
+        | ExprExtension.Unary(_, _) -> return! notImplementedError "Unary"
+        | ExprExtension.Rest t -> return! typeCheckTail typeBindings vars t
       }
 
-  let typeCheckValuePrimitives
-    (_ctx: PrimitivesExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+  let typeCheckValue
+    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (typeCheckTail: TypeChecker<'ValueExtensionTail>)
     (_typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (_typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
-    : TypeChecker<PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail>> =
+    : TypeChecker<ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>> =
     fun typeBindings vars v ->
       sum {
         match v with
@@ -405,14 +400,9 @@ module Primitives =
         | Rest e -> return! typeCheckTail typeBindings vars e
       }
 
-  let operatorEvalPrimitivesExtension
+  let operatorEvalExtension
     (tailOperatorEvalExtensions: OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail>)
-    : OperatorEvalExtensions<
-        'ExprExtension,
-        'ValueExtension,
-        PrimitivesValueExtension<'ExprExtensionTail, 'ValueExtensionTail>
-       >
-    =
+    : OperatorEvalExtensions<'ExprExtension, 'ValueExtension, ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>> =
     {| Apply =
         fun inputs ->
           match inputs.func with

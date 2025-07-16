@@ -16,6 +16,7 @@
         <Compile Include="ExprType/Unification.fs" />
         <Compile Include="Next/Type/Eval.fs" />
         <Compile Include="Next/Type/Unify.fs" />
+        <Compile Include="Next/Type/KindCheck.fs" />
         <Compile Include="Expr/Model.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
