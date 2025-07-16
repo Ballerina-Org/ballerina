@@ -46,6 +46,14 @@
           "Microsoft.Testing.Platform.MSBuild": "1.5.3"
         }
       },
+      "FParsec": {
+        "type": "Transitive",
+        "resolved": "1.1.1",
+        "contentHash": "Wdjf/gCNLEwd+0nUCDh9jAIIcKGwfhRramySTnTcVVgNC6i4Vp5aJklUJJfvFkEZMYNZEDGcI8pCa36/TmwmSg==",
+        "dependencies": {
+          "FSharp.Core": "4.3.4"
+        }
+      },
       "FSharp.Data": {
         "type": "Transitive",
         "resolved": "6.6.0",
@@ -381,6 +389,7 @@
         "dependencies": {
           "Ballerina.Cat": "[1.0.0, )",
           "Ballerina.Lang": "[1.0.0, )",
+          "FParsec": "[1.1.1, )",
           "FSharp.Core": "[9.0.300, )"
         }
       },

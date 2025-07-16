@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Expr.Extensions
 
+[<RequireQualifiedAccess>]
 module Collections =
   open Ballerina.StdLib.Json
   open Ballerina.DSL.Expr.Model
@@ -15,7 +16,7 @@ module Collections =
   open System
   open Ballerina.DSL.Expr.Types.Model
 
-  type CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     | List of List<Expr<'ExprExtension, 'ValueExtension>>
     | Rest of 'ExprExtensionTail
 
@@ -27,7 +28,7 @@ module Collections =
       | Rest t -> t.ToString()
 
 
-  type CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     | List of List<Value<'ExprExtension, 'ValueExtension>>
     | Rest of 'ValueExtensionTail
 
@@ -38,56 +39,50 @@ module Collections =
         $"""[{String.Join(", ", formattedValues)}]"""
       | Rest e -> e.ToString()
 
-  type CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
     { fromExpr:
         Expr<'ExprExtension, 'ValueExtension>
-          -> Sum<
-            CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>,
-            Errors
-           >
+          -> Sum<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>, Errors>
       toExpr:
-        CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
           -> Expr<'ExprExtension, 'ValueExtension>
       fromValue:
         Value<'ExprExtension, 'ValueExtension>
-          -> Sum<
-            CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>,
-            Errors
-           >
+          -> Sum<ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>, Errors>
       toValue:
-        CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
           -> Value<'ExprExtension, 'ValueExtension> }
 
 
-  type CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> with
+  type ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> with
     static member AsList
-      (ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (v: Expr<'ExprExtension, 'ValueExtension>)
       : Sum<List<Expr<'ExprExtension, 'ValueExtension>>, Errors> =
       sum {
         let! v = ctx.fromExpr v
 
         match v with
-        | CollectionsExprExtension.List l -> return l
+        | ExprExtension.List l -> return l
         | _ -> return! sum.Throw(Errors.Singleton $"Error: expected list, found {v.ToString()}")
       }
 
-  type CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> with
+  type ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> with
     static member AsList
-      (ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (v: Value<'ExprExtension, 'ValueExtension>)
       : Sum<List<Value<'ExprExtension, 'ValueExtension>>, Errors> =
       sum {
         let! v = ctx.fromValue v
 
         match v with
-        | CollectionsValueExtension.List v -> return v
+        | ValueExtension.List v -> return v
         | _ -> return! sum.Throw(Errors.Singleton $"Error: expected list, found {v.ToString()}")
       }
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member private ParseList
-      (ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (parseRootExpr: ExprParser<'ExprExtension, 'ValueExtension>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
@@ -99,27 +94,27 @@ module Collections =
             let! elementsJson = fieldsJson |> sum.TryFindField "elements"
             let! elementsArray = elementsJson |> JsonValue.AsArray
             let! elements = elementsArray |> Array.toList |> List.map parseRootExpr |> sum.All
-            return CollectionsExprExtension.List elements |> ctx.toExpr
+            return ExprExtension.List elements |> ctx.toExpr
           }
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
-  let parseCollections
-    : CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+  let parse
+    : ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
         -> ExprParser<'ExprExtension, 'ValueExtension>
         -> JsonValue
         -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
     fun ctx parseRootExpr jsonValue -> Expr.ParseList ctx parseRootExpr jsonValue
 
-  let evalCollections
-    (ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+  let eval
+    (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (evalTail:
       ExprEval<'ExprExtension, 'ValueExtension> -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail>)
     (evalRoot: ExprEval<'ExprExtension, 'ValueExtension>)
     : EvalFrom<
         'ExprExtension,
         'ValueExtension,
-        CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
        >
     =
     fun e ->
@@ -127,18 +122,18 @@ module Collections =
 
       co {
         match e with
-        | CollectionsExprExtension.List l ->
+        | ExprExtension.List l ->
           let! vs = l |> List.map evalRoot |> co.All
-          return CollectionsValueExtension.List vs |> ctx.toValue
-        | CollectionsExprExtension.Rest tail -> return! evalTail evalRoot tail
+          return ValueExtension.List vs |> ctx.toValue
+        | ExprExtension.Rest tail -> return! evalTail evalRoot tail
       }
 
-  let toJsonCollectionsValue
+  let toJsonValue
     (_toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors>)
     (toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors>)
     (_toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
     (toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
-    (value: CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (value: ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     : Sum<JsonValue, Errors> =
     sum {
       match value with
@@ -152,34 +147,34 @@ module Collections =
       | Rest t -> return! toJsonValueTail t
     }
 
-  let toJsonCollectionsExpr
+  let toJsonExpr
     (toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors>)
     (_toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors>)
     (toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
     (_toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors>)
-    (expr: CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (expr: ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     : Sum<JsonValue, Errors> =
     sum {
       match expr with
-      | CollectionsExprExtension.List elements ->
+      | ExprExtension.List elements ->
         let! jsonElements = elements |> List.map toJsonRootExpr |> sum.All
 
         return
           JsonValue.Record
             [| "kind", JsonValue.String "list"
                "elements", jsonElements |> Array.ofList |> JsonValue.Array |]
-      | CollectionsExprExtension.Rest t -> return! toJsonExprTail t
+      | ExprExtension.Rest t -> return! toJsonExprTail t
     }
 
   let collectionsTypeBindings: TypeBindings = Map.empty
 
-  let typeCheckExprCollections
-    (_ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+  let typeCheckExpr
+    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (typeCheckExprTail: TypeChecker<'ExprExtensionTail>)
     (_typeCheckValueTail: TypeChecker<'ValueExtensionTail>)
     (typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (_typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
-    : TypeChecker<CollectionsExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
+    : TypeChecker<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
     fun typeBindings vars e ->
       let _notImplementedError exprName =
         sum.Throw(Errors.Singleton $"Error: not implemented Expr type checker for expression {exprName}")
@@ -200,20 +195,20 @@ module Collections =
 
       sum {
         match e with
-        | CollectionsExprExtension.List l ->
+        | ExprExtension.List l ->
           let! tl = l |> List.map (typeCheckRootExpr typeBindings vars) |> sum.All
           let! innerType = checkInnerType tl
           ListType innerType
-        | CollectionsExprExtension.Rest t -> return! typeCheckExprTail typeBindings vars t
+        | ExprExtension.Rest t -> return! typeCheckExprTail typeBindings vars t
       }
 
-  let typeCheckValueCollections
-    (_ctx: CollectionsExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+  let typeCheckValue
+    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
     (_typeCheckExprTail: TypeChecker<'ExprExtensionTail>)
     (typeCheckValueTail: TypeChecker<'ValueExtensionTail>)
     (_typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
-    : TypeChecker<CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
+    : TypeChecker<ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
     fun typeBindings vars v ->
       // let (!) = typeCheckRoot vars
 
@@ -242,28 +237,26 @@ module Collections =
         | Rest e -> return! typeCheckValueTail typeBindings vars e
       }
 
-  let operatorEvalCollectionsExtension
+  let operatorEvalExtension
     (tailOperatorEvalExtensions: OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail>)
     : OperatorEvalExtensions<
         'ExprExtension,
         'ValueExtension,
-        CollectionsValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ValueExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
        >
     =
     {| Apply =
         fun inputs ->
           match inputs.func with
-          | CollectionsValueExtension.List _ -> co.Throw(Errors.Singleton "Nothing to apply in collections extension")
-          | CollectionsValueExtension.Rest r -> tailOperatorEvalExtensions.Apply {| inputs with func = r |}
+          | ValueExtension.List _ -> co.Throw(Errors.Singleton "Nothing to apply in collections extension")
+          | ValueExtension.Rest r -> tailOperatorEvalExtensions.Apply {| inputs with func = r |}
        GenericApply =
         fun inputs ->
           match inputs.typeFunc with
-          | CollectionsValueExtension.List _ ->
-            co.Throw(Errors.Singleton "Nothing to generic apply in collections extension")
-          | CollectionsValueExtension.Rest r -> tailOperatorEvalExtensions.GenericApply {| inputs with typeFunc = r |}
+          | ValueExtension.List _ -> co.Throw(Errors.Singleton "Nothing to generic apply in collections extension")
+          | ValueExtension.Rest r -> tailOperatorEvalExtensions.GenericApply {| inputs with typeFunc = r |}
        MatchCase =
         fun inputs ->
           match inputs.value with
-          | CollectionsValueExtension.List _ ->
-            co.Throw(Errors.Singleton "Nothing to match case in collections extension")
-          | CollectionsValueExtension.Rest r -> tailOperatorEvalExtensions.MatchCase {| inputs with value = r |} |}
+          | ValueExtension.List _ -> co.Throw(Errors.Singleton "Nothing to match case in collections extension")
+          | ValueExtension.Rest r -> tailOperatorEvalExtensions.MatchCase {| inputs with value = r |} |}

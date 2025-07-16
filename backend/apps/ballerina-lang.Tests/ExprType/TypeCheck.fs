@@ -2,23 +2,13 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.ExprType.TypeCheck
 
 open Ballerina.Collections.Sum
 open NUnit.Framework
-open Ballerina.DSL.Expr.Types.Model
 open Ballerina.DSL.Expr.Model
-open Ballerina.DSL.Expr.Types.TypeCheck
 open Ballerina.Errors
 open Ballerina.DSL.Extensions.BLPLang
-open Ballerina.DSL.Expr.Extensions.Primitives
-open Ballerina.DSL.Expr.Extensions.Collections
+open Ballerina.DSL.Expr.Extensions
 
 let private typeCheck (expr: Expr<BLPExprExtension, BLPValueExtension>) : Sum<ExprType, Errors> =
-  Expr.typeCheck
-    (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPExprExtension e) ->
-      blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
-    (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
-      blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-    blpLanguageExtension.typeCheck.typeBindings
-    Map.empty
-    expr
+  blpLanguageExtension.typeCheck Map.empty Map.empty expr
 
 type ValuePrimitiveTypeCheckTestCase =
   { expr: Expr<BLPExprExtension, BLPValueExtension>
@@ -27,19 +17,19 @@ type ValuePrimitiveTypeCheckTestCase =
 let valuePrimitiveTypeCheckTestCases: ValuePrimitiveTypeCheckTestCase list =
   [ { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstInt 42
+          (Primitives.ValueExtension.ConstInt 42
            |> blpLanguageExtension.primitivesExtension.toValue)
         )
       expected = ExprType.PrimitiveType PrimitiveType.IntType }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstString "42"
+          (Primitives.ValueExtension.ConstString "42"
            |> blpLanguageExtension.primitivesExtension.toValue)
         )
       expected = ExprType.PrimitiveType PrimitiveType.StringType }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstBool true
+          (Primitives.ValueExtension.ConstBool true
            |> blpLanguageExtension.primitivesExtension.toValue)
         )
       expected = ExprType.PrimitiveType PrimitiveType.BoolType } ]
@@ -58,14 +48,14 @@ type BoolReturningBinaryExpressionTestCase =
 
 let boolReturningBinaryExpressionTestCases =
   [ { expr =
-        PrimitivesExprExtension.Binary(
-          Or,
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool true
+            (Primitives.ValueExtension.ConstBool true
              |> blpLanguageExtension.primitivesExtension.toValue)
           ),
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool false
+            (Primitives.ValueExtension.ConstBool false
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
@@ -85,9 +75,9 @@ let ``Should typecheck tuple`` () =
   let expr =
     Expr.Value(
       Value.Tuple
-        [ (PrimitivesValueExtension.ConstBool true
+        [ (Primitives.ValueExtension.ConstBool true
            |> blpLanguageExtension.primitivesExtension.toValue)
-          (PrimitivesValueExtension.ConstInt 42
+          (Primitives.ValueExtension.ConstInt 42
            |> blpLanguageExtension.primitivesExtension.toValue) ]
     )
 
@@ -106,9 +96,9 @@ let ``Should typecheck tuple projection (with 1-based indexing)`` () =
     Expr.Project(
       Expr.Value(
         Value.Tuple
-          [ (PrimitivesValueExtension.ConstBool true
+          [ (Primitives.ValueExtension.ConstBool true
              |> blpLanguageExtension.primitivesExtension.toValue)
-            (PrimitivesValueExtension.ConstInt 42
+            (Primitives.ValueExtension.ConstInt 42
              |> blpLanguageExtension.primitivesExtension.toValue) ]
       ),
       1
@@ -129,17 +119,7 @@ let ``Should typecheck var lookup`` () =
   let inputVarTypes =
     Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.BoolType ]
 
-
-  match
-    Expr<BLPExprExtension, BLPValueExtension>.typeCheck
-      (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPExprExtension e) ->
-        blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
-      (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
-        blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-      blpLanguageExtension.typeCheck.typeBindings
-      inputVarTypes
-      expr
-  with
+  match blpLanguageExtension.typeCheck Map.empty inputVarTypes expr with
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 
@@ -149,15 +129,6 @@ let ``Should typecheck var lookup should fail if not in seen variables`` () =
 
   let vars = Map.empty
 
-  match
-    Expr.typeCheck
-      (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPExprExtension e) ->
-        blpLanguageExtension.typeCheck.expr typeCheckRootExpr typeCheckRootValue bindings vars e)
-      (fun typeCheckRootExpr typeCheckRootValue bindings vars (BLPValueExtension v) ->
-        blpLanguageExtension.typeCheck.value typeCheckRootExpr typeCheckRootValue bindings vars v)
-      blpLanguageExtension.typeCheck.typeBindings
-      vars
-      expr
-  with
+  match blpLanguageExtension.typeCheck Map.empty vars expr with
   | Left _ -> Assert.Fail $"Expected error but got success"
   | Right err -> Assert.That(err.ToString(), Contains.Substring "x")

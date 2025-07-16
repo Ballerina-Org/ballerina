@@ -3,8 +3,7 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Expr.Model
 open NUnit.Framework
 open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Extensions.BLPLang
-open Ballerina.DSL.Expr.Extensions.Primitives
-open Ballerina.DSL.Expr.Extensions.Collections
+open Ballerina.DSL.Expr.Extensions
 open System
 
 type TestCase =
@@ -16,31 +15,31 @@ let testCases =
       expected = "()" }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstInt 42)
+          (Primitives.ValueExtension.ConstInt 42)
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       expected = "42" }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstFloat 42m)
+          (Primitives.ValueExtension.ConstFloat 42m)
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       expected = "42" }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstString "42")
+          (Primitives.ValueExtension.ConstString "42")
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       expected = "42" }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstBool true)
+          (Primitives.ValueExtension.ConstBool true)
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       expected = "True" }
     { expr =
         Expr.Value(
-          (PrimitivesValueExtension.ConstGuid(Guid.Parse "00000000-0000-0000-0000-000000000000"))
+          (Primitives.ValueExtension.ConstGuid(Guid.Parse "00000000-0000-0000-0000-000000000000"))
           |> blpLanguageExtension.primitivesExtension.toValue
         )
       expected = "00000000-0000-0000-0000-000000000000" }
@@ -48,7 +47,7 @@ let testCases =
         Expr.Value(
           Value.CaseCons(
             "Some",
-            (PrimitivesValueExtension.ConstInt 42
+            (Primitives.ValueExtension.ConstInt 42
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
@@ -56,9 +55,9 @@ let testCases =
     { expr =
         Expr.Value(
           Value.Tuple
-            [ (PrimitivesValueExtension.ConstInt 42
+            [ (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
-              (PrimitivesValueExtension.ConstString "42"
+              (Primitives.ValueExtension.ConstString "42"
                |> blpLanguageExtension.primitivesExtension.toValue) ]
         )
       expected = "(42, 42)" }
@@ -67,10 +66,10 @@ let testCases =
           Value.Record(
             Map.ofList
               [ "x",
-                (PrimitivesValueExtension.ConstInt 42
+                (Primitives.ValueExtension.ConstInt 42
                  |> blpLanguageExtension.primitivesExtension.toValue)
                 "y",
-                (PrimitivesValueExtension.ConstString "42"
+                (Primitives.ValueExtension.ConstString "42"
                  |> blpLanguageExtension.primitivesExtension.toValue) ]
           )
         )
@@ -82,7 +81,7 @@ let testCases =
             Some(ExprType.PrimitiveType PrimitiveType.IntType),
             None,
             Expr.Value(
-              (PrimitivesValueExtension.ConstInt 42
+              (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
             )
           )
@@ -90,10 +89,10 @@ let testCases =
       expected = "fun (x:Int) -> 42" }
     { expr =
         Expr.Value(
-          CollectionsValueExtension.List
-            [ (PrimitivesValueExtension.ConstInt 42
+          Collections.ValueExtension.List
+            [ (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
-              (PrimitivesValueExtension.ConstInt 43
+              (Primitives.ValueExtension.ConstInt 43
                |> blpLanguageExtension.primitivesExtension.toValue) ]
           |> blpLanguageExtension.collectionsExtension.toValue
         )
@@ -106,40 +105,40 @@ let testCases =
               Some(ExprType.PrimitiveType PrimitiveType.IntType),
               None,
               Expr.Value(
-                (PrimitivesValueExtension.ConstInt 42
+                (Primitives.ValueExtension.ConstInt 42
                  |> blpLanguageExtension.primitivesExtension.toValue)
               )
             )
           ),
           Expr.Value(
-            (PrimitivesValueExtension.ConstInt 2
+            (Primitives.ValueExtension.ConstInt 2
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
       expected = "(fun (x:Int) -> 42)(2)" }
     { expr =
-        PrimitivesExprExtension.Binary(
-          BinaryOperator.And,
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.And,
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool true
+            (Primitives.ValueExtension.ConstBool true
              |> blpLanguageExtension.primitivesExtension.toValue)
           ),
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool false
+            (Primitives.ValueExtension.ConstBool false
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
         |> blpLanguageExtension.primitivesExtension.toExpr
       expected = "(True And False)" }
     { expr =
-        PrimitivesExprExtension.Binary(
-          BinaryOperator.Or,
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool true
+            (Primitives.ValueExtension.ConstBool true
              |> blpLanguageExtension.primitivesExtension.toValue)
           ),
           Expr.Value(
-            (PrimitivesValueExtension.ConstBool false
+            (Primitives.ValueExtension.ConstBool false
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
@@ -152,12 +151,12 @@ let testCases =
           Map.ofList
             [ "x",
               Expr.Value(
-                (PrimitivesValueExtension.ConstInt 42
+                (Primitives.ValueExtension.ConstInt 42
                  |> blpLanguageExtension.primitivesExtension.toValue)
               )
               "y",
               Expr.Value(
-                (PrimitivesValueExtension.ConstString "42"
+                (Primitives.ValueExtension.ConstString "42"
                  |> blpLanguageExtension.primitivesExtension.toValue)
               ) ]
         )
@@ -168,10 +167,10 @@ let testCases =
             Value.Record(
               Map.ofList
                 [ "x",
-                  (PrimitivesValueExtension.ConstInt 42
+                  (Primitives.ValueExtension.ConstInt 42
                    |> blpLanguageExtension.primitivesExtension.toValue)
                   "y",
-                  (PrimitivesValueExtension.ConstString "42"
+                  (Primitives.ValueExtension.ConstString "42"
                    |> blpLanguageExtension.primitivesExtension.toValue) ]
             )
           ),
@@ -181,22 +180,22 @@ let testCases =
     { expr =
         Expr.MakeTuple
           [ Expr.Value(
-              (PrimitivesValueExtension.ConstInt 42
+              (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
             )
             Expr.Value(
-              (PrimitivesValueExtension.ConstString "42"
+              (Primitives.ValueExtension.ConstString "42"
                |> blpLanguageExtension.primitivesExtension.toValue)
             ) ]
       expected = "(42, 42)" }
     { expr =
         Expr.MakeSet
           [ Expr.Value(
-              (PrimitivesValueExtension.ConstInt 42
+              (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
             )
             Expr.Value(
-              (PrimitivesValueExtension.ConstString "42"
+              (Primitives.ValueExtension.ConstString "42"
                |> blpLanguageExtension.primitivesExtension.toValue)
             ) ]
       expected = "{42; 42}" }
@@ -204,9 +203,9 @@ let testCases =
         Expr.Project(
           Expr.Value(
             Value.Tuple
-              [ (PrimitivesValueExtension.ConstInt 42
+              [ (Primitives.ValueExtension.ConstInt 42
                  |> blpLanguageExtension.primitivesExtension.toValue)
-                (PrimitivesValueExtension.ConstString "42"
+                (Primitives.ValueExtension.ConstString "42"
                  |> blpLanguageExtension.primitivesExtension.toValue) ]
           ),
           0
@@ -216,7 +215,7 @@ let testCases =
         Expr.MakeCase(
           "Some",
           Expr.Value(
-            (PrimitivesValueExtension.ConstInt 42
+            (Primitives.ValueExtension.ConstInt 42
              |> blpLanguageExtension.primitivesExtension.toValue)
           )
         )
@@ -226,7 +225,7 @@ let testCases =
           Expr.Value(
             Value.CaseCons(
               "Some",
-              (PrimitivesValueExtension.ConstInt 42
+              (Primitives.ValueExtension.ConstInt 42
                |> blpLanguageExtension.primitivesExtension.toValue)
             )
           ),
@@ -234,7 +233,7 @@ let testCases =
             [ "Some",
               ({ VarName = "y" },
                Expr.Value(
-                 (PrimitivesValueExtension.ConstInt 42
+                 (Primitives.ValueExtension.ConstInt 42
                   |> blpLanguageExtension.primitivesExtension.toValue)
                ))
               "None", ({ VarName = "_" }, Expr.Value Value.Unit) ]

@@ -38,21 +38,17 @@ module Model =
     | Apply of TypeExpr * TypeExpr
     | Lambda of TypeParameter * TypeExpr
     | Arrow of TypeExpr * TypeExpr
-    | Record of Map<TypeExpr, TypeExpr>
+    | Record of List<TypeExpr * TypeExpr>
     | Tuple of List<TypeExpr>
-    | Union of Map<TypeExpr, TypeExpr>
+    | Union of List<TypeExpr * TypeExpr>
     | List of TypeExpr
     | Set of TypeExpr
     | Map of TypeExpr * TypeExpr
     | KeyOf of TypeExpr
     | Sum of List<TypeExpr>
-    | Flatten of FlattenArgs
+    | Flatten of TypeExpr * TypeExpr
     | Exclude of TypeExpr * TypeExpr
     | Rotate of TypeExpr
-
-  and FlattenArgs =
-    { Left: TypeBinding
-      Right: TypeBinding }
 
   and TypeBinding =
     { Identifier: TypeIdentifier
@@ -129,7 +125,6 @@ module Model =
         | Record(fields) ->
           let! fields =
             fields
-            |> Map.toSeq
             |> Seq.map (fun (k, v) ->
               sum {
                 let! k = TypeExpr.AsLookup k
@@ -147,7 +142,6 @@ module Model =
         | Union(cases) ->
           let! cases =
             cases
-            |> Map.toSeq
             |> Seq.map (fun (k, v) ->
               sum {
                 let! k = TypeExpr.AsLookup k
@@ -305,7 +299,6 @@ module Model =
           | TypeExpr.Record(fields) ->
             let! fields =
               fields
-              |> Map.toSeq
               |> Seq.map (fun (k, v) ->
                 reader {
                   let! k = !!k
@@ -322,7 +315,6 @@ module Model =
           | TypeExpr.Union(cases) ->
             let! cases =
               cases
-              |> Map.toSeq
               |> Seq.map (fun (k, v) ->
                 reader {
                   let! k = !!k
@@ -355,53 +347,48 @@ module Model =
             let! variants = variants |> List.map (!) |> reader.All
 
             return TypeValue.Sum(variants)
-          | TypeExpr.Flatten({ Left = { Identifier = { Name = name1 }
-                                        Type = type1 }
-                               Right = { Identifier = { Name = name2 }
-                                         Type = type2 } }) ->
-            if name1 = name2 || name1 |> String.IsNullOrEmpty || name2 |> String.IsNullOrEmpty then
-              return!
-                $"Error: cannot flatten types with the same name '{name1}'"
-                |> Errors.Singleton
-                |> reader.Throw
-            else
-              let! type1 = !type1
-              let! type2 = !type2
+          | TypeExpr.Flatten(type1, type2) ->
+            let! type1 = !type1
+            let! type2 = !type2
 
-              return!
-                reader.Any2
-                  (reader {
-                    let! cases1 = type1 |> TypeValue.AsUnion |> reader.OfSum
-                    let! cases2 = type2 |> TypeValue.AsUnion |> reader.OfSum
+            return!
+              reader.Any2
+                (reader {
+                  let! cases1 = type1 |> TypeValue.AsUnion |> reader.OfSum
+                  let! cases2 = type2 |> TypeValue.AsUnion |> reader.OfSum
 
-                    let cases1 =
-                      cases1
-                      |> Map.toSeq
-                      |> Seq.map (fun (k, v) -> (name1 + "." + k.Name |> TypeSymbol.Create, v))
+                  let cases1 = cases1 |> Map.toSeq
+                  let keys1 = cases1 |> Seq.map fst |> Set.ofSeq
 
-                    let cases2 =
-                      cases2
-                      |> Map.toSeq
-                      |> Seq.map (fun (k, v) -> (name2 + "." + k.Name |> TypeSymbol.Create, v))
+                  let cases2 = cases2 |> Map.toSeq
+                  let keys2 = cases2 |> Seq.map fst |> Set.ofSeq
 
+                  if keys1 |> Set.intersect keys2 |> Set.isEmpty then
                     return cases1 |> Seq.append cases2 |> Map.ofSeq |> TypeValue.Union
-                  })
-                  (reader {
-                    let! fields1 = type1 |> TypeValue.AsRecord |> reader.OfSum
-                    let! fields2 = type2 |> TypeValue.AsRecord |> reader.OfSum
+                  else
+                    return!
+                      $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
+                      |> Errors.Singleton
+                      |> reader.Throw
+                })
+                (reader {
+                  let! fields1 = type1 |> TypeValue.AsRecord |> reader.OfSum
+                  let! fields2 = type2 |> TypeValue.AsRecord |> reader.OfSum
 
-                    let fields1 =
-                      fields1
-                      |> Map.toSeq
-                      |> Seq.map (fun (k, v) -> (name1 + "." + k.Name |> TypeSymbol.Create, v))
+                  let fields1 = fields1 |> Map.toSeq
+                  let keys1 = fields1 |> Seq.map fst |> Set.ofSeq
 
-                    let fields2 =
-                      fields2
-                      |> Map.toSeq
-                      |> Seq.map (fun (k, v) -> (name2 + "." + k.Name |> TypeSymbol.Create, v))
+                  let fields2 = fields2 |> Map.toSeq
+                  let keys2 = fields2 |> Seq.map fst |> Set.ofSeq
 
+                  if keys1 |> Set.intersect keys2 |> Set.isEmpty then
                     return fields1 |> Seq.append fields2 |> Map.ofSeq |> TypeValue.Record
-                  })
+                  else
+                    return!
+                      $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
+                      |> Errors.Singleton
+                      |> reader.Throw
+                })
           | TypeExpr.Exclude(type1, type2) ->
             let! type1 = !type1
             let! type2 = !type2
@@ -451,6 +438,9 @@ module Model =
   type KindCheckContext with
     static member Empty: KindCheckContext = { Kinds = Map.empty }
 
+    static member Updaters =
+      {| Kinds = fun u (c: KindCheckContext) -> { c with Kinds = c.Kinds |> u } |}
+
     static member Create(kinds: Map<string, Kind>) : KindCheckContext =
       { KindCheckContext.Empty with
           Kinds = kinds }
@@ -467,7 +457,10 @@ module Model =
           match t with
           | TypeExpr.Lookup id -> return! KindCheckContext.tryFindKind id
           | TypeExpr.Lambda(p, body) ->
-            let! body = !body
+            let! body =
+              !body
+              |> reader.MapContext(Map.add p.Name p.Kind |> KindCheckContext.Updaters.Kinds)
+
             return Kind.Arrow(p.Kind, body)
           | TypeExpr.Apply(f, a) ->
             let! f = TypeExpr.KindCheck f
@@ -485,8 +478,7 @@ module Model =
             | _ -> return! $"Error: expected function type, got {f}" |> Errors.Singleton |> reader.Throw
           | TypeExpr.Arrow(t1, t2)
           | TypeExpr.Exclude(t1, t2)
-          | TypeExpr.Flatten { Left = { Identifier = _; Type = t1 }
-                               Right = { Identifier = _; Type = t2 } }
+          | TypeExpr.Flatten(t1, t2)
           | TypeExpr.Map(t1, t2) ->
             let! t1 = !t1
             let! t2 = !t2
@@ -518,18 +510,21 @@ module Model =
             return Kind.Star
           | TypeExpr.Union args
           | TypeExpr.Record args ->
-            let args = args |> Map.values
 
             do!
               args
-              |> Seq.map (fun a ->
+              |> Seq.map (fun (f, a) ->
                 reader {
+                  let! f = !f
                   let! a = !a
 
-                  if a = Kind.Star then
-                    return Kind.Star
+                  if f = Kind.Symbol && a = Kind.Star then
+                    return ()
                   else
-                    return! $"Error: expected star type, got {a}" |> Errors.Singleton |> reader.Throw
+                    return!
+                      $"Error: expected symbol -> star for each record field, got {f} -> {a}"
+                      |> Errors.Singleton
+                      |> reader.Throw
                 })
               |> reader.All
               |> reader.Ignore

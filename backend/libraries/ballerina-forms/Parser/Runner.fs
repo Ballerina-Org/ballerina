@@ -21,7 +21,7 @@ module Runner =
   open Ballerina.StdLib.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.Expr.Extensions.Primitives
+  open Ballerina.DSL.Expr.Extensions
 
   type FormLauncher with
     static member Parse<'ExprExtension, 'ValueExtension>
