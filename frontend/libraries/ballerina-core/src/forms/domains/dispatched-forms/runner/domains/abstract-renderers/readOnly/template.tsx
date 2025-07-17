@@ -55,7 +55,7 @@ export const ReadOnlyAbstractRenderer = <
       ) => ({
         disabled: _.disabled,
         locked: _.locked,
-        value: _.value,
+        value: _.value.ReadOnly,
         ...(_.childFormState || GetDefaultChildState()),
         bindings: _.bindings,
         extraContext: _.extraContext,
