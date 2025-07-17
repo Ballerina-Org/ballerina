@@ -12,6 +12,12 @@ func DefaultReadOnly[T any]() ReadOnly[T] {
 	return ReadOnly[T]{}
 }
 
+func NewReadOnly[T any](t T) ReadOnly[T] {
+	return ReadOnly[T]{
+		ReadOnly: t,
+	}
+}
+
 func MatchDeltaReadOnly[a any, deltaA any, Result any]() func(DeltaReadOnly[a, deltaA]) (Result, error) {
 	return func(delta DeltaReadOnly[a, deltaA]) (Result, error) {
 		var result Result
