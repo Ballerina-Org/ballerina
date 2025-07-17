@@ -1543,9 +1543,7 @@ export const dispatchFromAPIRawValue =
           converters,
           injectedPrimitives,
         )(readOnlyResult.ReadOnly).Then((value) =>
-          ValueOrErrors.Default.return(
-            PredicateValue.Default.readonly(value),
-          ),
+          ValueOrErrors.Default.return(PredicateValue.Default.readonly(value)),
         );
       }
 
