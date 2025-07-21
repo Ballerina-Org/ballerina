@@ -799,6 +799,7 @@ func MatchDeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i 
 	onItem6 func(deltaF) (Result, error),
 	onItem7 func(deltaG) (Result, error),
 	onItem8 func(deltaH) (Result, error),
+	onItem9 func(deltaH) (Result, error),
 ) func(DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
 	return func(delta DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
 		var result Result
@@ -819,6 +820,8 @@ func MatchDeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i 
 			return onItem7(delta.Item7)
 		case "Tuple9Item8":
 			return onItem8(delta.Item8)
+		case "Tuple9Item9":
+			return onItem9(delta.Item8)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaTuple9")
 	}
