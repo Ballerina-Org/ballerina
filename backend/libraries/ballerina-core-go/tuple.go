@@ -734,6 +734,7 @@ type DeltaTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any, 
 	Item6         deltaF
 	Item7         deltaG
 	Item8         deltaH
+	Item9         deltaI
 }
 
 func NewDeltaTuple9Item1[a any, b any, c any, d any, e any, f any, g any, h any, i any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaA) DeltaTuple9[a, b, c, d, e, f, g, h, i, deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
