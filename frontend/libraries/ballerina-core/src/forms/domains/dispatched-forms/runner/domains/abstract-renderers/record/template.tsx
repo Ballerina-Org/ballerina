@@ -93,7 +93,9 @@ export const RecordAbstractRenderer = <
             > &
               RecordAbstractRendererState,
           ) => ({
-            value: _.value.fields.get(fieldName)!,
+            value: PredicateValue.Operations.IsUnit(_.value)
+              ? _.value
+              : _.value.fields.get(fieldName)!,
             type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
               FieldTemplates.get(fieldName)!.GetDefaultState()),
@@ -201,15 +203,18 @@ export const RecordAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[record]";
 
-    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsRecord(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `Record expected but got: ${JSON.stringify(
+        `Record or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Record value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Record or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

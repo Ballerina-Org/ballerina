@@ -8,6 +8,7 @@ import {
   DispatchOnChange,
   ListType,
   ValueCallbackWithOptionalFlags,
+  ValueUnit,
   VoidCallbackWithOptionalFlags,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
@@ -21,7 +22,7 @@ export type ListAbstractRendererReadonlyContext<
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   ListType<any>,
-  ValueTuple,
+  ValueTuple | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 >;

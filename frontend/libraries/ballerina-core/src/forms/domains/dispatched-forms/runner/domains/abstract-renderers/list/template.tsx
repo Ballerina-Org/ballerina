@@ -16,10 +16,7 @@ import {
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ListMethods } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
-import {
-  DispatchParsedType,
-  StringSerializedType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   ListAbstractRendererForeignMutationsExpected,
   ListAbstractRendererReadonlyContext,
@@ -63,8 +60,9 @@ export const ListAbstractRenderer = <
           ) => ({
             disabled: _.disabled,
             locked: _.locked,
-            value:
-              _.value.values?.get(elementIndex) || GetDefaultElementValue(),
+            value: PredicateValue.Operations.IsUnit(_.value)
+              ? _.value
+              : _.value.values.get(elementIndex) || GetDefaultElementValue(),
             ...(_.elementFormStates?.get(elementIndex) ||
               GetDefaultElementState()),
             bindings: _.bindings,
@@ -154,15 +152,18 @@ export const ListAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[list]";
 
-    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsTuple(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `Tuple value expected but got: ${JSON.stringify(
+        `Tuple or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Tuple value expected for list but got ${JSON.stringify(
+          message={`${domNodeId}: Tuple or unit value expected for list but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

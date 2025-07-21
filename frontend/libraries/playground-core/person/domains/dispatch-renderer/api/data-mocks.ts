@@ -950,6 +950,15 @@ const entityApis: EntityApis = {
                 ],
               },
             ],
+            IncomeTaxBrackets: [
+              [
+                {
+                  Amount: 100000,
+                  TaxRate: 0.1,
+                  TaxAmount: 10000,
+                },
+              ],
+            ],
           });
         };
       case "person-config":

@@ -6,6 +6,7 @@ import {
   simpleUpdater,
   Template,
   Updater,
+  ValueUnit,
   ValueRecord,
   View,
   DispatchOnChange,
@@ -23,7 +24,7 @@ export type RecordAbstractRendererReadonlyContext<
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   RecordType<any>,
-  ValueRecord,
+  ValueRecord | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 >;

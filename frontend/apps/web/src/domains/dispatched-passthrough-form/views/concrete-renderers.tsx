@@ -703,6 +703,35 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+    incomeLineItem: () => (props) => {
+      const value = props.context.value;
+      if (PredicateValue.Operations.IsUnit(value)) {
+        return (
+          <tr>
+            {props.FieldLabels.map((label) => (
+              <th>{label}</th>
+            ))}
+          </tr>
+        );
+      }
+      return (
+        <tr>
+          <>
+            {value.fields.keySeq().map((fieldName) => (
+              <td key={`${props.context.domNodeId}`}>
+                {props.EmbeddedFields.get(fieldName)!(undefined)({
+                  ...props,
+                  context: {
+                    ...props.context,
+                  },
+                  view: unit,
+                })}
+              </td>
+            ))}
+          </>
+        </tr>
+      );
+    },
   },
   table: {
     table: () => (_props) => <>Test</>,
@@ -1423,6 +1452,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   list: {
     defaultList: () => (props) => {
+      const value = props.context.value;
+      if (PredicateValue.Operations.IsUnit(value)) {
+        console.error(`Non partial list renderer called with unit value`);
+        return <></>;
+      }
       return (
         <div style={{ border: "1px solid darkblue" }}>
           {props.context.label && <h3>{props.context.label}</h3>}
@@ -1433,7 +1467,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             </p>
           )}
           <ul>
-            {props.context.value.values.map((_, elementIndex) => {
+            {value.values.map((_, elementIndex) => {
               return (
                 <li
                   style={{
@@ -1451,7 +1485,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                       customPresentationContext: {
                         listElement: {
                           isLastListElement:
-                            elementIndex == props.context.value.values.size - 1,
+                            elementIndex == value.values.size - 1,
                         },
                       },
                     },
@@ -1530,6 +1564,267 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               );
             })}
           </ul>
+          {props.foreignMutations.add && (
+            <button
+              onClick={() => {
+                props.foreignMutations.add!({ test: false });
+              }}
+              disabled={props.context.disabled}
+            >
+              ➕
+            </button>
+          )}
+        </div>
+      );
+    },
+    partialList: () => (props) => {
+      const value = props.context.value;
+
+      if (PredicateValue.Operations.IsUnit(value)) {
+        return (
+          <>
+            {props.embeddedElementTemplate(0)(undefined)({
+              ...props,
+              context: {
+                ...props.context,
+              },
+              view: unit,
+            })}
+          </>
+        );
+      }
+
+      return (
+        <div>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+
+          {value.values.map((_, elementIndex) => {
+            return (
+              <>
+                {props.embeddedElementTemplate(elementIndex)(undefined)({
+                  ...props,
+                  context: {
+                    ...props.context,
+                    customPresentationContext: {
+                      listElement: {
+                        isLastListElement:
+                          elementIndex == value.values.size - 1,
+                      },
+                    },
+                  },
+                  view: unit,
+                })}
+                <div style={{ display: "flex" }}>
+                  {props.foreignMutations.remove && (
+                    <button
+                      onClick={() =>
+                        props.foreignMutations.remove!(elementIndex, undefined)
+                      }
+                      disabled={props.context.disabled}
+                    >
+                      ❌
+                    </button>
+                  )}
+                  {props.foreignMutations.move && (
+                    <button
+                      onClick={() =>
+                        props.foreignMutations.move!(
+                          elementIndex,
+                          elementIndex - 1,
+                          undefined,
+                        )
+                      }
+                      disabled={props.context.disabled}
+                    >
+                      ⬆️
+                    </button>
+                  )}
+                  {props.foreignMutations.move && (
+                    <button
+                      onClick={() =>
+                        props.foreignMutations.move!(
+                          elementIndex,
+                          elementIndex + 1,
+                          undefined,
+                        )
+                      }
+                      disabled={props.context.disabled}
+                    >
+                      ⬇️
+                    </button>
+                  )}
+                  {props.foreignMutations.duplicate && (
+                    <button
+                      onClick={() =>
+                        props.foreignMutations.duplicate!(
+                          elementIndex,
+                          undefined,
+                        )
+                      }
+                      disabled={props.context.disabled}
+                    >
+                      📑
+                    </button>
+                  )}
+                  {props.foreignMutations.add && (
+                    <button
+                      onClick={() =>
+                        props.foreignMutations.insert!(
+                          elementIndex + 1,
+                          undefined,
+                        )
+                      }
+                      disabled={props.context.disabled}
+                    >
+                      ➕
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+          })}
+
+          {props.foreignMutations.add && (
+            <button
+              onClick={() => {
+                props.foreignMutations.add!({ test: false });
+              }}
+              disabled={props.context.disabled}
+            >
+              ➕
+            </button>
+          )}
+        </div>
+      );
+    },
+    listWithPartialList: () => (props) => {
+      const value = props.context.value;
+
+      if (PredicateValue.Operations.IsUnit(value)) {
+        console.error(`Non partial list renderer called with unit value`);
+        return <></>;
+      }
+
+      return (
+        <div style={{ border: "1px solid darkblue" }}>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+          {props.context.details && (
+            <p>
+              <em>{props.context.details}</em>
+            </p>
+          )}
+          <table>
+            <thead>
+              {props.embeddedElementTemplate(0)(undefined)({
+                ...props,
+                context: {
+                  ...props.context,
+                  value: PredicateValue.Default.unit(),
+                },
+                view: unit,
+              })}
+            </thead>
+
+            <tr>
+              {value.values.map((_, elementIndex) => {
+                return (
+                  <>
+                    <>
+                      {props.embeddedElementTemplate(elementIndex)(undefined)({
+                        ...props,
+                        context: {
+                          ...props.context,
+                          customPresentationContext: {
+                            listElement: {
+                              isLastListElement:
+                                elementIndex == value.values.size - 1,
+                            },
+                          },
+                        },
+                        view: unit,
+                      })}
+                    </>
+                    <div style={{ display: "flex" }}>
+                      {props.foreignMutations.remove && (
+                        <button
+                          onClick={() =>
+                            props.foreignMutations.remove!(
+                              elementIndex,
+                              undefined,
+                            )
+                          }
+                          disabled={props.context.disabled}
+                        >
+                          ❌
+                        </button>
+                      )}
+                      {props.foreignMutations.move && (
+                        <button
+                          onClick={() =>
+                            props.foreignMutations.move!(
+                              elementIndex,
+                              elementIndex - 1,
+                              undefined,
+                            )
+                          }
+                          disabled={props.context.disabled}
+                        >
+                          ⬆️
+                        </button>
+                      )}
+                      {props.foreignMutations.move && (
+                        <button
+                          onClick={() =>
+                            props.foreignMutations.move!(
+                              elementIndex,
+                              elementIndex + 1,
+                              undefined,
+                            )
+                          }
+                          disabled={props.context.disabled}
+                        >
+                          ⬇️
+                        </button>
+                      )}
+                      {props.foreignMutations.duplicate && (
+                        <button
+                          onClick={() =>
+                            props.foreignMutations.duplicate!(
+                              elementIndex,
+                              undefined,
+                            )
+                          }
+                          disabled={props.context.disabled}
+                        >
+                          📑
+                        </button>
+                      )}
+                      {props.foreignMutations.add && (
+                        <button
+                          onClick={() =>
+                            props.foreignMutations.insert!(
+                              elementIndex + 1,
+                              undefined,
+                            )
+                          }
+                          disabled={props.context.disabled}
+                        >
+                          ➕
+                        </button>
+                      )}
+                    </div>
+                  </>
+                );
+              })}
+            </tr>
+          </table>
           {props.foreignMutations.add && (
             <button
               onClick={() => {

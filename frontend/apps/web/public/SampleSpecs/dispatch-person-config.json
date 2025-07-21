@@ -358,6 +358,13 @@
         }
       ]
     },
+    "IncomeLineItem": {
+      "fields": {
+        "Amount": "number",
+        "TaxRate": "number",
+        "TaxAmount": "number"
+      }
+    },
     "Person": {
       "fields": {
         "Id": "guid",
@@ -552,6 +559,15 @@
         "BestFriend": {
           "fun": "One",
           "args": ["User"]
+        },
+        "IncomeTaxBrackets": {
+          "fun": "List",
+          "args": [
+            {
+              "fun": "List",
+              "args": ["IncomeLineItem"]
+            }
+          ]
         }
       }
     }
@@ -962,6 +978,32 @@
         }
       },
       "visibleColumns": ["Name", "Surname", "FavoriteColor"]
+    },
+    "incomeLineItem": {
+      "type": "IncomeLineItem",
+      "renderer": "incomeLineItem",
+      "fields": {
+        "Amount": {
+          "renderer": "defaultNumber"
+        },
+        "TaxRate": {
+          "renderer": "defaultNumber"
+        },
+        "TaxAmount": {
+          "renderer": "defaultNumber"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Amount", "TaxRate", "TaxAmount"]
+              }
+            }
+          }
+        }
+      }
     },
     "person": {
       "type": "Person",
@@ -1801,6 +1843,30 @@
             }
           },
           "api": ["User", "BestFriendApi"]
+        },
+        "IncomeTaxBrackets": {
+          "label": "Income Tax Brackets",
+          "renderer": "listWithPartialList",
+          "elementRenderer": {
+            "label": "Bracket",
+            "renderer": "partialList",
+            "elementRenderer": {
+              "label": "Income Line Item",
+              "renderer": "incomeLineItem"
+            },
+            "actions": {
+              "add": "add",
+              "remove": "remove",
+              "move": "move",
+              "duplicate": "duplicate"
+            }
+          },
+          "actions": {
+            "add": "add",
+            "remove": "remove",
+            "move": "move",
+            "duplicate": "duplicate"
+          }
         }
       },
       "tabs": {
@@ -1854,6 +1920,7 @@
       }
     }
   },
+
   "launchers": {
     "create-person": {
       "kind": "create",
