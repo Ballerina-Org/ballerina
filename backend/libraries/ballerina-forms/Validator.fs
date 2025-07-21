@@ -105,7 +105,7 @@ module Validator =
               return!
                 sum.Throw(
                   Errors.Singleton
-                    $"Error: api {l.OneApiId.ToFSharpString} is used in a preview but has no 'GetMany' method."
+                    $"Error: api {l.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyLinked.ToFSharpString} method."
                 )
             else
               return ()
@@ -127,7 +127,7 @@ module Validator =
               return!
                 sum.Throw(
                   Errors.Singleton
-                    $"Error: 'many' api {apiTypeId.VarName} - {apiName} is used in a preview but has no 'GetMany' method."
+                    $"Error: 'many' api {apiTypeId.VarName} - {apiName} is used in a preview but has no {CrudMethod.GetManyLinked.ToFSharpString} method."
                 )
             else
               return ()

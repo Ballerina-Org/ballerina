@@ -179,7 +179,7 @@ module Model =
     | Create
     | Delete
     | Get
-    | GetMany
+    | GetManyLinked
     | GetManyUnlinked
     | Update
     | Default

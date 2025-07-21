@@ -209,7 +209,7 @@ module Runner =
           crudCase "create" CrudMethod.Create,
           [ crudCase "delete" CrudMethod.Delete
             crudCase "get" CrudMethod.Get
-            crudCase "getMany" CrudMethod.GetMany
+            crudCase "getManyLinked" CrudMethod.GetManyLinked
             crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked
             crudCase "update" CrudMethod.Update
             crudCase "default" CrudMethod.Default ]
