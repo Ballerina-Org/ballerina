@@ -8,8 +8,8 @@ type DeltaReadOnly[a any, deltaA any] struct {
 	DeltaBase
 }
 
-func DefaultReadOnly[T any]() ReadOnly[T] {
-	return ReadOnly[T]{}
+func DefaultReadOnly[T any](value T) ReadOnly[T] {
+	return ReadOnly[T]{ReadOnly: value}
 }
 
 func NewReadOnly[T any](t T) ReadOnly[T] {
