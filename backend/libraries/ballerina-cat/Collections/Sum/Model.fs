@@ -59,6 +59,7 @@ module Sum =
     member _.Yield(result: 'a) = Sum.Left result
     member _.Bind(p, k) = Sum.bind k p
     member _.Combine(p, k) = Sum.bind (fun _ -> k) p
+    member _.OfOption (b: 'b) (p: Option<'a>) = Sum.fromOption (fun () -> b) p
 
     member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: NonEmptyList<Sum<'a, 'b>>) =
       let merge: Sum<'a, 'b> -> Sum<'a, 'b> -> Sum<'a, 'b> =

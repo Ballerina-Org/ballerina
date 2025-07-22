@@ -156,6 +156,22 @@ module WithError =
       =
       state.All({| concat = 'b.Concat |}, ps |> Seq.toList)
 
+    member inline state.AllMap<'k, 'a, 'c, 's, 'b when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
+      (ps: Map<'k, State<'a, 'c, 's, 'b>>)
+      =
+      state.All(
+        {| concat = 'b.Concat |},
+        ps
+        |> Map.toSeq
+        |> Seq.map (fun (k, p) ->
+          state {
+            let! v = p
+            return k, v
+          })
+        |> Seq.toList
+      )
+      |> state.Map(Map.ofSeq)
+
     member state.OfReader<'a, 'c, 's, 'e>(ReaderWithError r: ReaderWithError<'c, 'a, 'e>) : State<'a, 'c, 's, 'e> =
       State(fun (c, _s) ->
         match r c with

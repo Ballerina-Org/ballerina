@@ -2,15 +2,12 @@ namespace Ballerina.DSL.Expr
 
 module Model =
   open System
-  open Ballerina.Fun
-  open Ballerina.Collections.Option
-  open Ballerina.Collections.Map
-  open Ballerina.Collections.Sum
-  open Ballerina.Errors
 
   let sumCaseNames =
     {| Left = "Sum.Left"
        Right = "Sum.Right" |}
+
+  let optionCaseNames = {| Some = "some"; None = "none" |}
 
   type Vars<'ExprExtension, 'ValueExtension> = Map<VarName, Value<'ExprExtension, 'ValueExtension>>
 

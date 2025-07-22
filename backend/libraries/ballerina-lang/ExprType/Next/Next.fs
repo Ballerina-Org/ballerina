@@ -2,13 +2,9 @@ namespace Ballerina.DSL.Next
 
 module Model =
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.NonEmptyList
-  open Ballerina.State.WithError
   open Ballerina.Reader.WithError
   open Ballerina.Errors
   open System
-  open Ballerina.Fun
-  open Ballerina.StdLib.Object
 
   type TypeParameter = { Name: string; Kind: Kind }
 
@@ -75,6 +71,9 @@ module Model =
     | Decimal
     | Bool
     | String
+    | Float
+    | DateTime
+    | DateOnly
   // add more
 
   // Patterns.fs
@@ -253,7 +252,7 @@ module Model =
           | TypeExpr.Apply(f, a) ->
             let! f = !!f
             let! a = !!a
-            let! (param, body) = f |> TypeValue.AsLambda |> reader.OfSum
+            let! param, body = f |> TypeValue.AsLambda |> reader.OfSum
 
             return!
               !body
@@ -276,7 +275,7 @@ module Model =
           | TypeExpr.Lookup v -> return! TypeExprEvalContext.tryFindType v
           | TypeExpr.Apply(f, a) ->
             let! f = !f
-            let! (param, body) = f |> TypeValue.AsLambda |> reader.OfSum
+            let! param, body = f |> TypeValue.AsLambda |> reader.OfSum
 
             match param.Kind with
             | Kind.Symbol ->
@@ -541,3 +540,42 @@ module Model =
             else
               return! $"Error: expected star type, got {arg}" |> Errors.Singleton |> reader.Throw
         }
+
+  type Var = { Name: string }
+
+  type Expr =
+    | TypeLambda of TypeParameter * Expr
+    | TypeApply of Expr * TypeExpr
+    | Lambda of Var * Expr
+    | Apply of Expr * Expr
+    | RecordCons of List<string * Expr>
+    | UnionCons of string * Expr
+    | TupleCons of List<Expr>
+    | SumCons of int * Expr
+    | RecordDes of Expr * string
+    | UnionDes of Map<string, CaseHandler>
+    | TupleDes of Expr * int
+    | SumDes of CaseHandler * CaseHandler
+    | Primitive of PrimitiveValue
+    | Var of Var
+
+  and CaseHandler = Var * Expr
+
+  and PrimitiveValue =
+    | Int of int
+    | Decimal of decimal
+    | Bool of bool
+    | Guid of Guid
+    | String of string
+    | Date of DateOnly
+    | DateTime of DateTime
+    | Unit
+
+  and Value =
+    | TypeLambda of TypeParameter * Expr
+    | Lambda of Var * Expr
+    | Record of Map<string, Value>
+    | Union of string * Value
+    | Tuple of List<Value>
+    | Sum of int * Value
+    | Primitive of PrimitiveValue

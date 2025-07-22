@@ -48,6 +48,12 @@ module WithError =
         return! r2
       }
 
+    member reader.Catch((ReaderWithError p): ReaderWithError<'c, 'a, 'e>) : ReaderWithError<'c, Sum<'a, 'e>, 'e> =
+      ReaderWithError(fun cs ->
+        match p cs with
+        | Left(res: 'a) -> let result: Sum<'a, 'e> = Left res in Left(result)
+        | Right(err: 'e) -> let result: Sum<'a, 'e> = Right err in Left(result))
+
     member reader.Throw<'c, 'a, 'e>(error: 'e) : ReaderWithError<'c, 'a, 'e> =
       ReaderWithError(fun _ -> sum.Throw(error))
 
