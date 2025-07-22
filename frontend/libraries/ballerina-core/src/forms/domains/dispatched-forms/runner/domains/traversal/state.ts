@@ -78,31 +78,77 @@ export const RendererTraversal = {
 
       if (
         renderer.kind == "lookupType-lookupRenderer" ||
-        renderer.kind == "inlinedType-lookupRenderer" ||
-        renderer.kind == "lookupType-inlinedRenderer"
+        renderer.kind == "lookupType-inlinedRenderer" ||
+        renderer.kind == "inlinedType-lookupRenderer"
       ) {
         if (
           renderer.kind == "lookupType-lookupRenderer" ||
-          renderer.kind == "inlinedType-lookupRenderer"
+          renderer.kind == "lookupType-inlinedRenderer"
         ) {
-          // renderer.renderer.renderer is the form name
-          // this is a form lookup, so "local" changes here to the traversed value
           return LookupRenderer.Operations.ResolveRenderer(
             renderer,
             traversalContext.forms,
           ).Then((resolvedRenderer) =>
             rec(resolvedRenderer, traversalContext).Then(
               (valueTraversal: Option<ValueTraversal<T, Res>>) =>
-                ValueOrErrors.Default.return(
-                  mapEvalContext((ctx) => ({
-                    ...ctx,
-                    local: ctx.traversalIterator,
-                  }))(valueTraversal),
-                ),
+                ValueOrErrors.Default.return<
+                  Option<ValueTraversal<T, Res>>,
+                  string
+                >(
+                  // reassign local if it's a lookup renderer
+                  renderer.kind == "lookupType-lookupRenderer"
+                    ? mapEvalContext((ctx) => ({
+                        ...ctx,
+                        local: ctx.traversalIterator,
+                      }))(valueTraversal)
+                    : valueTraversal,
+                ).Then((resolvedTraversal) => {
+                  if (
+                    traverseNode.kind == "l" &&
+                    resolvedTraversal.kind == "l"
+                  ) {
+                    return ValueOrErrors.Default.return(Option.Default.none());
+                  }
+
+                  if (traverseNode.kind == "l") {
+                    return ValueOrErrors.Default.return(resolvedTraversal);
+                  }
+
+                  if (resolvedTraversal.kind == "l") {
+                    return ValueOrErrors.Default.return(
+                      Option.Default.some((evalContext: EvalContext<T, Res>) =>
+                        traverseNode
+                          .value(evalContext)
+                          .Then((nodeResult) =>
+                            ValueOrErrors.Default.return(nodeResult),
+                          ),
+                      ),
+                    );
+                  }
+
+                  return ValueOrErrors.Default.return(
+                    Option.Default.some((evalContext: EvalContext<T, Res>) => {
+                      return resolvedTraversal
+                        .value(evalContext)
+                        .Then((resolvedTraversal) =>
+                          traverseNode
+                            .value(evalContext)
+                            .Then((nodeResult) =>
+                              ValueOrErrors.Default.return<Res, string>(
+                                traversalContext.joinRes([
+                                  nodeResult,
+                                  resolvedTraversal,
+                                ]),
+                              ),
+                            ),
+                        );
+                    }),
+                  );
+                }),
             ),
           );
         }
-        // otherwise the form is inlined, so the local doesn't change
+
         return LookupRenderer.Operations.ResolveRenderer(
           renderer,
           traversalContext.forms,
@@ -113,6 +159,56 @@ export const RendererTraversal = {
           ),
         );
       }
+
+      if (
+        renderer.type.kind == "readOnly" &&
+        renderer.kind == "readOnlyRenderer"
+      ) {
+        return rec(renderer.childRenderer.renderer, traversalContext).Then(
+          (valueTraversal: Option<ValueTraversal<T, Res>>) => {
+            if (valueTraversal.kind == "l" && traverseNode.kind == "l") {
+              return ValueOrErrors.Default.return(Option.Default.none());
+            }
+            return ValueOrErrors.Default.return(
+              Option.Default.some((evalContext: EvalContext<T, Res>) => {
+                const iterator = evalContext.traversalIterator;
+                if (!PredicateValue.Operations.IsReadOnly(iterator)) {
+                  return ValueOrErrors.Default.throwOne<Res, string>(
+                    `Error: traversal iterator is not read only, got ${JSON.stringify(
+                      iterator,
+                      undefined,
+                      2,
+                    )}`,
+                  );
+                }
+                return (
+                  valueTraversal.kind == "r"
+                    ? valueTraversal.value({
+                        ...evalContext,
+                        traversalIterator: iterator.ReadOnly,
+                      })
+                    : ValueOrErrors.Default.return<Res, string>(
+                        traversalContext.zeroRes(unit),
+                      )
+                ).Then((valueResult) =>
+                  traverseNode.kind == "r"
+                    ? traverseNode
+                        .value(evalContext)
+                        .Then((nodeResult) =>
+                          ValueOrErrors.Default.return(
+                            traversalContext.joinRes([valueResult, nodeResult]),
+                          ),
+                        )
+                    : ValueOrErrors.Default.return(
+                        traversalContext.zeroRes(unit),
+                      ),
+                );
+              }),
+            );
+          },
+        );
+      }
+
       if (renderer.type.kind == "record" && renderer.kind == "recordRenderer") {
         return ValueOrErrors.Operations.All(
           List(
