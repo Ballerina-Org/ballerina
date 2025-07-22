@@ -199,9 +199,7 @@ export const RendererTraversal = {
                             traversalContext.joinRes([valueResult, nodeResult]),
                           ),
                         )
-                    : ValueOrErrors.Default.return(
-                        traversalContext.zeroRes(unit),
-                      ),
+                    : ValueOrErrors.Default.return(valueResult),
                 );
               }),
             );
