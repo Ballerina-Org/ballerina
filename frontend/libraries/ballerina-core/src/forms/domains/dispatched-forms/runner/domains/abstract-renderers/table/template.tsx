@@ -504,9 +504,6 @@ export const TableAbstractRenderer = <
               .flatMap((_, column) => {
                 const EmbeddedCell = EmbeddedCellTemplates.get(column);
                 if (EmbeddedCell == undefined) {
-                  console.error(
-                    `Cannot find column ${column} in fields ${rowData.fields.keySeq().toArray()}, this is likely due to a mismatch between the data we are trying to parse and the specs.`,
-                  );
                   return [];
                 }
                 return [
