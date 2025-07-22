@@ -9,7 +9,7 @@ type Chunk[T any] struct {
 	HasMore bool
 }
 
-func NewChunk[T any](values []T, from int, to int, hasMore bool) Chunk[T] {
+func NewChunk[T any](values []T, hasMore bool) Chunk[T] {
 	return Chunk[T]{
 		Values:  values,
 		HasMore: hasMore,
