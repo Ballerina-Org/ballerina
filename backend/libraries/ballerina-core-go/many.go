@@ -18,7 +18,7 @@ func MapMany[T, U any](m Many[T], f func(T) U) Many[U] {
 	return Many[U]{
 		LinkedItems:   MapChunk(m.LinkedItems, f),
 		UnlinkedItems: MapChunk(m.UnlinkedItems, f),
-		AllItems:      MapChunk(m.AllItems, func(item ManyItem[T]) ManyItem[U] {
+		AllItems: MapChunk(m.AllItems, func(item ManyItem[T]) ManyItem[U] {
 			return MapManyItem(item, f)
 		}),
 	}
