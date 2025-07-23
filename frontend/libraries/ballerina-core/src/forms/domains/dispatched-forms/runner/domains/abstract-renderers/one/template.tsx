@@ -25,6 +25,8 @@ import {
   Unit,
   MapRepo,
   DispatchParsedType,
+  DispatchOnChange,
+  BaseFlags,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -56,7 +58,7 @@ import {
 
 export const OneAbstractRenderer = <
   CustomPresentationContext = Unit,
-  Flags = Unit,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 >(
   DetailsRenderer: Template<any, any, any, any>,
@@ -86,6 +88,10 @@ export const OneAbstractRenderer = <
     ExtraContext
   >();
 
+  // value is Unit -> partial one, dont'run
+  // value is Option<none> -> signal to run the initialization
+  // value is Option<some> -> there is a value, we do not care about what's inside
+
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
       Omit<
@@ -98,21 +104,7 @@ export const OneAbstractRenderer = <
         value: ValueRecord | ValueUnit;
       } & OneAbstractRendererState
     >((_) => {
-      if (
-        !AsyncState.Operations.hasValue(_.customFormState.selectedValue.sync)
-      ) {
-        return undefined;
-      }
-      if (_.customFormState.selectedValue.sync.value.kind == "errors") {
-        console.error(
-          _.customFormState.selectedValue.sync.value.errors
-            .join("\n")
-            .concat(`\n...When parsing the "one" field value\n...`),
-        );
-        return undefined;
-      }
-
-      const value = _.customFormState.selectedValue.sync.value.value;
+      const value = _.value;
 
       if (PredicateValue.Operations.IsUnit(value)) {
         return undefined;
@@ -164,38 +156,7 @@ export const OneAbstractRenderer = <
                     ),
                   ),
                 ),
-              )
-              .then((__) => {
-                if (
-                  __.customFormState.selectedValue.sync.kind != "loaded" ||
-                  __.customFormState.selectedValue.sync.value.kind ==
-                    "errors" ||
-                  !PredicateValue.Operations.IsRecord(
-                    __.customFormState.selectedValue.sync.value.value,
-                  ) ||
-                  updater.kind == "l"
-                ) {
-                  return __;
-                }
-                return {
-                  ...__,
-                  customFormState: {
-                    ...__.customFormState,
-                    selectedValue: {
-                      ...__.customFormState.selectedValue,
-                      sync: {
-                        ...__.customFormState.selectedValue.sync,
-                        value: {
-                          ...__.customFormState.selectedValue.sync.value,
-                          value: updater.value(
-                            __.customFormState.selectedValue.sync.value.value,
-                          ),
-                        },
-                      },
-                    },
-                  },
-                };
-              }),
+              ),
           );
 
           const delta: DispatchDelta<Flags> = {
@@ -287,39 +248,7 @@ export const OneAbstractRenderer = <
                         ),
                       ),
                     ),
-                  )
-                  .then((__) => {
-                    if (
-                      __.customFormState.selectedValue.sync.kind != "loaded" ||
-                      __.customFormState.selectedValue.sync.value.kind ==
-                        "errors" ||
-                      !PredicateValue.Operations.IsRecord(
-                        __.customFormState.selectedValue.sync.value.value,
-                      ) ||
-                      updater.kind == "l"
-                    ) {
-                      return __;
-                    }
-                    return {
-                      ...__,
-                      customFormState: {
-                        ...__.customFormState,
-                        selectedValue: {
-                          ...__.customFormState.selectedValue,
-                          sync: {
-                            ...__.customFormState.selectedValue.sync,
-                            value: {
-                              ...__.customFormState.selectedValue.sync.value,
-                              value: updater.value(
-                                __.customFormState.selectedValue.sync.value
-                                  .value,
-                              ),
-                            },
-                          },
-                        },
-                      },
-                    };
-                  }),
+                  ),
               );
 
               const delta: DispatchDelta<Flags> = {
@@ -354,8 +283,8 @@ export const OneAbstractRenderer = <
     OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[one]";
-
     const value = props.context.value;
+
     if (
       !PredicateValue.Operations.IsUnit(value) &&
       (!PredicateValue.Operations.IsOption(value) ||
@@ -418,43 +347,20 @@ export const OneAbstractRenderer = <
       );
     }
 
-    if (
-      !AsyncState.Operations.hasValue(
-        props.context.customFormState.selectedValue.sync,
-      )
-    ) {
-      return (
-        <>
-          <IdProvider domNodeId={domNodeId}>
-            <props.view
-              {...props}
-              context={{
-                ...props.context,
-                domNodeId,
-                kind: "uninitialized",
-              }}
-              kind="uninitialized"
-              foreignMutations={{
-                kind: "uninitialized",
-              }}
-            />
-          </IdProvider>
-        </>
-      );
-    }
+    // if (props.context.value.kind === "unit") {
+    //   console.debug("value is unit");
+    //   return <></>;
+    // }
+
+    const innerValue = value.kind === "unit" ? value : value.value;
 
     if (
-      props.context.customFormState.selectedValue.sync.value.kind == "errors"
+      !PredicateValue.Operations.IsUnit(innerValue) &&
+      !PredicateValue.Operations.IsRecord(innerValue)
     ) {
-      console.error(
-        props.context.customFormState.selectedValue.sync.value.errors.join(
-          "\n",
-        ),
-      );
+      console.debug("inner value is neither a unit nor a record", innerValue);
       return <></>;
     }
-    const syncValue =
-      props.context.customFormState.selectedValue.sync.value.value;
 
     return (
       <>
@@ -466,7 +372,7 @@ export const OneAbstractRenderer = <
               ...props.context,
               kind: "initialized",
               domNodeId,
-              value: syncValue,
+              value: innerValue,
               hasMoreValues:
                 !!props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues,
@@ -517,26 +423,7 @@ export const OneAbstractRenderer = <
               clear: () =>
                 // See comment at top of file
                 // TODO: test the reinitialization behaviour
-                props.foreignMutations.clear &&
-                (props.foreignMutations.clear(),
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children
-                    .selectedValue(
-                      Synchronized.Updaters.sync(
-                        AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return<
-                            ValueRecord | ValueUnit,
-                            string
-                          >(PredicateValue.Default.unit()),
-                        ),
-                      ),
-                    )
-                    .then(
-                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                        true,
-                      ),
-                    ),
-                )),
+                props.foreignMutations.clear && props.foreignMutations.clear(),
               delete: (flags) => {
                 const delta: DispatchDelta<Flags> = {
                   kind: "OneDeleteValue",
@@ -545,25 +432,7 @@ export const OneAbstractRenderer = <
                     props.context.lookupTypeAncestorNames,
                 };
                 props.foreignMutations.delete &&
-                  (props.foreignMutations.delete(delta),
-                  props.setState(
-                    OneAbstractRendererState.Updaters.Core.customFormState.children
-                      .selectedValue(
-                        Synchronized.Updaters.sync(
-                          AsyncState.Updaters.toLoaded(
-                            ValueOrErrors.Default.return<
-                              ValueRecord | ValueUnit,
-                              string
-                            >(PredicateValue.Default.unit()),
-                          ),
-                        ),
-                      )
-                      .then(
-                        OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                          true,
-                        ),
-                      ),
-                  ));
+                  props.foreignMutations.delete(delta);
               },
               select: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
@@ -586,25 +455,6 @@ export const OneAbstractRenderer = <
                       Option.Default.some(updater),
                       delta,
                     );
-
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children
-                    .selectedValue(
-                      Synchronized.Updaters.sync(
-                        AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return<
-                            ValueRecord | ValueUnit,
-                            string
-                          >(value),
-                        ),
-                      ),
-                    )
-                    .then(
-                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                        true,
-                      ),
-                    ),
-                );
               },
               create: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
@@ -627,35 +477,27 @@ export const OneAbstractRenderer = <
                       Option.Default.some(updater),
                       delta,
                     );
-
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children
-                    .selectedValue(
-                      Synchronized.Updaters.sync(
-                        AsyncState.Updaters.toLoaded(
-                          ValueOrErrors.Default.return<
-                            ValueRecord | ValueUnit,
-                            string
-                          >(value),
-                        ),
-                      ),
-                    )
-                    .then(
-                      OneAbstractRendererState.Updaters.Template.shouldReinitialize(
-                        true,
-                      ),
-                    ),
-                );
               },
             }}
-            DetailsRenderer={embeddedDetailsRenderer}
-            PreviewRenderer={embeddedPreviewRenderer}
+            DetailsRenderer={
+              value.kind !== "unit" && value.isSome
+                ? embeddedDetailsRenderer
+                : undefined
+            }
+            PreviewRenderer={
+              value.kind !== "unit" && value.isSome
+                ? embeddedPreviewRenderer
+                : undefined
+            }
           />
         </IdProvider>
       </>
     );
   }).any([
-    typedInitializeOneRunner,
+    typedInitializeOneRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange as any,
+    })),
     typedReinitializeOneRunner,
     typedOneTableLoaderRunner,
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {

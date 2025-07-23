@@ -9,6 +9,8 @@ import {
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
 
+export type BaseFlags = { kind: "localOnly" };
+
 export type DispatchDelta<T = Unit> =
   | DispatchDeltaPrimitive<T>
   | DispatchDeltaOption<T>

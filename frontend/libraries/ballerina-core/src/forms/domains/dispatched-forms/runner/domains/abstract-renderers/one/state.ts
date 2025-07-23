@@ -30,6 +30,7 @@ import {
   CommonAbstractRendererState,
   DispatchDelta,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  BaseFlags,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -45,16 +46,13 @@ export type OneAbstractRendererReadonlyContext<
   getApi: BasicFun<Guid, Promise<unknown>>;
   fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
   remoteEntityVersionIdentifier: string;
+  postInitActionFlag: BaseFlags;
 };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
-    selectedValue: Synchronized<
-      ValueUnit,
-      ValueOrErrors<ValueRecord | ValueUnit, string>
-    >;
     streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
     stream: ValueInfiniteStreamState;
@@ -79,7 +77,6 @@ export const OneAbstractRendererState = {
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
       previewStates: Map(),
-      selectedValue: Synchronized.Default(ValueUnit.Default()),
       streamParams: Debounced.Default(Value.Default(Map())),
       status: "closed",
       getChunkWithParams: getChunk,
@@ -92,9 +89,6 @@ export const OneAbstractRendererState = {
   Updaters: {
     Core: {
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "selectedValue",
-        ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "status",
         ),
@@ -144,7 +138,7 @@ export const OneAbstractRendererState = {
   },
 };
 
-export type OneAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+export type OneAbstractRendererForeignMutationsExpected<Flags = BaseFlags> = {
   onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
   clear?: () => void;
   delete?: (delta: DispatchDelta<Flags>) => void;
@@ -158,21 +152,22 @@ export type OneAbstractRendererForeignMutationsExpected<Flags = Unit> = {
   ) => void;
 };
 
-export type OneAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
-  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
-  toggleOpen: SimpleCallback<void>;
-  setStreamParam: BasicFun2<string, string, void>;
-  select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
-  create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
-  delete?: VoidCallbackWithOptionalFlags<Flags>;
-  clear?: SimpleCallback<void>;
-  loadMore: SimpleCallback<void>;
-  reload: SimpleCallback<void>;
-};
+export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
+  {
+    onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+    toggleOpen: SimpleCallback<void>;
+    setStreamParam: BasicFun2<string, string, void>;
+    select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+    create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+    delete?: VoidCallbackWithOptionalFlags<Flags>;
+    clear?: SimpleCallback<void>;
+    loadMore: SimpleCallback<void>;
+    reload: SimpleCallback<void>;
+  };
 
 export type OneAbstractRendererView<
   CustomPresentationContext = Unit,
-  Flags = Unit,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 > = View<
   (
@@ -203,7 +198,7 @@ export type OneAbstractRendererView<
     },
   | {
       kind: "initialized";
-      DetailsRenderer: (flags: Flags | undefined) => Template<
+      DetailsRenderer?: (flags: Flags | undefined) => Template<
         Omit<
           OneAbstractRendererReadonlyContext<
             CustomPresentationContext,
