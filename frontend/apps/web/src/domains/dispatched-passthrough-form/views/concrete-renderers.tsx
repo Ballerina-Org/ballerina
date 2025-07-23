@@ -50,19 +50,19 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       ) {
         return <></>;
       }
-      if (
-        !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
-      ) {
-        return <></>;
-      }
-      if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
-        console.error(
-          ctx.customFormState.selectedValue.sync.value.errors
-            .join("\n")
-            .concat(`\n...When parsing the "one" field value\n...`),
-        );
-        return <></>;
-      }
+      // if (
+      //   !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
+      // ) {
+      //   return <></>;
+      // }
+      // if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+      //   console.error(
+      //     ctx.customFormState.selectedValue.sync.value.errors
+      //       .join("\n")
+      //       .concat(`\n...When parsing the "one" field value\n...`),
+      //   );
+      //   return <></>;
+      // }
 
       if (PredicateValue.Operations.IsUnit(ctx.value)) {
         return <></>;
@@ -80,7 +80,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           }}
         >
           <p>DetailsRenderer</p>
-          {propsLocal.DetailsRenderer(undefined)({
+          {propsLocal.DetailsRenderer?.(undefined)({
             ...propsLocal,
             context: {
               ...ctx,
@@ -179,26 +179,26 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       ) {
         return <></>;
       }
-      if (
-        !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
-      ) {
-        return <></>;
-      }
-      if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
-        console.error(
-          ctx.customFormState.selectedValue.sync.value.errors
-            .join("\n")
-            .concat(`\n...When parsing the "one" field value\n...`),
-        );
-        return <></>;
-      }
+      // if (
+      //   !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
+      // ) {
+      //   return <></>;
+      // }
+      // if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+      //   console.error(
+      //     ctx.customFormState.selectedValue.sync.value.errors
+      //       .join("\n")
+      //       .concat(`\n...When parsing the "one" field value\n...`),
+      //   );
+      //   return <></>;
+      // }
 
       if (PredicateValue.Operations.IsUnit(ctx.value)) {
         return (
           <>
             <p>one admin renderer</p>
             <p>DetailsRenderer</p>
-            {propsLocal.DetailsRenderer(undefined)({
+            {propsLocal.DetailsRenderer?.(undefined)({
               ...propsLocal,
               context: {
                 ...ctx,
@@ -280,7 +280,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <>
           <p>one admin renderer</p>
           <p>DetailsRenderer</p>
-          {propsLocal.DetailsRenderer(undefined)({
+          {propsLocal.DetailsRenderer?.(undefined)({
             ...propsLocal,
             context: {
               ...ctx,
@@ -379,19 +379,19 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       ) {
         return <></>;
       }
-      if (
-        !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
-      ) {
-        return <></>;
-      }
-      if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
-        console.error(
-          ctx.customFormState.selectedValue.sync.value.errors
-            .join("\n")
-            .concat(`\n...When parsing the "one" field value\n...`),
-        );
-        return <></>;
-      }
+      // if (
+      //   !AsyncState.Operations.hasValue(ctx.customFormState.selectedValue.sync)
+      // ) {
+      //   return <></>;
+      // }
+      // if (ctx.customFormState.selectedValue.sync.value.kind == "errors") {
+      //   console.error(
+      //     ctx.customFormState.selectedValue.sync.value.errors
+      //       .join("\n")
+      //       .concat(`\n...When parsing the "one" field value\n...`),
+      //   );
+      //   return <></>;
+      // }
 
       if (PredicateValue.Operations.IsUnit(ctx.value)) {
         return <></>;
@@ -412,7 +412,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         >
           <h2>{ctx.label}</h2>
           <li>
-            {propsLocal.DetailsRenderer(undefined)({
+            {propsLocal.DetailsRenderer?.(undefined)({
               ...propsLocal,
               context: {
                 ...ctx,
