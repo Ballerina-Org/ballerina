@@ -57,7 +57,7 @@ import getIdFromContext from "./operations/getIdFromContext";
 
 export const OneAbstractRenderer = <
   CustomPresentationContext = Unit,
-  Flags = BaseFlags,
+  Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 >(
   DetailsRenderer: Template<any, any, any, any>,

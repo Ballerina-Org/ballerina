@@ -14,7 +14,6 @@ import {
   OneType,
   ValueOrErrors,
   Guid,
-  Synchronized,
   Unit,
   Template,
   ValueRecord,
@@ -23,7 +22,6 @@ import {
   MapRepo,
   BasicFun2,
   Value,
-  replaceWith,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
   DispatchOnChange,
@@ -148,7 +146,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
 
 export type OneAbstractRendererView<
   CustomPresentationContext = Unit,
-  Flags = BaseFlags,
+  Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 > = View<
   OneAbstractRendererReadonlyContext<
