@@ -2,7 +2,7 @@ import { Unit, replaceWith, Sum } from "../../../../../../../../../main";
 import { ValueInfiniteStreamState } from "../../../../../../../../value-infinite-data-stream/state";
 import { OneAbstractRendererState } from "../state";
 import { Co } from "./builder";
-import { getIdFromContext } from "./utils";
+import getIdFromContext from "../operations/getIdFromContext";
 
 export const initializeStream = <
   CustomPresentationContext = Unit,

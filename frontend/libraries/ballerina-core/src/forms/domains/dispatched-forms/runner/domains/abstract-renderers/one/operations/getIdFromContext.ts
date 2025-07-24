@@ -5,7 +5,7 @@ import {
   OneAbstractRendererReadonlyContext,
 } from "../../../../../../../../../main";
 
-export const getIdFromContext = <
+const getIdFromContext = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >(
@@ -48,3 +48,5 @@ export const getIdFromContext = <
 
   return ValueOrErrors.Default.return(id);
 };
+
+export default getIdFromContext;

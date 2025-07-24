@@ -39,7 +39,7 @@ import {
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
 } from "./coroutines/runner";
-import { getIdFromContext } from "./coroutines/utils";
+import getIdFromContext from "./operations/getIdFromContext";
 
 /*
  * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
@@ -299,13 +299,6 @@ export const OneAbstractRenderer = <
       return <ErrorRenderer message={errorMsg} />;
     }
 
-    console.debug("OneAbstractRenderer", {
-      name: props.context.label,
-      type: props.context.type,
-      kind: value.kind,
-      isSome: value.kind !== "unit" ? value.isSome : undefined,
-    });
-
     return (
       <>
         <IdProvider domNodeId={domNodeId}>
@@ -360,17 +353,8 @@ export const OneAbstractRenderer = <
                     ),
                   ),
                 ),
-              reload: () =>
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
-                    Debounced.Updaters.Template.value(
-                      Value.Updaters.value(replaceWith(Map())),
-                    ),
-                  ),
-                ),
               clear: () =>
                 // See comment at top of file
-                // TODO: test the reinitialization behaviour
                 props.foreignMutations.clear && props.foreignMutations.clear(),
               delete: (flags) => {
                 const delta: DispatchDelta<Flags> = {
