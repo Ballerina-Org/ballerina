@@ -39,7 +39,6 @@ import {
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
 } from "./coroutines/runner";
-import getIdFromContext from "./operations/getIdFromContext";
 
 /*
  * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
@@ -290,9 +289,9 @@ export const OneAbstractRenderer = <
       );
     }
 
-    const maybeId = getIdFromContext(props.context).MapErrors((_) =>
-      _.concat(`\n...${domNodeId}`),
-    );
+    const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
+      props.context,
+    ).MapErrors((_) => _.concat(`\n...${domNodeId}`));
 
     if (maybeId.kind === "errors") {
       const errorMsg = maybeId.errors.join("\n");
@@ -433,7 +432,9 @@ export const OneAbstractRenderer = <
       onChange: props.foreignMutations.onChange as any,
     })),
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {
-      const maybeId = getIdFromContext(props.context).MapErrors((_) =>
+      const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
+        props.context,
+      ).MapErrors((_) =>
         _.concat(`\n...${props.context.domNodeAncestorPath + "[one]"}`),
       );
 

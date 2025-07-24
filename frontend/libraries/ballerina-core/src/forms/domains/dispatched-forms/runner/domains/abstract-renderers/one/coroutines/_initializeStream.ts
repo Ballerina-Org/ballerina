@@ -2,7 +2,6 @@ import { Unit, replaceWith, Sum } from "../../../../../../../../../main";
 import { ValueInfiniteStreamState } from "../../../../../../../../value-infinite-data-stream/state";
 import { OneAbstractRendererState } from "../state";
 import { Co } from "./builder";
-import getIdFromContext from "../operations/getIdFromContext";
 
 export const initializeStream = <
   CustomPresentationContext = Unit,
@@ -12,7 +11,9 @@ export const initializeStream = <
     .GetState()
     .then((current) => {
       const InstantiatedCo = Co<CustomPresentationContext, ExtraContext>();
-      const maybeId = getIdFromContext(current).MapErrors((_) =>
+      const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
+        current,
+      ).MapErrors((_) =>
         _.concat(
           `\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         ),
