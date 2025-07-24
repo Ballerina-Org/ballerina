@@ -39,7 +39,6 @@ import {
   initializeOneRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
-  reinitializeOneRunner,
 } from "./coroutines/runner";
 
 /*
@@ -68,11 +67,6 @@ export const OneAbstractRenderer = <
   oneEntityType: RecordType<any>,
 ) => {
   const typedInitializeOneRunner = initializeOneRunner<
-    CustomPresentationContext,
-    Flags,
-    ExtraContext
-  >();
-  const typedReinitializeOneRunner = reinitializeOneRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
@@ -374,10 +368,8 @@ export const OneAbstractRenderer = <
         <IdProvider domNodeId={domNodeId}>
           <props.view
             {...props}
-            kind="initialized"
             context={{
               ...props.context,
-              kind: "initialized",
               domNodeId,
               value: innerValue,
               hasMoreValues:
@@ -386,7 +378,6 @@ export const OneAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              kind: "initialized",
               toggleOpen: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -505,7 +496,6 @@ export const OneAbstractRenderer = <
       ...props.context,
       onChange: props.foreignMutations.onChange as any,
     })),
-    typedReinitializeOneRunner,
     typedOneTableLoaderRunner,
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {
       const local = props.context.bindings.get("local");

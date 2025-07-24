@@ -70,8 +70,12 @@ const intializeOne = <
   InitializeCo<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
+      const InstantiatedInitializeCo = InitializeCo<
+        CustomPresentationContext,
+        ExtraContext
+      >();
       if (current.value == undefined) {
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+        return InstantiatedInitializeCo.Wait(0);
       }
 
       /// When initailising, in both stages, inject the id to the get chunk
@@ -81,21 +85,21 @@ const intializeOne = <
         console.error(
           `local binding is undefined when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         );
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+        return InstantiatedInitializeCo.Wait(0);
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
         console.error(
           `local binding is not a record when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         );
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+        return InstantiatedInitializeCo.Wait(0);
       }
 
       if (!local.fields.has("Id")) {
         console.error(
           `local binding is missing Id (check casing) when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         );
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+        return InstantiatedInitializeCo.Wait(0);
       }
 
       const id = local.fields.get("Id")!; // safe because of above check;
@@ -103,37 +107,33 @@ const intializeOne = <
         console.error(
           `local Id is not a string when intialising one\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         );
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+        return InstantiatedInitializeCo.Wait(0);
       }
 
       const initializationCompletedCo = InitializeCo<
         CustomPresentationContext,
         ExtraContext
       >().Seq([
-        InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
+        InstantiatedInitializeCo.Do(() => {
           console.debug("initializationCompletedCo");
         }),
-        InitializeCo<CustomPresentationContext, ExtraContext>().SetState(
+        InstantiatedInitializeCo.SetState(
           OneAbstractRendererState.Updaters.Core.customFormState.children
-            .initializationStatus(
-              replaceWith<
-                OneAbstractRendererState["customFormState"]["initializationStatus"]
-              >("initialized"),
+            .previousRemoteEntityVersionIdentifier(
+              replaceWith(current.remoteEntityVersionIdentifier),
             )
-            .thenMany([
-              OneAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
-                replaceWith(current.remoteEntityVersionIdentifier),
-              ),
+            .then(
               OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
                 replaceWith(false),
               ),
-              current.customFormState.initializationStatus ==
-                "reinitializing" && current.customFormState.status == "open"
+            )
+            .then(
+              current.customFormState.status == "open"
                 ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     ValueInfiniteStreamState.Updaters.Template.loadMore(),
                   )
                 : idUpdater,
-            ]),
+            ),
         ),
       ]);
 
@@ -141,6 +141,7 @@ const intializeOne = <
         (PredicateValue.Operations.IsOption(current.value) &&
           current.value.isSome) ||
         PredicateValue.Operations.IsUnit(current.value);
+
       const initializeStreamCo = InitializeCo<
         CustomPresentationContext,
         ExtraContext
@@ -158,7 +159,7 @@ const intializeOne = <
       );
 
       if (hasInitialValue) {
-        return InitializeCo<CustomPresentationContext, ExtraContext>().Seq([
+        return InstantiatedInitializeCo.Seq([
           initializeStreamCo,
           initializationCompletedCo,
         ]);
@@ -173,7 +174,7 @@ const intializeOne = <
           (_) => console.error("err"),
         )
         .then((value) =>
-          InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
+          InstantiatedInitializeCo.Do(() => {
             return current.fromApiParser(value.value).Then((result) => {
               const updater = replaceWith<ValueOption | ValueUnit>(
                 ValueOption.Default.some(result),
@@ -195,7 +196,7 @@ const intializeOne = <
           }),
         );
 
-      return InitializeCo<CustomPresentationContext, ExtraContext>().Seq([
+      return InstantiatedInitializeCo.Seq([
         initializeStreamCo,
         initializeValueCo,
         initializationCompletedCo,
@@ -226,38 +227,6 @@ const debouncer = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
     ]),
   );
 
-const reinitialize = <
-  CustomPresentationContext = Unit,
-  ExtraContext = Unit,
->() =>
-  Co<CustomPresentationContext, ExtraContext>()
-    .GetState()
-    .then((_) => {
-      return Co<CustomPresentationContext, ExtraContext>().SetState(
-        OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-          replaceWith<
-            OneAbstractRendererState["customFormState"]["initializationStatus"]
-          >("reinitializing"),
-        ),
-      );
-    });
-
-export const reinitializeOneRunner = <
-  CustomPresentationContext = Unit,
-  Flags = Unit,
-  ExtraContext = Unit,
->() =>
-  Co<CustomPresentationContext, ExtraContext>().Template<
-    OneAbstractRendererForeignMutationsExpected<Flags>
-  >(reinitialize<CustomPresentationContext, ExtraContext>(), {
-    interval: 15,
-    runFilter: (props) =>
-      props.context.customFormState.initializationStatus === "initialized" &&
-      props.context.customFormState.shouldReinitialize &&
-      props.context.remoteEntityVersionIdentifier !==
-        props.context.customFormState.previousRemoteEntityVersionIdentifier,
-  });
-
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
@@ -271,7 +240,10 @@ export const initializeOneRunner = <
       // if the value is some, we already have something to pass to the renderers
       // -> we don't have to run the initialization coroutine
       // if the inner value is unit, we are rendering a partial one
-      props.context.value.kind === "option" && !props.context.value.isSome,
+      (props.context.value.kind === "option" && !props.context.value.isSome) ||
+      (props.context.customFormState.shouldReinitialize &&
+        props.context.remoteEntityVersionIdentifier !==
+          props.context.customFormState.previousRemoteEntityVersionIdentifier),
   });
 
 export const oneTableDebouncerRunner = <
