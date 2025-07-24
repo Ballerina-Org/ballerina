@@ -1,7 +1,6 @@
 import { Map } from "immutable";
 import React from "react";
 import {
-  AsyncState,
   BasicUpdater,
   DispatchCommonFormState,
   DispatchDelta,
@@ -10,7 +9,6 @@ import {
   RecordAbstractRendererState,
   RecordType,
   replaceWith,
-  Synchronized,
   Template,
   ValueInfiniteStreamState,
   ValueOption,
@@ -25,8 +23,8 @@ import {
   Unit,
   MapRepo,
   DispatchParsedType,
-  DispatchOnChange,
   BaseFlags,
+  Sum,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -37,9 +35,11 @@ import {
 } from "./state";
 import {
   initializeOneRunner,
+  initializeStreamRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
 } from "./coroutines/runner";
+import { getIdFromContext } from "./coroutines/utils";
 
 /*
  * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
@@ -66,6 +66,11 @@ export const OneAbstractRenderer = <
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   oneEntityType: RecordType<any>,
 ) => {
+  const typedInitializeStreamRunner = initializeStreamRunner<
+    CustomPresentationContext,
+    Flags,
+    ExtraContext
+  >();
   const typedInitializeOneRunner = initializeOneRunner<
     CustomPresentationContext,
     Flags,
@@ -94,9 +99,7 @@ export const OneAbstractRenderer = <
           ExtraContext
         >
     >((_) => {
-      const value = _.value;
-
-      if (PredicateValue.Operations.IsUnit(value)) {
+      if (PredicateValue.Operations.IsUnit(_.value)) {
         return undefined;
       }
 
@@ -105,7 +108,7 @@ export const OneAbstractRenderer = <
         RecordAbstractRendererState.Default.zero();
 
       return {
-        value: value.value,
+        value: _.value.value,
         ...state,
         disabled: _.disabled,
         bindings: _.bindings,
@@ -278,73 +281,23 @@ export const OneAbstractRenderer = <
           value.isSome &&
           !PredicateValue.Operations.IsRecord(value.value)))
     ) {
-      <ErrorRenderer
-        message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(
-          props.context.value,
-        )}`}
-      />;
-    }
-
-    const local = props.context.bindings.get("local");
-    if (local == undefined) {
-      console.error(
-        `local binding is undefined when intialising one\n
-        ...when rendering \n
-        ...${domNodeId}`,
-      );
       return (
         <ErrorRenderer
-          message={`local binding is undefined when intialising one\n...${domNodeId}`}
+          message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(
+            props.context.value,
+          )}`}
         />
       );
     }
 
-    if (!PredicateValue.Operations.IsRecord(local)) {
-      console.error(
-        `local binding is not a record when intialising one\n...${domNodeId}`,
-      );
-      return (
-        <ErrorRenderer
-          message={`local binding is not a record when intialising one\n...${domNodeId}`}
-        />
-      );
+    const maybeId = getIdFromContext(props.context).MapErrors((_) =>
+      _.concat(`\n...${domNodeId}`),
+    );
+
+    if (maybeId.kind === "errors") {
+      const errorMsg = maybeId.errors.join("\n");
+      return <ErrorRenderer message={errorMsg} />;
     }
-
-    if (!local.fields.has("Id")) {
-      console.error(
-        `local binding is missing Id (check casing) when intialising one\n...${domNodeId}`,
-      );
-      return (
-        <ErrorRenderer
-          message={`local binding is missing Id (check casing) when intialising one\n...${domNodeId}`}
-        />
-      );
-    }
-
-    const Id = local.fields.get("Id")!; // safe because of above check;
-    if (!PredicateValue.Operations.IsString(Id)) {
-      console.error(
-        `local Id is not a string when intialising one\n...${domNodeId}`,
-      );
-      return (
-        <ErrorRenderer
-          message={`local Id is not a string when intialising one\n...${domNodeId}`}
-        />
-      );
-    }
-
-    // if (props.context.value.kind === "unit") {
-    //   console.debug("value is unit");
-    //   return <></>;
-    // }
-
-    // if (
-    //   !PredicateValue.Operations.IsUnit(value) &&
-    //   !PredicateValue.Operations.IsRecord(value)
-    // ) {
-    //   console.debug("inner value is neither a unit nor a record", innerValue);
-    //   return <></>;
-    // }
 
     console.debug("OneAbstractRenderer", {
       name: props.context.label,
@@ -363,8 +316,10 @@ export const OneAbstractRenderer = <
               domNodeId,
               value,
               hasMoreValues:
-                !!props.context.customFormState.stream.loadedElements.last()
-                  ?.hasMoreValues,
+                props.context.customFormState.stream.kind === "r"
+                  ? false
+                  : !!props.context.customFormState.stream.value.loadedElements.last()
+                      ?.hasMoreValues,
             }}
             foreignMutations={{
               ...props.foreignMutations,
@@ -379,10 +334,13 @@ export const OneAbstractRenderer = <
                       ),
                     )
                     .then(
-                      props.context.customFormState.stream.loadedElements.count() ==
-                        0
+                      props.context.customFormState.stream.kind === "l" &&
+                        props.context.customFormState.stream.value.loadedElements.count() ==
+                          0
                         ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                            ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                            Sum.Updaters.left(
+                              ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                            ),
                           )
                         : id,
                     ),
@@ -397,7 +355,9 @@ export const OneAbstractRenderer = <
               loadMore: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                    ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                    Sum.Updaters.left(
+                      ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                    ),
                   ),
                 ),
               reload: () =>
@@ -482,49 +442,32 @@ export const OneAbstractRenderer = <
       </>
     );
   }).any([
+    typedInitializeStreamRunner,
+    typedOneTableLoaderRunner,
     typedInitializeOneRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange as any,
     })),
-    typedOneTableLoaderRunner,
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {
-      const local = props.context.bindings.get("local");
-      if (local == undefined) {
-        console.error(
-          `local binding is undefined when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
-        );
+      const maybeId = getIdFromContext(props.context).MapErrors((_) =>
+        _.concat(`\n...${props.context.domNodeAncestorPath + "[one]"}`),
+      );
+
+      if (maybeId.kind === "errors") {
+        console.error(maybeId.errors.join("\n"));
         return undefined;
       }
 
-      if (!PredicateValue.Operations.IsRecord(local)) {
-        console.error(
-          `local binding is not a record when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
-        );
-        return undefined;
-      }
-
-      if (!local.fields.has("Id")) {
-        console.error(
-          `local binding is missing Id (check casing) when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
-        );
-        return undefined;
-      }
-
-      const Id = local.fields.get("Id")!; // safe because of above check;
-      if (!PredicateValue.Operations.IsString(Id)) {
-        console.error(
-          `local Id is not a string when intialising one\n...${props.context.domNodeAncestorPath + "[one]"}`,
-        );
-        return undefined;
-      }
       return {
         ...props.context,
         onDebounce: () => {
           props.setState(
             OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-              ValueInfiniteStreamState.Updaters.Template.reload(
-                props.context.customFormState.getChunkWithParams(Id)(
-                  props.context.customFormState.streamParams.value,
+              Sum.Updaters.left(
+                ValueInfiniteStreamState.Updaters.Template.reload(
+                  props.context.customFormState.getChunkWithParams(
+                    maybeId.value,
+                  )(props.context.customFormState.streamParams.value),
                 ),
               ),
             ),

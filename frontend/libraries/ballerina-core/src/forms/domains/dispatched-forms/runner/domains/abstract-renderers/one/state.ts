@@ -31,6 +31,7 @@ import {
   DispatchDelta,
   CommonAbstractRendererViewOnlyReadonlyContext,
   BaseFlags,
+  Sum,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -55,7 +56,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
     previewStates: Map<string, RecordAbstractRendererState>;
     streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
-    stream: ValueInfiniteStreamState;
+    stream: Sum<ValueInfiniteStreamState, "not initialized">;
     getChunkWithParams: BasicFun<
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
@@ -79,7 +80,7 @@ export const OneAbstractRendererState = {
       streamParams: Debounced.Default(Value.Default(Map())),
       status: "closed",
       getChunkWithParams: getChunk,
-      stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
+      stream: Sum.Default.right("not initialized"),
       previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
     },

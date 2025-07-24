@@ -40,27 +40,28 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 > = {
   one: {
     admin: () => (props) => {
-      const propsLocal = props;
-      const fm = propsLocal.foreignMutations;
-      const ctx = propsLocal.context;
-
-      if (PredicateValue.Operations.IsUnit(ctx.value)) {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
         return <></>;
       }
 
-      if (!PredicateValue.Operations.IsOption(ctx.value)) {
+      if (!PredicateValue.Operations.IsOption(props.context.value)) {
         return <></>;
       }
 
-      if (!ctx.value.isSome) {
+      if (!props.context.value.isSome) {
         console.debug("loading");
         return <>Loading...</>;
       }
 
-      const optionValue = ctx.value.value;
+      const optionValue = props.context.value.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
         console.error("one option inner value is not a record", optionValue);
+        return <></>;
+      }
+
+      if (props.context.customFormState.stream.kind === "r") {
+        // TODO: check this
         return <></>;
       }
 
@@ -76,75 +77,88 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           }}
         >
           <p>DetailsRenderer</p>
-          {propsLocal.DetailsRenderer?.(undefined)({
-            ...propsLocal,
+          {props.DetailsRenderer?.(undefined)({
+            ...props,
             context: {
-              ...ctx,
+              ...props.context,
             },
             foreignMutations: {
-              ...fm,
+              ...props.foreignMutations,
             },
             view: unit,
           })}
           <p>PreviewRenderer</p>
-          <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
-            {propsLocal?.PreviewRenderer &&
-              propsLocal.PreviewRenderer(optionValue)("unique-id")(undefined)?.(
-                {
-                  ...propsLocal,
-                  context: {
-                    ...ctx,
-                  },
-                  foreignMutations: {
-                    ...fm,
-                  },
-                  view: unit,
+          <button
+            disabled={props.context.disabled}
+            onClick={() => props.foreignMutations.toggleOpen()}
+          >
+            {props?.PreviewRenderer &&
+              props.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
+                ...props,
+                context: {
+                  ...props.context,
                 },
-              )}
-            {ctx.customFormState.status == "open" ? "➖" : "➕"}
+                foreignMutations: {
+                  ...props.foreignMutations,
+                },
+                view: unit,
+              })}
+            {props.context.customFormState.status == "open" ? "➖" : "➕"}
           </button>
-          {ctx.customFormState.status == "closed" ? (
+          {props.context.customFormState.status == "closed" ? (
             <></>
           ) : (
             <>
               <input
-                disabled={ctx.disabled}
+                disabled={props.context.disabled}
                 value={
-                  ctx.customFormState.streamParams.value.get("search") ?? ""
+                  props.context.customFormState.streamParams.value.get(
+                    "search",
+                  ) ?? ""
                 }
                 onChange={(e) =>
-                  fm.setStreamParam("search", e.currentTarget.value)
+                  props.foreignMutations.setStreamParam(
+                    "search",
+                    e.currentTarget.value,
+                  )
                 }
               />
               <ul>
-                {ctx.customFormState.stream.loadedElements
+                {props.context.customFormState.stream.value.loadedElements
                   .entrySeq()
                   .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
                           <button
-                            disabled={ctx.disabled}
-                            onClick={() => fm.select(element, undefined)}
+                            disabled={props.context.disabled}
+                            onClick={() =>
+                              props.foreignMutations.select(element, undefined)
+                            }
                           >
                             <div
-                              onClick={() => fm.select(element, undefined)}
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  element,
+                                  undefined,
+                                )
+                              }
                               style={{
                                 display: "flex",
                                 flexDirection: "row",
                                 gap: "10px",
                               }}
                             />
-                            {propsLocal?.PreviewRenderer &&
-                              propsLocal.PreviewRenderer(element)(
-                                key.toString(),
-                              )(undefined)?.({
-                                ...propsLocal,
+                            {props?.PreviewRenderer &&
+                              props.PreviewRenderer(element)(key.toString())(
+                                undefined,
+                              )?.({
+                                ...props,
                                 context: {
-                                  ...ctx,
+                                  ...props.context,
                                 },
                                 foreignMutations: {
-                                  ...fm,
+                                  ...props.foreignMutations,
                                 },
                                 view: unit,
                               })}
@@ -157,81 +171,100 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             </>
           )}
           <button
-            disabled={ctx.hasMoreValues == false}
-            onClick={() => fm.loadMore()}
+            disabled={props.context.hasMoreValues == false}
+            onClick={() => props.foreignMutations.loadMore()}
           >
             ⋯
           </button>
-          <button onClick={() => fm.reload()}>🔄</button>
+          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
         </div>
       );
     },
     partialAdmin: () => (props) => {
-      const propsLocal = props;
-      const fm = propsLocal.foreignMutations;
-      const ctx = propsLocal.context;
+      if (props.context.customFormState.stream.kind === "r") {
+        // TODO: check this
+        return <></>;
+      }
 
-      if (PredicateValue.Operations.IsUnit(ctx.value)) {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
         return (
           <>
             <p>one admin renderer</p>
             <p>DetailsRenderer</p>
-            {propsLocal.DetailsRenderer?.(undefined)({
-              ...propsLocal,
+            {props.DetailsRenderer?.(undefined)({
+              ...props,
               context: {
-                ...ctx,
+                ...props.context,
               },
               foreignMutations: {
-                ...fm,
+                ...props.foreignMutations,
               },
               view: unit,
             })}
             <p>PreviewRenderer</p>
-            <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
-              {ctx.customFormState.status == "open" ? "➖" : "➕"}
+            <button
+              disabled={props.context.disabled}
+              onClick={() => props.foreignMutations.toggleOpen()}
+            >
+              {props.context.customFormState.status == "open" ? "➖" : "➕"}
             </button>
-            {ctx.customFormState.status == "closed" ? (
+            {props.context.customFormState.status == "closed" ? (
               <></>
             ) : (
               <>
                 <input
-                  disabled={ctx.disabled}
+                  disabled={props.context.disabled}
                   value={
-                    ctx.customFormState.streamParams.value.get("search") ?? ""
+                    props.context.customFormState.streamParams.value.get(
+                      "search",
+                    ) ?? ""
                   }
                   onChange={(e) =>
-                    fm.setStreamParam("search", e.currentTarget.value)
+                    props.foreignMutations.setStreamParam(
+                      "search",
+                      e.currentTarget.value,
+                    )
                   }
                 />
                 <ul>
-                  {ctx.customFormState.stream.loadedElements
+                  {props.context.customFormState.stream.value.loadedElements
                     .entrySeq()
                     .map(([key, chunk]) =>
                       chunk.data.valueSeq().map((element: any, idx: number) => {
                         return (
                           <li>
                             <button
-                              disabled={ctx.disabled}
-                              onClick={() => fm.select(element, undefined)}
+                              disabled={props.context.disabled}
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  element,
+                                  undefined,
+                                )
+                              }
                             >
                               <div
-                                onClick={() => fm.select(element, undefined)}
+                                onClick={() =>
+                                  props.foreignMutations.select(
+                                    element,
+                                    undefined,
+                                  )
+                                }
                                 style={{
                                   display: "flex",
                                   flexDirection: "row",
                                   gap: "10px",
                                 }}
                               />
-                              {propsLocal?.PreviewRenderer &&
-                                propsLocal?.PreviewRenderer(element)(
-                                  key.toString(),
-                                )(undefined)?.({
-                                  ...propsLocal,
+                              {props?.PreviewRenderer &&
+                                props?.PreviewRenderer(element)(key.toString())(
+                                  undefined,
+                                )?.({
+                                  ...props,
                                   context: {
-                                    ...ctx,
+                                    ...props.context,
                                   },
                                   foreignMutations: {
-                                    ...fm,
+                                    ...props.foreignMutations,
                                   },
                                   view: unit,
                                 })}
@@ -244,26 +277,26 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               </>
             )}
             <button
-              disabled={ctx.hasMoreValues == false}
-              onClick={() => fm.loadMore()}
+              disabled={props.context.hasMoreValues == false}
+              onClick={() => props.foreignMutations.loadMore()}
             >
               ⋯
             </button>
-            <button onClick={() => fm.reload()}>🔄</button>
+            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
           </>
         );
       }
 
-      if (!PredicateValue.Operations.IsOption(ctx.value)) {
+      if (!PredicateValue.Operations.IsOption(props.context.value)) {
         return <></>;
       }
 
-      if (!ctx.value.isSome) {
+      if (!props.context.value.isSome) {
         console.debug("loading");
         return <>Loading...</>;
       }
 
-      const optionValue = ctx.value.value;
+      const optionValue = props.context.value.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
         console.error("one option inner value is not a record", optionValue);
@@ -274,75 +307,88 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <>
           <p>one admin renderer</p>
           <p>DetailsRenderer</p>
-          {propsLocal.DetailsRenderer?.(undefined)({
-            ...propsLocal,
+          {props.DetailsRenderer?.(undefined)({
+            ...props,
             context: {
-              ...ctx,
+              ...props.context,
             },
             foreignMutations: {
-              ...fm,
+              ...props.foreignMutations,
             },
             view: unit,
           })}
           <p>PreviewRenderer</p>
-          <button disabled={ctx.disabled} onClick={() => fm.toggleOpen()}>
-            {propsLocal?.PreviewRenderer &&
-              propsLocal.PreviewRenderer(optionValue)("unique-id")(undefined)?.(
-                {
-                  ...propsLocal,
-                  context: {
-                    ...ctx,
-                  },
-                  foreignMutations: {
-                    ...fm,
-                  },
-                  view: unit,
+          <button
+            disabled={props.context.disabled}
+            onClick={() => props.foreignMutations.toggleOpen()}
+          >
+            {props?.PreviewRenderer &&
+              props.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
+                ...props,
+                context: {
+                  ...props.context,
                 },
-              )}
-            {ctx.customFormState.status == "open" ? "➖" : "➕"}
+                foreignMutations: {
+                  ...props.foreignMutations,
+                },
+                view: unit,
+              })}
+            {props.context.customFormState.status == "open" ? "➖" : "➕"}
           </button>
-          {ctx.customFormState.status == "closed" ? (
+          {props.context.customFormState.status == "closed" ? (
             <></>
           ) : (
             <>
               <input
-                disabled={ctx.disabled}
+                disabled={props.context.disabled}
                 value={
-                  ctx.customFormState.streamParams.value.get("search") ?? ""
+                  props.context.customFormState.streamParams.value.get(
+                    "search",
+                  ) ?? ""
                 }
                 onChange={(e) =>
-                  fm.setStreamParam("search", e.currentTarget.value)
+                  props.foreignMutations.setStreamParam(
+                    "search",
+                    e.currentTarget.value,
+                  )
                 }
               />
               <ul>
-                {ctx.customFormState.stream.loadedElements
+                {props.context.customFormState.stream.value.loadedElements
                   .entrySeq()
                   .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
                       return (
                         <li>
                           <button
-                            disabled={ctx.disabled}
-                            onClick={() => fm.select(element, undefined)}
+                            disabled={props.context.disabled}
+                            onClick={() =>
+                              props.foreignMutations.select(element, undefined)
+                            }
                           >
                             <div
-                              onClick={() => fm.select(element, undefined)}
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  element,
+                                  undefined,
+                                )
+                              }
                               style={{
                                 display: "flex",
                                 flexDirection: "row",
                                 gap: "10px",
                               }}
                             />
-                            {propsLocal?.PreviewRenderer &&
-                              propsLocal.PreviewRenderer(element)(
-                                key.toString(),
-                              )(undefined)?.({
-                                ...propsLocal,
+                            {props?.PreviewRenderer &&
+                              props.PreviewRenderer(element)(key.toString())(
+                                undefined,
+                              )?.({
+                                ...props,
                                 context: {
-                                  ...ctx,
+                                  ...props.context,
                                 },
                                 foreignMutations: {
-                                  ...fm,
+                                  ...props.foreignMutations,
                                 },
                                 view: unit,
                               })}
@@ -355,12 +401,12 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             </>
           )}
           <button
-            disabled={ctx.hasMoreValues == false}
-            onClick={() => fm.loadMore()}
+            disabled={props.context.hasMoreValues == false}
+            onClick={() => props.foreignMutations.loadMore()}
           >
             ⋯
           </button>
-          <button onClick={() => fm.reload()}>🔄</button>
+          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
         </>
       );
     },
@@ -388,6 +434,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       console.debug("bestFriend", props);
+
+      if (props.context.customFormState.stream.kind === "r") {
+        // TODO: check this
+        return <></>;
+      }
 
       return (
         <div
@@ -453,7 +504,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 }
               />
               <ul>
-                {props.context.customFormState.stream.loadedElements
+                {props.context.customFormState.stream.value.loadedElements
                   .entrySeq()
                   .map(([key, chunk]) =>
                     chunk.data.valueSeq().map((element: any) => {
