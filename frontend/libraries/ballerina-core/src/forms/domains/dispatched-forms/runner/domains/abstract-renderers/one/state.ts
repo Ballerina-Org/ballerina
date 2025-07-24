@@ -165,43 +165,39 @@ export type OneAbstractRendererView<
   Flags = BaseFlags,
   ExtraContext = Unit,
 > = View<
-  (Omit<
-    OneAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
-    "value"
+  OneAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
   > & {
-    value: ValueRecord | ValueUnit;
-  } & OneAbstractRendererState & {
-      hasMoreValues: boolean;
-    } & CommonAbstractRendererViewOnlyReadonlyContext) &
+    hasMoreValues: boolean;
+  } & CommonAbstractRendererViewOnlyReadonlyContext &
     OneAbstractRendererState,
   OneAbstractRendererState,
   OneAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    DetailsRenderer?: (flags: Flags | undefined) => Template<
-      Omit<
+    DetailsRenderer?: (
+      flags: Flags | undefined,
+    ) => Template<
+      OneAbstractRendererState &
         OneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >,
-        "value"
-      > & {
-        value: ValueRecord | ValueUnit;
-      } & OneAbstractRendererState,
       OneAbstractRendererState,
       OneAbstractRendererViewForeignMutationsExpected<Flags>
     >;
-    PreviewRenderer?: (value: ValueRecord) => (id: string) => (
+    PreviewRenderer?: (
+      value: ValueRecord,
+    ) => (
+      id: string,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
-      Omit<
+      OneAbstractRendererState &
         OneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >,
-        "value"
-      > & {
-        value: ValueRecord | ValueUnit;
-      } & OneAbstractRendererState,
       OneAbstractRendererState,
       OneAbstractRendererViewForeignMutationsExpected<Flags>
     >;

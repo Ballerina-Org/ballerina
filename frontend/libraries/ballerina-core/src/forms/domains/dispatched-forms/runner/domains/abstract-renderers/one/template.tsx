@@ -88,15 +88,11 @@ export const OneAbstractRenderer = <
 
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
-      Omit<
+      OneAbstractRendererState &
         OneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
-        >,
-        "value"
-      > & {
-        value: ValueRecord | ValueUnit;
-      } & OneAbstractRendererState
+        >
     >((_) => {
       const value = _.value;
 
@@ -109,7 +105,7 @@ export const OneAbstractRenderer = <
         RecordAbstractRendererState.Default.zero();
 
       return {
-        value,
+        value: value.value,
         ...state,
         disabled: _.disabled,
         bindings: _.bindings,
@@ -183,15 +179,11 @@ export const OneAbstractRenderer = <
   const embeddedPreviewRenderer = PreviewRenderer
     ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
-          Omit<
+          OneAbstractRendererState &
             OneAbstractRendererReadonlyContext<
               CustomPresentationContext,
               ExtraContext
-            >,
-            "value"
-          > & {
-            value: ValueRecord | ValueUnit;
-          } & OneAbstractRendererState
+            >
         >((_) => {
           const state =
             _.customFormState?.previewStates.get(id) ??
@@ -346,15 +338,13 @@ export const OneAbstractRenderer = <
     //   return <></>;
     // }
 
-    const innerValue = value.kind === "unit" ? value : value.value;
-
-    if (
-      !PredicateValue.Operations.IsUnit(innerValue) &&
-      !PredicateValue.Operations.IsRecord(innerValue)
-    ) {
-      console.debug("inner value is neither a unit nor a record", innerValue);
-      return <></>;
-    }
+    // if (
+    //   !PredicateValue.Operations.IsUnit(value) &&
+    //   !PredicateValue.Operations.IsRecord(value)
+    // ) {
+    //   console.debug("inner value is neither a unit nor a record", innerValue);
+    //   return <></>;
+    // }
 
     console.debug("OneAbstractRenderer", {
       name: props.context.label,
@@ -371,7 +361,7 @@ export const OneAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              value: innerValue,
+              value,
               hasMoreValues:
                 !!props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues,
