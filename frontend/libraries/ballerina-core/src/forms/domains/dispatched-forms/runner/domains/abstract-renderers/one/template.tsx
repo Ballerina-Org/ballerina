@@ -362,6 +362,13 @@ export const OneAbstractRenderer = <
       return <></>;
     }
 
+    console.debug("OneAbstractRenderer", {
+      name: props.context.label,
+      type: props.context.type,
+      kind: value.kind,
+      isSome: value.kind !== "unit" ? value.isSome : undefined,
+    });
+
     return (
       <>
         <IdProvider domNodeId={domNodeId}>
@@ -480,12 +487,12 @@ export const OneAbstractRenderer = <
               },
             }}
             DetailsRenderer={
-              value.kind !== "unit" && value.isSome
+              value.kind === "unit" || value.isSome
                 ? embeddedDetailsRenderer
                 : undefined
             }
             PreviewRenderer={
-              value.kind !== "unit" && value.isSome
+              value.kind === "unit" || value.isSome
                 ? embeddedPreviewRenderer
                 : undefined
             }
