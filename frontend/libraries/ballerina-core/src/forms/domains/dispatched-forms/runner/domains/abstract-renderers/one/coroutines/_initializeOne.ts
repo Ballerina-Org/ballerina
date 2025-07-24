@@ -14,7 +14,6 @@ import {
   Option,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
-import getIdFromContext from "../operations/getIdFromContext";
 import { initializeStream } from "./_initializeStream";
 
 export const initializeOne = <
@@ -29,7 +28,9 @@ export const initializeOne = <
         ExtraContext
       >();
 
-      const maybeId = getIdFromContext(current).MapErrors((_) =>
+      const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
+        current,
+      ).MapErrors((_) =>
         _.concat(
           `\n... in couroutine for\n...${current.domNodeAncestorPath + "[one]"}`,
         ),
