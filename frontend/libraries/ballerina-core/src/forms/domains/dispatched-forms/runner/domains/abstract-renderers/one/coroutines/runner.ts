@@ -33,10 +33,7 @@ export const initializeOneRunner = <
       // if the value is some, we already have something to pass to the renderers
       // -> we don't have to run the initialization coroutine
       // if the inner value is unit, we are rendering a partial one
-      (props.context.value.kind === "option" && !props.context.value.isSome) ||
-      (props.context.customFormState.shouldReinitialize &&
-        props.context.remoteEntityVersionIdentifier !==
-          props.context.customFormState.previousRemoteEntityVersionIdentifier),
+      props.context.value.kind === "option" && !props.context.value.isSome,
   });
 
 export const initializeStreamRunner = <
@@ -48,11 +45,7 @@ export const initializeStreamRunner = <
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(initializeStream<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
-    runFilter: (props) =>
-      props.context.customFormState.stream.kind === "r" ||
-      (props.context.customFormState.shouldReinitialize &&
-        props.context.remoteEntityVersionIdentifier !==
-          props.context.customFormState.previousRemoteEntityVersionIdentifier),
+    runFilter: (props) => props.context.customFormState.stream.kind === "r",
   });
 
 export const oneTableDebouncerRunner = <

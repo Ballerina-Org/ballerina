@@ -176,7 +176,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           >
             ⋯
           </button>
-          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
         </div>
       );
     },
@@ -282,7 +281,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             >
               ⋯
             </button>
-            <button onClick={() => props.foreignMutations.reload()}>🔄</button>
           </>
         );
       }
@@ -406,7 +404,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           >
             ⋯
           </button>
-          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
         </>
       );
     },
@@ -556,7 +553,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           >
             ⋯
           </button>
-          <button onClick={() => props.foreignMutations.reload()}>🔄</button>
         </div>
       );
     },

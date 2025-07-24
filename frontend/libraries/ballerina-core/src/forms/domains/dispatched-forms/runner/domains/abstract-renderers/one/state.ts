@@ -61,8 +61,6 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >;
-    previousRemoteEntityVersionIdentifier: string;
-    shouldReinitialize: boolean;
   };
 };
 
@@ -81,8 +79,6 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
-      previousRemoteEntityVersionIdentifier: "",
-      shouldReinitialize: false,
     },
   }),
   Updaters: {
@@ -99,12 +95,6 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "detailsState",
-        ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "previousRemoteEntityVersionIdentifier",
-        ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "shouldReinitialize",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
@@ -125,10 +115,6 @@ export const OneAbstractRendererState = {
           Debounced.Updaters.Template.value(
             Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
-        ),
-      shouldReinitialize: (_: boolean) =>
-        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-          replaceWith(_),
         ),
     },
   },
@@ -158,7 +144,6 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
     delete?: VoidCallbackWithOptionalFlags<Flags>;
     clear?: SimpleCallback<void>;
     loadMore: SimpleCallback<void>;
-    reload: SimpleCallback<void>;
   };
 
 export type OneAbstractRendererView<

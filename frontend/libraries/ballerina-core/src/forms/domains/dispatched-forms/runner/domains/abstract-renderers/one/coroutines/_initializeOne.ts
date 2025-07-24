@@ -14,7 +14,8 @@ import {
   Option,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
-import { getIdFromContext } from "./utils";
+import getIdFromContext from "../operations/getIdFromContext";
+import { initializeStream } from "./_initializeStream";
 
 export const initializeOne = <
   CustomPresentationContext = Unit,
@@ -44,24 +45,13 @@ export const initializeOne = <
         ExtraContext
       >().Seq([
         InstantiatedInitializeCo.SetState(
-          OneAbstractRendererState.Updaters.Core.customFormState.children
-            .previousRemoteEntityVersionIdentifier(
-              replaceWith(current.remoteEntityVersionIdentifier),
-            )
-            .then(
-              OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-                replaceWith(false),
-              ),
-            )
-            .then(
-              current.customFormState.status == "open"
-                ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                    Sum.Updaters.left(
-                      ValueInfiniteStreamState.Updaters.Template.loadMore(),
-                    ),
-                  )
-                : IdUpdater,
-            ),
+          current.customFormState.status == "open"
+            ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                Sum.Updaters.left(
+                  ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                ),
+              )
+            : IdUpdater,
         ),
       ]);
 
@@ -80,7 +70,7 @@ export const initializeOne = <
       >()
         .Await(
           () => current.getApi(maybeId.value),
-          (_) => console.error("err"),
+          (_) => console.error("error while getting api value for the one", _),
         )
         .then((value) =>
           InstantiatedInitializeCo.Do(() => {
@@ -97,7 +87,6 @@ export const initializeOne = <
                 type: current.type,
                 sourceAncestorLookupTypeNames: current.lookupTypeAncestorNames,
               };
-              console.debug("initializeOne delta", delta);
               current.onChange(Option.Default.some(updater), delta);
 
               return ValueOrErrors.Default.return(result);
@@ -105,8 +94,14 @@ export const initializeOne = <
           }),
         );
 
+      const initializeStreamCo = initializeStream<
+        CustomPresentationContext,
+        ExtraContext
+      >();
+
       return InstantiatedInitializeCo.Seq([
         initializeValueCo,
+        initializeStreamCo,
         initializationCompletedCo,
       ]);
     });
