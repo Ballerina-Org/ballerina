@@ -14,7 +14,6 @@ import {
   OneType,
   ValueOrErrors,
   Guid,
-  Synchronized,
   Unit,
   Template,
   ValueRecord,
@@ -23,13 +22,15 @@ import {
   MapRepo,
   BasicFun2,
   Value,
-  replaceWith,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
   DispatchOnChange,
   CommonAbstractRendererState,
   DispatchDelta,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  BaseFlags,
+  Sum,
+  PredicateValue,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -45,26 +46,20 @@ export type OneAbstractRendererReadonlyContext<
   getApi: BasicFun<Guid, Promise<unknown>>;
   fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
   remoteEntityVersionIdentifier: string;
+  postInitActionFlag: BaseFlags;
 };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
-    selectedValue: Synchronized<
-      ValueUnit,
-      ValueOrErrors<ValueRecord | ValueUnit, string>
-    >;
     streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
-    stream: ValueInfiniteStreamState;
+    stream: Sum<ValueInfiniteStreamState, "not initialized">;
     getChunkWithParams: BasicFun<
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >;
-    initializationStatus: "not initialized" | "initialized" | "reinitializing";
-    previousRemoteEntityVersionIdentifier: string;
-    shouldReinitialize: boolean;
   };
 };
 
@@ -79,22 +74,15 @@ export const OneAbstractRendererState = {
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
       previewStates: Map(),
-      selectedValue: Synchronized.Default(ValueUnit.Default()),
       streamParams: Debounced.Default(Value.Default(Map())),
       status: "closed",
       getChunkWithParams: getChunk,
-      stream: ValueInfiniteStreamState.Default(10, getChunk("")(Map())), // always overriden during initialisation to inject id
-      initializationStatus: "not initialized",
-      previousRemoteEntityVersionIdentifier: "",
-      shouldReinitialize: false,
+      stream: Sum.Default.right("not initialized"),
     },
   }),
   Updaters: {
     Core: {
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "selectedValue",
-        ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "status",
         ),
@@ -106,15 +94,6 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "detailsState",
-        ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "previousRemoteEntityVersionIdentifier",
-        ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "shouldReinitialize",
-        ),
-        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "initializationStatus",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
@@ -136,15 +115,53 @@ export const OneAbstractRendererState = {
             Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
           ),
         ),
-      shouldReinitialize: (_: boolean) =>
-        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-          replaceWith(_),
-        ),
+    },
+  },
+  Operations: {
+    GetIdFromContext: <CustomPresentationContext = Unit, ExtraContext = Unit>(
+      ctx: OneAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      >,
+    ): ValueOrErrors<string, string | undefined> => {
+      if (ctx.value == undefined) {
+        return ValueOrErrors.Default.throwOne(undefined);
+      }
+
+      /// When initailising, in both stages, inject the id to the get chunk
+
+      const local = ctx.bindings.get("local");
+      if (local == undefined) {
+        return ValueOrErrors.Default.throwOne(
+          `local binding is undefined when intialising one`,
+        );
+      }
+
+      if (!PredicateValue.Operations.IsRecord(local)) {
+        return ValueOrErrors.Default.throwOne(
+          `local binding is not a record when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
+        );
+      }
+
+      if (!local.fields.has("Id")) {
+        return ValueOrErrors.Default.throwOne(
+          `local binding is missing Id (check casing) when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
+        );
+      }
+
+      const id = local.fields.get("Id")!; // safe because of above check;
+      if (!PredicateValue.Operations.IsString(id)) {
+        return ValueOrErrors.Default.throwOne(
+          `local Id is not a string when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
+        );
+      }
+
+      return ValueOrErrors.Default.return(id);
     },
   },
 };
 
-export type OneAbstractRendererForeignMutationsExpected<Flags = Unit> = {
+export type OneAbstractRendererForeignMutationsExpected<Flags = BaseFlags> = {
   onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
   clear?: () => void;
   delete?: (delta: DispatchDelta<Flags>) => void;
@@ -158,81 +175,58 @@ export type OneAbstractRendererForeignMutationsExpected<Flags = Unit> = {
   ) => void;
 };
 
-export type OneAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
-  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
-  toggleOpen: SimpleCallback<void>;
-  setStreamParam: BasicFun2<string, string, void>;
-  select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
-  create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
-  delete?: VoidCallbackWithOptionalFlags<Flags>;
-  clear?: SimpleCallback<void>;
-  loadMore: SimpleCallback<void>;
-  reload: SimpleCallback<void>;
-};
+export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
+  {
+    onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+    toggleOpen: SimpleCallback<void>;
+    setStreamParam: BasicFun2<string, string, void>;
+    select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+    create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
+    delete?: VoidCallbackWithOptionalFlags<Flags>;
+    clear?: SimpleCallback<void>;
+    loadMore: SimpleCallback<void>;
+  };
 
 export type OneAbstractRendererView<
   CustomPresentationContext = Unit,
-  Flags = Unit,
+  Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 > = View<
-  (
-    | (Omit<
+  OneAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > & {
+    hasMoreValues: boolean;
+  } & CommonAbstractRendererViewOnlyReadonlyContext &
+    OneAbstractRendererState,
+  OneAbstractRendererState,
+  OneAbstractRendererViewForeignMutationsExpected<Flags>,
+  {
+    DetailsRenderer?: (
+      flags: Flags | undefined,
+    ) => Template<
+      OneAbstractRendererState &
         OneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >,
-        "value"
-      > & {
-        value: ValueRecord | ValueUnit;
-      } & OneAbstractRendererState & {
-          kind: "initialized";
-          hasMoreValues: boolean;
-        } & CommonAbstractRendererViewOnlyReadonlyContext)
-    | {
-        kind: "uninitialized";
-        domNodeId: string;
-      }
-  ) &
-    OneAbstractRendererState,
-  OneAbstractRendererState,
-  | ({
-      kind: "initialized";
-    } & OneAbstractRendererViewForeignMutationsExpected<Flags>)
-  | {
-      kind: "uninitialized";
-    },
-  | {
-      kind: "initialized";
-      DetailsRenderer: (flags: Flags | undefined) => Template<
-        Omit<
-          OneAbstractRendererReadonlyContext<
-            CustomPresentationContext,
-            ExtraContext
-          >,
-          "value"
-        > & {
-          value: ValueRecord | ValueUnit;
-        } & OneAbstractRendererState,
-        OneAbstractRendererState,
-        OneAbstractRendererViewForeignMutationsExpected<Flags>
-      >;
-      PreviewRenderer?: (value: ValueRecord) => (id: string) => (
-        flags: Flags | undefined,
-      ) => Template<
-        Omit<
-          OneAbstractRendererReadonlyContext<
-            CustomPresentationContext,
-            ExtraContext
-          >,
-          "value"
-        > & {
-          value: ValueRecord | ValueUnit;
-        } & OneAbstractRendererState,
-        OneAbstractRendererState,
-        OneAbstractRendererViewForeignMutationsExpected<Flags>
-      >;
-    }
-  | {
-      kind: "uninitialized";
-    }
+      OneAbstractRendererState,
+      OneAbstractRendererViewForeignMutationsExpected<Flags>
+    >;
+    PreviewRenderer?: (
+      value: ValueRecord,
+    ) => (
+      id: string,
+    ) => (
+      flags: Flags | undefined,
+    ) => Template<
+      OneAbstractRendererState &
+        OneAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        >,
+      OneAbstractRendererState,
+      OneAbstractRendererViewForeignMutationsExpected<Flags>
+    >;
+  }
 >;
