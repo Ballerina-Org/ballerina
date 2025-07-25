@@ -1048,9 +1048,9 @@ export const DispatchParsedType = {
                   `Union:Case ${unionCase.caseName}`,
                   unionCase.fields == undefined
                     ? { fields: {} }
-                    // we allow the record fields to be defined directly in the spec instead of
-                    // inside a fields key
-                    : SerializedType.isRecordFields(unionCase.fields)
+                    : // we allow the record fields to be defined directly in the spec instead of
+                      // inside a fields key
+                      SerializedType.isRecordFields(unionCase.fields)
                       ? { fields: unionCase.fields }
                       : unionCase.fields,
                   typeNames,
