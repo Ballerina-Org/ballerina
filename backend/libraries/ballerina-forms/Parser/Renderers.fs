@@ -17,7 +17,7 @@ module Renderers =
   open Ballerina.StdLib.String
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.FormEngine.Parser.ManyRenderer
+  open RendererDefinitions.Many
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseBoolRenderer
@@ -564,7 +564,6 @@ module Renderers =
             )
       }
 
-
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseListRenderer
       (parseNestedRenderer)
@@ -914,7 +913,8 @@ module Renderers =
                   Renderer.ParseSumRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseOptionRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseOneRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseManyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyAllRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyItemRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseReadOnlyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseListRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseCustomRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
