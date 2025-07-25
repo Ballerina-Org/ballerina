@@ -171,6 +171,17 @@
           "fields": "PlotInfo"
         },
         {
+          "caseName": "D",
+          "fields": "string"
+        },
+        {
+          "caseName": "E",
+          "fields": {
+            "fun": "ReadOnly",
+            "args": ["string"]
+          }
+        },
+        {
           "caseName": "C",
           "fields": {}
         }
@@ -355,6 +366,20 @@
         {
           "caseName": "Designer",
           "fields": "DesignerJob"
+        },
+        {
+          "caseName": "Manager",
+          "fields": {
+            "fun": "ReadOnly",
+            "args": ["string"]
+          }
+        },
+        {
+          "caseName": "Owners",
+          "fields": {
+            "fun": "List",
+            "args": ["string"]
+          }
         }
       ]
     },
@@ -1238,7 +1263,23 @@
                   }
                 }
               },
-              "Designer": "designerJob"
+              "Designer": "designerJob",
+              "Manager": {
+                "renderer": {
+                  "renderer": "ReadOnly",
+                  "childRenderer": {
+                    "renderer": "defaultString"
+                  }
+                }
+              },
+              "Owners": {
+                "renderer": {
+                  "renderer": "defaultList",
+                  "elementRenderer": {
+                    "renderer": "defaultString"
+                  }
+                }
+              }
             }
           }
         },

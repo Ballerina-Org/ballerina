@@ -1324,30 +1324,15 @@ export const dispatchFromAPIRawValue =
             )}`,
           );
 
-        if (caseType.kind != "record" && caseType.kind != "lookup")
-          return ValueOrErrors.Default.throwOne(
-            `union case ${
-              result.caseName
-            } expected record or lookup type, got ${JSON.stringify(caseType)}`,
-          );
-
         return dispatchFromAPIRawValue(
           caseType,
           types,
           converters,
           injectedPrimitives,
         )(result.fields).Then((value) =>
-          PredicateValue.Operations.IsRecord(value)
-            ? ValueOrErrors.Default.return(
-                PredicateValue.Default.unionCase(result.caseName, value),
-              )
-            : ValueOrErrors.Default.throwOne(
-                `union case ${
-                  result.caseName
-                } expected record, got ${PredicateValue.Operations.GetKind(
-                  value,
-                )}`,
-              ),
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.unionCase(result.caseName, value),
+          ),
         );
       }
 

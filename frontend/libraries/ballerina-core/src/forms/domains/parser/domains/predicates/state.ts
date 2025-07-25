@@ -425,7 +425,7 @@ export const PredicateValue = {
       kind: "record",
       fields,
     }),
-    unionCase: (caseName: string, fields: ValueRecord): ValueUnionCase => ({
+    unionCase: (caseName: string, fields: PredicateValue): ValueUnionCase => ({
       kind: "unionCase",
       caseName,
       fields,

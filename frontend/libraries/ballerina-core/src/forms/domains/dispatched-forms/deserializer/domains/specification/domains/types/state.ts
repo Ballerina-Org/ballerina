@@ -191,6 +191,8 @@ export const SerializedType = {
     SerializedType.isApplication(_) &&
     _.fun == "ReadOnly" &&
     _.args.length == 1,
+  isRecordFields: (_: unknown) =>
+    typeof _ == "object" && _ != null && !("fun" in _) && !("args" in _),
 };
 
 export type StringSerializedType = string;
@@ -1042,41 +1044,25 @@ export const DispatchParsedType = {
           return ValueOrErrors.Operations.All(
             List<ValueOrErrors<[string, DispatchParsedType<T>], string>>(
               rawType.args.map((unionCase) =>
-                typeof unionCase.fields == "string" // lookup case
-                  ? serializedTypes[unionCase.fields] == undefined // probably dont need this
-                    ? ValueOrErrors.Default.throwOne(
-                        `Cannot find union case type: ${JSON.stringify(
-                          unionCase.fields,
-                        )} in types`,
-                      )
-                    : DispatchParsedType.Operations.ParseRawType(
-                        `Union:Case ${unionCase.caseName}`,
-                        unionCase.fields,
-                        typeNames,
-                        serializedTypes,
-                        alreadyParsedTypes,
-                        injectedPrimitives,
-                      ).Then((parsedType) =>
-                        ValueOrErrors.Default.return([
-                          unionCase.caseName,
-                          parsedType[0],
-                        ]),
-                      )
-                  : DispatchParsedType.Operations.ParseRawType(
-                      `Union:Case ${unionCase.caseName}`,
-                      unionCase.fields == undefined
-                        ? { fields: {} }
-                        : unionCase,
-                      typeNames,
-                      serializedTypes,
-                      alreadyParsedTypes,
-                      injectedPrimitives,
-                    ).Then((parsedType) =>
-                      ValueOrErrors.Default.return([
-                        unionCase.caseName,
-                        parsedType[0],
-                      ]),
-                    ),
+                DispatchParsedType.Operations.ParseRawType(
+                  `Union:Case ${unionCase.caseName}`,
+                  unionCase.fields == undefined
+                    ? { fields: {} }
+                    // we allow the record fields to be defined directly in the spec instead of
+                    // inside a fields key
+                    : SerializedType.isRecordFields(unionCase.fields)
+                      ? { fields: unionCase.fields }
+                      : unionCase.fields,
+                  typeNames,
+                  serializedTypes,
+                  alreadyParsedTypes,
+                  injectedPrimitives,
+                ).Then((parsedType) =>
+                  ValueOrErrors.Default.return([
+                    unionCase.caseName,
+                    parsedType[0],
+                  ]),
+                ),
               ),
             ),
           ).Then((parsedUnionCases) =>

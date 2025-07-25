@@ -571,13 +571,19 @@ const entityApis: EntityApis = {
               Values: {},
             },
             Job: {
-              Discriminator: "Designer",
-              Designer: {
-                Name: "Designer",
-                Salary: Math.floor(Math.random() * 100000),
-                DesignTool: "Figma",
-                Certifications: ["cool stuff"],
-              },
+              // Discriminator: "Designer",
+              // Designer: {
+              //   Name: "Designer",
+              //   Salary: Math.floor(Math.random() * 100000),
+              //   DesignTool: "Figma",
+              //   Certifications: ["cool stuff"],
+              // },
+              // Discriminator: "Manager",
+              // Manager: {
+              //   ReadOnly: "I'm a Manager!",
+              // },
+              Discriminator: "Owners",
+              Owners: [faker.person.firstName(), faker.person.firstName()],
             },
             Category: {
               kind: ["child", "adult", "senior"][
