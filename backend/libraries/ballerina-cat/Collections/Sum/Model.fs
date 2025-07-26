@@ -74,6 +74,11 @@ module Sum =
       | One p -> p
       | Many(p, ps) -> ps |> Seq.fold merge p
 
+    member inline sum.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p: Sum<'a, 'b>, ps: List<Sum<'a, 'b>>)
+      =
+      sum.Any(NonEmptyList.OfList(p, ps))
+
     member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)> (p1: Sum<'a, 'b>) (p2: Sum<'a, 'b>) =
       match p1, p2 with
       | Left v, _
@@ -134,8 +139,4 @@ module Sum =
   let sum = SumBuilder()
 
   type Sum<'a, 'b> with
-    static member (>>=)(p, q) =
-      sum {
-        let! x = p
-        return! q x
-      }
+    static member Then(f, g) = fun x -> sum.Bind(f x, g) // Using bind

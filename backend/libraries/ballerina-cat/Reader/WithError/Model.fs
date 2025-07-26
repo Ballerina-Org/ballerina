@@ -77,6 +77,11 @@ module WithError =
       : ReaderWithError<'c, 'a, 'e> =
       ReaderWithError(fun (c: 'c) -> sum.Any(readers |> NonEmptyList.map (fun (ReaderWithError r) -> r c)))
 
+    member inline reader.Any<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
+      (p: ReaderWithError<'c, 'a, 'e>, ps: ReaderWithError<'c, 'a, 'e> list)
+      : ReaderWithError<'c, 'a, 'e> =
+      reader.Any(NonEmptyList.OfList(p, ps))
+
     member inline reader.AllMap<'c, 'a, 'e, 'k when 'k: comparison and 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: Map<'k, ReaderWithError<'c, 'a, 'e>>)
       : ReaderWithError<'c, Map<'k, 'a>, 'e> =
@@ -101,3 +106,5 @@ module WithError =
       ReaderWithError(fun c -> sum { return c })
 
   let reader = ReaderWithErrorBuilder()
+
+  type Reader<'a, 'c, 'e> = ReaderWithError<'c, 'a, 'e>
