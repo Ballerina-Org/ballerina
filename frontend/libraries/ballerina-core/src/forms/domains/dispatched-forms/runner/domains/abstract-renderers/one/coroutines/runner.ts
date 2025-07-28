@@ -47,7 +47,9 @@ export const initializeStreamRunner = <
     OneAbstractRendererForeignMutationsExpected<Flags>
   >(initializeStream<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
-    runFilter: (props) => props.context.customFormState.stream.kind === "r",
+    runFilter: (props) =>
+      props.context.customFormState.stream.kind === "r" &&
+      props.context.customFormState.getChunkWithParams !== undefined,
   });
 
 export const oneTableDebouncerRunner = <
@@ -62,7 +64,8 @@ export const oneTableDebouncerRunner = <
     runFilter: (props) =>
       Debounced.Operations.shouldCoroutineRun(
         props.context.customFormState.streamParams,
-      ),
+      ) &&
+      props.context.customFormState.getChunkWithParams !== undefined,
   });
 
 export const oneTableLoaderRunner = <

@@ -52,32 +52,36 @@ export const OneDispatcher = {
         CustomPresentationContexts,
         ExtraContext
       >,
-    ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
+    ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> =>
       Array.isArray(api) &&
       api.length == 2 &&
       api.every((_) => typeof _ == "string")
         ? dispatcherContext.specApis.lookups == undefined
-          ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
+          ? ValueOrErrors.Default.return(undefined)
           : dispatcherContext.specApis.lookups.get(api[0]) == undefined
-            ? ValueOrErrors.Default.throwOne(`lookup api not found`)
+            ? ValueOrErrors.Default.return(undefined)
             : dispatcherContext.specApis.lookups.get(api[0])?.one == undefined
-              ? ValueOrErrors.Default.throwOne(`lookup api not found`)
-              : dispatcherContext.specApis.lookups.get(api[0])?.one(api[1])
-        ? dispatcherContext.lookupSources == undefined
-          ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
-          : dispatcherContext
-              .lookupSources(api[0])
-              .Then((lookupSource) =>
-                lookupSource.one == undefined
+              ? ValueOrErrors.Default.return(undefined)
+              : dispatcherContext.specApis.lookups.get(api[0])?.one.get(api[1])
+                    ?.methods.get == false
+                ? ValueOrErrors.Default.return(undefined)
+                : dispatcherContext.lookupSources == undefined
                   ? ValueOrErrors.Default.throwOne(
-                      `lookup source missing "one" api`,
+                      `lookup api sources are undefined`,
                     )
-                  : lookupSource
-                      .one(api[1])
-                      .Then((source) =>
-                        ValueOrErrors.Default.return(source.get),
-                      ),
-              )
+                  : dispatcherContext
+                      .lookupSources(api[0])
+                      .Then((lookupSource) =>
+                        lookupSource.one == undefined
+                          ? ValueOrErrors.Default.throwOne(
+                              `lookup source missing "one" api`,
+                            )
+                          : lookupSource
+                              .one(api[1])
+                              .Then((source) =>
+                                ValueOrErrors.Default.return(source.get),
+                              ),
+                      )
         : ValueOrErrors.Default.throwOne(
             `api must be a string or an array of strings`,
           ),

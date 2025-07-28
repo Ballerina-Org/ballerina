@@ -39,6 +39,7 @@ import {
   TableAbstractRendererView,
   UnionAbstractRendererView,
   DispatchInjectablesTypes,
+  SpecificationApis,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -634,6 +635,7 @@ export const dispatchDefaultState =
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
+    specApis: SpecificationApis,
   ) =>
   (
     t: DispatchParsedType<T>,
@@ -659,6 +661,7 @@ export const dispatchDefaultState =
                 converters,
                 lookupSources,
                 tableApiSources,
+                specApis,
               )(resolvedType, resolvedRenderer),
           ),
         );
@@ -677,6 +680,7 @@ export const dispatchDefaultState =
             converters,
             lookupSources,
             tableApiSources,
+            specApis,
           )(resolvedType, renderer.inlinedRenderer),
         );
       }
@@ -692,6 +696,7 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
+              specApis,
             )(renderer.type, resolvedRenderer),
         );
       }
@@ -796,6 +801,7 @@ export const dispatchDefaultState =
                     converters,
                     lookupSources,
                     tableApiSources,
+                    specApis,
                   )(_, renderer.itemRenderers[index].renderer).Then(
                     (itemState) =>
                       ValueOrErrors.Default.return([index, itemState]),
@@ -821,6 +827,7 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
+              specApis,
             )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
               renderer.rightRenderer == undefined
                 ? ValueOrErrors.Default.throwOne(
@@ -834,6 +841,7 @@ export const dispatchDefaultState =
                     converters,
                     lookupSources,
                     tableApiSources,
+                    specApis,
                   )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
                     ValueOrErrors.Default.return(
                       SumAbstractRendererState.Default({
@@ -859,44 +867,59 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Default.throwOne(
               `received non one renderer kind "${renderer.kind}" when resolving defaultState for one`,
             )
-          : lookupSources == undefined
-            ? ValueOrErrors.Default.throwOne(
-                `lookup sources referenced but no lookup sources are provided`,
-              )
-            : lookupSources(renderer.api[0]) == undefined
+          : specApis.lookups != undefined &&
+              specApis.lookups.get(renderer.api[0]) != undefined &&
+              specApis.lookups.get(renderer.api[0])?.one != undefined &&
+              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1]) !=
+                undefined &&
+              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1])
+                ?.methods.getManyUnlinked
+            ? lookupSources == undefined
               ? ValueOrErrors.Default.throwOne(
-                  `cannot find lookup source for ${renderer.api[0]}`,
+                  `lookup sources referenced but no lookup sources are provided`,
                 )
-              : lookupSources(renderer.api[0]).Then((lookupSource) =>
-                  lookupSource.one == undefined
-                    ? ValueOrErrors.Default.throwOne(
-                        `one source not provided for ${renderer.api[0]}`,
-                      )
-                    : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
-                        .Then((oneSource) =>
-                          MapRepo.Operations.tryFindWithError(
-                            t.arg.name,
-                            types,
-                            () =>
-                              `cannot find lookup type ${JSON.stringify(
-                                t.arg.name,
-                              )} in ${JSON.stringify(t)}`,
-                          ).Then((lookupType) =>
-                            ValueOrErrors.Default.return(
-                              OneAbstractRendererState.Default(
-                                oneSource.getManyUnlinked(
-                                  dispatchFromAPIRawValue(
-                                    lookupType,
-                                    types,
-                                    converters,
-                                    injectedPrimitives,
+              : lookupSources(renderer.api[0]) == undefined
+                ? ValueOrErrors.Default.throwOne(
+                    `cannot find lookup source for ${renderer.api[0]}`,
+                  )
+                : lookupSources(renderer.api[0]).Then((lookupSource) =>
+                    lookupSource.one == undefined
+                      ? ValueOrErrors.Default.throwOne(
+                          `one source not provided for ${renderer.api[0]}`,
+                        )
+                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                          .Then((oneSource) =>
+                            oneSource.getManyUnlinked == undefined
+                              ? ValueOrErrors.Default.throwOne(
+                                  `getManyUnlinked not provided for ${renderer.api[0]}-${renderer.api[1]}`,
+                                )
+                              : MapRepo.Operations.tryFindWithError(
+                                  t.arg.name,
+                                  types,
+                                  () =>
+                                    `cannot find lookup type ${JSON.stringify(
+                                      t.arg.name,
+                                    )} in ${JSON.stringify(t)}`,
+                                ).Then((lookupType) =>
+                                  ValueOrErrors.Default.return(
+                                    OneAbstractRendererState.Default(
+                                      oneSource.getManyUnlinked!(
+                                        // safe because we check for undefined above but type system doesn't know that
+                                        dispatchFromAPIRawValue(
+                                          lookupType,
+                                          types,
+                                          converters,
+                                          injectedPrimitives,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
                           ),
-                        ),
-                );
+                  )
+            : ValueOrErrors.Default.return(
+                OneAbstractRendererState.Default(undefined),
+              );
 
       if (t.kind == "readOnly")
         return renderer.kind != "readOnlyRenderer"
@@ -911,6 +934,7 @@ export const dispatchDefaultState =
               converters,
               lookupSources,
               tableApiSources,
+              specApis,
             )(t.arg, renderer.childRenderer.renderer).Then((childState) =>
               ValueOrErrors.Default.return(
                 ReadOnlyAbstractRendererState.Default.childFormState(
@@ -944,6 +968,7 @@ export const dispatchDefaultState =
                         converters,
                         lookupSources,
                         tableApiSources,
+                        specApis,
                       )(fieldType, fieldRenderer.renderer).Then((value) =>
                         ValueOrErrors.Default.return([fieldName, value]),
                       ),
@@ -982,6 +1007,7 @@ export const dispatchDefaultState =
                         converters,
                         lookupSources,
                         tableApiSources,
+                        specApis,
                       )(caseType, caseRenderer).Then((caseState) =>
                         ValueOrErrors.Default.return([caseName, caseState]),
                       ),

@@ -30,7 +30,8 @@ export const initializeStream = <
             Sum.Default.left(
               ValueInfiniteStreamState.Default(
                 100,
-                current.customFormState.getChunkWithParams(maybeId.value)(
+                // safe because we check for undefined in the runFilter
+                current.customFormState.getChunkWithParams!(maybeId.value)(
                   current.customFormState.streamParams.value,
                 ),
               ),

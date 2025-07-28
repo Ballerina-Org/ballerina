@@ -593,6 +593,18 @@
               "args": ["IncomeLineItem"]
             }
           ]
+        },
+        "EagerReadonlyOne": {
+          "fun": "One",
+          "args": ["User"]
+        },
+        "LazyReadonlyOne": {
+          "fun": "One",
+          "args": ["User"]
+        },
+        "EagerEditableOne": {
+          "fun": "One",
+          "args": ["User"]
         }
       }
     }
@@ -604,6 +616,18 @@
           "BestFriendApi": {
             "type": "User",
             "methods": ["get", "getManyUnlinked"]
+          },
+          "EagerEditableOneApi": {
+            "type": "User",
+            "methods": ["getManyUnlinked"]
+          },
+          "EagerReadonlyOneApi": {
+            "type": "User",
+            "methods": []
+          },
+          "LazyReadonlyOneApi": {
+            "type": "User",
+            "methods": ["get"]
           }
         }
       }
@@ -1885,6 +1909,165 @@
           },
           "api": ["User", "BestFriendApi"]
         },
+        "EagerEditableOne": {
+          "label": "Eager Editable One",
+          "renderer": "eagerEditableOne",
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "EagerEditableOneApi"]
+        },
+        "LazyReadonlyOne": {
+          "label": "Lazy Readonly One",
+          "renderer": "lazyReadonlyOne",
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "LazyReadonlyOneApi"]
+        },
+        "EagerReadonlyOne": {
+          "label": "Eager Readonly One",
+          "renderer": "eagerReadonlyOne",
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "EagerReadonlyOneApi"]
+        },
         "IncomeTaxBrackets": {
           "label": "Income Tax Brackets",
           "renderer": "listWithPartialList",
@@ -1917,6 +2100,9 @@
               "groups": {
                 "main": [
                   "BestFriend",
+                  "EagerEditableOne",
+                  "LazyReadonlyOne",
+                  "EagerReadonlyOne",
                   "Friends",
                   "Children",
                   "Job",

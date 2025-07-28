@@ -203,79 +203,72 @@ export const TableApis = {
 };
 
 export type LookupApiName = string;
-export type LookupApis = Map<LookupApiName, LookupApi>;
-export type LookupApi = {
-  one?: Map<
-    string,
-    {
-      type: DispatchTypeName;
-      methods: {
-        get?: boolean;
-        update?: boolean;
-        getManyUnlinked?: boolean;
-        create?: boolean;
-        delete?: boolean;
-      };
-    }
-  >;
-  many?: Map<
-    string,
-    {
-      type: DispatchTypeName;
-      methods: {
-        update: boolean;
-        getManyUnlinked: boolean;
-        create: boolean;
-        delete: boolean;
-      };
-    }
-  >;
-};
+export type LookupApis = Map<LookupApiName, { one: LookupApiOne }>;
+export type LookupApiOne = Map<
+  string,
+  {
+    type: DispatchTypeName;
+    methods: {
+      get: boolean;
+      update: boolean;
+      getManyUnlinked: boolean;
+      create: boolean;
+      delete: boolean;
+    };
+  }
+>;
 
 // TODO add many deserialization
 export const LookupApis = {
   Operations: {
-    isLookupApi: (
+    isOneApi: (
       _: unknown,
     ): _ is {
-      enums?: unknown;
-      streams?: unknown;
-      tables?: unknown;
-      lookups?: unknown;
-      one?: unknown;
-      many?: unknown;
-    } => DispatchIsObject(_),
+      one: {
+        [key: string]: {
+          type: DispatchTypeName;
+          methods: Array<string>;
+        };
+      };
+    } =>
+      DispatchIsObject(_) &&
+      "one" in _ &&
+      DispatchIsObject(_.one) &&
+      Object.values(_.one).every(
+        (value) =>
+          isObject(value) &&
+          "type" in value &&
+          isString(value.type) &&
+          "methods" in value &&
+          Array.isArray(value.methods) &&
+          value.methods.every((method) => isString(method)),
+      ),
     DeserializeOne: (
-      serializedLookupApi: unknown,
-    ): ValueOrErrors<LookupApi, string> =>
-      !LookupApis.Operations.isLookupApi(serializedLookupApi)
-        ? ValueOrErrors.Default.throwOne(`serializedLookupApi is not an object`)
-        : EnumApis.Operations.Deserialize(serializedLookupApi.enums)
-            .Then((enums) =>
-              StreamApis.Operations.Deserialize(
-                serializedLookupApi.streams,
-              ).Then((streams) =>
-                TableApis.Operations.Deserialize(
-                  serializedLookupApi.tables,
-                ).Then((tables) =>
-                  LookupApis.Operations.Deserialize(
-                    serializedLookupApi.lookups,
-                  ).Then((lookups) =>
-                    ValueOrErrors.Default.return({
-                      enums,
-                      streams,
-                      tables,
-                      lookups,
-                    }),
-                  ),
-                ),
-              ),
-            )
-            .MapErrors((errors) =>
-              errors.map(
-                (error) => `${error}\n...When deserializing lookup api`,
-              ),
+      serializedOneApi: unknown,
+    ): ValueOrErrors<LookupApiOne, string> =>
+      !LookupApis.Operations.isOneApi(serializedOneApi)
+        ? ValueOrErrors.Default.throwOne<LookupApiOne, string>(
+            `serializedLookupApi is not a valid lookup api`,
+          )
+        : ValueOrErrors.Default.return<LookupApiOne, string>(
+            Map(
+              Object.entries(serializedOneApi.one).map(([key, value]) => [
+                key,
+                {
+                  type: value.type,
+                  methods: {
+                    get: value.methods.includes("get"),
+                    update: value.methods.includes("update"),
+                    getManyUnlinked: value.methods.includes("getManyUnlinked"),
+                    create: value.methods.includes("create"),
+                    delete: value.methods.includes("delete"),
+                  },
+                },
+              ]),
             ),
+          ).MapErrors((errors) =>
+            errors.map((error) => `${error}\n...When deserializing lookup api`),
+          ),
     Deserialize: (
       serializedApiLookups?: unknown,
     ): ValueOrErrors<undefined | LookupApis, string> =>
@@ -286,15 +279,19 @@ export const LookupApis = {
               `serializedApiLookups is not an object`,
             )
           : ValueOrErrors.Operations.All(
-              List<ValueOrErrors<[LookupApiName, LookupApi], string>>(
+              List<
+                ValueOrErrors<[LookupApiName, { one: LookupApiOne }], string>
+              >(
                 Object.entries(serializedApiLookups).map(([key, value]) =>
-                  ValueOrErrors.Default.return([key, value]),
+                  LookupApis.Operations.DeserializeOne(value).Then((one) =>
+                    ValueOrErrors.Default.return([key, { one }]),
+                  ),
                 ),
               ),
             )
               .Then((entries) =>
                 ValueOrErrors.Default.return(
-                  Map<LookupApiName, LookupApi>(entries),
+                  Map<LookupApiName, { one: LookupApiOne }>(entries),
                 ),
               )
               .MapErrors((errors) =>

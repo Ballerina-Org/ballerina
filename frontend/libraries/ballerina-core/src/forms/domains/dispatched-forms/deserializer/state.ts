@@ -200,14 +200,14 @@ export type DispatchTableApiSources = BasicFun<
 
 export type DispatchApiName = string;
 export type DispatchOneSource = {
-  get: BasicFun<Guid, Promise<any>>;
+  get: BasicFun<Guid, Promise<any>> | undefined;
   getManyUnlinked: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<
       Guid,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
     >
-  >;
+  > | undefined;
 };
 
 export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
@@ -376,6 +376,7 @@ export const parseDispatchFormsToLaunchers =
               apiConverters,
               lookupSources,
               tableApiSources,
+              specification.apis,
             ),
             types: specification.types,
             parseFromApiByType: (type: DispatchParsedType<T>) =>

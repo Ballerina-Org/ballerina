@@ -450,7 +450,8 @@ export const OneAbstractRenderer = <
             OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
               Sum.Updaters.left(
                 ValueInfiniteStreamState.Updaters.Template.reload(
-                  props.context.customFormState.getChunkWithParams(
+                  // safe because we check for undefined in the runFilter
+                  props.context.customFormState.getChunkWithParams!(
                     maybeId.value,
                   )(props.context.customFormState.streamParams.value),
                 ),

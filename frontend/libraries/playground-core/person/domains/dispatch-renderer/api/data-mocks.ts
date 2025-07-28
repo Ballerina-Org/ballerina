@@ -362,24 +362,29 @@ const getChildren: DispatchTableApiSource = {
 
 const getFriends: DispatchOneSource = {
   get: (id: Guid) => {
-    return PromiseRepo.Default.mock(() => ({
-      Id: v4(),
-      Name: "Tim",
-      Surname: "Pool",
-      Birthday: "1990-01-01",
-      Email: "tim.pool@example.com",
-      SubscribeToNewsletter: true,
-      FavoriteColor: {
-        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-        IsSome: true,
-      },
-      Friends: {
-        From: 0,
-        To: 0,
-        HasMore: true,
-        Values: {},
-      },
-    }));
+    return PromiseRepo.Default.mock(
+      () => ({
+        Id: v4(),
+        Name: "Tim",
+        Surname: "Pool",
+        Birthday: "1990-01-01",
+        Email: "tim.pool@example.com",
+        SubscribeToNewsletter: true,
+        FavoriteColor: {
+          Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+          IsSome: true,
+        },
+        Friends: {
+          From: 0,
+          To: 0,
+          HasMore: true,
+          Values: {},
+        },
+      }),
+      undefined,
+      undefined,
+      2,
+    );
   },
   getManyUnlinked:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
@@ -425,15 +430,94 @@ const getFriends: DispatchOneSource = {
     },
 };
 
+const eagerEditableOne: DispatchOneSource = {
+  get: undefined,
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const lazyReadonlyOne: DispatchOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(
+      () => ({
+        Id: v4(),
+        Name: "Tim",
+        Surname: "Pool",
+        Birthday: "1990-01-01",
+        Email: "tim.pool@example.com",
+        SubscribeToNewsletter: true,
+        FavoriteColor: {
+          Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+          IsSome: true,
+        },
+        Friends: {
+          From: 0,
+          To: 0,
+          HasMore: true,
+          Values: {},
+        },
+      }),
+      undefined,
+      undefined,
+      1,
+    );
+  },
+  getManyUnlinked: undefined,
+};
+
 const lookupSources: DispatchLookupSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
         one: (apiName: string) =>
           apiName == "BestFriendApi"
             ? ValueOrErrors.Default.return(getFriends)
-            : ValueOrErrors.Default.throwOne(
-                `can't find api ${apiName} when getting lookup api sources`,
-              ),
+            : apiName == "EagerEditableOneApi"
+              ? ValueOrErrors.Default.return(eagerEditableOne)
+              : apiName == "LazyReadonlyOneApi"
+                ? ValueOrErrors.Default.return(lazyReadonlyOne)
+                : ValueOrErrors.Default.throwOne(
+                    `can't find api ${apiName} when getting lookup api sources`,
+                  ),
       })
     : ValueOrErrors.Default.throwOne(
         `can't find type ${typeName} when getting lookup api source`,
@@ -539,15 +623,26 @@ const entityApis: EntityApis = {
           console.log(`get person ${id}`);
           return Promise.resolve({
             Id: v4(),
-            // Job: {
-            //   Discriminator: "Developer",
-            //   Developer: {
-            //     Name: "Developer",
-            //     Salary: Math.floor(Math.random() * 100000),
-            //     Language: "TypeScript",
-            //   },
-            // },
             BestFriend: {
+              isRight: false,
+              right: {},
+            },
+            EagerEditableOne: {
+              isRight: true,
+              right: {
+                Id: v4(),
+                Name: "John",
+                Surname: "Doe",
+                Birthday: "1990-01-01",
+                Email: "john.doe@example.com",
+                SubscribeToNewsletter: true,
+              },
+            },
+            LazyReadonlyOne: {
+              isRight: false,
+              right: {},
+            },
+            EagerReadonlyOne: {
               isRight: true,
               right: {
                 Id: v4(),

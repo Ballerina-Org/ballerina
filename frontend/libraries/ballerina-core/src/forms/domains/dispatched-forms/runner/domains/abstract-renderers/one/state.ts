@@ -58,7 +58,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
     getChunkWithParams: BasicFun<
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    >;
+    > | undefined;
   };
 };
 
@@ -67,7 +67,7 @@ export const OneAbstractRendererState = {
     getChunk: BasicFun<
       string,
       BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    >,
+    > | undefined,
   ): OneAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {

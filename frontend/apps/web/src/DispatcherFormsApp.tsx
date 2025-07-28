@@ -441,7 +441,7 @@ export const DispatcherFormsApp = (props: {}) => {
                   />
                 </div>
                 <h3>Person</h3>
-                {entityPath && entityPath.kind == "value" && (
+                {/* {entityPath && entityPath.kind == "value" && (
                   <pre
                     style={{
                       display: "inline-block",
@@ -451,7 +451,7 @@ export const DispatcherFormsApp = (props: {}) => {
                   >
                     {JSON.stringify(entityPath.value, null, 2)}
                   </pre>
-                )}
+                )} */}
                 {entityPath && entityPath.kind == "errors" && (
                   <pre>
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
