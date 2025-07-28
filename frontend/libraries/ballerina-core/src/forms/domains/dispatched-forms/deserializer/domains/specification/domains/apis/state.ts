@@ -205,19 +205,16 @@ export const TableApis = {
 export type LookupApiName = string;
 export type LookupApis = Map<LookupApiName, LookupApi>;
 export type LookupApi = {
-  enums?: EnumApis;
-  streams?: StreamApis;
-  tables?: TableApis;
-  lookups?: LookupApis;
   one?: Map<
     string,
     {
       type: DispatchTypeName;
       methods: {
-        update: boolean;
-        getManyUnlinked: boolean;
-        create: boolean;
-        delete: boolean;
+        get?: boolean;
+        update?: boolean;
+        getManyUnlinked?: boolean;
+        create?: boolean;
+        delete?: boolean;
       };
     }
   >;

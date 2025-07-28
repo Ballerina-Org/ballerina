@@ -45,7 +45,7 @@ export const OneDispatcher = {
       CustomPresentationContexts,
       ExtraContext,
     >(
-      api: string | string[],
+      api: string[],
       dispatcherContext: DispatcherContext<
         any,
         Flags,
@@ -53,31 +53,34 @@ export const OneDispatcher = {
         ExtraContext
       >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>>, string> =>
-      typeof api == "string"
-        ? ValueOrErrors.Default.throwOne(
-            `Attempted to use a table API for a one, this is not allowed`,
-          )
-        : Array.isArray(api) &&
-            api.length == 2 &&
-            api.every((_) => typeof _ == "string")
-          ? dispatcherContext.lookupSources == undefined
-            ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
-            : dispatcherContext
-                .lookupSources(api[0])
-                .Then((lookupSource) =>
-                  lookupSource.one == undefined
-                    ? ValueOrErrors.Default.throwOne(
-                        `lookup source missing "one" api`,
-                      )
-                    : lookupSource
-                        .one(api[1])
-                        .Then((source) =>
-                          ValueOrErrors.Default.return(source.get),
-                        ),
-                )
-          : ValueOrErrors.Default.throwOne(
-              `api must be a string or an array of strings`,
-            ),
+      Array.isArray(api) &&
+      api.length == 2 &&
+      api.every((_) => typeof _ == "string")
+        ? dispatcherContext.specApis.lookups == undefined
+          ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
+          : dispatcherContext.specApis.lookups.get(api[0]) == undefined
+            ? ValueOrErrors.Default.throwOne(`lookup api not found`)
+            : dispatcherContext.specApis.lookups.get(api[0])?.one == undefined
+              ? ValueOrErrors.Default.throwOne(`lookup api not found`)
+              : dispatcherContext.specApis.lookups.get(api[0])?.one(api[1])
+        ? dispatcherContext.lookupSources == undefined
+          ? ValueOrErrors.Default.throwOne(`lookup apis are undefined`)
+          : dispatcherContext
+              .lookupSources(api[0])
+              .Then((lookupSource) =>
+                lookupSource.one == undefined
+                  ? ValueOrErrors.Default.throwOne(
+                      `lookup source missing "one" api`,
+                    )
+                  : lookupSource
+                      .one(api[1])
+                      .Then((source) =>
+                        ValueOrErrors.Default.return(source.get),
+                      ),
+              )
+        : ValueOrErrors.Default.throwOne(
+            `api must be a string or an array of strings`,
+          ),
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,

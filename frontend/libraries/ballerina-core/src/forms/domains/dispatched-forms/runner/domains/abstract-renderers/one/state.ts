@@ -43,7 +43,7 @@ export type OneAbstractRendererReadonlyContext<
   CustomPresentationContext,
   ExtraContext
 > & {
-  getApi: BasicFun<Guid, Promise<unknown>>;
+  getApi?: BasicFun<Guid, Promise<unknown>>;
   fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
   remoteEntityVersionIdentifier: string;
 };

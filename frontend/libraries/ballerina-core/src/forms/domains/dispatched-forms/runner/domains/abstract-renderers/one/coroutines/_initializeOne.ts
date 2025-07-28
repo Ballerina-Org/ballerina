@@ -70,7 +70,8 @@ export const initializeOne = <
         ExtraContext
       >()
         .Await(
-          () => current.getApi(maybeId.value),
+          // get Api being defined is in the run condition and is a sign that this could be lazy loaded
+          () => current.getApi!(maybeId.value),
           (_) => console.error("error while getting api value for the one", _),
         )
         .then((value) =>
