@@ -46,7 +46,6 @@ export type OneAbstractRendererReadonlyContext<
   getApi: BasicFun<Guid, Promise<unknown>>;
   fromApiParser: (value: unknown) => ValueOrErrors<ValueRecord, string>;
   remoteEntityVersionIdentifier: string;
-  postInitActionFlag: BaseFlags;
 };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
@@ -162,7 +161,7 @@ export const OneAbstractRendererState = {
 };
 
 export type OneAbstractRendererForeignMutationsExpected<Flags = BaseFlags> = {
-  onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
+  onChange: DispatchOnChange<ValueOption | ValueUnit, BaseFlags>;
   clear?: () => void;
   delete?: (delta: DispatchDelta<Flags>) => void;
   select?: (
@@ -189,7 +188,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
 
 export type OneAbstractRendererView<
   CustomPresentationContext = Unit,
-  Flags extends BaseFlags = BaseFlags,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 > = View<
   OneAbstractRendererReadonlyContext<

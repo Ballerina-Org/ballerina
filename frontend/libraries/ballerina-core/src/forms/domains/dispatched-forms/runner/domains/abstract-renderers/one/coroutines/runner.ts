@@ -22,7 +22,7 @@ import { debouncer } from "./_debouncer";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
-  Flags extends BaseFlags = BaseFlags,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   InitializeCo<CustomPresentationContext, ExtraContext>().Template<
@@ -38,7 +38,7 @@ export const initializeOneRunner = <
 
 export const initializeStreamRunner = <
   CustomPresentationContext = Unit,
-  Flags extends BaseFlags = BaseFlags,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   Co<CustomPresentationContext, ExtraContext>().Template<
@@ -50,7 +50,7 @@ export const initializeStreamRunner = <
 
 export const oneTableDebouncerRunner = <
   CustomPresentationContext = Unit,
-  Flags extends BaseFlags = BaseFlags,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   DebouncerCo<CustomPresentationContext, ExtraContext>().Template<
@@ -65,7 +65,7 @@ export const oneTableDebouncerRunner = <
 
 export const oneTableLoaderRunner = <
   CustomPresentationContext = Unit,
-  Flags extends BaseFlags = BaseFlags,
+  Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   Co<CustomPresentationContext, ExtraContext>().Template<

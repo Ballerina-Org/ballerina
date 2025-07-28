@@ -429,7 +429,7 @@ export const OneAbstractRenderer = <
     typedOneTableLoaderRunner,
     typedInitializeOneRunner.mapContextFromProps((props) => ({
       ...props.context,
-      onChange: props.foreignMutations.onChange as any,
+      onChange: props.foreignMutations.onChange
     })),
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
