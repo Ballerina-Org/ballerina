@@ -763,7 +763,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       if (!PredicateValue.Operations.IsOption(maybeOption)) {
         console.error("value option expected but got", maybeOption);
-          return (
+        return (
           <>
             <h2>{props.context.label}</h2>
             <>Error: value option expected but got</>

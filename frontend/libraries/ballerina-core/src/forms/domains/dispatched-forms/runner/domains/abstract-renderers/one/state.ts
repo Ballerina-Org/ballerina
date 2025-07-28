@@ -55,19 +55,23 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
     streamParams: Debounced<Value<Map<string, string>>>;
     status: "open" | "closed";
     stream: Sum<ValueInfiniteStreamState, "not initialized">;
-    getChunkWithParams: BasicFun<
-      string,
-      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    > | undefined;
+    getChunkWithParams:
+      | BasicFun<
+          string,
+          BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+        >
+      | undefined;
   };
 };
 
 export const OneAbstractRendererState = {
   Default: (
-    getChunk: BasicFun<
-      string,
-      BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
-    > | undefined,
+    getChunk:
+      | BasicFun<
+          string,
+          BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+        >
+      | undefined,
   ): OneAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {

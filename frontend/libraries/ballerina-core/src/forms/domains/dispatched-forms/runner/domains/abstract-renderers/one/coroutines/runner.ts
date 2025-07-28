@@ -64,8 +64,7 @@ export const oneTableDebouncerRunner = <
     runFilter: (props) =>
       Debounced.Operations.shouldCoroutineRun(
         props.context.customFormState.streamParams,
-      ) &&
-      props.context.customFormState.getChunkWithParams !== undefined,
+      ) && props.context.customFormState.getChunkWithParams !== undefined,
   });
 
 export const oneTableLoaderRunner = <

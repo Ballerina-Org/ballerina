@@ -34,7 +34,7 @@ export const initializeOne = <
         console.error(maybeId.errors.join("\n"));
         return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
       }
-      
+
       return InitializeCo<CustomPresentationContext, ExtraContext>()
         .Await(
           // get Api being defined is in the run condition and is a sign that this could be lazy loaded
