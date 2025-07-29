@@ -65,6 +65,14 @@ export const ValueStreamPosition = {
             ),
           ),
         ),
+      initLoad: (): Updater<ValueStreamPosition> =>
+        ValueStreamPosition.Updaters.Core.lastModifiedTime(
+          replaceWith(Date.now()),
+        ).then(
+          ValueStreamPosition.Updaters.Core.shouldLoad(
+            replaceWith<ValueStreamPosition["shouldLoad"]>("loadMore"),
+          ),
+        ),
     },
     Core: {
       ...simpleUpdater<ValueStreamPosition>()("lastModifiedTime"),
@@ -237,6 +245,12 @@ export const ValueInfiniteStreamState = {
         ValueInfiniteStreamState.Updaters.Core.whenNotAlreadyLoading(
           ValueInfiniteStreamState.Updaters.Core.position(
             ValueStreamPosition.Updaters.Template.loadMore(),
+          ),
+        ),
+      initLoad: (): Updater<ValueInfiniteStreamState> =>
+        ValueInfiniteStreamState.Updaters.Core.whenNotAlreadyLoading(
+          ValueInfiniteStreamState.Updaters.Core.position(
+            ValueStreamPosition.Updaters.Template.initLoad(),
           ),
         ),
       updateChunkValue:
