@@ -21,7 +21,9 @@
         <Compile Include="Core\Object\Model.fs" />
         <Compile Include="Core\Map\Model.fs" />
         <Compile Include="Errors\Model.fs" />
-        <Compile Include="Core\Json\Model.fs" />
+        <Compile Include="Core\Json\Patterns.fs" />
+        <Compile Include="Core\Json\Reader.fs" />
+        <Compile Include="Core\Json\Sum.fs" />
         <Compile Include="Range\Model.fs" />
         <Compile Include="Queries\QuotationToLinq.fs" />
         <Compile Include="Crud\Model.fs" />

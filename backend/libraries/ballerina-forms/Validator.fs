@@ -92,12 +92,13 @@ module Validator =
 
           let! apiMethods =
             match l.OneApiId with
-            | Choice2Of2(apiTypeId, apiName) ->
+            | Some(Choice2Of2(apiTypeId, apiName)) ->
               sum {
                 let! (_, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
                 return oneApiMethods
               }
-            | Choice1Of2(_) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
+            | Some(Choice1Of2(_)) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
+            | _ -> sum { return Set.empty }
 
           match l.Preview with
           | Some preview ->
@@ -114,28 +115,29 @@ module Validator =
           | _ -> return ()
 
           return fr.Type
-        | Renderer.ManyRenderer(l) ->
+        | Renderer.ManyRenderer(ManyAllRenderer l) ->
           do! !l.Many |> Sum.map ignore
-          do! !l.Details.Renderer |> Sum.map ignore
-
-          let (apiTypeId, apiName) = l.ManyApiId
-          let! _, manyApiMethods = ctx.TryFindMany apiTypeId.VarName apiName
-
-          match l.Preview with
-          | Some preview ->
-            if manyApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
-              return!
-                sum.Throw(
-                  Errors.Singleton
-                    $"Error: 'many' api {apiTypeId.VarName} - {apiName} is used in a preview but has no {CrudMethod.GetManyLinked.ToFSharpString} method."
-                )
-            else
-              return ()
-
-            do! !preview.Renderer |> Sum.map ignore
-          | _ -> return ()
-
+          do! !l.Element.Renderer |> Sum.map ignore
           return fr.Type
+
+        | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer l) ->
+          do! !l.Many |> Sum.map ignore
+
+          let linkedType = l.Linked.Type
+          let unlinkedType = l.Unlinked.Type
+
+          do!
+            ExprType.Unify
+              Map.empty
+              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+              linkedType
+              unlinkedType
+            |> Sum.map ignore
+
+          do! !l.Linked.Renderer |> Sum.map ignore
+          do! !l.Unlinked.Renderer |> Sum.map ignore
+          return fr.Type
+
         | Renderer.ReadOnlyRenderer(l) ->
           do! !l.ReadOnly |> Sum.map ignore
           do! !l.Value.Renderer |> Sum.map ignore
@@ -269,13 +271,14 @@ module Validator =
           | Some preview -> do! !!preview
           | _ -> return ()
 
-        | Renderer.ManyRenderer e ->
+        | Renderer.ManyRenderer(ManyAllRenderer e) ->
           do! !e.Many
-          do! !!e.Details
+          do! !!e.Element
 
-          match e.Preview with
-          | Some preview -> do! !!preview
-          | _ -> return ()
+        | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer e) ->
+          do! !e.Many
+          do! !!e.Linked
+          do! !!e.Unlinked
 
         | Renderer.OptionRenderer e ->
           do! !e.Option

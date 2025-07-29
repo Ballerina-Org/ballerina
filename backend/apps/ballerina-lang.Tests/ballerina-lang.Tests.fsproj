@@ -18,6 +18,8 @@
         <Compile Include="Next/Type/Unify.fs" />
         <Compile Include="Next/Type/KindCheck.fs" />
         <Compile Include="Next/Type/Instantiate.fs" />
+        <Compile Include="Next/Type/FromJson.fs" />
+        <Compile Include="Next/Term/FromJson.fs" />
         <Compile Include="Expr/Model.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>

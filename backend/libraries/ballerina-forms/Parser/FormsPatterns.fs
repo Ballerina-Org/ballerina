@@ -88,7 +88,8 @@ module FormsPatterns =
       | ListRenderer r -> ExprType.ListType r.Element.Type
       | OptionRenderer r -> ExprType.OptionType r.Some.Type
       | OneRenderer r -> ExprType.OneType r.Details.Type
-      | ManyRenderer r -> ExprType.ManyType r.Details.Type
+      | ManyRenderer(ManyAllRenderer r) -> ManyType r.Element.Type
+      | ManyRenderer(ManyLinkedUnlinkedRenderer r) -> ManyType r.Linked.Type
       | ReadOnlyRenderer r -> ExprType.ReadOnlyType r.Value.Type
       // | TableRenderer r -> ExprType.TableType r.Row.Type
       | EnumRenderer(_, r)
