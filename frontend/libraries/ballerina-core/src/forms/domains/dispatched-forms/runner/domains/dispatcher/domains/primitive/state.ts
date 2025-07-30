@@ -157,14 +157,18 @@ export const PrimitiveDispatcher = {
             );
         }
         return ValueOrErrors.Default.throwOne(
-          `could not resolve primitive concrete renderer for ${viewKind}`,
+          `could not resolve primitive concrete ${renderer.concreteRenderer} renderer for ${viewKind}`,
         );
       })();
 
       return result.MapErrors((errors) =>
         errors.map(
           (error) =>
-            `${error}\n...When dispatching nested primitive: ${renderer}`,
+            `${error}\n...When dispatching nested primitive: ${JSON.stringify(
+              renderer,
+              null,
+              2,
+            )}`,
         ),
       );
     },
