@@ -8,7 +8,7 @@ module ExprType =
   open Ballerina.DSL.Expr.Types.Patterns
   open System
   open Ballerina.Errors
-  open Ballerina.StdLib.Json
+  open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.String
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList

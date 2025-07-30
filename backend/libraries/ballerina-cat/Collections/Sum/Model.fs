@@ -48,10 +48,15 @@ module Sum =
     member _.MapError f p = p |> Sum.mapRight f
     member _.Map f p = p |> Sum.map f
 
-    member _.Catch h p =
+    // member _.Catch h p =
+    //   match p with
+    //   | Left _ -> p
+    //   | Right _ -> Left(h ())
+
+    member _.Catch p =
       match p with
-      | Left _ -> p
-      | Right _ -> Left(h ())
+      | Left res -> Left(Some res)
+      | Right _ -> Left(None)
 
     member _.Throw(e) = Sum.Right e
     member _.Return(result: 'a) = Sum.Left result
@@ -73,6 +78,11 @@ module Sum =
       match ps with
       | One p -> p
       | Many(p, ps) -> ps |> Seq.fold merge p
+
+    member inline sum.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p: Sum<'a, 'b>, ps: List<Sum<'a, 'b>>)
+      =
+      sum.Any(NonEmptyList.OfList(p, ps))
 
     member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)> (p1: Sum<'a, 'b>) (p2: Sum<'a, 'b>) =
       match p1, p2 with
@@ -131,11 +141,16 @@ module Sum =
       |> sum.All
       |> sum.Map(Map.ofList)
 
+    member inline sum.RunOption(p: Option<Sum<'a, 'b>>) =
+      sum {
+        match p with
+        | Some p ->
+          let! res = p
+          return Some res
+        | None -> return None
+      }
+
   let sum = SumBuilder()
 
   type Sum<'a, 'b> with
-    static member (>>=)(p, q) =
-      sum {
-        let! x = p
-        return! q x
-      }
+    static member Then(f, g) = fun x -> sum.Bind(f x, g) // Using bind

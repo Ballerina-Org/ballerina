@@ -2,7 +2,7 @@ namespace Ballerina.DSL.Expr.Extensions
 
 [<RequireQualifiedAccess>]
 module Collections =
-  open Ballerina.StdLib.Json
+  open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Expr.Model
   open FSharp.Data
   open Ballerina.Collections.Sum

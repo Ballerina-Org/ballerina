@@ -9,8 +9,11 @@ module Unification =
   open System
   open Ballerina.Fun
   open Ballerina.StdLib.Object
-  open Ballerina.DSL.Next.Model
+  open Ballerina.DSL.Next.KitchenSink
   open Ballerina.DSL.Next.EquivalenceClasses
+  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Types.Eval
 
   type UnificationContext = TypeExprEvalContext
 

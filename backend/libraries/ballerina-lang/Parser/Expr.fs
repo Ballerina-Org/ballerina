@@ -9,7 +9,7 @@ module Expr =
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Collections.Sum
   open Ballerina.Errors
-  open Ballerina.StdLib.Json
+  open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
   open FSharp.Data

@@ -3,7 +3,10 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.KindCheck
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.Errors
-open Ballerina.DSL.Next.Model
+open Ballerina.DSL.Next.Types.Model
+open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.DSL.Next.Types.KindCheck
+open Ballerina.DSL.Next.KitchenSink
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError

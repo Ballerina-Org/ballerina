@@ -18,6 +18,13 @@ module WithError =
     static member map<'b>(f: 'a -> 'b) : (ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c, 'b, 'e>) =
       fun (ReaderWithError r) -> ReaderWithError(r >> Sum.map f)
 
+    static member mapError<'e1>(f: 'e -> 'e1) : (ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c, 'a, 'e1>) =
+      fun (ReaderWithError r) ->
+        ReaderWithError(fun ctx ->
+          match r ctx with
+          | Left res -> Left res
+          | Right err -> Right(f err))
+
     static member mapContext<'c1>(f: 'c1 -> 'c) : (ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c1, 'a, 'e>) =
       fun (ReaderWithError r) -> ReaderWithError(f >> r)
 
@@ -77,6 +84,11 @@ module WithError =
       : ReaderWithError<'c, 'a, 'e> =
       ReaderWithError(fun (c: 'c) -> sum.Any(readers |> NonEmptyList.map (fun (ReaderWithError r) -> r c)))
 
+    member inline reader.Any<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
+      (p: ReaderWithError<'c, 'a, 'e>, ps: ReaderWithError<'c, 'a, 'e> list)
+      : ReaderWithError<'c, 'a, 'e> =
+      reader.Any(NonEmptyList.OfList(p, ps))
+
     member inline reader.AllMap<'c, 'a, 'e, 'k when 'k: comparison and 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: Map<'k, ReaderWithError<'c, 'a, 'e>>)
       : ReaderWithError<'c, Map<'k, 'a>, 'e> =
@@ -94,6 +106,9 @@ module WithError =
     member _.Map<'c, 'a, 'b, 'e>(f: 'a -> 'b) : ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c, 'b, 'e> =
       ReaderWithError.map f
 
+    member _.MapError<'c, 'a, 'e, 'e1>(f: 'e -> 'e1) : ReaderWithError<'c, 'a, 'e> -> ReaderWithError<'c, 'a, 'e1> =
+      ReaderWithError.mapError f
+
     member _.Ignore<'c, 'a, 'e>(r: ReaderWithError<'c, 'a, 'e>) : ReaderWithError<'c, Unit, 'e> =
       ReaderWithError.map (fun _ -> ()) r
 
@@ -101,3 +116,5 @@ module WithError =
       ReaderWithError(fun c -> sum { return c })
 
   let reader = ReaderWithErrorBuilder()
+
+  type Reader<'a, 'c, 'e> = ReaderWithError<'c, 'a, 'e>

@@ -331,7 +331,7 @@ export const OneAbstractRenderer = <
                           0
                         ? OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                             Sum.Updaters.left(
-                              ValueInfiniteStreamState.Updaters.Template.loadMore(),
+                              ValueInfiniteStreamState.Updaters.Template.initLoad(),
                             ),
                           )
                         : id,
