@@ -6,6 +6,8 @@ module Model =
   open System
   open Ballerina.State.WithError
 
+  open Models.Many
+
   type CodeGenConfig =
     { Int: CodegenConfigTypeDef
       Bool: CodegenConfigTypeDef
@@ -93,13 +95,6 @@ module Model =
       DefaultConstructor: string
       MappingFunction: string }
 
-  and CodegenConfigManyDef =
-    { GeneratedTypeName: string
-      RequiredImport: Option<string>
-      DeltaTypeName: string
-      SupportedRenderers: Set<string>
-      DefaultConstructor: string
-      MappingFunction: string }
 
   and CodegenConfigReadOnlyDef =
     { GeneratedTypeName: string
@@ -413,12 +408,9 @@ module Model =
       {| One: Renderer<'ExprExtension, 'ValueExtension>
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
          Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         OneApiId: Choice<TableApiId, ExprTypeId * string> |}
-    | ManyRenderer of
-      {| Many: Renderer<'ExprExtension, 'ValueExtension>
-         Details: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         ManyApiId: ExprTypeId * string |}
+         OneApiId: Option<Choice<TableApiId, ExprTypeId * string>> |}
+
+    | ManyRenderer of ManyRenderer<'ExprExtension, 'ValueExtension>
 
     | ReadOnlyRenderer of
       {| ReadOnly: Renderer<'ExprExtension, 'ValueExtension>
@@ -444,6 +436,16 @@ module Model =
   //      Cases: Map<CaseName, Renderer>
   //   //Children: RendererChildren
   //   |}
+
+  and ManyRenderer<'ExprExtension, 'ValueExtension> =
+    | ManyLinkedUnlinkedRenderer of
+      {| Many: Renderer<'ExprExtension, 'ValueExtension>
+         Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
+         Unlinked: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+    | ManyAllRenderer of
+      {| Many: Renderer<'ExprExtension, 'ValueExtension>
+         Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+
 
   and StreamRendererApi =
     | Stream of StreamApiId

@@ -17,10 +17,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Models/Many.fs" />
         <Compile Include="Model.fs" />
         <Compile Include="Parser/Model.fs" />
         <Compile Include="Parser/FormsPatterns.fs" />
-        <Compile Include="Parser/Renderers/ManyRenderer.fs" />
+        <Compile Include="Parser/RendererDefinitions/Many.fs" />
         <Compile Include="Parser/Renderers.fs" />
         <Compile Include="Parser/Runner.fs" />
         <Compile Include="Validator.fs" />

@@ -2,7 +2,10 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Eval
 
 open Ballerina.Collections.Sum
 open NUnit.Framework
-open Ballerina.DSL.Next.Model
+open Ballerina.DSL.Next.Types.Model
+open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.KitchenSink
 open Ballerina.Reader.WithError
 
 [<Test>]

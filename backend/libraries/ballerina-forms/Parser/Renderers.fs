@@ -13,11 +13,11 @@ module Renderers =
   open Ballerina.Collections.Map
   open Ballerina.State.WithError
   open Ballerina.Errors
-  open Ballerina.StdLib.Json
+  open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.String
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.FormEngine.Parser.ManyRenderer
+  open RendererDefinitions.Many
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseBoolRenderer
@@ -483,28 +483,32 @@ module Renderers =
                 |> Option.map (fun previewJson -> state { return! parseNestedRenderer previewJson })
                 |> state.RunOption
 
-              let! apiRendererJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum
+              let! apiRendererJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum |> state.Catch
+
 
               let! oneApiId =
-                state.Either
-                  (state {
-                    let! entityApiNameJson = apiRendererJson |> JsonValue.AsString |> state.OfSum
+                match apiRendererJson with
+                | Right _ -> state { return None }
+                | Left apiRendererJson ->
+                  state.Either
+                    (state {
+                      let! entityApiNameJson = apiRendererJson |> JsonValue.AsString |> state.OfSum
 
-                    let! entityApi = formsState.TryFindTableApi entityApiNameJson |> state.OfSum
-                    return Choice1Of2(entityApi |> fst |> TableApi.Id)
-                  })
-                  (state {
-                    let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
+                      let! entityApi = formsState.TryFindTableApi entityApiNameJson |> state.OfSum
+                      return Choice1Of2(entityApi |> fst |> TableApi.Id) |> Some
+                    })
+                    (state {
+                      let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
 
-                    let! (apiSourceTypeName, oneApiName) =
-                      state.All2
-                        (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
-                        (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
+                      let! (apiSourceTypeName, oneApiName) =
+                        state.All2
+                          (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
+                          (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
 
-                    let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-                    let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.VarName oneApiName |> state.OfSum
-                    return Choice2Of2(apiType.TypeId, oneApi.EntityName)
-                  })
+                      let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
+                      let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.VarName oneApiName |> state.OfSum
+                      return Choice2Of2(apiType.TypeId, oneApi.EntityName) |> Some
+                    })
 
               return
                 OneRenderer
@@ -563,7 +567,6 @@ module Renderers =
               Errors.Singleton $"Error: cannot parse read only renderer from {json.ToString().ReasonablyClamped}"
             )
       }
-
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseListRenderer
@@ -914,7 +917,8 @@ module Renderers =
                   Renderer.ParseSumRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseOptionRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseOneRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseManyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyAllRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyItemRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseReadOnlyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseListRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
                   Renderer.ParseCustomRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
