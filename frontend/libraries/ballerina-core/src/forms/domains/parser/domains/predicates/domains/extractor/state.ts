@@ -321,6 +321,23 @@ export const PredicateValueExtractor = {
                   ),
                 );
         }
+        case "readOnly": {
+          const traverseReadOnlyField = self(
+            lookupName,
+            typesMap,
+            t.arg,
+            debugPath.concat("readOnly"),
+          );
+          return (v) =>
+            !PredicateValue.Operations.IsReadOnly(v)
+              ? ValueOrErrors.Default.throwOne(
+                  Errors.Default.singleton([
+                    "not a ValueReadOnly",
+                    JSON.stringify(v),
+                  ]),
+                )
+              : traverseReadOnlyField(v.ReadOnly);
+        }
         case "table": {
           return (_) => ValueOrErrors.Default.return([]);
         }
