@@ -1,9 +1,6 @@
 namespace Ballerina.DSL.Next.Types
 
 module Model =
-  open Ballerina.Collections.Sum
-  open Ballerina.Reader.WithError
-  open Ballerina.Errors
   open System
 
   type TypeParameter = { Name: string; Kind: Kind }

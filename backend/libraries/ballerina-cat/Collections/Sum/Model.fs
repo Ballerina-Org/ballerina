@@ -152,5 +152,8 @@ module Sum =
 
   let sum = SumBuilder()
 
+  module Operators =
+    let (>>=) f g = fun x -> sum.Bind(f x, g)
+
   type Sum<'a, 'b> with
-    static member Then(f, g) = fun x -> sum.Bind(f x, g) // Using bind
+    static member Then(f, g) = fun x -> sum.Bind(f x, g)

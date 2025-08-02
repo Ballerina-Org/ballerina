@@ -18,8 +18,13 @@
         <Compile Include="Next/Type/Unify.fs" />
         <Compile Include="Next/Type/KindCheck.fs" />
         <Compile Include="Next/Type/Instantiate.fs" />
-        <Compile Include="Next/Type/FromJson.fs" />
-        <Compile Include="Next/Term/FromJson.fs" />
+        <Compile Include="Next\Type\Json\Type_TypeValue_PrimitiveType.fs" />
+        <Compile Include="Next\Type\Json\Type_TypeValue.fs" />
+        <Compile Include="Next\Type\Json\Type.fs" />
+        <Compile Include="Next\Type\Json\Type_TypeExpr.fs" />
+        <Compile Include="Next\Term\Json\Value_TypeValue_Primitive.fs" />
+        <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
+        <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
         <Compile Include="Expr/Model.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>

@@ -117,4 +117,7 @@ module WithError =
 
   let reader = ReaderWithErrorBuilder()
 
+  module Operators =
+    let (>>=) f g = fun x -> reader.Bind(f x, g)
+
   type Reader<'a, 'c, 'e> = ReaderWithError<'c, 'a, 'e>
