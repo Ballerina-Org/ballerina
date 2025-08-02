@@ -23,14 +23,82 @@
         <Compile Include="Next/Types/Patterns.fs" />
         <Compile Include="Next/Types/Eval.fs" />
         <Compile Include="Next/Types/KindCheck.fs" />
-        <Compile Include="Next/Types/Json.fs" />
+    
         <Compile Include="Next/Terms/Model.fs" />
         <Compile Include="Next/Terms/Patterns.fs" />
-        <Compile Include="Next/Terms/Json/Primitive.fs" />
-        <Compile Include="Next/Terms/Json/Value.fs" />
+        <Compile Include="Next/Terms/Expr_TypeEval.fs" />
+
         <Compile Include="Next/Next.fs" />
         <Compile Include="Next/Unification/EquivalenceClass.fs" />
         <Compile Include="Next/Unification/Unification.fs" />
+        <Compile Include="Next\Json\Json.fs" />
+        <Compile Include="Next\Json\Type\Var.fs" />
+        <Compile Include="Next\Json\Type\Symbol.fs" />
+        <Compile Include="Next\Json\Type\Primitive.fs" />
+        <Compile Include="Next\Json\Type\Kind.fs" />
+        <Compile Include="Next\Json\Type\Parameter.fs" />
+        <Compile Include="Next\Json\Type\Identifier.fs" />
+
+        <Compile Include="Next\Json\Types\TypeExpr\Union.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Tuple.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Sum.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Set.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Rotate.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Record.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Primitive.fs" />
+
+        <Compile Include="Next\Json\Types\TypeExpr\Map.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Lookup.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\List.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Lambda.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\KeyOf.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Flatten.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Exclude.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Arrow.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Apply.fs" />
+        <Compile Include="Next\Json\Types\TypeExpr\Model.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Var.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Union.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Tuple.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Sum.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Set.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Record.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Primitive.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Map.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Lookup.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\List.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Lambda.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Arrow.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Model.fs" />
+        <Compile Include="Next\Json\Terms\Primitive.fs" />
+        <Compile Include="Next\Json\Terms\Expr\UnionDes.fs" />
+        <Compile Include="Next\Json\Terms\Expr\UnionCons.fs" />
+        <Compile Include="Next\Json\Terms\Expr\TypeLet.fs" />
+        <Compile Include="Next\Json\Terms\Expr\TypeLambda.fs" />
+        <Compile Include="Next\Json\Terms\Expr\TypeApply.fs" />
+        <Compile Include="Next\Json\Terms\Expr\TupleDes.fs" />
+        <Compile Include="Next\Json\Terms\Expr\TupleCons.fs" />
+        <Compile Include="Next\Json\Terms\Expr\SumDes.fs" />
+        <Compile Include="Next\Json\Terms\Expr\SumCons.fs" />
+        <Compile Include="Next\Json\Terms\Expr\RecordDes.fs" />
+        <Compile Include="Next\Json\Terms\Expr\RecordCons.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Primitive.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Lookup.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Let.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Lambda.fs" />
+        <Compile Include="Next\Json\Terms\Expr\If.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Apply.fs" />
+        <Compile Include="Next\Json\Terms\Expr\Model.fs" />
+        <Compile Include="Next\Json\Terms\Value\Var.fs" />
+        <Compile Include="Next\Json\Terms\Value\Union.fs" />
+        <Compile Include="Next\Json\Terms\Value\TypeLambda.fs" />
+        <Compile Include="Next\Json\Terms\Value\Tuple.fs" />
+        <Compile Include="Next\Json\Terms\Value\Sum.fs" />
+        <Compile Include="Next\Json\Terms\Value\Record.fs" />
+        <Compile Include="Next\Json\Terms\Value\Primitive.fs" />
+        <Compile Include="Next\Json\Terms\Value\Lambda.fs" />
+        <Compile Include="Next\Json\Terms\Value\Model.fs" />
+
         <Compile Include="ExprType/Model.fs" />
         <Compile Include="ExprType/Patterns.fs" />
         <Compile Include="ExprType/Unification.fs" />
@@ -53,5 +121,6 @@
       <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
       <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
     </ItemGroup>
+
 
 </Project>

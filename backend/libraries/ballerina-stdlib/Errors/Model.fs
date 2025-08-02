@@ -78,6 +78,21 @@ module Errors =
       |> Map.tryFind k
       |> withError (sprintf "Cannot find %s '%s'" k_category k_error)
 
+    static member tryFindByWithError
+      (predicate: 'k * 'v -> bool)
+      (k_category: string)
+      (k_error: string)
+      (m: Map<'k, 'v>)
+      : Sum<'k * 'v, Errors> =
+
+      let withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
+        o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
+
+      m
+      |> Seq.map (fun (KeyValue(k, v)) -> (k, v))
+      |> Seq.tryFind predicate
+      |> withError (sprintf "Cannot find %s '%s'" k_category k_error)
+
   type SumBuilder with
     member sum.WithErrorContext err =
       sum.MapError(Errors.Map(String.appendNewline err))
