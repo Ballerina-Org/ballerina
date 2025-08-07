@@ -6,7 +6,7 @@ dependencies = []
 description = ""
 name = "ballerina-core"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 version = "0.1.0"
 
 [tool.poetry]
