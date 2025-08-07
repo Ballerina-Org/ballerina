@@ -24,6 +24,8 @@ import {
   TableMethod,
   CommonAbstractRendererViewOnlyReadonlyContext,
   RecordType,
+  ValueTuple,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -47,11 +49,16 @@ export type TableAbstractRendererReadonlyContext<
   apiMethods: Array<TableMethod>;
 };
 
+export type TableAbstractRendererSelectedDetailRow =
+  | ValueTuple
+  | ValueUnit
+  | undefined;
+
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
-    selectedDetailRow: [number, string] | undefined;
+    selectedDetailRow: TableAbstractRendererSelectedDetailRow;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
     streamParams: Debounced<Map<string, string>>;
     stream: ValueInfiniteStreamState;

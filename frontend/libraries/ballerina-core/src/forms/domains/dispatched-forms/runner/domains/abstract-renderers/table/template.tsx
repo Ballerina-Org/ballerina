@@ -30,6 +30,9 @@ import {
   MapRepo,
   ValueTable,
   RecordType,
+  unit,
+  ValueUnit,
+  TableAbstractRendererSelectedDetailRow,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -289,7 +292,9 @@ export const TableAbstractRenderer = <
           > &
             TableAbstractRendererState
         >((_) => {
-          if (_.customFormState.selectedDetailRow == undefined) {
+          const { selectedDetailRow } = _.customFormState;
+
+          if (selectedDetailRow == undefined) {
             console.error(
               `Selected detail row is undefined\n
               ...When rendering table field\n
@@ -298,9 +303,36 @@ export const TableAbstractRenderer = <
             return undefined;
           }
 
-          const value = _.customFormState.stream.loadedElements
-            .get(_.customFormState.selectedDetailRow[0])
-            ?.data.get(_.customFormState.selectedDetailRow[1]);
+          if (
+            !PredicateValue.Operations.IsTuple(selectedDetailRow) &&
+            !PredicateValue.Operations.IsUnit(selectedDetailRow)
+          ) {
+            console.error(
+              `Selected detail row is not a tuple or unit\n
+              ...When rendering table field\n
+              ...${_.domNodeAncestorPath}`,
+            );
+            return undefined;
+          }
+
+          const chunkIndex = PredicateValue.Operations.IsTuple(
+            selectedDetailRow,
+          )
+            ? Number(selectedDetailRow.values.get(0))
+            : undefined;
+          const chunkValueKey = PredicateValue.Operations.IsTuple(
+            selectedDetailRow,
+          )
+            ? selectedDetailRow.values.get(1)?.toString()
+            : undefined;
+
+          const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
+            ? ValueUnit.Default()
+            : chunkIndex !== undefined && chunkValueKey !== undefined
+              ? _.customFormState.stream.loadedElements
+                  .get(chunkIndex)
+                  ?.data.get(chunkValueKey)
+              : undefined;
 
           if (value == undefined) {
             console.error(
@@ -311,10 +343,9 @@ export const TableAbstractRenderer = <
             return undefined;
           }
 
-          const rowState =
-            _.customFormState.rowStates.get(
-              _.customFormState.selectedDetailRow[1],
-            ) ?? RecordAbstractRendererState.Default.fieldState(Map());
+          const rowState = chunkValueKey
+            ? _.customFormState.rowStates.get(chunkValueKey)
+            : RecordAbstractRendererState.Default.fieldState(Map());
 
           return {
             value,
@@ -334,7 +365,9 @@ export const TableAbstractRenderer = <
           };
         })
           .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
-            if (props.context.customFormState.selectedDetailRow == undefined) {
+            const { selectedDetailRow } = props.context.customFormState;
+
+            if (selectedDetailRow == undefined) {
               console.error(
                 `Selected detail row is undefined\n
                 ...When rendering table detail view \n
@@ -343,9 +376,24 @@ export const TableAbstractRenderer = <
               return id;
             }
 
+            if (!PredicateValue.Operations.IsTuple(selectedDetailRow)) {
+              return id;
+            }
+
+            const chunkValueKey = selectedDetailRow.values.get(1);
+
+            if (chunkValueKey == undefined) {
+              console.error(
+                `Chunk value key is undefined for selected detail row\n
+                ...When rendering table detail view \n
+                ...${props.context.domNodeAncestorPath}`,
+              );
+              return id;
+            }
+
             return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
               MapRepo.Updaters.upsert(
-                props.context.customFormState.selectedDetailRow[1],
+                chunkValueKey.toString(),
                 () => RecordAbstractRendererState.Default.fieldState(Map()),
                 updater,
               ),
@@ -358,9 +406,9 @@ export const TableAbstractRenderer = <
               _: Option<BasicUpdater<ValueRecord>>,
               nestedDelta: DispatchDelta<Flags>,
             ) => {
-              if (
-                props.context.customFormState.selectedDetailRow == undefined
-              ) {
+              const { selectedDetailRow } = props.context.customFormState;
+
+              if (selectedDetailRow == undefined) {
                 console.error(
                   `Selected detail row is undefined\n
                   ...When rendering table field\n
@@ -368,30 +416,57 @@ export const TableAbstractRenderer = <
                 );
                 return id;
               }
-              props.setState(
-                TableAbstractRendererState.Updaters.Core.commonFormState.children
-                  .modifiedByUser(replaceWith(true))
-                  .then(
-                    TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                      ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
-                        props.context.customFormState.selectedDetailRow[0],
-                        props.context.customFormState.selectedDetailRow[1],
-                      )(_.kind == "r" ? _.value : id),
+
+              if (
+                !PredicateValue.Operations.IsTuple(selectedDetailRow) &&
+                !PredicateValue.Operations.IsUnit(selectedDetailRow)
+              ) {
+                console.error(
+                  `Selected detail row is not a tuple or unit\n
+                  ...When rendering table field\n
+                  ...${props.context.domNodeAncestorPath}`,
+                );
+                return id;
+              }
+
+              if (PredicateValue.Operations.IsTuple(selectedDetailRow)) {
+                const chunkIndex = Number(selectedDetailRow.values.get(0));
+                const chunkValueKey = selectedDetailRow.values.get(1);
+
+                if (!chunkValueKey) {
+                  console.error(
+                    `Chunk value key is undefined for selected detail row\n
+                    ...When rendering table field\n
+                    ...${props.context.domNodeAncestorPath}`,
+                  );
+                  return id;
+                }
+
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState.children
+                    .modifiedByUser(replaceWith(true))
+                    .then(
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                        ValueInfiniteStreamState.Updaters.Template.updateChunkValue(
+                          chunkIndex,
+                          chunkValueKey.toString(),
+                        )(_.kind == "r" ? _.value : id),
+                      ),
                     ),
-                  ),
-              );
+                );
 
-              // TODO, different delta for details
-              const delta: DispatchDelta<Flags> = {
-                kind: "TableValue",
-                id: props.context.customFormState.selectedDetailRow[1],
-                nestedDelta: nestedDelta,
-                flags,
-                sourceAncestorLookupTypeNames:
-                  nestedDelta.sourceAncestorLookupTypeNames,
-              };
+                // TODO, different delta for details
+                const delta: DispatchDelta<Flags> = {
+                  kind: "TableValue",
+                  id: chunkValueKey.toString(),
+                  nestedDelta: nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
 
-              props.foreignMutations.onChange(Option.Default.none(), delta);
+                props.foreignMutations.onChange(Option.Default.none(), delta);
+              }
             },
           }))
     : undefined;
@@ -550,10 +625,11 @@ export const TableAbstractRenderer = <
                 props.setState(
                   TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
                     chunkIndex.kind == "value"
-                      ? replaceWith<[number, string] | undefined>([
-                          chunkIndex.value,
-                          rowId,
-                        ])
+                      ? replaceWith<TableAbstractRendererSelectedDetailRow>(
+                          PredicateValue.Default.tuple(
+                            List([chunkIndex.value, rowId]),
+                          ),
+                        )
                       : id,
                   ),
                 );
@@ -561,7 +637,9 @@ export const TableAbstractRenderer = <
               clearDetailView: () =>
                 props.setState(
                   TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
-                    replaceWith<[number, string] | undefined>(undefined),
+                    replaceWith<TableAbstractRendererSelectedDetailRow>(
+                      undefined,
+                    ),
                   ),
                 ),
               selectRow: (rowId: string) =>
