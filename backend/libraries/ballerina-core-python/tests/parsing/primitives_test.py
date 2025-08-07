@@ -1,7 +1,10 @@
 from decimal import Decimal
+import datetime
 
 from ballerina_core.parsing.parsing_types import Json
 from ballerina_core.parsing.primitives import (
+    date_from_json,
+    date_to_json,
     bool_from_json,
     bool_to_json,
     float_from_json,
@@ -67,3 +70,13 @@ class TestPrimitivesSerializer:
     def test_float_from_json() -> None:
         serialized: Json = {"kind": "float", "value": "3.14"}
         assert float_from_json(serialized) == Sum.right(Decimal("3.14"))
+
+    @staticmethod
+    def test_date_to_json() -> None:
+        value = datetime.date(2021, 1, 1)
+        assert date_to_json(value) == {"kind": "date", "value": "2021-01-01"}
+
+    @staticmethod
+    def test_date_from_json() -> None:
+        serialized: Json = {"kind": "date", "value": "2021-01-01"}
+        assert date_from_json(serialized) == Sum.right(datetime.date(2021, 1, 1))
