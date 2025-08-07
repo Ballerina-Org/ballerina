@@ -73,10 +73,10 @@ class TestPrimitivesSerializer:
 
     @staticmethod
     def test_date_to_json() -> None:
-        value = datetime.date(2021, 1, 1)
-        assert date_to_json(value) == {"kind": "date", "value": "2021-01-01"}
+        value = datetime.date(2021, 2, 1)
+        assert date_to_json(value) == {"kind": "date", "value": "2021-02-01"}
 
     @staticmethod
     def test_date_from_json() -> None:
-        serialized: Json = {"kind": "date", "value": "2021-01-01"}
-        assert date_from_json(serialized) == Sum.right(datetime.date(2021, 1, 1))
+        serialized: Json = {"kind": "date", "value": "2021-02-01"}
+        assert date_from_json(serialized) == Sum.right(datetime.date(2021, 2, 1))
