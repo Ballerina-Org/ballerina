@@ -1017,6 +1017,14 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     userDetails: () => (props) => {
+      console.log({
+        userDetails: props,
+      });
+
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <>select user (unit renderer)</>;
+      }
+
       return (
         <>
           {props.context.layout.valueSeq().map((tab) =>
@@ -1269,76 +1277,83 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 <tbody>
                   {props.TableData.entrySeq()
                     .toArray()
-                    .map(([id, row], idx) => (
-                      <tr style={{ border: "1px solid black" }}>
-                        <button
-                          onClick={() =>
-                            props.context.customFormState.selectedDetailRow &&
-                            props.context.customFormState
-                              .selectedDetailRow[1] == id
-                              ? props.foreignMutations.clearDetailView()
-                              : props.foreignMutations.selectDetailView(id)
-                          }
-                        >
-                          {props.context.customFormState.selectedDetailRow &&
-                          props.context.customFormState.selectedDetailRow[1] ==
-                            id
-                            ? "🙉"
-                            : "🙈"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            props.foreignMutations.remove &&
-                            props.foreignMutations.remove(id, undefined)
-                          }
-                        >
-                          {"❌"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            props.foreignMutations.duplicate &&
-                            props.foreignMutations.duplicate(id, undefined)
-                          }
-                        >
-                          {"👥"}
-                        </button>
-                        <select
-                          onChange={(_) =>
-                            props.foreignMutations.moveTo &&
-                            props.foreignMutations.moveTo(
-                              id,
-                              props.TableData.keySeq().get(
-                                Number(_.currentTarget.value),
-                              )!,
-                              undefined,
-                            )
-                          }
-                        >
-                          {props.TableData.entrySeq().map((_, optIdx) => (
-                            <option key={_[0]} selected={optIdx === idx}>
-                              {optIdx}
-                            </option>
-                          ))}
-                        </select>
-                        <td style={{ border: "1px solid black" }}>
-                          <input
-                            type="checkbox"
-                            checked={props.context.customFormState.selectedRows.has(
-                              id,
-                            )}
-                            onClick={() => props.foreignMutations.selectRow(id)}
-                          />
-                        </td>
-                        {props.context.tableHeaders.map((header: string) => (
+                    .map(([id, row], idx) => {
+                      const isSelected =
+                        props.context.customFormState.selectedDetailRow &&
+                        PredicateValue.Operations.IsTuple(
+                          props.context.customFormState.selectedDetailRow,
+                        ) &&
+                        props.context.customFormState.selectedDetailRow.values.get(
+                          1,
+                        ) == id;
+
+                      return (
+                        <tr style={{ border: "1px solid black" }}>
+                          <button
+                            onClick={() =>
+                              isSelected
+                                ? props.foreignMutations.clearDetailView()
+                                : props.foreignMutations.selectDetailView(id)
+                            }
+                          >
+                            {isSelected ? "hide details" : "show details"}
+                          </button>
+                          <button
+                            onClick={() =>
+                              props.foreignMutations.remove &&
+                              props.foreignMutations.remove(id, undefined)
+                            }
+                          >
+                            remove
+                          </button>
+                          <button
+                            onClick={() =>
+                              props.foreignMutations.duplicate &&
+                              props.foreignMutations.duplicate(id, undefined)
+                            }
+                          >
+                            duplicate
+                          </button>
+                          <select
+                            onChange={(_) =>
+                              props.foreignMutations.moveTo &&
+                              props.foreignMutations.moveTo(
+                                id,
+                                props.TableData.keySeq().get(
+                                  Number(_.currentTarget.value),
+                                )!,
+                                undefined,
+                              )
+                            }
+                          >
+                            {props.TableData.entrySeq().map((_, optIdx) => (
+                              <option key={_[0]} selected={optIdx === idx}>
+                                {optIdx}
+                              </option>
+                            ))}
+                          </select>
                           <td style={{ border: "1px solid black" }}>
-                            {row.get(header)!(undefined)({
-                              ...props,
-                              view: unit,
-                            })}
+                            <input
+                              type="checkbox"
+                              checked={props.context.customFormState.selectedRows.has(
+                                id,
+                              )}
+                              onClick={() =>
+                                props.foreignMutations.selectRow(id)
+                              }
+                            />
                           </td>
-                        ))}
-                      </tr>
-                    ))}
+                          {props.context.tableHeaders.map((header: string) => (
+                            <td style={{ border: "1px solid black" }}>
+                              {row.get(header)!(undefined)({
+                                ...props,
+                                view: unit,
+                              })}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
               <button onClick={() => props.foreignMutations.loadMore()}>
@@ -1346,44 +1361,34 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               </button>
             </div>
 
-            <div key={props.context.customFormState.selectedDetailRow?.[1]}>
-              {props.context.customFormState.selectedDetailRow ? (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                      minWidth: "300px",
-                      maxWidth: "300px",
-                      backgroundColor: "dimgray",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "10px",
-                    }}
-                  >
-                    <h3>Detail View</h3>
-                    {props.DetailsRenderer &&
-                      props.DetailsRenderer(undefined)({
-                        ...props,
-                        view: unit,
-                      })}
-                    {/* {DetailView({
-                    ...props,
-                    view: unit,
-                  })} */}
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                    minWidth: "300px",
-                  }}
-                />
-              )}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                minWidth: "300px",
+                maxWidth: "300px",
+                backgroundColor: "dimgray",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "10px",
+              }}
+            >
+              <h3>Detail View</h3>
+              {props.DetailsRenderer &&
+                props.DetailsRenderer(undefined)({
+                  ...props,
+                  context: {
+                    ...props.context,
+                    customFormState: {
+                      ...props.context.customFormState,
+                      selectedDetailRow:
+                        props.context.customFormState.selectedDetailRow ||
+                        PredicateValue.Default.unit(),
+                    },
+                  },
+                  view: unit,
+                })}
             </div>
           </div>
         </>
