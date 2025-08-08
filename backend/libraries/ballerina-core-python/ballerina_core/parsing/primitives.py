@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from decimal import Decimal, InvalidOperation
 
 from ballerina_core.parsing.parsing_types import Json, ParsingError
@@ -78,3 +79,22 @@ def float_from_json(value: Json) -> Sum[ParsingError, Decimal]:
                     return Sum.left(ParsingError.single(f"Not a string: {float_value}"))
         case _:
             return Sum.left(ParsingError.single(f"Not a float: {value}"))
+
+
+def date_to_json(value: datetime.date) -> Json:
+    return {_KIND_KEY: "date", "value": value.isoformat()}
+
+
+def date_from_json(value: Json) -> Sum[ParsingError, datetime.date]:
+    match value:
+        case {"kind": "date", "value": date_value}:
+            match date_value:
+                case str():
+                    try:
+                        return Sum.right(datetime.date.fromisoformat(date_value))
+                    except ValueError as e:
+                        return Sum.left(ParsingError.single(f"Invalid date: {date_value} ({e})"))
+                case _:
+                    return Sum.left(ParsingError.single(f"Date is not a string: {date_value}"))
+        case _:
+            return Sum.left(ParsingError.single(f"Not a date: {value}"))
