@@ -66,7 +66,7 @@ const intialiseTable = <
                 .then(
                   ValueInfiniteStreamState.Updaters.Core.position(
                     ValueStreamPosition.Updaters.Core.nextStart(
-                      replaceWith(to + 1),
+                      replaceWith(to),
                     ),
                   ),
                 ),
