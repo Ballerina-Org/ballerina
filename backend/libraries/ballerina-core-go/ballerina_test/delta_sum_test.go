@@ -16,8 +16,7 @@ func (s *DeltaSumSerializationTestSuite) TestReplace() {
 		ballerina.Left[string, int]("hello"),
 	)
 
-	converted := backAndForthFromJson(s.T(), delta)
-	s.Require().Equal(delta, converted)
+	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
 func (s *DeltaSumSerializationTestSuite) TestLeft() {
@@ -25,8 +24,7 @@ func (s *DeltaSumSerializationTestSuite) TestLeft() {
 		ballerina.NewDeltaStringReplace("hello"),
 	)
 
-	converted := backAndForthFromJson(s.T(), delta)
-	s.Require().Equal(delta, converted)
+	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
 func (s *DeltaSumSerializationTestSuite) TestRight() {
@@ -34,8 +32,7 @@ func (s *DeltaSumSerializationTestSuite) TestRight() {
 		ballerina.NewDeltaInt32Replace(42),
 	)
 
-	converted := backAndForthFromJson(s.T(), delta)
-	s.Require().Equal(delta, converted)
+	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
 func TestDeltaSumSerializationTestSuite(t *testing.T) {
