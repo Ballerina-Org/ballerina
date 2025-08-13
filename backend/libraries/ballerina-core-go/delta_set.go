@@ -33,7 +33,7 @@ func (d DeltaSet[a, deltaA]) MarshalJSON() ([]byte, error) {
 		Add           *a
 		Remove        *a
 	}{
-		DeltaBase: d.DeltaBase,
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
 		Add:           d.add,
