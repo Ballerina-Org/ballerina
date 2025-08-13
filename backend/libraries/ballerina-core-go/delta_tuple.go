@@ -318,22 +318,22 @@ func (v *DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) UnmarshalJSON(data
 	var tmp struct {
 		DeltaBase
 		Discriminator DeltaTuple5EffectsEnum
-		Item1         deltaA
-		Item2         deltaB
-		Item3         deltaC
-		Item4         deltaD
-		Item5         deltaE
+		Item1         *deltaA
+		Item2         *deltaB
+		Item3         *deltaC
+		Item4         *deltaD
+		Item5         *deltaE
 	}
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
 	v.DeltaBase = tmp.DeltaBase
 	v.discriminator = tmp.Discriminator
-	v.item1 = &tmp.Item1
-	v.item2 = &tmp.Item2
-	v.item3 = &tmp.Item3
-	v.item4 = &tmp.Item4
-	v.item5 = &tmp.Item5
+	v.item1 = tmp.Item1
+	v.item2 = tmp.Item2
+	v.item3 = tmp.Item3
+	v.item4 = tmp.Item4
+	v.item5 = tmp.Item5
 	return nil
 }
 
@@ -564,7 +564,7 @@ const (
 	Tuple7Item7 DeltaTuple7EffectsEnum = "Tuple7Item7"
 )
 
-var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Item1, Tuple7Item2, Tuple7Item3, Tuple7Item4, Tuple7Item5, Tuple7Item6}
+var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Item1, Tuple7Item2, Tuple7Item3, Tuple7Item4, Tuple7Item5, Tuple7Item6, Tuple7Item7}
 
 func DefaultDeltaTuple7EffectsEnum() DeltaTuple7EffectsEnum { return AllDeltaTuple7EffectsEnumCases[0] }
 
@@ -720,7 +720,7 @@ const (
 	Tuple8Item8 DeltaTuple8EffectsEnum = "Tuple8Item8"
 )
 
-var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6}
+var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6, Tuple8Item7, Tuple8Item8}
 
 func DefaultDeltaTuple8EffectsEnum() DeltaTuple8EffectsEnum { return AllDeltaTuple8EffectsEnumCases[0] }
 

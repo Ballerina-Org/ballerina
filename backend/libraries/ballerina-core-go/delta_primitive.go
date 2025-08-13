@@ -347,8 +347,8 @@ func DefaultDeltaTimeEffectsEnum() DeltaTimeEffectsEnum { return AllDeltaTimeEff
 
 type DeltaTime struct {
 	DeltaBase
-	Discriminator DeltaTimeEffectsEnum
-	Replace       time.Time
+	discriminator DeltaTimeEffectsEnum
+	replace       time.Time
 }
 
 var _ json.Unmarshaler = &DeltaTime{}
@@ -361,8 +361,8 @@ func (d DeltaTime) MarshalJSON() ([]byte, error) {
 		Replace       time.Time
 	}{
 		DeltaBase:     d.DeltaBase,
-		Discriminator: d.Discriminator,
-		Replace:       d.Replace,
+		Discriminator: d.discriminator,
+		Replace:       d.replace,
 	})
 }
 
@@ -376,15 +376,15 @@ func (d *DeltaTime) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
-	d.Discriminator = aux.Discriminator
-	d.Replace = aux.Replace
+	d.discriminator = aux.Discriminator
+	d.replace = aux.Replace
 	return nil
 }
 
 func NewDeltaTimeReplace(value time.Time) DeltaTime {
 	return DeltaTime{
-		Discriminator: TimeReplace,
-		Replace:       value,
+		discriminator: TimeReplace,
+		replace:       value,
 	}
 }
 func MatchDeltaTime[Result any](
@@ -392,11 +392,11 @@ func MatchDeltaTime[Result any](
 ) func(DeltaTime) (Result, error) {
 	return func(delta DeltaTime) (Result, error) {
 		var result Result
-		switch delta.Discriminator {
+		switch delta.discriminator {
 		case TimeReplace:
-			return onReplace(delta.Replace)
+			return onReplace(delta.replace)
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaTime")
+		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTime")
 	}
 }
 
