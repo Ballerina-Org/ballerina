@@ -19,6 +19,7 @@ func DefaultDeltaManyEffectsEnum() DeltaManyEffectsEnum {
 }
 
 type DeltaMany[T any, deltaT any] struct {
+	DeltaBase
 	discriminator DeltaManyEffectsEnum
 	linkedItems   *DeltaChunk[T, deltaT]
 	unlinkedItems *DeltaChunk[T, deltaT]
@@ -31,11 +32,13 @@ var _ json.Marshaler = DeltaMany[Unit, Unit]{}
 // MarshalJSON implements json.Marshaler.
 func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
+		DeltaBase
 		Discriminator DeltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
 		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		LinkedItems:   d.linkedItems,
 		UnlinkedItems: d.unlinkedItems,
@@ -46,6 +49,7 @@ func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements json.Unmarshaler.
 func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
@@ -54,6 +58,7 @@ func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.linkedItems = aux.LinkedItems
 	d.unlinkedItems = aux.UnlinkedItems

@@ -19,6 +19,7 @@ func DefaultDeltaManyItemEffectsEnum() DeltaManyItemEffectsEnum {
 }
 
 type DeltaManyItem[T any, deltaT any] struct {
+	DeltaBase
 	discriminator DeltaManyItemEffectsEnum
 	value         *deltaT
 	isLinked      *bool
@@ -31,11 +32,13 @@ var _ json.Marshaler = DeltaManyItem[Unit, Unit]{}
 // MarshalJSON implements the json.Marshaler interface for DeltaManyItem.
 func (d DeltaManyItem[T, deltaT]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaManyItemEffectsEnum
 		Value         *deltaT
 		IsLinked      *bool
 		CanChangeLink *bool
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
 		IsLinked:      d.isLinked,
@@ -45,6 +48,7 @@ func (d DeltaManyItem[T, deltaT]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaManyItem[T, deltaT]) UnmarshalJSON(data []byte) error {
 	var a struct {
+		DeltaBase
 		Discriminator DeltaManyItemEffectsEnum
 		Value         *deltaT
 		IsLinked      *bool
@@ -53,6 +57,7 @@ func (d *DeltaManyItem[T, deltaT]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &a); err != nil {
 		return err
 	}
+	d.DeltaBase = a.DeltaBase
 	d.discriminator = a.Discriminator
 	d.value = a.Value
 	d.isLinked = a.IsLinked

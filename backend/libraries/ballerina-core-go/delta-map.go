@@ -18,6 +18,7 @@ var AllDeltaMapEffectsEnumCases = [...]DeltaMapEffectsEnum{MapKey, MapValue, Map
 func DefaultDeltaMapEffectsEnum() DeltaMapEffectsEnum { return AllDeltaMapEffectsEnumCases[0] }
 
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
+	DeltaBase
 	discriminator DeltaMapEffectsEnum
 	key           *Tuple2[int, deltaK]
 	value         *Tuple2[int, deltaV]
@@ -31,12 +32,14 @@ var _ json.Marshaler = DeltaMap[Unit, Unit, Unit, Unit]{}
 // MarshalJSON implements the json.Marshaler interface for DeltaMap.
 func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaMapEffectsEnum
 		Key           *Tuple2[int, deltaK]
 		Value         *Tuple2[int, deltaV]
 		Add           *Tuple2[k, v]
 		Remove        *int
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Key:           d.key,
 		Value:         d.value,
@@ -47,6 +50,7 @@ func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 	var a struct {
+		DeltaBase
 		Discriminator DeltaMapEffectsEnum
 		Key           *Tuple2[int, deltaK]
 		Value         *Tuple2[int, deltaV]
@@ -56,6 +60,7 @@ func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &a); err != nil {
 		return err
 	}
+	d.DeltaBase = a.DeltaBase
 	d.discriminator = a.Discriminator
 	d.key = a.Key
 	d.value = a.Value

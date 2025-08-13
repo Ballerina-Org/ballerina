@@ -17,6 +17,7 @@ var AllDeltaIntEffectsEnumCases = [...]DeltaIntEffectsEnum{IntReplace}
 func DefaultDeltaIntEffectsEnum() DeltaIntEffectsEnum { return AllDeltaIntEffectsEnumCases[0] }
 
 type DeltaInt struct {
+	DeltaBase
 	discriminator DeltaIntEffectsEnum
 	replace       int
 }
@@ -26,9 +27,11 @@ var _ json.Marshaler = DeltaInt{}
 
 func (d DeltaInt) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaIntEffectsEnum
 		Replace       int
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -36,12 +39,14 @@ func (d DeltaInt) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaInt) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaIntEffectsEnum
 		Replace       int
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -77,6 +82,7 @@ var AllDeltaInt64EffectsEnumCases = [...]DeltaInt64EffectsEnum{Int64Replace}
 func DefaultDeltaInt64EffectsEnum() DeltaInt64EffectsEnum { return AllDeltaInt64EffectsEnumCases[0] }
 
 type DeltaInt64 struct {
+	DeltaBase
 	discriminator DeltaInt64EffectsEnum
 	replace       int64
 }
@@ -86,9 +92,11 @@ var _ json.Marshaler = DeltaInt64{}
 
 func (d DeltaInt64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaInt64EffectsEnum
 		Replace       int64
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -96,12 +104,14 @@ func (d DeltaInt64) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaInt64) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaInt64EffectsEnum
 		Replace       int64
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -137,6 +147,7 @@ var AllDeltaStringEffectsEnumCases = [...]DeltaStringEffectsEnum{StringReplace}
 func DefaultDeltaStringEffectsEnum() DeltaStringEffectsEnum { return AllDeltaStringEffectsEnumCases[0] }
 
 type DeltaString struct {
+	DeltaBase
 	discriminator DeltaStringEffectsEnum
 	replace       string
 }
@@ -146,9 +157,11 @@ var _ json.Marshaler = DeltaString{}
 
 func (d DeltaString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaStringEffectsEnum
 		Replace       string
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -156,12 +169,14 @@ func (d DeltaString) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaString) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaStringEffectsEnum
 		Replace       string
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -197,6 +212,7 @@ var AllDeltaBoolEffectsEnumCases = [...]DeltaBoolEffectsEnum{BoolReplace}
 func DefaultDeltaBoolEffectsEnum() DeltaBoolEffectsEnum { return AllDeltaBoolEffectsEnumCases[0] }
 
 type DeltaBool struct {
+	DeltaBase
 	discriminator DeltaBoolEffectsEnum
 	replace       bool
 }
@@ -206,9 +222,11 @@ var _ json.Marshaler = DeltaBool{}
 
 func (d DeltaBool) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaBoolEffectsEnum
 		Replace       bool
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -216,12 +234,14 @@ func (d DeltaBool) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaBool) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaBoolEffectsEnum
 		Replace       bool
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -257,6 +277,7 @@ var AllDeltaGuidEffectsEnumCases = [...]DeltaGuidEffectsEnum{GuidReplace}
 func DefaultDeltaGuidEffectsEnum() DeltaGuidEffectsEnum { return AllDeltaGuidEffectsEnumCases[0] }
 
 type DeltaGuid struct {
+	DeltaBase
 	discriminator DeltaGuidEffectsEnum
 	replace       uuid.UUID
 }
@@ -266,9 +287,11 @@ var _ json.Marshaler = DeltaGuid{}
 
 func (d DeltaGuid) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaGuidEffectsEnum
 		Replace       uuid.UUID
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -276,12 +299,14 @@ func (d DeltaGuid) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaGuid) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaGuidEffectsEnum
 		Replace       uuid.UUID
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -321,6 +346,7 @@ var AllDeltaTimeEffectsEnumCases = [...]DeltaTimeEffectsEnum{TimeReplace}
 func DefaultDeltaTimeEffectsEnum() DeltaTimeEffectsEnum { return AllDeltaTimeEffectsEnumCases[0] }
 
 type DeltaTime struct {
+	DeltaBase
 	Discriminator DeltaTimeEffectsEnum
 	Replace       time.Time
 }
@@ -330,9 +356,11 @@ var _ json.Marshaler = DeltaTime{}
 
 func (d DeltaTime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaTimeEffectsEnum
 		Replace       time.Time
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.Discriminator,
 		Replace:       d.Replace,
 	})
@@ -340,12 +368,14 @@ func (d DeltaTime) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaTime) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaTimeEffectsEnum
 		Replace       time.Time
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.Discriminator = aux.Discriminator
 	d.Replace = aux.Replace
 	return nil
@@ -381,6 +411,7 @@ var AllDeltaInt32EffectsEnumCases = [...]DeltaInt32EffectsEnum{Int32Replace}
 func DefaultDeltaInt32EffectsEnum() DeltaInt32EffectsEnum { return AllDeltaInt32EffectsEnumCases[0] }
 
 type DeltaInt32 struct {
+	DeltaBase
 	discriminator DeltaInt32EffectsEnum
 	replace       int32
 }
@@ -390,9 +421,11 @@ var _ json.Marshaler = DeltaInt32{}
 
 func (d DeltaInt32) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaInt32EffectsEnum
 		Replace       int32
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -400,12 +433,14 @@ func (d DeltaInt32) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaInt32) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaInt32EffectsEnum
 		Replace       int32
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -443,6 +478,7 @@ func DefaultDeltaFloat32EffectsEnum() DeltaFloat32EffectsEnum {
 }
 
 type DeltaFloat32 struct {
+	DeltaBase
 	discriminator DeltaFloat32EffectsEnum
 	replace       float32
 }
@@ -452,9 +488,11 @@ var _ json.Marshaler = DeltaFloat32{}
 
 func (d DeltaFloat32) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaFloat32EffectsEnum
 		Replace       float32
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 	})
@@ -462,12 +500,14 @@ func (d DeltaFloat32) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaFloat32) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaFloat32EffectsEnum
 		Replace       float32
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.replace = aux.Replace
 	return nil
@@ -505,8 +545,9 @@ func DefaultDeltaFloat64EffectsEnum() DeltaFloat64EffectsEnum {
 }
 
 type DeltaFloat64 struct {
-	Discriminator DeltaFloat64EffectsEnum
-	Replace       float64
+	DeltaBase
+	discriminator DeltaFloat64EffectsEnum
+	replace       float64
 }
 
 var _ json.Unmarshaler = &DeltaFloat64{}
@@ -514,31 +555,35 @@ var _ json.Marshaler = DeltaFloat64{}
 
 func (d DeltaFloat64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaFloat64EffectsEnum
 		Replace       float64
 	}{
-		Discriminator: d.Discriminator,
-		Replace:       d.Replace,
+		DeltaBase:     d.DeltaBase,
+		Discriminator: d.discriminator,
+		Replace:       d.replace,
 	})
 }
 
 func (d *DeltaFloat64) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaFloat64EffectsEnum
 		Replace       float64
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	d.Discriminator = aux.Discriminator
-	d.Replace = aux.Replace
+	d.DeltaBase = aux.DeltaBase
+	d.discriminator = aux.Discriminator
+	d.replace = aux.Replace
 	return nil
 }
 
 func NewDeltaFloat64Replace(value float64) DeltaFloat64 {
 	return DeltaFloat64{
-		Discriminator: Float64Replace,
-		Replace:       value,
+		discriminator: Float64Replace,
+		replace:       value,
 	}
 }
 func MatchDeltaFloat64[Result any](
@@ -546,10 +591,10 @@ func MatchDeltaFloat64[Result any](
 ) func(DeltaFloat64) (Result, error) {
 	return func(delta DeltaFloat64) (Result, error) {
 		var result Result
-		switch delta.Discriminator {
+		switch delta.discriminator {
 		case Float64Replace:
-			return onReplace(delta.Replace)
+			return onReplace(delta.replace)
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.Discriminator), "DeltaFloat64")
+		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaFloat64")
 	}
 }

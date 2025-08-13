@@ -22,6 +22,7 @@ var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableValue, Table
 func DefaultDeltaTableEffectsEnum() DeltaTableEffectsEnum { return AllDeltaTableEffectsEnumCases[0] }
 
 type DeltaTable[a any, deltaA any] struct {
+	DeltaBase
 	discriminator DeltaTableEffectsEnum
 	value         *Tuple2[uuid.UUID, deltaA]
 	addAt         *Tuple2[uuid.UUID, a]
@@ -36,6 +37,7 @@ var _ json.Marshaler = DeltaTable[Unit, Unit]{}
 
 func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaTableEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
 		AddAt         *Tuple2[uuid.UUID, a]
@@ -44,6 +46,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DuplicateAt   *uuid.UUID
 		Add           *a
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
 		AddAt:         d.addAt,
@@ -56,6 +59,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaTableEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
 		AddAt         *Tuple2[uuid.UUID, a]
@@ -67,6 +71,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
 	d.addAt = aux.AddAt

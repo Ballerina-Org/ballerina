@@ -18,6 +18,7 @@ var AllDeltaOneEffectsEnumCases = [...]DeltaOneEffectsEnum{OneReplace, OneValue,
 func DefaultDeltaOneEffectsEnum() DeltaOneEffectsEnum { return AllDeltaOneEffectsEnumCases[0] }
 
 type DeltaOne[a any, deltaA any] struct {
+	DeltaBase
 	discriminator DeltaOneEffectsEnum
 	replace       *a
 	value         *deltaA
@@ -31,12 +32,14 @@ var _ json.Marshaler = DeltaOne[Unit, Unit]{}
 // MarshalJSON implements the json.Marshaler interface for DeltaOne.
 func (d DeltaOne[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaOneEffectsEnum
 		Replace       *a
 		Value         *deltaA
 		CreateValue   *a
 		DeleteValue   *Unit
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Replace:       d.replace,
 		Value:         d.value,
@@ -47,6 +50,7 @@ func (d DeltaOne[a, deltaA]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaOne[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
+		DeltaBase
 		Discriminator DeltaOneEffectsEnum
 		Replace       *a
 		Value         *deltaA
@@ -56,6 +60,7 @@ func (d *DeltaOne[a, deltaA]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
+	d.DeltaBase = tmp.DeltaBase
 	d.discriminator = tmp.Discriminator
 	d.replace = tmp.Replace
 	d.value = tmp.Value

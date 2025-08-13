@@ -15,6 +15,7 @@ var AllDeltaSetEffectsEnumCases = [...]DeltaSetEffectsEnum{SetValue, SetAdd, Set
 func DefaultDeltaSetEffectsEnum() DeltaSetEffectsEnum { return AllDeltaSetEffectsEnumCases[0] }
 
 type DeltaSet[a comparable, deltaA any] struct {
+	DeltaBase
 	discriminator DeltaSetEffectsEnum
 	value         *Tuple2[a, deltaA]
 	add           *a
@@ -26,11 +27,13 @@ var _ json.Marshaler = DeltaSet[Unit, Unit]{}
 
 func (d DeltaSet[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaSetEffectsEnum
 		Value         *Tuple2[a, deltaA]
 		Add           *a
 		Remove        *a
 	}{
+		DeltaBase: d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
 		Add:           d.add,
@@ -40,6 +43,7 @@ func (d DeltaSet[a, deltaA]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaSetEffectsEnum
 		Value         *Tuple2[a, deltaA]
 		Add           *a
@@ -48,6 +52,7 @@ func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
 	d.add = aux.Add
