@@ -87,19 +87,19 @@ func NewDeltaManyAllItems[T any, deltaT any](delta DeltaChunk[ManyItem[T], Delta
 }
 
 func MatchDeltaMany[T any, deltaT any, Result any](
-	onLinkedItems func(*DeltaChunk[T, deltaT]) (Result, error),
-	onUnlinkedItems func(*DeltaChunk[T, deltaT]) (Result, error),
-	onAllItems func(*DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) (Result, error),
+	onLinkedItems func(DeltaChunk[T, deltaT]) (Result, error),
+	onUnlinkedItems func(DeltaChunk[T, deltaT]) (Result, error),
+	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) (Result, error),
 ) func(DeltaMany[T, deltaT]) (Result, error) {
 	return func(delta DeltaMany[T, deltaT]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case "ManyLinkedItems":
-			return onLinkedItems(delta.linkedItems)
+			return onLinkedItems(*delta.linkedItems)
 		case "ManyUnlinkedItems":
-			return onUnlinkedItems(delta.unlinkedItems)
+			return onUnlinkedItems(*delta.unlinkedItems)
 		case "ManyAllItems":
-			return onAllItems(delta.allItems)
+			return onAllItems(*delta.allItems)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMany")
 	}

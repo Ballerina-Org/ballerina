@@ -69,16 +69,16 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 	}
 }
 func MatchDeltaOption[a any, deltaA any, Result any](
-	onReplace func(*a) (Result, error),
-	onValue func(*deltaA) (Result, error),
+	onReplace func(a) (Result, error),
+	onValue func(deltaA) (Result, error),
 ) func(DeltaOption[a, deltaA]) (Result, error) {
 	return func(delta DeltaOption[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case OptionReplace:
-			return onReplace(delta.replace)
+			return onReplace(*delta.replace)
 		case OptionValue:
-			return onValue(delta.value)
+			return onValue(*delta.value)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 	}

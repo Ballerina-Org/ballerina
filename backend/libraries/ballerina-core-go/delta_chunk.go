@@ -123,28 +123,28 @@ func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
 }
 
 func MatchDeltaChunk[a any, deltaA any, Result any](
-	onValue func(*Tuple2[uuid.UUID, deltaA]) (Result, error),
-	onAddAt func(*Tuple2[uuid.UUID, a]) (Result, error),
-	onRemoveAt func(*uuid.UUID) (Result, error),
-	onMoveFromTo func(*Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
-	onDuplicateAt func(*uuid.UUID) (Result, error),
-	onAdd func(*a) (Result, error),
+	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
+	onRemoveAt func(uuid.UUID) (Result, error),
+	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
+	onDuplicateAt func(uuid.UUID) (Result, error),
+	onAdd func(a) (Result, error),
 ) func(DeltaChunk[a, deltaA]) (Result, error) {
 	return func(delta DeltaChunk[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case ChunkValue:
-			return onValue(delta.value)
+			return onValue(*delta.value)
 		case ChunkAddAt:
-			return onAddAt(delta.addAt)
+			return onAddAt(*delta.addAt)
 		case ChunkRemoveAt:
-			return onRemoveAt(delta.removeAt)
+			return onRemoveAt(*delta.removeAt)
 		case ChunkMoveFromTo:
-			return onMoveFromTo(delta.moveFromTo)
+			return onMoveFromTo(*delta.moveFromTo)
 		case ChunkDuplicateAt:
-			return onDuplicateAt(delta.duplicateAt)
+			return onDuplicateAt(*delta.duplicateAt)
 		case ChunkAdd:
-			return onAdd(delta.add)
+			return onAdd(*delta.add)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaChunk")
 	}

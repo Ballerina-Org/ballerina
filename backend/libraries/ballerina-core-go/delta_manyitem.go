@@ -86,19 +86,19 @@ func NewDeltaManyItemCanChangeLink[T any, deltaT any](canChangeLink bool) DeltaM
 }
 
 func MatchDeltaManyItem[T any, deltaT any, Result any](
-	onValue func(*deltaT) (Result, error),
-	onIsLinked func(*bool) (Result, error),
-	onCanChangeLink func(*bool) (Result, error),
+	onValue func(deltaT) (Result, error),
+	onIsLinked func(bool) (Result, error),
+	onCanChangeLink func(bool) (Result, error),
 ) func(DeltaManyItem[T, deltaT]) (Result, error) {
 	return func(delta DeltaManyItem[T, deltaT]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case ManyItemValue:
-			return onValue(delta.value)
+			return onValue(*delta.value)
 		case ManyItemIsLinked:
-			return onIsLinked(delta.isLinked)
+			return onIsLinked(*delta.isLinked)
 		case ManyItemCanChangeLink:
-			return onCanChangeLink(delta.canChangeLink)
+			return onCanChangeLink(*delta.canChangeLink)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaManyItem")
 	}

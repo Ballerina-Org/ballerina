@@ -119,28 +119,28 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 }
 
 func MatchDeltaArray[a any, deltaA any, Result any](
-	onValue func(*Tuple2[int, deltaA]) (Result, error),
-	onAddAt func(*Tuple2[int, a]) (Result, error),
-	onRemoveAt func(*int) (Result, error),
-	onMoveFromTo func(*Tuple2[int, int]) (Result, error),
-	onDuplicateAt func(*int) (Result, error),
-	onAdd func(*a) (Result, error),
+	onValue func(Tuple2[int, deltaA]) (Result, error),
+	onAddAt func(Tuple2[int, a]) (Result, error),
+	onRemoveAt func(int) (Result, error),
+	onMoveFromTo func(Tuple2[int, int]) (Result, error),
+	onDuplicateAt func(int) (Result, error),
+	onAdd func(a) (Result, error),
 ) func(DeltaArray[a, deltaA]) (Result, error) {
 	return func(delta DeltaArray[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case ArrayValue:
-			return onValue(delta.value)
+			return onValue(*delta.value)
 		case ArrayAddAt:
-			return onAddAt(delta.addAt)
+			return onAddAt(*delta.addAt)
 		case ArrayRemoveAt:
-			return onRemoveAt(delta.removeAt)
+			return onRemoveAt(*delta.removeAt)
 		case ArrayMoveFromTo:
-			return onMoveFromTo(delta.moveFromTo)
+			return onMoveFromTo(*delta.moveFromTo)
 		case ArrayDuplicateAt:
-			return onDuplicateAt(delta.duplicateAt)
+			return onDuplicateAt(*delta.duplicateAt)
 		case ArrayAdd:
-			return onAdd(delta.add)
+			return onAdd(*delta.add)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 	}

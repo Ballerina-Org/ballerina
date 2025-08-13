@@ -96,22 +96,22 @@ func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) D
 }
 
 func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
-	onKey func(*Tuple2[int, deltaK]) (Result, error),
-	onValue func(*Tuple2[int, deltaV]) (Result, error),
-	onAdd func(*Tuple2[k, v]) (Result, error),
-	onRemove func(*int) (Result, error),
+	onKey func(Tuple2[int, deltaK]) (Result, error),
+	onValue func(Tuple2[int, deltaV]) (Result, error),
+	onAdd func(Tuple2[k, v]) (Result, error),
+	onRemove func(int) (Result, error),
 ) func(DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
 	return func(delta DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case MapKey:
-			return onKey(delta.key)
+			return onKey(*delta.key)
 		case MapValue:
-			return onValue(delta.value)
+			return onValue(*delta.value)
 		case MapAdd:
-			return onAdd(delta.add)
+			return onAdd(*delta.add)
 		case MapRemove:
-			return onRemove(delta.remove)
+			return onRemove(*delta.remove)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
 	}
