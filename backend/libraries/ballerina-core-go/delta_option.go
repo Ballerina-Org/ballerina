@@ -25,7 +25,6 @@ type DeltaOption[a any, deltaA any] struct {
 var _ json.Unmarshaler = &DeltaOption[Unit, Unit]{}
 var _ json.Marshaler = DeltaOption[Unit, Unit]{}
 
-// MarshalJSON implements the json.Marshaler interface for DeltaOption.
 func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase

@@ -1,5 +1,9 @@
 package ballerina
 
+import (
+	"encoding/json"
+)
+
 type Sum[a any, b any] struct {
 	// NOTE: Important: all of these attributes must be private.
 	// Getting values out of Sum can only be done through Fold
@@ -57,4 +61,58 @@ func FoldWithError[L any, R any, O any](e Sum[L, R], leftMap func(L) (O, error),
 		return rightMap(e.right)
 	}
 	return leftMap(e.left)
+}
+
+// Serialization
+
+type sumForSerialization[a any] struct {
+	IsRight bool
+	Value   a
+}
+
+func (s Sum[a, b]) MarshalJSON() ([]byte, error) {
+	return FoldWithError(
+		s,
+		func(left a) ([]byte, error) {
+			return json.Marshal(sumForSerialization[a]{
+				IsRight: false,
+				Value:   left,
+			})
+		},
+		func(right b) ([]byte, error) {
+			return json.Marshal(sumForSerialization[b]{
+				IsRight: true,
+				Value:   right,
+			})
+		},
+	)
+}
+
+type inspectIsRight struct {
+	IsRight bool
+}
+
+func (s *Sum[a, b]) UnmarshalJSON(data []byte) error {
+	var i inspectIsRight
+	err := json.Unmarshal(data, &i)
+	if err != nil {
+		return err
+	}
+	s.isRight = i.IsRight
+	if s.isRight {
+		var right sumForSerialization[b]
+		err = json.Unmarshal(data, &right)
+		if err != nil {
+			return err
+		}
+		s.right = right.Value
+	} else {
+		var left sumForSerialization[a]
+		err = json.Unmarshal(data, &left)
+		if err != nil {
+			return err
+		}
+		s.left = left.Value
+	}
+	return nil
 }

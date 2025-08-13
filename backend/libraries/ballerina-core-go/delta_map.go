@@ -29,7 +29,6 @@ type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 var _ json.Unmarshaler = &DeltaMap[Unit, Unit, Unit, Unit]{}
 var _ json.Marshaler = DeltaMap[Unit, Unit, Unit, Unit]{}
 
-// MarshalJSON implements the json.Marshaler interface for DeltaMap.
 func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
