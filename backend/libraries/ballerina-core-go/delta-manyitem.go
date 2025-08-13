@@ -19,7 +19,6 @@ func DefaultDeltaManyItemEffectsEnum() DeltaManyItemEffectsEnum {
 }
 
 type DeltaManyItem[T any, deltaT any] struct {
-	DeltaBase
 	discriminator DeltaManyItemEffectsEnum
 	value         *deltaT
 	isLinked      *bool

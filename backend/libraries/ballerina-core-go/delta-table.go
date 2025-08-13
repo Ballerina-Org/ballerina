@@ -22,7 +22,6 @@ var AllDeltaTableEffectsEnumCases = [...]DeltaTableEffectsEnum{TableValue, Table
 func DefaultDeltaTableEffectsEnum() DeltaTableEffectsEnum { return AllDeltaTableEffectsEnumCases[0] }
 
 type DeltaTable[a any, deltaA any] struct {
-	DeltaBase
 	discriminator DeltaTableEffectsEnum
 	value         *Tuple2[uuid.UUID, deltaA]
 	addAt         *Tuple2[uuid.UUID, a]

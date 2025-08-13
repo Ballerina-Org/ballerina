@@ -17,7 +17,6 @@ var AllDeltaIntEffectsEnumCases = [...]DeltaIntEffectsEnum{IntReplace}
 func DefaultDeltaIntEffectsEnum() DeltaIntEffectsEnum { return AllDeltaIntEffectsEnumCases[0] }
 
 type DeltaInt struct {
-	DeltaBase
 	discriminator DeltaIntEffectsEnum
 	replace       int
 }
@@ -78,7 +77,6 @@ var AllDeltaInt64EffectsEnumCases = [...]DeltaInt64EffectsEnum{Int64Replace}
 func DefaultDeltaInt64EffectsEnum() DeltaInt64EffectsEnum { return AllDeltaInt64EffectsEnumCases[0] }
 
 type DeltaInt64 struct {
-	DeltaBase
 	discriminator DeltaInt64EffectsEnum
 	replace       int64
 }
@@ -139,7 +137,6 @@ var AllDeltaStringEffectsEnumCases = [...]DeltaStringEffectsEnum{StringReplace}
 func DefaultDeltaStringEffectsEnum() DeltaStringEffectsEnum { return AllDeltaStringEffectsEnumCases[0] }
 
 type DeltaString struct {
-	DeltaBase
 	discriminator DeltaStringEffectsEnum
 	replace       string
 }
@@ -200,7 +197,6 @@ var AllDeltaBoolEffectsEnumCases = [...]DeltaBoolEffectsEnum{BoolReplace}
 func DefaultDeltaBoolEffectsEnum() DeltaBoolEffectsEnum { return AllDeltaBoolEffectsEnumCases[0] }
 
 type DeltaBool struct {
-	DeltaBase
 	discriminator DeltaBoolEffectsEnum
 	replace       bool
 }
@@ -261,7 +257,6 @@ var AllDeltaGuidEffectsEnumCases = [...]DeltaGuidEffectsEnum{GuidReplace}
 func DefaultDeltaGuidEffectsEnum() DeltaGuidEffectsEnum { return AllDeltaGuidEffectsEnumCases[0] }
 
 type DeltaGuid struct {
-	DeltaBase
 	discriminator DeltaGuidEffectsEnum
 	replace       uuid.UUID
 }
@@ -326,7 +321,6 @@ var AllDeltaTimeEffectsEnumCases = [...]DeltaTimeEffectsEnum{TimeReplace}
 func DefaultDeltaTimeEffectsEnum() DeltaTimeEffectsEnum { return AllDeltaTimeEffectsEnumCases[0] }
 
 type DeltaTime struct {
-	DeltaBase
 	Discriminator DeltaTimeEffectsEnum
 	Replace       time.Time
 }
@@ -387,7 +381,6 @@ var AllDeltaInt32EffectsEnumCases = [...]DeltaInt32EffectsEnum{Int32Replace}
 func DefaultDeltaInt32EffectsEnum() DeltaInt32EffectsEnum { return AllDeltaInt32EffectsEnumCases[0] }
 
 type DeltaInt32 struct {
-	DeltaBase
 	discriminator DeltaInt32EffectsEnum
 	replace       int32
 }
@@ -450,7 +443,6 @@ func DefaultDeltaFloat32EffectsEnum() DeltaFloat32EffectsEnum {
 }
 
 type DeltaFloat32 struct {
-	DeltaBase
 	discriminator DeltaFloat32EffectsEnum
 	replace       float32
 }
@@ -513,7 +505,6 @@ func DefaultDeltaFloat64EffectsEnum() DeltaFloat64EffectsEnum {
 }
 
 type DeltaFloat64 struct {
-	DeltaBase
 	Discriminator DeltaFloat64EffectsEnum
 	Replace       float64
 }

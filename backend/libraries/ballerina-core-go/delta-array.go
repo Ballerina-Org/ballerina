@@ -33,6 +33,7 @@ var _ json.Marshaler = DeltaArray[Unit, Unit]{}
 
 func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
+		DeltaBase
 		Discriminator DeltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
 		AddAt         *Tuple2[int, a]
@@ -41,6 +42,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DuplicateAt   *int
 		Add           *a
 	}{
+		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
 		AddAt:         d.addAt,
@@ -53,6 +55,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 
 func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
+		DeltaBase
 		Discriminator DeltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
 		AddAt         *Tuple2[int, a]
@@ -64,6 +67,7 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
 	d.addAt = aux.AddAt

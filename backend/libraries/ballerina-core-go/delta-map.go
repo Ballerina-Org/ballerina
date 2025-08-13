@@ -18,7 +18,6 @@ var AllDeltaMapEffectsEnumCases = [...]DeltaMapEffectsEnum{MapKey, MapValue, Map
 func DefaultDeltaMapEffectsEnum() DeltaMapEffectsEnum { return AllDeltaMapEffectsEnumCases[0] }
 
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
-	DeltaBase
 	discriminator DeltaMapEffectsEnum
 	key           *Tuple2[int, deltaK]
 	value         *Tuple2[int, deltaV]

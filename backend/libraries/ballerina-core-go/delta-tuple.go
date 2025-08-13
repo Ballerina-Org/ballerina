@@ -14,7 +14,6 @@ var AllDeltaTuple2EffectsEnumCases = [...]DeltaTuple2EffectsEnum{Tuple2Item1, Tu
 func DefaultDeltaTuple2EffectsEnum() DeltaTuple2EffectsEnum { return AllDeltaTuple2EffectsEnumCases[0] }
 
 type DeltaTuple2[deltaA any, deltaB any] struct {
-	DeltaBase
 	discriminator DeltaTuple2EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -25,7 +24,6 @@ var _ json.Marshaler = DeltaTuple2[Unit, Unit]{}
 
 func (v *DeltaTuple2[deltaA, deltaB]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple2EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -92,7 +90,6 @@ var AllDeltaTuple3EffectsEnumCases = [...]DeltaTuple3EffectsEnum{Tuple3Item1, Tu
 func DefaultDeltaTuple3EffectsEnum() DeltaTuple3EffectsEnum { return AllDeltaTuple3EffectsEnumCases[0] }
 
 type DeltaTuple3[deltaA any, deltaB any, deltaC any] struct {
-	DeltaBase
 	discriminator DeltaTuple3EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -104,7 +101,6 @@ var _ json.Marshaler = DeltaTuple3[Unit, Unit, Unit]{}
 
 func (v *DeltaTuple3[deltaA, deltaB, deltaC]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple3EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -185,7 +181,6 @@ var AllDeltaTuple4EffectsEnumCases = [...]DeltaTuple4EffectsEnum{Tuple4Item1, Tu
 func DefaultDeltaTuple4EffectsEnum() DeltaTuple4EffectsEnum { return AllDeltaTuple4EffectsEnumCases[0] }
 
 type DeltaTuple4[deltaA any, deltaB any, deltaC any, deltaD any] struct {
-	DeltaBase
 	discriminator DeltaTuple4EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -198,7 +193,6 @@ var _ json.Marshaler = DeltaTuple4[Unit, Unit, Unit, Unit]{}
 
 func (v *DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple4EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -293,7 +287,6 @@ var AllDeltaTuple5EffectsEnumCases = [...]DeltaTuple5EffectsEnum{Tuple5Item1, Tu
 func DefaultDeltaTuple5EffectsEnum() DeltaTuple5EffectsEnum { return AllDeltaTuple5EffectsEnumCases[0] }
 
 type DeltaTuple5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any] struct {
-	DeltaBase
 	discriminator DeltaTuple5EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -307,7 +300,6 @@ var _ json.Marshaler = DeltaTuple5[Unit, Unit, Unit, Unit, Unit]{}
 
 func (v *DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple5EffectsEnum
 		Item1         deltaA
 		Item2         deltaB
@@ -416,7 +408,6 @@ var AllDeltaTuple6EffectsEnumCases = [...]DeltaTuple6EffectsEnum{Tuple6Item1, Tu
 func DefaultDeltaTuple6EffectsEnum() DeltaTuple6EffectsEnum { return AllDeltaTuple6EffectsEnumCases[0] }
 
 type DeltaTuple6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any] struct {
-	DeltaBase
 	discriminator DeltaTuple6EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -431,7 +422,6 @@ var _ json.Marshaler = DeltaTuple6[Unit, Unit, Unit, Unit, Unit, Unit]{}
 
 func (v *DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple6EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -554,7 +544,6 @@ var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Item1, Tu
 func DefaultDeltaTuple7EffectsEnum() DeltaTuple7EffectsEnum { return AllDeltaTuple7EffectsEnumCases[0] }
 
 type DeltaTuple7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any] struct {
-	DeltaBase
 	discriminator DeltaTuple7EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -570,7 +559,6 @@ var _ json.Marshaler = DeltaTuple7[Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
 
 func (v *DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple7EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -707,7 +695,6 @@ var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Item1, Tu
 func DefaultDeltaTuple8EffectsEnum() DeltaTuple8EffectsEnum { return AllDeltaTuple8EffectsEnumCases[0] }
 
 type DeltaTuple8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any] struct {
-	DeltaBase
 	discriminator DeltaTuple8EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -724,7 +711,6 @@ var _ json.Marshaler = DeltaTuple8[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Uni
 
 func (v *DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple8EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
@@ -877,7 +863,6 @@ var AllDeltaTuple9EffectsEnumCases = [...]DeltaTuple9EffectsEnum{
 func DefaultDeltaTuple9EffectsEnum() DeltaTuple9EffectsEnum { return AllDeltaTuple9EffectsEnumCases[0] }
 
 type DeltaTuple9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any] struct {
-	DeltaBase
 	discriminator DeltaTuple9EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
@@ -895,7 +880,6 @@ var _ json.Marshaler = DeltaTuple9[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Uni
 
 func (v *DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
-		DeltaBase
 		Discriminator DeltaTuple9EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB

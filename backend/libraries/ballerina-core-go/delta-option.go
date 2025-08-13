@@ -16,7 +16,6 @@ var AllDeltaOptionEffectsEnumCases = [...]DeltaOptionEffectsEnum{OptionReplace, 
 func DefaultDeltaOptionEffectsEnum() DeltaOptionEffectsEnum { return AllDeltaOptionEffectsEnumCases[0] }
 
 type DeltaOption[a any, deltaA any] struct {
-	DeltaBase
 	discriminator DeltaOptionEffectsEnum
 	replace       *a
 	value         *deltaA

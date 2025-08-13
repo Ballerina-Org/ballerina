@@ -17,7 +17,6 @@ var AllDeltaSumEffectsEnumCases = [...]DeltaSumEffectsEnum{SumReplace, SumLeft, 
 func DefaultDeltaSumEffectsEnum() DeltaSumEffectsEnum { return AllDeltaSumEffectsEnumCases[0] }
 
 type DeltaSum[a any, b any, deltaA any, deltaB any] struct {
-	DeltaBase
 	Discriminator DeltaSumEffectsEnum
 	Replace       Sum[a, b]
 	Left          deltaA

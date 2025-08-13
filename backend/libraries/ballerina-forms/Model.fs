@@ -30,7 +30,7 @@ module Model =
       Custom: Map<string, CodegenConfigCustomDef>
       Generic: List<GenericTypeDef>
       IdentifierAllowedRegex: string
-      DeltaBase: CodegenConfigInterfaceDef
+      : CodegenConfigInterfaceDef
       EntityNotFoundError: CodegenConfigErrorDef
       OneNotFoundError: CodegenConfigErrorDef
       LookupStreamNotFoundError: CodegenConfigErrorDef

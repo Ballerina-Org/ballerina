@@ -1,7 +1,6 @@
 package ballerina
 
 type DeltaReadOnly struct {
-	DeltaBase
 }
 
 func MatchDeltaReadOnly[Result any]() func(DeltaReadOnly) (Result, error) {

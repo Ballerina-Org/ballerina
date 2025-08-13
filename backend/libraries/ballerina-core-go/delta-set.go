@@ -15,7 +15,6 @@ var AllDeltaSetEffectsEnumCases = [...]DeltaSetEffectsEnum{SetValue, SetAdd, Set
 func DefaultDeltaSetEffectsEnum() DeltaSetEffectsEnum { return AllDeltaSetEffectsEnumCases[0] }
 
 type DeltaSet[a comparable, deltaA any] struct {
-	DeltaBase
 	discriminator DeltaSetEffectsEnum
 	value         *Tuple2[a, deltaA]
 	add           *a

@@ -21,7 +21,6 @@ var AllDeltaChunkEffectsEnumCases = [...]DeltaChunkEffectsEnum{ChunkValue, Chunk
 func DefaultDeltaChunkEffectsEnum() DeltaChunkEffectsEnum { return AllDeltaChunkEffectsEnumCases[0] }
 
 type DeltaChunk[a any, deltaA any] struct {
-	DeltaBase
 	discriminator DeltaChunkEffectsEnum
 	value         *Tuple2[uuid.UUID, deltaA]
 	addAt         *Tuple2[uuid.UUID, a]
@@ -116,28 +115,6 @@ func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
 		discriminator: ChunkAdd,
 		add:           &newElement,
 	}
-}
-
-func (d DeltaChunk[a, deltaA]) Discriminator() DeltaChunkEffectsEnum {
-	return d.discriminator
-}
-func (d DeltaChunk[a, deltaA]) Value() *Tuple2[uuid.UUID, deltaA] {
-	return d.value
-}
-func (d DeltaChunk[a, deltaA]) AddAt() *Tuple2[uuid.UUID, a] {
-	return d.addAt
-}
-func (d DeltaChunk[a, deltaA]) RemoveAt() *uuid.UUID {
-	return d.removeAt
-}
-func (d DeltaChunk[a, deltaA]) MoveFromTo() *Tuple2[uuid.UUID, uuid.UUID] {
-	return d.moveFromTo
-}
-func (d DeltaChunk[a, deltaA]) DuplicateAt() *uuid.UUID {
-	return d.duplicateAt
-}
-func (d DeltaChunk[a, deltaA]) Add() *a {
-	return d.add
 }
 
 func MatchDeltaChunk[a any, deltaA any, Result any](

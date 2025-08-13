@@ -19,7 +19,6 @@ func DefaultDeltaManyEffectsEnum() DeltaManyEffectsEnum {
 }
 
 type DeltaMany[T any, deltaT any] struct {
-	DeltaBase
 	discriminator DeltaManyEffectsEnum
 	linkedItems   *DeltaChunk[T, deltaT]
 	unlinkedItems *DeltaChunk[T, deltaT]
@@ -32,7 +31,6 @@ var _ json.Marshaler = DeltaMany[Unit, Unit]{}
 // MarshalJSON implements json.Marshaler.
 func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		DeltaBase
 		Discriminator DeltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
@@ -48,7 +46,6 @@ func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements json.Unmarshaler.
 func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		DeltaBase
 		Discriminator DeltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
