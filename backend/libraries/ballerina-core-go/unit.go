@@ -9,7 +9,3 @@ func NewUnit() Unit {
 }
 
 var DefaultUnit Unit = NewUnit()
-
-type DeltaUnit interface {
-	DeltaBase
-}
