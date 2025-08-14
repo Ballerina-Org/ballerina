@@ -1,7 +1,6 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.ExprType.Unification
 
 open NUnit.Framework
-open Ballerina.DSL.Expr.Types.Model
 open Ballerina.DSL.Expr.Types.Unification
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Model

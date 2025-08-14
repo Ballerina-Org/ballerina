@@ -10,7 +10,7 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
-open Ballerina.DSL.Next.Terms.Json.ExprJson
+open Ballerina.DSL.Next.Terms.Json
 
 let rec normalizeJson (json: JsonValue) : JsonValue =
   match json with

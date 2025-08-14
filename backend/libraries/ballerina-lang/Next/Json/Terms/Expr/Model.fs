@@ -1,6 +1,5 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json
 
-open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Json
 
 [<AutoOpen>]
@@ -10,6 +9,9 @@ module ExprJson =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json.Expr
   open Ballerina.DSL.Next.Terms.Json
+  open Ballerina.Errors
+  open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
 
   type Expr<'T> with
     static member FromJson: JsonValue -> ExprParser<'T> =
@@ -31,8 +33,13 @@ module ExprJson =
             Expr.FromJsonSumDes Expr.FromJson json
             Expr.FromJsonIf Expr.FromJson json
             Expr.FromJsonPrimitive(json)
-            Expr.FromJsonLookup(json) ]
+            Expr.FromJsonLookup(json)
+            $"Unknown Expr JSON: {json.ToFSharpString.ReasonablyClamped}"
+            |> Errors.Singleton
+            |> Errors.WithPriority ErrorPriority.Medium
+            |> reader.Throw ]
         )
+        |> reader.MapError(Errors.HighestPriority)
 
     static member ToJson: Expr<'T> -> JsonValue =
       fun expr ->

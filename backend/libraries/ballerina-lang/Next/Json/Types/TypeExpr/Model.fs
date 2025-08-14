@@ -3,6 +3,8 @@
 [<AutoOpen>]
 module TypeExpr =
   open FSharp.Data
+  open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
@@ -26,7 +28,11 @@ module TypeExpr =
           TypeExpr.FromJsonMap TypeExpr.FromJson json
           TypeExpr.FromJsonKeyOf TypeExpr.FromJson json
           TypeExpr.FromJsonFlatten TypeExpr.FromJson json
-          TypeExpr.FromJsonExclude TypeExpr.FromJson json ]
+          TypeExpr.FromJsonExclude TypeExpr.FromJson json
+          $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton
+          |> Errors.WithPriority ErrorPriority.High
+          |> sum.Throw ]
       )
       |> sum.MapError(Errors.HighestPriority)
 
