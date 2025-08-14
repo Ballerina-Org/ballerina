@@ -3,6 +3,8 @@ namespace Ballerina.StdLib.Json
 module Reader =
   open FSharp.Data
   open Ballerina.Reader.WithError
+  open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Collections.Map
   open Ballerina.Errors
@@ -37,7 +39,7 @@ module Reader =
 
     member _.AssertKindAndContinue<'ctx, 'T>
       (kind: string)
-      (k: Map<string, JsonValue> -> Reader<'T, 'ctx, Errors>)
+      (k: Unit -> Reader<'T, 'ctx, Errors>)
       (json: JsonValue)
       : Reader<'T, 'ctx, Errors> =
       reader {
@@ -48,8 +50,14 @@ module Reader =
           let! kindValue = kindValue |> JsonValue.AsString |> reader.OfSum
           let fields = fields |> Map.remove "kind"
 
-          if kindValue = kind then
-            return! k fields |> reader.MapError(Errors.WithPriority ErrorPriority.Medium)
+          if kindValue = kind && fields |> Map.isEmpty |> not then
+            return!
+              $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).ToFSharpString.ReasonablyClamped})."
+              |> Errors.Singleton
+              |> Errors.WithPriority ErrorPriority.High
+              |> reader.Throw
+          elif kindValue = kind then
+            return! k () |> reader.MapError(Errors.WithPriority ErrorPriority.Medium)
           else
             return!
               $"Error: Expected kind '{kind}', but found '{kindValue}'."
@@ -67,14 +75,33 @@ module Reader =
       (fieldKey: string)
       (k: JsonValue -> Reader<'T, 'ctx, Errors>)
       : JsonValue -> Reader<'T, 'ctx, Errors> =
-      reader.AssertKindAndContinue kind (fun fields ->
+      fun json ->
         reader {
-          if fields |> Map.count <> 1 then
+          let! fields = json |> JsonValue.AsRecordMap |> reader.OfSum
+
+          match fields.TryFind "kind" with
+          | Some kindValue ->
+            let! kindValue = kindValue |> JsonValue.AsString |> reader.OfSum
+            let fields = fields |> Map.remove "kind"
+
+            if kindValue = kind && fields |> Map.count <> 1 then
+              return!
+                $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).ToFSharpString.ReasonablyClamped})."
+                |> Errors.Singleton
+                |> Errors.WithPriority ErrorPriority.High
+                |> reader.Throw
+            elif kindValue = kind then
+              let! fieldValue = fields |> Map.tryFindWithError fieldKey "fields" fieldKey |> reader.OfSum
+              return! k fieldValue |> reader.MapError(Errors.WithPriority ErrorPriority.High)
+            else
+              return!
+                $"Error: Expected kind '{kind}', but found '{kindValue}'."
+                |> Errors.Singleton
+                |> reader.Throw
+          | None ->
             return!
-              $"Error: Expected exactly one field, but found {fields |> Map.count}."
+              $"Error: Expected field 'kind' in JSON object, but it was not found."
               |> Errors.Singleton
               |> reader.Throw
-          else
-            let! fieldValue = fields |> Map.tryFindWithError fieldKey "fields" fieldKey |> reader.OfSum
-            return! k fieldValue |> reader.MapError(Errors.WithPriority ErrorPriority.High)
-        })
+
+        }

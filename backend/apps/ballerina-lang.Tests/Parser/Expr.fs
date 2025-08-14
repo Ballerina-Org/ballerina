@@ -11,6 +11,7 @@ open Ballerina.Errors
 open Ballerina.DSL.Extensions.BLPLang
 open Ballerina.DSL.Expr.Extensions
 open Unbound.AI.Extensions
+open System
 
 module ExprParserTests =
 
@@ -279,6 +280,20 @@ module ExprParserTests =
       |> blpLanguageExtension.collectionsExtension.toExpr
 
     assertSuccess result expectedExpr
+
+[<Test>]
+let ``Should parse date`` () =
+  let json =
+    JsonValue.Record [| "kind", JsonValue.String "date"; "value", JsonValue.String "2021-02-01" |]
+
+  let result = Expr.Parse blpLanguageExtension.parse json
+
+  assertSuccess
+    result
+    (Expr.Value(
+      Primitives.ValueExtension.ConstDate(DateOnly(2021, 2, 1))
+      |> blpLanguageExtension.primitivesExtension.toValue
+    ))
 
 [<Test>]
 let ``Should parse predict (AI extension)`` () =
@@ -729,6 +744,17 @@ let ``Should convert generic apply to and from Json`` () =
       |> blpLanguageExtension.aiExtension.toValue
       |> Expr.Value,
       ExprType.UnitType
+    )
+
+  let result = toAndFromJson expr
+  assertSuccess result expr
+
+[<Test>]
+let ``Should convert date to and from Json`` () =
+  let expr =
+    Expr.Value(
+      Primitives.ValueExtension.ConstDate(DateOnly(2021, 2, 1))
+      |> blpLanguageExtension.primitivesExtension.toValue
     )
 
   let result = toAndFromJson expr

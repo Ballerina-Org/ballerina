@@ -30,7 +30,7 @@ module Model =
       Custom: Map<string, CodegenConfigCustomDef>
       Generic: List<GenericTypeDef>
       IdentifierAllowedRegex: string
-      DeltaBase : CodegenConfigInterfaceDef
+      DeltaBase: CodegenConfigInterfaceDef
       EntityNotFoundError: CodegenConfigErrorDef
       OneNotFoundError: CodegenConfigErrorDef
       LookupStreamNotFoundError: CodegenConfigErrorDef
@@ -441,8 +441,7 @@ module Model =
     | ManyLinkedUnlinkedRenderer of
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
          Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Unlinked: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         ManyApiId: Option<Choice<TableApiId, ExprTypeId * string>> |}
+         Unlinked: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | ManyAllRenderer of
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
          Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}

@@ -51,6 +51,7 @@ module Primitives =
     | ConstString of string
     | ConstBool of bool
     | ConstGuid of Guid
+    | ConstDate of DateOnly
     | Rest of 'ValueExtensionTail
 
     override v.ToString() =
@@ -60,6 +61,7 @@ module Primitives =
       | ConstBool v -> v.ToString()
       | ConstGuid v -> v.ToString()
       | ConstString v -> v.ToString()
+      | ConstDate v -> v.ToString()
       | Rest e -> e.ToString()
 
   type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
@@ -167,6 +169,25 @@ module Primitives =
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
+    static member private ParseDate
+      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (json: JsonValue)
+      : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
+      sum {
+        let! fieldsJson = assertKindIsAndGetFields "date" json
+
+        return!
+          sum {
+            let! valueJson = fieldsJson |> sum.TryFindField "value"
+            let! value = JsonValue.AsString valueJson
+
+            match DateOnly.TryParse value with
+            | true, v -> return ValueExtension.ConstDate v |> ctx.toValue |> Expr.Value
+            | false, _ -> return! sum.Throw(Errors.Singleton $"Error: could not parse {value} as date")
+          }
+          |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+      }
+
     static member private ParseBool
       (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
       (json: JsonValue)
@@ -225,6 +246,7 @@ module Primitives =
             Expr.ParseFloat
             Expr.ParseBool
             Expr.ParseString
+            Expr.ParseDate
             Expr.ParseBinaryOperator parseRootExpr ]
         )
         |> NonEmptyList.map (fun f -> f ctx jsonValue)
@@ -290,6 +312,8 @@ module Primitives =
                "value", JsonValue.String(value.ToString()) |]
       | ConstBool b -> return JsonValue.Boolean b
       | ConstString s -> return JsonValue.String s
+      | ConstDate d ->
+        return JsonValue.Record [| "kind", JsonValue.String "date"; "value", JsonValue.String(d.ToString()) |]
       | ConstGuid _ -> return! "Error: ConstGuid not implemented" |> Errors.Singleton |> sum.Throw
       | Rest t -> return! toJsonValueTail t
     }
@@ -341,7 +365,8 @@ module Primitives =
 
         sum {
           match op with
-          | Or ->
+          | Or
+          | And ->
             let! t1 = !e1
             let! t2 = !e2
 
@@ -360,7 +385,10 @@ module Primitives =
                   $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
                   |> Errors.Singleton
                 )
-          | Plus ->
+          | Plus
+          | Minus
+          | Times
+          | DividedBy ->
             let! t1 = !e1
             let! t2 = !e2
 
@@ -368,12 +396,14 @@ module Primitives =
             do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
 
             return PrimitiveType IntType
-          | And -> return! notImplementedError "Binary op: And"
-          | Minus -> return! notImplementedError "Binary op: Minus"
-          | Times -> return! notImplementedError "Binary op: Times"
-          | GreaterThan -> return! notImplementedError "Binary op: GreaterThan"
-          | GreaterThanEquals -> return! notImplementedError "Binary op: GreaterThanEquals"
-          | DividedBy -> return! notImplementedError "Binary op: DividedBy"
+          | GreaterThan
+          | GreaterThanEquals ->
+            let! t1 = !e1
+            let! t2 = !e2
+
+            do! ExprType.Unify vars typeBindings t1 (PrimitiveType IntType) |> Sum.map ignore
+            do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
+            return PrimitiveType BoolType
         }
 
       sum {
@@ -397,6 +427,7 @@ module Primitives =
         | ConstBool _ -> PrimitiveType PrimitiveType.BoolType
         | ConstString _ -> PrimitiveType PrimitiveType.StringType
         | ConstGuid _ -> PrimitiveType PrimitiveType.GuidType
+        | ConstDate _ -> PrimitiveType PrimitiveType.DateOnlyType
         | Rest e -> return! typeCheckTail typeBindings vars e
       }
 
@@ -411,6 +442,7 @@ module Primitives =
           | ConstBool _ -> co.Throw(Errors.Singleton "Nothing to apply in primitives extension")
           | ConstString _ -> co.Throw(Errors.Singleton "Nothing to apply in primitives extension")
           | ConstGuid _ -> co.Throw(Errors.Singleton "Nothing to apply in primitives extension")
+          | ConstDate _ -> co.Throw(Errors.Singleton "Nothing to apply in primitives extension")
           | Rest r -> tailOperatorEvalExtensions.Apply {| inputs with func = r |}
        GenericApply =
         fun inputs ->
@@ -420,6 +452,7 @@ module Primitives =
           | ConstBool _ -> co.Throw(Errors.Singleton "Nothing to generic apply in primitives extension")
           | ConstString _ -> co.Throw(Errors.Singleton "Nothing to generic apply in primitives extension")
           | ConstGuid _ -> co.Throw(Errors.Singleton "Nothing to generic apply in primitives extension")
+          | ConstDate _ -> co.Throw(Errors.Singleton "Nothing to generic apply in primitives extension")
           | Rest r -> tailOperatorEvalExtensions.GenericApply {| inputs with typeFunc = r |}
        MatchCase =
         fun inputs ->
@@ -429,4 +462,5 @@ module Primitives =
           | ConstBool _ -> co.Throw(Errors.Singleton "Nothing to match case in primitives extension")
           | ConstString _ -> co.Throw(Errors.Singleton "Nothing to match case in primitives extension")
           | ConstGuid _ -> co.Throw(Errors.Singleton "Nothing to match case in primitives extension")
+          | ConstDate _ -> co.Throw(Errors.Singleton "Nothing to match case in primitives extension")
           | Rest r -> tailOperatorEvalExtensions.MatchCase {| inputs with value = r |} |}
