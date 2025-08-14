@@ -5,7 +5,7 @@ import (
 )
 
 type IsNotNull struct {
-	isNotNull interface{}
+	isNotNull Unit
 }
 
 func NewIsNotNull() IsNotNull {
@@ -25,7 +25,7 @@ func (d IsNotNull) MarshalJSON() ([]byte, error) {
 
 func (d *IsNotNull) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		IsNotNull interface{}
+		IsNotNull Unit
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
