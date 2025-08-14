@@ -7,11 +7,12 @@ import (
 	ballerina "ballerina.com/core"
 )
 
-func TestSum2Serialization(t *testing.T) {
+func TestSum3Serialization(t *testing.T) {
 	t.Parallel()
-	testCases := []ballerina.Sum2[int, string]{
-		ballerina.Case1Of2[int, string](10),
-		ballerina.Case2Of2[int, string]("abc"),
+	testCases := []ballerina.Sum3[int, string, float64]{
+		ballerina.Case1Of3[int, string, float64](10),
+		ballerina.Case2Of3[int, string, float64]("abc"),
+		ballerina.Case3Of3[int, string, float64](3.14),
 	}
 
 	for caseIndex, testCase := range testCases {
