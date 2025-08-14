@@ -25,7 +25,7 @@ func (d IsNull) MarshalJSON() ([]byte, error) {
 
 func (d *IsNull) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		IsNull interface{}
+		IsNull Unit
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
