@@ -1153,7 +1153,7 @@ func (d Sum9[case1, case2, case3, case4, case5, case6, case7, case8, case9]) Mar
 
 func (d *Sum9[case1, case2, case3, case4, case5, case6, case7, case8, case9]) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		Discriminator sum8CasesEnum
+		Discriminator sum9CasesEnum
 		Case1         *case1
 		Case2         *case2
 		Case3         *case3
