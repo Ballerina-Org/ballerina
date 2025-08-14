@@ -5,7 +5,7 @@ import (
 )
 
 type IsNull struct {
-	isNull interface{}
+	isNull Unit
 }
 
 func NewIsNull() IsNull {
@@ -17,7 +17,7 @@ var _ json.Marshaler = IsNull{}
 
 func (d IsNull) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		IsNull interface{}
+		IsNull Unit
 	}{
 		IsNull: d.isNull,
 	})

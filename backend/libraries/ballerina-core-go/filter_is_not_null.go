@@ -17,7 +17,7 @@ var _ json.Marshaler = IsNotNull{}
 
 func (d IsNotNull) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		IsNotNull interface{}
+		IsNotNull Unit
 	}{
 		IsNotNull: d.isNotNull,
 	})
