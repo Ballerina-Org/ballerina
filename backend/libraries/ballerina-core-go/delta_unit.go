@@ -1,4 +1,3 @@
 package ballerina
 
-type DeltaUnit interface {
-}
+type DeltaUnit Unit
