@@ -63,6 +63,14 @@ module Unification =
 
       sum {
         match t1, t2 with
+        | ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType),
+          ExprType.PrimitiveType(PrimitiveType.StringType) -> return UnificationConstraints.Zero()
+        | ExprType.PrimitiveType(PrimitiveType.StringType),
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType) -> return UnificationConstraints.Zero()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType), ExprType.PrimitiveType(PrimitiveType.StringType) ->
+          return UnificationConstraints.Zero()
+        | ExprType.PrimitiveType(PrimitiveType.StringType), ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) ->
+          return UnificationConstraints.Zero()
         | ExprType.UnitType, ExprType.UnitType -> return UnificationConstraints.Zero()
         | ExprType.UnitType, ExprType.RecordType fields when fields |> Map.isEmpty ->
           return UnificationConstraints.Zero()

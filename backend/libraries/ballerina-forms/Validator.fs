@@ -1031,16 +1031,17 @@ module Validator =
 
         let error =
           sum.Throw(
-            $$"""Error: type {{streamType}} in stream {{streamApi.StreamName}} is invalid: expected fields id:(Guid|string), displayValue:string but found {{fields}}"""
+            $$"""Error: type {{streamType}} in stream {{streamApi.StreamName}} is invalid: expected fields id:(entityIdUUID|entityIdString), displayValue:string but found {{fields}}"""
             |> Errors.Singleton
           )
 
         let! id, displayName = sum.All2 (fields |> sum.TryFindField "Id") (fields |> sum.TryFindField "DisplayValue")
 
         match id, displayName with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType), ExprType.PrimitiveType(PrimitiveType.StringType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType), ExprType.PrimitiveType(PrimitiveType.StringType) ->
-          return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType),
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType),
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType) -> return ()
         | _ -> return! error
       }
       |> sum.WithErrorContext $"...when validating stream {streamApi.StreamName}"
@@ -1059,15 +1060,15 @@ module Validator =
 
         let error =
           sum.Throw(
-            $$"""Error: type {{tableType}} in table {{tableApiFst.TableName}} is invalid: expected field id:(Guid|string) but found {{fields}}"""
+            $$"""Error: type {{tableType}} in table {{tableApiFst.TableName}} is invalid: expected field id:(entityIdUUID|entityIdString) but found {{fields}}"""
             |> Errors.Singleton
           )
 
         let! id = fields |> sum.TryFindField "Id"
 
         match id with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
         | _ -> return! error
       }
       |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
@@ -1101,13 +1102,13 @@ module Validator =
             })
 
         match idField with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
         | _ ->
           return!
             sum.Throw(
               Errors.Singleton
-                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'string' or 'guid', but it has one of type '{idField}'."
+                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idField}'."
             )
             |> Sum.map ignore
 

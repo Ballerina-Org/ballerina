@@ -94,6 +94,33 @@ module ExprType =
                 sum {
                   do!
                     json
+                    |> JsonValue.AsEnum(Set.singleton "entityIdString")
+
+                    |> sum.Map ignore
+
+                  return ExprType.PrimitiveType PrimitiveType.EntityIdStringType
+                }
+                sum {
+                  do!
+                    json
+                    |> JsonValue.AsEnum(Set.singleton "entityIdUUID")
+
+                    |> sum.Map ignore
+
+                  return ExprType.PrimitiveType PrimitiveType.EntityIdUUIDType
+                }
+                sum {
+                  do!
+                    json
+                    |> JsonValue.AsEnum(Set.singleton "calculatedDisplayValue")
+
+                    |> sum.Map ignore
+
+                  return ExprType.PrimitiveType PrimitiveType.CalculatedDisplayValueType
+                }
+                sum {
+                  do!
+                    json
                     |> JsonValue.AsEnum(Set.singleton "number")
 
                     |> sum.Map ignore
