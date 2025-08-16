@@ -25,6 +25,14 @@ func Right[L any, R any](value R) Sum[L, R] {
 	}
 }
 
+func (s Sum[L, R]) Swap() Sum[R, L] {
+	return Fold(
+		s,
+		Right[R, L],
+		Left[R, L],
+	)
+}
+
 func BiMap[L any, R any, LO any, RO any](e Sum[L, R], leftMap func(L) LO, rightMap func(R) RO) Sum[LO, RO] {
 	if e.isRight {
 		return Right[LO, RO](rightMap(e.right))
