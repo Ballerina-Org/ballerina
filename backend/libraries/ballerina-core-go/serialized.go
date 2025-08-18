@@ -22,6 +22,34 @@ type Serialized struct {
 	Value Sum7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized]
 }
 
+func (Serialized) Null() Serialized {
+	return Serialized{Value: Case1Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](Null{})}
+}
+
+func (Serialized) String(s string) Serialized {
+	return Serialized{Value: Case2Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](s)}
+}
+
+func (Serialized) Int64(i int64) Serialized {
+	return Serialized{Value: Case3Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](i)}
+}
+
+func (Serialized) Bool(b bool) Serialized {
+	return Serialized{Value: Case4Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](b)}
+}
+
+func (Serialized) Float64(f float64) Serialized {
+	return Serialized{Value: Case5Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](f)}
+}
+
+func (Serialized) Map(m map[string]Serialized) Serialized {
+	return Serialized{Value: Case6Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](m)}
+}
+
+func (Serialized) Array(a []Serialized) Serialized {
+	return Serialized{Value: Case7Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](a)}
+}
+
 func FoldSerialized[Result any](onNull func(Null) (Result, error),
 	onString func(string) (Result, error),
 	onInt64 func(int64) (Result, error),

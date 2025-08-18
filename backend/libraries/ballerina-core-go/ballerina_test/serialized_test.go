@@ -15,13 +15,13 @@ func TestSerializedSerialization(t *testing.T) {
 		Serialized ballerina.Serialized
 		Expected   string
 	}{
-		{Serialized: ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}, Expected: "null"},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case2Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]("hello")}, Expected: `"hello"`},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case3Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123)}, Expected: `123`},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case4Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](true)}, Expected: `true`},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case5Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123.456)}, Expected: `123.456`},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case6Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](map[string]ballerina.Serialized{"hello": ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})}, Expected: `{"hello":null}`},
-		{Serialized: ballerina.Serialized{Value: ballerina.Case7Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]([]ballerina.Serialized{ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})}, Expected: `[null]`},
+		{Serialized: ballerina.Serialized{}.Null(), Expected: "null"},
+		{Serialized: ballerina.Serialized{}.String("hello"), Expected: `"hello"`},
+		{Serialized: ballerina.Serialized{}.Int64(123), Expected: `123`},
+		{Serialized: ballerina.Serialized{}.Bool(true), Expected: `true`},
+		{Serialized: ballerina.Serialized{}.Float64(123.456), Expected: `123.456`},
+		{Serialized: ballerina.Serialized{}.Map(map[string]ballerina.Serialized{"hello": ballerina.Serialized{}.Null()}), Expected: `{"hello":null}`},
+		{Serialized: ballerina.Serialized{}.Array([]ballerina.Serialized{ballerina.Serialized{}.Null()}), Expected: `[null]`},
 	}
 
 	for caseIndex, testCase := range testCases {
@@ -39,13 +39,13 @@ func TestSerializedDeserialization(t *testing.T) {
 		Json     string
 		Expected ballerina.Serialized
 	}{
-		{Json: "null", Expected: ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}},
-		{Json: `"hello"`, Expected: ballerina.Serialized{Value: ballerina.Case2Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]("hello")}},
-		{Json: `123`, Expected: ballerina.Serialized{Value: ballerina.Case3Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123)}},
-		{Json: `true`, Expected: ballerina.Serialized{Value: ballerina.Case4Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](true)}},
-		{Json: `123.456`, Expected: ballerina.Serialized{Value: ballerina.Case5Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123.456)}},
-		{Json: `{"hello":null}`, Expected: ballerina.Serialized{Value: ballerina.Case6Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](map[string]ballerina.Serialized{"hello": ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})}},
-		{Json: `[null]`, Expected: ballerina.Serialized{Value: ballerina.Case7Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]([]ballerina.Serialized{ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})}},
+		{Json: "null", Expected: ballerina.Serialized{}.Null()},
+		{Json: `"hello"`, Expected: ballerina.Serialized{}.String("hello")},
+		{Json: `123`, Expected: ballerina.Serialized{}.Int64(123)},
+		{Json: `true`, Expected: ballerina.Serialized{}.Bool(true)},
+		{Json: `123.456`, Expected: ballerina.Serialized{}.Float64(123.456)},
+		{Json: `{"hello":null}`, Expected: ballerina.Serialized{}.Map(map[string]ballerina.Serialized{"hello": ballerina.Serialized{}.Null()})},
+		{Json: `[null]`, Expected: ballerina.Serialized{}.Array([]ballerina.Serialized{ballerina.Serialized{}.Null()})},
 	}
 
 	for caseIndex, testCase := range testCases {
@@ -61,13 +61,13 @@ func TestSerializedDeserialization(t *testing.T) {
 func TestSerializedSerializationBackAndForth(t *testing.T) {
 	t.Parallel()
 	testCases := []ballerina.Serialized{
-		ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})},
-		ballerina.Serialized{Value: ballerina.Case2Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]("hello")},
-		ballerina.Serialized{Value: ballerina.Case3Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123)},
-		ballerina.Serialized{Value: ballerina.Case4Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](true)},
-		ballerina.Serialized{Value: ballerina.Case5Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](123.456)},
-		ballerina.Serialized{Value: ballerina.Case6Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](map[string]ballerina.Serialized{"hello": ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})},
-		ballerina.Serialized{Value: ballerina.Case7Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized]([]ballerina.Serialized{ballerina.Serialized{Value: ballerina.Case1Of7[ballerina.Null, string, int64, bool, float64, map[string]ballerina.Serialized, []ballerina.Serialized](ballerina.Null{})}})},
+		ballerina.Serialized{}.Null(),
+		ballerina.Serialized{}.String("hello"),
+		ballerina.Serialized{}.Int64(123),
+		ballerina.Serialized{}.Bool(true),
+		ballerina.Serialized{}.Float64(123.456),
+		ballerina.Serialized{}.Map(map[string]ballerina.Serialized{"hello": ballerina.Serialized{}.Null()}),
+		ballerina.Serialized{}.Array([]ballerina.Serialized{ballerina.Serialized{}.Null()}),
 	}
 
 	for caseIndex, testCase := range testCases {

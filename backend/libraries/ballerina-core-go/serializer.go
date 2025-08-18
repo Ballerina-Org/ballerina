@@ -14,7 +14,7 @@ const _KIND_KEY = "kind"
 type UnitSerializer struct{}
 
 func (UnitSerializer) Serialize(value Unit) Serialized {
-	return Serialized{Value: Case6Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized](map[string]Serialized{_KIND_KEY: Serialized{Value: Case2Of7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized]("unit")}})}
+	return Serialized{}.Map(map[string]Serialized{_KIND_KEY: Serialized{}.String("unit")})
 }
 
 func (s UnitSerializer) Deserialize(value Serialized) (Unit, error) {
@@ -46,5 +46,67 @@ func (s UnitSerializer) Deserialize(value Serialized) (Unit, error) {
 			return Unit{}, err
 		},
 		func([]Serialized) (Unit, error) { return Unit{}, err },
+	)(value)
+}
+
+type SumSerializer[a any, b any] struct {
+	SerializerLeft  Serializer[a]
+	SerializerRight Serializer[b]
+}
+
+func (s SumSerializer[a, b]) Serialize(value Sum[a, b]) Serialized {
+	return Fold(value,
+		func(left a) Serialized {
+			return Serialized{}.Map(map[string]Serialized{"case": Serialized{}.String("Sum.Left"), "value": s.SerializerLeft.Serialize(left)})
+		},
+		func(right b) Serialized {
+			return Serialized{}.Map(map[string]Serialized{"case": Serialized{}.String("Sum.Right"), "value": s.SerializerRight.Serialize(right)})
+		},
+	)
+}
+
+func (s SumSerializer[a, b]) Deserialize(value Serialized) (Sum[a, b], error) {
+	err := errors.New("not a sum")
+	return FoldSerialized(
+		func(Null) (Sum[a, b], error) { return Sum[a, b]{}, err },
+		func(string) (Sum[a, b], error) { return Sum[a, b]{}, err },
+		func(int64) (Sum[a, b], error) { return Sum[a, b]{}, err },
+		func(bool) (Sum[a, b], error) { return Sum[a, b]{}, err },
+		func(float64) (Sum[a, b], error) { return Sum[a, b]{}, err },
+		func(m map[string]Serialized) (Sum[a, b], error) {
+			if caseValue, ok := m["case"]; ok {
+				isLeft, err := FoldSerialized(
+					func(Null) (bool, error) { return false, err },
+					func(s string) (bool, error) { return s == "Sum.Left", nil },
+					func(int64) (bool, error) { return false, err },
+					func(bool) (bool, error) { return false, err },
+					func(float64) (bool, error) { return false, err },
+					func(map[string]Serialized) (bool, error) { return false, err },
+					func([]Serialized) (bool, error) { return false, err },
+				)(caseValue)
+				if err != nil {
+					return Sum[a, b]{}, err
+				}
+				valueValue, ok := m["value"]
+				if !ok {
+					return Sum[a, b]{}, err
+				}
+				if isLeft {
+					left, err := s.SerializerLeft.Deserialize(valueValue)
+					if err != nil {
+						return Sum[a, b]{}, err
+					}
+					return Left[a, b](left), nil
+				} else {
+					right, err := s.SerializerRight.Deserialize(valueValue)
+					if err != nil {
+						return Sum[a, b]{}, err
+					}
+					return Right[a, b](right), nil
+				}
+			}
+			return Sum[a, b]{}, err
+		},
+		func([]Serialized) (Sum[a, b], error) { return Sum[a, b]{}, err },
 	)(value)
 }
