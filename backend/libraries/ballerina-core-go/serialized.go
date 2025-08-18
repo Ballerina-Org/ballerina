@@ -22,6 +22,26 @@ type Serialized struct {
 	Value Sum7[Null, string, int64, bool, float64, map[string]Serialized, []Serialized]
 }
 
+func FoldSerialized[Result any](onNull func(Null) (Result, error),
+	onString func(string) (Result, error),
+	onInt64 func(int64) (Result, error),
+	onBool func(bool) (Result, error),
+	onFloat64 func(float64) (Result, error),
+	onMap func(map[string]Serialized) (Result, error),
+	onArray func([]Serialized) (Result, error)) func(Serialized) (Result, error) {
+	return func(s Serialized) (Result, error) {
+		return FoldSum7(
+			onNull,
+			onString,
+			onInt64,
+			onBool,
+			onFloat64,
+			onMap,
+			onArray,
+		)(s.Value)
+	}
+}
+
 func (s Serialized) MarshalJSON() ([]byte, error) {
 	serializeNull := func(data Null) ([]byte, error) {
 		return json.Marshal(data)
