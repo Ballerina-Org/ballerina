@@ -6,6 +6,9 @@ import (
 
 type Serializer[T any] interface {
 	Serialize(T) Serialized
+}
+
+type Deserializer[T any] interface {
 	Deserialize(Serialized) (T, error)
 }
 
@@ -17,7 +20,9 @@ func (UnitSerializer) Serialize(value Unit) Serialized {
 	return Serialized{}.Map(map[string]Serialized{_KIND_KEY: Serialized{}.String("unit")})
 }
 
-func (s UnitSerializer) Deserialize(value Serialized) (Unit, error) {
+type UnitDeserializer struct{}
+
+func (UnitDeserializer) Deserialize(value Serialized) (Unit, error) {
 	err := errors.New("not a unit")
 	return FoldSerialized(
 		func(Null) (Unit, error) { return Unit{}, err },
@@ -65,7 +70,12 @@ func (s SumSerializer[a, b]) Serialize(value Sum[a, b]) Serialized {
 	)
 }
 
-func (s SumSerializer[a, b]) Deserialize(value Serialized) (Sum[a, b], error) {
+type SumDeserializer[a any, b any] struct {
+	DeserializerLeft  Deserializer[a]
+	DeserializerRight Deserializer[b]
+}
+
+func (s SumDeserializer[a, b]) Deserialize(value Serialized) (Sum[a, b], error) {
 	err := errors.New("not a sum")
 	return FoldSerialized(
 		func(Null) (Sum[a, b], error) { return Sum[a, b]{}, err },
@@ -92,13 +102,13 @@ func (s SumSerializer[a, b]) Deserialize(value Serialized) (Sum[a, b], error) {
 					return Sum[a, b]{}, err
 				}
 				if isLeft {
-					left, err := s.SerializerLeft.Deserialize(valueValue)
+					left, err := s.DeserializerLeft.Deserialize(valueValue)
 					if err != nil {
 						return Sum[a, b]{}, err
 					}
 					return Left[a, b](left), nil
 				} else {
-					right, err := s.SerializerRight.Deserialize(valueValue)
+					right, err := s.DeserializerRight.Deserialize(valueValue)
 					if err != nil {
 						return Sum[a, b]{}, err
 					}
