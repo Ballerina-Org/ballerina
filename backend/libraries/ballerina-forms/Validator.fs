@@ -94,7 +94,18 @@ module Validator =
             match l.OneApiId with
             | Some(Choice2Of2(apiTypeId, apiName)) ->
               sum {
-                let! (_, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
+                let! (oneApi, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
+                let! oneApi = ctx.TryFindType oneApi.TypeId.VarName
+                let oneApi = oneApi.Type
+
+                do!
+                  ExprType.Unify
+                    Map.empty
+                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                    fr.Type
+                    (oneApi |> ExprType.OneType)
+                  |> Sum.map ignore
+
                 return oneApiMethods
               }
             | Some(Choice1Of2(_)) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
@@ -118,24 +129,82 @@ module Validator =
         | Renderer.ManyRenderer(ManyAllRenderer l) ->
           do! !l.Many |> Sum.map ignore
           do! !l.Element.Renderer |> Sum.map ignore
-          return fr.Type
+
+          let! manyApiMethods =
+            sum {
+              match l.ManyApiId with
+              | Some(rootEntityId, manyApiName) ->
+                let! (manyApi, manyApiMethods) = ctx.TryFindMany rootEntityId.VarName manyApiName
+                let! manyType = ctx.TryFindType manyApi.TypeId.VarName
+                let manyType = manyType.Type
+
+                do!
+                  ExprType.Unify
+                    Map.empty
+                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                    fr.Type
+                    (manyType |> ExprType.ManyType)
+                  |> Sum.map ignore
+
+                return manyApiMethods
+              | None -> return Set.empty
+            }
+
+          if manyApiMethods |> Set.contains CrudMethod.GetAll |> not then
+            return!
+              $"Error: many renderer for all items needs the API to support 'get all'"
+              |> Errors.Singleton
+              |> sum.Throw
+          else
+            return fr.Type
 
         | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer l) ->
           do! !l.Many |> Sum.map ignore
 
           let linkedType = l.Linked.Type
-          let unlinkedType = l.Unlinked.Type
 
-          do!
-            ExprType.Unify
-              Map.empty
-              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-              linkedType
-              unlinkedType
-            |> Sum.map ignore
+          let! manyApiMethods =
+            sum {
+              match l.ManyApiId with
+              | Some(rootEntityId, manyApiName) ->
+                let! (manyApi, manyApiMethods) = ctx.TryFindMany rootEntityId.VarName manyApiName
+                let! manyType = ctx.TryFindType manyApi.TypeId.VarName
+                let manyType = manyType.Type
+
+                do!
+                  ExprType.Unify
+                    Map.empty
+                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                    fr.Type
+                    (manyType |> ExprType.ManyType)
+                  |> Sum.map ignore
+
+                return manyApiMethods
+              | None -> return Set.empty
+            }
+
+          match l.Unlinked with
+          | Some unlinked ->
+            if manyApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+              return!
+                $"Error: many renderer has an unlinked renderer but the many API does not support 'get many unlinked'"
+                |> Errors.Singleton
+                |> sum.Throw
+            else
+              let unlinkedType = unlinked.Type
+
+              do!
+                ExprType.Unify
+                  Map.empty
+                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                  linkedType
+                  unlinkedType
+                |> Sum.map ignore
+
+              do! !unlinked.Renderer |> Sum.map ignore
+          | None -> return ()
 
           do! !l.Linked.Renderer |> Sum.map ignore
-          do! !l.Unlinked.Renderer |> Sum.map ignore
           return fr.Type
 
         | Renderer.ReadOnlyRenderer(l) ->
@@ -278,7 +347,10 @@ module Validator =
         | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer e) ->
           do! !e.Many
           do! !!e.Linked
-          do! !!e.Unlinked
+
+          match e.Unlinked with
+          | Some unlinked -> do! !!unlinked
+          | None -> return ()
 
         | Renderer.OptionRenderer e ->
           do! !e.Option
@@ -959,16 +1031,17 @@ module Validator =
 
         let error =
           sum.Throw(
-            $$"""Error: type {{streamType}} in stream {{streamApi.StreamName}} is invalid: expected fields id:(Guid|string), displayValue:string but found {{fields}}"""
+            $$"""Error: type {{streamType}} in stream {{streamApi.StreamName}} is invalid: expected fields id:(entityIdUUID|entityIdString), displayValue:string but found {{fields}}"""
             |> Errors.Singleton
           )
 
         let! id, displayName = sum.All2 (fields |> sum.TryFindField "Id") (fields |> sum.TryFindField "DisplayValue")
 
         match id, displayName with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType), ExprType.PrimitiveType(PrimitiveType.StringType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType), ExprType.PrimitiveType(PrimitiveType.StringType) ->
-          return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType),
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType),
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType) -> return ()
         | _ -> return! error
       }
       |> sum.WithErrorContext $"...when validating stream {streamApi.StreamName}"
@@ -987,15 +1060,15 @@ module Validator =
 
         let error =
           sum.Throw(
-            $$"""Error: type {{tableType}} in table {{tableApiFst.TableName}} is invalid: expected field id:(Guid|string) but found {{fields}}"""
+            $$"""Error: type {{tableType}} in table {{tableApiFst.TableName}} is invalid: expected field id:(entityIdUUID|entityIdString) but found {{fields}}"""
             |> Errors.Singleton
           )
 
         let! id = fields |> sum.TryFindField "Id"
 
         match id with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
         | _ -> return! error
       }
       |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
@@ -1029,13 +1102,13 @@ module Validator =
             })
 
         match idField with
-        | ExprType.PrimitiveType(PrimitiveType.GuidType)
-        | ExprType.PrimitiveType(PrimitiveType.StringType) -> return ()
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
         | _ ->
           return!
             sum.Throw(
               Errors.Singleton
-                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'string' or 'guid', but it has one of type '{idField}'."
+                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idField}'."
             )
             |> Sum.map ignore
 

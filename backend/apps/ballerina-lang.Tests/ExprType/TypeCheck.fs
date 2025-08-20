@@ -42,11 +42,11 @@ let ``Should typecheck values primitives`` (testCase: ValuePrimitiveTypeCheckTes
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 
-type BoolReturningBinaryExpressionTestCase =
+type SimpleBinaryExpressionTestCase =
   { expr: Expr<BLPExprExtension, BLPValueExtension>
     expected: ExprType }
 
-let boolReturningBinaryExpressionTestCases =
+let simpleBinaryExpressionTestCases =
   [ { expr =
         Primitives.ExprExtension.Binary(
           Primitives.BinaryOperator.Or,
@@ -60,15 +60,217 @@ let boolReturningBinaryExpressionTestCases =
           )
         )
         |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.And,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstBool true
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstBool false
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Plus,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.IntType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Minus,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.IntType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Times,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.IntType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.DividedBy,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.IntType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Equals,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.GreaterThan,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.GreaterThanEquals,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 1
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstInt 2
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Equals,
+          Expr.Value(
+            Value.Tuple
+              [ (Primitives.ValueExtension.ConstBool true
+                 |> blpLanguageExtension.primitivesExtension.toValue)
+                (Primitives.ValueExtension.ConstInt 42
+                 |> blpLanguageExtension.primitivesExtension.toValue) ]
+          ),
+          Expr.Value(
+            Value.Tuple
+              [ (Primitives.ValueExtension.ConstBool false
+                 |> blpLanguageExtension.primitivesExtension.toValue)
+                (Primitives.ValueExtension.ConstInt 13
+                 |> blpLanguageExtension.primitivesExtension.toValue) ]
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
       expected = ExprType.PrimitiveType PrimitiveType.BoolType } ]
 
-[<TestCaseSource(nameof boolReturningBinaryExpressionTestCases)>]
-let ``Should typecheck bool returning binary expressions`` (testCase: BoolReturningBinaryExpressionTestCase) =
+[<TestCaseSource(nameof simpleBinaryExpressionTestCases)>]
+let ``Should typecheck simple binary expressions`` (testCase: SimpleBinaryExpressionTestCase) =
   let { expr = expr; expected = expected } = testCase
 
   match typeCheck expr with
   | Left value -> Assert.That(value, Is.EqualTo expected)
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+
+type SimpleIncorrectBinaryExpressionTestCase =
+  { expr: Expr<BLPExprExtension, BLPValueExtension> }
+
+let simpleIncorrectBinaryExpressionTestCases =
+  [ { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstBool true
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstString "42"
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Equals,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstBool true
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstString "42"
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.GreaterThanEquals,
+          Expr.Value(
+            (Primitives.ValueExtension.ConstBool true
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          ),
+          Expr.Value(
+            (Primitives.ValueExtension.ConstString "42"
+             |> blpLanguageExtension.primitivesExtension.toValue)
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Equals,
+          Expr.Value(
+            Value.Tuple
+              [ (Primitives.ValueExtension.ConstBool true
+                 |> blpLanguageExtension.primitivesExtension.toValue)
+                (Primitives.ValueExtension.ConstInt 42
+                 |> blpLanguageExtension.primitivesExtension.toValue) ]
+          ),
+          Expr.Value(
+            Value.Tuple
+              [ (Primitives.ValueExtension.ConstBool false
+                 |> blpLanguageExtension.primitivesExtension.toValue) ]
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr } ]
+
+[<TestCaseSource(nameof simpleIncorrectBinaryExpressionTestCases)>]
+let ``Should not typecheck incorrect binary expressions`` (testCase: SimpleIncorrectBinaryExpressionTestCase) =
+  let { expr = expr } = testCase
+
+  match typeCheck expr with
+  | Left _value -> Assert.Fail $"Expected error but got success"
+  | Right _err -> ()
 
 [<Test>]
 let ``Should typecheck tuple`` () =

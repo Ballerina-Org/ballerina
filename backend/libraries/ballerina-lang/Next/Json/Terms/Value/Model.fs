@@ -5,6 +5,9 @@ open Ballerina.DSL.Next.Json
 [<AutoOpen>]
 module Value =
   open Ballerina.Reader.WithError
+  open Ballerina.Errors
+  open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
   open FSharp.Data
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
@@ -19,8 +22,13 @@ module Value =
           Value.FromJsonSum Value.FromJson json
           Value.FromJsonVar json
           Value.FromJsonLambda Expr.FromJson json
-          Value.FromJsonTypeLambda Expr.FromJson json ]
+          Value.FromJsonTypeLambda Expr.FromJson json
+          $"Unknown Value JSON: {json.ToFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton
+          |> Errors.WithPriority ErrorPriority.Medium
+          |> reader.Throw ]
       )
+      |> reader.MapError(Errors.HighestPriority)
 
     static member ToJson: Value<'T> -> JsonValue =
       fun value ->

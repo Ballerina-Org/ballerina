@@ -1,7 +1,10 @@
 ﻿namespace Ballerina.DSL.Next.Types.Json
 
+[<AutoOpen>]
 module TypeValue =
   open FSharp.Data
+  open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
@@ -21,7 +24,11 @@ module TypeValue =
           TypeValue.FromJsonSum TypeValue.FromJson json
           TypeValue.FromJsonList TypeValue.FromJson json
           TypeValue.FromJsonSet TypeValue.FromJson json
-          TypeValue.FromJsonMap TypeValue.FromJson json ]
+          TypeValue.FromJsonMap TypeValue.FromJson json
+          $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton
+          |> Errors.WithPriority ErrorPriority.Medium
+          |> sum.Throw ]
       )
       |> sum.MapError(Errors.HighestPriority)
 

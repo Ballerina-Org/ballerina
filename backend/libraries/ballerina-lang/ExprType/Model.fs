@@ -109,6 +109,9 @@ module Model =
         match p with
         | PrimitiveType.GuidType -> JsonValue.String "guid"
         | PrimitiveType.StringType -> JsonValue.String "string"
+        | PrimitiveType.EntityIdStringType -> JsonValue.String "entityIdString"
+        | PrimitiveType.EntityIdUUIDType -> JsonValue.String "entityIdUUID"
+        | PrimitiveType.CalculatedDisplayValueType -> JsonValue.String "calculatedDisplayValue"
         | PrimitiveType.IntType -> JsonValue.String "int"
         | PrimitiveType.FloatType -> JsonValue.String "float"
         | PrimitiveType.BoolType -> JsonValue.String "boolean"

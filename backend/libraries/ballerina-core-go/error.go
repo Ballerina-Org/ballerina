@@ -110,7 +110,7 @@ type EntityNameAndDeltaTypeMismatch struct {
 }
 
 func (err *EntityNameAndDeltaTypeMismatch) Error() string {
-	return fmt.Sprintf("%s/%A is not a valid entity name/delta combination", err.EntityName, err.Delta)
+	return fmt.Sprintf("%s/%v is not a valid entity name/delta combination", err.EntityName, err.Delta)
 }
 
 func NewEntityNameAndDeltaTypeMismatch(entityName string, delta DeltaBase) error {

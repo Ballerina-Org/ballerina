@@ -30,7 +30,7 @@ module Model =
       Custom: Map<string, CodegenConfigCustomDef>
       Generic: List<GenericTypeDef>
       IdentifierAllowedRegex: string
-      DeltaBase : CodegenConfigInterfaceDef
+      DeltaBase: CodegenConfigInterfaceDef
       EntityNotFoundError: CodegenConfigErrorDef
       OneNotFoundError: CodegenConfigErrorDef
       LookupStreamNotFoundError: CodegenConfigErrorDef
@@ -174,6 +174,7 @@ module Model =
     | Create
     | Delete
     | Get
+    | GetAll
     | GetManyLinked
     | GetManyUnlinked
     | Update
@@ -442,10 +443,11 @@ module Model =
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
          Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
          Unlinked: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         ManyApiId: Option<Choice<TableApiId, ExprTypeId * string>> |}
+         ManyApiId: Option<ExprTypeId * string> |}
     | ManyAllRenderer of
       {| Many: Renderer<'ExprExtension, 'ValueExtension>
-         Element: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+         Element: NestedRenderer<'ExprExtension, 'ValueExtension>
+         ManyApiId: Option<ExprTypeId * string> |}
 
 
   and StreamRendererApi =

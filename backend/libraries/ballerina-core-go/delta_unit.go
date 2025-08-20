@@ -1,4 +1,7 @@
 package ballerina
 
-type DeltaUnit interface {
+type DeltaUnit Unit
+
+func NewDeltaUnit() DeltaUnit {
+	return DeltaUnit(NewUnit())
 }

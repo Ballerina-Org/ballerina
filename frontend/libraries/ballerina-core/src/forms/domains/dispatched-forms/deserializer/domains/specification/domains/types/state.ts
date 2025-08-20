@@ -66,6 +66,9 @@ export type SerializedType<T> =
 export const DispatchPrimitiveTypeNames = [
   "unit",
   "guid", //resolves to string
+  "entityIdString", //resolves to string
+  "entityIdUUID", //resolves to string
+  "calculatedDisplayValue", //resolves to string
   "string",
   "number",
   "boolean",
@@ -877,10 +880,18 @@ export const DispatchParsedType = {
         ],
         string
       > = (() => {
+        const stringyTypes = [
+          "guid",
+          "entityIdUUID",
+          "entityIdString",
+          "calculatedDisplayValue",
+        ];
         if (SerializedType.isPrimitive(rawType, injectedPrimitives))
           return ValueOrErrors.Default.return([
             DispatchParsedType.Default.primitive(
-              rawType == "guid" ? "string" : rawType,
+              typeof rawType === "string" && stringyTypes.includes(rawType)
+                ? "string"
+                : rawType,
             ),
             alreadyParsedTypes,
           ]);

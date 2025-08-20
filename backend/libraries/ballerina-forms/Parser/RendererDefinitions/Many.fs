@@ -13,6 +13,7 @@ module Many =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.String
+  open Ballerina.StdLib.Object
   open FSharp.Data
 
   [<Literal>]
@@ -28,6 +29,32 @@ module Many =
   let apiKeyword = "api"
 
   type Renderer<'ExprExtension, 'ValueExtension> with
+
+    static member private ParseManyApi
+      (parentJsonFields: (string * JsonValue)[])
+      : State<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      state {
+        let! apiRendererJson = parentJsonFields |> sum.TryFindField apiKeyword |> state.OfSum |> state.Catch
+        let apiRendererJson = apiRendererJson |> Sum.toOption
+
+        return!
+          apiRendererJson
+          |> Option.map (fun apiRendererJson ->
+            state {
+              let! apiSourceTypeNameJson, manyApiNameJson = apiRendererJson |> JsonValue.AsPair |> state.OfSum
+
+              let! apiSourceTypeName, manyApiName =
+                state.All2
+                  (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
+                  (manyApiNameJson |> JsonValue.AsString |> state.OfSum)
+
+              let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+              let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
+              let! manyApi, _ = formsState.TryFindMany apiType.TypeId.VarName manyApiName |> state.OfSum
+              return apiType.TypeId, manyApi.TableName
+            })
+          |> state.RunOption
+      }
 
     static member ParseManyAllRenderer
       parseNestedRenderer
@@ -53,16 +80,7 @@ module Many =
               let! (itemRenderer: NestedRenderer<'ExprExtension, 'ValueExtension>) =
                 parseNestedRenderer itemRendererJson
 
-              // TODO: Do we need api here?
-              // let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
-              // let! apiRendererJson = parentJsonFields |> sum.TryFindField apiKeyword |> state.OfSum
-              // let! apiSourceTypeNameJson, manyApiNameJson = apiRendererJson |> JsonValue.AsPair |> state.OfSum
-              // let! apiSourceTypeName, manyApiName =
-              //   state.All2
-              //     (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
-              //     (manyApiNameJson |> JsonValue.AsString |> state.OfSum)
-              // let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-              // let! manyApi, _ = formsState.TryFindMany apiType.TypeId.VarName manyApiName |> state.OfSum
+              let! manyApi = Renderer.ParseManyApi parentJsonFields
 
               return
                 ManyAllRenderer
@@ -71,7 +89,8 @@ module Many =
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
                           Type = ManyType itemRenderer.Type }
-                     Element = itemRenderer |}
+                     Element = itemRenderer
+                     ManyApiId = manyApi |}
                 |> ManyRenderer
             }
 
@@ -105,21 +124,12 @@ module Many =
               let! (linkedRenderer: NestedRenderer<'ExprExtension, 'ValueExtension>) =
                 parseNestedRenderer linkedRendererJson
 
-              let! unlinkedRendererJson = parentJsonFields |> state.TryFindField UnlinkedRendererKeyword
+              let! unlinkedRendererJson = parentJsonFields |> state.TryFindField UnlinkedRendererKeyword |> state.Catch
+              let unlinkedRendererJson = unlinkedRendererJson |> Sum.toOption
 
-              let! (unlinkedRenderer: NestedRenderer<'ExprExtension, 'ValueExtension>) =
-                parseNestedRenderer unlinkedRendererJson
+              let! unlinkedRenderer = unlinkedRendererJson |> Option.map parseNestedRenderer |> state.RunOption
 
-              // TODO: Do we need api here?
-              // let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
-              // let! apiRendererJson = parentJsonFields |> sum.TryFindField apiKeyword |> state.OfSum
-              // let! apiSourceTypeNameJson, manyApiNameJson = apiRendererJson |> JsonValue.AsPair |> state.OfSum
-              // let! apiSourceTypeName, manyApiName =
-              //   state.All2
-              //     (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
-              //     (manyApiNameJson |> JsonValue.AsString |> state.OfSum)
-              // let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-              // let! manyApi, _ = formsState.TryFindMany apiType.TypeId.VarName manyApiName |> state.OfSum
+              let! manyApi = Renderer.ParseManyApi parentJsonFields
 
               return
                 ManyLinkedUnlinkedRenderer
@@ -129,7 +139,8 @@ module Many =
                           PrimitiveRendererId = Guid.CreateVersion7()
                           Type = ManyType linkedRenderer.Type }
                      Linked = linkedRenderer
-                     Unlinked = unlinkedRenderer |}
+                     Unlinked = unlinkedRenderer
+                     ManyApiId = manyApi |}
                 |> ManyRenderer
             }
 

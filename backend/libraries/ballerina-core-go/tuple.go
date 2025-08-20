@@ -5,6 +5,10 @@ type Tuple2[a any, b any] struct {
 	Item2 b
 }
 
+func (t Tuple2[a, b]) Unpack() (a, b) {
+	return t.Item1, t.Item2
+}
+
 func NewTuple2[a any, b any](item1 a, item2 b) Tuple2[a, b] {
 	var p Tuple2[a, b]
 	p.Item1 = item1
@@ -16,6 +20,10 @@ type Tuple3[a any, b any, c any] struct {
 	Item1 a
 	Item2 b
 	Item3 c
+}
+
+func (t Tuple3[a, b, c]) Unpack() (a, b, c) {
+	return t.Item1, t.Item2, t.Item3
 }
 
 func NewTuple3[a any, b any, c any](item1 a, item2 b, item3 c) Tuple3[a, b, c] {
@@ -33,6 +41,10 @@ type Tuple4[a any, b any, c any, d any] struct {
 	Item4 d
 }
 
+func (t Tuple4[a, b, c, d]) Unpack() (a, b, c, d) {
+	return t.Item1, t.Item2, t.Item3, t.Item4
+}
+
 func NewTuple4[a any, b any, c any, d any](item1 a, item2 b, item3 c, item4 d) Tuple4[a, b, c, d] {
 	var p Tuple4[a, b, c, d]
 	p.Item1 = item1
@@ -48,6 +60,10 @@ type Tuple5[a any, b any, c any, d any, e any] struct {
 	Item3 c
 	Item4 d
 	Item5 e
+}
+
+func (t Tuple5[a, b, c, d, e]) Unpack() (a, b, c, d, e) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5
 }
 
 func NewTuple5[a any, b any, c any, d any, e any](item1 a, item2 b, item3 c, item4 d, item5 e) Tuple5[a, b, c, d, e] {
@@ -69,6 +85,10 @@ type Tuple6[a any, b any, c any, d any, e any, f any] struct {
 	Item6 f
 }
 
+func (t Tuple6[a, b, c, d, e, f]) Unpack() (a, b, c, d, e, f) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6
+}
+
 func NewTuple6[a any, b any, c any, d any, e any, f any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f) Tuple6[a, b, c, d, e, f] {
 	var p Tuple6[a, b, c, d, e, f]
 	p.Item1 = item1
@@ -88,6 +108,10 @@ type Tuple7[a any, b any, c any, d any, e any, f any, g any] struct {
 	Item5 e
 	Item6 f
 	Item7 g
+}
+
+func (t Tuple7[a, b, c, d, e, f, g]) Unpack() (a, b, c, d, e, f, g) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7
 }
 
 func NewTuple7[a any, b any, c any, d any, e any, f any, g any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f, item7 g) Tuple7[a, b, c, d, e, f, g] {
@@ -113,6 +137,10 @@ type Tuple8[a any, b any, c any, d any, e any, f any, g any, h any] struct {
 	Item8 h
 }
 
+func (t Tuple8[a, b, c, d, e, f, g, h]) Unpack() (a, b, c, d, e, f, g, h) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7, t.Item8
+}
+
 func NewTuple8[a any, b any, c any, d any, e any, f any, g any, h any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f, item7 g, item8 h) Tuple8[a, b, c, d, e, f, g, h] {
 	var p Tuple8[a, b, c, d, e, f, g, h]
 	p.Item1 = item1
@@ -136,6 +164,10 @@ type Tuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any] struc
 	Item7 g
 	Item8 h
 	Item9 i
+}
+
+func (t Tuple9[a, b, c, d, e, f, g, h, i]) Unpack() (a, b, c, d, e, f, g, h, i) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7, t.Item8, t.Item9
 }
 
 func NewTuple9[a any, b any, c any, d any, e any, f any, g any, h any, i any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f, item7 g, item8 h, item9 i) Tuple9[a, b, c, d, e, f, g, h, i] {

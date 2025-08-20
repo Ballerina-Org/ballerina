@@ -710,7 +710,9 @@ export const dispatchDefaultState =
               ? ValueOrErrors.Default.return(
                   NumberAbstractRendererState.Default(),
                 )
-              : t.name == "string"
+              : t.name == "string" ||
+                  t.name == "entityIdString" ||
+                  t.name == "calculatedDisplayValue"
                 ? ValueOrErrors.Default.return(
                     StringAbstractRendererState.Default(),
                   )

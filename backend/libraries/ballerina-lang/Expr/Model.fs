@@ -114,6 +114,9 @@ module Model =
     | IntType
     | FloatType
     | StringType
+    | EntityIdStringType
+    | EntityIdUUIDType
+    | CalculatedDisplayValueType
     | BoolType
     | GuidType
 
@@ -126,6 +129,9 @@ module Model =
       | PrimitiveType.GuidType -> "Guid"
       | PrimitiveType.IntType -> "Int"
       | PrimitiveType.StringType -> "String"
+      | PrimitiveType.EntityIdStringType -> "EntityIdString"
+      | PrimitiveType.EntityIdUUIDType -> "EntityIdUUID"
+      | PrimitiveType.CalculatedDisplayValueType -> "CalculatedDisplayValue"
 
   and ExprTypeId = VarName
 
