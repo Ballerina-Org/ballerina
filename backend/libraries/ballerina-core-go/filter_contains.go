@@ -4,32 +4,28 @@ import (
 	"encoding/json"
 )
 
-type Contains struct {
-	contains string
+type Contains[T any] struct {
+	contains T
 }
 
-func NewContains(value string) Contains {
-	return Contains{contains: value}
+func NewContains[T any](value T) Contains[T] {
+	return Contains[T]{contains: value}
 }
 
-func (c Contains) GetContains() string {
-	return c.contains
-}
+var _ json.Unmarshaler = &Contains[Unit]{}
+var _ json.Marshaler = Contains[Unit]{}
 
-var _ json.Unmarshaler = &Contains{}
-var _ json.Marshaler = Contains{}
-
-func (d Contains) MarshalJSON() ([]byte, error) {
+func (d Contains[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Contains string
+		Contains T
 	}{
-		Contains: d.GetContains(),
+		Contains: d.contains,
 	})
 }
 
-func (d *Contains) UnmarshalJSON(data []byte) error {
+func (d *Contains[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		Contains string
+		Contains T
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err

@@ -4,32 +4,32 @@ import (
 	"encoding/json"
 )
 
-type StartsWith struct {
-	startsWith string
+type StartsWith[T any] struct {
+	startsWith T
 }
 
-func NewStartsWith(value string) StartsWith {
-	return StartsWith{startsWith: value}
+func NewStartsWith[T any](value T) StartsWith[T] {
+	return StartsWith[T]{startsWith: value}
 }
 
-func (c StartsWith) GetStartsWith() string {
+func (c StartsWith[T]) GetStartsWith() T {
 	return c.startsWith
 }
 
-var _ json.Unmarshaler = &StartsWith{}
-var _ json.Marshaler = StartsWith{}
+var _ json.Unmarshaler = &StartsWith[Unit]{}
+var _ json.Marshaler = StartsWith[Unit]{}
 
-func (d StartsWith) MarshalJSON() ([]byte, error) {
+func (d StartsWith[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		StartsWith string
+		StartsWith T
 	}{
 		StartsWith: d.GetStartsWith(),
 	})
 }
 
-func (d *StartsWith) UnmarshalJSON(data []byte) error {
+func (d *StartsWith[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		StartsWith string
+		StartsWith T
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
