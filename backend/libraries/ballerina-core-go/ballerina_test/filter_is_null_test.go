@@ -12,7 +12,7 @@ type FilterIsNullSerializationTestSuite struct {
 }
 
 func (s *FilterIsNullSerializationTestSuite) Test() {
-	filter := ballerina.NewIsNull()
+	filter := ballerina.NewIsNull[ballerina.Unit]()
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), filter)
 }

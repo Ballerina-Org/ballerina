@@ -4,18 +4,18 @@ import (
 	"encoding/json"
 )
 
-type IsNotNull struct {
+type IsNotNull[T any] struct {
 	isNotNull Unit
 }
 
-func NewIsNotNull() IsNotNull {
-	return IsNotNull{}
+func NewIsNotNull[T any]() IsNotNull[T] {
+	return IsNotNull[T]{}
 }
 
-var _ json.Unmarshaler = &IsNotNull{}
-var _ json.Marshaler = IsNotNull{}
+var _ json.Unmarshaler = &IsNotNull[Unit]{}
+var _ json.Marshaler = IsNotNull[Unit]{}
 
-func (d IsNotNull) MarshalJSON() ([]byte, error) {
+func (d IsNotNull[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		IsNotNull Unit
 	}{
@@ -23,7 +23,7 @@ func (d IsNotNull) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (d *IsNotNull) UnmarshalJSON(data []byte) error {
+func (d *IsNotNull[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		IsNotNull Unit
 	}
