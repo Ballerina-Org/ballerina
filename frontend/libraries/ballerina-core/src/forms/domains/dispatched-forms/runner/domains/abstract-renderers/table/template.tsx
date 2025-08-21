@@ -34,6 +34,9 @@ import {
   ValueUnit,
   TableAbstractRendererSelectedDetailRow,
   TableApiFiltering,
+  ValueFilter,
+  CommonAbstractRendererViewOnlyReadonlyContext,
+  FilterType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -98,6 +101,23 @@ export const TableAbstractRenderer = <
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
+  Filters: Map<
+    string,
+    [
+      Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          CommonAbstractRendererState,
+        CommonAbstractRendererState,
+        CommonAbstractRendererViewOnlyReadonlyContext
+      >,
+      Array<FilterType<any>>,
+    ]
+  >,
 ): Template<
   TableAbstractRendererReadonlyContext<
     CustomPresentationContext,
@@ -749,6 +769,40 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
+              addFilter: (columnName: string, filter: ValueFilter) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.addFilter(
+                    columnName,
+                    filter,
+                  ),
+                );
+              },
+              removeFilter: (columnName: string, filterIndex: number) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.removeFilter(
+                    columnName,
+                    filterIndex,
+                  ),
+                );
+              },
+              addSorting: (
+                columnName: string,
+                direction: "Ascending" | "Descending",
+              ) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.addSorting(
+                    columnName,
+                    direction,
+                  ),
+                );
+              },
+              removeSorting: (sortingIndex: number) => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Template.removeSorting(
+                    sortingIndex,
+                  ),
+                );
+              },
               reinitialize: () =>
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.shouldReinitialize(
@@ -758,6 +812,9 @@ export const TableAbstractRenderer = <
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
+            AllowedFilters={Filters}
+            AllowedSorting={props.context.sorting}
+            HighlightedFilters={props.context.highlightedFilters}
           />
         </IdProvider>
       </>

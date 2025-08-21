@@ -2,11 +2,9 @@ import { Map, OrderedMap, Set } from "immutable";
 
 import {
   simpleUpdater,
-  BasicUpdater,
   Updater,
   SimpleCallback,
   simpleUpdaterWithChildren,
-  MapRepo,
   ValueOrErrors,
   PredicateValue,
   ValueRecord,
@@ -27,6 +25,10 @@ import {
   ValueTuple,
   ValueUnit,
   TableApiFiltering,
+  FilterType,
+  MapRepo,
+  ValueFilter,
+  DispatchParsedType,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -48,7 +50,6 @@ export type TableAbstractRendererReadonlyContext<
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
   apiMethods: Array<TableMethod>;
-  filtering: TableApiFiltering<any>;
   sorting: Array<string>;
   highlightedFilters: Array<string>;
 };
@@ -64,7 +65,9 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: TableAbstractRendererSelectedDetailRow;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
-    streamParams: Debounced<Map<string, string>>;
+    filters: Map<string, Array<ValueFilter>>;
+    sorting: Array<[string, "Ascending" | "Descending"]>;
+    filterAndSortParam: Debounced<string>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
       Map<string, string>,
@@ -81,8 +84,10 @@ export const TableAbstractRendererState = {
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      streamParams: Debounced.Default(Map()),
+      filterAndSortParam: Debounced.Default(""),
       rowStates: Map(),
+      filters: Map(),
+      sorting: [],
       // TODO: replace with sum
       getChunkWithParams: undefined as any,
       stream: undefined as any,
@@ -100,7 +105,13 @@ export const TableAbstractRendererState = {
           "stream",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "streamParams",
+          "filterAndSortParam",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "filters",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "sorting",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "initializationStatus",
@@ -128,14 +139,46 @@ export const TableAbstractRendererState = {
       })("commonFormState"),
     },
     Template: {
-      searchText: (
-        key: string,
-        _: BasicUpdater<string>,
+      // TODO -- at the end of each filter / sorting, update the filterAndSortParam debounced after parsing the filters and sorting
+      addFilter: (
+        columnName: string,
+        filter: ValueFilter,
       ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
-          Debounced.Updaters.Template.value(
-            MapRepo.Updaters.upsert(key, () => "", _),
-          ),
+        TableAbstractRendererState.Updaters.Core.customFormState.children.filters(
+          (_) => ({
+            ..._,
+            filters: _.set(columnName, [...(_.get(columnName) ?? []), filter]),
+          }),
+        ),
+      removeFilter: (
+        columnName: string,
+        filterIndex: number,
+      ): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.filters(
+          (_) => ({
+            ..._,
+            filters: _.set(
+              columnName,
+              _.get(columnName) == undefined
+                ? []
+                : _.get(columnName)!
+                    .slice(0, filterIndex)
+                    .concat(_.get(columnName)!.slice(filterIndex + 1)),
+            ),
+          }),
+        ),
+      addSorting: (
+        columnName: string,
+        direction: "Ascending" | "Descending",
+      ): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
+          (_) => [..._, [columnName, direction]],
+        ),
+      removeSorting: (
+        sortingIndex: number,
+      ): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
+          (_) => _.slice(0, sortingIndex).concat(_.slice(sortingIndex + 1)),
         ),
       loadMore: (): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
@@ -149,6 +192,13 @@ export const TableAbstractRendererState = {
   },
   // TODO: clean up the streams to accept data as a value or errors
   Operations: {
+    // TODO -- need to also parse via api
+    // parseFiltersAndSortingToBase64String: (
+    //   filters: Map<string, Array<ValueFilter>>,
+    //   sorting: Array<string>,
+    // ): string => {
+    //   return btoa(JSON.stringify({ filters, sorting }));
+    // },
     tableValuesToValueRecord: (
       values: any,
       fromApiRaw: (value: any) => ValueOrErrors<PredicateValue, string>,
@@ -209,6 +259,13 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   reinitialize: SimpleCallback<void>;
+  addFilter: (columnName: string, filter: ValueFilter) => void;
+  removeFilter: (columnName: string, filterIndex: number) => void;
+  addSorting: (
+    columnName: string,
+    direction: "Ascending" | "Descending",
+  ) => void;
+  removeSorting: (sortingIndex: number) => void;
 };
 
 export type TableAbstractRendererView<
@@ -255,5 +312,24 @@ export type TableAbstractRendererView<
       TableAbstractRendererState,
       TableAbstractRendererForeignMutationsExpected<Flags>
     >;
+    AllowedFilters: Map<
+      string,
+      [
+        Template<
+          CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            CommonAbstractRendererState,
+          CommonAbstractRendererState,
+          CommonAbstractRendererViewOnlyReadonlyContext
+        >,
+        Array<FilterType<any>>,
+      ]
+    >;
+    AllowedSorting: Array<string>;
+    HighlightedFilters: Array<string>;
   }
 >;

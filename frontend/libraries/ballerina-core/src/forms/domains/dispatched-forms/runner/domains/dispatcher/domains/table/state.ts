@@ -10,6 +10,9 @@ import {
   PredicateValue,
   LookupType,
   LookupTypeAbstractRenderer,
+  Dispatcher,
+  Value,
+  FilterType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -177,21 +180,55 @@ export const TableDispatcher = {
                   dispatcherContext,
                   isInlined,
                   tableApi,
-                ).Then((detailsRenderer) =>
-                  dispatcherContext
+                ).Then((detailsRenderer) => {
+                  const api = renderer.api ?? tableApi;
+                  const filtering =
+                    api == undefined
+                      ? undefined
+                      : (dispatcherContext.specApis.tables?.get(api!)
+                          ?.filtering ?? undefined);
+
+                  // TODO - this can be significantly improved, also to provide an error if something fails
+                  const AllowedFilters: Map<
+                    string,
+                    [Template<any, any, any, any>, FilterType<any>[]]
+                  > = (() => {
+                    if (filtering == undefined) {
+                      return Map();
+                    }
+                    return filtering
+                      .map((columnFilters) => ({
+                        template: Dispatcher.Operations.DispatchAs(
+                          columnFilters.displayRenderer,
+                          dispatcherContext,
+                          "table column filter renderer",
+                          false,
+                          isInlined,
+                          tableApi,
+                        ),
+                        filters: columnFilters.filters,
+                      }))
+                      .filter(
+                        (dispatchedFilterRenderer) =>
+                          dispatchedFilterRenderer.template.kind == "value",
+                      )
+                      .map((dispatchedFilterRenderer) => [
+                        (
+                          dispatchedFilterRenderer.template as Value<
+                            Template<any, any, any, any>
+                          >
+                        ).value,
+                        dispatchedFilterRenderer.filters.toArray(),
+                      ] as const);
+                  })();
+
+                  return dispatcherContext
                     .getConcreteRenderer("table", renderer.concreteRenderer)
                     .Then((concreteRenderer) =>
                       TableDispatcher.Operations.GetApi(
                         renderer.api ?? tableApi,
                         dispatcherContext,
                       ).Then((tableApiSource) => {
-                        const api = renderer.api ?? tableApi;
-                        const filtering =
-                          api == undefined
-                            ? undefined
-                            : (dispatcherContext.specApis.tables?.get(api!)
-                                ?.filtering ?? undefined);
-
                         const highlightedFilters =
                           api == undefined
                             ? []
@@ -211,6 +248,7 @@ export const TableDispatcher = {
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                             tableEntityType,
+                            AllowedFilters,
                           )
                             .mapContext((_: any) => ({
                               ..._,
@@ -222,7 +260,6 @@ export const TableDispatcher = {
                                       api!,
                                     )?.methods ?? []),
                               tableApiSource,
-                              filtering,
                               sorting,
                               highlightedFilters,
                               fromTableApiParser:
@@ -233,8 +270,8 @@ export const TableDispatcher = {
                             .withView(concreteRenderer),
                         );
                       }),
-                    ),
-                ),
+                    );
+                }),
               )
             : ValueOrErrors.Default.throwOne<
                 Template<any, any, any, any>,

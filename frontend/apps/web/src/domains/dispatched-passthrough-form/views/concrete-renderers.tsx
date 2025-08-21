@@ -1225,7 +1225,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     streamingTable: () => (props) => {
-      console.debug("streamingTable", props.context.filtering);
       return (
         <>
           <h3>{props.context.label}</h3>
