@@ -159,10 +159,7 @@ export const TableApis = {
           typeof key == "string" && typeof value == "object" && value != null,
       ),
     IsValidTableApi: (value: unknown): value is SerializedTableApi =>
-      typeof value == "object" &&
-      value != null &&
-      "type" in value &&
-      "methods" in value,
+      typeof value == "object" && value != null && "type" in value,
     IsMethod: (value: unknown): value is TableMethod => {
       return (
         isString(value) &&
@@ -219,67 +216,80 @@ export const TableApis = {
                           [ColumnName, ColumnFilters<T>],
                           string
                         >(`display property is missing from value`)
-                      : !("type" in value)
+                      : !isObject(value.display)
                         ? ValueOrErrors.Default.throwOne<
                             [ColumnName, ColumnFilters<T>],
                             string
-                          >(`type property is missing from value`)
-                        : !("operators" in value)
+                          >(`display is not an object`)
+                        : !("renderer" in value.display)
                           ? ValueOrErrors.Default.throwOne<
                               [ColumnName, ColumnFilters<T>],
                               string
-                            >(`operators property is missing from value`)
-                          : !Array.isArray(value.operators)
+                            >(`renderer property is missing from display`)
+                          : !("type" in value)
                             ? ValueOrErrors.Default.throwOne<
                                 [ColumnName, ColumnFilters<T>],
                                 string
-                              >(`operators is not an array`)
-                            : DispatchParsedType.Operations.ParseRawType(
-                                "filter",
-                                value.type as SerializedType<T>,
-                                Set(),
-                                {},
-                                Map(),
-                                injectedPrimitives,
-                              ).Then((type) =>
-                                Renderer.Operations.Deserialize(
-                                  type[0],
-                                  value.display,
-                                  concreteRenderers,
-                                  types,
-                                  undefined,
-                                ).Then((renderer) =>
-                                  ValueOrErrors.Operations.All<
-                                    FilterType<T>,
+                              >(`type property is missing from value`)
+                            : !("operators" in value)
+                              ? ValueOrErrors.Default.throwOne<
+                                  [ColumnName, ColumnFilters<T>],
+                                  string
+                                >(`operators property is missing from value`)
+                              : !Array.isArray(value.operators)
+                                ? ValueOrErrors.Default.throwOne<
+                                    [ColumnName, ColumnFilters<T>],
                                     string
-                                  >(
-                                    List<ValueOrErrors<FilterType<T>, string>>(
-                                      // checked above that this is an array
-                                      (value.operators as unknown[]).map(
-                                        (operator: unknown) =>
-                                          !isString(operator)
-                                            ? ValueOrErrors.Default.throwOne<
-                                                FilterType<T>,
-                                                string
-                                              >(`operator is not a string`)
-                                            : DispatchParsedType.Operations.ParseRawFilterType(
-                                                operator,
-                                                type[0],
-                                              ),
+                                  >(`operators is not an array`)
+                                : DispatchParsedType.Operations.ParseRawType(
+                                    "filter",
+                                    value.type as SerializedType<T>,
+                                    Set(),
+                                    {},
+                                    Map(),
+                                    injectedPrimitives,
+                                  ).Then((type) =>
+                                    Renderer.Operations.Deserialize(
+                                      type[0],
+                                      // checked above that this is an object with renderer property
+                                      (value.display as { renderer: string }).renderer,
+                                      concreteRenderers,
+                                      types,
+                                      undefined,
+                                    ).Then((renderer) =>
+                                      ValueOrErrors.Operations.All<
+                                        FilterType<T>,
+                                        string
+                                      >(
+                                        List<
+                                          ValueOrErrors<FilterType<T>, string>
+                                        >(
+                                          // checked above that this is an array
+                                          (value.operators as unknown[]).map(
+                                            (operator: unknown) =>
+                                              !isString(operator)
+                                                ? ValueOrErrors.Default.throwOne<
+                                                    FilterType<T>,
+                                                    string
+                                                  >(`operator is not a string`)
+                                                : DispatchParsedType.Operations.ParseRawFilterType(
+                                                    operator,
+                                                    type[0],
+                                                  ),
+                                          ),
+                                        ),
+                                      ).Then((filters) =>
+                                        ValueOrErrors.Default.return([
+                                          key,
+                                          {
+                                            displayType: type[0],
+                                            displayRenderer: renderer,
+                                            filters,
+                                          },
+                                        ] as const),
                                       ),
                                     ),
-                                  ).Then((filters) =>
-                                    ValueOrErrors.Default.return([
-                                      key,
-                                      {
-                                        displayType: type[0],
-                                        displayRenderer: renderer,
-                                        filters,
-                                      },
-                                    ] as const),
                                   ),
-                                ),
-                              ),
               ),
             ),
           ).Then((filters) => ValueOrErrors.Default.return(Map(filters)))
@@ -325,7 +335,7 @@ export const TableApis = {
                 Object.entries(serializedApiTables).map(([key, value]) =>
                   !TableApis.Operations.IsValidTableApi(value)
                     ? ValueOrErrors.Default.throwOne(
-                        `value is not a valid table api object`,
+                        `${key} is not a valid table api object`,
                       )
                     : TableApis.Operations.DeserializeFiltering(
                         concreteRenderers,

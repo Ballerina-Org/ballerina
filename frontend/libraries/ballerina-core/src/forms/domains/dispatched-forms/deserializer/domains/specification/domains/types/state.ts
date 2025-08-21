@@ -1175,7 +1175,7 @@ export const DispatchParsedType = {
           return ValueOrErrors.Default.return(
             DispatchParsedType.Default.filterNotEqualsTo(arg),
           );
-        case "==":
+        case "=":
           return ValueOrErrors.Default.return(
             DispatchParsedType.Default.filterEqualsTo(arg),
           );

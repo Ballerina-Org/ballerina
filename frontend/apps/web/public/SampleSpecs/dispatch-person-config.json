@@ -646,7 +646,18 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User",
-        "methods": ["move", "duplicate"]
+        "methods": ["move", "duplicate"],
+        "sorting": ["Name"],
+        "highlightedFilters": ["Name"],
+        "filtering": {
+          "Name": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "startsWith"]
+          }
+        }
       },
       "ActiveFriendsApi": {
         "type": "Friend",
