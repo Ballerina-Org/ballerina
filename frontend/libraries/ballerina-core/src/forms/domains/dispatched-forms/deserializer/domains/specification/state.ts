@@ -261,7 +261,10 @@ export const Specification = {
                                 serializedSpecifications.apis.searchableStreams,
                               ).Then((streams) =>
                                 TableApis.Operations.Deserialize(
+                                  concreteRenderers,
+                                  allTypes,
                                   serializedSpecifications.apis.tables,
+                                  injectedPrimitives,
                                 ).Then((tables) =>
                                   LookupApis.Operations.Deserialize(
                                     serializedSpecifications.apis.lookups,

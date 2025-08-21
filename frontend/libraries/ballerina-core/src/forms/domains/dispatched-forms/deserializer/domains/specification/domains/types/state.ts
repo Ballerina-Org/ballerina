@@ -675,7 +675,8 @@ export const DispatchParsedType = {
     ): FilterNotEqualsToType<T> => ({
       kind: "!=",
       notEqualsTo,
-      asString: () => FilterNotEqualsToType.SerializeToString(notEqualsTo.asString()),
+      asString: () =>
+        FilterNotEqualsToType.SerializeToString(notEqualsTo.asString()),
     }),
     filterGreaterThanOrEqualsTo: <T>(
       greaterThanOrEqualsTo: DispatchParsedType<T>,
@@ -932,7 +933,9 @@ export const DispatchParsedType = {
         case "=":
           return FilterEqualsToType.SerializeToString(type.equalsTo.asString());
         case "!=":
-          return FilterNotEqualsToType.SerializeToString(type.notEqualsTo.asString());
+          return FilterNotEqualsToType.SerializeToString(
+            type.notEqualsTo.asString(),
+          );
         case ">=":
           return FilterGreaterThanOrEqualsToType.SerializeToString(
             type.greaterThanOrEqualsTo.asString(),
@@ -1148,7 +1151,6 @@ export const DispatchParsedType = {
     ParseRawFilterType: <T>(
       rawFilterType: unknown,
       arg: DispatchParsedType<T>,
-
     ): ValueOrErrors<FilterType<T>, string> => {
       if (typeof rawFilterType != "string") {
         return ValueOrErrors.Default.throwOne<FilterType<T>, string>(
