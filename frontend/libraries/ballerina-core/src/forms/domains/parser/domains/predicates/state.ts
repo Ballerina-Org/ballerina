@@ -314,6 +314,32 @@ export const ValueSum = {
   },
 };
 
+export type ValueSumN = {
+  kind: "sumN";
+  caseIndex: number;
+  arity: number;
+  value: PredicateValue;
+};
+export const ValueSumN = {
+  Default: (
+    caseIndex: number,
+    arity: number,
+    value: PredicateValue,
+  ): ValueSumN => ({
+    kind: "sumN",
+    caseIndex,
+    arity,
+    value,
+  }),
+  Updaters: {
+    case: (caseIndex: number) => (upd: BasicUpdater<PredicateValue>) =>
+      Updater<ValueSumN>((v) =>
+        ValueSumN.Default(caseIndex, v.arity, upd(v.value)),
+      ),
+    ...simpleUpdater<ValueSumN>()("value"),
+  },
+};
+
 export const ValueTuple = {
   Default: (): ValueTuple => ({
     kind: "tuple",
@@ -363,6 +389,140 @@ export const ValueTable = {
     ...simpleUpdater<ValueTable>()("data"),
   },
 };
+
+// Filters
+export type ValueFilterContains = {
+  kind: "contains";
+  contains: PredicateValue;
+};
+
+export const ValueFilterContains = {
+  Default: (contains: PredicateValue): ValueFilterContains => ({
+    kind: "contains",
+    contains,
+  }),
+};
+
+export type ValueFilterEqualsTo = {
+  kind: "=";
+  equalsTo: PredicateValue;
+};
+
+export const ValueFilterEqualsTo = {
+  Default: (equalsTo: PredicateValue): ValueFilterEqualsTo => ({
+    kind: "=",
+    equalsTo,
+  }),
+};
+
+export type ValueFilterNotEqualsTo = {
+  kind: "!=";
+  notEqualsTo: PredicateValue;
+};
+
+export const ValueFilterNotEqualsTo = {
+  Default: (notEqualsTo: PredicateValue): ValueFilterNotEqualsTo => ({
+    kind: "!=",
+    notEqualsTo,
+  }),
+};
+
+export type ValueFilterGreaterThanOrEqualsTo = {
+  kind: ">=";
+  greaterThanOrEqualsTo: PredicateValue;
+};
+
+export const ValueFilterGreaterThanOrEqualsTo = {
+  Default: (
+    greaterThanOrEqualsTo: PredicateValue,
+  ): ValueFilterGreaterThanOrEqualsTo => ({
+    kind: ">=",
+    greaterThanOrEqualsTo,
+  }),
+};
+
+export type ValueFilterGreaterThan = {
+  kind: ">";
+  greaterThan: PredicateValue;
+};
+
+export const ValueFilterGreaterThan = {
+  Default: (greaterThan: PredicateValue): ValueFilterGreaterThan => ({
+    kind: ">",
+    greaterThan,
+  }),
+};
+
+export type ValueFilterIsNotNull = {
+  kind: "!=null";
+};
+
+export const ValueFilterIsNotNull = {
+  Default: (): ValueFilterIsNotNull => ({
+    kind: "!=null",
+  }),
+};
+
+export type ValueFilterIsNull = {
+  kind: "=null";
+};
+
+export const ValueFilterIsNull = {
+  Default: (): ValueFilterIsNull => ({
+    kind: "=null",
+  }),
+};
+
+export type ValueFilterSmallerThanOrEqualsTo = {
+  kind: "<=";
+  smallerThanOrEqualsTo: PredicateValue;
+};
+
+export const ValueFilterSmallerThanOrEqualsTo = {
+  Default: (
+    smallerThanOrEqualsTo: PredicateValue,
+  ): ValueFilterSmallerThanOrEqualsTo => ({
+    kind: "<=",
+    smallerThanOrEqualsTo,
+  }),
+};
+
+export type ValueFilterSmallerThan = {
+  kind: "<";
+  smallerThan: PredicateValue;
+};
+
+export const ValueFilterSmallerThan = {
+  Default: (smallerThan: PredicateValue): ValueFilterSmallerThan => ({
+    kind: "<",
+    smallerThan,
+  }),
+};
+
+export type ValueFilterStartsWith = {
+  kind: "startsWith";
+  startsWith: PredicateValue;
+};
+
+export const ValueFilterStartsWith = {
+  Default: (startsWith: PredicateValue): ValueFilterStartsWith => ({
+    kind: "startsWith",
+    startsWith,
+  }),
+};
+
+export type ValueFilter =
+  | ValueFilterContains
+  | ValueFilterEqualsTo
+  | ValueFilterNotEqualsTo
+  | ValueFilterGreaterThanOrEqualsTo
+  | ValueFilterGreaterThan
+  | ValueFilterIsNotNull
+  | ValueFilterIsNull
+  | ValueFilterSmallerThanOrEqualsTo
+  | ValueFilterSmallerThan
+  | ValueFilterStartsWith;
+
 export type PredicateValue =
   | ValuePrimitive
   | ValueUnit
@@ -372,9 +532,11 @@ export type PredicateValue =
   | ValueOption
   | ValueVarLookup
   | ValueSum
+  | ValueSumN
   | ValueCustom
   | ValueTable
-  | ValueReadOnly;
+  | ValueReadOnly
+  | ValueFilter;
 
 export type ExprLambda = { kind: "lambda"; parameter: string; body: Expr };
 export type ExprMatchCase = {
@@ -443,6 +605,16 @@ export const PredicateValue = {
       kind: "sum",
       value,
     }),
+    sumN: (
+      caseIndex: number,
+      arity: number,
+      value: PredicateValue,
+    ): ValueSumN => ({
+      kind: "sumN",
+      caseIndex,
+      arity,
+      value,
+    }),
     table: (
       from: number,
       to: number,
@@ -458,6 +630,54 @@ export const PredicateValue = {
     readonly: (value: PredicateValue): ValueReadOnly => ({
       kind: "readOnly",
       ReadOnly: value,
+    }),
+    filterContains: (contains: PredicateValue): ValueFilterContains => ({
+      kind: "contains",
+      contains,
+    }),
+    filterEqualsTo: (equalsTo: PredicateValue): ValueFilterEqualsTo => ({
+      kind: "=",
+      equalsTo,
+    }),
+    filterNotEqualsTo: (
+      notEqualsTo: PredicateValue,
+    ): ValueFilterNotEqualsTo => ({
+      kind: "!=",
+      notEqualsTo,
+    }),
+    filterGreaterThanOrEqualsTo: (
+      greaterThanOrEqualsTo: PredicateValue,
+    ): ValueFilterGreaterThanOrEqualsTo => ({
+      kind: ">=",
+      greaterThanOrEqualsTo,
+    }),
+    filterGreaterThan: (
+      greaterThan: PredicateValue,
+    ): ValueFilterGreaterThan => ({
+      kind: ">",
+      greaterThan,
+    }),
+    filterIsNotNull: (): ValueFilterIsNotNull => ({
+      kind: "!=null",
+    }),
+    filterIsNull: (): ValueFilterIsNull => ({
+      kind: "=null",
+    }),
+    filterSmallerThanOrEqualsTo: (
+      smallerThanOrEqualsTo: PredicateValue,
+    ): ValueFilterSmallerThanOrEqualsTo => ({
+      kind: "<=",
+      smallerThanOrEqualsTo,
+    }),
+    filterSmallerThan: (
+      smallerThan: PredicateValue,
+    ): ValueFilterSmallerThan => ({
+      kind: "<",
+      smallerThan,
+    }),
+    filterStartsWith: (startsWith: PredicateValue): ValueFilterStartsWith => ({
+      kind: "startsWith",
+      startsWith,
     }),
   },
   Operations: {
@@ -545,6 +765,13 @@ export const PredicateValue = {
         value.kind == "sum"
       );
     },
+    IsSumN: (value: PredicateValue | Expr): value is ValueSumN => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "sumN"
+      );
+    },
     IsVarLookup: (value: PredicateValue | Expr): value is ValueVarLookup => {
       return (
         typeof value == "object" &&
@@ -564,6 +791,96 @@ export const PredicateValue = {
         typeof value == "object" &&
         !PredicateValue.Operations.IsDate(value) &&
         value.kind == "readOnly"
+      );
+    },
+    IsFilterContains: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterContains => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "contains"
+      );
+    },
+    IsFilterEqualsTo: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterEqualsTo => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "="
+      );
+    },
+    IsFilterNotEqualsTo: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterNotEqualsTo => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "!="
+      );
+    },
+    IsFilterGreaterThanOrEqualsTo: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterGreaterThanOrEqualsTo => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == ">="
+      );
+    },
+    IsFilterGreaterThan: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterGreaterThan => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == ">"
+      );
+    },
+    IsFilterIsNotNull: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterIsNotNull => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "!=null"
+      );
+    },
+    IsFilterIsNull: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterIsNull => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "=null"
+      );
+    },
+    IsFilterSmallerThanOrEqualsTo: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterSmallerThanOrEqualsTo => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "<="
+      );
+    },
+    IsFilterSmallerThan: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterSmallerThan => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "<"
+      );
+    },
+    IsFilterStartsWith: (
+      value: PredicateValue | Expr,
+    ): value is ValueFilterStartsWith => {
+      return (
+        typeof value == "object" &&
+        !PredicateValue.Operations.IsDate(value) &&
+        value.kind == "startsWith"
       );
     },
     ParseAsDate: (json: any): ValueOrErrors<PredicateValue, string> => {

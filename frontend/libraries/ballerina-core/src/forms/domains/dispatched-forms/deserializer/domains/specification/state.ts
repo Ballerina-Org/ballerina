@@ -35,7 +35,7 @@ export type SerializedSpecification = {
 
 export type Specification<T> = {
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
-  apis: SpecificationApis;
+  apis: SpecificationApis<T>;
   forms: Map<string, Renderer<T>>;
   launchers: {
     create: Map<string, CreateLauncher>;

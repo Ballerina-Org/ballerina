@@ -1,12 +1,21 @@
-import { List, Map } from "immutable";
+import { List, Map, Set } from "immutable";
 import {
+  ConcreteRenderers,
+  DispatchInjectablesTypes,
+  DispatchInjectedPrimitives,
   EntityApi,
   isObject,
   isString,
-  NestedRenderer,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { DispatchIsObject, DispatchTypeName } from "../types/state";
+import {
+  DispatchIsObject,
+  DispatchParsedType,
+  DispatchTypeName,
+  FilterType,
+  SerializedType,
+} from "../types/state";
 
 export type SerializedEntityApi = {
   type?: any;
@@ -111,17 +120,22 @@ const TableMethods = {
 } as const;
 
 type ColumnName = string;
-// export type ColumnFilter = {
-//   kind: "filter";
-//   filter: DispatchParsedType<T>;
-//   asString: () => StringSerializedType;
-// };
-export type ColumnFilters<T> = List<[NestedRenderer<T>, ColumnFilter]>
+
+export type ColumnFilters<T> = {
+  displayType: DispatchParsedType<T>;
+  displayRenderer: Renderer<T>;
+  filters: List<FilterType<T>>;
+};
 export type TableMethod = (typeof TableMethods)[keyof typeof TableMethods];
 export type TableApiName = string;
+export type TableApiFiltering<T> = Map<ColumnName, ColumnFilters<T>>;
 export type TableApis<T> = Map<
   TableApiName,
-  { type: DispatchTypeName; methods: Array<TableMethod>; filtering: Map<ColumnName, ColumnFilters<T>> }
+  {
+    type: DispatchTypeName;
+    methods: Array<TableMethod>;
+    filtering?: TableApiFiltering<T>;
+  }
 >;
 export const TableApis = {
   Operations: {
@@ -133,6 +147,72 @@ export const TableApis = {
     },
     IsMethodsArray: (values: unknown[]): values is Array<TableMethod> => {
       return values.every((value) => TableApis.Operations.IsMethod(value));
+    },
+    DeserializeFiltering: <
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext,
+    >(
+      concreteRenderers: ConcreteRenderers<
+        T,
+        Flags,
+        CustomPresentationContexts,
+        ExtraContext
+      >,
+      types: Map<DispatchTypeName, DispatchParsedType<T>>,
+      serializedFiltering?: unknown,
+      injectedPrimitives?: DispatchInjectedPrimitives<T>,
+    ): ValueOrErrors<undefined | TableApiFiltering<T>, string> => {
+      return serializedFiltering
+        ? ValueOrErrors.Operations.All(
+            List<ValueOrErrors<[ColumnName, ColumnFilters<T>], string>>(
+              Object.entries(serializedFiltering).map(([key, value]) =>
+                !isString(key)
+                  ? ValueOrErrors.Default.throwOne<[ColumnName, ColumnFilters<T>], string>(`key is not a string`)
+                  : !isObject(value)
+                    ? ValueOrErrors.Default.throwOne<[ColumnName, ColumnFilters<T>], string>(`value is not an object`)
+                    : !("display" in value)
+                      ? ValueOrErrors.Default.throwOne<[ColumnName, ColumnFilters<T>], string>(
+                          `display property is missing from value`,
+                        )
+                      : !("type" in value)
+                        ? ValueOrErrors.Default.throwOne<[ColumnName, ColumnFilters<T>], string>(
+                            `type property is missing from value`,
+                          )
+                        : !("operators" in value)
+                          ? ValueOrErrors.Default.throwOne<[ColumnName, ColumnFilters<T>], string>(
+                              `operators property is missing from value`,
+                            )
+                          : DispatchParsedType.Operations.ParseRawType(
+                              "filter",
+                              value.type as SerializedType<T>,
+                              Set(),
+                              {},
+                              Map(),
+                              injectedPrimitives,
+                            ).Then((type) =>
+                              Renderer.Operations.Deserialize(
+                                type[0],
+                                value.display,
+                                concreteRenderers,
+                                types,
+                                undefined,
+                              ).Then((renderer) =>
+                                ValueOrErrors.Default.return([
+                                  key,
+                                  {
+                                    displayType: type[0],
+                                    displayRenderer: renderer,
+                                    filters: value.operators as any,
+                                  },
+                                ] as const),
+                              ),
+                            ),
+              ),
+            ),
+          ).Then((filters) => ValueOrErrors.Default.return(Map(filters)))
+        : ValueOrErrors.Default.return(undefined);
     },
     Deserialize: <T>(
       serializedApiTables?: unknown,
@@ -187,8 +267,7 @@ export const TableApis = {
                                 : ValueOrErrors.Default.return([
                                     key,
                                     {
-                                      // TODO: type assertion is safe but would like typescript to know that
-                                      type: value.type as DispatchTypeName,
+                                      type: value.type,
                                       methods: value.methods,
                                     },
                                   ]),

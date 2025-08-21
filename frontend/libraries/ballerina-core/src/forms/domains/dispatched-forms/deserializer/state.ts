@@ -79,7 +79,7 @@ export type DispatcherContext<
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
-  specApis: SpecificationApis;
+  specApis: SpecificationApis<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
