@@ -324,6 +324,22 @@ export const SumType = {
   },
 };
 
+export type SumNType<T> = {
+  kind: "sumN";
+  args: Array<DispatchParsedType<T>>;
+  arity: number;
+  asString: () => StringSerializedType;
+};
+
+export const SumNType = {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+    arity: number,
+  ): StringSerializedType => {
+    return `[sumN; arity: ${arity}; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type MapType<T> = {
   kind: "map";
   args: Array<DispatchParsedType<T>>;
@@ -513,6 +529,7 @@ export type DispatchParsedType<T> =
   | ListType<T>
   | TupleType<T>
   | SumType<T>
+  | SumNType<T>
   | MapType<T>
   | TableType<T>
   | OneType<T>
@@ -580,6 +597,12 @@ export const DispatchParsedType = {
       kind: "sum",
       args,
       asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
+    }),
+    sumN: <T>(args: Array<DispatchParsedType<T>>, arity: number): DispatchParsedType<T> => ({
+      kind: "sumN",
+      args,
+      arity,
+      asString: () => SumNType.SerializeToString(args.map((v) => v.asString()), arity),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
@@ -842,6 +865,13 @@ export const DispatchParsedType = {
             type.args.map((v) =>
               DispatchParsedType.Operations.SerializeToString(v),
             ),
+          );
+        case "sumN":
+          return SumNType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+            type.arity,
           );
         case "map":
           return MapType.SerializeToString(
