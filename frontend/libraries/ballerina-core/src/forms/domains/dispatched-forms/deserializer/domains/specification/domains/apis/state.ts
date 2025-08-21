@@ -3,6 +3,7 @@ import {
   EntityApi,
   isObject,
   isString,
+  NestedRenderer,
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { DispatchIsObject, DispatchTypeName } from "../types/state";
@@ -20,11 +21,11 @@ export type SerializedLookupApi = {
   tables?: unknown;
 };
 
-export type SpecificationApis = {
+export type SpecificationApis<T> = {
   entities: Map<string, EntityApi>; // TODO move entity apis out
   enums?: EnumApis;
   streams?: StreamApis;
-  tables?: TableApis;
+  tables?: TableApis<T>;
   lookups?: LookupApis;
 };
 
@@ -108,11 +109,19 @@ const TableMethods = {
   remove: "remove",
   move: "move",
 } as const;
+
+type ColumnName = string;
+// export type ColumnFilter = {
+//   kind: "filter";
+//   filter: DispatchParsedType<T>;
+//   asString: () => StringSerializedType;
+// };
+export type ColumnFilters<T> = List<[NestedRenderer<T>, ColumnFilter]>
 export type TableMethod = (typeof TableMethods)[keyof typeof TableMethods];
 export type TableApiName = string;
-export type TableApis = Map<
+export type TableApis<T> = Map<
   TableApiName,
-  { type: DispatchTypeName; methods: Array<TableMethod> }
+  { type: DispatchTypeName; methods: Array<TableMethod>; filtering: Map<ColumnName, ColumnFilters<T>> }
 >;
 export const TableApis = {
   Operations: {
@@ -125,9 +134,9 @@ export const TableApis = {
     IsMethodsArray: (values: unknown[]): values is Array<TableMethod> => {
       return values.every((value) => TableApis.Operations.IsMethod(value));
     },
-    Deserialize: (
+    Deserialize: <T>(
       serializedApiTables?: unknown,
-    ): ValueOrErrors<undefined | TableApis, string> =>
+    ): ValueOrErrors<undefined | TableApis<T>, string> =>
       serializedApiTables === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiTables)
