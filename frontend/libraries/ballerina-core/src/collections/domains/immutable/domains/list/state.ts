@@ -1,7 +1,7 @@
 import { List } from "immutable";
 import { Updater } from "../../../../../fun/domains/updater/state";
 import { BasicFun } from "../../../../../fun/state";
-import { unit } from "../../../../../fun/domains/unit/state";
+import { Unit, unit } from "../../../../../fun/domains/unit/state";
 import { Option, Sum } from "../../../sum/state";
 import { ValueOrErrors } from "../../../valueOrErrors/state";
 

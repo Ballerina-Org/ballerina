@@ -37,6 +37,8 @@ import {
   ValueFilter,
   CommonAbstractRendererViewOnlyReadonlyContext,
   FilterType,
+  ListRepo,
+  Updater,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -103,8 +105,8 @@ export const TableAbstractRenderer = <
   TableEntityType: RecordType<any>,
   Filters: Map<
     string,
-    [
-      Template<
+    {
+      template: Template<
         CommonAbstractRendererReadonlyContext<
           DispatchParsedType<any>,
           PredicateValue,
@@ -113,10 +115,13 @@ export const TableAbstractRenderer = <
         > &
           CommonAbstractRendererState,
         CommonAbstractRendererState,
-        CommonAbstractRendererViewOnlyReadonlyContext
-      >,
-      Array<FilterType<any>>,
-    ]
+        CommonAbstractRendererForeignMutationsExpected
+      >;
+      type: DispatchParsedType<any>;
+      GetDefaultValue: () => PredicateValue;
+      GetDefaultState: () => CommonAbstractRendererState;
+      filters: Array<FilterType<any>>;
+    }
   >,
 ): Template<
   TableAbstractRendererReadonlyContext<
@@ -498,6 +503,66 @@ export const TableAbstractRenderer = <
 
   const ColumnLabels = CellTemplates.map((cellTemplate) => cellTemplate.label);
 
+  const EmbeddedAllowedFilters = Filters.map((filter, columnName) => ({
+    ...filter,
+    template: (index: number) =>
+      filter.template
+        .mapContext<
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState
+        >((_) => ({
+          value:
+            _.customFormState.filterValues.get(columnName)?.get(index). ??
+            filter.GetDefaultValue(),
+          locked: false,
+          disabled: false,
+          bindings: _.bindings,
+          extraContext: _.extraContext,
+          type: filter.type,
+          label: columnName,
+          tooltip: undefined,
+          details: undefined,
+          customPresentationContext: undefined,
+          remoteEntityVersionIdentifier: "",
+          domNodeAncestorPath: "",
+          typeAncestors: [],
+          lookupTypeAncestorNames: [],
+          ...(_.customFormState.filterStates.get(columnName)?.get(index) ??
+            filter.GetDefaultState()),
+        }))
+        .mapState<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children.filterStates(
+            MapRepo.Updaters.upsert(
+              columnName,
+              () => List([filter.GetDefaultState()]),
+              ListRepo.Updaters.update(index, Updater(_)),
+            ),
+          ),
+        )
+        .mapForeignMutationsFromProps<
+          TableAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
+          onChange: (updaterOption) =>
+            updaterOption.kind == "r"
+              ? props.setState(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
+                    MapRepo.Updaters.upsert(
+                      columnName,
+                      () => List([filter.GetDefaultValue()]),
+                      ListRepo.Updaters.update(
+                        index,
+                        Updater(updaterOption.value),
+                      ),
+                    ),
+                  ),
+                )
+              : id,
+        })),
+  }));
+
   return Template.Default<
     TableAbstractRendererReadonlyContext<
       CustomPresentationContext,
@@ -812,7 +877,7 @@ export const TableAbstractRenderer = <
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
-            AllowedFilters={Filters}
+            AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
           />

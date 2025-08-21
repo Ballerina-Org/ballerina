@@ -12,8 +12,11 @@ import {
   DispatchDelta,
   Option,
   ConcreteRenderers,
+  MapRepo,
+  id,
 } from "ballerina-core";
-import { OrderedMap, Set } from "immutable";
+import { OrderedMap, Map, Set } from "immutable";
+import { useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 
 export type DispatchPassthroughFormFlags = {
@@ -1225,9 +1228,36 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     streamingTable: () => (props) => {
+      const [colFilterDisplays, setColFilterDisplays] = useState<Map<string, boolean>>(
+        Map(props.AllowedFilters.map(_ => false))
+      );
+      
       return (
         <>
           <h3>{props.context.label}</h3>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "10px",
+            }}
+          >
+            {props.HighlightedFilters.map((filterName) => (
+              <>
+                {props.AllowedFilters.get(filterName)!.template(0)({
+                  ...props,
+                  view: unit,
+                })}
+              </>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "10px",
+            }}
+          ></div>
           <div
             style={{
               display: "flex",
@@ -1270,7 +1300,17 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                       />
                     </th>
                     {props.context.tableHeaders.map((header: any) => (
-                      <th style={{ border: "1px solid black" }}>{header}</th>
+                      <th style={{ border: "1px solid black" }}>
+                        {header}
+                        {props.AllowedFilters.has(header) &&
+                          <div onClick={() => setColFilterDisplays(MapRepo.Updaters.update(header, _ => !_))}>🔎</div>
+                        }
+                        {(colFilterDisplays.get(header) ?? false) && colFilterDisplays.get(header) &&
+                          props.AllowedFilters.get(header)!.template(0)({
+                            ...props,
+                            view: unit,
+                          })}
+                      </th>
                     ))}
                   </tr>
                 </thead>

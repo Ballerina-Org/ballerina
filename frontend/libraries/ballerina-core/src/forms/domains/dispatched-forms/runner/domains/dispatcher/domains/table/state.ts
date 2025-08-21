@@ -191,7 +191,13 @@ export const TableDispatcher = {
                   // TODO - this can be significantly improved, also to provide an error if something fails
                   const AllowedFilters: Map<
                     string,
-                    [Template<any, any, any, any>, FilterType<any>[]]
+                    {
+                      template: Template<any, any, any, any>;
+                      filters: FilterType<any>[];
+                      type: DispatchParsedType<any>;
+                      GetDefaultValue: () => PredicateValue;
+                      GetDefaultState: () => any;
+                    }
                   > = (() => {
                     if (filtering == undefined) {
                       return Map();
@@ -207,19 +213,43 @@ export const TableDispatcher = {
                           tableApi,
                         ),
                         filters: columnFilters.filters,
+                        type: columnFilters.displayType,
+                        GetDefaultValue: () =>
+                          dispatcherContext.defaultValue(
+                            columnFilters.displayType,
+                            columnFilters.displayRenderer,
+                          ),
+                        GetDefaultState: () =>
+                          dispatcherContext.defaultState(
+                            columnFilters.displayType,
+                            columnFilters.displayRenderer,
+                          ),
                       }))
                       .filter(
                         (dispatchedFilterRenderer) =>
-                          dispatchedFilterRenderer.template.kind == "value",
+                          dispatchedFilterRenderer.template.kind == "value" &&
+                          dispatchedFilterRenderer.GetDefaultValue().kind ==
+                            "value" &&
+                          dispatchedFilterRenderer.GetDefaultState().kind ==
+                            "value",
                       )
-                      .map((dispatchedFilterRenderer) => [
-                        (
+                      .map((dispatchedFilterRenderer) => ({
+                        template: (
                           dispatchedFilterRenderer.template as Value<
                             Template<any, any, any, any>
                           >
                         ).value,
-                        dispatchedFilterRenderer.filters.toArray(),
-                      ] as const);
+                        filters: dispatchedFilterRenderer.filters.toArray(),
+                        type: dispatchedFilterRenderer.type,
+                        GetDefaultValue: () =>
+                          (
+                            dispatchedFilterRenderer.GetDefaultValue() as Value<PredicateValue>
+                          ).value,
+                        GetDefaultState: () =>
+                          (
+                            dispatchedFilterRenderer.GetDefaultState() as Value<any>
+                          ).value,
+                      }));
                   })();
 
                   return dispatcherContext

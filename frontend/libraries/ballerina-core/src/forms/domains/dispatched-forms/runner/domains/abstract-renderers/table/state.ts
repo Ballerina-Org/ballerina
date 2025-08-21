@@ -1,4 +1,4 @@
-import { Map, OrderedMap, Set } from "immutable";
+import { Map, OrderedMap, Set, List } from "immutable";
 
 import {
   simpleUpdater,
@@ -29,6 +29,7 @@ import {
   MapRepo,
   ValueFilter,
   DispatchParsedType,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -75,6 +76,8 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     >;
     previousRemoteEntityVersionIdentifier: string;
     shouldReinitialize: boolean;
+    filterValues: Map<string, List<ValueFilter>>;
+    filterStates: Map<string, List<any>>;
   };
 };
 export const TableAbstractRendererState = {
@@ -93,6 +96,8 @@ export const TableAbstractRendererState = {
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
+      filterValues: Map(),
+      filterStates: Map(),
     },
   }),
   Updaters: {
@@ -130,6 +135,12 @@ export const TableAbstractRendererState = {
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "rowStates",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "filterValues",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "filterStates",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -314,20 +325,21 @@ export type TableAbstractRendererView<
     >;
     AllowedFilters: Map<
       string,
-      [
-        Template<
-          CommonAbstractRendererReadonlyContext<
-            DispatchParsedType<any>,
-            PredicateValue,
+      {
+        template: (index: number) => Template<
+          TableAbstractRendererReadonlyContext<
             CustomPresentationContext,
             ExtraContext
           > &
-            CommonAbstractRendererState,
-          CommonAbstractRendererState,
-          CommonAbstractRendererViewOnlyReadonlyContext
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          TableAbstractRendererForeignMutationsExpected<Flags>
         >,
-        Array<FilterType<any>>,
-      ]
+        type: DispatchParsedType<any>,
+        filters: Array<FilterType<any>>,
+        GetDefaultValue: () => PredicateValue,
+        GetDefaultState: () => CommonAbstractRendererState,
+      }
     >;
     AllowedSorting: Array<string>;
     HighlightedFilters: Array<string>;
