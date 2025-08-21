@@ -184,8 +184,26 @@ export const TableDispatcher = {
                       TableDispatcher.Operations.GetApi(
                         renderer.api ?? tableApi,
                         dispatcherContext,
-                      ).Then((tableApiSource) =>
-                        ValueOrErrors.Default.return(
+                      ).Then((tableApiSource) => {
+                        const api = renderer.api ?? tableApi;
+                        const filtering =
+                          api == undefined
+                            ? undefined
+                            : (dispatcherContext.specApis.tables?.get(api!)
+                                ?.filtering ?? undefined);
+
+                        const highlightedFilters =
+                          api == undefined
+                            ? []
+                            : (dispatcherContext.specApis.tables?.get(api!)
+                                ?.highlightedFilters ?? []);
+
+                        const sorting =
+                          api == undefined
+                            ? []
+                            : (dispatcherContext.specApis.tables?.get(api!)
+                                ?.sorting ?? []);
+                        return ValueOrErrors.Default.return(
                           TableAbstractRenderer(
                             Map(cellTemplates),
                             detailsRenderer,
@@ -198,20 +216,23 @@ export const TableDispatcher = {
                               ..._,
                               type: renderer.type,
                               apiMethods:
-                                tableApi == undefined
+                                api == undefined
                                   ? []
                                   : (dispatcherContext.specApis.tables?.get(
-                                      tableApi!,
+                                      api!,
                                     )?.methods ?? []),
                               tableApiSource,
+                              filtering,
+                              sorting,
+                              highlightedFilters,
                               fromTableApiParser:
                                 dispatcherContext.parseFromApiByType(
                                   renderer.type.arg,
                                 ),
                             }))
                             .withView(concreteRenderer),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
                 ),
               )

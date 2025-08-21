@@ -33,6 +33,7 @@ import {
   unit,
   ValueUnit,
   TableAbstractRendererSelectedDetailRow,
+  TableApiFiltering,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";

@@ -26,6 +26,7 @@ import {
   RecordType,
   ValueTuple,
   ValueUnit,
+  TableApiFiltering,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -47,6 +48,9 @@ export type TableAbstractRendererReadonlyContext<
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
   apiMethods: Array<TableMethod>;
+  filtering: TableApiFiltering<any>;
+  sorting: Array<string>;
+  highlightedFilters: Array<string>;
 };
 
 export type TableAbstractRendererSelectedDetailRow =

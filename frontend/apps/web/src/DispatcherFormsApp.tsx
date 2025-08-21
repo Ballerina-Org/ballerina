@@ -177,7 +177,6 @@ export const DispatcherFormsApp = (props: {}) => {
       );
     };
 
-  console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
   const onPersonConfigChange: DispatchOnChange<
     PredicateValue,
