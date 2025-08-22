@@ -3,6 +3,7 @@ package ballerina_test
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	ballerina "ballerina.com/core"
 	"github.com/stretchr/testify/require"
@@ -110,4 +111,20 @@ func TestFloat64Deserialization(t *testing.T) {
 	serialized := json.RawMessage(`{"kind":"float","value":"1.75"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, float64](1.75), deserialized)
+}
+
+func TestDateSerialization(t *testing.T) {
+	t.Parallel()
+	serializer := ballerina.DateSerializer()
+	date := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	serialized := serializer(date)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"kind":"date","value":"2025-01-01"}`)), serialized)
+}
+
+func TestDateDeserialization(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.DateDeserializer()
+	serialized := json.RawMessage(`{"kind":"date","value":"2025-01-01"}`)
+	deserialized := deserializer(serialized)
+	require.Equal(t, ballerina.Right[error, time.Time](time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)), deserialized)
 }

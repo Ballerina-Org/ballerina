@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 // The Serializer function should be total (i.e. never return an error).
@@ -164,6 +165,24 @@ func FloatDeserializer() Deserializer[float64] {
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, float64] {
 				return Bind(primitiveTypeForSerialization.getValueWithKind("float"), SumWrap(func(value string) (float64, error) {
 					return strconv.ParseFloat(value, 64)
+				}))
+			},
+		)
+	})
+}
+
+func DateSerializer() Serializer[time.Time] {
+	return withContext("on date", func(value time.Time) Sum[error, json.RawMessage] {
+		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "date", Value: value.Format(time.DateOnly)})
+	})
+}
+
+func DateDeserializer() Deserializer[time.Time] {
+	return withContext("on date", func(data json.RawMessage) Sum[error, time.Time] {
+		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
+			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, time.Time] {
+				return Bind(primitiveTypeForSerialization.getValueWithKind("date"), SumWrap(func(value string) (time.Time, error) {
+					return time.Parse(time.DateOnly, value)
 				}))
 			},
 		)
