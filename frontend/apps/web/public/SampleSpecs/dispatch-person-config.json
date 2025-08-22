@@ -647,7 +647,7 @@
       "ActiveUsersApi": {
         "type": "User",
         "methods": ["move", "duplicate"],
-        "sorting": ["Name"],
+        "sorting": ["Name", "City"],
         "highlightedFilters": ["Name"],
         "filtering": {
           "Name": {
@@ -656,6 +656,13 @@
             },
             "type": "string",
             "operators": ["=", "contains", "startsWith"]
+          },
+          "Surname": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "=null", "!=null"]
           }
         }
       },

@@ -883,6 +883,32 @@ export const PredicateValue = {
         value.kind == "startsWith"
       );
     },
+    KindAndValueToFilter: (kind: string, value: PredicateValue): ValueFilter => {
+      switch (kind) {
+        case "contains":
+          return PredicateValue.Default.filterContains(value);
+        case "=":
+          return PredicateValue.Default.filterEqualsTo(value);
+        case "!=":
+          return PredicateValue.Default.filterNotEqualsTo(value);
+        case ">=":
+          return PredicateValue.Default.filterGreaterThanOrEqualsTo(value);
+        case ">":
+          return PredicateValue.Default.filterGreaterThan(value);
+        case "!=null":
+          return PredicateValue.Default.filterIsNotNull();
+        case "=null":
+          return PredicateValue.Default.filterIsNull();
+        case "<=":
+          return PredicateValue.Default.filterSmallerThanOrEqualsTo(value);
+        case "<":
+          return PredicateValue.Default.filterSmallerThan(value);
+        case "startsWith":
+          return PredicateValue.Default.filterStartsWith(value);
+        default:
+          return PredicateValue.Default.filterEqualsTo(value);
+      }
+    },
     ParseAsDate: (json: any): ValueOrErrors<PredicateValue, string> => {
       if (PredicateValue.Operations.IsDate(json))
         return ValueOrErrors.Default.return(json);

@@ -31,6 +31,8 @@ import {
   DispatchParsedType,
   CommonAbstractRendererForeignMutationsExpected,
   FilterTypeKind,
+  ListAbstractRendererViewForeignMutationsExpected,
+  ListRepo,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -67,8 +69,8 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: TableAbstractRendererSelectedDetailRow;
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
-    filters: Map<string, Array<ValueFilter>>;
-    sorting: Array<[string, "Ascending" | "Descending"]>;
+    filters: Map<string, List<ValueFilter>>;
+    sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: Debounced<string>;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
@@ -77,9 +79,6 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     >;
     previousRemoteEntityVersionIdentifier: string;
     shouldReinitialize: boolean;
-    filterValues: Map<string, List<PredicateValue>>;
-    // keeping kind and value separate to allow a user to change the kind of the filter without changing the value
-    filterKinds: Map<string, List<FilterTypeKind>>;
     filterStates: Map<string, List<any>>;
   };
 };
@@ -93,14 +92,12 @@ export const TableAbstractRendererState = {
       filterAndSortParam: Debounced.Default(""),
       rowStates: Map(),
       filters: Map(),
-      sorting: [],
+      sorting: Map(),
       // TODO: replace with sum
       getChunkWithParams: undefined as any,
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
-      filterValues: Map(),
-      filterKinds: Map(),
       filterStates: Map(),
     },
   }),
@@ -141,13 +138,7 @@ export const TableAbstractRendererState = {
           "rowStates",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "filterValues",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "filterStates",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "filterKinds",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -157,46 +148,28 @@ export const TableAbstractRendererState = {
       })("commonFormState"),
     },
     Template: {
-      // TODO -- at the end of each filter / sorting, update the filterAndSortParam debounced after parsing the filters and sorting
-      addFilter: (
-        columnName: string,
-        filter: ValueFilter,
+      updateFilters: (
+        filters: Map<string, List<ValueFilter>>,
       ): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.filters(
-          (_) => ({
-            ..._,
-            filters: _.set(columnName, [...(_.get(columnName) ?? []), filter]),
-          }),
-        ),
-      removeFilter: (
-        columnName: string,
-        filterIndex: number,
-      ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.filters(
-          (_) => ({
-            ..._,
-            filters: _.set(
-              columnName,
-              _.get(columnName) == undefined
-                ? []
-                : _.get(columnName)!
-                    .slice(0, filterIndex)
-                    .concat(_.get(columnName)!.slice(filterIndex + 1)),
-            ),
-          }),
+          replaceWith(filters),
         ),
       addSorting: (
         columnName: string,
-        direction: "Ascending" | "Descending",
+        direction: "Ascending" | "Descending" | undefined,
       ): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-          (_) => [..._, [columnName, direction]],
+          MapRepo.Updaters.upsert(
+            columnName,
+            () => undefined,
+            replaceWith(direction),
+          )
         ),
       removeSorting: (
-        sortingIndex: number,
+        columnName: string,
       ): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-          (_) => _.slice(0, sortingIndex).concat(_.slice(sortingIndex + 1)),
+          MapRepo.Updaters.remove(columnName),
         ),
       loadMore: (): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
@@ -277,13 +250,12 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   reinitialize: SimpleCallback<void>;
-  addFilter: (columnName: string, filter: ValueFilter) => void;
-  removeFilter: (columnName: string, filterIndex: number) => void;
+  updateFilters: (filters: Map<string, List<ValueFilter>>) => void;
   addSorting: (
     columnName: string,
-    direction: "Ascending" | "Descending",
+    direction: "Ascending" | "Descending" | undefined,
   ) => void;
-  removeSorting: (sortingIndex: number) => void;
+  removeSorting: (columnName: string) => void;
 };
 
 export type TableAbstractRendererView<
@@ -333,19 +305,23 @@ export type TableAbstractRendererView<
     AllowedFilters: Map<
       string,
       {
-        template: (index: number) => Template<
-          TableAbstractRendererReadonlyContext<
+        template: (
+          index: number,
+        ) => Template<
+          CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
             CustomPresentationContext,
             ExtraContext
           > &
             TableAbstractRendererState,
           TableAbstractRendererState,
-          TableAbstractRendererForeignMutationsExpected<Flags>
-        >,
-        type: DispatchParsedType<any>,
-        filters: Array<FilterType<any>>,
-        GetDefaultValue: () => PredicateValue,
-        GetDefaultState: () => CommonAbstractRendererState,
+          CommonAbstractRendererForeignMutationsExpected
+        >;
+        type: DispatchParsedType<any>;
+        filters: Array<FilterType<any>>;
+        GetDefaultValue: () => PredicateValue;
+        GetDefaultState: () => CommonAbstractRendererState;
       }
     >;
     AllowedSorting: Array<string>;

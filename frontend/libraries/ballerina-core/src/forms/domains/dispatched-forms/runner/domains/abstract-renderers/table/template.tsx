@@ -508,21 +508,21 @@ export const TableAbstractRenderer = <
     template: (index: number) =>
       filter.template
         .mapContext<
-          TableAbstractRendererReadonlyContext<
+          CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
             CustomPresentationContext,
             ExtraContext
           > &
             TableAbstractRendererState
         >((_) => ({
-          value:
-            _.customFormState.filterValues.get(columnName)?.get(index) ??
-            filter.GetDefaultValue(),
+          value: _.value,
           locked: false,
           disabled: false,
           bindings: _.bindings,
           extraContext: _.extraContext,
           type: filter.type,
-          label: columnName,
+          label: _.label,
           tooltip: undefined,
           details: undefined,
           customPresentationContext: undefined,
@@ -542,25 +542,25 @@ export const TableAbstractRenderer = <
             ),
           ),
         )
-        .mapForeignMutationsFromProps<
-          TableAbstractRendererForeignMutationsExpected<Flags>
-        >((props) => ({
-          onChange: (updaterOption) =>
-            updaterOption.kind == "r"
-              ? props.setState(
-                  TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
-                    MapRepo.Updaters.upsert(
-                      columnName,
-                      () => List([filter.GetDefaultValue()]),
-                      ListRepo.Updaters.update(
-                        index,
-                        Updater(updaterOption.value),
-                      ),
-                    ),
-                  ),
-                )
-              : id,
-        })),
+        // .mapForeignMutationsFromProps<
+        //   TableAbstractRendererForeignMutationsExpected<Flags>
+        // >((props) => ({
+        //   onChange: (updaterOption) =>
+        //     updaterOption.kind == "r"
+        //       ? props.setState(
+        //           TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
+        //             MapRepo.Updaters.upsert(
+        //               columnName,
+        //               () => List([filter.GetDefaultValue()]),
+        //               ListRepo.Updaters.update(
+        //                 index,
+        //                 Updater(updaterOption.value),
+        //               ),
+        //             ),
+        //           ),
+        //         )
+        //       : id,
+        // })),
   }));
 
   return Template.Default<
@@ -834,25 +834,16 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
-              addFilter: (columnName: string, filter: ValueFilter) => {
+              updateFilters: (filters: Map<string, List<ValueFilter>>) => {
                 props.setState(
-                  TableAbstractRendererState.Updaters.Template.addFilter(
-                    columnName,
-                    filter,
-                  ),
-                );
-              },
-              removeFilter: (columnName: string, filterIndex: number) => {
-                props.setState(
-                  TableAbstractRendererState.Updaters.Template.removeFilter(
-                    columnName,
-                    filterIndex,
+                  TableAbstractRendererState.Updaters.Template.updateFilters(
+                    filters,
                   ),
                 );
               },
               addSorting: (
                 columnName: string,
-                direction: "Ascending" | "Descending",
+                direction: "Ascending" | "Descending" | undefined,
               ) => {
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.addSorting(
@@ -861,10 +852,10 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              removeSorting: (sortingIndex: number) => {
+              removeSorting: (columnName: string) => {
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.removeSorting(
-                    sortingIndex,
+                    columnName,
                   ),
                 );
               },

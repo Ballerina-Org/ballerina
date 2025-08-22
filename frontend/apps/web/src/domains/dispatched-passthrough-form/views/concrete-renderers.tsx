@@ -14,9 +14,12 @@ import {
   ConcreteRenderers,
   MapRepo,
   id,
+  FilterTypeKind,
+  ListRepo,
+  BasicUpdater,
 } from "ballerina-core";
-import { OrderedMap, Map, Set } from "immutable";
-import { useState } from "react";
+import { OrderedMap, Map, Set, List } from "immutable";
+import { useEffect, useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 
 export type DispatchPassthroughFormFlags = {
@@ -34,6 +37,13 @@ export type DispatchPassthroughFormExtraContext = {
 export type DispatchPassthroughFormCustomPresentationContext = {
   listElement: ListElementCustomPresentationContext;
 };
+
+export type ColumnFilter = {
+  kind: FilterTypeKind;
+  value: PredicateValue;
+};
+
+export type ColumnFilters = Map<string, List<ColumnFilter>>;
 
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
@@ -1228,10 +1238,126 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     streamingTable: () => (props) => {
-      const [colFilterDisplays, setColFilterDisplays] = useState<Map<string, boolean>>(
-        Map(props.AllowedFilters.map(_ => false))
+      const [colFilterDisplays, setColFilterDisplays] = useState<
+        Map<string, boolean>
+      >(Map(props.AllowedFilters.map((_) => false)));
+
+      // TODO: initialise with response from new endpoint
+      const [colFilters, setColFilters] = useState<ColumnFilters>(
+        Map(props.AllowedFilters.map((_) => List([]))),
       );
-      
+
+      useEffect(() => {
+        const filters = colFilters.map((_) =>
+          _.map(({ kind, value }) =>
+            PredicateValue.Operations.KindAndValueToFilter(kind, value),
+          ),
+        );
+        props.foreignMutations.updateFilters(filters);
+      }, [colFilters]);
+
+      const handleFilterValueChange = (
+        columnName: string,
+        filterIndex: number,
+        updater: BasicUpdater<PredicateValue>,
+      ) => {
+        const filterValue =
+          colFilters.get(columnName)!.get(filterIndex)?.value ??
+          props.AllowedFilters.get(columnName)!.GetDefaultValue();
+
+        const filterKind =
+          colFilters.get(columnName)!.get(filterIndex)?.kind ??
+          props.AllowedFilters.get(columnName)!.filters[0].kind;
+
+        const newFilter = {
+          kind: filterKind,
+          value: updater(filterValue),
+        };
+
+        if (colFilters.get(columnName)!.get(filterIndex)) {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.update(filterIndex, replaceWith(newFilter)),
+            ),
+          );
+        } else {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.push(newFilter),
+            ),
+          );
+        }
+      };
+
+      const handleFilterKindChange = (
+        columnName: string,
+        filterIndex: number,
+        filterKind: FilterTypeKind,
+      ) => {
+        const filterValue =
+          colFilters.get(columnName)!.get(filterIndex)?.value ??
+          props.AllowedFilters.get(columnName)!.GetDefaultValue();
+
+        const newFilter = {
+          kind: filterKind,
+          value: filterValue,
+        };
+
+        if (colFilters.get(columnName)!.get(filterIndex)) {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.update(filterIndex, replaceWith(newFilter)),
+            ),
+          );
+        } else {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.push(newFilter),
+            ),
+          );
+        }
+      };
+
+      const handleFilterRemove = (columnName: string, filterIndex: number) => {
+        setColFilters(
+          MapRepo.Updaters.update(
+            columnName,
+            ListRepo.Updaters.remove(filterIndex),
+          ),
+        );
+      };
+
+      const handleSortingChange = (columnName: string) => {
+        if (props.AllowedSorting.includes(columnName)) {
+          if (props.context.customFormState.sorting.has(columnName)) {
+            if (
+              props.context.customFormState.sorting.get(columnName) ==
+              "Ascending"
+            ) {
+              props.foreignMutations.addSorting(columnName, "Descending");
+            } else {
+              props.foreignMutations.addSorting(columnName, "Ascending");
+            }
+          } else {
+            props.foreignMutations.addSorting(columnName, "Ascending");
+          }
+        }
+      };
+
+      const handleSortingRemove = (columnName: string) => {
+        if (props.AllowedSorting.includes(columnName)) {
+          props.foreignMutations.removeSorting(columnName);
+        }
+      };
+
+      console.debug("local filters", JSON.stringify(colFilters, undefined, 2));
+      console.debug("filters", JSON.stringify(props.context.customFormState.filters, undefined, 2));
+      console.debug("sorting", JSON.stringify(props.context.customFormState.sorting, undefined, 2));
+
       return (
         <>
           <h3>{props.context.label}</h3>
@@ -1242,13 +1368,57 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               gap: "10px",
             }}
           >
-            {props.HighlightedFilters.map((filterName) => (
-              <>
+            {props.HighlightedFilters.map((filterName: string) => (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "10px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <select
+                  style={{ height: "30px", width: "100px" }}
+                  onChange={(_) =>
+                    handleFilterKindChange(
+                      filterName,
+                      0,
+                      _.currentTarget.value as FilterTypeKind,
+                    )
+                  }
+                >
+                  {props.AllowedFilters.get(filterName)!.filters.map(
+                    (filter) => (
+                      <option value={filter.kind}>{filter.kind}</option>
+                    ),
+                  )}
+                </select>
                 {props.AllowedFilters.get(filterName)!.template(0)({
                   ...props,
+                  context: {
+                    ...props.context,
+                    value:
+                      colFilters.get(filterName)!.get(0)?.value ??
+                      props.AllowedFilters.get(filterName)!.GetDefaultValue(),
+                  },
+                  foreignMutations: {
+                    onChange: (updaterOption) => {
+                      if (updaterOption.kind == "r") {
+                        handleFilterValueChange(
+                          filterName,
+                          0,
+                          updaterOption.value,
+                        );
+                      }
+                    },
+                  },
                   view: unit,
                 })}
-              </>
+                <button onClick={() => handleFilterRemove(filterName, 0)}>
+                  ❌
+                </button>
+              </div>
             ))}
           </div>
           <div
@@ -1301,15 +1471,115 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     </th>
                     {props.context.tableHeaders.map((header: any) => (
                       <th style={{ border: "1px solid black" }}>
-                        {header}
-                        {props.AllowedFilters.has(header) &&
-                          <div onClick={() => setColFilterDisplays(MapRepo.Updaters.update(header, _ => !_))}>🔎</div>
-                        }
-                        {(colFilterDisplays.get(header) ?? false) && colFilterDisplays.get(header) &&
-                          props.AllowedFilters.get(header)!.template(0)({
-                            ...props,
-                            view: unit,
-                          })}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "10px",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {header}
+                          {props.AllowedFilters.has(header) && (
+                            <button
+                              onClick={() =>
+                                setColFilterDisplays(
+                                  MapRepo.Updaters.update(header, (_) => !_),
+                                )
+                              }
+                            >
+                              🔎
+                            </button>
+                          )}
+                          {props.AllowedSorting.includes(header) &&
+                            props.context.customFormState.sorting.get(
+                              header,
+                            ) && (
+                              <>
+                                <button
+                                  onClick={() => handleSortingChange(header)}
+                                >
+                                  {props.context.customFormState.sorting.get(
+                                    header,
+                                  ) == "Ascending"
+                                    ? "⬆️"
+                                    : "⬇️"}
+                                </button>
+                                <button
+                                  onClick={() => handleSortingRemove(header)}
+                                >
+                                  ❌
+                                </button>
+                              </>
+                            )}
+                            {props.AllowedSorting.includes(header) &&
+                              !props.context.customFormState.sorting.get(
+                                header,
+                              ) && (
+                                <button onClick={() => handleSortingChange(header)}>
+                                  ⬆️
+                                </button>
+                              )}
+                        </div>
+                        {colFilterDisplays.get(header) && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "10px",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <select
+                              style={{ height: "30px", width: "100px" }}
+                              onChange={(_) =>
+                                handleFilterKindChange(
+                                  header,
+                                  0,
+                                  _.currentTarget.value as FilterTypeKind,
+                                )
+                              }
+                            >
+                              {props.AllowedFilters.get(header)!.filters.map(
+                                (filter) => (
+                                  <option value={filter.kind}>
+                                    {filter.kind}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                            {props.AllowedFilters.get(header)!.template(0)({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                value:
+                                  colFilters.get(header)!.get(0)?.value ??
+                                  props.AllowedFilters.get(
+                                    header,
+                                  )!.GetDefaultValue(),
+                              },
+                              foreignMutations: {
+                                onChange: (updaterOption) => {
+                                  if (updaterOption.kind == "r") {
+                                    handleFilterValueChange(
+                                      header,
+                                      0,
+                                      updaterOption.value,
+                                    );
+                                  }
+                                },
+                              },
+                              view: unit,
+                            })}
+                            <button
+                              onClick={() => handleFilterRemove(header, 0)}
+                            >
+                              ❌
+                            </button>
+                          </div>
+                        )}
                       </th>
                     ))}
                   </tr>
