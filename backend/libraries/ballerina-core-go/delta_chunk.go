@@ -123,19 +123,24 @@ func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
 	}
 }
 
-func MatchDeltaChunk[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+func MatchDeltaChunk[context any, a any, deltaA any, Result any](
+	onValue func(ReaderWithError[context, a], Tuple2[uuid.UUID, deltaA]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaChunk[a, deltaA]) (Result, error) {
-	return func(delta DeltaChunk[a, deltaA]) (Result, error) {
+) func(ReaderWithError[context, Chunk[a]], DeltaChunk[a, deltaA]) (Result, error) {
+	return func(chunk ReaderWithError[context, Chunk[a]], delta DeltaChunk[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case chunkValue:
-			return onValue(*delta.value)
+			value := MapReaderWithError[context, Chunk[a], a](
+				func(chunk Chunk[a]) a {
+					return chunk.Values[chunk.IdToIndex[delta.value.Item1]]
+				},
+			)(chunk)
+			return onValue(value, *delta.value)
 		case chunkAddAt:
 			return onAddAt(*delta.addAt)
 		case chunkRemoveAt:

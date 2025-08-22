@@ -66,17 +66,18 @@ func NewDeltaTuple2Item2[deltaA any, deltaB any](delta deltaB) DeltaTuple2[delta
 		item2:         &delta,
 	}
 }
-func MatchDeltaTuple2[deltaA any, deltaB any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-) func(DeltaTuple2[deltaA, deltaB]) (Result, error) {
-	return func(delta DeltaTuple2[deltaA, deltaB]) (Result, error) {
+
+func MatchDeltaTuple2[context any, A any, B any, deltaA any, deltaB any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+) func(ReaderWithError[context, Tuple2[A, B]], DeltaTuple2[deltaA, deltaB]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple2[A, B]], delta DeltaTuple2[deltaA, deltaB]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple2Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple2[A, B].GetItem1)(value), *delta.item1)
 		case tuple2Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple2[A, B].GetItem2)(value), *delta.item2)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple2")
 	}
@@ -158,20 +159,20 @@ func NewDeltaTuple3Item3[deltaA any, deltaB any, deltaC any](delta deltaC) Delta
 		item3:         &delta,
 	}
 }
-func MatchDeltaTuple3[deltaA any, deltaB any, deltaC any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-) func(DeltaTuple3[deltaA, deltaB, deltaC]) (Result, error) {
-	return func(delta DeltaTuple3[deltaA, deltaB, deltaC]) (Result, error) {
+func MatchDeltaTuple3[context any, A any, B any, C any, deltaA any, deltaB any, deltaC any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+) func(ReaderWithError[context, Tuple3[A, B, C]], DeltaTuple3[deltaA, deltaB, deltaC]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple3[A, B, C]], delta DeltaTuple3[deltaA, deltaB, deltaC]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple3Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple3[A, B, C].GetItem1)(value), *delta.item1)
 		case tuple3Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple3[A, B, C].GetItem2)(value), *delta.item2)
 		case tuple3Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple3[A, B, C].GetItem3)(value), *delta.item3)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple3")
 	}
@@ -265,23 +266,23 @@ func NewDeltaTuple4Item4[deltaA any, deltaB any, deltaC any, deltaD any](delta d
 		item4:         &delta,
 	}
 }
-func MatchDeltaTuple4[deltaA any, deltaB any, deltaC any, deltaD any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-) func(DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) (Result, error) {
-	return func(delta DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) (Result, error) {
+func MatchDeltaTuple4[context any, A any, B any, C any, D any, deltaA any, deltaB any, deltaC any, deltaD any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+) func(ReaderWithError[context, Tuple4[A, B, C, D]], DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple4[A, B, C, D]], delta DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple4Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple4[A, B, C, D].GetItem1)(value), *delta.item1)
 		case tuple4Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple4[A, B, C, D].GetItem2)(value), *delta.item2)
 		case tuple4Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple4[A, B, C, D].GetItem3)(value), *delta.item3)
 		case tuple4Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple4[A, B, C, D].GetItem4)(value), *delta.item4)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple4")
 	}
@@ -387,26 +388,26 @@ func NewDeltaTuple5Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE 
 		item5:         &delta,
 	}
 }
-func MatchDeltaTuple5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-	onItem5 func(deltaE) (Result, error),
-) func(DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
-	return func(delta DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
+func MatchDeltaTuple5[context any, A any, B any, C any, D any, E any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+	onItem5 func(ReaderWithError[context, E], deltaE) (Result, error),
+) func(ReaderWithError[context, Tuple5[A, B, C, D, E]], DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple5[A, B, C, D, E]], delta DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple5Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple5[A, B, C, D, E].GetItem1)(value), *delta.item1)
 		case tuple5Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple5[A, B, C, D, E].GetItem2)(value), *delta.item2)
 		case tuple5Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple5[A, B, C, D, E].GetItem3)(value), *delta.item3)
 		case tuple5Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple5[A, B, C, D, E].GetItem4)(value), *delta.item4)
 		case tuple5Item5:
-			return onItem5(*delta.item5)
+			return onItem5(MapReaderWithError[context](Tuple5[A, B, C, D, E].GetItem5)(value), *delta.item5)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple5")
 	}
@@ -524,29 +525,29 @@ func NewDeltaTuple6Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE 
 		item6:         &delta,
 	}
 }
-func MatchDeltaTuple6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-	onItem5 func(deltaE) (Result, error),
-	onItem6 func(deltaF) (Result, error),
-) func(DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
-	return func(delta DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
+func MatchDeltaTuple6[context any, A any, B any, C any, D any, E any, F any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+	onItem5 func(ReaderWithError[context, E], deltaE) (Result, error),
+	onItem6 func(ReaderWithError[context, F], deltaF) (Result, error),
+) func(ReaderWithError[context, Tuple6[A, B, C, D, E, F]], DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple6[A, B, C, D, E, F]], delta DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple6Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem1)(value), *delta.item1)
 		case tuple6Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem2)(value), *delta.item2)
 		case tuple6Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem3)(value), *delta.item3)
 		case tuple6Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem4)(value), *delta.item4)
 		case tuple6Item5:
-			return onItem5(*delta.item5)
+			return onItem5(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem5)(value), *delta.item5)
 		case tuple6Item6:
-			return onItem6(*delta.item6)
+			return onItem6(MapReaderWithError[context](Tuple6[A, B, C, D, E, F].GetItem6)(value), *delta.item6)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple6")
 	}
@@ -676,32 +677,32 @@ func NewDeltaTuple7Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE 
 		item7:         &delta,
 	}
 }
-func MatchDeltaTuple7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-	onItem5 func(deltaE) (Result, error),
-	onItem6 func(deltaF) (Result, error),
-	onItem7 func(deltaG) (Result, error),
-) func(DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
-	return func(delta DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
+func MatchDeltaTuple7[context any, A any, B any, C any, D any, E any, F any, G any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+	onItem5 func(ReaderWithError[context, E], deltaE) (Result, error),
+	onItem6 func(ReaderWithError[context, F], deltaF) (Result, error),
+	onItem7 func(ReaderWithError[context, G], deltaG) (Result, error),
+) func(ReaderWithError[context, Tuple7[A, B, C, D, E, F, G]], DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple7[A, B, C, D, E, F, G]], delta DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple7Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem1)(value), *delta.item1)
 		case tuple7Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem2)(value), *delta.item2)
 		case tuple7Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem3)(value), *delta.item3)
 		case tuple7Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem4)(value), *delta.item4)
 		case tuple7Item5:
-			return onItem5(*delta.item5)
+			return onItem5(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem5)(value), *delta.item5)
 		case tuple7Item6:
-			return onItem6(*delta.item6)
+			return onItem6(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem6)(value), *delta.item6)
 		case tuple7Item7:
-			return onItem7(*delta.item7)
+			return onItem7(MapReaderWithError[context](Tuple7[A, B, C, D, E, F, G].GetItem7)(value), *delta.item7)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple7")
 	}
@@ -843,35 +844,35 @@ func NewDeltaTuple8Item8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE 
 		item8:         &delta,
 	}
 }
-func MatchDeltaTuple8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-	onItem5 func(deltaE) (Result, error),
-	onItem6 func(deltaF) (Result, error),
-	onItem7 func(deltaG) (Result, error),
-	onItem8 func(deltaH) (Result, error),
-) func(DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
-	return func(delta DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
+func MatchDeltaTuple8[context any, A any, B any, C any, D any, E any, F any, G any, H any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+	onItem5 func(ReaderWithError[context, E], deltaE) (Result, error),
+	onItem6 func(ReaderWithError[context, F], deltaF) (Result, error),
+	onItem7 func(ReaderWithError[context, G], deltaG) (Result, error),
+	onItem8 func(ReaderWithError[context, H], deltaH) (Result, error),
+) func(ReaderWithError[context, Tuple8[A, B, C, D, E, F, G, H]], DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple8[A, B, C, D, E, F, G, H]], delta DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple8Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem1)(value), *delta.item1)
 		case tuple8Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem2)(value), *delta.item2)
 		case tuple8Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem3)(value), *delta.item3)
 		case tuple8Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem4)(value), *delta.item4)
 		case tuple8Item5:
-			return onItem5(*delta.item5)
+			return onItem5(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem5)(value), *delta.item5)
 		case tuple8Item6:
-			return onItem6(*delta.item6)
+			return onItem6(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem6)(value), *delta.item6)
 		case tuple8Item7:
-			return onItem7(*delta.item7)
+			return onItem7(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem7)(value), *delta.item7)
 		case tuple8Item8:
-			return onItem8(*delta.item8)
+			return onItem8(MapReaderWithError[context](Tuple8[A, B, C, D, E, F, G, H].GetItem8)(value), *delta.item8)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple8")
 	}
@@ -1027,38 +1028,38 @@ func NewDeltaTuple9Item9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE 
 		item9:         &delta,
 	}
 }
-func MatchDeltaTuple9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, Result any](
-	onItem1 func(deltaA) (Result, error),
-	onItem2 func(deltaB) (Result, error),
-	onItem3 func(deltaC) (Result, error),
-	onItem4 func(deltaD) (Result, error),
-	onItem5 func(deltaE) (Result, error),
-	onItem6 func(deltaF) (Result, error),
-	onItem7 func(deltaG) (Result, error),
-	onItem8 func(deltaH) (Result, error),
-	onItem9 func(deltaI) (Result, error),
-) func(DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
-	return func(delta DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
+func MatchDeltaTuple9[context any, A any, B any, C any, D any, E any, F any, G any, H any, I any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, Result any](
+	onItem1 func(ReaderWithError[context, A], deltaA) (Result, error),
+	onItem2 func(ReaderWithError[context, B], deltaB) (Result, error),
+	onItem3 func(ReaderWithError[context, C], deltaC) (Result, error),
+	onItem4 func(ReaderWithError[context, D], deltaD) (Result, error),
+	onItem5 func(ReaderWithError[context, E], deltaE) (Result, error),
+	onItem6 func(ReaderWithError[context, F], deltaF) (Result, error),
+	onItem7 func(ReaderWithError[context, G], deltaG) (Result, error),
+	onItem8 func(ReaderWithError[context, H], deltaH) (Result, error),
+	onItem9 func(ReaderWithError[context, I], deltaI) (Result, error),
+) func(ReaderWithError[context, Tuple9[A, B, C, D, E, F, G, H, I]], DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
+	return func(value ReaderWithError[context, Tuple9[A, B, C, D, E, F, G, H, I]], delta DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tuple9Item1:
-			return onItem1(*delta.item1)
+			return onItem1(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem1)(value), *delta.item1)
 		case tuple9Item2:
-			return onItem2(*delta.item2)
+			return onItem2(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem2)(value), *delta.item2)
 		case tuple9Item3:
-			return onItem3(*delta.item3)
+			return onItem3(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem3)(value), *delta.item3)
 		case tuple9Item4:
-			return onItem4(*delta.item4)
+			return onItem4(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem4)(value), *delta.item4)
 		case tuple9Item5:
-			return onItem5(*delta.item5)
+			return onItem5(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem5)(value), *delta.item5)
 		case tuple9Item6:
-			return onItem6(*delta.item6)
+			return onItem6(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem6)(value), *delta.item6)
 		case tuple9Item7:
-			return onItem7(*delta.item7)
+			return onItem7(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem7)(value), *delta.item7)
 		case tuple9Item8:
-			return onItem8(*delta.item8)
+			return onItem8(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem8)(value), *delta.item8)
 		case tuple9Item9:
-			return onItem9(*delta.item9)
+			return onItem9(MapReaderWithError[context](Tuple9[A, B, C, D, E, F, G, H, I].GetItem9)(value), *delta.item9)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple9")
 	}

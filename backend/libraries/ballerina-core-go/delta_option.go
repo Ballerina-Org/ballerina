@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type deltaOptionEffectsEnum string
@@ -68,17 +69,30 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 		value:         &delta,
 	}
 }
-func MatchDeltaOption[a any, deltaA any, Result any](
-	onReplace func(Option[a]) (Result, error),
-	onValue func(deltaA) (Result, error),
-) func(DeltaOption[a, deltaA]) (Result, error) {
-	return func(delta DeltaOption[a, deltaA]) (Result, error) {
+func MatchDeltaOption[context any, a any, deltaA any, Result any](
+	onReplace func(ReaderWithError[context, Option[a]], Option[a]) (Result, error),
+	onValue func(ReaderWithError[context, a], deltaA) (Result, error),
+) func(ReaderWithError[context, Option[a]], DeltaOption[a, deltaA]) (Result, error) {
+	return func(option ReaderWithError[context, Option[a]], delta DeltaOption[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case optionReplace:
-			return onReplace(*delta.replace)
+			return onReplace(option, *delta.replace)
 		case optionValue:
-			return onValue(*delta.value)
+			value := BindReaderWithError[context, Option[a], a](
+				func(one Option[a]) ReaderWithError[context, a] {
+					return PureReader[context, Sum[error, a]](
+						Fold(
+							one.Sum,
+							func(Unit) Sum[error, a] {
+								return Left[error, a](fmt.Errorf("option is not set"))
+							},
+							Right[error, a],
+						),
+					)
+				},
+			)(option)
+			return onValue(value, *delta.value)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 	}

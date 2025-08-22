@@ -2,8 +2,9 @@ package ballerina
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type deltaIntEffectsEnum string
@@ -58,14 +59,14 @@ func NewDeltaIntReplace(value int) DeltaInt {
 		replace:       value,
 	}
 }
-func MatchDeltaInt[Result any](
-	onReplace func(int) (Result, error),
-) func(DeltaInt) (Result, error) {
-	return func(delta DeltaInt) (Result, error) {
+func MatchDeltaInt[context any, Result any](
+	onReplace func(ReaderWithError[context, int], int) (Result, error),
+) func(ReaderWithError[context, int], DeltaInt) (Result, error) {
+	return func(value ReaderWithError[context, int], delta DeltaInt) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case intReplace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaInt")
 	}
@@ -123,14 +124,14 @@ func NewDeltaInt64Replace(value int64) DeltaInt64 {
 		replace:       value,
 	}
 }
-func MatchDeltaInt64[Result any](
-	onReplace func(int64) (Result, error),
-) func(DeltaInt64) (Result, error) {
-	return func(delta DeltaInt64) (Result, error) {
+func MatchDeltaInt64[context any, Result any](
+	onReplace func(ReaderWithError[context, int64], int64) (Result, error),
+) func(ReaderWithError[context, int64], DeltaInt64) (Result, error) {
+	return func(value ReaderWithError[context, int64], delta DeltaInt64) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case int64Replace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaInt64")
 	}
@@ -188,14 +189,14 @@ func NewDeltaStringReplace(value string) DeltaString {
 		replace:       value,
 	}
 }
-func MatchDeltaString[Result any](
-	onReplace func(string) (Result, error),
-) func(DeltaString) (Result, error) {
-	return func(delta DeltaString) (Result, error) {
+func MatchDeltaString[context any, Result any](
+	onReplace func(ReaderWithError[context, string], string) (Result, error),
+) func(ReaderWithError[context, string], DeltaString) (Result, error) {
+	return func(value ReaderWithError[context, string], delta DeltaString) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case stringReplace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaString")
 	}
@@ -253,14 +254,14 @@ func NewDeltaBoolReplace(value bool) DeltaBool {
 		replace:       value,
 	}
 }
-func MatchDeltaBool[Result any](
-	onReplace func(bool) (Result, error),
-) func(DeltaBool) (Result, error) {
-	return func(delta DeltaBool) (Result, error) {
+func MatchDeltaBool[context any, Result any](
+	onReplace func(ReaderWithError[context, bool], bool) (Result, error),
+) func(ReaderWithError[context, bool], DeltaBool) (Result, error) {
+	return func(value ReaderWithError[context, bool], delta DeltaBool) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case boolReplace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaBool")
 	}
@@ -318,14 +319,14 @@ func NewDeltaGuidReplace(value uuid.UUID) DeltaGuid {
 		replace:       value,
 	}
 }
-func MatchDeltaGuid[Result any](
-	onReplace func(uuid.UUID) (Result, error),
-) func(DeltaGuid) (Result, error) {
-	return func(delta DeltaGuid) (Result, error) {
+func MatchDeltaGuid[context any, Result any](
+	onReplace func(ReaderWithError[context, uuid.UUID], uuid.UUID) (Result, error),
+) func(ReaderWithError[context, uuid.UUID], DeltaGuid) (Result, error) {
+	return func(value ReaderWithError[context, uuid.UUID], delta DeltaGuid) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case guidReplace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaGuid")
 	}
@@ -387,14 +388,14 @@ func NewDeltaTimeReplace(value time.Time) DeltaTime {
 		replace:       value,
 	}
 }
-func MatchDeltaTime[Result any](
-	onReplace func(time.Time) (Result, error),
-) func(DeltaTime) (Result, error) {
-	return func(delta DeltaTime) (Result, error) {
+func MatchDeltaTime[context any, Result any](
+	onReplace func(ReaderWithError[context, time.Time], time.Time) (Result, error),
+) func(ReaderWithError[context, time.Time], DeltaTime) (Result, error) {
+	return func(value ReaderWithError[context, time.Time], delta DeltaTime) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case timeReplace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTime")
 	}
@@ -452,14 +453,14 @@ func NewDeltaInt32Replace(value int32) DeltaInt32 {
 		replace:       value,
 	}
 }
-func MatchDeltaInt32[Result any](
-	onReplace func(int32) (Result, error),
-) func(DeltaInt32) (Result, error) {
-	return func(delta DeltaInt32) (Result, error) {
+func MatchDeltaInt32[context any, Result any](
+	onReplace func(ReaderWithError[context, int32], int32) (Result, error),
+) func(ReaderWithError[context, int32], DeltaInt32) (Result, error) {
+	return func(value ReaderWithError[context, int32], delta DeltaInt32) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case int32Replace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaInt32")
 	}
@@ -519,14 +520,14 @@ func NewDeltaFloat32Replace(value float32) DeltaFloat32 {
 		replace:       value,
 	}
 }
-func MatchDeltaFloat32[Result any](
-	onReplace func(float32) (Result, error),
-) func(DeltaFloat32) (Result, error) {
-	return func(delta DeltaFloat32) (Result, error) {
+func MatchDeltaFloat32[context any, Result any](
+	onReplace func(ReaderWithError[context, float32], float32) (Result, error),
+) func(ReaderWithError[context, float32], DeltaFloat32) (Result, error) {
+	return func(value ReaderWithError[context, float32], delta DeltaFloat32) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case float32Replace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaFloat32")
 	}
@@ -586,14 +587,14 @@ func NewDeltaFloat64Replace(value float64) DeltaFloat64 {
 		replace:       value,
 	}
 }
-func MatchDeltaFloat64[Result any](
-	onReplace func(float64) (Result, error),
-) func(DeltaFloat64) (Result, error) {
-	return func(delta DeltaFloat64) (Result, error) {
+func MatchDeltaFloat64[context any, Result any](
+	onReplace func(ReaderWithError[context, float64], float64) (Result, error),
+) func(ReaderWithError[context, float64], DeltaFloat64) (Result, error) {
+	return func(value ReaderWithError[context, float64], delta DeltaFloat64) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case float64Replace:
-			return onReplace(delta.replace)
+			return onReplace(value, delta.replace)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaFloat64")
 	}
