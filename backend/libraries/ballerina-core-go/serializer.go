@@ -99,6 +99,41 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 	})
 }
 
+func OptionSerializer[T any](serializer Serializer[T]) Serializer[Option[T]] {
+	return withContext("on option", func(value Option[T]) Sum[error, json.RawMessage] {
+		return Bind(Fold(value.Sum,
+			func(left Unit) Sum[error, _sumForSerialization] {
+				return MapRight(UnitSerializer()(left), func(value json.RawMessage) _sumForSerialization {
+					return _sumForSerialization{Case: "none", Value: value}
+				})
+			},
+			func(right T) Sum[error, _sumForSerialization] {
+				return MapRight(serializer(right), func(value json.RawMessage) _sumForSerialization {
+					return _sumForSerialization{Case: "some", Value: value}
+				})
+			},
+		), wrappedMarshal)
+	})
+}
+
+func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[Option[T]] {
+	return withContext("on option", func(data json.RawMessage) Sum[error, Option[T]] {
+		return Bind(wrappedUnmarshal[_sumForSerialization](data),
+			func(sumForSerialization _sumForSerialization) Sum[error, Option[T]] {
+				switch sumForSerialization.Case {
+				case "none":
+					return MapRight(UnitDeserializer()(sumForSerialization.Value), func(unit Unit) Option[T] {
+						return None[T]()
+					})
+				case "some":
+					return MapRight(deserializer(sumForSerialization.Value), Some[T])
+				}
+				return Left[error, Option[T]](fmt.Errorf("expected case to be 'none' or 'some', got %s", sumForSerialization.Case))
+			},
+		)
+	})
+}
+
 func StringSerializer() Serializer[string] {
 	return withContext("on string", func(value string) Sum[error, json.RawMessage] {
 		return wrappedMarshal(value)

@@ -51,6 +51,32 @@ func TestSumDeserialization(t *testing.T) {
 	require.Equal(t, ballerina.Right[error, ballerina.Sum[ballerina.Unit, ballerina.Unit]](ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{})), deserializedRight)
 }
 
+func TestOptionSerialization(t *testing.T) {
+	t.Parallel()
+
+	serializer := ballerina.OptionSerializer(ballerina.UnitSerializer())
+	some := ballerina.Some(ballerina.Unit{})
+	serialized := serializer(some)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"case":"some","value":{"kind":"unit"}}`)), serialized)
+
+	none := ballerina.None[ballerina.Unit]()
+	serializedNone := serializer(none)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"case":"none","value":{"kind":"unit"}}`)), serializedNone)
+}
+
+func TestOptionDeserialization(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.OptionDeserializer(ballerina.UnitDeserializer())
+
+	serializedSome := json.RawMessage(`{"case":"some","value":{"kind":"unit"}}`)
+	deserializedSome := deserializer(serializedSome)
+	require.Equal(t, ballerina.Right[error, ballerina.Option[ballerina.Unit]](ballerina.Some(ballerina.Unit{})), deserializedSome)
+
+	serializedNone := json.RawMessage(`{"case":"none","value":{"kind":"unit"}}`)
+	deserializedNone := deserializer(serializedNone)
+	require.Equal(t, ballerina.Right[error, ballerina.Option[ballerina.Unit]](ballerina.None[ballerina.Unit]()), deserializedNone)
+}
+
 func TestStringSerialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerina.StringSerializer()
