@@ -77,6 +77,21 @@ func TestOptionDeserialization(t *testing.T) {
 	require.Equal(t, ballerina.Right[error, ballerina.Option[ballerina.Unit]](ballerina.None[ballerina.Unit]()), deserializedNone)
 }
 
+func TestTuple2Serialization(t *testing.T) {
+	t.Parallel()
+	serializer := ballerina.Tuple2Serializer(ballerina.UnitSerializer(), ballerina.UnitSerializer())
+	serialized := serializer(ballerina.Tuple2[ballerina.Unit, ballerina.Unit]{Item1: ballerina.Unit{}, Item2: ballerina.Unit{}})
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"kind":"tuple","elements":[{"kind":"unit"},{"kind":"unit"}]}`)), serialized)
+}
+
+func TestTuple2Deserialization(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.Tuple2Deserializer(ballerina.UnitDeserializer(), ballerina.UnitDeserializer())
+	serialized := json.RawMessage(`{"kind":"tuple","elements":[{"kind":"unit"},{"kind":"unit"}]}`)
+	deserialized := deserializer(serialized)
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple2[ballerina.Unit, ballerina.Unit]](ballerina.Tuple2[ballerina.Unit, ballerina.Unit]{Item1: ballerina.Unit{}, Item2: ballerina.Unit{}}), deserialized)
+}
+
 func TestStringSerialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerina.StringSerializer()

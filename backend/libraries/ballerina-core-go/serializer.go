@@ -134,6 +134,38 @@ func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[Option
 	})
 }
 
+type _tuple2ForSerialization struct {
+	Kind     string            `json:"kind"`
+	Elements []json.RawMessage `json:"elements"`
+}
+
+func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Serializer[B]) Serializer[Tuple2[A, B]] {
+	return withContext("on tuple2", func(value Tuple2[A, B]) Sum[error, json.RawMessage] {
+		return Bind(serializerA(value.Item1), func(item1 json.RawMessage) Sum[error, json.RawMessage] {
+			return Bind(serializerB(value.Item2), func(item2 json.RawMessage) Sum[error, json.RawMessage] {
+				return wrappedMarshal(_tuple2ForSerialization{
+					Kind:     "tuple",
+					Elements: []json.RawMessage{item1, item2},
+				})
+			})
+		})
+	})
+}
+
+func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserializerB Deserializer[B]) Deserializer[Tuple2[A, B]] {
+	return withContext("on tuple2", func(data json.RawMessage) Sum[error, Tuple2[A, B]] {
+		return Bind(wrappedUnmarshal[_tuple2ForSerialization](data),
+			func(tuple2ForSerialization _tuple2ForSerialization) Sum[error, Tuple2[A, B]] {
+				return Bind(deserializerA(tuple2ForSerialization.Elements[0]), func(item1 A) Sum[error, Tuple2[A, B]] {
+					return MapRight(deserializerB(tuple2ForSerialization.Elements[1]), func(item2 B) Tuple2[A, B] {
+						return Tuple2[A, B]{Item1: item1, Item2: item2}
+					})
+				})
+			},
+		)
+	})
+}
+
 func StringSerializer() Serializer[string] {
 	return withContext("on string", func(value string) Sum[error, json.RawMessage] {
 		return wrappedMarshal(value)
