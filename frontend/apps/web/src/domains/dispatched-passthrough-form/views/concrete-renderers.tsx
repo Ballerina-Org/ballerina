@@ -1354,16 +1354,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         }
       };
 
-      console.debug("local filters", JSON.stringify(colFilters, undefined, 2));
-      console.debug(
-        "filters",
-        JSON.stringify(props.context.customFormState.filters, undefined, 2),
-      );
-      console.debug(
-        "sorting",
-        JSON.stringify(props.context.customFormState.sorting, undefined, 2),
-      );
-
       return (
         <>
           <h3>{props.context.label}</h3>
