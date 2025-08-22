@@ -203,6 +203,51 @@ let ``Should typecheck simple binary expressions`` (testCase: SimpleBinaryExpres
   | Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 
+type BinaryExpressionTestCaseRequiringUnification =
+  { expr: Expr<BLPExprExtension, BLPValueExtension>
+    expected: ExprType
+    varTypes: VarTypes }
+
+let binaryExpressionTestCasesRequiringUnification: BinaryExpressionTestCaseRequiringUnification list =
+  [ { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Or,
+          Expr.VarLookup { VarName = "x" },
+          Expr.Value(
+            Primitives.ValueExtension.ConstBool true
+            |> blpLanguageExtension.primitivesExtension.toValue
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.BoolType
+      varTypes = Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.BoolType ] }
+    { expr =
+        Primitives.ExprExtension.Binary(
+          Primitives.BinaryOperator.Plus,
+          Expr.VarLookup { VarName = "x" },
+          Expr.Value(
+            Primitives.ValueExtension.ConstInt 42
+            |> blpLanguageExtension.primitivesExtension.toValue
+          )
+        )
+        |> blpLanguageExtension.primitivesExtension.toExpr
+      expected = ExprType.PrimitiveType PrimitiveType.IntType
+      varTypes = Map.ofList [ { VarName = "x" }, ExprType.PrimitiveType PrimitiveType.IntType ] } ]
+
+[<TestCaseSource(nameof binaryExpressionTestCasesRequiringUnification)>]
+let ``Should typecheck binary expressions requiring unification``
+  (testCase: BinaryExpressionTestCaseRequiringUnification)
+  =
+  let { expr = expr
+        expected = expected
+        varTypes = varTypes } =
+    testCase
+
+  match blpLanguageExtension.typeCheck Map.empty varTypes expr with
+  | Left value -> Assert.That(value, Is.EqualTo expected)
+  | Right err -> Assert.Fail $"Expected success but got error: {err}"
+
+
 type SimpleIncorrectBinaryExpressionTestCase =
   { expr: Expr<BLPExprExtension, BLPValueExtension> }
 

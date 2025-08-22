@@ -670,6 +670,14 @@ module Validator =
           // | Some preview -> do! FormBody.Validate codegen ctx localType preview |> Sum.map ignore
           // | None -> return ()
 
+          let! rowFields = table.RowType |> ExprType.AsRecord
+
+          do!
+            table.HighlightedFilters
+            |> Seq.map (fun f -> rowFields |> Map.tryFindWithError f "highlightedFilters" f)
+            |> sum.All
+            |> sum.Map ignore
+
           do!
             sum.All(
               table.Columns
@@ -974,7 +982,7 @@ module Validator =
       }
       |> state.WithErrorContext $"...when validating launcher {formLauncher.LauncherName}"
 
-  type FormApis with
+  type FormApis<'ExprExtension, 'ValueExtension> with
     static member inline private extractTypes<'k, 'v when 'v: (static member Type: 'v -> ExprTypeId) and 'k: comparison>
       (m: Map<'k, 'v>)
       =
@@ -983,7 +991,7 @@ module Validator =
       |> Seq.map (fun e -> e |> 'v.Type |> Set.singleton)
       |> Seq.fold (+) Set.empty
 
-    static member GetTypesFreeVars(fa: FormApis) : Set<ExprTypeId> =
+    static member GetTypesFreeVars(fa: FormApis<'ExprExtension, 'ValueExtension>) : Set<ExprTypeId> =
       FormApis.extractTypes fa.Enums
       + FormApis.extractTypes fa.Streams
       + FormApis.extractTypes (fa.Entities |> Map.map (fun _ -> fst))
@@ -1046,17 +1054,48 @@ module Validator =
       }
       |> sum.WithErrorContext $"...when validating stream {streamApi.StreamName}"
 
-  type TableApi with
+  type TableApi<'ExprExtension, 'ValueExtension> with
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
+      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (tableApi: TableApi * Set<TableMethod>)
+      (tableApi: TableApi<'ExprExtension, 'ValueExtension> * Set<TableMethod>)
       : Sum<Unit, Errors> =
       sum {
         let tableApiFst = tableApi |> fst
         let! tableType = ExprType.Find ctx.Types tableApiFst.TypeId
         let! tableType = ExprType.ResolveLookup ctx.Types tableType
         let! fields = ExprType.GetFields tableType
+
+        do!
+          tableApiFst.Sorting
+          |> Seq.map (fun sortableField -> fields |> sum.TryFindField sortableField |> sum.Map ignore)
+          |> sum.All
+          |> sum.Map ignore
+          |> sum.WithErrorContext $"...when validating sorting"
+
+        do!
+          tableApiFst.Filters
+          |> Map.map (fun filterableField filtering ->
+            sum {
+              do! fields |> sum.TryFindField filterableField |> sum.Map ignore
+              let! rendererType = NestedRenderer.Validate codegen ctx filtering.Type filtering.Display
+
+              do!
+                ExprType.Unify
+                  Map.empty
+                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                  rendererType
+                  filtering.Type
+                |> sum.Map ignore
+
+              return ()
+            }
+            |> sum.WithErrorContext $"...when validating filterable field {filterableField}")
+          |> sum.AllMap
+          |> sum.Map ignore
+          |> sum.WithErrorContext $"...when validating filters"
+
 
         let error =
           sum.Throw(
@@ -1073,11 +1112,11 @@ module Validator =
       }
       |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
 
-  type LookupApi with
+  type LookupApi<'ExprExtension, 'ValueExtension> with
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (lookupApi: LookupApi)
+      (lookupApi: LookupApi<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
       sum {
         let! lookupType = ctx.TryFindType lookupApi.EntityName
@@ -1142,11 +1181,13 @@ module Validator =
           |> Sum.map ignore
           |> state.OfSum
 
+        let! codegenConfig = state.GetContext()
+
         do!
           sum.All(
             ctx.Apis.Tables
             |> Map.values
-            |> Seq.map (TableApi.Validate codegenTargetConfig ctx)
+            |> Seq.map (TableApi.Validate codegenTargetConfig codegenConfig ctx)
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1164,8 +1205,6 @@ module Validator =
 
         // do System.Console.WriteLine(ctx.Forms.ToFSharpString)
         // do System.Console.ReadLine() |> ignore
-
-        let! codegenConfig = state.GetContext()
 
         do!
           sum.All(

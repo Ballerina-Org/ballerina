@@ -129,6 +129,11 @@ module WithError =
       =
       state.Any({| concat = 'b.Concat |}, ps)
 
+    member inline state.Any<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p: State<'a, 'c, 's, 'b>, ps: List<State<'a, 'c, 's, 'b>>)
+      =
+      NonEmptyList.OfList(p, ps) |> state.Any
+
     member state.All<'a, 'c, 's, 'e>(e: {| concat: 'e * 'e -> 'e |}, ps: List<State<'a, 'c, 's, 'e>>) =
       match ps with
       | [] -> state.Return []

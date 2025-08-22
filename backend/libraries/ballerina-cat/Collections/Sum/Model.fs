@@ -109,6 +109,22 @@ module Sum =
       : Sum<List<'a>, 'b> =
       ps |> List.ofSeq |> sum.All
 
+    member inline sum.AllNonEmpty<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (ps: NonEmptyList<Sum<'a, 'b>>)
+      : Sum<NonEmptyList<'a>, 'b> =
+      let head: Sum<'a, 'b> = ps.Head
+      let tail: Sum<List<'a>, 'b> = sum.All ps.Tail
+
+      match head with
+      | Left leftHead ->
+        match tail with
+        | Left leftTail -> Left(NonEmptyList.OfList(leftHead, leftTail))
+        | Right rightTail -> Right rightTail
+      | Right rightHead ->
+        match tail with
+        | Left _ -> Right rightHead
+        | Right rightTail -> Right('b.Concat(rightHead, rightTail))
+
     member inline _.All2<'a1, 'a2, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p1: Sum<'a1, 'b>)
       (p2: Sum<'a2, 'b>)

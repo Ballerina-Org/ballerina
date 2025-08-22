@@ -241,11 +241,110 @@ module Runner =
         )
       )
 
-  type TableApi with
+  type TableFilteringOperator with
     static member Parse
+      (json: JsonValue)
+      : State<TableFilteringOperator, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      sum.Any(
+        sum {
+          do! json |> JsonValue.AsEnum("=" |> Set.singleton) |> sum.Map ignore
+          return TableFilteringOperator.EqualsTo
+        },
+        [ sum {
+            do! json |> JsonValue.AsEnum("!=" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.NotEqualsTo
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("contains" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.Contains
+          }
+          sum {
+            do! json |> JsonValue.AsEnum(">=" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.GreaterThanOrEqualsTo
+          }
+          sum {
+            do! json |> JsonValue.AsEnum(">" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.GreaterThan
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("<=" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.SmallerThanOrEqualsTo
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("<" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.SmallerThan
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("!=null" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.IsNotNull
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("=null" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.IsNull
+          }
+          sum {
+            do! json |> JsonValue.AsEnum("startswith" |> Set.singleton) |> sum.Map ignore
+            return TableFilteringOperator.StartsWith
+          }
+          sum {
+            return!
+              $"Error: cannot parse json {json} as a filtering operator!"
+              |> Errors.Singleton
+              |> sum.Throw
+              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+          } ]
+      )
+      |> state.OfSum
+      |> state.MapError(Errors.HighestPriority)
+
+  type TableFilter<'ExprExtension, 'ValueExtension> with
+    static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
+      (json: JsonValue)
+      : State<
+          TableFilter<'ExprExtension, 'ValueExtension>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
+      state {
+        let! json = json |> JsonValue.AsRecordMap |> state.OfSum
+        let! operators = json |> Map.tryFindWithError "operators" "operators" "operators" |> state.OfSum
+        let! operators = operators |> JsonValue.AsArray |> state.OfSum
+        let! operators = operators |> Seq.map TableFilteringOperator.Parse |> state.All
+        let operators = operators |> Set.ofList
+
+        let! exprType = json |> Map.tryFindWithError "type" "type" "type" |> state.OfSum
+        let! exprType = exprType |> ExprType.Parse |> state.OfSum
+
+        let! display = json |> Map.tryFindWithError "display" "display" "display" |> state.OfSum
+
+        let! display =
+          display
+          |> NestedRenderer<'ExprExtension, 'ValueExtension>.Parse primitivesExt exprParser
+
+        return
+          { Operators = operators //: Set<TableFilteringOperator>
+            Type = exprType
+            Display = display //: NestedRenderer<'ExprExtension, 'ValueExtension>
+          }
+      }
+
+  type TableApi<'ExprExtension, 'ValueExtension> with
+    static member Parse
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       (tableName: string)
       (tableTypeJson: JsonValue)
-      : State<TableApi * Set<TableMethod>, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      : State<
+          TableApi<'ExprExtension, 'ValueExtension> * Set<TableMethod>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -272,9 +371,58 @@ module Runner =
         let! tableType = ExprType.Parse typeJson |> state.OfSum
         let! tableTypeId = tableType |> ExprType.AsLookupId |> state.OfSum
 
+        let! filtersJson =
+          state.Either
+            (state {
+              let! filtersJson = tableTypeFieldJsons |> state.TryFindField "filtering"
+              return Option.Some filtersJson
+            })
+            (state { return Option.None })
+
+        let! filters =
+          filtersJson
+          |> Option.map (fun filtersJson ->
+            state {
+              let! filters = filtersJson |> JsonValue.AsRecordMap |> state.OfSum
+
+              let! filters =
+                filters
+                |> Map.map (fun _ -> TableFilter.Parse primitivesExt exprParser)
+                |> state.AllMap
+
+              return filters
+            })
+          |> state.RunOption
+
+        let filters = filters |> Option.defaultWith (fun () -> Map.empty)
+
+        let! sortingJson =
+          state.Either
+            (state {
+              let! sortingJson = tableTypeFieldJsons |> state.TryFindField "sorting"
+              return Option.Some sortingJson
+            })
+            (state { return Option.None })
+
+        let! sorting =
+          sortingJson
+          |> Option.map (fun sortingJson ->
+            state {
+              let! sorting = sortingJson |> JsonValue.AsArray |> state.OfSum
+
+              let! sorting = sorting |> Seq.map (JsonValue.AsString >> state.OfSum) |> state.All
+
+              return sorting |> Set.ofSeq
+            })
+          |> state.RunOption
+
+        let sorting = sorting |> Option.defaultWith (fun () -> Set.empty)
+
         let tableApi =
           { TableApi.TypeId = tableTypeId
-            TableName = tableName },
+            TableName = tableName
+            Filters = filters
+            Sorting = sorting },
           methods
 
         return tableApi
@@ -284,7 +432,13 @@ module Runner =
     static member ParseAsMany
       (tableName: string)
       (tableTypeJson: JsonValue)
-      : State<TableApi * Set<CrudMethod>, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      : State<
+          TableApi<'ExprExtension, 'ValueExtension> * Set<CrudMethod>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
       state {
         let! tableTypeFieldJsons = tableTypeJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -300,7 +454,9 @@ module Runner =
 
         let tableApi =
           { TableApi.TypeId = tableTypeId
-            TableName = tableName },
+            TableName = tableName
+            Filters = Map.empty
+            Sorting = Set.empty },
           methods
 
         return tableApi
@@ -334,11 +490,17 @@ module Runner =
       }
       |> state.WithErrorContext $"...when parsing entity api {entityName}"
 
-  type LookupApi with
+  type LookupApi<'ExprExtension, 'ValueExtension> with
     static member Parse
       (parentEntityName: string)
       (lookupApiJson: JsonValue)
-      : State<LookupApi, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      : State<
+          LookupApi<'ExprExtension, 'ValueExtension>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
       state {
         let! lookupApiFields = lookupApiJson |> JsonValue.AsRecord |> state.OfSum
 
@@ -399,6 +561,8 @@ module Runner =
 
   type ParsedFormsContext<'ExprExtension, 'ValueExtension> with
     static member ParseApis
+      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
+      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
       enumValueFieldName
       (topLevel: TopLevel)
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
@@ -407,23 +571,47 @@ module Runner =
           topLevel.Enums, topLevel.Streams, topLevel.Entities, topLevel.Tables, topLevel.Lookups
 
         for enumName, enumJson in enums do
-          do! EnumApi.Parse enumValueFieldName enumName enumJson
+          do! EnumApi.Parse<'ExprExtension, 'ValueExtension> enumValueFieldName enumName enumJson
 
         for streamName, streamJson in streams do
           let! streamApi = StreamApi.Parse streamName streamJson
-          do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Streams(Map.add streamName streamApi)))
+
+          do!
+            state.SetState(
+              ParsedFormsContext.Updaters.Apis(
+                FormApis<'ExprExtension, 'ValueExtension>.Updaters.Streams(Map.add streamName streamApi)
+              )
+            )
 
         for entityName, entityJson in entities do
           let! entityApi = EntityApi.Parse entityName entityJson
-          do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Entities(Map.add entityName entityApi)))
+
+          do!
+            state.SetState(
+              ParsedFormsContext.Updaters.Apis(
+                FormApis<'ExprExtension, 'ValueExtension>.Updaters.Entities(Map.add entityName entityApi)
+              )
+            )
 
         for tableName, tableJson in tables do
-          let! tableApi = TableApi.Parse tableName tableJson
-          do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Tables(Map.add tableName tableApi)))
+          let! tableApi = TableApi.Parse primitivesExt exprParser tableName tableJson
+
+          do!
+            state.SetState(
+              ParsedFormsContext.Updaters.Apis(
+                FormApis<'ExprExtension, 'ValueExtension>.Updaters.Tables(Map.add tableName tableApi)
+              )
+            )
 
         for lookupName, lookupJson in lookups do
           let! lookupApi = LookupApi.Parse lookupName lookupJson
-          do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Lookups(Map.add lookupName lookupApi)))
+
+          do!
+            state.SetState(
+              ParsedFormsContext.Updaters.Apis(
+                FormApis<'ExprExtension, 'ValueExtension>.Updaters.Lookups(Map.add lookupName lookupApi)
+              )
+            )
 
         return ()
       }
@@ -589,7 +777,14 @@ module Runner =
             )
 
         let! _ = state.GetState()
-        do! ParsedFormsContext.ParseApis generatedLanguageSpecificConfig.EnumValueFieldName topLevel
+
+        do!
+          ParsedFormsContext.ParseApis
+            primitivesExt
+            exprParser
+            generatedLanguageSpecificConfig.EnumValueFieldName
+            topLevel
+
         do! ParsedFormsContext.ParseForms primitivesExt exprParser topLevel.Forms
         do! ParsedFormsContext.ParseLaunchers topLevel.Launchers
         return topLevel

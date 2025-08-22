@@ -109,7 +109,24 @@ module Model =
       DeltaTypeName: string
       SupportedRenderers: Set<string>
       DefaultConstructor: string
-      MappingFunction: string }
+      MappingFunction: string
+      FilteringConfig: CodegenConfigTableFilteringTypesDef }
+
+  and CodegenConfigTableFilteringTypesDef =
+    { SortingTypeName: string
+      FilteringOperators: CodegenConfigTableFilteringOperatorsDef }
+
+  and CodegenConfigTableFilteringOperatorsDef =
+    { EqualsTo: string
+      NotEqualsTo: string
+      GreaterThan: string
+      SmallerThan: string
+      GreaterThanOrEqualsTo: string
+      SmallerThanOrEqualsTo: string
+      StartsWith: string
+      Contains: string
+      IsNull: string
+      IsNotNull: string }
 
   and CodegenConfigMapDef =
     { GeneratedTypeName: string
@@ -251,29 +268,56 @@ module Model =
 
   and TableApiId = { TableName: string }
 
-  and TableApi =
+  and FieldName = string
+
+  and TableFilteringOperator =
+    | EqualsTo
+    | NotEqualsTo
+    | GreaterThan
+    | SmallerThan
+    | GreaterThanOrEqualsTo
+    | SmallerThanOrEqualsTo
+    | StartsWith
+    | Contains
+    | IsNull
+    | IsNotNull
+
+  and TableFilter<'ExprExtension, 'ValueExtension> =
+    { Operators: Set<TableFilteringOperator>
+      Type: ExprType
+      Display: NestedRenderer<'ExprExtension, 'ValueExtension> }
+
+  and TableFilters<'ExprExtension, 'ValueExtension> = Map<FieldName, TableFilter<'ExprExtension, 'ValueExtension>>
+
+  and TableApi<'ExprExtension, 'ValueExtension> =
     { TableName: string
-      TypeId: ExprTypeId }
+      TypeId: ExprTypeId
+      Filters: TableFilters<'ExprExtension, 'ValueExtension>
+      Sorting: Set<FieldName> }
 
-    static member Id(e: TableApi) = { TableName = e.TableName }
+    static member Id(e: TableApi<'ExprExtension, 'ValueExtension>) = { TableName = e.TableName }
 
-    static member Create(n, t) : TableApi = { TableName = n; TypeId = t }
+    static member Create(n, t) : TableApi<'ExprExtension, 'ValueExtension> =
+      { TableName = n
+        TypeId = t
+        Filters = Map.empty
+        Sorting = Set.empty }
 
-  and LookupApi =
+  and LookupApi<'ExprExtension, 'ValueExtension> =
     { EntityName: string
       Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Ones: Map<string, EntityApi * Set<CrudMethod>>
-      Manys: Map<string, TableApi * Set<CrudMethod>> }
+      Manys: Map<string, TableApi<'ExprExtension, 'ValueExtension> * Set<CrudMethod>> }
 
-  and FormApis =
+  and FormApis<'ExprExtension, 'ValueExtension> =
     { Enums: Map<string, EnumApi>
       Streams: Map<string, StreamApi>
       Entities: Map<string, EntityApi * Set<CrudMethod>>
-      Tables: Map<string, TableApi * Set<TableMethod>>
-      Lookups: Map<string, LookupApi> }
+      Tables: Map<string, TableApi<'ExprExtension, 'ValueExtension> * Set<TableMethod>>
+      Lookups: Map<string, LookupApi<'ExprExtension, 'ValueExtension>> }
 
-    static member Empty =
+    static member Empty: FormApis<'ExprExtension, 'ValueExtension> =
       { Enums = Map.empty
         Streams = Map.empty
         Entities = Map.empty
@@ -281,21 +325,21 @@ module Model =
         Lookups = Map.empty }
 
     static member Updaters =
-      {| Enums = fun u s -> { s with FormApis.Enums = u (s.Enums) }
+      {| Enums = fun u (s: FormApis<'ExprExtension, 'ValueExtension>) -> { s with FormApis.Enums = u (s.Enums) }
          Streams =
-          fun u s ->
+          fun u (s: FormApis<'ExprExtension, 'ValueExtension>) ->
             { s with
                 FormApis.Streams = u (s.Streams) }
          Entities =
-          fun u s ->
+          fun u (s: FormApis<'ExprExtension, 'ValueExtension>) ->
             { s with
                 FormApis.Entities = u (s.Entities) }
          Tables =
-          fun u s ->
+          fun u (s: FormApis<'ExprExtension, 'ValueExtension>) ->
             { s with
                 FormApis.Tables = u (s.Tables) }
          Lookups =
-          fun u s ->
+          fun u (s: FormApis<'ExprExtension, 'ValueExtension>) ->
             { s with
                 FormApis.Lookups = u (s.Lookups) } |}
 
@@ -325,6 +369,7 @@ module Model =
     | Table of
       {| Renderer: string
          Details: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
+         HighlightedFilters: List<FieldName>
          //  Preview: Option<FormBody>
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
@@ -344,9 +389,7 @@ module Model =
       | Table t -> t.RowType |> ExprType.TableType
 
   and Column<'ExprExtension, 'ValueExtension> =
-    { FieldConfig: FieldConfig<'ExprExtension, 'ValueExtension>
-      IsFilterable: bool
-      IsSortable: bool }
+    { FieldConfig: FieldConfig<'ExprExtension, 'ValueExtension> }
 
   and FormFields<'ExprExtension, 'ValueExtension> =
     { Fields: Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>
@@ -503,7 +546,7 @@ module Model =
 
   type ParsedFormsContext<'ExprExtension, 'ValueExtension> =
     { Types: TypeContext
-      Apis: FormApis
+      Apis: FormApis<'ExprExtension, 'ValueExtension>
       Forms: Map<string, FormConfig<'ExprExtension, 'ValueExtension>>
       GenericRenderers:
         List<
@@ -514,7 +557,7 @@ module Model =
 
     static member Empty: ParsedFormsContext<'ExprExtension, 'ValueExtension> =
       { Types = Map.empty
-        Apis = FormApis.Empty
+        Apis = FormApis<'ExprExtension, 'ValueExtension>.Empty
         Forms = Map.empty
         GenericRenderers = []
         Launchers = Map.empty }

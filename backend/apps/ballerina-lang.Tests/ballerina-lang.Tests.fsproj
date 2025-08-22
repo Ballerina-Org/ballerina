@@ -1,49 +1,49 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <RootNamespace>Ballerina.Lang.Tests</RootNamespace>
-        <LangVersion>latest</LangVersion>
-        <IsPackable>false</IsPackable>
-        <GenerateProgramFile>false</GenerateProgramFile>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Ballerina.Lang.Tests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <Compile Include="Parser/Common.fs" />
-        <Compile Include="Parser/ExprType.fs" />
-        <Compile Include="Parser/Expr.fs" />
-        <Compile Include="ExprType/TypeCheck.fs" />
-        <Compile Include="ExprType/Unification.fs" />
-        <Compile Include="Next/Type/Eval.fs" />
-        <Compile Include="Next/Type/Unify.fs" />
-        <Compile Include="Next/Type/KindCheck.fs" />
-        <Compile Include="Next/Type/Instantiate.fs" />
-        <Compile Include="Next\Type\Json\Type_TypeValue_PrimitiveType.fs" />
-        <Compile Include="Next\Type\Json\Type_TypeValue.fs" />
-        <Compile Include="Next\Type\Json\Type.fs" />
-        <Compile Include="Next\Type\Json\Type_TypeExpr.fs" />
-        <Compile Include="Next\Term\Json\Value_TypeValue_Primitive.fs" />
-        <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
-        <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
-        <Compile Include="Expr/Model.fs" />
-        <Compile Include="Program.fs"/>
-    </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Parser/Common.fs" />
+    <Compile Include="Parser/ExprType.fs" />
+    <Compile Include="Parser/Expr.fs" />
+    <Compile Include="ExprType/TypeCheck.fs" />
+    <Compile Include="ExprType/Unification.fs" />
+    <Compile Include="Next/Type/Eval.fs" />
+    <Compile Include="Next/Type/Unify.fs" />
+    <Compile Include="Next/Type/KindCheck.fs" />
+    <Compile Include="Next/Type/Instantiate.fs" />
+    <Compile Include="Next\Type\Json\Type_TypeValue_PrimitiveType.fs" />
+    <Compile Include="Next\Type\Json\Type_TypeValue.fs" />
+    <Compile Include="Next\Type\Json\Type.fs" />
+    <Compile Include="Next\Type\Json\Type_TypeExpr.fs" />
+    <Compile Include="Next\Term\Json\Value_TypeValue_Primitive.fs" />
+    <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
+    <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
+    <Compile Include="Expr/Model.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="6.0.4"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
-        <PackageReference Include="NUnit" Version="4.3.2" />
-        <PackageReference Include="NUnit.Analyzers" Version="4.9.2">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
-        <PackageReference Update="FSharp.Core" Version="9.0.300" />
-    </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
-      <ProjectReference Include="..\..\libraries\ballerina-lang\ballerina-lang.fsproj" />
-      <ProjectReference Include="..\..\libraries\unbound-core\unbound-core.fsproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.9.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+    <PackageReference Update="FSharp.Core" Version="9.0.303" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-lang\ballerina-lang.fsproj" />
+    <ProjectReference Include="..\..\libraries\unbound-core\unbound-core.fsproj" />
+  </ItemGroup>
 
 </Project>
