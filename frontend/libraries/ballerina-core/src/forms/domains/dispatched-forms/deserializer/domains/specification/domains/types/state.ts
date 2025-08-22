@@ -544,6 +544,21 @@ export type FilterType<T> =
   | FilterSmallerThanType<T>
   | FilterStartsWithType<T>;
 
+export const FilterTypeKinds = [
+  "contains",
+  "=",
+  "!=",
+  ">=",
+  ">",
+  "!=null",
+  "=null",
+  "<=",
+  "<",
+  "startsWith",
+] as const;
+
+export type FilterTypeKind = (typeof FilterTypeKinds)[number];
+
 export type DispatchParsedType<T> =
   | RecordType<T>
   | LookupType

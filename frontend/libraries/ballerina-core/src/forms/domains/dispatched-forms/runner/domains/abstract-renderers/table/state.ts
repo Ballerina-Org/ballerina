@@ -30,6 +30,7 @@ import {
   ValueFilter,
   DispatchParsedType,
   CommonAbstractRendererForeignMutationsExpected,
+  FilterTypeKind,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -76,7 +77,9 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     >;
     previousRemoteEntityVersionIdentifier: string;
     shouldReinitialize: boolean;
-    filterValues: Map<string, List<ValueFilter>>;
+    filterValues: Map<string, List<PredicateValue>>;
+    // keeping kind and value separate to allow a user to change the kind of the filter without changing the value
+    filterKinds: Map<string, List<FilterTypeKind>>;
     filterStates: Map<string, List<any>>;
   };
 };
@@ -97,6 +100,7 @@ export const TableAbstractRendererState = {
       previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
       filterValues: Map(),
+      filterKinds: Map(),
       filterStates: Map(),
     },
   }),
@@ -141,6 +145,9 @@ export const TableAbstractRendererState = {
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "filterStates",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "filterKinds",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({

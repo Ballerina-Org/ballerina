@@ -515,7 +515,7 @@ export const TableAbstractRenderer = <
             TableAbstractRendererState
         >((_) => ({
           value:
-            _.customFormState.filterValues.get(columnName)?.get(index). ??
+            _.customFormState.filterValues.get(columnName)?.get(index) ??
             filter.GetDefaultValue(),
           locked: false,
           disabled: false,
