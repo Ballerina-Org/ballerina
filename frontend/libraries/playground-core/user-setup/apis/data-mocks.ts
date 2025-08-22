@@ -12,6 +12,8 @@ import {
   DispatchOneSource,
   DispatchLookupSources,
   TableAbstractRendererState,
+  DispatchParsedType,
+  SumNType,
 } from "ballerina-core";
 import { Map, Range } from "immutable";
 import { ValueStreamPosition } from "ballerina-core";
@@ -213,6 +215,18 @@ const getActiveUsers: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getInactiveUsers: DispatchTableApiSource = {
@@ -257,6 +271,18 @@ const getInactiveUsers: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getAdmin: DispatchTableApiSource = {
@@ -301,6 +327,18 @@ const getAdmin: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getUserGroups: DispatchTableApiSource = {
@@ -335,6 +373,18 @@ const getUserGroups: DispatchTableApiSource = {
           fromApiRaw,
         ),
       })),
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getActivities: DispatchTableApiSource = {
@@ -368,6 +418,18 @@ const getActivities: DispatchTableApiSource = {
           res.Values,
           fromApiRaw,
         ),
+      })),
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
       })),
 };
 

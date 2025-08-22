@@ -629,9 +629,7 @@ export const DispatchParsedType = {
       args,
       asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
     }),
-    sumN: <T>(
-      args: Array<DispatchParsedType<T>>,
-    ): SumNType<T> => ({
+    sumN: <T>(args: Array<DispatchParsedType<T>>): SumNType<T> => ({
       kind: "sumN",
       args,
       asString: () =>

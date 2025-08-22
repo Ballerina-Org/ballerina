@@ -50,6 +50,9 @@ export type TableAbstractRendererReadonlyContext<
 > & {
   tableApiSource: DispatchTableApiSource;
   fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
+  parseFromApiByType: (
+    type: DispatchParsedType<any>,
+  ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
   apiMethods: Array<TableMethod>;
@@ -86,7 +89,7 @@ export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
-      isFilteringInitialized: true,
+      isFilteringInitialized: false,
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
@@ -287,19 +290,14 @@ export const TableAbstractRendererState = {
       ) {
         return "";
       }
-      const filterTypes = sumNFilterTypes.map((sumNType) => sumNType.args as Array<FilterType<any>>);
-      console.debug('snf', sumNFilterTypes.toJS());
+      const filterTypes = sumNFilterTypes.map(
+        (sumNType) => sumNType.args as Array<FilterType<any>>,
+      );
       const parsedFilters = filterValues.map((filters, columnName) =>
         filters.map((filter) => {
-          // const filterType = filterTypes
-          //   .get(columnName)
-          //   ?.find((f) => f.kind == filter.kind);
           const filterTypeIndex = filterTypes
             .get(columnName)
             ?.findIndex((f) => f.kind == filter.kind);
-          console.debug('filterTypes', filterTypes.toJS());
-          console.debug("filterTypeIndex", filterTypeIndex);
-          console.debug("filter", filter);
           if (filterTypeIndex == undefined || filterTypeIndex < 0) {
             console.error(
               `filter ${filter.kind} type not found for column ${columnName}`,
@@ -351,7 +349,6 @@ export const TableAbstractRendererState = {
           .toList()
           .filter((sorting) => sorting[1] != undefined),
       };
-      console.debug("params", JSON.stringify(params, null, 2));
       return btoa(JSON.stringify(params));
     },
     tableValuesToValueRecord: (

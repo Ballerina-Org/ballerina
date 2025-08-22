@@ -80,7 +80,7 @@ export const TableDispatcher = {
     >(
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<
-        T,  
+        T,
         Flags,
         CustomPresentationContexts,
         ExtraContext
@@ -299,6 +299,8 @@ export const TableDispatcher = {
                                 dispatcherContext.parseFromApiByType(
                                   renderer.type.arg,
                                 ),
+                              parseFromApiByType:
+                                dispatcherContext.parseFromApiByType,
                             }))
                             .withView(concreteRenderer),
                         );

@@ -4,6 +4,7 @@ import {
   DispatchParsedType,
   DispatchTypeName,
   FilterType,
+  SumNType,
 } from "./domains/specification/domains/types/state";
 import { unit, Unit } from "../../../../fun/domains/unit/state";
 import {
@@ -203,8 +204,14 @@ export type DispatchTableApiSource = {
     BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
   >;
   getDefaultFiltersAndSorting: BasicFun<
-    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Unit, Promise<DispatchTableFiltersAndSorting>>
+    Map<string, SumNType<any>>,
+    BasicFun<
+      BasicFun<
+        DispatchParsedType<any>,
+        BasicFun<any, ValueOrErrors<PredicateValue, string>>
+      >,
+      BasicFun<Unit, Promise<DispatchTableFiltersAndSorting>>
+    >
   >;
 };
 

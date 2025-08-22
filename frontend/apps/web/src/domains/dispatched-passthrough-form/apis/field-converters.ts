@@ -165,13 +165,18 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
       }),
     },
     SumN: {
-      fromAPIRawValue: (_: any) =>
-        ValueSumN.Default(_.Discriminator, _.Size, _.Value),
+      fromAPIRawValue: (_: any) => {
+        const caseIndex =
+          parseInt(_.Discriminator.split("of")[0].split("case")[1]) - 1;
+        const arity = parseInt(_.Discriminator.split("of")[1]);
+        const discriminator = `Case${caseIndex + 1}`;
+
+        return ValueSumN.Default(caseIndex, arity, _[discriminator]);
+      },
       toAPIRawValue: ([_, __]) => {
         return {
-          Discriminator: _.caseIndex + 1,
-          Size: _.arity,
-          Value: _.value,
+          Discriminator: `case${_.caseIndex + 1}of${_.arity}`,
+          [`Case${_.caseIndex + 1}`]: _.value,
         };
       },
     },

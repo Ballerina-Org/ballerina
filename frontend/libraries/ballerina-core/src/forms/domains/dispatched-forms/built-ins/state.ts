@@ -1492,6 +1492,7 @@ export const dispatchFromAPIRawValue =
 
       if (t.kind == "sumN") {
         const result = converters["SumN"].fromAPIRawValue(raw);
+
         return dispatchFromAPIRawValue(
           t.args[result.caseIndex],
           types,

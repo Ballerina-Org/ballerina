@@ -16,8 +16,12 @@ import {
   DispatchLookupSources,
   TableAbstractRendererState,
   DispatchTableFiltersAndSorting,
+  SumNType,
+  DispatchParsedType,
+  Value,
+  ValueFilter,
 } from "ballerina-core";
-import { Range, Map } from "immutable";
+import { Range, Map, List } from "immutable";
 import { City } from "../../address/state";
 import { AddressApi } from "../../address/apis/mocks";
 import { v4 } from "uuid";
@@ -155,60 +159,92 @@ const getActiveUsers: DispatchTableApiSource = {
       }));
     },
   getDefaultFiltersAndSorting:
-    //   (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
-    //     PromiseRepo.Default.mock(() => ({
-    //       Filters: {
-    //         Name: ([
-    //           {
-    //             EqualsTo: "John",
-    //           },
-    //         ]),
-    //       },
-    //       Sorting: {},
-    //     })).then((res) => {
-    //       const parsedFilters = Object.entries(res.Filters).map(([columnName, filters]) =>
-    //         filters.map((filter) => {
-    //           const filterType = filterTypes
-    //             .get(columnName)
-    //             ?.find((f) => f.kind == filter.kind);
-    //           if (!filterType) {
-    //             console.error(
-    //               `filter ${filter.kind} type not found for column ${columnName}`,
-    //             );
-    //             return ValueOrErrors.Default.throwOne(
-    //               `filter ${filter.kind} type not found for column ${columnName}`,
-    //             );
-    //           }
-    //           return toApiRaw(filterType, filter, {});
-    //         }),
-    //       );
-    //       if (
-    //         parsedFilters.some((filter) => filter.some((f) => f.kind == "errors"))
-    //       ) {
-    //         console.error(
-    //           "error parsing filters to api",
-    //           parsedFilters
-    //             .filter((filter) => filter.some((f) => f.kind == "errors"))
-    //             .toJS(),
-    //         );
-    //         return "";
-    //       }
-
-    //       // TODO: Deal with this monadically
-    //       const parsedFiltersValues = parsedFilters
-    //         .map((filter) => filter.map((f) => (f as Value<PredicateValue>).value))
-    //         .toJS();
-
-    //       return {
-    //         filters: Map(Object.entries(res.filters)),
-    //         sorting: Map(Object.entries(res.sorting)),
-    //       };
-    //     }),
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
       PromiseRepo.Default.mock(() => ({
-        filters: Map(),
-        sorting: Map(),
-      })),
+        Filters: {
+          Name: [
+            {
+              Discriminator: "case1of2",
+              Case1: {
+                EqualsTo: "John",
+              },
+              Case2: null,
+            },
+          ],
+        },
+        Sorting: [["Name", "Ascending"]],
+      })).then((res) => {
+        const parsedFilters: [string, ValueOrErrors<ValueFilter, string>[]][] =
+          Object.entries(res.Filters).map(
+            ([columnName, filters]) =>
+              [
+                columnName,
+                filters.map((filter) => {
+                  const filterType = filterTypes.get(columnName);
+                  if (!filterType) {
+                    console.error(
+                      `filter type not found for column ${columnName}`,
+                    );
+                    return ValueOrErrors.Default.throwOne<ValueFilter, string>(
+                      `filter type not found for column ${columnName}`,
+                    );
+                  }
+                  return parseFromApiByType(filterType)(
+                    filter,
+                  ) as ValueOrErrors<ValueFilter, string>;
+                }),
+              ] as const,
+          );
+        console.debug("parsedFiltersz", parsedFilters);
+        const parsedFiltersMap = Map(parsedFilters);
+        if (
+          parsedFiltersMap.some((filters) =>
+            filters.some((f) => f.kind == "errors"),
+          )
+        ) {
+          console.error(
+            "error parsing filters to api",
+            parsedFiltersMap.filter((filters) =>
+              filters.some((f) => f.kind == "errors"),
+            ),
+          );
+          return {
+            filters: Map(),
+            sorting: Map(),
+          };
+        }
+
+        // TODO: Deal with this monadically
+        const parsedFiltersValues = parsedFiltersMap.map((filters) =>
+          List(filters.map((f) => (f as Value<ValueFilter>).value)),
+        );
+
+        return {
+          filters: parsedFiltersValues,
+          sorting: Map<string, "Ascending" | "Descending" | undefined>(
+            res.Sorting.map(
+              (s) =>
+                [s[0], s[1]] as [
+                  string,
+                  "Ascending" | "Descending" | undefined,
+                ],
+            ),
+          ),
+        };
+      }),
+  // (filterTypes: Map<string, SumNType<any>>) =>
+  //   (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+  //   () =>
+  //     PromiseRepo.Default.mock(() => ({
+  //       filters: Map(),
+  //       sorting: Map(),
+  //     })),
 };
 
 const getActiveFriends: DispatchTableApiSource = {
@@ -293,7 +329,13 @@ const getActiveFriends: DispatchTableApiSource = {
       }));
     },
   getDefaultFiltersAndSorting:
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
       PromiseRepo.Default.mock(() => ({
         filters: Map(),
         sorting: Map(),
@@ -427,7 +469,13 @@ const getChildren: DispatchTableApiSource = {
       }));
     },
   getDefaultFiltersAndSorting:
-    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
       PromiseRepo.Default.mock(() => ({
         filters: Map(),
         sorting: Map(),

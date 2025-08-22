@@ -5,6 +5,7 @@ import {
 } from "../../../../../../../../value-infinite-data-stream/state";
 import {
   replaceWith,
+  SumNType,
   TableAbstractRendererState,
   Unit,
 } from "../../../../../../../../../main";
@@ -22,36 +23,44 @@ const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
 
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
-// if value exists in entity, use that, otherwise load first chunk from infinite stream
 const initialiseFiltersAndSorting = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
->() =>
-  Co<CustomPresentationContext, ExtraContext>()
-    .GetState()
-    .then((current) => {
-      const getDefaultFiltersAndSorting =
-        current.tableApiSource.getDefaultFiltersAndSorting(
-          current.fromTableApiParser,
-        );
-      return Co<CustomPresentationContext, ExtraContext>()
-        .Await(getDefaultFiltersAndSorting, () =>
-          console.error("error getting default filters and sorting"),
-        )
-        .then((filtersAndSorting) => {
-          return filtersAndSorting.kind == "l"
-            ? Co<CustomPresentationContext, ExtraContext>().SetState(
-                TableAbstractRendererState.Updaters.Core.customFormState.children
-                  .filters(replaceWith(filtersAndSorting.value.filters))
-                  .then(
-                    TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-                      replaceWith(filtersAndSorting.value.sorting),
+>(
+  filterTypes: Map<string, SumNType<any>>,
+) => {
+  return Co<CustomPresentationContext, ExtraContext>().Seq([
+    Co<CustomPresentationContext, ExtraContext>()
+      .GetState()
+      .then((current) => {
+        const getDefaultFiltersAndSorting =
+          current.tableApiSource.getDefaultFiltersAndSorting(filterTypes);
+        return Co<CustomPresentationContext, ExtraContext>()
+          .Await(getDefaultFiltersAndSorting(current.parseFromApiByType), () =>
+            console.error("error getting default filters and sorting"),
+          )
+          .then((filtersAndSorting) => {
+            return filtersAndSorting.kind == "l"
+              ? Co<CustomPresentationContext, ExtraContext>().SetState(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children
+                    .filters(replaceWith(filtersAndSorting.value.filters))
+                    .then(
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
+                        replaceWith(filtersAndSorting.value.sorting),
+                      ),
                     ),
-                  ),
-              )
-            : Co<CustomPresentationContext, ExtraContext>().Wait(0);
-        });
-    });
+                )
+              : Co<CustomPresentationContext, ExtraContext>().Wait(0);
+          });
+      }),
+    Co<CustomPresentationContext, ExtraContext>().SetState(
+      TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(
+        // always set to true even if the first call fails so we don't block the flow
+        replaceWith(true),
+      ),
+    ),
+  ]);
+};
 
 const intialiseTable = <
   CustomPresentationContext = Unit,
@@ -148,6 +157,22 @@ const reinitialise = <
       );
     });
 
+export const TableInitialiseFiltersAndSortingRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>(
+  filterTypes: Map<string, SumNType<any>>,
+) =>
+  Co<CustomPresentationContext, ExtraContext>().Template<any>(
+    initialiseFiltersAndSorting<CustomPresentationContext, ExtraContext>(
+      filterTypes,
+    ),
+    {
+      interval: 15,
+      runFilter: (props) =>
+        props.context.customFormState.isFilteringInitialized == false,
+    },
+  );
 export const TableReinitialiseRunner = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,

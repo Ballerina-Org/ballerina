@@ -15,6 +15,8 @@ import {
   DispatchOneSource,
   DispatchLookupSources,
   TableAbstractRendererState,
+  SumNType,
+  DispatchParsedType,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
 import { City } from "../../address/state";
@@ -108,6 +110,18 @@ const getActiveUsers: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getActiveFriends: DispatchTableApiSource = {
@@ -187,6 +201,18 @@ const getActiveFriends: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getFriends: DispatchOneSource = {

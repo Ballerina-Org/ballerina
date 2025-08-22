@@ -43,7 +43,11 @@ import {
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
-import { TableReinitialiseRunner, TableRunner } from "./coroutines/runner";
+import {
+  TableInitialiseFiltersAndSortingRunner,
+  TableReinitialiseRunner,
+  TableRunner,
+} from "./coroutines/runner";
 
 const EmbeddedValueInfiniteStreamTemplate = <
   CustomPresentationContext = Unit,
@@ -147,6 +151,11 @@ export const TableAbstractRenderer = <
     CustomPresentationContext,
     ExtraContext
   >();
+  const InstantiatedEmbeddedParseFromApiByTypeTemplate =
+    TableInitialiseFiltersAndSortingRunner<
+      CustomPresentationContext,
+      ExtraContext
+    >(Filters.map(({ filters }) => filters));
   const InstantiatedEmbeddedValueInfiniteStreamTemplate =
     EmbeddedValueInfiniteStreamTemplate<
       CustomPresentationContext,
@@ -690,6 +699,12 @@ export const TableAbstractRenderer = <
       TableEntityType.fields.keySeq().toArray().includes(_),
     );
 
+    console.debug(
+      "xyz",
+      JSON.stringify(props.context.customFormState.filters, null, 2),
+      JSON.stringify(props.context.customFormState.sorting, null, 2),
+    );
+
     return (
       <>
         <IdProvider domNodeId={domNodeId}>
@@ -898,5 +913,6 @@ export const TableAbstractRenderer = <
     InstantiatedTableRunner,
     InstantiatedTableReinitialiseRunner,
     InstantiatedEmbeddedValueInfiniteStreamTemplate,
+    InstantiatedEmbeddedParseFromApiByTypeTemplate,
   ]);
 };
