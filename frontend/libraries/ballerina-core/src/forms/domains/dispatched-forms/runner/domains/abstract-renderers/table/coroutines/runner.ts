@@ -1,4 +1,4 @@
-import { Map } from "immutable";
+import { Map, Set } from "immutable";
 import {
   ValueInfiniteStreamState,
   ValueStreamPosition,
@@ -41,53 +41,67 @@ const intialiseTable = <
         current.fromTableApiParser,
       );
 
+      console.debug(
+        "params - filterAndSortParam",
+        current.customFormState.filterAndSortParam,
+      );
+
+      const params =
+        current.customFormState.filterAndSortParam == ""
+          ? Map<string, string>()
+          : Map([
+              ["filtersAndSorting", current.customFormState.filterAndSortParam],
+            ]);
+
       return Co<CustomPresentationContext, ExtraContext>().SetState(
-        replaceWith(TableAbstractRendererState.Default()).then(
-          TableAbstractRendererState.Updaters.Core.customFormState.children
-            .stream(
-              replaceWith(
-                ValueInfiniteStreamState.Default(
-                  DEFAULT_CHUNK_SIZE,
-                  getChunkWithParams(Map<string, string>()),
-                  initialData.size == 0 && hasMoreValues ? "loadMore" : false,
-                ),
-              )
-                .then(
-                  ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(
-                    0,
-                    {
-                      data: initialData,
-                      hasMoreValues: hasMoreValues,
-                      from,
-                      to,
-                    },
-                  ),
-                )
-                .then(
-                  ValueInfiniteStreamState.Updaters.Core.position(
-                    ValueStreamPosition.Updaters.Core.nextStart(
-                      replaceWith(to),
-                    ),
-                  ),
-                ),
+        TableAbstractRendererState.Updaters.Core.customFormState.children
+          .stream(
+            replaceWith(
+              ValueInfiniteStreamState.Default(
+                DEFAULT_CHUNK_SIZE,
+                getChunkWithParams(params),
+                initialData.size == 0 && hasMoreValues ? "loadMore" : false,
+              ),
             )
-            .thenMany([
-              TableAbstractRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
-                replaceWith(getChunkWithParams),
+              .then(
+                ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
+                  data: initialData,
+                  hasMoreValues: hasMoreValues,
+                  from,
+                  to,
+                }),
+              )
+              .then(
+                ValueInfiniteStreamState.Updaters.Core.position(
+                  ValueStreamPosition.Updaters.Core.nextStart(replaceWith(to)),
+                ),
               ),
-              TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                false,
-              ),
-              TableAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
-                replaceWith(current.remoteEntityVersionIdentifier),
-              ),
-              TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-                replaceWith<
-                  TableAbstractRendererState["customFormState"]["initializationStatus"]
-                >("initialized"),
-              ),
-            ]),
-        ),
+          )
+          .thenMany([
+            TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+              replaceWith(Map()),
+            ),
+            TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
+              replaceWith(Set()),
+            ),
+            TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
+              replaceWith(undefined as any),
+            ),
+            TableAbstractRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
+              replaceWith(getChunkWithParams),
+            ),
+            TableAbstractRendererState.Updaters.Template.shouldReinitialize(
+              false,
+            ),
+            TableAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
+              replaceWith(current.remoteEntityVersionIdentifier),
+            ),
+            TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+              replaceWith<
+                TableAbstractRendererState["customFormState"]["initializationStatus"]
+              >("initialized"),
+            ),
+          ]),
       );
     });
 

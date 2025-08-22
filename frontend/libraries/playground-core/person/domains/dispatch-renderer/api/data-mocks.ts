@@ -68,6 +68,7 @@ const getActiveUsers: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug("streamParams - getMany ActiveUsers", streamParams.toJS());
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -179,6 +180,7 @@ const getActiveFriends: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug("streamParams - getMany ActiveFriends", streamParams.toJS());
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -274,6 +276,7 @@ const getChildren: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug("streamParams - getMany Children", streamParams.toJS());
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -391,6 +394,7 @@ const getFriends: DispatchOneSource = {
     (id: Guid) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
+      console.debug("streamParams - getMany Friends", streamParams.toJS());
       return PromiseRepo.Default.mock(() => ({
         Values: Range(1, 5)
           .map((_) => ({

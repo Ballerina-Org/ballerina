@@ -259,13 +259,6 @@ export const TableAbstractRendererState = {
   },
   // TODO: clean up the streams to accept data as a value or errors
   Operations: {
-    // TODO -- need to also parse via api
-    // parseFiltersAndSortingToBase64String: (
-    //   filters: Map<string, Array<ValueFilter>>,
-    //   sorting: Array<string>,
-    // ): string => {
-    //   return btoa(JSON.stringify({ filters, sorting }));
-    // },
     parseFiltersAndSortingToBase64String: (
       filterValues: Map<string, List<ValueFilter>>,
       filterTypes: Map<string, DispatchParsedType<any>>,
@@ -276,10 +269,9 @@ export const TableAbstractRendererState = {
         state: any,
       ) => ValueOrErrors<any, string>,
     ): string => {
-      // const params = PredicateValue.Default.record(OrderedMap({
-      //   Filters: PredicateValue.Default.record(filters.map(filters => PredicateValue.Default.tuple(filters))),
-      //   Sorting: PredicateValue.Default.tuple(sorting.toList().filter(sorting => sorting != undefined)),
-      // }));
+      if (filterValues.valueSeq().every((filters) => filters.size == 0) && sorting.size == 0) {
+        return "";
+      }
       const parsedFilters = filterValues.map((filters, columnName) =>
         filters.map((filter) =>
           toApiRaw(filterTypes.get(columnName)!, filter, {}),
