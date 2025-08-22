@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type deltaSumEffectsEnum string
@@ -80,20 +81,47 @@ func NewDeltaSumRight[a any, b any, deltaA any, deltaB any](delta deltaB) DeltaS
 		right:         &delta,
 	}
 }
-func MatchDeltaSum[a any, b any, deltaA any, deltaB any, Result any](
-	onReplace func(Sum[a, b]) (Result, error),
-	onLeft func(deltaA) (Result, error),
-	onRight func(deltaB) (Result, error),
-) func(DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
-	return func(delta DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
+
+func MatchDeltaSum[context any, a any, b any, deltaA any, deltaB any, Result any](
+	onReplace func(ReaderWithError[context, Sum[a, b]], Sum[a, b]) (Result, error),
+	onLeft func(ReaderWithError[context, a], deltaA) (Result, error),
+	onRight func(ReaderWithError[context, b], deltaB) (Result, error),
+) func(ReaderWithError[context, Sum[a, b]], DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
+	return func(value ReaderWithError[context, Sum[a, b]], delta DeltaSum[a, b, deltaA, deltaB]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case sumReplace:
-			return onReplace(*delta.replace)
+			return onReplace(value, *delta.replace)
 		case sumLeft:
-			return onLeft(*delta.left)
+			var leftValue ReaderWithError[context, a] = BindReaderWithError(
+				func(value Sum[a, b]) ReaderWithError[context, a] {
+					return PureReader[context, Sum[error, a]](
+						Fold(
+							value,
+							Right[error, a],
+							func(right b) Sum[error, a] {
+								return Left[error, a](fmt.Errorf("sum is right"))
+							},
+						),
+					)
+				},
+			)(value)
+			return onLeft(leftValue, *delta.left)
 		case sumRight:
-			return onRight(*delta.right)
+			var rightValue ReaderWithError[context, b] = BindReaderWithError(
+				func(value Sum[a, b]) ReaderWithError[context, b] {
+					return PureReader[context, Sum[error, b]](
+						Fold(
+							value,
+							func(left a) Sum[error, b] {
+								return Left[error, b](fmt.Errorf("sum is left"))
+							},
+							Right[error, b],
+						),
+					)
+				},
+			)(value)
+			return onRight(rightValue, *delta.right)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaSum")
 	}

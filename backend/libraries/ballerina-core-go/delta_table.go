@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+
 	"github.com/google/uuid"
 )
 
@@ -127,20 +128,25 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 	}
 }
 
-func MatchDeltaTable[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+func MatchDeltaTable[context any, a any, deltaA any, Result any](
+	onValue func(ReaderWithError[context, a], Tuple2[uuid.UUID, deltaA]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
 	onAddEmpty func() (Result, error),
-) func(DeltaTable[a, deltaA]) (Result, error) {
-	return func(delta DeltaTable[a, deltaA]) (Result, error) {
+) func(ReaderWithError[context, Table[a]], DeltaTable[a, deltaA]) (Result, error) {
+	return func(table ReaderWithError[context, Table[a]], delta DeltaTable[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
 		case tableValue:
-			return onValue(*delta.value)
+			value := MapReaderWithError[context, Table[a], a](
+				func(table Table[a]) a {
+					return table.Values[table.IdToIndex[delta.value.Item1]]
+				},
+			)(table)
+			return onValue(value, *delta.value)
 		case tableAddAt:
 			return onAddAt(*delta.addAt)
 		case tableRemoveAt:
