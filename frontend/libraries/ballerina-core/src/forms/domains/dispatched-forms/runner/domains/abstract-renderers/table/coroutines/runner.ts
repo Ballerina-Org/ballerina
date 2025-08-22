@@ -41,11 +41,6 @@ const intialiseTable = <
         current.fromTableApiParser,
       );
 
-      console.debug(
-        "params - filterAndSortParam",
-        current.customFormState.filterAndSortParam,
-      );
-
       const params =
         current.customFormState.filterAndSortParam == ""
           ? Map<string, string>()

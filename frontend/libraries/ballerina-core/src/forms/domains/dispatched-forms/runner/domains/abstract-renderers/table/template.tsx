@@ -843,7 +843,7 @@ export const TableAbstractRenderer = <
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.updateFilters(
                     filters,
-                    Filters.map(( {filters } ) => filters),
+                    Filters.map(({ filters }) => filters),
                     parseToApiByType,
                   ),
                 );

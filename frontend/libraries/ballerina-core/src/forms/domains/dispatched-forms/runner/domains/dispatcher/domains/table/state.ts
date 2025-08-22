@@ -262,7 +262,8 @@ export const TableDispatcher = {
                         const highlightedFilters =
                           api == undefined
                             ? []
-                            : (dispatcherContext.specApis.tables?.get(api!)
+                            : (dispatcherContext.specApis.tables
+                                ?.get(api!)
                                 ?.highlightedFilters?.toArray() ?? []);
 
                         const sorting =
