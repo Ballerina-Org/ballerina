@@ -49,3 +49,19 @@ func TestSumDeserialization(t *testing.T) {
 	deserializedRight := deserializer(serializedRight)
 	require.Equal(t, ballerina.Right[error, ballerina.Sum[ballerina.Unit, ballerina.Unit]](ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{})), deserializedRight)
 }
+
+func TestStringSerialization(t *testing.T) {
+	t.Parallel()
+	serializer := ballerina.StringSerializer()
+	string := `he\nllo`
+	serialized := serializer(string)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`"he\\nllo"`)), serialized)
+}
+
+func TestStringDeserialization(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.StringDeserializer()
+	serialized := json.RawMessage(`"he\\nllo"`)
+	deserialized := deserializer(serialized)
+	require.Equal(t, ballerina.Right[error, string](`he\nllo`), deserialized)
+}

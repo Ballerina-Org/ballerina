@@ -100,3 +100,15 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 		)
 	})
 }
+
+func StringSerializer() Serializer[string] {
+	return withContext("on string", func(value string) Sum[error, json.RawMessage] {
+		return wrappedMarshal(value)
+	})
+}
+
+func StringDeserializer() Deserializer[string] {
+	return withContext("on string", func(data json.RawMessage) Sum[error, string] {
+		return wrappedUnmarshal[string](data)
+	})
+}
