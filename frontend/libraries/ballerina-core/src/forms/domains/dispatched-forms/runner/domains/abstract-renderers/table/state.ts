@@ -147,7 +147,7 @@ export const TableAbstractRendererState = {
     Template: {
       updateFilters: (
         filters: Map<string, List<ValueFilter>>,
-        filterTypes: Map<string, DispatchParsedType<any>>,
+        filterTypes: Map<string, Array<FilterType<any>>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -178,7 +178,7 @@ export const TableAbstractRendererState = {
       addSorting: (
         columnName: string,
         direction: "Ascending" | "Descending" | undefined,
-        filterTypes: Map<string, DispatchParsedType<any>>,
+        filterTypes: Map<string, Array<FilterType<any>>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -214,7 +214,7 @@ export const TableAbstractRendererState = {
       },
       removeSorting: (
         columnName: string,
-        filterTypes: Map<string, DispatchParsedType<any>>,
+        filterTypes: Map<string, Array<FilterType<any>>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -261,7 +261,7 @@ export const TableAbstractRendererState = {
   Operations: {
     parseFiltersAndSortingToBase64String: (
       filterValues: Map<string, List<ValueFilter>>,
-      filterTypes: Map<string, DispatchParsedType<any>>,
+      filterTypes: Map<string, Array<FilterType<any>>>,
       sorting: Map<string, "Ascending" | "Descending" | undefined>,
       toApiRaw: (
         type: DispatchParsedType<any>,
@@ -276,9 +276,20 @@ export const TableAbstractRendererState = {
         return "";
       }
       const parsedFilters = filterValues.map((filters, columnName) =>
-        filters.map((filter) =>
-          toApiRaw(filterTypes.get(columnName)!, filter, {}),
-        ),
+        filters.map((filter) => {
+          const filterType = filterTypes
+            .get(columnName)
+            ?.find((f) => f.kind == filter.kind);
+          if (!filterType) {
+            console.error(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+            return ValueOrErrors.Default.throwOne(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+          }
+          return toApiRaw(filterType, filter, {});
+        }),
       );
       if (
         parsedFilters.some((filter) => filter.some((f) => f.kind == "errors"))
@@ -303,10 +314,7 @@ export const TableAbstractRendererState = {
           .toList()
           .filter((sorting) => sorting[1] != undefined),
       };
-      const serialized = btoa(JSON.stringify(params));
-      console.debug("params", JSON.stringify(params, null, 2));
-      console.debug("serialized", serialized);
-      return serialized;
+      return btoa(JSON.stringify(params));
     },
     tableValuesToValueRecord: (
       values: any,
