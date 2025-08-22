@@ -84,14 +84,14 @@ func TestBoolDeserialization(t *testing.T) {
 
 func TestInt64Serialization(t *testing.T) {
 	t.Parallel()
-	serializer := ballerina.Int64Serializer()
+	serializer := ballerina.IntSerializer()
 	serialized := serializer(int64(123))
 	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"kind":"int","value":"123"}`)), serialized)
 }
 
 func TestInt64Deserialization(t *testing.T) {
 	t.Parallel()
-	deserializer := ballerina.Int64Deserializer()
+	deserializer := ballerina.IntDeserializer()
 	serialized := json.RawMessage(`{"kind":"int","value":"123"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, int64](123), deserialized)
@@ -99,14 +99,14 @@ func TestInt64Deserialization(t *testing.T) {
 
 func TestFloat64Serialization(t *testing.T) {
 	t.Parallel()
-	serializer := ballerina.Float64Serializer()
+	serializer := ballerina.FloatSerializer()
 	serialized := serializer(float64(1.75))
 	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"kind":"float","value":"1.75"}`)), serialized)
 }
 
 func TestFloat64Deserialization(t *testing.T) {
 	t.Parallel()
-	deserializer := ballerina.Float64Deserializer()
+	deserializer := ballerina.FloatDeserializer()
 	serialized := json.RawMessage(`{"kind":"float","value":"1.75"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, float64](1.75), deserialized)

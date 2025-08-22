@@ -134,14 +134,14 @@ func (s _primitiveTypeForSerialization) getValueWithKind(kind string) Sum[error,
 	return Right[error, string](s.Value)
 }
 
-func Int64Serializer() Serializer[int64] {
-	return withContext("on int64", func(value int64) Sum[error, json.RawMessage] {
+func IntSerializer() Serializer[int64] {
+	return withContext("on int", func(value int64) Sum[error, json.RawMessage] {
 		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "int", Value: strconv.FormatInt(value, 10)})
 	})
 }
 
-func Int64Deserializer() Deserializer[int64] {
-	return withContext("on int64", func(data json.RawMessage) Sum[error, int64] {
+func IntDeserializer() Deserializer[int64] {
+	return withContext("on int", func(data json.RawMessage) Sum[error, int64] {
 		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, int64] {
 				return Bind(primitiveTypeForSerialization.getValueWithKind("int"), SumWrap(func(value string) (int64, error) {
@@ -152,14 +152,14 @@ func Int64Deserializer() Deserializer[int64] {
 	})
 }
 
-func Float64Serializer() Serializer[float64] {
-	return withContext("on float64", func(value float64) Sum[error, json.RawMessage] {
+func FloatSerializer() Serializer[float64] {
+	return withContext("on float", func(value float64) Sum[error, json.RawMessage] {
 		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "float", Value: strconv.FormatFloat(value, 'f', -1, 64)})
 	})
 }
 
-func Float64Deserializer() Deserializer[float64] {
-	return withContext("on float64", func(data json.RawMessage) Sum[error, float64] {
+func FloatDeserializer() Deserializer[float64] {
+	return withContext("on float", func(data json.RawMessage) Sum[error, float64] {
 		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, float64] {
 				return Bind(primitiveTypeForSerialization.getValueWithKind("float"), SumWrap(func(value string) (float64, error) {
