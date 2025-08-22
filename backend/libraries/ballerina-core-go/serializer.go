@@ -166,6 +166,36 @@ func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserialize
 	})
 }
 
+func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
+	return withContext("on list", func(elements []T) Sum[error, json.RawMessage] {
+		return Bind(SumSequence(ListFoldLeft(elements, []Sum[error, json.RawMessage]{},
+			func(acc []Sum[error, json.RawMessage], value T) []Sum[error, json.RawMessage] {
+				return append(acc, serializer(value))
+			})),
+			func(serializedElements []json.RawMessage) Sum[error, json.RawMessage] {
+				return wrappedMarshal(_tuple2ForSerialization{
+					Kind:     "list",
+					Elements: serializedElements,
+				})
+			})
+	})
+}
+
+func ListDeserializer[T any](deserializer Deserializer[T]) Deserializer[[]T] {
+	return withContext("on list", func(data json.RawMessage) Sum[error, []T] {
+		return Bind(wrappedUnmarshal[_tuple2ForSerialization](data),
+			func(tuple2ForSerialization _tuple2ForSerialization) Sum[error, []T] {
+				return Bind(SumSequence(ListFoldLeft(tuple2ForSerialization.Elements, []Sum[error, T]{},
+					func(acc []Sum[error, T], value json.RawMessage) []Sum[error, T] {
+						return append(acc, deserializer(value))
+					}),
+				),
+					Right[error, []T],
+				)
+			})
+	})
+}
+
 func StringSerializer() Serializer[string] {
 	return withContext("on string", func(value string) Sum[error, json.RawMessage] {
 		return wrappedMarshal(value)
