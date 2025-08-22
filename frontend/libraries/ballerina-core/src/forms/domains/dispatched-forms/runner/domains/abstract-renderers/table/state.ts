@@ -269,7 +269,10 @@ export const TableAbstractRendererState = {
         state: any,
       ) => ValueOrErrors<any, string>,
     ): string => {
-      if (filterValues.valueSeq().every((filters) => filters.size == 0) && sorting.size == 0) {
+      if (
+        filterValues.valueSeq().every((filters) => filters.size == 0) &&
+        sorting.size == 0
+      ) {
         return "";
       }
       const parsedFilters = filterValues.map((filters, columnName) =>
@@ -278,21 +281,21 @@ export const TableAbstractRendererState = {
         ),
       );
       if (
-        parsedFilters.some((filter) =>
-          filter.some((f) => f.kind == "errors"),
-        )
+        parsedFilters.some((filter) => filter.some((f) => f.kind == "errors"))
       ) {
         console.error(
           "error parsing filters to api",
-          parsedFilters.filter((filter) => filter.some((f) => f.kind == "errors")).toJS(),
+          parsedFilters
+            .filter((filter) => filter.some((f) => f.kind == "errors"))
+            .toJS(),
         );
         return "";
       }
 
       // TODO: Deal with this monadically
-      const parsedFiltersValues = parsedFilters.map((filter) =>
-        filter.map((f) => (f as Value<PredicateValue>).value),
-      ).toJS();
+      const parsedFiltersValues = parsedFilters
+        .map((filter) => filter.map((f) => (f as Value<PredicateValue>).value))
+        .toJS();
       const params = {
         Filters: parsedFiltersValues,
         Sorting: sorting

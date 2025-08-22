@@ -1355,8 +1355,14 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       };
 
       console.debug("local filters", JSON.stringify(colFilters, undefined, 2));
-      console.debug("filters", JSON.stringify(props.context.customFormState.filters, undefined, 2));
-      console.debug("sorting", JSON.stringify(props.context.customFormState.sorting, undefined, 2));
+      console.debug(
+        "filters",
+        JSON.stringify(props.context.customFormState.filters, undefined, 2),
+      );
+      console.debug(
+        "sorting",
+        JSON.stringify(props.context.customFormState.sorting, undefined, 2),
+      );
 
       return (
         <>
@@ -1513,14 +1519,16 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                                 </button>
                               </>
                             )}
-                            {props.AllowedSorting.includes(header) &&
-                              !props.context.customFormState.sorting.get(
-                                header,
-                              ) && (
-                                <button onClick={() => handleSortingChange(header)}>
-                                  ⬆️
-                                </button>
-                              )}
+                          {props.AllowedSorting.includes(header) &&
+                            !props.context.customFormState.sorting.get(
+                              header,
+                            ) && (
+                              <button
+                                onClick={() => handleSortingChange(header)}
+                              >
+                                ⬆️
+                              </button>
+                            )}
                         </div>
                         {colFilterDisplays.get(header) && (
                           <div

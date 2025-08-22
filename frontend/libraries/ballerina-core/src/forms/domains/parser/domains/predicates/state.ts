@@ -883,7 +883,10 @@ export const PredicateValue = {
         value.kind == "startsWith"
       );
     },
-    KindAndValueToFilter: (kind: string, value: PredicateValue): ValueFilter => {
+    KindAndValueToFilter: (
+      kind: string,
+      value: PredicateValue,
+    ): ValueFilter => {
       switch (kind) {
         case "contains":
           return PredicateValue.Default.filterContains(value);

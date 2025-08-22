@@ -180,7 +180,10 @@ const getActiveFriends: DispatchTableApiSource = {
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
-      console.debug("streamParams - getMany ActiveFriends", streamParams.toJS());
+      console.debug(
+        "streamParams - getMany ActiveFriends",
+        streamParams.toJS(),
+      );
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {

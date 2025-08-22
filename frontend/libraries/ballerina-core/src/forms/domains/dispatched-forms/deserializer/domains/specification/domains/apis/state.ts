@@ -252,7 +252,8 @@ export const TableApis = {
                                     Renderer.Operations.Deserialize(
                                       type[0],
                                       // checked above that this is an object with renderer property
-                                      (value.display as { renderer: string }).renderer,
+                                      (value.display as { renderer: string })
+                                        .renderer,
                                       concreteRenderers,
                                       types,
                                       undefined,

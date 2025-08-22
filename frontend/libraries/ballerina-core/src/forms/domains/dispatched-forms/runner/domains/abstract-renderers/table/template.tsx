@@ -546,26 +546,26 @@ export const TableAbstractRenderer = <
               ListRepo.Updaters.update(index, Updater(_)),
             ),
           ),
-        )
-        // .mapForeignMutationsFromProps<
-        //   TableAbstractRendererForeignMutationsExpected<Flags>
-        // >((props) => ({
-        //   onChange: (updaterOption) =>
-        //     updaterOption.kind == "r"
-        //       ? props.setState(
-        //           TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
-        //             MapRepo.Updaters.upsert(
-        //               columnName,
-        //               () => List([filter.GetDefaultValue()]),
-        //               ListRepo.Updaters.update(
-        //                 index,
-        //                 Updater(updaterOption.value),
-        //               ),
-        //             ),
-        //           ),
-        //         )
-        //       : id,
-        // })),
+        ),
+    // .mapForeignMutationsFromProps<
+    //   TableAbstractRendererForeignMutationsExpected<Flags>
+    // >((props) => ({
+    //   onChange: (updaterOption) =>
+    //     updaterOption.kind == "r"
+    //       ? props.setState(
+    //           TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
+    //             MapRepo.Updaters.upsert(
+    //               columnName,
+    //               () => List([filter.GetDefaultValue()]),
+    //               ListRepo.Updaters.update(
+    //                 index,
+    //                 Updater(updaterOption.value),
+    //               ),
+    //             ),
+    //           ),
+    //         )
+    //       : id,
+    // })),
   }));
 
   return Template.Default<

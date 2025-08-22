@@ -1546,7 +1546,10 @@ export const dispatchFromAPIRawValue =
                   )(record).Then((value) =>
                     PredicateValue.Operations.IsRecord(value)
                       ? ValueOrErrors.Default.return([key, value] as const)
-                      : ValueOrErrors.Default.throwOne<[string, ValueRecord], string>(
+                      : ValueOrErrors.Default.throwOne<
+                          [string, ValueRecord],
+                          string
+                        >(
                           `record expected but got ${PredicateValue.Operations.GetKind(
                             value,
                           )}`,
@@ -2268,7 +2271,6 @@ export const dispatchToAPIRawValue =
           ),
         );
       }
-      
 
       if (t.kind == ">=") {
         if (!PredicateValue.Operations.IsFilterGreaterThanOrEqualsTo(raw)) {

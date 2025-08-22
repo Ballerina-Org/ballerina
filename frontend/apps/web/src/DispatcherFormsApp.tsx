@@ -177,7 +177,6 @@ export const DispatcherFormsApp = (props: {}) => {
       );
     };
 
-
   const onPersonConfigChange: DispatchOnChange<
     PredicateValue,
     DispatchPassthroughFormFlags
