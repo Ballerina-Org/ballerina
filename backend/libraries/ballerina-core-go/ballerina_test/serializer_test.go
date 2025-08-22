@@ -2,12 +2,25 @@ package ballerina_test
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
 	ballerina "ballerina.com/core"
 	"github.com/stretchr/testify/require"
 )
+
+func assertErrorContains[T any](t *testing.T, expected string, actual ballerina.Sum[error, T]) {
+	ballerina.Fold(actual, func(err error) ballerina.Unit {
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("expected error to contain '%s', but got '%s'", expected, err.Error())
+		}
+		return ballerina.NewUnit()
+	}, func(value T) ballerina.Unit {
+		t.Errorf("expected error to contain '%s', but got value %v", expected, value)
+		return ballerina.NewUnit()
+	})
+}
 
 func TestUnitSerialization(t *testing.T) {
 	t.Parallel()
@@ -23,6 +36,23 @@ func TestUnitDeserialization(t *testing.T) {
 	serialized := json.RawMessage(`{"kind":"unit"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, ballerina.Unit](ballerina.Unit{}), deserialized)
+}
+
+func TestUnitDeserializationError(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.UnitDeserializer()
+
+	serialized := json.RawMessage(`{"kind":"not-unit"}`)
+	deserialized := deserializer(serialized)
+	assertErrorContains(t, "on unit: expected kind to be 'unit', got 'not-unit'", deserialized)
+
+	serialized = json.RawMessage(`{}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on unit", deserialized)
+
+	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on unit", deserialized)
 }
 
 func TestSumSerialization(t *testing.T) {
@@ -51,6 +81,30 @@ func TestSumDeserialization(t *testing.T) {
 	require.Equal(t, ballerina.Right[error, ballerina.Sum[ballerina.Unit, ballerina.Unit]](ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{})), deserializedRight)
 }
 
+func TestSumDeserializationError(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.SumDeserializer(ballerina.UnitDeserializer(), ballerina.UnitDeserializer())
+
+	serialized := json.RawMessage(`{"case":"Sum.Left","value":{"kind":"not-unit"}}`)
+	deserialized := deserializer(serialized)
+	assertErrorContains(t, "on sum: on left:", deserialized)
+
+	serialized = json.RawMessage(`{"case":"Sum.Right","value":{"kind":"not-unit"}}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on sum: on right:", deserialized)
+
+	serialized = json.RawMessage(`{"case":"not-sum","value":{"kind":"unit"}}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on sum: expected case to be 'Sum.Left' or 'Sum.Right', got not-sum", deserialized)
+
+	serialized = json.RawMessage(`{}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on sum", deserialized)
+
+	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on sum", deserialized)
+}
 func TestOptionSerialization(t *testing.T) {
 	t.Parallel()
 
@@ -77,6 +131,31 @@ func TestOptionDeserialization(t *testing.T) {
 	require.Equal(t, ballerina.Right[error, ballerina.Option[ballerina.Unit]](ballerina.None[ballerina.Unit]()), deserializedNone)
 }
 
+func TestOptionDeserializationError(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.OptionDeserializer(ballerina.UnitDeserializer())
+
+	serialized := json.RawMessage(`{"case":"some","value":{"kind":"not-unit"}}`)
+	deserialized := deserializer(serialized)
+	assertErrorContains(t, "on option: on some:", deserialized)
+
+	serialized = json.RawMessage(`{"case":"none","value":{"kind":"not-unit"}}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on option: on none:", deserialized)
+
+	serialized = json.RawMessage(`{"case":"not-option","value":{"kind":"unit"}}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on option: expected case to be 'none' or 'some', got not-option", deserialized)
+
+	serialized = json.RawMessage(`{}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on option", deserialized)
+
+	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on option", deserialized)
+}
+
 func TestTuple2Serialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerina.Tuple2Serializer(ballerina.UnitSerializer(), ballerina.UnitSerializer())
@@ -92,6 +171,31 @@ func TestTuple2Deserialization(t *testing.T) {
 	require.Equal(t, ballerina.Right[error, ballerina.Tuple2[ballerina.Unit, ballerina.Unit]](ballerina.Tuple2[ballerina.Unit, ballerina.Unit]{Item1: ballerina.Unit{}, Item2: ballerina.Unit{}}), deserialized)
 }
 
+func TestTuple2DeserializationError(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.Tuple2Deserializer(ballerina.UnitDeserializer(), ballerina.UnitDeserializer())
+
+	serialized := json.RawMessage(`{"kind":"tuple","elements":[{"kind":"not-unit"},{"kind":"unit"}]}`)
+	deserialized := deserializer(serialized)
+	assertErrorContains(t, "on tuple2: on item1:", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"tuple","elements":[{"kind":"unit"},{"kind":"not-unit"}]}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on tuple2: on item2:", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"tuple","elements":[{"kind":"unit"},{"kind":"unit"},{"kind":"unit"}]}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on tuple2", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"tuple","elements":["not-unit"]}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on tuple2", deserialized)
+
+	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on tuple2", deserialized)
+}
+
 func TestListSerialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerina.ListSerializer(ballerina.BoolSerializer())
@@ -105,6 +209,23 @@ func TestListDeserialization(t *testing.T) {
 	serialized := json.RawMessage(`{"kind":"list","elements":[true,false,true]}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, []bool]([]bool{true, false, true}), deserialized)
+}
+
+func TestListDeserializationError(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.ListDeserializer(ballerina.BoolDeserializer())
+
+	serialized := json.RawMessage(`{"kind":"list","elements":["not-bool"]}`)
+	deserialized := deserializer(serialized)
+	assertErrorContains(t, "on list", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"list","not-elements":[true,false,true]}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on list", deserialized)
+
+	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on list", deserialized)
 }
 
 func TestStringSerialization(t *testing.T) {

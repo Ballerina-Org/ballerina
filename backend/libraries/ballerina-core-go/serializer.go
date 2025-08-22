@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -26,10 +27,13 @@ func wrappedMarshal[T any](value T) Sum[error, json.RawMessage] {
 func wrappedUnmarshal[T any](data json.RawMessage) Sum[error, T] {
 	return SumWrap(func(data json.RawMessage) (T, error) {
 		var value T
-		err := json.Unmarshal(data, &value)
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.DisallowUnknownFields()
+		err := decoder.Decode(&value)
 		return value, err
 	})(data)
 }
+
 func withContext[I any, T any](context string, f func(I) Sum[error, T]) func(I) Sum[error, T] {
 	return func(value I) Sum[error, T] {
 		return MapLeft[error, T](f(value), func(err error) error {
@@ -53,7 +57,7 @@ func UnitDeserializer() Deserializer[Unit] {
 		return Bind(wrappedUnmarshal[_unitForSerialization](data),
 			func(unitForSerialization _unitForSerialization) Sum[error, Unit] {
 				if unitForSerialization.Kind != "unit" {
-					return Left[error, Unit](fmt.Errorf("expected kind to be 'unit', got %s", unitForSerialization.Kind))
+					return Left[error, Unit](fmt.Errorf("expected kind to be 'unit', got '%s'", unitForSerialization.Kind))
 				}
 				return Right[error, Unit](Unit{})
 			},
@@ -70,12 +74,12 @@ func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer S
 	return withContext("on sum", func(value Sum[L, R]) Sum[error, json.RawMessage] {
 		return Bind(Fold(value,
 			func(left L) Sum[error, _sumForSerialization] {
-				return MapRight(leftSerializer(left), func(value json.RawMessage) _sumForSerialization {
+				return MapRight(withContext("on left", leftSerializer)(left), func(value json.RawMessage) _sumForSerialization {
 					return _sumForSerialization{Case: "Sum.Left", Value: value}
 				})
 			},
 			func(right R) Sum[error, _sumForSerialization] {
-				return MapRight(rightSerializer(right), func(value json.RawMessage) _sumForSerialization {
+				return MapRight(withContext("on right", rightSerializer)(right), func(value json.RawMessage) _sumForSerialization {
 					return _sumForSerialization{Case: "Sum.Right", Value: value}
 				})
 			},
@@ -89,9 +93,9 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 			func(sumForSerialization _sumForSerialization) Sum[error, Sum[L, R]] {
 				switch sumForSerialization.Case {
 				case "Sum.Left":
-					return MapRight(leftDeserializer(sumForSerialization.Value), Left[L, R])
+					return MapRight(withContext("on left", leftDeserializer)(sumForSerialization.Value), Left[L, R])
 				case "Sum.Right":
-					return MapRight(rightDeserializer(sumForSerialization.Value), Right[L, R])
+					return MapRight(withContext("on right", rightDeserializer)(sumForSerialization.Value), Right[L, R])
 				}
 				return Left[error, Sum[L, R]](fmt.Errorf("expected case to be 'Sum.Left' or 'Sum.Right', got %s", sumForSerialization.Case))
 			},
@@ -103,12 +107,12 @@ func OptionSerializer[T any](serializer Serializer[T]) Serializer[Option[T]] {
 	return withContext("on option", func(value Option[T]) Sum[error, json.RawMessage] {
 		return Bind(Fold(value.Sum,
 			func(left Unit) Sum[error, _sumForSerialization] {
-				return MapRight(UnitSerializer()(left), func(value json.RawMessage) _sumForSerialization {
+				return MapRight(withContext("on none", UnitSerializer())(left), func(value json.RawMessage) _sumForSerialization {
 					return _sumForSerialization{Case: "none", Value: value}
 				})
 			},
 			func(right T) Sum[error, _sumForSerialization] {
-				return MapRight(serializer(right), func(value json.RawMessage) _sumForSerialization {
+				return MapRight(withContext("on some", serializer)(right), func(value json.RawMessage) _sumForSerialization {
 					return _sumForSerialization{Case: "some", Value: value}
 				})
 			},
@@ -122,11 +126,11 @@ func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[Option
 			func(sumForSerialization _sumForSerialization) Sum[error, Option[T]] {
 				switch sumForSerialization.Case {
 				case "none":
-					return MapRight(UnitDeserializer()(sumForSerialization.Value), func(unit Unit) Option[T] {
+					return MapRight(withContext("on none", UnitDeserializer())(sumForSerialization.Value), func(unit Unit) Option[T] {
 						return None[T]()
 					})
 				case "some":
-					return MapRight(deserializer(sumForSerialization.Value), Some[T])
+					return MapRight(withContext("on some", deserializer)(sumForSerialization.Value), Some[T])
 				}
 				return Left[error, Option[T]](fmt.Errorf("expected case to be 'none' or 'some', got %s", sumForSerialization.Case))
 			},
@@ -141,8 +145,8 @@ type _tuple2ForSerialization struct {
 
 func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Serializer[B]) Serializer[Tuple2[A, B]] {
 	return withContext("on tuple2", func(value Tuple2[A, B]) Sum[error, json.RawMessage] {
-		return Bind(serializerA(value.Item1), func(item1 json.RawMessage) Sum[error, json.RawMessage] {
-			return Bind(serializerB(value.Item2), func(item2 json.RawMessage) Sum[error, json.RawMessage] {
+		return Bind(withContext("on item1", serializerA)(value.Item1), func(item1 json.RawMessage) Sum[error, json.RawMessage] {
+			return Bind(withContext("on item2", serializerB)(value.Item2), func(item2 json.RawMessage) Sum[error, json.RawMessage] {
 				return wrappedMarshal(_tuple2ForSerialization{
 					Kind:     "tuple",
 					Elements: []json.RawMessage{item1, item2},
@@ -156,8 +160,11 @@ func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserialize
 	return withContext("on tuple2", func(data json.RawMessage) Sum[error, Tuple2[A, B]] {
 		return Bind(wrappedUnmarshal[_tuple2ForSerialization](data),
 			func(tuple2ForSerialization _tuple2ForSerialization) Sum[error, Tuple2[A, B]] {
-				return Bind(deserializerA(tuple2ForSerialization.Elements[0]), func(item1 A) Sum[error, Tuple2[A, B]] {
-					return MapRight(deserializerB(tuple2ForSerialization.Elements[1]), func(item2 B) Tuple2[A, B] {
+				if len(tuple2ForSerialization.Elements) != 2 {
+					return Left[error, Tuple2[A, B]](fmt.Errorf("expected 2 elements in tuple, got %d", len(tuple2ForSerialization.Elements)))
+				}
+				return Bind(withContext("on item1", deserializerA)(tuple2ForSerialization.Elements[0]), func(item1 A) Sum[error, Tuple2[A, B]] {
+					return MapRight(withContext("on item2", deserializerB)(tuple2ForSerialization.Elements[1]), func(item2 B) Tuple2[A, B] {
 						return Tuple2[A, B]{Item1: item1, Item2: item2}
 					})
 				})
