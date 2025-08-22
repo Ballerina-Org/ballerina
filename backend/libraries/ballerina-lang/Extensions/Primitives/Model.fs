@@ -364,19 +364,17 @@ module Primitives =
         let (!) = typeCheckRootExpr typeBindings vars
 
         sum {
+          let! t1 = !e1
+          let! t2 = !e2
+
           match op with
           | Or
           | And ->
-            let! t1 = !e1
-            let! t2 = !e2
+            do! ExprType.Unify vars typeBindings t1 (PrimitiveType BoolType) |> Sum.map ignore
+            do! ExprType.Unify vars typeBindings t2 (PrimitiveType BoolType) |> Sum.map ignore
+            return PrimitiveType BoolType
 
-            match t1, t2 with
-            | PrimitiveType BoolType, PrimitiveType BoolType -> PrimitiveType BoolType
-            | _ -> return! sum.Throw($$"""Error: invalid type of expression {{e}}""" |> Errors.Singleton)
           | Equals ->
-            let! t1 = !e1
-            let! t2 = !e2
-
             if t1 = t2 then
               PrimitiveType BoolType
             else
@@ -385,22 +383,17 @@ module Primitives =
                   $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
                   |> Errors.Singleton
                 )
+
           | Plus
           | Minus
           | Times
           | DividedBy ->
-            let! t1 = !e1
-            let! t2 = !e2
-
             do! ExprType.Unify vars typeBindings t1 (PrimitiveType IntType) |> Sum.map ignore
             do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
-
             return PrimitiveType IntType
+
           | GreaterThan
           | GreaterThanEquals ->
-            let! t1 = !e1
-            let! t2 = !e2
-
             do! ExprType.Unify vars typeBindings t1 (PrimitiveType IntType) |> Sum.map ignore
             do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
             return PrimitiveType BoolType

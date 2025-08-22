@@ -774,29 +774,9 @@ module Renderers =
                   columnsJson
                   |> Seq.map (fun (columnName, columnJson) ->
                     state {
-                      let! columnFields = columnJson |> JsonValue.AsRecord |> state.OfSum
                       let! columnBody = FieldConfig.Parse primitivesExt exprParser columnName columnJson
 
-                      let! isFilterable =
-                        state.Either
-                          (columnFields |> sum.TryFindField "isFilterable" |> state.OfSum)
-                          (JsonValue.Boolean true |> state.Return)
-
-                      let! isSortable =
-                        state.Either
-                          (columnFields |> sum.TryFindField "isSortable" |> state.OfSum)
-                          (JsonValue.Boolean true |> state.Return)
-
-                      let! isFilterable, isSortable =
-                        state.All2
-                          (isFilterable |> JsonValue.AsBoolean |> state.OfSum)
-                          (isSortable |> JsonValue.AsBoolean |> state.OfSum)
-
-                      return
-                        columnName,
-                        { FieldConfig = columnBody
-                          IsFilterable = isFilterable
-                          IsSortable = isSortable }
+                      return columnName, { FieldConfig = columnBody }
                     }
                     |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing table column {columnName}")))
                   |> state.All
@@ -812,11 +792,26 @@ module Renderers =
                     (columns |> Map.map (fun _ c -> c.FieldConfig))
                     visibleColumnsJson
 
+                let! highlightedFilters = fields |> state.TryFindField "highlightedFilters" |> state.Catch
+                let highlightedFilters = highlightedFilters |> Sum.toOption
+
+                let! highlightedFilters =
+                  highlightedFilters
+                  |> Option.map (fun highlightedFilters ->
+                    state {
+                      let! highlightedFilters = highlightedFilters |> JsonValue.AsArray |> state.OfSum
+                      return! highlightedFilters |> Seq.map (JsonValue.AsString >> state.OfSum) |> state.All
+                    })
+                  |> state.RunOption
+
+                let highlightedFilters = highlightedFilters |> Option.defaultWith (fun () -> [])
+
                 return
                   {| Columns = columns
                      RowType = t.Type
                      Details = details
                      //  Preview = preview
+                     HighlightedFilters = highlightedFilters
                      Renderer = renderer
                      MethodLabels = actionLabels
                      VisibleColumns = visibleColumns |}
