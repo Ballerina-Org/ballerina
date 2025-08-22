@@ -127,6 +127,13 @@ type _primitiveTypeForSerialization struct {
 	Value string `json:"value"`
 }
 
+func (s _primitiveTypeForSerialization) getValueWithKind(kind string) Sum[error, string] {
+	if s.Kind != kind {
+		return Left[error, string](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Kind))
+	}
+	return Right[error, string](s.Value)
+}
+
 func Int64Serializer() Serializer[int64] {
 	return withContext("on int64", func(value int64) Sum[error, json.RawMessage] {
 		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "int", Value: strconv.FormatInt(value, 10)})
@@ -137,12 +144,9 @@ func Int64Deserializer() Deserializer[int64] {
 	return withContext("on int64", func(data json.RawMessage) Sum[error, int64] {
 		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, int64] {
-				if primitiveTypeForSerialization.Kind != "int" {
-					return Left[error, int64](fmt.Errorf("expected kind to be 'int', got %s", primitiveTypeForSerialization.Kind))
-				}
-				return SumWrap(func(value string) (int64, error) {
+				return Bind(primitiveTypeForSerialization.getValueWithKind("int"), SumWrap(func(value string) (int64, error) {
 					return strconv.ParseInt(value, 10, 64)
-				})(primitiveTypeForSerialization.Value)
+				}))
 			},
 		)
 	})
@@ -158,12 +162,9 @@ func Float64Deserializer() Deserializer[float64] {
 	return withContext("on float64", func(data json.RawMessage) Sum[error, float64] {
 		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, float64] {
-				if primitiveTypeForSerialization.Kind != "float" {
-					return Left[error, float64](fmt.Errorf("expected kind to be 'float', got %s", primitiveTypeForSerialization.Kind))
-				}
-				return SumWrap(func(value string) (float64, error) {
+				return Bind(primitiveTypeForSerialization.getValueWithKind("float"), SumWrap(func(value string) (float64, error) {
 					return strconv.ParseFloat(value, 64)
-				})(primitiveTypeForSerialization.Value)
+				}))
 			},
 		)
 	})
