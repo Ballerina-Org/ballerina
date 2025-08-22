@@ -11,32 +11,56 @@ import (
 // we would have to prove that it can never happen (which we believe is true, but did not formally prove).
 // Thus, this partial signature.
 
-type Serializer[T any] func(T) (json.RawMessage, error)
+type Serializer[T any] func(T) Sum[error, json.RawMessage]
 
-type Deserializer[T any] func(json.RawMessage) (T, error)
+type Deserializer[T any] func(json.RawMessage) Sum[error, T]
+
+func wrappedMarshal[T any](value T) Sum[error, json.RawMessage] {
+	serializedValue, err := json.Marshal(value)
+	if err != nil {
+		return Left[error, json.RawMessage](err)
+	}
+	return Right[error, json.RawMessage](serializedValue)
+}
+
+func wrappedUnmarshal[T any](data json.RawMessage) Sum[error, T] {
+	var value T
+	err := json.Unmarshal(data, &value)
+	if err != nil {
+		return Left[error, T](err)
+	}
+	return Right[error, T](value)
+}
+
+func withContext[I any, T any](context string, f func(I) Sum[error, T]) func(I) Sum[error, T] {
+	return func(value I) Sum[error, T] {
+		return MapLeft[error, T](f(value), func(err error) error {
+			return fmt.Errorf("%s: %w", context, err)
+		})
+	}
+}
 
 type _unitForSerialization struct {
 	Kind string `json:"kind"`
 }
 
 func UnitSerializer() Serializer[Unit] {
-	return func(value Unit) (json.RawMessage, error) {
-		return json.Marshal(_unitForSerialization{Kind: "unit"})
-	}
+	return withContext("on unit", func(value Unit) Sum[error, json.RawMessage] {
+		return wrappedMarshal(_unitForSerialization{Kind: "unit"})
+	})
 }
 
 func UnitDeserializer() Deserializer[Unit] {
-	return func(data json.RawMessage) (Unit, error) {
-		var unit _unitForSerialization
-		err := json.Unmarshal(data, &unit)
-		if err != nil {
-			return Unit{}, fmt.Errorf("on unit: %w", err)
-		}
-		if unit.Kind != "unit" {
-			return Unit{}, fmt.Errorf("expected kind to be 'unit', got %s", unit.Kind)
-		}
-		return Unit{}, nil
-	}
+	return withContext("on unit", func(data json.RawMessage) Sum[error, Unit] {
+		return Bind(wrappedUnmarshal[_unitForSerialization](data),
+			func(unitForSerialization _unitForSerialization) Sum[error, Unit] {
+				if unitForSerialization.Kind != "unit" {
+					return Left[error, Unit](fmt.Errorf("expected kind to be 'unit', got %s", unitForSerialization.Kind))
+				}
+				return Right[error, Unit](Unit{})
+			},
+		)
+	})
 }
 
 type _sumForSerialization struct {
@@ -45,51 +69,34 @@ type _sumForSerialization struct {
 }
 
 func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer Serializer[R]) Serializer[Sum[L, R]] {
-	return func(value Sum[L, R]) (json.RawMessage, error) {
-		sumForSerialization, err := FoldWithError(value,
-			func(left L) (_sumForSerialization, error) {
-				value, err := leftSerializer(left)
-				if err != nil {
-					return _sumForSerialization{}, fmt.Errorf("on case 'Sum.Left': %w", err)
-				}
-				return _sumForSerialization{Case: "Sum.Left", Value: value}, nil
+	return withContext("on sum", func(value Sum[L, R]) Sum[error, json.RawMessage] {
+		return Bind(Fold(value,
+			func(left L) Sum[error, _sumForSerialization] {
+				return MapRight(leftSerializer(left), func(value json.RawMessage) _sumForSerialization {
+					return _sumForSerialization{Case: "Sum.Left", Value: value}
+				})
 			},
-			func(right R) (_sumForSerialization, error) {
-				value, err := rightSerializer(right)
-				if err != nil {
-					return _sumForSerialization{}, fmt.Errorf("on case 'Sum.Right': %w", err)
-				}
-				return _sumForSerialization{Case: "Sum.Right", Value: value}, nil
+			func(right R) Sum[error, _sumForSerialization] {
+				return MapRight(rightSerializer(right), func(value json.RawMessage) _sumForSerialization {
+					return _sumForSerialization{Case: "Sum.Right", Value: value}
+				})
 			},
-		)
-		if err != nil {
-			return json.RawMessage{}, fmt.Errorf("on sum: %w", err)
-		}
-		return json.Marshal(sumForSerialization)
-	}
+		), wrappedMarshal)
+	})
 }
 
 func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeserializer Deserializer[R]) Deserializer[Sum[L, R]] {
-	return func(data json.RawMessage) (Sum[L, R], error) {
-		var sum _sumForSerialization
-		err := json.Unmarshal(data, &sum)
-		if err != nil {
-			return Sum[L, R]{}, fmt.Errorf("on sum: %w", err)
-		}
-		switch sum.Case {
-		case "Sum.Left":
-			left, err := leftDeserializer(sum.Value)
-			if err != nil {
-				return Sum[L, R]{}, fmt.Errorf("on case 'Sum.Left': %w", err)
-			}
-			return Left[L, R](left), nil
-		case "Sum.Right":
-			right, err := rightDeserializer(sum.Value)
-			if err != nil {
-				return Sum[L, R]{}, fmt.Errorf("on case 'Sum.Right: %w", err)
-			}
-			return Right[L, R](right), nil
-		}
-		return Sum[L, R]{}, fmt.Errorf("expected case to be 'Sum.Left' or 'Sum.Right', got %s", sum.Case)
-	}
+	return withContext("on sum", func(data json.RawMessage) Sum[error, Sum[L, R]] {
+		return Bind(wrappedUnmarshal[_sumForSerialization](data),
+			func(sumForSerialization _sumForSerialization) Sum[error, Sum[L, R]] {
+				switch sumForSerialization.Case {
+				case "Sum.Left":
+					return MapRight(leftDeserializer(sumForSerialization.Value), Left[L, R])
+				case "Sum.Right":
+					return MapRight(rightDeserializer(sumForSerialization.Value), Right[L, R])
+				}
+				return Left[error, Sum[L, R]](fmt.Errorf("expected case to be 'Sum.Left' or 'Sum.Right', got %s", sumForSerialization.Case))
+			},
+		)
+	})
 }
