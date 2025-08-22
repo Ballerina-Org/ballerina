@@ -112,3 +112,15 @@ func StringDeserializer() Deserializer[string] {
 		return wrappedUnmarshal[string](data)
 	})
 }
+
+func BoolSerializer() Serializer[bool] {
+	return withContext("on bool", func(value bool) Sum[error, json.RawMessage] {
+		return wrappedMarshal(value)
+	})
+}
+
+func BoolDeserializer() Deserializer[bool] {
+	return withContext("on bool", func(data json.RawMessage) Sum[error, bool] {
+		return wrappedUnmarshal[bool](data)
+	})
+}

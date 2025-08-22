@@ -65,3 +65,19 @@ func TestStringDeserialization(t *testing.T) {
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, string](`he\nllo`), deserialized)
 }
+
+func TestBoolSerialization(t *testing.T) {
+	t.Parallel()
+	serializer := ballerina.BoolSerializer()
+	bool := true
+	serialized := serializer(bool)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`true`)), serialized)
+}
+
+func TestBoolDeserialization(t *testing.T) {
+	t.Parallel()
+	deserializer := ballerina.BoolDeserializer()
+	serialized := json.RawMessage(`false`)
+	deserialized := deserializer(serialized)
+	require.Equal(t, ballerina.Right[error, bool](false), deserialized)
+}
