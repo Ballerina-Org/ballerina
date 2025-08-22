@@ -8,6 +8,7 @@ import {
   isString,
   Renderer,
   ValueOrErrors,
+  ValueSumN,
 } from "../../../../../../../../../main";
 import {
   DispatchIsObject,
@@ -15,6 +16,7 @@ import {
   DispatchTypeName,
   FilterType,
   SerializedType,
+  SumNType,
 } from "../types/state";
 
 export type SerializedEntityApi = {
@@ -132,7 +134,7 @@ type ColumnName = string;
 export type ColumnFilters<T> = {
   displayType: DispatchParsedType<T>;
   displayRenderer: Renderer<T>;
-  filters: List<FilterType<T>>;
+  filters: SumNType<T>;
 };
 export type TableMethod = (typeof TableMethods)[keyof typeof TableMethods];
 export type TableApiName = string;
@@ -285,7 +287,10 @@ export const TableApis = {
                                           {
                                             displayType: type[0],
                                             displayRenderer: renderer,
-                                            filters,
+                                            filters:
+                                              DispatchParsedType.Default.sumN(
+                                                filters.toArray(),
+                                              ),
                                           },
                                         ] as const),
                                       ),

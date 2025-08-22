@@ -169,7 +169,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         ValueSumN.Default(_.Discriminator, _.Size, _.Value),
       toAPIRawValue: ([_, __]) => {
         return {
-          Discriminator: _.caseIndex,
+          Discriminator: _.caseIndex + 1,
           Size: _.arity,
           Value: _.value,
         };

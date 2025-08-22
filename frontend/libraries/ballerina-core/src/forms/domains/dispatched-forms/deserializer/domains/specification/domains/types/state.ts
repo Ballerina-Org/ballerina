@@ -328,7 +328,6 @@ export const SumType = {
 export type SumNType<T> = {
   kind: "sumN";
   args: Array<DispatchParsedType<T>>;
-  arity: number;
   asString: () => StringSerializedType;
 };
 
@@ -632,15 +631,13 @@ export const DispatchParsedType = {
     }),
     sumN: <T>(
       args: Array<DispatchParsedType<T>>,
-      arity: number,
-    ): DispatchParsedType<T> => ({
+    ): SumNType<T> => ({
       kind: "sumN",
       args,
-      arity,
       asString: () =>
         SumNType.SerializeToString(
           args.map((v) => v.asString()),
-          arity,
+          args.length,
         ),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
@@ -927,7 +924,7 @@ export const DispatchParsedType = {
             type.args.map((v) =>
               DispatchParsedType.Operations.SerializeToString(v),
             ),
-            type.arity,
+            type.args.length,
           );
         case "map":
           return MapType.SerializeToString(

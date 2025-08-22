@@ -30,6 +30,8 @@ import {
   DispatchParsedType,
   CommonAbstractRendererForeignMutationsExpected,
   Value,
+  SumNType,
+  ValueSumN,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -62,6 +64,7 @@ export type TableAbstractRendererSelectedDetailRow =
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
+    isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: TableAbstractRendererSelectedDetailRow;
@@ -83,6 +86,7 @@ export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
+      isFilteringInitialized: true,
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
@@ -137,6 +141,9 @@ export const TableAbstractRendererState = {
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "filterStates",
         ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "isFilteringInitialized",
+        ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
         ...simpleUpdater<TableAbstractRendererState["commonFormState"]>()(
@@ -147,7 +154,7 @@ export const TableAbstractRendererState = {
     Template: {
       updateFilters: (
         filters: Map<string, List<ValueFilter>>,
-        filterTypes: Map<string, Array<FilterType<any>>>,
+        filterTypes: Map<string, SumNType<any>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -165,6 +172,7 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     _.customFormState.sorting,
                     toApiRaw,
+                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -178,7 +186,7 @@ export const TableAbstractRendererState = {
       addSorting: (
         columnName: string,
         direction: "Ascending" | "Descending" | undefined,
-        filterTypes: Map<string, Array<FilterType<any>>>,
+        filterTypes: Map<string, SumNType<any>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -201,6 +209,7 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
+                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -214,7 +223,7 @@ export const TableAbstractRendererState = {
       },
       removeSorting: (
         columnName: string,
-        filterTypes: Map<string, Array<FilterType<any>>>,
+        filterTypes: Map<string, SumNType<any>>,
         toApiRaw: (
           type: DispatchParsedType<any>,
           value: PredicateValue,
@@ -236,6 +245,7 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
+                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -261,25 +271,45 @@ export const TableAbstractRendererState = {
   Operations: {
     parseFiltersAndSortingToBase64String: (
       filterValues: Map<string, List<ValueFilter>>,
-      filterTypes: Map<string, Array<FilterType<any>>>,
+      sumNFilterTypes: Map<string, SumNType<any>>,
       sorting: Map<string, "Ascending" | "Descending" | undefined>,
       toApiRaw: (
         type: DispatchParsedType<any>,
         value: PredicateValue,
         state: any,
       ) => ValueOrErrors<any, string>,
+      isFilteringInitialized: boolean,
     ): string => {
       if (
-        filterValues.valueSeq().every((filters) => filters.size == 0) &&
-        sorting.size == 0
+        !isFilteringInitialized ||
+        (filterValues.valueSeq().every((filters) => filters.size == 0) &&
+          sorting.size == 0)
       ) {
         return "";
       }
+      const filterTypes = sumNFilterTypes.map((sumNType) => sumNType.args as Array<FilterType<any>>);
+      console.debug('snf', sumNFilterTypes.toJS());
       const parsedFilters = filterValues.map((filters, columnName) =>
         filters.map((filter) => {
-          const filterType = filterTypes
+          // const filterType = filterTypes
+          //   .get(columnName)
+          //   ?.find((f) => f.kind == filter.kind);
+          const filterTypeIndex = filterTypes
             .get(columnName)
-            ?.find((f) => f.kind == filter.kind);
+            ?.findIndex((f) => f.kind == filter.kind);
+          console.debug('filterTypes', filterTypes.toJS());
+          console.debug("filterTypeIndex", filterTypeIndex);
+          console.debug("filter", filter);
+          if (filterTypeIndex == undefined || filterTypeIndex < 0) {
+            console.error(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+            return ValueOrErrors.Default.throwOne(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+          }
+          const filterType = sumNFilterTypes.get(columnName);
+
           if (!filterType) {
             console.error(
               `filter ${filter.kind} type not found for column ${columnName}`,
@@ -288,7 +318,14 @@ export const TableAbstractRendererState = {
               `filter ${filter.kind} type not found for column ${columnName}`,
             );
           }
-          return toApiRaw(filterType, filter, {});
+
+          const sumValue = ValueSumN.Default(
+            filterTypeIndex,
+            filterType.args.length,
+            filter,
+          );
+
+          return toApiRaw(filterType, sumValue, {});
         }),
       );
       if (
@@ -314,6 +351,7 @@ export const TableAbstractRendererState = {
           .toList()
           .filter((sorting) => sorting[1] != undefined),
       };
+      console.debug("params", JSON.stringify(params, null, 2));
       return btoa(JSON.stringify(params));
     },
     tableValuesToValueRecord: (
@@ -452,5 +490,6 @@ export type TableAbstractRendererView<
     >;
     AllowedSorting: Array<string>;
     HighlightedFilters: Array<string>;
+    isFilteringSortAndLoadingEnabled: boolean;
   }
 >;

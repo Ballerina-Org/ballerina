@@ -39,6 +39,7 @@ import {
   FilterType,
   ListRepo,
   Updater,
+  SumNType,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -120,7 +121,7 @@ export const TableAbstractRenderer = <
       type: DispatchParsedType<any>;
       GetDefaultValue: () => PredicateValue;
       GetDefaultState: () => CommonAbstractRendererState;
-      filters: Array<FilterType<any>>;
+      filters: SumNType<any>;
     }
   >,
   parseToApiByType: (
@@ -510,6 +511,7 @@ export const TableAbstractRenderer = <
 
   const EmbeddedAllowedFilters = Filters.map((filter, columnName) => ({
     ...filter,
+    filters: filter.filters.args as Array<FilterType<any>>,
     template: (index: number) =>
       filter.template
         .mapContext<
@@ -703,10 +705,13 @@ export const TableAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              loadMore: () =>
-                props.setState(
-                  TableAbstractRendererState.Updaters.Template.loadMore(),
-                ),
+              loadMore: () => {
+                if (props.context.customFormState.isFilteringInitialized) {
+                  props.setState(
+                    TableAbstractRendererState.Updaters.Template.loadMore(),
+                  );
+                }
+              },
               selectDetailView: (rowId: string) => {
                 const chunkIndex =
                   ValueInfiniteStreamState.Operations.getChunkIndexForValue(
@@ -882,6 +887,9 @@ export const TableAbstractRenderer = <
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
+            isFilteringSortAndLoadingEnabled={
+              props.context.customFormState.isFilteringInitialized
+            }
           />
         </IdProvider>
       </>

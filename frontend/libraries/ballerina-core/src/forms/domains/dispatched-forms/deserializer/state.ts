@@ -3,6 +3,7 @@ import { List, Map } from "immutable";
 import {
   DispatchParsedType,
   DispatchTypeName,
+  FilterType,
 } from "./domains/specification/domains/types/state";
 import { unit, Unit } from "../../../../fun/domains/unit/state";
 import {
@@ -24,6 +25,7 @@ import {
   TableApis,
   SpecificationApis,
   LookupTypeAbstractRendererView,
+  ValueFilter,
 } from "../../../../../main";
 
 import {
@@ -189,12 +191,20 @@ export type DispatchInfiniteStreamSources = BasicFun<
     string
   >
 >;
+export type DispatchTableFiltersAndSorting = {
+  filters: Map<string, List<ValueFilter>>;
+  sorting: Map<string, "Ascending" | "Descending" | undefined>;
+};
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
     BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+  >;
+  getDefaultFiltersAndSorting: BasicFun<
+    BasicFun<any, ValueOrErrors<PredicateValue, string>>,
+    BasicFun<Unit, Promise<DispatchTableFiltersAndSorting>>
   >;
 };
 

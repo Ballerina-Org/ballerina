@@ -15,6 +15,7 @@ import {
   DispatchOneSource,
   DispatchLookupSources,
   TableAbstractRendererState,
+  DispatchTableFiltersAndSorting,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
 import { City } from "../../address/state";
@@ -153,6 +154,61 @@ const getActiveUsers: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    //   (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+    //     PromiseRepo.Default.mock(() => ({
+    //       Filters: {
+    //         Name: ([
+    //           {
+    //             EqualsTo: "John",
+    //           },
+    //         ]),
+    //       },
+    //       Sorting: {},
+    //     })).then((res) => {
+    //       const parsedFilters = Object.entries(res.Filters).map(([columnName, filters]) =>
+    //         filters.map((filter) => {
+    //           const filterType = filterTypes
+    //             .get(columnName)
+    //             ?.find((f) => f.kind == filter.kind);
+    //           if (!filterType) {
+    //             console.error(
+    //               `filter ${filter.kind} type not found for column ${columnName}`,
+    //             );
+    //             return ValueOrErrors.Default.throwOne(
+    //               `filter ${filter.kind} type not found for column ${columnName}`,
+    //             );
+    //           }
+    //           return toApiRaw(filterType, filter, {});
+    //         }),
+    //       );
+    //       if (
+    //         parsedFilters.some((filter) => filter.some((f) => f.kind == "errors"))
+    //       ) {
+    //         console.error(
+    //           "error parsing filters to api",
+    //           parsedFilters
+    //             .filter((filter) => filter.some((f) => f.kind == "errors"))
+    //             .toJS(),
+    //         );
+    //         return "";
+    //       }
+
+    //       // TODO: Deal with this monadically
+    //       const parsedFiltersValues = parsedFilters
+    //         .map((filter) => filter.map((f) => (f as Value<PredicateValue>).value))
+    //         .toJS();
+
+    //       return {
+    //         filters: Map(Object.entries(res.filters)),
+    //         sorting: Map(Object.entries(res.sorting)),
+    //       };
+    //     }),
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getActiveFriends: DispatchTableApiSource = {
@@ -236,6 +292,12 @@ const getActiveFriends: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getChildren: DispatchTableApiSource = {
@@ -364,6 +426,12 @@ const getChildren: DispatchTableApiSource = {
         ),
       }));
     },
+  getDefaultFiltersAndSorting:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) => () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getFriends: DispatchOneSource = {

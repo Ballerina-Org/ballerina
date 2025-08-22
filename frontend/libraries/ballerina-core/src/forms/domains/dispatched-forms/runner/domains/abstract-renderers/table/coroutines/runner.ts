@@ -23,6 +23,36 @@ const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
 // TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 // if value exists in entity, use that, otherwise load first chunk from infinite stream
+const initialiseFiltersAndSorting = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  Co<CustomPresentationContext, ExtraContext>()
+    .GetState()
+    .then((current) => {
+      const getDefaultFiltersAndSorting =
+        current.tableApiSource.getDefaultFiltersAndSorting(
+          current.fromTableApiParser,
+        );
+      return Co<CustomPresentationContext, ExtraContext>()
+        .Await(getDefaultFiltersAndSorting, () =>
+          console.error("error getting default filters and sorting"),
+        )
+        .then((filtersAndSorting) => {
+          return filtersAndSorting.kind == "l"
+            ? Co<CustomPresentationContext, ExtraContext>().SetState(
+                TableAbstractRendererState.Updaters.Core.customFormState.children
+                  .filters(replaceWith(filtersAndSorting.value.filters))
+                  .then(
+                    TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
+                      replaceWith(filtersAndSorting.value.sorting),
+                    ),
+                  ),
+              )
+            : Co<CustomPresentationContext, ExtraContext>().Wait(0);
+        });
+    });
+
 const intialiseTable = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
@@ -40,6 +70,8 @@ const intialiseTable = <
       const getChunkWithParams = current.tableApiSource.getMany(
         current.fromTableApiParser,
       );
+
+      console.debug("params", current.customFormState.filterAndSortParam);
 
       const params =
         current.customFormState.filterAndSortParam == ""

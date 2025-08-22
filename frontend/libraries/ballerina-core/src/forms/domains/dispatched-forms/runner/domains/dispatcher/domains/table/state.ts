@@ -13,6 +13,7 @@ import {
   Dispatcher,
   Value,
   FilterType,
+  SumNType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -79,7 +80,7 @@ export const TableDispatcher = {
     >(
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContext<
-        T,
+        T,  
         Flags,
         CustomPresentationContexts,
         ExtraContext
@@ -193,7 +194,7 @@ export const TableDispatcher = {
                     string,
                     {
                       template: Template<any, any, any, any>;
-                      filters: FilterType<any>[];
+                      filters: SumNType<any>;
                       type: DispatchParsedType<any>;
                       GetDefaultValue: () => PredicateValue;
                       GetDefaultState: () => any;
@@ -239,7 +240,7 @@ export const TableDispatcher = {
                             Template<any, any, any, any>
                           >
                         ).value,
-                        filters: dispatchedFilterRenderer.filters.toArray(),
+                        filters: dispatchedFilterRenderer.filters,
                         type: dispatchedFilterRenderer.type,
                         GetDefaultValue: () =>
                           (
