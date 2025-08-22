@@ -33,6 +33,18 @@ func (s Sum[L, R]) Swap() Sum[R, L] {
 	)
 }
 
+func MapLeft[L any, R any, LO any](e Sum[L, R], leftMap func(L) LO) Sum[LO, R] {
+	return BiMap(e, leftMap, id[R])
+}
+
+func MapRight[L any, R any, RO any](e Sum[L, R], rightMap func(R) RO) Sum[L, RO] {
+	return BiMap(e, id[L], rightMap)
+}
+
+func Bind[L any, R any, RO any](e Sum[L, R], rightMap func(R) Sum[L, RO]) Sum[L, RO] {
+	return Fold(e, func(l L) Sum[L, RO] { return Left[L, RO](l) }, rightMap)
+}
+
 func BiMap[L any, R any, LO any, RO any](e Sum[L, R], leftMap func(L) LO, rightMap func(R) RO) Sum[LO, RO] {
 	if e.isRight {
 		return Right[LO, RO](rightMap(e.right))
