@@ -135,56 +135,54 @@ func (s _primitiveTypeForSerialization) getValueWithKind(kind string) Sum[error,
 	return Right[error, string](s.Value)
 }
 
+func serializePrimitiveTypeFrom[T any](kind string, serialize func(T) string) func(T) Sum[error, json.RawMessage] {
+	return withContext("on "+kind, func(value T) Sum[error, json.RawMessage] {
+		return wrappedMarshal(_primitiveTypeForSerialization{Kind: kind, Value: serialize(value)})
+	})
+}
+
+func deserializePrimitiveTypeTo[T any](kind string, parse func(string) (T, error)) func(json.RawMessage) Sum[error, T] {
+	return withContext("on "+kind, func(data json.RawMessage) Sum[error, T] {
+		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
+			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, T] {
+				return Bind(primitiveTypeForSerialization.getValueWithKind(kind), SumWrap(parse))
+			},
+		)
+	})
+}
+
 func IntSerializer() Serializer[int64] {
-	return withContext("on int", func(value int64) Sum[error, json.RawMessage] {
-		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "int", Value: strconv.FormatInt(value, 10)})
+	return serializePrimitiveTypeFrom("int", func(value int64) string {
+		return strconv.FormatInt(value, 10)
 	})
 }
 
 func IntDeserializer() Deserializer[int64] {
-	return withContext("on int", func(data json.RawMessage) Sum[error, int64] {
-		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
-			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, int64] {
-				return Bind(primitiveTypeForSerialization.getValueWithKind("int"), SumWrap(func(value string) (int64, error) {
-					return strconv.ParseInt(value, 10, 64)
-				}))
-			},
-		)
+	return deserializePrimitiveTypeTo("int", func(value string) (int64, error) {
+		return strconv.ParseInt(value, 10, 64)
 	})
 }
 
 func FloatSerializer() Serializer[float64] {
-	return withContext("on float", func(value float64) Sum[error, json.RawMessage] {
-		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "float", Value: strconv.FormatFloat(value, 'f', -1, 64)})
+	return serializePrimitiveTypeFrom("float", func(value float64) string {
+		return strconv.FormatFloat(value, 'f', -1, 64)
 	})
 }
 
 func FloatDeserializer() Deserializer[float64] {
-	return withContext("on float", func(data json.RawMessage) Sum[error, float64] {
-		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
-			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, float64] {
-				return Bind(primitiveTypeForSerialization.getValueWithKind("float"), SumWrap(func(value string) (float64, error) {
-					return strconv.ParseFloat(value, 64)
-				}))
-			},
-		)
+	return deserializePrimitiveTypeTo("float", func(value string) (float64, error) {
+		return strconv.ParseFloat(value, 64)
 	})
 }
 
 func DateSerializer() Serializer[time.Time] {
-	return withContext("on date", func(value time.Time) Sum[error, json.RawMessage] {
-		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "date", Value: value.Format(time.DateOnly)})
+	return serializePrimitiveTypeFrom("date", func(value time.Time) string {
+		return value.Format(time.DateOnly)
 	})
 }
 
 func DateDeserializer() Deserializer[time.Time] {
-	return withContext("on date", func(data json.RawMessage) Sum[error, time.Time] {
-		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
-			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, time.Time] {
-				return Bind(primitiveTypeForSerialization.getValueWithKind("date"), SumWrap(func(value string) (time.Time, error) {
-					return time.Parse(time.DateOnly, value)
-				}))
-			},
-		)
+	return deserializePrimitiveTypeTo("date", func(value string) (time.Time, error) {
+		return time.Parse(time.DateOnly, value)
 	})
 }
