@@ -86,7 +86,7 @@ export const TableAbstractRendererState = {
       initializationStatus: "not initialized",
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      filterAndSortParam: Debounced.Default(""),
+      filterAndSortParam: "",
       rowStates: Map(),
       filters: Map(),
       sorting: Map(),
