@@ -3,6 +3,7 @@ package ballerina
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // The Serializer function should be total (i.e. never return an error).
@@ -16,22 +17,18 @@ type Serializer[T any] func(T) Sum[error, json.RawMessage]
 type Deserializer[T any] func(json.RawMessage) Sum[error, T]
 
 func wrappedMarshal[T any](value T) Sum[error, json.RawMessage] {
-	serializedValue, err := json.Marshal(value)
-	if err != nil {
-		return Left[error, json.RawMessage](err)
-	}
-	return Right[error, json.RawMessage](serializedValue)
+	return SumWrap(func(value T) (json.RawMessage, error) {
+		return json.Marshal(value)
+	})(value)
 }
 
 func wrappedUnmarshal[T any](data json.RawMessage) Sum[error, T] {
-	var value T
-	err := json.Unmarshal(data, &value)
-	if err != nil {
-		return Left[error, T](err)
-	}
-	return Right[error, T](value)
+	return SumWrap(func(data json.RawMessage) (T, error) {
+		var value T
+		err := json.Unmarshal(data, &value)
+		return value, err
+	})(data)
 }
-
 func withContext[I any, T any](context string, f func(I) Sum[error, T]) func(I) Sum[error, T] {
 	return func(value I) Sum[error, T] {
 		return MapLeft[error, T](f(value), func(err error) error {
@@ -122,5 +119,52 @@ func BoolSerializer() Serializer[bool] {
 func BoolDeserializer() Deserializer[bool] {
 	return withContext("on bool", func(data json.RawMessage) Sum[error, bool] {
 		return wrappedUnmarshal[bool](data)
+	})
+}
+
+type _primitiveTypeForSerialization struct {
+	Kind  string `json:"kind"`
+	Value string `json:"value"`
+}
+
+func Int64Serializer() Serializer[int64] {
+	return withContext("on int64", func(value int64) Sum[error, json.RawMessage] {
+		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "int", Value: strconv.FormatInt(value, 10)})
+	})
+}
+
+func Int64Deserializer() Deserializer[int64] {
+	return withContext("on int64", func(data json.RawMessage) Sum[error, int64] {
+		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
+			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, int64] {
+				if primitiveTypeForSerialization.Kind != "int" {
+					return Left[error, int64](fmt.Errorf("expected kind to be 'int', got %s", primitiveTypeForSerialization.Kind))
+				}
+				return SumWrap(func(value string) (int64, error) {
+					return strconv.ParseInt(value, 10, 64)
+				})(primitiveTypeForSerialization.Value)
+			},
+		)
+	})
+}
+
+func Float64Serializer() Serializer[float64] {
+	return withContext("on float64", func(value float64) Sum[error, json.RawMessage] {
+		return wrappedMarshal(_primitiveTypeForSerialization{Kind: "float", Value: strconv.FormatFloat(value, 'f', -1, 64)})
+	})
+}
+
+func Float64Deserializer() Deserializer[float64] {
+	return withContext("on float64", func(data json.RawMessage) Sum[error, float64] {
+		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
+			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, float64] {
+				if primitiveTypeForSerialization.Kind != "float" {
+					return Left[error, float64](fmt.Errorf("expected kind to be 'float', got %s", primitiveTypeForSerialization.Kind))
+				}
+				return SumWrap(func(value string) (float64, error) {
+					return strconv.ParseFloat(value, 64)
+				})(primitiveTypeForSerialization.Value)
+			},
+		)
 	})
 }
