@@ -279,6 +279,7 @@ export const TableDispatcher = {
                             dispatcherContext.ErrorRenderer,
                             tableEntityType,
                             AllowedFilters,
+                            dispatcherContext.parseToApiByType,
                           )
                             .mapContext((_: any) => ({
                               ..._,

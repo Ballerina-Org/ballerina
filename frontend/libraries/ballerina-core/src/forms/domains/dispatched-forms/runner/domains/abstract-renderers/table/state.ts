@@ -24,15 +24,12 @@ import {
   RecordType,
   ValueTuple,
   ValueUnit,
-  TableApiFiltering,
   FilterType,
   MapRepo,
   ValueFilter,
   DispatchParsedType,
   CommonAbstractRendererForeignMutationsExpected,
-  FilterTypeKind,
-  ListAbstractRendererViewForeignMutationsExpected,
-  ListRepo,
+  Value,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { BasicFun } from "../../../../../../../fun/state";
@@ -71,7 +68,7 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     initializationStatus: "not initialized" | "initialized" | "reinitializing";
     filters: Map<string, List<ValueFilter>>;
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
-    filterAndSortParam: Debounced<string>;
+    filterAndSortParam: string;
     stream: ValueInfiniteStreamState;
     getChunkWithParams: BasicFun<
       Map<string, string>,
@@ -150,27 +147,106 @@ export const TableAbstractRendererState = {
     Template: {
       updateFilters: (
         filters: Map<string, List<ValueFilter>>,
+        filterTypes: Map<string, DispatchParsedType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
       ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.filters(
-          replaceWith(filters),
+        Updater((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .filters(replaceWith(filters))
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    filters,
+                    filterTypes,
+                    _.customFormState.sorting,
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+                replaceWith(true),
+              ),
+            )(_),
         ),
       addSorting: (
         columnName: string,
         direction: "Ascending" | "Descending" | undefined,
-      ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-          MapRepo.Updaters.upsert(
-            columnName,
-            () => undefined,
-            replaceWith(direction),
-          )
-        ),
+        filterTypes: Map<string, DispatchParsedType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
+      ): Updater<TableAbstractRendererState> => {
+        const sortingUpdater = MapRepo.Updaters.upsert(
+          columnName,
+          () => undefined,
+          replaceWith(direction),
+        );
+        return Updater<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .sorting(sortingUpdater)
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    _.customFormState.filters,
+                    filterTypes,
+                    sortingUpdater(_.customFormState.sorting),
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+                replaceWith(true),
+              ),
+            )(_),
+        );
+      },
       removeSorting: (
         columnName: string,
-      ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-          MapRepo.Updaters.remove(columnName),
-        ),
+        filterTypes: Map<string, DispatchParsedType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
+      ): Updater<TableAbstractRendererState> => {
+        const sortingUpdater = MapRepo.Updaters.remove<
+          string,
+          "Ascending" | "Descending" | undefined
+        >(columnName);
+        return Updater<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .sorting(sortingUpdater)
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    _.customFormState.filters,
+                    filterTypes,
+                    sortingUpdater(_.customFormState.sorting),
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+                replaceWith(true),
+              ),
+            )(_),
+        );
+      },
       loadMore: (): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
           ValueInfiniteStreamState.Updaters.Template.loadMore(),
@@ -190,6 +266,53 @@ export const TableAbstractRendererState = {
     // ): string => {
     //   return btoa(JSON.stringify({ filters, sorting }));
     // },
+    parseFiltersAndSortingToBase64String: (
+      filterValues: Map<string, List<ValueFilter>>,
+      filterTypes: Map<string, DispatchParsedType<any>>,
+      sorting: Map<string, "Ascending" | "Descending" | undefined>,
+      toApiRaw: (
+        type: DispatchParsedType<any>,
+        value: PredicateValue,
+        state: any,
+      ) => ValueOrErrors<any, string>,
+    ): string => {
+      // const params = PredicateValue.Default.record(OrderedMap({
+      //   Filters: PredicateValue.Default.record(filters.map(filters => PredicateValue.Default.tuple(filters))),
+      //   Sorting: PredicateValue.Default.tuple(sorting.toList().filter(sorting => sorting != undefined)),
+      // }));
+      const parsedFilters = filterValues.map((filters, columnName) =>
+        filters.map((filter) =>
+          toApiRaw(filterTypes.get(columnName)!, filter, {}),
+        ),
+      );
+      if (
+        parsedFilters.some((filter) =>
+          filter.some((f) => f.kind == "errors"),
+        )
+      ) {
+        console.error(
+          "error parsing filters to api",
+          parsedFilters.filter((filter) => filter.some((f) => f.kind == "errors")).toJS(),
+        );
+        return "";
+      }
+
+      // TODO: Deal with this monadically
+      const parsedFiltersValues = parsedFilters.map((filter) =>
+        filter.map((f) => (f as Value<PredicateValue>).value),
+      ).toJS();
+      const params = {
+        Filters: parsedFiltersValues,
+        Sorting: sorting
+          .entrySeq()
+          .toList()
+          .filter((sorting) => sorting[1] != undefined),
+      };
+      const serialized = btoa(JSON.stringify(params));
+      console.debug("params", JSON.stringify(params, null, 2));
+      console.debug("serialized", serialized);
+      return serialized;
+    },
     tableValuesToValueRecord: (
       values: any,
       fromApiRaw: (value: any) => ValueOrErrors<PredicateValue, string>,

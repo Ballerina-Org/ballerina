@@ -127,6 +127,11 @@ export type DispatcherContext<
   parseFromApiByType: (
     type: DispatchParsedType<T>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
+  parseToApiByType: (
+    type: DispatchParsedType<T>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>;
 };
 
 export type DeserializedDispatchSpecification<
@@ -390,6 +395,17 @@ export const parseDispatchFormsToLaunchers =
               ),
             IdProvider,
             ErrorRenderer,
+            parseToApiByType: (
+              type: DispatchParsedType<T>,
+              value: PredicateValue,
+              state: any,
+            ) =>
+              dispatchToAPIRawValue(
+                type,
+                specification.types,
+                apiConverters,
+                injectedPrimitives,
+              )(value, state),
           },
           parseEntityFromApiByTypeLookupName: (
             typeLookupName: string,

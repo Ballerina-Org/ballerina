@@ -123,6 +123,11 @@ export const TableAbstractRenderer = <
       filters: Array<FilterType<any>>;
     }
   >,
+  parseToApiByType: (
+    type: DispatchParsedType<any>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>,
 ): Template<
   TableAbstractRendererReadonlyContext<
     CustomPresentationContext,
@@ -838,6 +843,8 @@ export const TableAbstractRenderer = <
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.updateFilters(
                     filters,
+                    Filters.map(({ type }) => type),
+                    parseToApiByType,
                   ),
                 );
               },
@@ -849,6 +856,8 @@ export const TableAbstractRenderer = <
                   TableAbstractRendererState.Updaters.Template.addSorting(
                     columnName,
                     direction,
+                    Filters.map(({ type }) => type),
+                    parseToApiByType,
                   ),
                 );
               },
@@ -856,6 +865,8 @@ export const TableAbstractRenderer = <
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.removeSorting(
                     columnName,
+                    Filters.map(({ type }) => type),
+                    parseToApiByType,
                   ),
                 );
               },
