@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Collections\Sum.fs" />
+    <Compile Include="Collections/Sum.fs" />
+    <Compile Include="State/WithError.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
