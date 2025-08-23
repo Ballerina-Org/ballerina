@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 )
 
-type DeltaOptionEffectsEnum string
+type deltaOptionEffectsEnum string
 
 const (
-	OptionReplace DeltaOptionEffectsEnum = "OptionReplace"
-	OptionValue   DeltaOptionEffectsEnum = "OptionValue"
+	optionReplace deltaOptionEffectsEnum = "OptionReplace"
+	optionValue   deltaOptionEffectsEnum = "OptionValue"
 )
 
-var AllDeltaOptionEffectsEnumCases = [...]DeltaOptionEffectsEnum{OptionReplace, OptionValue}
+var allDeltaOptionEffectsEnumCases = [...]deltaOptionEffectsEnum{optionReplace, optionValue}
 
-func DefaultDeltaOptionEffectsEnum() DeltaOptionEffectsEnum { return AllDeltaOptionEffectsEnumCases[0] }
+func DefaultDeltaOptionEffectsEnum() deltaOptionEffectsEnum { return allDeltaOptionEffectsEnumCases[0] }
 
 type DeltaOption[a any, deltaA any] struct {
 	DeltaBase
-	discriminator DeltaOptionEffectsEnum
+	discriminator deltaOptionEffectsEnum
 	replace       *a
 	value         *deltaA
 }
@@ -28,7 +28,7 @@ var _ json.Marshaler = DeltaOption[Unit, Unit]{}
 func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaOptionEffectsEnum
+		Discriminator deltaOptionEffectsEnum
 		Replace       *a
 		Value         *deltaA
 	}{
@@ -42,7 +42,7 @@ func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaOptionEffectsEnum
+		Discriminator deltaOptionEffectsEnum
 		Replace       *a
 		Value         *deltaA
 	}
@@ -58,13 +58,13 @@ func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 
 func NewDeltaOptionReplace[a any, deltaA any](val a) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
-		discriminator: OptionReplace,
+		discriminator: optionReplace,
 		replace:       &val,
 	}
 }
 func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
-		discriminator: OptionValue,
+		discriminator: optionValue,
 		value:         &delta,
 	}
 }
@@ -75,9 +75,9 @@ func MatchDeltaOption[a any, deltaA any, Result any](
 	return func(delta DeltaOption[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case OptionReplace:
+		case optionReplace:
 			return onReplace(*delta.replace)
-		case OptionValue:
+		case optionValue:
 			return onValue(*delta.value)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")

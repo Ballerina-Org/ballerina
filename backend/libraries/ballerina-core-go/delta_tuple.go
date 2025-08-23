@@ -2,20 +2,20 @@ package ballerina
 
 import "encoding/json"
 
-type DeltaTuple2EffectsEnum string
+type deltaTuple2EffectsEnum string
 
 const (
-	Tuple2Item1 DeltaTuple2EffectsEnum = "Tuple2Item1"
-	Tuple2Item2 DeltaTuple2EffectsEnum = "Tuple2Item2"
+	tuple2Item1 deltaTuple2EffectsEnum = "Tuple2Item1"
+	tuple2Item2 deltaTuple2EffectsEnum = "Tuple2Item2"
 )
 
-var AllDeltaTuple2EffectsEnumCases = [...]DeltaTuple2EffectsEnum{Tuple2Item1, Tuple2Item2}
+var allDeltaTuple2EffectsEnumCases = [...]deltaTuple2EffectsEnum{tuple2Item1, tuple2Item2}
 
-func DefaultDeltaTuple2EffectsEnum() DeltaTuple2EffectsEnum { return AllDeltaTuple2EffectsEnumCases[0] }
+func DefaultDeltaTuple2EffectsEnum() deltaTuple2EffectsEnum { return allDeltaTuple2EffectsEnumCases[0] }
 
 type DeltaTuple2[deltaA any, deltaB any] struct {
 	DeltaBase
-	discriminator DeltaTuple2EffectsEnum
+	discriminator deltaTuple2EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 }
@@ -26,7 +26,7 @@ var _ json.Marshaler = DeltaTuple2[Unit, Unit]{}
 func (v *DeltaTuple2[deltaA, deltaB]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple2EffectsEnum
+		Discriminator deltaTuple2EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 	}
@@ -43,7 +43,7 @@ func (v *DeltaTuple2[deltaA, deltaB]) UnmarshalJSON(data []byte) error {
 func (v DeltaTuple2[deltaA, deltaB]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple2EffectsEnum
+		Discriminator deltaTuple2EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 	}{
@@ -56,13 +56,13 @@ func (v DeltaTuple2[deltaA, deltaB]) MarshalJSON() ([]byte, error) {
 
 func NewDeltaTuple2Item1[deltaA any, deltaB any](delta deltaA) DeltaTuple2[deltaA, deltaB] {
 	return DeltaTuple2[deltaA, deltaB]{
-		discriminator: Tuple2Item1,
+		discriminator: tuple2Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple2Item2[deltaA any, deltaB any](delta deltaB) DeltaTuple2[deltaA, deltaB] {
 	return DeltaTuple2[deltaA, deltaB]{
-		discriminator: Tuple2Item2,
+		discriminator: tuple2Item2,
 		item2:         &delta,
 	}
 }
@@ -73,30 +73,30 @@ func MatchDeltaTuple2[deltaA any, deltaB any, Result any](
 	return func(delta DeltaTuple2[deltaA, deltaB]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple2Item1:
+		case tuple2Item1:
 			return onItem1(*delta.item1)
-		case Tuple2Item2:
+		case tuple2Item2:
 			return onItem2(*delta.item2)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple2")
 	}
 }
 
-type DeltaTuple3EffectsEnum string
+type deltaTuple3EffectsEnum string
 
 const (
-	Tuple3Item1 DeltaTuple3EffectsEnum = "Tuple3Item1"
-	Tuple3Item2 DeltaTuple3EffectsEnum = "Tuple3Item2"
-	Tuple3Item3 DeltaTuple3EffectsEnum = "Tuple3Item3"
+	tuple3Item1 deltaTuple3EffectsEnum = "Tuple3Item1"
+	tuple3Item2 deltaTuple3EffectsEnum = "Tuple3Item2"
+	tuple3Item3 deltaTuple3EffectsEnum = "Tuple3Item3"
 )
 
-var AllDeltaTuple3EffectsEnumCases = [...]DeltaTuple3EffectsEnum{Tuple3Item1, Tuple3Item2, Tuple3Item3}
+var allDeltaTuple3EffectsEnumCases = [...]deltaTuple3EffectsEnum{tuple3Item1, tuple3Item2, tuple3Item3}
 
-func DefaultDeltaTuple3EffectsEnum() DeltaTuple3EffectsEnum { return AllDeltaTuple3EffectsEnumCases[0] }
+func DefaultDeltaTuple3EffectsEnum() deltaTuple3EffectsEnum { return allDeltaTuple3EffectsEnumCases[0] }
 
 type DeltaTuple3[deltaA any, deltaB any, deltaC any] struct {
 	DeltaBase
-	discriminator DeltaTuple3EffectsEnum
+	discriminator deltaTuple3EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -108,7 +108,7 @@ var _ json.Marshaler = DeltaTuple3[Unit, Unit, Unit]{}
 func (v *DeltaTuple3[deltaA, deltaB, deltaC]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple3EffectsEnum
+		Discriminator deltaTuple3EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -127,7 +127,7 @@ func (v *DeltaTuple3[deltaA, deltaB, deltaC]) UnmarshalJSON(data []byte) error {
 func (v DeltaTuple3[deltaA, deltaB, deltaC]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple3EffectsEnum
+		Discriminator deltaTuple3EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -142,19 +142,19 @@ func (v DeltaTuple3[deltaA, deltaB, deltaC]) MarshalJSON() ([]byte, error) {
 
 func NewDeltaTuple3Item1[deltaA any, deltaB any, deltaC any](delta deltaA) DeltaTuple3[deltaA, deltaB, deltaC] {
 	return DeltaTuple3[deltaA, deltaB, deltaC]{
-		discriminator: Tuple3Item1,
+		discriminator: tuple3Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple3Item2[deltaA any, deltaB any, deltaC any](delta deltaB) DeltaTuple3[deltaA, deltaB, deltaC] {
 	return DeltaTuple3[deltaA, deltaB, deltaC]{
-		discriminator: Tuple3Item2,
+		discriminator: tuple3Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple3Item3[deltaA any, deltaB any, deltaC any](delta deltaC) DeltaTuple3[deltaA, deltaB, deltaC] {
 	return DeltaTuple3[deltaA, deltaB, deltaC]{
-		discriminator: Tuple3Item3,
+		discriminator: tuple3Item3,
 		item3:         &delta,
 	}
 }
@@ -166,33 +166,33 @@ func MatchDeltaTuple3[deltaA any, deltaB any, deltaC any, Result any](
 	return func(delta DeltaTuple3[deltaA, deltaB, deltaC]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple3Item1:
+		case tuple3Item1:
 			return onItem1(*delta.item1)
-		case Tuple3Item2:
+		case tuple3Item2:
 			return onItem2(*delta.item2)
-		case Tuple3Item3:
+		case tuple3Item3:
 			return onItem3(*delta.item3)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple3")
 	}
 }
 
-type DeltaTuple4EffectsEnum string
+type deltaTuple4EffectsEnum string
 
 const (
-	Tuple4Item1 DeltaTuple4EffectsEnum = "Tuple4Item1"
-	Tuple4Item2 DeltaTuple4EffectsEnum = "Tuple4Item2"
-	Tuple4Item3 DeltaTuple4EffectsEnum = "Tuple4Item3"
-	Tuple4Item4 DeltaTuple4EffectsEnum = "Tuple4Item4"
+	tuple4Item1 deltaTuple4EffectsEnum = "Tuple4Item1"
+	tuple4Item2 deltaTuple4EffectsEnum = "Tuple4Item2"
+	tuple4Item3 deltaTuple4EffectsEnum = "Tuple4Item3"
+	tuple4Item4 deltaTuple4EffectsEnum = "Tuple4Item4"
 )
 
-var AllDeltaTuple4EffectsEnumCases = [...]DeltaTuple4EffectsEnum{Tuple4Item1, Tuple4Item2, Tuple4Item3, Tuple4Item4}
+var allDeltaTuple4EffectsEnumCases = [...]deltaTuple4EffectsEnum{tuple4Item1, tuple4Item2, tuple4Item3, tuple4Item4}
 
-func DefaultDeltaTuple4EffectsEnum() DeltaTuple4EffectsEnum { return AllDeltaTuple4EffectsEnumCases[0] }
+func DefaultDeltaTuple4EffectsEnum() deltaTuple4EffectsEnum { return allDeltaTuple4EffectsEnumCases[0] }
 
 type DeltaTuple4[deltaA any, deltaB any, deltaC any, deltaD any] struct {
 	DeltaBase
-	discriminator DeltaTuple4EffectsEnum
+	discriminator deltaTuple4EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -205,7 +205,7 @@ var _ json.Marshaler = DeltaTuple4[Unit, Unit, Unit, Unit]{}
 func (v *DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple4EffectsEnum
+		Discriminator deltaTuple4EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -226,7 +226,7 @@ func (v *DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) UnmarshalJSON(data []byte)
 func (v DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple4EffectsEnum
+		Discriminator deltaTuple4EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -243,25 +243,25 @@ func (v DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) MarshalJSON() ([]byte, erro
 
 func NewDeltaTuple4Item1[deltaA any, deltaB any, deltaC any, deltaD any](delta deltaA) DeltaTuple4[deltaA, deltaB, deltaC, deltaD] {
 	return DeltaTuple4[deltaA, deltaB, deltaC, deltaD]{
-		discriminator: Tuple4Item1,
+		discriminator: tuple4Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple4Item2[deltaA any, deltaB any, deltaC any, deltaD any](delta deltaB) DeltaTuple4[deltaA, deltaB, deltaC, deltaD] {
 	return DeltaTuple4[deltaA, deltaB, deltaC, deltaD]{
-		discriminator: Tuple4Item2,
+		discriminator: tuple4Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple4Item3[deltaA any, deltaB any, deltaC any, deltaD any](delta deltaC) DeltaTuple4[deltaA, deltaB, deltaC, deltaD] {
 	return DeltaTuple4[deltaA, deltaB, deltaC, deltaD]{
-		discriminator: Tuple4Item3,
+		discriminator: tuple4Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple4Item4[deltaA any, deltaB any, deltaC any, deltaD any](delta deltaD) DeltaTuple4[deltaA, deltaB, deltaC, deltaD] {
 	return DeltaTuple4[deltaA, deltaB, deltaC, deltaD]{
-		discriminator: Tuple4Item4,
+		discriminator: tuple4Item4,
 		item4:         &delta,
 	}
 }
@@ -274,36 +274,36 @@ func MatchDeltaTuple4[deltaA any, deltaB any, deltaC any, deltaD any, Result any
 	return func(delta DeltaTuple4[deltaA, deltaB, deltaC, deltaD]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple4Item1:
+		case tuple4Item1:
 			return onItem1(*delta.item1)
-		case Tuple4Item2:
+		case tuple4Item2:
 			return onItem2(*delta.item2)
-		case Tuple4Item3:
+		case tuple4Item3:
 			return onItem3(*delta.item3)
-		case Tuple4Item4:
+		case tuple4Item4:
 			return onItem4(*delta.item4)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple4")
 	}
 }
 
-type DeltaTuple5EffectsEnum string
+type deltaTuple5EffectsEnum string
 
 const (
-	Tuple5Item1 DeltaTuple5EffectsEnum = "Tuple5Item1"
-	Tuple5Item2 DeltaTuple5EffectsEnum = "Tuple5Item2"
-	Tuple5Item3 DeltaTuple5EffectsEnum = "Tuple5Item3"
-	Tuple5Item4 DeltaTuple5EffectsEnum = "Tuple5Item4"
-	Tuple5Item5 DeltaTuple5EffectsEnum = "Tuple5Item5"
+	tuple5Item1 deltaTuple5EffectsEnum = "Tuple5Item1"
+	tuple5Item2 deltaTuple5EffectsEnum = "Tuple5Item2"
+	tuple5Item3 deltaTuple5EffectsEnum = "Tuple5Item3"
+	tuple5Item4 deltaTuple5EffectsEnum = "Tuple5Item4"
+	tuple5Item5 deltaTuple5EffectsEnum = "Tuple5Item5"
 )
 
-var AllDeltaTuple5EffectsEnumCases = [...]DeltaTuple5EffectsEnum{Tuple5Item1, Tuple5Item2, Tuple5Item3, Tuple5Item4, Tuple5Item5}
+var allDeltaTuple5EffectsEnumCases = [...]deltaTuple5EffectsEnum{tuple5Item1, tuple5Item2, tuple5Item3, tuple5Item4, tuple5Item5}
 
-func DefaultDeltaTuple5EffectsEnum() DeltaTuple5EffectsEnum { return AllDeltaTuple5EffectsEnumCases[0] }
+func DefaultDeltaTuple5EffectsEnum() deltaTuple5EffectsEnum { return allDeltaTuple5EffectsEnumCases[0] }
 
 type DeltaTuple5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any] struct {
 	DeltaBase
-	discriminator DeltaTuple5EffectsEnum
+	discriminator deltaTuple5EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -317,7 +317,7 @@ var _ json.Marshaler = DeltaTuple5[Unit, Unit, Unit, Unit, Unit]{}
 func (v *DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple5EffectsEnum
+		Discriminator deltaTuple5EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -340,7 +340,7 @@ func (v *DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) UnmarshalJSON(data
 func (v DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple5EffectsEnum
+		Discriminator deltaTuple5EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -359,31 +359,31 @@ func (v DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) MarshalJSON() ([]by
 
 func NewDeltaTuple5Item1[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaA) DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]{
-		discriminator: Tuple5Item1,
+		discriminator: tuple5Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple5Item2[a any, b any, c any, d any, e any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaB) DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]{
-		discriminator: Tuple5Item2,
+		discriminator: tuple5Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple5Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaC) DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]{
-		discriminator: Tuple5Item3,
+		discriminator: tuple5Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple5Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaD) DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]{
-		discriminator: Tuple5Item4,
+		discriminator: tuple5Item4,
 		item4:         &delta,
 	}
 }
 func NewDeltaTuple5Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any](delta deltaE) DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE] {
 	return DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]{
-		discriminator: Tuple5Item5,
+		discriminator: tuple5Item5,
 		item5:         &delta,
 	}
 }
@@ -397,39 +397,39 @@ func MatchDeltaTuple5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any
 	return func(delta DeltaTuple5[deltaA, deltaB, deltaC, deltaD, deltaE]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple5Item1:
+		case tuple5Item1:
 			return onItem1(*delta.item1)
-		case Tuple5Item2:
+		case tuple5Item2:
 			return onItem2(*delta.item2)
-		case Tuple5Item3:
+		case tuple5Item3:
 			return onItem3(*delta.item3)
-		case Tuple5Item4:
+		case tuple5Item4:
 			return onItem4(*delta.item4)
-		case Tuple5Item5:
+		case tuple5Item5:
 			return onItem5(*delta.item5)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple5")
 	}
 }
 
-type DeltaTuple6EffectsEnum string
+type deltaTuple6EffectsEnum string
 
 const (
-	Tuple6Item1 DeltaTuple6EffectsEnum = "Tuple6Item1"
-	Tuple6Item2 DeltaTuple6EffectsEnum = "Tuple6Item2"
-	Tuple6Item3 DeltaTuple6EffectsEnum = "Tuple6Item3"
-	Tuple6Item4 DeltaTuple6EffectsEnum = "Tuple6Item4"
-	Tuple6Item5 DeltaTuple6EffectsEnum = "Tuple6Item5"
-	Tuple6Item6 DeltaTuple6EffectsEnum = "Tuple6Item6"
+	tuple6Item1 deltaTuple6EffectsEnum = "Tuple6Item1"
+	tuple6Item2 deltaTuple6EffectsEnum = "Tuple6Item2"
+	tuple6Item3 deltaTuple6EffectsEnum = "Tuple6Item3"
+	tuple6Item4 deltaTuple6EffectsEnum = "Tuple6Item4"
+	tuple6Item5 deltaTuple6EffectsEnum = "Tuple6Item5"
+	tuple6Item6 deltaTuple6EffectsEnum = "Tuple6Item6"
 )
 
-var AllDeltaTuple6EffectsEnumCases = [...]DeltaTuple6EffectsEnum{Tuple6Item1, Tuple6Item2, Tuple6Item3, Tuple6Item4, Tuple6Item5, Tuple6Item6}
+var allDeltaTuple6EffectsEnumCases = [...]deltaTuple6EffectsEnum{tuple6Item1, tuple6Item2, tuple6Item3, tuple6Item4, tuple6Item5, tuple6Item6}
 
-func DefaultDeltaTuple6EffectsEnum() DeltaTuple6EffectsEnum { return AllDeltaTuple6EffectsEnumCases[0] }
+func DefaultDeltaTuple6EffectsEnum() deltaTuple6EffectsEnum { return allDeltaTuple6EffectsEnumCases[0] }
 
 type DeltaTuple6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any] struct {
 	DeltaBase
-	discriminator DeltaTuple6EffectsEnum
+	discriminator deltaTuple6EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -444,7 +444,7 @@ var _ json.Marshaler = DeltaTuple6[Unit, Unit, Unit, Unit, Unit, Unit]{}
 func (v *DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple6EffectsEnum
+		Discriminator deltaTuple6EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -469,7 +469,7 @@ func (v *DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) UnmarshalJ
 func (v DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple6EffectsEnum
+		Discriminator deltaTuple6EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -490,37 +490,37 @@ func (v DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) MarshalJSON
 
 func NewDeltaTuple6Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaA) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item1,
+		discriminator: tuple6Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple6Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaB) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item2,
+		discriminator: tuple6Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple6Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaC) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item3,
+		discriminator: tuple6Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple6Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaD) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item4,
+		discriminator: tuple6Item4,
 		item4:         &delta,
 	}
 }
 func NewDeltaTuple6Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaE) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item5,
+		discriminator: tuple6Item5,
 		item5:         &delta,
 	}
 }
 func NewDeltaTuple6Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any](delta deltaF) DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF] {
 	return DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]{
-		discriminator: Tuple6Item6,
+		discriminator: tuple6Item6,
 		item6:         &delta,
 	}
 }
@@ -535,42 +535,42 @@ func MatchDeltaTuple6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any
 	return func(delta DeltaTuple6[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple6Item1:
+		case tuple6Item1:
 			return onItem1(*delta.item1)
-		case Tuple6Item2:
+		case tuple6Item2:
 			return onItem2(*delta.item2)
-		case Tuple6Item3:
+		case tuple6Item3:
 			return onItem3(*delta.item3)
-		case Tuple6Item4:
+		case tuple6Item4:
 			return onItem4(*delta.item4)
-		case Tuple6Item5:
+		case tuple6Item5:
 			return onItem5(*delta.item5)
-		case Tuple6Item6:
+		case tuple6Item6:
 			return onItem6(*delta.item6)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple6")
 	}
 }
 
-type DeltaTuple7EffectsEnum string
+type deltaTuple7EffectsEnum string
 
 const (
-	Tuple7Item1 DeltaTuple7EffectsEnum = "Tuple7Item1"
-	Tuple7Item2 DeltaTuple7EffectsEnum = "Tuple7Item2"
-	Tuple7Item3 DeltaTuple7EffectsEnum = "Tuple7Item3"
-	Tuple7Item4 DeltaTuple7EffectsEnum = "Tuple7Item4"
-	Tuple7Item5 DeltaTuple7EffectsEnum = "Tuple7Item5"
-	Tuple7Item6 DeltaTuple7EffectsEnum = "Tuple7Item6"
-	Tuple7Item7 DeltaTuple7EffectsEnum = "Tuple7Item7"
+	tuple7Item1 deltaTuple7EffectsEnum = "Tuple7Item1"
+	tuple7Item2 deltaTuple7EffectsEnum = "Tuple7Item2"
+	tuple7Item3 deltaTuple7EffectsEnum = "Tuple7Item3"
+	tuple7Item4 deltaTuple7EffectsEnum = "Tuple7Item4"
+	tuple7Item5 deltaTuple7EffectsEnum = "Tuple7Item5"
+	tuple7Item6 deltaTuple7EffectsEnum = "Tuple7Item6"
+	tuple7Item7 deltaTuple7EffectsEnum = "Tuple7Item7"
 )
 
-var AllDeltaTuple7EffectsEnumCases = [...]DeltaTuple7EffectsEnum{Tuple7Item1, Tuple7Item2, Tuple7Item3, Tuple7Item4, Tuple7Item5, Tuple7Item6, Tuple7Item7}
+var allDeltaTuple7EffectsEnumCases = [...]deltaTuple7EffectsEnum{tuple7Item1, tuple7Item2, tuple7Item3, tuple7Item4, tuple7Item5, tuple7Item6, tuple7Item7}
 
-func DefaultDeltaTuple7EffectsEnum() DeltaTuple7EffectsEnum { return AllDeltaTuple7EffectsEnumCases[0] }
+func DefaultDeltaTuple7EffectsEnum() deltaTuple7EffectsEnum { return allDeltaTuple7EffectsEnumCases[0] }
 
 type DeltaTuple7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any] struct {
 	DeltaBase
-	discriminator DeltaTuple7EffectsEnum
+	discriminator deltaTuple7EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -586,7 +586,7 @@ var _ json.Marshaler = DeltaTuple7[Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
 func (v *DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple7EffectsEnum
+		Discriminator deltaTuple7EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -613,7 +613,7 @@ func (v *DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) Un
 func (v DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple7EffectsEnum
+		Discriminator deltaTuple7EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -636,43 +636,43 @@ func (v DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) Mar
 
 func NewDeltaTuple7Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaA) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item1,
+		discriminator: tuple7Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple7Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaB) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item2,
+		discriminator: tuple7Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple7Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaC) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item3,
+		discriminator: tuple7Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple7Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaD) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item4,
+		discriminator: tuple7Item4,
 		item4:         &delta,
 	}
 }
 func NewDeltaTuple7Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaE) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item5,
+		discriminator: tuple7Item5,
 		item5:         &delta,
 	}
 }
 func NewDeltaTuple7Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaF) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item6,
+		discriminator: tuple7Item6,
 		item6:         &delta,
 	}
 }
 func NewDeltaTuple7Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any](delta deltaG) DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG] {
 	return DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]{
-		discriminator: Tuple7Item7,
+		discriminator: tuple7Item7,
 		item7:         &delta,
 	}
 }
@@ -688,45 +688,45 @@ func MatchDeltaTuple7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any
 	return func(delta DeltaTuple7[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple7Item1:
+		case tuple7Item1:
 			return onItem1(*delta.item1)
-		case Tuple7Item2:
+		case tuple7Item2:
 			return onItem2(*delta.item2)
-		case Tuple7Item3:
+		case tuple7Item3:
 			return onItem3(*delta.item3)
-		case Tuple7Item4:
+		case tuple7Item4:
 			return onItem4(*delta.item4)
-		case Tuple7Item5:
+		case tuple7Item5:
 			return onItem5(*delta.item5)
-		case Tuple7Item6:
+		case tuple7Item6:
 			return onItem6(*delta.item6)
-		case Tuple7Item7:
+		case tuple7Item7:
 			return onItem7(*delta.item7)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple7")
 	}
 }
 
-type DeltaTuple8EffectsEnum string
+type deltaTuple8EffectsEnum string
 
 const (
-	Tuple8Item1 DeltaTuple8EffectsEnum = "Tuple8Item1"
-	Tuple8Item2 DeltaTuple8EffectsEnum = "Tuple8Item2"
-	Tuple8Item3 DeltaTuple8EffectsEnum = "Tuple8Item3"
-	Tuple8Item4 DeltaTuple8EffectsEnum = "Tuple8Item4"
-	Tuple8Item5 DeltaTuple8EffectsEnum = "Tuple8Item5"
-	Tuple8Item6 DeltaTuple8EffectsEnum = "Tuple8Item6"
-	Tuple8Item7 DeltaTuple8EffectsEnum = "Tuple8Item7"
-	Tuple8Item8 DeltaTuple8EffectsEnum = "Tuple8Item8"
+	tuple8Item1 deltaTuple8EffectsEnum = "Tuple8Item1"
+	tuple8Item2 deltaTuple8EffectsEnum = "Tuple8Item2"
+	tuple8Item3 deltaTuple8EffectsEnum = "Tuple8Item3"
+	tuple8Item4 deltaTuple8EffectsEnum = "Tuple8Item4"
+	tuple8Item5 deltaTuple8EffectsEnum = "Tuple8Item5"
+	tuple8Item6 deltaTuple8EffectsEnum = "Tuple8Item6"
+	tuple8Item7 deltaTuple8EffectsEnum = "Tuple8Item7"
+	tuple8Item8 deltaTuple8EffectsEnum = "Tuple8Item8"
 )
 
-var AllDeltaTuple8EffectsEnumCases = [...]DeltaTuple8EffectsEnum{Tuple8Item1, Tuple8Item2, Tuple8Item3, Tuple8Item4, Tuple8Item5, Tuple8Item6, Tuple8Item7, Tuple8Item8}
+var allDeltaTuple8EffectsEnumCases = [...]deltaTuple8EffectsEnum{tuple8Item1, tuple8Item2, tuple8Item3, tuple8Item4, tuple8Item5, tuple8Item6, tuple8Item7, tuple8Item8}
 
-func DefaultDeltaTuple8EffectsEnum() DeltaTuple8EffectsEnum { return AllDeltaTuple8EffectsEnumCases[0] }
+func DefaultDeltaTuple8EffectsEnum() deltaTuple8EffectsEnum { return allDeltaTuple8EffectsEnumCases[0] }
 
 type DeltaTuple8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any] struct {
 	DeltaBase
-	discriminator DeltaTuple8EffectsEnum
+	discriminator deltaTuple8EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -743,7 +743,7 @@ var _ json.Marshaler = DeltaTuple8[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Uni
 func (v *DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple8EffectsEnum
+		Discriminator deltaTuple8EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -772,7 +772,7 @@ func (v *DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, del
 func (v DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple8EffectsEnum
+		Discriminator deltaTuple8EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -797,49 +797,49 @@ func (v DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, delt
 
 func NewDeltaTuple8Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaA) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item1,
+		discriminator: tuple8Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple8Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaB) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item2,
+		discriminator: tuple8Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple8Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaC) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item3,
+		discriminator: tuple8Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple8Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaD) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item4,
+		discriminator: tuple8Item4,
 		item4:         &delta,
 	}
 }
 func NewDeltaTuple8Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaE) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item5,
+		discriminator: tuple8Item5,
 		item5:         &delta,
 	}
 }
 func NewDeltaTuple8Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaF) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item6,
+		discriminator: tuple8Item6,
 		item6:         &delta,
 	}
 }
 func NewDeltaTuple8Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaG) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item7,
+		discriminator: tuple8Item7,
 		item7:         &delta,
 	}
 }
 func NewDeltaTuple8Item8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any](delta deltaH) DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH] {
 	return DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]{
-		discriminator: Tuple8Item8,
+		discriminator: tuple8Item8,
 		item8:         &delta,
 	}
 }
@@ -856,50 +856,50 @@ func MatchDeltaTuple8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any
 	return func(delta DeltaTuple8[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple8Item1:
+		case tuple8Item1:
 			return onItem1(*delta.item1)
-		case Tuple8Item2:
+		case tuple8Item2:
 			return onItem2(*delta.item2)
-		case Tuple8Item3:
+		case tuple8Item3:
 			return onItem3(*delta.item3)
-		case Tuple8Item4:
+		case tuple8Item4:
 			return onItem4(*delta.item4)
-		case Tuple8Item5:
+		case tuple8Item5:
 			return onItem5(*delta.item5)
-		case Tuple8Item6:
+		case tuple8Item6:
 			return onItem6(*delta.item6)
-		case Tuple8Item7:
+		case tuple8Item7:
 			return onItem7(*delta.item7)
-		case Tuple8Item8:
+		case tuple8Item8:
 			return onItem8(*delta.item8)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple8")
 	}
 }
 
-type DeltaTuple9EffectsEnum string
+type deltaTuple9EffectsEnum string
 
 const (
-	Tuple9Item1 DeltaTuple9EffectsEnum = "Tuple9Item1"
-	Tuple9Item2 DeltaTuple9EffectsEnum = "Tuple9Item2"
-	Tuple9Item3 DeltaTuple9EffectsEnum = "Tuple9Item3"
-	Tuple9Item4 DeltaTuple9EffectsEnum = "Tuple9Item4"
-	Tuple9Item5 DeltaTuple9EffectsEnum = "Tuple9Item5"
-	Tuple9Item6 DeltaTuple9EffectsEnum = "Tuple9Item6"
-	Tuple9Item7 DeltaTuple9EffectsEnum = "Tuple9Item7"
-	Tuple9Item8 DeltaTuple9EffectsEnum = "Tuple9Item8"
-	Tuple9Item9 DeltaTuple9EffectsEnum = "Tuple9Item9"
+	tuple9Item1 deltaTuple9EffectsEnum = "Tuple9Item1"
+	tuple9Item2 deltaTuple9EffectsEnum = "Tuple9Item2"
+	tuple9Item3 deltaTuple9EffectsEnum = "Tuple9Item3"
+	tuple9Item4 deltaTuple9EffectsEnum = "Tuple9Item4"
+	tuple9Item5 deltaTuple9EffectsEnum = "Tuple9Item5"
+	tuple9Item6 deltaTuple9EffectsEnum = "Tuple9Item6"
+	tuple9Item7 deltaTuple9EffectsEnum = "Tuple9Item7"
+	tuple9Item8 deltaTuple9EffectsEnum = "Tuple9Item8"
+	tuple9Item9 deltaTuple9EffectsEnum = "Tuple9Item9"
 )
 
-var AllDeltaTuple9EffectsEnumCases = [...]DeltaTuple9EffectsEnum{
-	Tuple9Item1, Tuple9Item2, Tuple9Item3, Tuple9Item4, Tuple9Item5, Tuple9Item6, Tuple9Item7, Tuple9Item8, Tuple9Item9,
+var allDeltaTuple9EffectsEnumCases = [...]deltaTuple9EffectsEnum{
+	tuple9Item1, tuple9Item2, tuple9Item3, tuple9Item4, tuple9Item5, tuple9Item6, tuple9Item7, tuple9Item8, tuple9Item9,
 }
 
-func DefaultDeltaTuple9EffectsEnum() DeltaTuple9EffectsEnum { return AllDeltaTuple9EffectsEnumCases[0] }
+func DefaultDeltaTuple9EffectsEnum() deltaTuple9EffectsEnum { return allDeltaTuple9EffectsEnumCases[0] }
 
 type DeltaTuple9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any] struct {
 	DeltaBase
-	discriminator DeltaTuple9EffectsEnum
+	discriminator deltaTuple9EffectsEnum
 	item1         *deltaA
 	item2         *deltaB
 	item3         *deltaC
@@ -917,7 +917,7 @@ var _ json.Marshaler = DeltaTuple9[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Uni
 func (v *DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaTuple9EffectsEnum
+		Discriminator deltaTuple9EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -948,7 +948,7 @@ func (v *DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, del
 func (v DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaTuple9EffectsEnum
+		Discriminator deltaTuple9EffectsEnum
 		Item1         *deltaA
 		Item2         *deltaB
 		Item3         *deltaC
@@ -975,55 +975,55 @@ func (v DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, delt
 
 func NewDeltaTuple9Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaA) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item1,
+		discriminator: tuple9Item1,
 		item1:         &delta,
 	}
 }
 func NewDeltaTuple9Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaB) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item2,
+		discriminator: tuple9Item2,
 		item2:         &delta,
 	}
 }
 func NewDeltaTuple9Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaC) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item3,
+		discriminator: tuple9Item3,
 		item3:         &delta,
 	}
 }
 func NewDeltaTuple9Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaD) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item4,
+		discriminator: tuple9Item4,
 		item4:         &delta,
 	}
 }
 func NewDeltaTuple9Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaE) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item5,
+		discriminator: tuple9Item5,
 		item5:         &delta,
 	}
 }
 func NewDeltaTuple9Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaF) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item6,
+		discriminator: tuple9Item6,
 		item6:         &delta,
 	}
 }
 func NewDeltaTuple9Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaG) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item7,
+		discriminator: tuple9Item7,
 		item7:         &delta,
 	}
 }
 func NewDeltaTuple9Item8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaH) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item8,
+		discriminator: tuple9Item8,
 		item8:         &delta,
 	}
 }
 func NewDeltaTuple9Item9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any](delta deltaI) DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI] {
 	return DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]{
-		discriminator: Tuple9Item9,
+		discriminator: tuple9Item9,
 		item9:         &delta,
 	}
 }
@@ -1041,23 +1041,23 @@ func MatchDeltaTuple9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any
 	return func(delta DeltaTuple9[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case Tuple9Item1:
+		case tuple9Item1:
 			return onItem1(*delta.item1)
-		case Tuple9Item2:
+		case tuple9Item2:
 			return onItem2(*delta.item2)
-		case Tuple9Item3:
+		case tuple9Item3:
 			return onItem3(*delta.item3)
-		case Tuple9Item4:
+		case tuple9Item4:
 			return onItem4(*delta.item4)
-		case Tuple9Item5:
+		case tuple9Item5:
 			return onItem5(*delta.item5)
-		case Tuple9Item6:
+		case tuple9Item6:
 			return onItem6(*delta.item6)
-		case Tuple9Item7:
+		case tuple9Item7:
 			return onItem7(*delta.item7)
-		case Tuple9Item8:
+		case tuple9Item8:
 			return onItem8(*delta.item8)
-		case Tuple9Item9:
+		case tuple9Item9:
 			return onItem9(*delta.item9)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple9")

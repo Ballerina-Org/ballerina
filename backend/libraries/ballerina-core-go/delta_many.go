@@ -4,23 +4,23 @@ import (
 	"encoding/json"
 )
 
-type DeltaManyEffectsEnum string
+type deltaManyEffectsEnum string
 
 const (
-	ManyLinkedItems   DeltaManyEffectsEnum = "ManyLinkedItems"
-	ManyUnlinkedItems DeltaManyEffectsEnum = "ManyUnlinkedItems"
-	ManyAllItems      DeltaManyEffectsEnum = "ManyAllItems"
+	manyLinkedItems   deltaManyEffectsEnum = "ManyLinkedItems"
+	manyUnlinkedItems deltaManyEffectsEnum = "ManyUnlinkedItems"
+	manyAllItems      deltaManyEffectsEnum = "ManyAllItems"
 )
 
-var AllDeltaManyEffectsEnumCases = [...]DeltaManyEffectsEnum{ManyLinkedItems, ManyUnlinkedItems, ManyAllItems}
+var allDeltaManyEffectsEnumCases = [...]deltaManyEffectsEnum{manyLinkedItems, manyUnlinkedItems, manyAllItems}
 
-func DefaultDeltaManyEffectsEnum() DeltaManyEffectsEnum {
-	return AllDeltaManyEffectsEnumCases[0]
+func DefaultDeltaManyEffectsEnum() deltaManyEffectsEnum {
+	return allDeltaManyEffectsEnumCases[0]
 }
 
 type DeltaMany[T any, deltaT any] struct {
 	DeltaBase
-	discriminator DeltaManyEffectsEnum
+	discriminator deltaManyEffectsEnum
 	linkedItems   *DeltaChunk[T, deltaT]
 	unlinkedItems *DeltaChunk[T, deltaT]
 	allItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
@@ -32,7 +32,7 @@ var _ json.Marshaler = DeltaMany[Unit, Unit]{}
 func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		DeltaBase
-		Discriminator DeltaManyEffectsEnum
+		Discriminator deltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
 		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
@@ -49,7 +49,7 @@ func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		DeltaBase
-		Discriminator DeltaManyEffectsEnum
+		Discriminator deltaManyEffectsEnum
 		LinkedItems   *DeltaChunk[T, deltaT]
 		UnlinkedItems *DeltaChunk[T, deltaT]
 		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
@@ -67,21 +67,21 @@ func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 
 func NewDeltaManyLinkedItems[T any, deltaT any](delta DeltaChunk[T, deltaT]) DeltaMany[T, deltaT] {
 	return DeltaMany[T, deltaT]{
-		discriminator: ManyLinkedItems,
+		discriminator: manyLinkedItems,
 		linkedItems:   &delta,
 	}
 }
 
 func NewDeltaManyUnlinkedItems[T any, deltaT any](delta DeltaChunk[T, deltaT]) DeltaMany[T, deltaT] {
 	return DeltaMany[T, deltaT]{
-		discriminator: ManyUnlinkedItems,
+		discriminator: manyUnlinkedItems,
 		unlinkedItems: &delta,
 	}
 }
 
 func NewDeltaManyAllItems[T any, deltaT any](delta DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) DeltaMany[T, deltaT] {
 	return DeltaMany[T, deltaT]{
-		discriminator: ManyAllItems,
+		discriminator: manyAllItems,
 		allItems:      &delta,
 	}
 }
@@ -94,11 +94,11 @@ func MatchDeltaMany[T any, deltaT any, Result any](
 	return func(delta DeltaMany[T, deltaT]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case "ManyLinkedItems":
+		case manyLinkedItems:
 			return onLinkedItems(*delta.linkedItems)
-		case "ManyUnlinkedItems":
+		case manyUnlinkedItems:
 			return onUnlinkedItems(*delta.unlinkedItems)
-		case "ManyAllItems":
+		case manyAllItems:
 			return onAllItems(*delta.allItems)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMany")

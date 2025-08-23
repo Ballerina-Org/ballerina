@@ -4,23 +4,23 @@ import (
 	"encoding/json"
 )
 
-type DeltaManyItemEffectsEnum string
+type deltaManyItemEffectsEnum string
 
 const (
-	ManyItemValue         DeltaManyItemEffectsEnum = "ManyItemValue"
-	ManyItemIsLinked      DeltaManyItemEffectsEnum = "ManyItemIsLinked"
-	ManyItemCanChangeLink DeltaManyItemEffectsEnum = "ManyItemCanChangeLink"
+	manyItemValue         deltaManyItemEffectsEnum = "ManyItemValue"
+	manyItemIsLinked      deltaManyItemEffectsEnum = "ManyItemIsLinked"
+	manyItemCanChangeLink deltaManyItemEffectsEnum = "ManyItemCanChangeLink"
 )
 
-var AllDeltaManyItemEffectsEnumCases = [...]DeltaManyItemEffectsEnum{ManyItemValue, ManyItemIsLinked, ManyItemCanChangeLink}
+var allDeltaManyItemEffectsEnumCases = [...]deltaManyItemEffectsEnum{manyItemValue, manyItemIsLinked, manyItemCanChangeLink}
 
-func DefaultDeltaManyItemEffectsEnum() DeltaManyItemEffectsEnum {
-	return AllDeltaManyItemEffectsEnumCases[0]
+func DefaultDeltaManyItemEffectsEnum() deltaManyItemEffectsEnum {
+	return allDeltaManyItemEffectsEnumCases[0]
 }
 
 type DeltaManyItem[T any, deltaT any] struct {
 	DeltaBase
-	discriminator DeltaManyItemEffectsEnum
+	discriminator deltaManyItemEffectsEnum
 	value         *deltaT
 	isLinked      *bool
 	canChangeLink *bool
@@ -32,7 +32,7 @@ var _ json.Marshaler = DeltaManyItem[Unit, Unit]{}
 func (d DeltaManyItem[T, deltaT]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaManyItemEffectsEnum
+		Discriminator deltaManyItemEffectsEnum
 		Value         *deltaT
 		IsLinked      *bool
 		CanChangeLink *bool
@@ -48,7 +48,7 @@ func (d DeltaManyItem[T, deltaT]) MarshalJSON() ([]byte, error) {
 func (d *DeltaManyItem[T, deltaT]) UnmarshalJSON(data []byte) error {
 	var a struct {
 		DeltaBase
-		Discriminator DeltaManyItemEffectsEnum
+		Discriminator deltaManyItemEffectsEnum
 		Value         *deltaT
 		IsLinked      *bool
 		CanChangeLink *bool
@@ -66,21 +66,21 @@ func (d *DeltaManyItem[T, deltaT]) UnmarshalJSON(data []byte) error {
 
 func NewDeltaManyItemValue[T any, deltaT any](delta deltaT) DeltaManyItem[T, deltaT] {
 	return DeltaManyItem[T, deltaT]{
-		discriminator: ManyItemValue,
+		discriminator: manyItemValue,
 		value:         &delta,
 	}
 }
 
 func NewDeltaManyItemIsLinked[T any, deltaT any](isLinked bool) DeltaManyItem[T, deltaT] {
 	return DeltaManyItem[T, deltaT]{
-		discriminator: ManyItemIsLinked,
+		discriminator: manyItemIsLinked,
 		isLinked:      &isLinked,
 	}
 }
 
 func NewDeltaManyItemCanChangeLink[T any, deltaT any](canChangeLink bool) DeltaManyItem[T, deltaT] {
 	return DeltaManyItem[T, deltaT]{
-		discriminator: ManyItemCanChangeLink,
+		discriminator: manyItemCanChangeLink,
 		canChangeLink: &canChangeLink,
 	}
 }
@@ -93,11 +93,11 @@ func MatchDeltaManyItem[T any, deltaT any, Result any](
 	return func(delta DeltaManyItem[T, deltaT]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case ManyItemValue:
+		case manyItemValue:
 			return onValue(*delta.value)
-		case ManyItemIsLinked:
+		case manyItemIsLinked:
 			return onIsLinked(*delta.isLinked)
-		case ManyItemCanChangeLink:
+		case manyItemCanChangeLink:
 			return onCanChangeLink(*delta.canChangeLink)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaManyItem")

@@ -4,22 +4,22 @@ import (
 	"encoding/json"
 )
 
-type DeltaMapEffectsEnum string
+type deltaMapEffectsEnum string
 
 const (
-	MapKey    DeltaMapEffectsEnum = "MapKey"
-	MapValue  DeltaMapEffectsEnum = "MapValue"
-	MapAdd    DeltaMapEffectsEnum = "MapAdd"
-	MapRemove DeltaMapEffectsEnum = "MapRemove"
+	mapKey    deltaMapEffectsEnum = "MapKey"
+	mapValue  deltaMapEffectsEnum = "MapValue"
+	mapAdd    deltaMapEffectsEnum = "MapAdd"
+	mapRemove deltaMapEffectsEnum = "MapRemove"
 )
 
-var AllDeltaMapEffectsEnumCases = [...]DeltaMapEffectsEnum{MapKey, MapValue, MapAdd, MapRemove}
+var allDeltaMapEffectsEnumCases = [...]deltaMapEffectsEnum{mapKey, mapValue, mapAdd, mapRemove}
 
-func DefaultDeltaMapEffectsEnum() DeltaMapEffectsEnum { return AllDeltaMapEffectsEnumCases[0] }
+func DefaultDeltaMapEffectsEnum() deltaMapEffectsEnum { return allDeltaMapEffectsEnumCases[0] }
 
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 	DeltaBase
-	discriminator DeltaMapEffectsEnum
+	discriminator deltaMapEffectsEnum
 	key           *Tuple2[int, deltaK]
 	value         *Tuple2[int, deltaV]
 	add           *Tuple2[k, v]
@@ -32,7 +32,7 @@ var _ json.Marshaler = DeltaMap[Unit, Unit, Unit, Unit]{}
 func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaMapEffectsEnum
+		Discriminator deltaMapEffectsEnum
 		Key           *Tuple2[int, deltaK]
 		Value         *Tuple2[int, deltaV]
 		Add           *Tuple2[k, v]
@@ -50,7 +50,7 @@ func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 	var a struct {
 		DeltaBase
-		Discriminator DeltaMapEffectsEnum
+		Discriminator deltaMapEffectsEnum
 		Key           *Tuple2[int, deltaK]
 		Value         *Tuple2[int, deltaV]
 		Add           *Tuple2[k, v]
@@ -71,26 +71,26 @@ func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 func NewDeltaMapKey[k comparable, v any, deltaK any, deltaV any](index int, delta deltaK) DeltaMap[k, v, deltaK, deltaV] {
 	t := NewTuple2(index, delta)
 	return DeltaMap[k, v, deltaK, deltaV]{
-		discriminator: MapKey,
+		discriminator: mapKey,
 		key:           &t,
 	}
 }
 func NewDeltaMapValue[k comparable, v any, deltaK any, deltaV any](index int, delta deltaV) DeltaMap[k, v, deltaK, deltaV] {
 	t := NewTuple2(index, delta)
 	return DeltaMap[k, v, deltaK, deltaV]{
-		discriminator: MapValue,
+		discriminator: mapValue,
 		value:         &t,
 	}
 }
 func NewDeltaMapAdd[k comparable, v any, deltaK any, deltaV any](newElement Tuple2[k, v]) DeltaMap[k, v, deltaK, deltaV] {
 	return DeltaMap[k, v, deltaK, deltaV]{
-		discriminator: MapAdd,
+		discriminator: mapAdd,
 		add:           &newElement,
 	}
 }
 func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) DeltaMap[k, v, deltaK, deltaV] {
 	return DeltaMap[k, v, deltaK, deltaV]{
-		discriminator: MapRemove,
+		discriminator: mapRemove,
 		remove:        &index,
 	}
 }
@@ -104,13 +104,13 @@ func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
 	return func(delta DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case MapKey:
+		case mapKey:
 			return onKey(*delta.key)
-		case MapValue:
+		case mapValue:
 			return onValue(*delta.value)
-		case MapAdd:
+		case mapAdd:
 			return onAdd(*delta.add)
-		case MapRemove:
+		case mapRemove:
 			return onRemove(*delta.remove)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
