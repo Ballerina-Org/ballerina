@@ -10,10 +10,7 @@ module Model =
 
   type TypeVarBindings = Map<VarName, ExprType>
 
-  and TypeBinding =
-    { TypeId: ExprTypeId
-      Type: ExprType
-      Const: bool }
+  and TypeBinding = { TypeId: ExprTypeId; Type: ExprType }
 
   and TypeBindingId = { TypeId: ExprTypeId }
 
@@ -26,8 +23,7 @@ module Model =
 
     static member Create(name, exprType) =
       { TypeBinding.TypeId = name
-        TypeBinding.Type = exprType
-        Const = false }
+        TypeBinding.Type = exprType }
 
   type ExprType with
     static member Extend t1 t2 =

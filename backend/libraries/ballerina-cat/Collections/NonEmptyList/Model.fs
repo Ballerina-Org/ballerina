@@ -4,8 +4,7 @@ module NonEmptyList =
   open Ballerina.Fun
 
   type NonEmptyList<'e> =
-    | One of 'e
-    | Many of 'e * NonEmptyList<'e>
+    | NonEmptyList of 'e * List<'e>
 
     interface System.Collections.Generic.IEnumerable<'e> with
       member l.GetEnumerator() : System.Collections.Generic.IEnumerator<'e> =
@@ -16,44 +15,37 @@ module NonEmptyList =
 
     member l.Head =
       match l with
-      | One h -> h
-      | Many(h, _) -> h
+      | NonEmptyList(h, _) -> h
 
     member l.Tail =
       match l with
-      | One _ -> []
-      | Many(_, t) -> t |> NonEmptyList.ToList
+      | NonEmptyList(_, t) -> t
 
     static member map (f: 'e -> 'b) (l: NonEmptyList<'e>) =
       match l with
-      | One h -> One(f h)
-      | Many(h, t) -> Many(f h, t |> NonEmptyList.map f)
+      | NonEmptyList(h, t) -> NonEmptyList(f h, t |> List.map f)
 
     static member reduce (f: 'e -> 'e -> 'e) (l: NonEmptyList<'e>) =
       match l with
-      | One e -> e
-      | Many(h, t) -> f h (NonEmptyList.reduce f t)
+      | NonEmptyList(h, t) -> List.reduce f (h :: t)
 
     static member ToList(l: NonEmptyList<'e>) =
       match l with
-      | One e -> [ e ]
-      | Many(h, t) -> h :: (NonEmptyList.ToList t)
+      | NonEmptyList(h, t) -> h :: t
 
     static member ToSeq(l: NonEmptyList<'e>) =
       seq {
         match l with
-        | One e -> yield e
-        | Many(h, t) ->
+        | NonEmptyList(h, t) ->
           yield h
-          yield! NonEmptyList.ToSeq t
+          yield! t
       }
 
-    static member OfList(head: 'e, tail) =
-      match tail with
-      | [] -> One head
-      | x :: xs -> Many(head, NonEmptyList.OfList(x, xs))
+    static member OfList(head: 'e, tail: List<'e>) = NonEmptyList(head, tail)
 
     static member TryOfList(l: List<'e>) =
       match l with
       | x :: xs -> NonEmptyList.OfList(x, xs) |> Some
       | _ -> None
+
+    static member One(e: 'e) = NonEmptyList(e, [])

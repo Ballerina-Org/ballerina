@@ -76,8 +76,7 @@ module Sum =
           | Right b2 -> Right('b.Concat(b1, b2))
 
       match ps with
-      | One p -> p
-      | Many(p, ps) -> ps |> Seq.fold merge p
+      | NonEmptyList(p, ps) -> ps |> Seq.fold merge p
 
     member inline sum.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p: Sum<'a, 'b>, ps: List<Sum<'a, 'b>>)

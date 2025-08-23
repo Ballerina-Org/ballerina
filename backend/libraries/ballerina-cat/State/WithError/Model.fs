@@ -109,19 +109,23 @@ module WithError =
       | Some first -> state.Combine(body first, state.For(seq |> Seq.tail, body))
       | None -> state { return () }
 
-    member state.Any<'a, 'c, 's, 'e>(e: {| concat: 'e * 'e -> 'e |}, l: NonEmptyList<State<'a, 'c, 's, 'e>>) =
+    member state.Any<'a, 'c, 's, 'e>
+      (e: {| concat: 'e * 'e -> 'e |}, l: NonEmptyList<State<'a, 'c, 's, 'e>>)
+      : State<'a, 'c, 's, 'e> =
       state {
         match l with
-        | One p -> return! p
-        | Many(p, ps) ->
+        | NonEmptyList(p, ps) ->
           match! p |> state.Catch with
-          | Left result -> return result
+          | Left result -> result
           | Right error ->
-            match! state.Any(e, ps) |> state.Catch with
-            | Left result -> return result
-            | Right error' ->
-              let finalError = e.concat (error, error')
-              return! finalError |> state.Throw
+            match ps with
+            | [] -> return! error |> state.Throw
+            | p' :: ps' ->
+              match! state.Any(e, NonEmptyList.OfList(p', ps')) |> state.Catch with
+              | Left result -> result
+              | Right error' ->
+                let finalError = e.concat (error, error')
+                return! finalError |> state.Throw
       }
 
     member inline state.Any<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>

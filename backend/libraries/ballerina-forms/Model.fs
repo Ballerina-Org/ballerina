@@ -153,7 +153,6 @@ module Model =
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
       DefaultConstructor: string
-      Const: bool
       DeltaTypeName: string
       RequiredImport: Option<string>
       SupportedRenderers: Set<string> }

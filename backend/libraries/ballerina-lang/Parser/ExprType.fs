@@ -463,8 +463,7 @@ module ExprType =
                   Map.add
                     name
                     { Type = ExprType.UnitType
-                      TypeId = typeId
-                      Const = false }
+                      TypeId = typeId }
                 )
 
               return name, typeId, json
@@ -486,21 +485,14 @@ module ExprType =
                         |> Sum.toOption
                         |> Option.defaultWith (fun () -> JsonValue.Array [||])
 
-                      let isConstJson =
-                        typeJsonArgs
-                        |> sum.TryFindField "const"
-                        |> Sum.toOption
-                        |> Option.defaultWith (fun () -> JsonValue.Boolean false)
-
                       let! fieldsJson = typeJsonArgs |> sum.TryFindField "fields" |> state.OfSum
 
                       return!
                         state {
-                          let! extends, fields, isConst =
-                            state.All3
+                          let! extends, fields =
+                            state.All2
                               (extendsJson |> JsonValue.AsArray |> state.OfSum)
                               (fieldsJson |> JsonValue.AsRecord |> state.OfSum)
-                              (isConstJson |> JsonValue.AsBoolean |> state.OfSum)
 
                           let! s = state.GetState()
 
@@ -539,14 +531,7 @@ module ExprType =
                               (Left(ExprType.RecordType fields))
                             |> state.OfSum
 
-                          do!
-                            state.SetState(
-                              Map.add
-                                typeName
-                                { Type = exprType
-                                  TypeId = typeId
-                                  Const = isConst }
-                            )
+                          do! state.SetState(Map.add typeName { Type = exprType; TypeId = typeId })
 
                           return ()
                         }
@@ -557,14 +542,7 @@ module ExprType =
 
                         let! parsedType = ExprType.Parse typeJson |> state.OfSum
 
-                        do!
-                          state.SetState(
-                            Map.add
-                              typeName
-                              { Type = parsedType
-                                TypeId = typeId
-                                Const = false }
-                          )
+                        do! state.SetState(Map.add typeName { Type = parsedType; TypeId = typeId })
                       }
                       state.Throw(
                         Errors.Singleton
