@@ -86,25 +86,27 @@ func NewDeltaManyItemCanChangeLink[T any, deltaT any](canChangeLink bool) DeltaM
 }
 
 func MatchDeltaManyItem[context any, T any, deltaT any, Result any](
-	onValue func(ReaderWithError[context, T], deltaT) (Result, error),
+	onValue func(deltaT) func(ReaderWithError[context, T]) (Result, error),
 	onIsLinked func(bool) (Result, error),
 	onCanChangeLink func(bool) (Result, error),
-) func(ReaderWithError[context, ManyItem[T]], DeltaManyItem[T, deltaT]) (Result, error) {
-	return func(manyItem ReaderWithError[context, ManyItem[T]], delta DeltaManyItem[T, deltaT]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case manyItemValue:
-			value := MapReaderWithError[context, ManyItem[T], T](
-				func(manyItem ManyItem[T]) T {
-					return manyItem.Value
-				},
-			)(manyItem)
-			return onValue(value, *delta.value)
-		case manyItemIsLinked:
-			return onIsLinked(*delta.isLinked)
-		case manyItemCanChangeLink:
-			return onCanChangeLink(*delta.canChangeLink)
+) func(DeltaManyItem[T, deltaT]) func(ReaderWithError[context, ManyItem[T]]) (Result, error) {
+	return func(delta DeltaManyItem[T, deltaT]) func(ReaderWithError[context, ManyItem[T]]) (Result, error) {
+		return func(manyItem ReaderWithError[context, ManyItem[T]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case manyItemValue:
+				value := MapReaderWithError[context, ManyItem[T], T](
+					func(manyItem ManyItem[T]) T {
+						return manyItem.Value
+					},
+				)(manyItem)
+				return onValue(*delta.value)(value)
+			case manyItemIsLinked:
+				return onIsLinked(*delta.isLinked)
+			case manyItemCanChangeLink:
+				return onCanChangeLink(*delta.canChangeLink)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaManyItem")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaManyItem")
 	}
 }

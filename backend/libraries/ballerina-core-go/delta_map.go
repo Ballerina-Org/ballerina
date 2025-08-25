@@ -96,33 +96,35 @@ func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) D
 }
 
 func MatchDeltaMap[context any, k comparable, v any, deltaK any, deltaV any, Result any](
-	onKey func(ReaderWithError[context, k], Tuple2[int, deltaK]) (Result, error),
-	onValue func(ReaderWithError[context, v], Tuple2[int, deltaV]) (Result, error),
+	onKey func(Tuple2[int, deltaK]) func(ReaderWithError[context, k]) (Result, error),
+	onValue func(Tuple2[int, deltaV]) func(ReaderWithError[context, v]) (Result, error),
 	onAdd func(Tuple2[k, v]) (Result, error),
 	onRemove func(int) (Result, error),
-) func(ReaderWithError[context, Map[k, v]], DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
-	return func(mapReader ReaderWithError[context, Map[k, v]], delta DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case mapKey:
-			key := MapReaderWithError[context, Map[k, v], k](
-				func(m Map[k, v]) k {
-					return m[delta.key.Item1].Key
-				},
-			)(mapReader)
-			return onKey(key, *delta.key)
-		case mapValue:
-			value := MapReaderWithError[context, Map[k, v], v](
-				func(m Map[k, v]) v {
-					return m[delta.value.Item1].Value
-				},
-			)(mapReader)
-			return onValue(value, *delta.value)
-		case mapAdd:
-			return onAdd(*delta.add)
-		case mapRemove:
-			return onRemove(*delta.remove)
+) func(DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[context, Map[k, v]]) (Result, error) {
+	return func(delta DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[context, Map[k, v]]) (Result, error) {
+		return func(mapReader ReaderWithError[context, Map[k, v]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case mapKey:
+				key := MapReaderWithError[context, Map[k, v], k](
+					func(m Map[k, v]) k {
+						return m[delta.key.Item1].Key
+					},
+				)(mapReader)
+				return onKey(*delta.key)(key)
+			case mapValue:
+				value := MapReaderWithError[context, Map[k, v], v](
+					func(m Map[k, v]) v {
+						return m[delta.value.Item1].Value
+					},
+				)(mapReader)
+				return onValue(*delta.value)(value)
+			case mapAdd:
+				return onAdd(*delta.add)
+			case mapRemove:
+				return onRemove(*delta.remove)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
 	}
 }
