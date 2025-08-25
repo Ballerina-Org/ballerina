@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type deltaOneEffectsEnum string
@@ -94,32 +95,47 @@ func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
 	}
 }
 func MatchDeltaOne[a any, deltaA any, Result any](
-	onReplace func(a) (Result, error),
-	onValue func(deltaA) (Result, error),
+	onReplace func(a) func(ReaderWithError[Unit, One[a]]) (Result, error),
+	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
 	onCreateValue func(a) (Result, error),
 	onDeleteValue func() (Result, error),
-) func(DeltaOne[a, deltaA]) (Result, error) {
-	return func(delta DeltaOne[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case oneReplace:
-			if delta.replace == nil {
-				return result, NewInvalidDiscriminatorError("nil replace", "DeltaOne")
+) func(DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
+	return func(delta DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
+		return func(one ReaderWithError[Unit, One[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case oneReplace:
+				if delta.replace == nil {
+					return result, NewInvalidDiscriminatorError("nil replace", "DeltaOne")
+				}
+				return onReplace(*delta.replace)(one)
+			case oneValue:
+				if delta.value == nil {
+					return result, NewInvalidDiscriminatorError("nil value", "DeltaOne")
+				}
+				value := BindReaderWithError[Unit, One[a], a](
+					func(one One[a]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
+							Fold(
+								one.Sum,
+								func(Unit) Sum[error, a] {
+									return Left[error, a](fmt.Errorf("one is not set"))
+								},
+								Right[error, a],
+							),
+						)
+					},
+				)(one)
+				return onValue(*delta.value)(value)
+			case oneCreateValue:
+				if delta.createValue == nil {
+					return result, NewInvalidDiscriminatorError("nil createValue", "DeltaOne")
+				}
+				return onCreateValue(*delta.createValue)
+			case oneDeleteValue:
+				return onDeleteValue()
 			}
-			return onReplace(*delta.replace)
-		case oneValue:
-			if delta.value == nil {
-				return result, NewInvalidDiscriminatorError("nil value", "DeltaOne")
-			}
-			return onValue(*delta.value)
-		case oneCreateValue:
-			if delta.createValue == nil {
-				return result, NewInvalidDiscriminatorError("nil createValue", "DeltaOne")
-			}
-			return onCreateValue(*delta.createValue)
-		case oneDeleteValue:
-			return onDeleteValue()
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOne")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOne")
 	}
 }

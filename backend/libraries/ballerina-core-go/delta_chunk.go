@@ -124,29 +124,36 @@ func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
 }
 
 func MatchDeltaChunk[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaChunk[a, deltaA]) (Result, error) {
-	return func(delta DeltaChunk[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case chunkValue:
-			return onValue(*delta.value)
-		case chunkAddAt:
-			return onAddAt(*delta.addAt)
-		case chunkRemoveAt:
-			return onRemoveAt(*delta.removeAt)
-		case chunkMoveFromTo:
-			return onMoveFromTo(*delta.moveFromTo)
-		case chunkDuplicateAt:
-			return onDuplicateAt(*delta.duplicateAt)
-		case chunkAdd:
-			return onAdd(*delta.add)
+) func(DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+	return func(delta DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+		return func(chunk ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case chunkValue:
+				value := MapReaderWithError[Unit, Chunk[a], a](
+					func(chunk Chunk[a]) a {
+						return chunk.Values[chunk.IdToIndex[delta.value.Item1]]
+					},
+				)(chunk)
+				return onValue(*delta.value)(value)
+			case chunkAddAt:
+				return onAddAt(*delta.addAt)
+			case chunkRemoveAt:
+				return onRemoveAt(*delta.removeAt)
+			case chunkMoveFromTo:
+				return onMoveFromTo(*delta.moveFromTo)
+			case chunkDuplicateAt:
+				return onDuplicateAt(*delta.duplicateAt)
+			case chunkAdd:
+				return onAdd(*delta.add)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaChunk")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaChunk")
 	}
 }

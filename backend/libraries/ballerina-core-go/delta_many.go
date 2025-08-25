@@ -87,20 +87,37 @@ func NewDeltaManyAllItems[T any, deltaT any](delta DeltaChunk[ManyItem[T], Delta
 }
 
 func MatchDeltaMany[T any, deltaT any, Result any](
-	onLinkedItems func(DeltaChunk[T, deltaT]) (Result, error),
-	onUnlinkedItems func(DeltaChunk[T, deltaT]) (Result, error),
-	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) (Result, error),
-) func(DeltaMany[T, deltaT]) (Result, error) {
-	return func(delta DeltaMany[T, deltaT]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case manyLinkedItems:
-			return onLinkedItems(*delta.linkedItems)
-		case manyUnlinkedItems:
-			return onUnlinkedItems(*delta.unlinkedItems)
-		case manyAllItems:
-			return onAllItems(*delta.allItems)
+	onLinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
+	onUnlinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
+	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) func(ReaderWithError[Unit, Chunk[ManyItem[T]]]) (Result, error),
+) func(DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
+	return func(delta DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
+		return func(many ReaderWithError[Unit, Many[T]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case manyLinkedItems:
+				linkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
+					func(many Many[T]) Chunk[T] {
+						return many.LinkedItems
+					},
+				)(many)
+				return onLinkedItems(*delta.linkedItems)(linkedItems)
+			case manyUnlinkedItems:
+				unlinkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
+					func(many Many[T]) Chunk[T] {
+						return many.UnlinkedItems
+					},
+				)(many)
+				return onUnlinkedItems(*delta.unlinkedItems)(unlinkedItems)
+			case manyAllItems:
+				allItems := MapReaderWithError[Unit, Many[T], Chunk[ManyItem[T]]](
+					func(many Many[T]) Chunk[ManyItem[T]] {
+						return many.AllItems
+					},
+				)(many)
+				return onAllItems(*delta.allItems)(allItems)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMany")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMany")
 	}
 }
