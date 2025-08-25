@@ -8,7 +8,6 @@ import {
   isString,
   Renderer,
   ValueOrErrors,
-  ValueSumN,
 } from "../../../../../../../../../main";
 import {
   DispatchIsObject,
@@ -246,16 +245,23 @@ export const TableApis = {
                                 : DispatchParsedType.Operations.ParseRawType(
                                     "filter",
                                     value.type as SerializedType<T>,
-                                    Set(),
+                                    Set(types.keys()),
                                     {},
-                                    Map(),
+                                    types.map((t) =>
+                                      ValueOrErrors.Default.return(t),
+                                    ),
                                     injectedPrimitives,
                                   ).Then((type) =>
                                     Renderer.Operations.Deserialize(
                                       type[0],
                                       // checked above that this is an object with renderer property
-                                      (value.display as { renderer: string })
-                                        .renderer,
+                                      type[0].kind == "primitive"
+                                        ? (
+                                            value.display as {
+                                              renderer: string;
+                                            }
+                                          ).renderer
+                                        : value.display,
                                       concreteRenderers,
                                       types,
                                       undefined,
