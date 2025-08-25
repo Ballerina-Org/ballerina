@@ -86,31 +86,31 @@ func NewDeltaManyAllItems[T any, deltaT any](delta DeltaChunk[ManyItem[T], Delta
 	}
 }
 
-func MatchDeltaMany[context any, T any, deltaT any, Result any](
-	onLinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[context, Chunk[T]]) (Result, error),
-	onUnlinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[context, Chunk[T]]) (Result, error),
-	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) func(ReaderWithError[context, Chunk[ManyItem[T]]]) (Result, error),
-) func(DeltaMany[T, deltaT]) func(ReaderWithError[context, Many[T]]) (Result, error) {
-	return func(delta DeltaMany[T, deltaT]) func(ReaderWithError[context, Many[T]]) (Result, error) {
-		return func(many ReaderWithError[context, Many[T]]) (Result, error) {
+func MatchDeltaMany[T any, deltaT any, Result any](
+	onLinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
+	onUnlinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
+	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) func(ReaderWithError[Unit, Chunk[ManyItem[T]]]) (Result, error),
+) func(DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
+	return func(delta DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
+		return func(many ReaderWithError[Unit, Many[T]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case manyLinkedItems:
-				linkedItems := MapReaderWithError[context, Many[T], Chunk[T]](
+				linkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
 					func(many Many[T]) Chunk[T] {
 						return many.LinkedItems
 					},
 				)(many)
 				return onLinkedItems(*delta.linkedItems)(linkedItems)
 			case manyUnlinkedItems:
-				unlinkedItems := MapReaderWithError[context, Many[T], Chunk[T]](
+				unlinkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
 					func(many Many[T]) Chunk[T] {
 						return many.UnlinkedItems
 					},
 				)(many)
 				return onUnlinkedItems(*delta.unlinkedItems)(unlinkedItems)
 			case manyAllItems:
-				allItems := MapReaderWithError[context, Many[T], Chunk[ManyItem[T]]](
+				allItems := MapReaderWithError[Unit, Many[T], Chunk[ManyItem[T]]](
 					func(many Many[T]) Chunk[ManyItem[T]] {
 						return many.AllItems
 					},

@@ -94,14 +94,14 @@ func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
 		deleteValue:   &unit,
 	}
 }
-func MatchDeltaOne[context any, a any, deltaA any, Result any](
-	onReplace func(a) func(ReaderWithError[context, One[a]]) (Result, error),
-	onValue func(deltaA) func(ReaderWithError[context, a]) (Result, error),
+func MatchDeltaOne[a any, deltaA any, Result any](
+	onReplace func(a) func(ReaderWithError[Unit, One[a]]) (Result, error),
+	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
 	onCreateValue func(a) (Result, error),
 	onDeleteValue func() (Result, error),
-) func(DeltaOne[a, deltaA]) func(ReaderWithError[context, One[a]]) (Result, error) {
-	return func(delta DeltaOne[a, deltaA]) func(ReaderWithError[context, One[a]]) (Result, error) {
-		return func(one ReaderWithError[context, One[a]]) (Result, error) {
+) func(DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
+	return func(delta DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
+		return func(one ReaderWithError[Unit, One[a]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case oneReplace:
@@ -113,9 +113,9 @@ func MatchDeltaOne[context any, a any, deltaA any, Result any](
 				if delta.value == nil {
 					return result, NewInvalidDiscriminatorError("nil value", "DeltaOne")
 				}
-				value := BindReaderWithError[context, One[a], a](
-					func(one One[a]) ReaderWithError[context, a] {
-						return PureReader[context, Sum[error, a]](
+				value := BindReaderWithError[Unit, One[a], a](
+					func(one One[a]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
 							Fold(
 								one.Sum,
 								func(Unit) Sum[error, a] {

@@ -85,17 +85,17 @@ func NewDeltaManyItemCanChangeLink[T any, deltaT any](canChangeLink bool) DeltaM
 	}
 }
 
-func MatchDeltaManyItem[context any, T any, deltaT any, Result any](
-	onValue func(deltaT) func(ReaderWithError[context, T]) (Result, error),
+func MatchDeltaManyItem[T any, deltaT any, Result any](
+	onValue func(deltaT) func(ReaderWithError[Unit, T]) (Result, error),
 	onIsLinked func(bool) (Result, error),
 	onCanChangeLink func(bool) (Result, error),
-) func(DeltaManyItem[T, deltaT]) func(ReaderWithError[context, ManyItem[T]]) (Result, error) {
-	return func(delta DeltaManyItem[T, deltaT]) func(ReaderWithError[context, ManyItem[T]]) (Result, error) {
-		return func(manyItem ReaderWithError[context, ManyItem[T]]) (Result, error) {
+) func(DeltaManyItem[T, deltaT]) func(ReaderWithError[Unit, ManyItem[T]]) (Result, error) {
+	return func(delta DeltaManyItem[T, deltaT]) func(ReaderWithError[Unit, ManyItem[T]]) (Result, error) {
+		return func(manyItem ReaderWithError[Unit, ManyItem[T]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case manyItemValue:
-				value := MapReaderWithError[context, ManyItem[T], T](
+				value := MapReaderWithError[Unit, ManyItem[T], T](
 					func(manyItem ManyItem[T]) T {
 						return manyItem.Value
 					},
