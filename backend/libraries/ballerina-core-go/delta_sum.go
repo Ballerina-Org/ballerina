@@ -82,21 +82,21 @@ func NewDeltaSumRight[a any, b any, deltaA any, deltaB any](delta deltaB) DeltaS
 	}
 }
 
-func MatchDeltaSum[context any, a any, b any, deltaA any, deltaB any, Result any](
-	onReplace func(Sum[a, b]) func(ReaderWithError[context, Sum[a, b]]) (Result, error),
-	onLeft func(deltaA) func(ReaderWithError[context, a]) (Result, error),
-	onRight func(deltaB) func(ReaderWithError[context, b]) (Result, error),
-) func(DeltaSum[a, b, deltaA, deltaB]) func(ReaderWithError[context, Sum[a, b]]) (Result, error) {
-	return func(delta DeltaSum[a, b, deltaA, deltaB]) func(ReaderWithError[context, Sum[a, b]]) (Result, error) {
-		return func(value ReaderWithError[context, Sum[a, b]]) (Result, error) {
+func MatchDeltaSum[a any, b any, deltaA any, deltaB any, Result any](
+	onReplace func(Sum[a, b]) func(ReaderWithError[Unit, Sum[a, b]]) (Result, error),
+	onLeft func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
+	onRight func(deltaB) func(ReaderWithError[Unit, b]) (Result, error),
+) func(DeltaSum[a, b, deltaA, deltaB]) func(ReaderWithError[Unit, Sum[a, b]]) (Result, error) {
+	return func(delta DeltaSum[a, b, deltaA, deltaB]) func(ReaderWithError[Unit, Sum[a, b]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Sum[a, b]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case sumReplace:
 				return onReplace(*delta.replace)(value)
 			case sumLeft:
-				var leftValue ReaderWithError[context, a] = BindReaderWithError(
-					func(value Sum[a, b]) ReaderWithError[context, a] {
-						return PureReader[context, Sum[error, a]](
+				var leftValue ReaderWithError[Unit, a] = BindReaderWithError(
+					func(value Sum[a, b]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
 							Fold(
 								value,
 								Right[error, a],
@@ -109,9 +109,9 @@ func MatchDeltaSum[context any, a any, b any, deltaA any, deltaB any, Result any
 				)(value)
 				return onLeft(*delta.left)(leftValue)
 			case sumRight:
-				var rightValue ReaderWithError[context, b] = BindReaderWithError(
-					func(value Sum[a, b]) ReaderWithError[context, b] {
-						return PureReader[context, Sum[error, b]](
+				var rightValue ReaderWithError[Unit, b] = BindReaderWithError(
+					func(value Sum[a, b]) ReaderWithError[Unit, b] {
+						return PureReader[Unit, Sum[error, b]](
 							Fold(
 								value,
 								func(left a) Sum[error, b] {

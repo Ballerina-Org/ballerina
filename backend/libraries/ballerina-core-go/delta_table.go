@@ -128,21 +128,21 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 	}
 }
 
-func MatchDeltaTable[context any, a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[context, a]) (Result, error),
+func MatchDeltaTable[a any, deltaA any, Result any](
+	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
 	onAddEmpty func() (Result, error),
-) func(DeltaTable[a, deltaA]) func(ReaderWithError[context, Table[a]]) (Result, error) {
-	return func(delta DeltaTable[a, deltaA]) func(ReaderWithError[context, Table[a]]) (Result, error) {
-		return func(table ReaderWithError[context, Table[a]]) (Result, error) {
+) func(DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
+	return func(delta DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
+		return func(table ReaderWithError[Unit, Table[a]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case tableValue:
-				value := MapReaderWithError[context, Table[a], a](
+				value := MapReaderWithError[Unit, Table[a], a](
 					func(table Table[a]) a {
 						return table.Values[table.IdToIndex[delta.value.Item1]]
 					},

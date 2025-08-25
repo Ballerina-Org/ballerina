@@ -69,20 +69,20 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 		value:         &delta,
 	}
 }
-func MatchDeltaOption[context any, a any, deltaA any, Result any](
-	onReplace func(Option[a]) func(ReaderWithError[context, Option[a]]) (Result, error),
-	onValue func(deltaA) func(ReaderWithError[context, a]) (Result, error),
-) func(DeltaOption[a, deltaA]) func(ReaderWithError[context, Option[a]]) (Result, error) {
-	return func(delta DeltaOption[a, deltaA]) func(ReaderWithError[context, Option[a]]) (Result, error) {
-		return func(option ReaderWithError[context, Option[a]]) (Result, error) {
+func MatchDeltaOption[a any, deltaA any, Result any](
+	onReplace func(Option[a]) func(ReaderWithError[Unit, Option[a]]) (Result, error),
+	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
+) func(DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+	return func(delta DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+		return func(option ReaderWithError[Unit, Option[a]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case optionReplace:
 				return onReplace(*delta.replace)(option)
 			case optionValue:
-				value := BindReaderWithError[context, Option[a], a](
-					func(one Option[a]) ReaderWithError[context, a] {
-						return PureReader[context, Sum[error, a]](
+				value := BindReaderWithError[Unit, Option[a], a](
+					func(one Option[a]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
 							Fold(
 								one.Sum,
 								func(Unit) Sum[error, a] {

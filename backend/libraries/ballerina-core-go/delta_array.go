@@ -118,20 +118,20 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 	}
 }
 
-func MatchDeltaArray[c any, a any, deltaA any, Result any](
-	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[c, a]) (Result, error),
+func MatchDeltaArray[a any, deltaA any, Result any](
+	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaArray[a, deltaA]) func(ReaderWithError[c, []a]) (Result, error) {
-	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[c, []a]) (Result, error) {
-		return func(value ReaderWithError[c, []a]) (Result, error) {
+) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, []a]) (Result, error) {
+	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, []a]) (Result, error) {
+		return func(value ReaderWithError[Unit, []a]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case arrayValue:
-				arrayElement := MapReaderWithError[c](
+				arrayElement := MapReaderWithError[Unit](
 					func(value []a) a {
 						return value[delta.value.Item1]
 					},
