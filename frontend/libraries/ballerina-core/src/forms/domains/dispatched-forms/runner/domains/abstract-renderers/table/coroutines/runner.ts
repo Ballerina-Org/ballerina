@@ -29,37 +29,48 @@ const initialiseFiltersAndSorting = <
 >(
   filterTypes: Map<string, SumNType<any>>,
 ) => {
-  return Co<CustomPresentationContext, ExtraContext>().Seq([
-    Co<CustomPresentationContext, ExtraContext>()
-      .GetState()
-      .then((current) => {
-        const getDefaultFiltersAndSorting =
-          current.tableApiSource.getDefaultFiltersAndSorting(filterTypes);
-        return Co<CustomPresentationContext, ExtraContext>()
-          .Await(getDefaultFiltersAndSorting(current.parseFromApiByType), () =>
-            console.error("error getting default filters and sorting"),
-          )
-          .then((filtersAndSorting) => {
-            return filtersAndSorting.kind == "l"
-              ? Co<CustomPresentationContext, ExtraContext>().SetState(
-                  TableAbstractRendererState.Updaters.Core.customFormState.children
-                    .filters(replaceWith(filtersAndSorting.value.filters))
-                    .then(
-                      TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
-                        replaceWith(filtersAndSorting.value.sorting),
-                      ),
-                    ),
-                )
-              : Co<CustomPresentationContext, ExtraContext>().Wait(0);
-          });
-      }),
-    Co<CustomPresentationContext, ExtraContext>().SetState(
-      TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(
-        // always set to true even if the first call fails so we don't block the flow
-        replaceWith(true),
-      ),
-    ),
-  ]);
+  return filterTypes.size == 0
+    ? Co<CustomPresentationContext, ExtraContext>().SetState(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(
+          // always set to true even if the first call fails so we don't block the flow
+          replaceWith(true),
+        ),
+      )
+    : Co<CustomPresentationContext, ExtraContext>().Seq([
+        Co<CustomPresentationContext, ExtraContext>()
+          .GetState()
+          .then((current) => {
+            const getDefaultFiltersAndSorting =
+              current.tableApiSource.getDefaultFiltersAndSorting(filterTypes);
+            return Co<CustomPresentationContext, ExtraContext>()
+              .Await(
+                getDefaultFiltersAndSorting(current.parseFromApiByType),
+                () =>
+                  console.error(
+                    "error getting default filters and sorting from api",
+                  ),
+              )
+              .then((filtersAndSorting) => {
+                return filtersAndSorting.kind == "l"
+                  ? Co<CustomPresentationContext, ExtraContext>().SetState(
+                      TableAbstractRendererState.Updaters.Core.customFormState.children
+                        .filters(replaceWith(filtersAndSorting.value.filters))
+                        .then(
+                          TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
+                            replaceWith(filtersAndSorting.value.sorting),
+                          ),
+                        ),
+                    )
+                  : Co<CustomPresentationContext, ExtraContext>().Wait(0);
+              });
+          }),
+        Co<CustomPresentationContext, ExtraContext>().SetState(
+          TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(
+            // always set to true even if the first call fails so we don't block the flow
+            replaceWith(true),
+          ),
+        ),
+      ]);
 };
 
 const intialiseTable = <
@@ -79,8 +90,6 @@ const intialiseTable = <
       const getChunkWithParams = current.tableApiSource.getMany(
         current.fromTableApiParser,
       );
-
-      console.debug("params", current.customFormState.filterAndSortParam);
 
       const params =
         current.customFormState.filterAndSortParam == ""
@@ -183,6 +192,7 @@ export const TableReinitialiseRunner = <
       interval: 15,
       runFilter: (props) =>
         props.context.customFormState.initializationStatus === "initialized" &&
+        props.context.customFormState.isFilteringInitialized &&
         props.context.customFormState.shouldReinitialize,
     },
   );
@@ -197,10 +207,11 @@ export const TableRunner = <
       interval: 15,
       runFilter: (props) => {
         return (
-          props.context.customFormState.initializationStatus ===
+          (props.context.customFormState.initializationStatus ===
             "not initialized" ||
-          props.context.customFormState.initializationStatus ===
-            "reinitializing"
+            props.context.customFormState.initializationStatus ===
+              "reinitializing") &&
+          props.context.customFormState.isFilteringInitialized
         );
       },
     },

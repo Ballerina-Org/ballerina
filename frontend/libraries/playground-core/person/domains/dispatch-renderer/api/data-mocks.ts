@@ -201,7 +201,6 @@ const getActiveUsers: DispatchTableApiSource = {
                 }),
               ] as const,
           );
-        console.debug("parsedFiltersz", parsedFilters);
         const parsedFiltersMap = Map(parsedFilters);
         if (
           parsedFiltersMap.some((filters) =>
@@ -238,13 +237,6 @@ const getActiveUsers: DispatchTableApiSource = {
           ),
         };
       }),
-  // (filterTypes: Map<string, SumNType<any>>) =>
-  //   (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-  //   () =>
-  //     PromiseRepo.Default.mock(() => ({
-  //       filters: Map(),
-  //       sorting: Map(),
-  //     })),
 };
 
 const getActiveFriends: DispatchTableApiSource = {

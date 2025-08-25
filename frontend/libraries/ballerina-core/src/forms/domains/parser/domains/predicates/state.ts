@@ -11,6 +11,7 @@ import {
   ListRepo,
   BasicUpdater,
   Guid,
+  FilterTypeKind,
 } from "../../../../../../main";
 
 export type TuplePredicateExpression = {
@@ -910,6 +911,32 @@ export const PredicateValue = {
           return PredicateValue.Default.filterStartsWith(value);
         default:
           return PredicateValue.Default.filterEqualsTo(value);
+      }
+    },
+    FilterToKindAndValue: (
+      filter: ValueFilter,
+    ): { kind: FilterTypeKind; value: PredicateValue } => {
+      switch (filter.kind) {
+        case "contains":
+          return { kind: "contains", value: filter.contains };
+        case "=":
+          return { kind: "=", value: filter.equalsTo };
+        case "!=":
+          return { kind: "!=", value: filter.notEqualsTo };
+        case ">=":
+          return { kind: ">=", value: filter.greaterThanOrEqualsTo };
+        case ">":
+          return { kind: ">", value: filter.greaterThan };
+        case "!=null":
+          return { kind: "!=null", value: PredicateValue.Default.unit() };
+        case "=null":
+          return { kind: "=null", value: PredicateValue.Default.unit() };
+        case "<=":
+          return { kind: "<=", value: filter.smallerThanOrEqualsTo };
+        case "<":
+          return { kind: "<", value: filter.smallerThan };
+        default:
+          return { kind: "startsWith", value: filter.startsWith };
       }
     },
     ParseAsDate: (json: any): ValueOrErrors<PredicateValue, string> => {
