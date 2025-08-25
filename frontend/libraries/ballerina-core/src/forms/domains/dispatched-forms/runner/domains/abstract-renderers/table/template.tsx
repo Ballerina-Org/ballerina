@@ -558,25 +558,6 @@ export const TableAbstractRenderer = <
             ),
           ),
         ),
-    // .mapForeignMutationsFromProps<
-    //   TableAbstractRendererForeignMutationsExpected<Flags>
-    // >((props) => ({
-    //   onChange: (updaterOption) =>
-    //     updaterOption.kind == "r"
-    //       ? props.setState(
-    //           TableAbstractRendererState.Updaters.Core.customFormState.children.filterValues(
-    //             MapRepo.Updaters.upsert(
-    //               columnName,
-    //               () => List([filter.GetDefaultValue()]),
-    //               ListRepo.Updaters.update(
-    //                 index,
-    //                 Updater(updaterOption.value),
-    //               ),
-    //             ),
-    //           ),
-    //         )
-    //       : id,
-    // })),
   }));
 
   return Template.Default<
@@ -697,12 +678,6 @@ export const TableAbstractRenderer = <
 
     const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
       TableEntityType.fields.keySeq().toArray().includes(_),
-    );
-
-    console.debug(
-      "xyz",
-      JSON.stringify(props.context.customFormState.filters, null, 2),
-      JSON.stringify(props.context.customFormState.sorting, null, 2),
     );
 
     return (
