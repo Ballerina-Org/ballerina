@@ -175,7 +175,7 @@ func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserialize
 
 func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 	return withContext("on list", func(elements []T) Sum[error, json.RawMessage] {
-		return Bind(SumAll(ListMap(elements, serializer)),
+		return Bind(SumAll(MapArray(elements, serializer)),
 			func(serializedElements []json.RawMessage) Sum[error, json.RawMessage] {
 				return wrappedMarshal(_sequentialForSerialization{
 					Kind:     "list",
@@ -189,7 +189,7 @@ func ListDeserializer[T any](deserializer Deserializer[T]) Deserializer[[]T] {
 	return unmarshalWithContext("on list", func(sequentialForSerialization _sequentialForSerialization) Sum[error, []T] {
 		return Bind(sequentialForSerialization.getElementsWithKind("list"),
 			func(elements []json.RawMessage) Sum[error, []T] {
-				return SumAll(ListMap(elements, deserializer))
+				return SumAll(MapArray(elements, deserializer))
 			})
 	},
 	)
