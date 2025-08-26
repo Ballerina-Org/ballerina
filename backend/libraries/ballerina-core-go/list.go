@@ -9,7 +9,9 @@ func ListFoldLeft[T any, U any](list []T, initial U, f func(U, T) U) U {
 }
 
 func ListMap[T any, U any](list []T, f func(T) U) []U {
-	return ListFoldLeft(list, []U{}, func(acc []U, item T) []U {
-		return append(acc, f(item))
-	})
+	result := make([]U, len(list))
+	for i, item := range list {
+		result[i] = f(item)
+	}
+	return result
 }
