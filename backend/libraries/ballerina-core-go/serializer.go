@@ -138,7 +138,7 @@ func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[Option
 	})
 }
 
-type _tuple2ForSerialization struct {
+type _sequentialForSerialization struct {
 	Kind     string            `json:"kind"`
 	Elements []json.RawMessage `json:"elements"`
 }
@@ -147,7 +147,7 @@ func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Seria
 	return withContext("on tuple2", func(value Tuple2[A, B]) Sum[error, json.RawMessage] {
 		return Bind(withContext("on item1", serializerA)(value.Item1), func(item1 json.RawMessage) Sum[error, json.RawMessage] {
 			return Bind(withContext("on item2", serializerB)(value.Item2), func(item2 json.RawMessage) Sum[error, json.RawMessage] {
-				return wrappedMarshal(_tuple2ForSerialization{
+				return wrappedMarshal(_sequentialForSerialization{
 					Kind:     "tuple",
 					Elements: []json.RawMessage{item1, item2},
 				})
@@ -158,13 +158,13 @@ func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Seria
 
 func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserializerB Deserializer[B]) Deserializer[Tuple2[A, B]] {
 	return withContext("on tuple2", func(data json.RawMessage) Sum[error, Tuple2[A, B]] {
-		return Bind(wrappedUnmarshal[_tuple2ForSerialization](data),
-			func(tuple2ForSerialization _tuple2ForSerialization) Sum[error, Tuple2[A, B]] {
-				if len(tuple2ForSerialization.Elements) != 2 {
-					return Left[error, Tuple2[A, B]](fmt.Errorf("expected 2 elements in tuple, got %d", len(tuple2ForSerialization.Elements)))
+		return Bind(wrappedUnmarshal[_sequentialForSerialization](data),
+			func(sequentialForSerialization _sequentialForSerialization) Sum[error, Tuple2[A, B]] {
+				if len(sequentialForSerialization.Elements) != 2 {
+					return Left[error, Tuple2[A, B]](fmt.Errorf("expected 2 elements in tuple, got %d", len(sequentialForSerialization.Elements)))
 				}
-				return Bind(withContext("on item1", deserializerA)(tuple2ForSerialization.Elements[0]), func(item1 A) Sum[error, Tuple2[A, B]] {
-					return MapRight(withContext("on item2", deserializerB)(tuple2ForSerialization.Elements[1]), func(item2 B) Tuple2[A, B] {
+				return Bind(withContext("on item1", deserializerA)(sequentialForSerialization.Elements[0]), func(item1 A) Sum[error, Tuple2[A, B]] {
+					return MapRight(withContext("on item2", deserializerB)(sequentialForSerialization.Elements[1]), func(item2 B) Tuple2[A, B] {
 						return Tuple2[A, B]{Item1: item1, Item2: item2}
 					})
 				})
@@ -180,7 +180,7 @@ func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 				return append(acc, serializer(value))
 			})),
 			func(serializedElements []json.RawMessage) Sum[error, json.RawMessage] {
-				return wrappedMarshal(_tuple2ForSerialization{
+				return wrappedMarshal(_sequentialForSerialization{
 					Kind:     "list",
 					Elements: serializedElements,
 				})
@@ -190,9 +190,9 @@ func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 
 func ListDeserializer[T any](deserializer Deserializer[T]) Deserializer[[]T] {
 	return withContext("on list", func(data json.RawMessage) Sum[error, []T] {
-		return Bind(wrappedUnmarshal[_tuple2ForSerialization](data),
-			func(tuple2ForSerialization _tuple2ForSerialization) Sum[error, []T] {
-				return Bind(SumSequence(ListFoldLeft(tuple2ForSerialization.Elements, []Sum[error, T]{},
+		return Bind(wrappedUnmarshal[_sequentialForSerialization](data),
+			func(sequentialForSerialization _sequentialForSerialization) Sum[error, []T] {
+				return Bind(SumSequence(ListFoldLeft(sequentialForSerialization.Elements, []Sum[error, T]{},
 					func(acc []Sum[error, T], value json.RawMessage) []Sum[error, T] {
 						return append(acc, deserializer(value))
 					}),
