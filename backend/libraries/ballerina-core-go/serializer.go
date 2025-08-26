@@ -20,13 +20,13 @@ type Serializer[T any] func(T) Sum[error, json.RawMessage]
 type Deserializer[T any] func(json.RawMessage) Sum[error, T]
 
 func wrappedMarshal[T any](value T) Sum[error, json.RawMessage] {
-	return SumWrap(func(value T) (json.RawMessage, error) {
+	return GoErrorToSum(func(value T) (json.RawMessage, error) {
 		return json.Marshal(value)
 	})(value)
 }
 
 func wrappedUnmarshal[T any](data json.RawMessage) Sum[error, T] {
-	return SumWrap(func(data json.RawMessage) (T, error) {
+	return GoErrorToSum(func(data json.RawMessage) (T, error) {
 		var value T
 		decoder := json.NewDecoder(bytes.NewReader(data))
 		decoder.DisallowUnknownFields()
@@ -241,7 +241,7 @@ func deserializePrimitiveTypeTo[T any](kind string, parse func(string) (T, error
 	return withContext("on "+kind, func(data json.RawMessage) Sum[error, T] {
 		return Bind(wrappedUnmarshal[_primitiveTypeForSerialization](data),
 			func(primitiveTypeForSerialization _primitiveTypeForSerialization) Sum[error, T] {
-				return Bind(primitiveTypeForSerialization.getValueWithKind(kind), SumWrap(parse))
+				return Bind(primitiveTypeForSerialization.getValueWithKind(kind), GoErrorToSum(parse))
 			},
 		)
 	})
