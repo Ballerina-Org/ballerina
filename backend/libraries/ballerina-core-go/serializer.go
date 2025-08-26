@@ -47,24 +47,20 @@ type _unitForSerialization struct {
 	Kind string `json:"kind"`
 }
 
-func UnitSerializer() Serializer[Unit] {
-	return withContext("on unit", func(value Unit) Sum[error, json.RawMessage] {
-		return wrappedMarshal(_unitForSerialization{Kind: "unit"})
-	})
-}
+var UnitSerializer Serializer[Unit] = withContext("on unit", func(value Unit) Sum[error, json.RawMessage] {
+	return wrappedMarshal(_unitForSerialization{Kind: "unit"})
+})
 
-func UnitDeserializer() Deserializer[Unit] {
-	return withContext("on unit", func(data json.RawMessage) Sum[error, Unit] {
-		return Bind(wrappedUnmarshal[_unitForSerialization](data),
-			func(unitForSerialization _unitForSerialization) Sum[error, Unit] {
-				if unitForSerialization.Kind != "unit" {
-					return Left[error, Unit](fmt.Errorf("expected kind to be 'unit', got '%s'", unitForSerialization.Kind))
-				}
-				return Right[error, Unit](Unit{})
-			},
-		)
-	})
-}
+var UnitDeserializer Deserializer[Unit] = withContext("on unit", func(data json.RawMessage) Sum[error, Unit] {
+	return Bind(wrappedUnmarshal[_unitForSerialization](data),
+		func(unitForSerialization _unitForSerialization) Sum[error, Unit] {
+			if unitForSerialization.Kind != "unit" {
+				return Left[error, Unit](fmt.Errorf("expected kind to be 'unit', got '%s'", unitForSerialization.Kind))
+			}
+			return Right[error, Unit](Unit{})
+		},
+	)
+})
 
 type _sumForSerialization struct {
 	Case  string          `json:"case"`
@@ -108,7 +104,7 @@ func OptionSerializer[T any](serializer Serializer[T]) Serializer[Option[T]] {
 	return withContext("on option", func(value Option[T]) Sum[error, json.RawMessage] {
 		return Bind(Fold(value.Sum,
 			func(left Unit) Sum[error, _sumForSerialization] {
-				return MapRight(withContext("on none", UnitSerializer())(left), func(value json.RawMessage) _sumForSerialization {
+				return MapRight(withContext("on none", UnitSerializer)(left), func(value json.RawMessage) _sumForSerialization {
 					return _sumForSerialization{Case: "none", Value: value}
 				})
 			},
@@ -127,7 +123,7 @@ func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[Option
 			func(sumForSerialization _sumForSerialization) Sum[error, Option[T]] {
 				switch sumForSerialization.Case {
 				case "none":
-					return MapRight(withContext("on none", UnitDeserializer())(sumForSerialization.Value), func(unit Unit) Option[T] {
+					return MapRight(withContext("on none", UnitDeserializer)(sumForSerialization.Value), func(unit Unit) Option[T] {
 						return None[T]()
 					})
 				case "some":
@@ -195,29 +191,13 @@ func ListDeserializer[T any](deserializer Deserializer[T]) Deserializer[[]T] {
 	})
 }
 
-func StringSerializer() Serializer[string] {
-	return withContext("on string", func(value string) Sum[error, json.RawMessage] {
-		return wrappedMarshal(value)
-	})
-}
+var StringSerializer Serializer[string] = withContext("on string", wrappedMarshal[string])
 
-func StringDeserializer() Deserializer[string] {
-	return withContext("on string", func(data json.RawMessage) Sum[error, string] {
-		return wrappedUnmarshal[string](data)
-	})
-}
+var StringDeserializer Deserializer[string] = withContext("on string", wrappedUnmarshal[string])
 
-func BoolSerializer() Serializer[bool] {
-	return withContext("on bool", func(value bool) Sum[error, json.RawMessage] {
-		return wrappedMarshal(value)
-	})
-}
+var BoolSerializer Serializer[bool] = withContext("on bool", wrappedMarshal[bool])
 
-func BoolDeserializer() Deserializer[bool] {
-	return withContext("on bool", func(data json.RawMessage) Sum[error, bool] {
-		return wrappedUnmarshal[bool](data)
-	})
-}
+var BoolDeserializer Deserializer[bool] = withContext("on bool", wrappedUnmarshal[bool])
 
 type _primitiveTypeForSerialization struct {
 	Kind  string `json:"kind"`
@@ -247,38 +227,26 @@ func deserializePrimitiveTypeTo[T any](kind string, parse func(string) (T, error
 	})
 }
 
-func IntSerializer() Serializer[int64] {
-	return serializePrimitiveTypeFrom("int", func(value int64) string {
-		return strconv.FormatInt(value, 10)
-	})
-}
+var IntSerializer Serializer[int64] = serializePrimitiveTypeFrom("int", func(value int64) string {
+	return strconv.FormatInt(value, 10)
+})
 
-func IntDeserializer() Deserializer[int64] {
-	return deserializePrimitiveTypeTo("int", func(value string) (int64, error) {
-		return strconv.ParseInt(value, 10, 64)
-	})
-}
+var IntDeserializer Deserializer[int64] = deserializePrimitiveTypeTo("int", func(value string) (int64, error) {
+	return strconv.ParseInt(value, 10, 64)
+})
 
-func FloatSerializer() Serializer[float64] {
-	return serializePrimitiveTypeFrom("float", func(value float64) string {
-		return strconv.FormatFloat(value, 'f', -1, 64)
-	})
-}
+var FloatSerializer Serializer[float64] = serializePrimitiveTypeFrom("float", func(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
+})
 
-func FloatDeserializer() Deserializer[float64] {
-	return deserializePrimitiveTypeTo("float", func(value string) (float64, error) {
-		return strconv.ParseFloat(value, 64)
-	})
-}
+var FloatDeserializer Deserializer[float64] = deserializePrimitiveTypeTo("float", func(value string) (float64, error) {
+	return strconv.ParseFloat(value, 64)
+})
 
-func DateSerializer() Serializer[time.Time] {
-	return serializePrimitiveTypeFrom("date", func(value time.Time) string {
-		return value.Format(time.DateOnly)
-	})
-}
+var DateSerializer Serializer[time.Time] = serializePrimitiveTypeFrom("date", func(value time.Time) string {
+	return value.Format(time.DateOnly)
+})
 
-func DateDeserializer() Deserializer[time.Time] {
-	return deserializePrimitiveTypeTo("date", func(value string) (time.Time, error) {
-		return time.Parse(time.DateOnly, value)
-	})
-}
+var DateDeserializer Deserializer[time.Time] = deserializePrimitiveTypeTo("date", func(value string) (time.Time, error) {
+	return time.Parse(time.DateOnly, value)
+})
