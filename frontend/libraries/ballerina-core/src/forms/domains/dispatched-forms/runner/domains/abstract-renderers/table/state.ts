@@ -374,11 +374,13 @@ export const TableAbstractRendererState = {
       );
 
       const finalSorting =
-        parsedValueSorting.kind == "errors" ? [] : parsedValueSorting.value.toArray();
+        parsedValueSorting.kind == "errors"
+          ? []
+          : parsedValueSorting.value.toArray();
 
       const params = {
         Filters: parsedFiltersValues,
-        Sorting: finalSorting
+        Sorting: finalSorting,
       };
       return btoa(JSON.stringify(params));
     },
