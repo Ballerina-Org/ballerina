@@ -342,12 +342,45 @@ export const TableAbstractRendererState = {
       const parsedFiltersValues = parsedFilters
         .map((filter) => filter.map((f) => (f as Value<PredicateValue>).value))
         .toJS();
+
+      const valueSorting = sorting
+        .entrySeq()
+        .filter(([_, direction]) => direction != undefined)
+        .map(([columnName, direction]) =>
+          PredicateValue.Default.tuple(List([columnName, direction as string])),
+        );
+
+      const parsedValueSorting = ValueOrErrors.Operations.All(
+        valueSorting
+          .map((sorting) =>
+            toApiRaw(
+              DispatchParsedType.Default.tuple([
+                {
+                  kind: "primitive",
+                  name: "string",
+                  asString: () => "string",
+                },
+                {
+                  kind: "primitive",
+                  name: "string",
+                  asString: () => "string",
+                },
+              ]),
+              sorting,
+              {},
+            ),
+          )
+          .toList(),
+      );
+
+      const finalSorting =
+        parsedValueSorting.kind == "errors"
+          ? []
+          : parsedValueSorting.value.toArray();
+
       const params = {
         Filters: parsedFiltersValues,
-        Sorting: sorting
-          .entrySeq()
-          .toList()
-          .filter((sorting) => sorting[1] != undefined),
+        Sorting: finalSorting,
       };
       return btoa(JSON.stringify(params));
     },
