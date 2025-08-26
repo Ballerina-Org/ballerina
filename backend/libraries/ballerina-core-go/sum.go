@@ -92,7 +92,7 @@ func SumWrap[T, U any](f func(T) (U, error)) func(T) Sum[error, U] {
 }
 
 // NOTE: we collect only the first error we encounter
-func SumSequence[T any](values []Sum[error, T]) Sum[error, []T] {
+func SumAll[T any](values []Sum[error, T]) Sum[error, []T] {
 	return ListFoldLeft(values, Right[error, []T]([]T{}), func(acc Sum[error, []T], value Sum[error, T]) Sum[error, []T] {
 		return Bind(value, func(value T) Sum[error, []T] {
 			return MapRight(acc, func(acc []T) []T {
