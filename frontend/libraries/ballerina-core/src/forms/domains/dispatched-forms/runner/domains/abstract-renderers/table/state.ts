@@ -33,8 +33,6 @@ import {
   SumNType,
   ValueSumN,
 } from "../../../../../../../../main";
-import { Debounced } from "../../../../../../../debounced/state";
-import { BasicFun } from "../../../../../../../fun/state";
 import { Template, View } from "../../../../../../../template/state";
 
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
@@ -67,6 +65,7 @@ export type TableAbstractRendererSelectedDetailRow =
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
+    isLoadingMore: boolean;
     isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
@@ -76,10 +75,6 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: string;
     stream: ValueInfiniteStreamState;
-    getChunkWithParams: BasicFun<
-      Map<string, string>,
-      ValueInfiniteStreamState["getChunk"]
-    >;
     previousRemoteEntityVersionIdentifier: string;
     shouldReinitialize: boolean;
     filterStates: Map<string, List<any>>;
@@ -89,6 +84,7 @@ export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
+      isLoadingMore: false,
       isFilteringInitialized: false,
       initializationStatus: "not initialized",
       selectedRows: Set(),
@@ -98,7 +94,6 @@ export const TableAbstractRendererState = {
       filters: Map(),
       sorting: Map(),
       // TODO: replace with sum
-      getChunkWithParams: undefined as any,
       stream: undefined as any,
       previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
@@ -108,9 +103,6 @@ export const TableAbstractRendererState = {
   Updaters: {
     Core: {
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "getChunkWithParams",
-        ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "stream",
         ),
@@ -146,6 +138,9 @@ export const TableAbstractRendererState = {
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "isFilteringInitialized",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "isLoadingMore",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({

@@ -9,19 +9,8 @@ import {
   TableAbstractRendererState,
   Unit,
 } from "../../../../../../../../../main";
-import { TableAbstractRendererReadonlyContext } from "../../../../../../../../../main";
-import { CoTypedFactory } from "../../../../../../../../../main";
+import { Co } from "./builder";
 
-const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
-  CoTypedFactory<
-    TableAbstractRendererReadonlyContext<
-      CustomPresentationContext,
-      ExtraContext
-    >,
-    TableAbstractRendererState
-  >();
-
-// TODO -- very unsafe, needs work, checking undefined etc,,,
 const DEFAULT_CHUNK_SIZE = 20;
 const initialiseFiltersAndSorting = <
   CustomPresentationContext = Unit,
@@ -80,13 +69,9 @@ const intialiseTable = <
   Co<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
-      if (current.value == undefined) {
-        return Co<CustomPresentationContext, ExtraContext>().Wait(0);
-      }
-      const initialData = current.value.data;
-      const hasMoreValues = current.value.hasMoreValues;
-      const from = current.value.from;
-      const to = current.value.to;
+      const isLazyLoaded = current.value.data.size == 0 && current.value.hasMoreValues;
+
+
       const getChunkWithParams = current.tableApiSource.getMany(
         current.fromTableApiParser,
       );
