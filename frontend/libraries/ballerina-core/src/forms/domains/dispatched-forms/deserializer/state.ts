@@ -27,6 +27,7 @@ import {
   SpecificationApis,
   LookupTypeAbstractRendererView,
   ValueFilter,
+  ValueTable,
 } from "../../../../../main";
 
 import {
@@ -196,12 +197,17 @@ export type DispatchTableFiltersAndSorting = {
   filters: Map<string, List<ValueFilter>>;
   sorting: Map<string, "Ascending" | "Descending" | undefined>;
 };
+export type TableGetManyParams = {
+  chunkSize: number;
+  from: number;
+  filtersAndSorting?: string;
+};
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    BasicFun<TableGetManyParams, Promise<ValueTable>>
   >;
   getDefaultFiltersAndSorting: BasicFun<
     Map<string, SumNType<any>>,

@@ -32,6 +32,7 @@ import {
   Value,
   SumNType,
   ValueSumN,
+  BasicFun,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -45,12 +46,7 @@ export type TableAbstractRendererReadonlyContext<
   ValueTable,
   CustomPresentationContext,
   ExtraContext
-> & {
-  tableApiSource: DispatchTableApiSource;
-  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
-  parseFromApiByType: (
-    type: DispatchParsedType<any>,
-  ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
+> & { 
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
   apiMethods: Array<TableMethod>;
@@ -65,7 +61,7 @@ export type TableAbstractRendererSelectedDetailRow =
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
-    isLoadingMore: boolean;
+    loadingState: "not loaded" | "loading" | "loaded" | "error";
     isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
@@ -75,7 +71,6 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: string;
     stream: ValueInfiniteStreamState;
-    previousRemoteEntityVersionIdentifier: string;
     shouldReinitialize: boolean;
     filterStates: Map<string, List<any>>;
   };
@@ -84,7 +79,7 @@ export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
-      isLoadingMore: false,
+      loadingState: "not loaded",
       isFilteringInitialized: false,
       initializationStatus: "not initialized",
       selectedRows: Set(),
@@ -95,7 +90,6 @@ export const TableAbstractRendererState = {
       sorting: Map(),
       // TODO: replace with sum
       stream: undefined as any,
-      previousRemoteEntityVersionIdentifier: "",
       shouldReinitialize: false,
       filterStates: Map(),
     },
@@ -125,9 +119,6 @@ export const TableAbstractRendererState = {
           "selectedRows",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "previousRemoteEntityVersionIdentifier",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "shouldReinitialize",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
@@ -140,7 +131,7 @@ export const TableAbstractRendererState = {
           "isFilteringInitialized",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "isLoadingMore",
+          "loadingState",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({

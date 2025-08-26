@@ -40,35 +40,36 @@ import {
   ListRepo,
   Updater,
   SumNType,
+  BasicFun,
+  DispatchTableApiSource,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 import {
+  TableInfiniteLoaderRunner,
   TableInitialiseFiltersAndSortingRunner,
-  TableReinitialiseRunner,
-  TableRunner,
 } from "./coroutines/runner";
 
-const EmbeddedValueInfiniteStreamTemplate = <
-  CustomPresentationContext = Unit,
-  Flags = Unit,
-  ExtraContext = Unit,
->() =>
-  ValueInfiniteStreamTemplate.mapContext<
-    TableAbstractRendererReadonlyContext<
-      CustomPresentationContext,
-      ExtraContext
-    > &
-      TableAbstractRendererState
-  >((_) => _.customFormState.stream)
-    .mapState<TableAbstractRendererState>(
-      TableAbstractRendererState.Updaters.Core.customFormState.children.stream,
-    )
-    .mapForeignMutationsFromProps<
-      TableAbstractRendererForeignMutationsExpected<Flags>
-    >((props) => ({
-      ...props.foreignMutations,
-    }));
+// const EmbeddedValueInfiniteStreamTemplate = <
+//   CustomPresentationContext = Unit,
+//   Flags = Unit,
+//   ExtraContext = Unit,
+// >() =>
+//   ValueInfiniteStreamTemplate.mapContext<
+//     TableAbstractRendererReadonlyContext<
+//       CustomPresentationContext,
+//       ExtraContext
+//     > &
+//       TableAbstractRendererState
+//   >((_) => _.customFormState.stream)
+//     .mapState<TableAbstractRendererState>(
+//       TableAbstractRendererState.Updaters.Core.customFormState.children.stream,
+//     )
+//     .mapForeignMutationsFromProps<
+//       TableAbstractRendererForeignMutationsExpected<Flags>
+//     >((props) => ({
+//       ...props.foreignMutations,
+//     }));
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -133,6 +134,11 @@ export const TableAbstractRenderer = <
     value: PredicateValue,
     state: any,
   ) => ValueOrErrors<any, string>,
+  parseFromApiByType: (
+    type: DispatchParsedType<any>,
+  ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>,
+  tableApiSource: DispatchTableApiSource,
 ): Template<
   TableAbstractRendererReadonlyContext<
     CustomPresentationContext,
@@ -143,25 +149,25 @@ export const TableAbstractRenderer = <
   TableAbstractRendererForeignMutationsExpected<Flags>,
   TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
 > => {
-  const InstantiatedTableRunner = TableRunner<
+  const InstantiatedInfiniteLoaderRunner = TableInfiniteLoaderRunner<
     CustomPresentationContext,
     ExtraContext
-  >();
-  const InstantiatedTableReinitialiseRunner = TableReinitialiseRunner<
-    CustomPresentationContext,
-    ExtraContext
-  >();
-  const InstantiatedEmbeddedParseFromApiByTypeTemplate =
+  >(tableApiSource, fromTableApiParser);
+  const InstantiatedInitialiseFiltersAndSortingRunner =
     TableInitialiseFiltersAndSortingRunner<
       CustomPresentationContext,
       ExtraContext
-    >(Filters.map(({ filters }) => filters));
-  const InstantiatedEmbeddedValueInfiniteStreamTemplate =
-    EmbeddedValueInfiniteStreamTemplate<
-      CustomPresentationContext,
-      Flags,
-      ExtraContext
-    >();
+    >(
+      Filters.map(({ filters }) => filters),
+      tableApiSource,
+      parseFromApiByType,
+    );
+  // const InstantiatedEmbeddedValueInfiniteStreamTemplate =
+  //   EmbeddedValueInfiniteStreamTemplate<
+  //     CustomPresentationContext,
+  //     Flags,
+  //     ExtraContext
+  //   >();
 
   const embedCellTemplate =
     (
@@ -885,9 +891,10 @@ export const TableAbstractRenderer = <
       </>
     );
   }).any([
-    InstantiatedTableRunner,
-    InstantiatedTableReinitialiseRunner,
-    InstantiatedEmbeddedValueInfiniteStreamTemplate,
-    InstantiatedEmbeddedParseFromApiByTypeTemplate,
+    InstantiatedInfiniteLoaderRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange,
+    })),
+    InstantiatedInitialiseFiltersAndSortingRunner,
   ]);
 };
