@@ -125,14 +125,14 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, []a]) (Result, error) {
-	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, []a]) (Result, error) {
-		return func(value ReaderWithError[Unit, []a]) (Result, error) {
+) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Array[a]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case arrayValue:
 				arrayElement := MapReaderWithError[Unit](
-					func(value []a) a {
+					func(value Array[a]) a {
 						return value[delta.value.Item1]
 					},
 				)(value)
