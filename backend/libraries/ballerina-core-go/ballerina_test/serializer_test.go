@@ -194,6 +194,10 @@ func TestTuple2DeserializationError(t *testing.T) {
 	serialized = json.RawMessage(`{"other-key":"something"}`)
 	deserialized = deserializer(serialized)
 	assertErrorContains(t, "on tuple2", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"list","elements":[{"kind":"unit"},{"kind":"unit"}]}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on tuple2", deserialized)
 }
 
 func TestListSerialization(t *testing.T) {
@@ -224,6 +228,10 @@ func TestListDeserializationError(t *testing.T) {
 	assertErrorContains(t, "on list", deserialized)
 
 	serialized = json.RawMessage(`{"other-key":"something"}`)
+	deserialized = deserializer(serialized)
+	assertErrorContains(t, "on list", deserialized)
+
+	serialized = json.RawMessage(`{"kind":"tuple","elements":[{"kind":"unit"},{"kind":"unit"}]}`)
 	deserialized = deserializer(serialized)
 	assertErrorContains(t, "on list", deserialized)
 }
