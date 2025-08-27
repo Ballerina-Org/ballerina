@@ -871,11 +871,9 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
-              reinitialize: () =>
+              reloadFrom0: () =>
                 props.setState(
-                  TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-                    true,
-                  ),
+                  TableAbstractRendererState.Updaters.Template.reloadFrom0(),
                 ),
             }}
             DetailsRenderer={embedDetailsRenderer}

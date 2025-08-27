@@ -140,8 +140,11 @@ export const TableInfiniteLoaderRunner = <
     {
       interval: 15,
       runFilter: (props) =>
-        props.context.customFormState.initializationStatus === "reinitializing",
-    }
+        (props.context.value.data.size == 0 &&
+          props.context.value.hasMoreValues) ||
+        props.context.customFormState.loadMore == "load more" ||
+        props.context.customFormState.loadMore == "reload from 0",
+    },
   );
 
 // export const TableReinitialiseRunner = <

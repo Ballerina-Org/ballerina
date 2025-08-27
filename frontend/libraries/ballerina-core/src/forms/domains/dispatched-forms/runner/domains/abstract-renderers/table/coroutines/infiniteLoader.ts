@@ -51,7 +51,10 @@ export const TableInfiniteLoader =
                 () =>
                   tableApiSource.getMany(fromTableApiParser)({
                     chunkSize: DEFAULT_CHUNK_SIZE,
-                    from: current.value.data.size, // TODO: should be reset to 0 when the filters and sorting change
+                    from:
+                      current.customFormState.loadMore == "reload from 0"
+                        ? 0
+                        : current.value.data.size,
                     filtersAndSorting:
                       current.customFormState.filterAndSortParam === ""
                         ? undefined
@@ -75,9 +78,9 @@ export const TableInfiniteLoader =
 
     return Co<CustomPresentationContext, ExtraContext>().Seq([
       Co<CustomPresentationContext, ExtraContext>().SetState(
-        TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+        TableAbstractRendererState.Updaters.Core.customFormState.children.intialLoadingState(
           replaceWith<
-            TableAbstractRendererState["customFormState"]["loadingState"]
+            TableAbstractRendererState["customFormState"]["intialLoadingState"]
           >("loading"),
         ),
       ),
@@ -85,11 +88,19 @@ export const TableInfiniteLoader =
         res.kind == "r"
           ? Co<CustomPresentationContext, ExtraContext>().Seq([
               Co<CustomPresentationContext, ExtraContext>().SetState(
-                TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
-                  replaceWith<
-                    TableAbstractRendererState["customFormState"]["loadingState"]
-                  >("loaded"),
-                ),
+                TableAbstractRendererState.Updaters.Core.customFormState.children
+                  .intialLoadingState(
+                    replaceWith<
+                      TableAbstractRendererState["customFormState"]["intialLoadingState"]
+                    >("loaded"),
+                  )
+                  .then(
+                    TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                      replaceWith<
+                        TableAbstractRendererState["customFormState"]["loadMore"]
+                      >("don't load more"),
+                    ),
+                  ),
               ),
               Co<CustomPresentationContext, ExtraContext>()
                 .GetState()
@@ -99,7 +110,9 @@ export const TableInfiniteLoader =
                       0,
                       current.value.data.size + res.value.data.size, // validate this
                       res.value.hasMoreValues,
-                      current.value.data.concat(res.value.data),
+                      current.customFormState.loadMore == "reload from 0"
+                        ? res.value.data
+                        : current.value.data.concat(res.value.data),
                     ),
                   );
                   const delta: DispatchDelta<BaseFlags> = {
@@ -121,11 +134,19 @@ export const TableInfiniteLoader =
                 }),
             ])
           : Co<CustomPresentationContext, ExtraContext>().SetState(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
-                replaceWith<
-                  TableAbstractRendererState["customFormState"]["loadingState"]
-                >("error"),
-              ),
+              TableAbstractRendererState.Updaters.Core.customFormState.children
+                .intialLoadingState(
+                  replaceWith<
+                    TableAbstractRendererState["customFormState"]["intialLoadingState"]
+                  >("error"),
+                )
+                .then(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                    replaceWith<
+                      TableAbstractRendererState["customFormState"]["loadMore"]
+                    >("don't load more"),
+                  ),
+                ),
             ),
       ),
     ]);

@@ -61,7 +61,8 @@ export type TableAbstractRendererSelectedDetailRow =
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
-    loadingState: "not loaded" | "loading" | "loaded" | "error";
+    intialLoadingState: "not loaded" | "loading" | "loaded" | "error";
+    loadMore: "load more" | "reload from 0" | "don't load more";
     isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
@@ -70,8 +71,6 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     filters: Map<string, List<ValueFilter>>;
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: string;
-    stream: ValueInfiniteStreamState;
-    shouldReinitialize: boolean;
     filterStates: Map<string, List<any>>;
   };
 };
@@ -79,7 +78,8 @@ export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
-      loadingState: "not loaded",
+      intialLoadingState: "not loaded",
+      loadMore: "don't load more",
       isFilteringInitialized: false,
       initializationStatus: "not initialized",
       selectedRows: Set(),
@@ -88,9 +88,6 @@ export const TableAbstractRendererState = {
       rowStates: Map(),
       filters: Map(),
       sorting: Map(),
-      // TODO: replace with sum
-      stream: undefined as any,
-      shouldReinitialize: false,
       filterStates: Map(),
     },
   }),
@@ -98,10 +95,10 @@ export const TableAbstractRendererState = {
     Core: {
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "stream",
+          "filterAndSortParam",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "filterAndSortParam",
+          "loadMore",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "filters",
@@ -119,9 +116,6 @@ export const TableAbstractRendererState = {
           "selectedRows",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "shouldReinitialize",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "rowStates",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
@@ -131,7 +125,7 @@ export const TableAbstractRendererState = {
           "isFilteringInitialized",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "loadingState",
+          "intialLoadingState",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -167,8 +161,8 @@ export const TableAbstractRendererState = {
               ),
             )
             .then(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-                replaceWith(true),
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>("reload from 0"),
               ),
             )(_),
         ),
@@ -204,8 +198,8 @@ export const TableAbstractRendererState = {
               ),
             )
             .then(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-                replaceWith(true),
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>("reload from 0"),
               ),
             )(_),
         );
@@ -240,19 +234,19 @@ export const TableAbstractRendererState = {
               ),
             )
             .then(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-                replaceWith(true),
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>("reload from 0"),
               ),
             )(_),
         );
       },
       loadMore: (): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
-          ValueInfiniteStreamState.Updaters.Template.loadMore(),
+        TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+          replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>("load more"),
         ),
-      shouldReinitialize: (_: boolean) =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-          replaceWith(_),
+      reloadFrom0: (): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+          replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>("reload from 0"),
         ),
     },
   },
@@ -429,13 +423,13 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
-  reinitialize: SimpleCallback<void>;
   updateFilters: (filters: Map<string, List<ValueFilter>>) => void;
   addSorting: (
     columnName: string,
     direction: "Ascending" | "Descending" | undefined,
   ) => void;
   removeSorting: (columnName: string) => void;
+  reloadFrom0: () => void;
 };
 
 export type TableAbstractRendererView<

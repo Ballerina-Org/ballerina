@@ -25,7 +25,7 @@ export const InitialiseFiltersAndSorting = <
     ? Co<CustomPresentationContext, ExtraContext>().SetState(
         TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(
           // always set to true even if the first call fails so we don't block the flow
-          replaceWith(true),
+          replaceWith<TableAbstractRendererState["customFormState"]["isFilteringInitialized"]>(true),
         ),
       )
     : Co<CustomPresentationContext, ExtraContext>().Seq([
