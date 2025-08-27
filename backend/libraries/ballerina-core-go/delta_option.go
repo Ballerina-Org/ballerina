@@ -18,7 +18,7 @@ func DefaultDeltaOptionEffectsEnum() deltaOptionEffectsEnum { return allDeltaOpt
 type DeltaOption[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaOptionEffectsEnum
-	replace       *Option[a]
+	replace       *a
 	value         *deltaA
 }
 
@@ -29,7 +29,7 @@ func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
 		Discriminator deltaOptionEffectsEnum
-		Replace       *Option[a]
+		Replace       *a
 		Value         *deltaA
 	}{
 		DeltaBase:     d.DeltaBase,
@@ -43,7 +43,7 @@ func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
 		Discriminator deltaOptionEffectsEnum
-		Replace       *Option[a]
+		Replace       *a
 		Value         *deltaA
 	}
 	if err := json.Unmarshal(data, &tmp); err != nil {
@@ -56,7 +56,7 @@ func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaOptionReplace[a any, deltaA any](val Option[a]) DeltaOption[a, deltaA] {
+func NewDeltaOptionReplace[a any, deltaA any](val a) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
 		discriminator: optionReplace,
 		replace:       &val,
@@ -69,7 +69,7 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 	}
 }
 func MatchDeltaOption[a any, deltaA any, Result any](
-	onReplace func(Option[a]) (Result, error),
+	onReplace func(a) (Result, error),
 	onValue func(deltaA) (Result, error),
 ) func(DeltaOption[a, deltaA]) (Result, error) {
 	return func(delta DeltaOption[a, deltaA]) (Result, error) {
