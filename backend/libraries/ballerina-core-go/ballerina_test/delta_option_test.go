@@ -12,7 +12,7 @@ type DeltaOptionSerializationTestSuite struct {
 }
 
 func (s *DeltaOptionSerializationTestSuite) TestReplace() {
-	delta := ballerina.NewDeltaOptionReplace[string, ballerina.DeltaString]("hello")
+	delta := ballerina.NewDeltaOptionReplace[string, ballerina.DeltaString](ballerina.Some("hello"))
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
