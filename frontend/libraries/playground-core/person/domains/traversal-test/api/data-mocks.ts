@@ -17,6 +17,7 @@ import {
   TableAbstractRendererState,
   SumNType,
   DispatchParsedType,
+  TableGetManyParams,
 } from "ballerina-core";
 import { Range, Map } from "immutable";
 import { City } from "../../address/state";
@@ -70,8 +71,7 @@ const getActiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -100,15 +100,17 @@ const getActiveUsers: DispatchTableApiSource = {
         HasMore: true,
         From: 1,
         To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
   getDefaultFiltersAndSorting:
     (filterTypes: Map<string, SumNType<any>>) =>
@@ -147,8 +149,7 @@ const getActiveFriends: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -191,15 +192,17 @@ const getActiveFriends: DispatchTableApiSource = {
         HasMore: true,
         From: 1,
         To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
   getDefaultFiltersAndSorting:
     (filterTypes: Map<string, SumNType<any>>) =>

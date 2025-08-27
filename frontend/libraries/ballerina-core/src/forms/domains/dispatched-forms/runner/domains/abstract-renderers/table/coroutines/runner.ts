@@ -12,6 +12,7 @@ import { Co, InfiniteLoaderCo } from "./builder";
 import {} from "./initialiseFiltersAndSorting";
 import { InitialiseFiltersAndSorting } from "./initialiseFiltersAndSorting";
 import { TableInfiniteLoader } from "./infiniteLoader";
+import { InitialiseTable } from "./initialiseTable";
 
 // const intialiseTable = <
 //   CustomPresentationContext = Unit,
@@ -125,6 +126,28 @@ export const TableInitialiseFiltersAndSortingRunner = <
     },
   );
 
+export const TableInitialiseTableRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>(
+  tableApiSource: DispatchTableApiSource,
+  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>,
+) =>
+  InfiniteLoaderCo<CustomPresentationContext, ExtraContext>().Template<any>(
+    InitialiseTable<CustomPresentationContext, ExtraContext>(
+      tableApiSource,
+      fromTableApiParser,
+    ),
+    {
+      interval: 15,
+      runFilter: (props) =>
+        props.context.customFormState.isFilteringInitialized &&
+        (props.context.customFormState.loadingState == "not loaded" ||
+          props.context.customFormState.loadingState == "loading" ||
+          props.context.customFormState.loadingState == "reload from 0"),
+    },
+  );
+
 export const TableInfiniteLoaderRunner = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
@@ -136,14 +159,13 @@ export const TableInfiniteLoaderRunner = <
     TableInfiniteLoader<CustomPresentationContext, ExtraContext>(
       tableApiSource,
       fromTableApiParser,
-    )(),
+    ),
     {
       interval: 15,
       runFilter: (props) =>
-        (props.context.value.data.size == 0 &&
-          props.context.value.hasMoreValues) ||
-        props.context.customFormState.loadMore == "load more" ||
-        props.context.customFormState.loadMore == "reload from 0",
+        props.context.customFormState.isFilteringInitialized &&
+        props.context.customFormState.loadingState == "loaded" &&
+        props.context.customFormState.loadMore,
     },
   );
 

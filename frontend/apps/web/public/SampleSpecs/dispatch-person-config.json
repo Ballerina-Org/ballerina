@@ -1080,7 +1080,7 @@
           "label": "Friends",
           "renderer": {
             "type": "User",
-            "renderer": "streamingTable",
+            "renderer": "streamingTable2",
             "columns": {
               "Name": {
                 "label": "First Name",
@@ -2117,27 +2117,8 @@
             "demographics": {
               "groups": {
                 "main": [
-                  "BestFriend",
-                  "EagerEditableOne",
-                  "LazyReadonlyOne",
-                  "EagerReadonlyOne",
                   "Friends",
-                  "Children",
-                  "Job",
-                  "Category",
-                  "FullName",
-                  "Birthday",
-                  "SuperSecretNumber",
-                  "MoreSecretNumbers",
-                  "Gender",
-                  "Emails",
-                  "Dependants",
-                  "FriendsByCategory",
-                  "Relatives",
-                  "FriendsBirthdays",
-                  "ShoeColours",
-                  "ImportantDate",
-                  "CutOffDates"
+                  "Children"
                 ]
               }
             },
