@@ -473,7 +473,7 @@ export const LookupApis = {
     ): ValueOrErrors<LookupApiOne, string> =>
       !LookupApis.Operations.isOneApi(serializedOneApi)
         ? ValueOrErrors.Default.throwOne<LookupApiOne, string>(
-            `serializedLookupApi is not a valid lookup api`,
+            `serializedLookupApi is not a valid lookup api:${JSON.stringify(serializedOneApi)}`,
           )
         : ValueOrErrors.Default.return<LookupApiOne, string>(
             Map(

@@ -1851,13 +1851,34 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   string: {
-    defaultString: () => (props) => {
-      return (
-        <>
-          {props.context.customPresentationContext?.listElement
-            ?.isLastListElement && <p>Last</p>}
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+      daisyString: () => (props) => {
+          return (<fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+              {props.context.customPresentationContext?.listElement
+                  ?.isLastListElement && <p>Last</p>}
+              {props.context.details && <legend className="fieldset-legend">{props.context.details}</legend>}
+              <input 
+                  type="text" 
+                  className="input tooltip tooltip-open tooltip-bottom" 
+                  data-tip={props.context.tooltip}
+                  placeholder="placeholder"
+                  disabled={props.context.disabled}
+                  onChange={(e) =>
+                      props.foreignMutations.setNewValue(e.currentTarget.value, {
+                          test: true,
+                      })
+                  }
+                  value={props.context.value}/>
+              {props.context.label &&<p className="label">{props.context.label}</p>}
+          </fieldset>)
+      },
+
+      defaultString: () => (props) => {
+          return (
+              <>
+                  {props.context.customPresentationContext?.listElement
+                      ?.isLastListElement && <p>Last</p>}
+                  {props.context.label && <h3>{props.context.label}</h3>}
+                  {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
             <p>
               <em>{props.context.details}</em>
@@ -1982,70 +2003,123 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   enumMultiSelection: {
     defaultEnumMultiselect: () => (props) => {
       return (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.details && (
-            <p>
-              <em>{props.context.details}</em>
-            </p>
-          )}
-          {props.context.activeOptions == "unloaded" ||
-          props.context.activeOptions == "loading" ? (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              onClick={() => props.foreignMutations.loadOptions()}
-            >
-              <>
-                {props.context.value.fields.map((o) => (
-                  <option
-                    value={(o as ValueRecord).fields.get("Value")! as string}
+          <>
+              {props.context.label && <h3>{props.context.label}</h3>}
+              {props.context.details && (
+                  <p>
+                      <em>{props.context.details}</em>
+                  </p>
+              )}
+
+              {props.context.activeOptions == "unloaded" ||
+              props.context.activeOptions == "loading" ? (
+                  <select
+                      multiple
+                      value={props.context.selectedIds}
+                      onClick={() => props.foreignMutations.loadOptions()}
                   >
-                    {(o as ValueRecord).fields.get("Value") as string}
-                  </option>
-                ))}
-              </>
-            </select>
-          ) : (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              disabled={props.context.disabled}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(
-                  Array.from(e.currentTarget.options)
-                    .filter((_) => _.selected)
-                    .map((_) => _.value),
-                  undefined,
-                )
-              }
-            >
-              <>
-                {props.context.activeOptions.map((o) => (
-                  <option value={o.fields.get("Value")! as string}>
-                    {o.fields.get("Value") as string}
-                  </option>
-                ))}
-              </>
-            </select>
-          )}
-        </>
+                      <>
+                          {props.context.value.fields.map((o) => (
+                              <option
+                                  value={(o as ValueRecord).fields.get("Value")! as string}
+                              >
+                                  {(o as ValueRecord).fields.get("Value") as string}
+                              </option>
+                          ))}
+                      </>
+                  </select>
+              ) : (
+                  <select
+                      multiple
+                      value={props.context.selectedIds}
+                      disabled={props.context.disabled}
+                      onChange={(e) =>
+                          props.foreignMutations.setNewValue(
+                              Array.from(e.currentTarget.options)
+                                  .filter((_) => _.selected)
+                                  .map((_) => _.value),
+                              undefined,
+                          )
+                      }
+                  >
+                      <>
+                          {props.context.activeOptions.map((o) => (
+                              <option value={o.fields.get("Value")! as string}>
+                                  {o.fields.get("Value") as string}
+                              </option>
+                          ))}
+                      </>
+                  </select>
+              )}
+          </>
       );
-    },
+    }, 
+    daisyUI: () => (props) =>
+        <div className="form-control w-full max-w-xs">
+
+            {props.context.details && (
+                <p>
+                    <em>{props.context.details}</em>
+                </p>
+            )}
+            {props.context.label && <label className="label">
+                <span className="label-text">{props.context.label}</span>
+            </label>}
+            {props.context.activeOptions == "unloaded" ||
+            props.context.activeOptions == "loading" ? (
+                <select multiple
+                        className="select select-bordered select-primary w-full h-40 rounded-xl shadow-md"
+                        value={props.context.selectedIds}
+                        onClick={() => props.foreignMutations.loadOptions()}>
+
+                    <>
+                        {props.context.value.fields.map((o) => (
+                            <option
+                                value={(o as ValueRecord).fields.get("Value")! as string}
+                            >
+                                {(o as ValueRecord).fields.get("Value") as string}
+                            </option>
+                        ))}
+                    </>
+                </select>
+            ) : (
+                <select multiple
+                        className="select select-bordered select-primary w-full h-40 rounded-xl shadow-md"
+                        value={props.context.selectedIds}
+                        disabled={props.context.disabled}
+                        onChange={(e) =>
+                            props.foreignMutations.setNewValue(
+                                Array.from(e.currentTarget.options)
+                                    .filter((_) => _.selected)
+                                    .map((_) => _.value),
+                                undefined,
+                            )
+                        }>
+                    <>
+                        {props.context.activeOptions.map((o) => (
+                            <option value={o.fields.get("Value")! as string}>
+                                {o.fields.get("Value") as string}
+                            </option>
+                        ))}
+                    </>
+                </select>
+            )}
+
+        </div>,
   },
-  streamSingleSelection: {
-    defaultInfiniteStream: () => (props) => (
-      <>
-        {props.context.label && <h3>{props.context.label}</h3>}
-        {props.context.tooltip && <p>{props.context.tooltip}</p>}
-        {props.context.details && (
-          <p>
-            <em>{props.context.details}</em>
-          </p>
-        )}
-        <button
-          disabled={props.context.disabled}
-          onClick={() => props.foreignMutations.toggleOpen()}
+    streamSingleSelection: {
+        defaultInfiniteStream: () => (props) => (
+            <>
+                {props.context.label && <h3>{props.context.label}</h3>}
+                {props.context.tooltip && <p>{props.context.tooltip}</p>}
+                {props.context.details && (
+                    <p>
+                        <em>{props.context.details}</em>
+                    </p>
+                )}
+                <button
+                    disabled={props.context.disabled}
+                    onClick={() => props.foreignMutations.toggleOpen()}
         >
           {props.context.value.isSome &&
             ((props.context.value.value as ValueRecord).fields.get(
