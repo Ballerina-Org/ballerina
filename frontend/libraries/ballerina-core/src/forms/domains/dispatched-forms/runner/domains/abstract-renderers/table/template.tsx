@@ -605,7 +605,9 @@ export const TableAbstractRenderer = <
         props.context.customFormState.selectedDetailRow,
       ) &&
       props.context.value.data.size > 0 &&
-      props.context.value.data.has(props.context.customFormState.selectedDetailRow);
+      props.context.value.data.has(
+        props.context.customFormState.selectedDetailRow,
+      );
 
     return (
       <>
