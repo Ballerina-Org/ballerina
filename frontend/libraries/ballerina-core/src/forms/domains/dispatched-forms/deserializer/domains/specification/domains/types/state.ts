@@ -1177,7 +1177,7 @@ export const DispatchParsedType = {
           return ValueOrErrors.Default.return(
             DispatchParsedType.Default.filterEqualsTo(arg),
           );
-        case "startsWith":
+        case "startswith":
           return ValueOrErrors.Default.return(
             DispatchParsedType.Default.filterStartsWith(arg),
           );
