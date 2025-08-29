@@ -2116,7 +2116,29 @@
           "columns": {
             "demographics": {
               "groups": {
-                "main": ["Friends", "Children"]
+                "main": [
+                  "BestFriend",
+                  "EagerEditableOne",
+                  "LazyReadonlyOne",
+                  "EagerReadonlyOne",
+                  "Friends",
+                  "Children",
+                  "Job",
+                  "Category",
+                  "FullName",
+                  "Birthday",
+                  "SuperSecretNumber",
+                  "MoreSecretNumbers",
+                  "Gender",
+                  "Emails",
+                  "Dependants",
+                  "FriendsByCategory",
+                  "Relatives",
+                  "FriendsBirthdays",
+                  "ShoeColours",
+                  "ImportantDate",
+                  "CutOffDates"
+                ]
               }
             },
             "mailing": {
