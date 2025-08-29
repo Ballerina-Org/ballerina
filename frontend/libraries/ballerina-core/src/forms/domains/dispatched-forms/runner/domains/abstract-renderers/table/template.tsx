@@ -1,4 +1,4 @@
-import { List, Map, Set } from "immutable";
+import { List, Map, OrderedMap, Set } from "immutable";
 import {
   BasicUpdater,
   id,
@@ -43,27 +43,6 @@ import {
   TableInitialiseFiltersAndSortingRunner,
   TableInitialiseTableRunner,
 } from "./coroutines/runner";
-
-// const EmbeddedValueInfiniteStreamTemplate = <
-//   CustomPresentationContext = Unit,
-//   Flags = Unit,
-//   ExtraContext = Unit,
-// >() =>
-//   ValueInfiniteStreamTemplate.mapContext<
-//     TableAbstractRendererReadonlyContext<
-//       CustomPresentationContext,
-//       ExtraContext
-//     > &
-//       TableAbstractRendererState
-//   >((_) => _.customFormState.stream)
-//     .mapState<TableAbstractRendererState>(
-//       TableAbstractRendererState.Updaters.Core.customFormState.children.stream,
-//     )
-//     .mapForeignMutationsFromProps<
-//       TableAbstractRendererForeignMutationsExpected<Flags>
-//     >((props) => ({
-//       ...props.foreignMutations,
-//     }));
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -375,24 +354,9 @@ export const TableAbstractRenderer = <
               return id;
             }
 
-            if (!PredicateValue.Operations.IsTuple(selectedDetailRow)) {
-              return id;
-            }
-
-            const chunkValueKey = selectedDetailRow.values.get(1);
-
-            if (chunkValueKey == undefined) {
-              console.error(
-                `Chunk value key is undefined for selected detail row\n
-                ...When rendering table detail view \n
-                ...${props.context.domNodeAncestorPath}`,
-              );
-              return id;
-            }
-
             return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
               MapRepo.Updaters.upsert(
-                chunkValueKey.toString(),
+                selectedDetailRow,
                 () => RecordAbstractRendererState.Default.fieldState(Map()),
                 updater,
               ),
@@ -515,10 +479,6 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    if (props.context.customFormState.loadingState == "loading") {
-      return <></>;
-    }
-
     const domNodeId = props.context.domNodeAncestorPath + "[table]";
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
@@ -592,19 +552,28 @@ export const TableAbstractRenderer = <
 
     const hasMoreValues = props.context.value.hasMoreValues;
 
-    const embeddedTableData = props.context.value.data.map((rowData, rowId) =>
-      rowData.fields
-        .filter((_, column) => visibleColumns.value.columns.includes(column))
-        .map((_, column) => {
-          return EmbeddedCellTemplates.get(column)!(rowId)(
-            rowData.fields.get(column)!,
-          )(disabledColumnKeysSet.has(column));
-        }),
-    );
+    const embeddedTableData =
+      props.context.customFormState.loadingState != "loaded"
+        ? OrderedMap<string, OrderedMap<string, any>>()
+        : props.context.value.data.map((rowData, rowId) =>
+            rowData.fields
+              .filter((_, column) =>
+                visibleColumns.value.columns.includes(column),
+              )
+              .map((_, column) => {
+                return EmbeddedCellTemplates.get(column)!(rowId)(
+                  rowData.fields.get(column)!,
+                )(disabledColumnKeysSet.has(column));
+              }),
+          );
 
     const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
       TableEntityType.fields.keySeq().toArray().includes(_),
     );
+
+    if (props.context.customFormState.isFilteringInitialized == false) {
+      return <></>;
+    }
 
     return (
       <>
