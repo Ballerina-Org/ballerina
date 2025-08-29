@@ -520,6 +520,11 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
+
+    if (props.context.customFormState.loadingState == "loading") {
+      return <></>;
+    }
+
     const domNodeId = props.context.domNodeAncestorPath + "[table]";
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
