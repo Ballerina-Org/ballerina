@@ -1080,7 +1080,7 @@
           "label": "Friends",
           "renderer": {
             "type": "User",
-            "renderer": "streamingTable2",
+            "renderer": "streamingTable",
             "columns": {
               "Name": {
                 "label": "First Name",
@@ -2116,10 +2116,7 @@
           "columns": {
             "demographics": {
               "groups": {
-                "main": [
-                  "Friends",
-                  "Children"
-                ]
+                "main": ["Friends", "Children"]
               }
             },
             "mailing": {

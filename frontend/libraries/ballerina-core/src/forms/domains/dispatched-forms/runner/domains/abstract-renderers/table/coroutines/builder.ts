@@ -1,4 +1,7 @@
-import { CoTypedFactory, TableAbstractRendererForeignMutationsExpected } from "../../../../../../../../../main";
+import {
+  CoTypedFactory,
+  TableAbstractRendererForeignMutationsExpected,
+} from "../../../../../../../../../main";
 import {
   TableAbstractRendererReadonlyContext,
   TableAbstractRendererState,

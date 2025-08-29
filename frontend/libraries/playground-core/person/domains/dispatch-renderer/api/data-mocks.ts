@@ -73,7 +73,6 @@ const getActiveUsers: DispatchTableApiSource = {
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: TableGetManyParams) => {
-      console.debug("streamParams - getMany ActiveUsers", streamParams);
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -265,50 +264,54 @@ const getActiveFriends: DispatchTableApiSource = {
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: TableGetManyParams) => {
-      console.debug("streamParams - getMany ActiveFriends", streamParams);
-      return PromiseRepo.Default.mock(() => ({
-        Values: {
-          [v4()]: {
-            Id: v4(),
-            Name: faker.person.firstName(),
-            Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: faker.datatype.boolean(),
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
+      return PromiseRepo.Default.mock(
+        () => ({
+          Values: {
+            [v4()]: {
+              Id: v4(),
+              Name: faker.person.firstName(),
+              Surname: faker.person.lastName(),
+              Birthday: faker.date.birthdate().toISOString(),
+              Email: faker.internet.email(),
+              SubscribeToNewsletter: faker.datatype.boolean(),
+              FavoriteColor: {
+                Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                IsSome: true,
+              },
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: true,
+                Values: {},
+              },
             },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
+            [v4()]: {
+              Id: v4(),
+              Name: faker.person.firstName(),
+              Surname: faker.person.lastName(),
+              Birthday: faker.date.birthdate().toISOString(),
+              Email: faker.internet.email(),
+              SubscribeToNewsletter: faker.datatype.boolean(),
+              FavoriteColor: {
+                Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                IsSome: true,
+              },
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: true,
+                Values: {},
+              },
             },
           },
-          [v4()]: {
-            Id: v4(),
-            Name: faker.person.firstName(),
-            Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: faker.datatype.boolean(),
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
-            },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
-            },
-          },
-        },
-        HasMore: true,
-        From: 1,
-        To: 2,
-      }), undefined, undefined, 1000).then((res) =>
+          HasMore: true,
+          From: 1,
+          To: 2,
+        }),
+        undefined,
+        undefined,
+        1000,
+      ).then((res) =>
         PredicateValue.Default.table(
           res.From,
           res.To,
@@ -374,7 +377,6 @@ const getChildren: DispatchTableApiSource = {
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (streamParams: TableGetManyParams) => {
-      console.debug("streamParams - getMany Children", streamParams);
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -506,7 +508,6 @@ const getFriends: DispatchOneSource = {
     (id: Guid) =>
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
-      console.debug("streamParams - getMany Friends", streamParams.toJS());
       return PromiseRepo.Default.mock(() => ({
         Values: Range(1, 5)
           .map((_) => ({
@@ -770,81 +771,80 @@ const entityApis: EntityApis = {
               },
             },
             Friends: {
-              // Values: {
-              //   [v4()]: {
-              //     Id: v4(),
-              //     Name: faker.person.firstName(),
-              //     Surname: faker.person.lastName(),
-              //     Birthday: faker.date.birthdate().toISOString(),
-              //     Email: faker.internet.email(),
-              //     SubscribeToNewsletter: faker.datatype.boolean(),
-              //     FavoriteColor: {
-              //       Value: {
-              //         Value: colors[Math.round(Math.random() * 10) % 3],
-              //       },
-              //       IsSome: true,
-              //     },
-              //     City: {
-              //       IsSome: true,
-              //       Value: {
-              //         ...City.Default(v4(), faker.location.city()),
-              //       },
-              //     },
-              //     StreetNumberAndCity: {
-              //       Item1: faker.location.street(),
-              //       Item2: 100,
-              //       Item3: {
-              //         IsSome: true,
-              //         Value: {
-              //           ...City.Default(v4(), faker.location.city()),
-              //         },
-              //       },
-              //     },
-              //     Friends: {
-              //       From: 0,
-              //       To: 0,
-              //       HasMore: true,
-              //       Values: {},
-              //     },
-              //   },
-              //   [v4()]: {
-              //     Id: v4(),
-              //     Name: faker.person.firstName(),
-              //     Surname: faker.person.lastName(),
-              //     Birthday: faker.date.birthdate().toISOString(),
-              //     Email: faker.internet.email(),
-              //     SubscribeToNewsletter: faker.datatype.boolean(),
-              //     FavoriteColor: {
-              //       Value: {
-              //         Value: colors[Math.round(Math.random() * 10) % 3],
-              //       },
-              //       IsSome: true,
-              //     },
-              //     City: {
-              //       IsSome: true,
-              //       Value: {
-              //         ...City.Default(v4(), faker.location.city()),
-              //       },
-              //     },
-              //     StreetNumberAndCity: {
-              //       Item1: faker.location.street(),
-              //       Item2: 100,
-              //       Item3: {
-              //         IsSome: true,
-              //         Value: {
-              //           ...City.Default(v4(), faker.location.city()),
-              //         },
-              //       },
-              //     },
-              //     Friends: {
-              //       From: 0,
-              //       To: 0,
-              //       HasMore: true,
-              //       Values: {},
-              //     },
-              //   },
-              // },
-              Values: {},
+              Values: {
+                [v4()]: {
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  FavoriteColor: {
+                    Value: {
+                      Value: colors[Math.round(Math.random() * 10) % 3],
+                    },
+                    IsSome: true,
+                  },
+                  City: {
+                    IsSome: true,
+                    Value: {
+                      ...City.Default(v4(), faker.location.city()),
+                    },
+                  },
+                  StreetNumberAndCity: {
+                    Item1: faker.location.street(),
+                    Item2: 100,
+                    Item3: {
+                      IsSome: true,
+                      Value: {
+                        ...City.Default(v4(), faker.location.city()),
+                      },
+                    },
+                  },
+                  Friends: {
+                    From: 0,
+                    To: 0,
+                    HasMore: true,
+                    Values: {},
+                  },
+                },
+                [v4()]: {
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  FavoriteColor: {
+                    Value: {
+                      Value: colors[Math.round(Math.random() * 10) % 3],
+                    },
+                    IsSome: true,
+                  },
+                  City: {
+                    IsSome: true,
+                    Value: {
+                      ...City.Default(v4(), faker.location.city()),
+                    },
+                  },
+                  StreetNumberAndCity: {
+                    Item1: faker.location.street(),
+                    Item2: 100,
+                    Item3: {
+                      IsSome: true,
+                      Value: {
+                        ...City.Default(v4(), faker.location.city()),
+                      },
+                    },
+                  },
+                  Friends: {
+                    From: 0,
+                    To: 0,
+                    HasMore: true,
+                    Values: {},
+                  },
+                },
+              },
               HasMore: true,
               From: 0,
               To: 0,

@@ -537,10 +537,6 @@ export const TableAbstractRenderer = <
       );
     }
 
-    if (props.context.customFormState.loadingState == "not loaded") {
-      return <></>;
-    }
-
     const updatedBindings = props.context.bindings.set(
       "local",
       props.context.value,
@@ -597,10 +593,6 @@ export const TableAbstractRenderer = <
 
     const hasMoreValues = props.context.value.hasMoreValues;
 
-    console.debug("embedded cell templates", EmbeddedCellTemplates.toJS());
-    console.debug("visible columns", visibleColumns);
-    console.debug('data',  props.context.value.data.toJS())
-
     const embeddedTableData = props.context.value.data.map((rowData, rowId) =>
       rowData.fields
         .filter((_, column) => visibleColumns.value.columns.includes(column))
@@ -610,8 +602,6 @@ export const TableAbstractRenderer = <
           )(disabledColumnKeysSet.has(column));
         }),
     );
-
-    console.debug("embeddedTableData", embeddedTableData);
 
     const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
       TableEntityType.fields.keySeq().toArray().includes(_),

@@ -33,7 +33,8 @@ export const InitialiseTable = <
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
       .then((current) =>
-        current.value.data.size == 0 && current.value.hasMoreValues
+        (current.value.data.size == 0 && current.value.hasMoreValues) ||
+        current.customFormState.loadingState == "reload from 0"
           ? TableLoadWithRetries<CustomPresentationContext, ExtraContext>(
               tableApiSource,
               fromTableApiParser,

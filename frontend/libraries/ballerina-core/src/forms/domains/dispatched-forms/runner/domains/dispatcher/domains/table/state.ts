@@ -299,7 +299,6 @@ export const TableDispatcher = {
                                     )?.methods ?? []),
                               sorting,
                               highlightedFilters,
-
                             }))
                             .withView(concreteRenderer),
                         );

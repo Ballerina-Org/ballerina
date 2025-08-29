@@ -14,95 +14,6 @@ import { InitialiseFiltersAndSorting } from "./initialiseFiltersAndSorting";
 import { TableInfiniteLoader } from "./infiniteLoader";
 import { InitialiseTable } from "./initialiseTable";
 
-// const intialiseTable = <
-//   CustomPresentationContext = Unit,
-//   ExtraContext = Unit,
-// >() =>
-//   Co<CustomPresentationContext, ExtraContext>()
-//     .GetState()
-//     .then((current) => {
-//       const isLazyLoaded =
-//         current.value.data.size == 0 && current.value.hasMoreValues;
-
-//       const getChunkWithParams = current.tableApiSource.getMany(
-//         current.fromTableApiParser,
-//       );
-
-//       const params =
-//         current.customFormState.filterAndSortParam == ""
-//           ? Map<string, string>()
-//           : Map([
-//               ["filtersAndSorting", current.customFormState.filterAndSortParam],
-//             ]);
-
-//       return Co<CustomPresentationContext, ExtraContext>().SetState(
-//         TableAbstractRendererState.Updaters.Core.customFormState.children
-//           .stream(
-//             replaceWith(
-//               ValueInfiniteStreamState.Default(
-//                 DEFAULT_CHUNK_SIZE,
-//                 getChunkWithParams(params),
-//                 initialData.size == 0 && hasMoreValues ? "loadMore" : false,
-//               ),
-//             )
-//               .then(
-//                 ValueInfiniteStreamState.Updaters.Coroutine.addLoadedChunk(0, {
-//                   data: initialData,
-//                   hasMoreValues: hasMoreValues,
-//                   from,
-//                   to,
-//                 }),
-//               )
-//               .then(
-//                 ValueInfiniteStreamState.Updaters.Core.position(
-//                   ValueStreamPosition.Updaters.Core.nextStart(replaceWith(to)),
-//                 ),
-//               ),
-//           )
-//           .thenMany([
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
-//               replaceWith(Map()),
-//             ),
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
-//               replaceWith(Set()),
-//             ),
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.selectedDetailRow(
-//               replaceWith(undefined as any),
-//             ),
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.getChunkWithParams(
-//               replaceWith(getChunkWithParams),
-//             ),
-//             TableAbstractRendererState.Updaters.Template.shouldReinitialize(
-//               false,
-//             ),
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.previousRemoteEntityVersionIdentifier(
-//               replaceWith(current.remoteEntityVersionIdentifier),
-//             ),
-//             TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-//               replaceWith<
-//                 TableAbstractRendererState["customFormState"]["initializationStatus"]
-//               >("initialized"),
-//             ),
-//           ]),
-//       );
-//     });
-
-// const reinitialise = <
-//   CustomPresentationContext = Unit,
-//   ExtraContext = Unit,
-// >() =>
-//   Co<CustomPresentationContext, ExtraContext>()
-//     .GetState()
-//     .then((_) => {
-//       return Co<CustomPresentationContext, ExtraContext>().SetState(
-//         TableAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-//           replaceWith<
-//             TableAbstractRendererState["customFormState"]["initializationStatus"]
-//           >("reinitializing"),
-//         ),
-//       );
-//     });
-
 export const TableInitialiseFiltersAndSortingRunner = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
@@ -142,8 +53,7 @@ export const TableInitialiseTableRunner = <
       interval: 15,
       runFilter: (props) =>
         props.context.customFormState.isFilteringInitialized &&
-        (props.context.customFormState.loadingState == "not loaded" ||
-          props.context.customFormState.loadingState == "loading" ||
+        (props.context.customFormState.loadingState == "loading" ||
           props.context.customFormState.loadingState == "reload from 0"),
     },
   );
@@ -165,41 +75,6 @@ export const TableInfiniteLoaderRunner = <
       runFilter: (props) =>
         props.context.customFormState.isFilteringInitialized &&
         props.context.customFormState.loadingState == "loaded" &&
-        props.context.customFormState.loadMore,
+        props.context.customFormState.loadMore == "load more",
     },
   );
-
-// export const TableReinitialiseRunner = <
-//   CustomPresentationContext = Unit,
-//   ExtraContext = Unit,
-// >() =>
-//   Co<CustomPresentationContext, ExtraContext>().Template<any>(
-//     reinitialise<CustomPresentationContext, ExtraContext>(),
-//     {
-//       interval: 15,
-//       runFilter: (props) =>
-//         props.context.customFormState.initializationStatus === "initialized" &&
-//         props.context.customFormState.isFilteringInitialized &&
-//         props.context.customFormState.shouldReinitialize,
-//     },
-//   );
-
-// export const TableRunner = <
-//   CustomPresentationContext = Unit,
-//   ExtraContext = Unit,
-// >() =>
-//   Co<CustomPresentationContext, ExtraContext>().Template<any>(
-//     intialiseTable<CustomPresentationContext, ExtraContext>(),
-//     {
-//       interval: 15,
-//       runFilter: (props) => {
-//         return (
-//           (props.context.customFormState.initializationStatus ===
-//             "not initialized" ||
-//             props.context.customFormState.initializationStatus ===
-//               "reinitializing") &&
-//           props.context.customFormState.isFilteringInitialized
-//         );
-//       },
-//     },
-//   );

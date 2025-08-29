@@ -55,32 +55,21 @@ export const TableInfiniteLoader = <
                       current.lookupTypeAncestorNames,
                   };
                   current.onChange(Option.Default.some(updater), delta);
-                  return Co<CustomPresentationContext, ExtraContext>().Return(
-                    unit,
-                  );
                 }),
                 Co<CustomPresentationContext, ExtraContext>().SetState(
                   TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
                     replaceWith<
                       TableAbstractRendererState["customFormState"]["loadMore"]
-                    >(false),
+                    >("don't load more"),
                   ),
                 ),
               ])
             : Co<CustomPresentationContext, ExtraContext>().SetState(
-                TableAbstractRendererState.Updaters.Core.customFormState.children
-                  .loadingState(
-                    replaceWith<
-                      TableAbstractRendererState["customFormState"]["loadingState"]
-                    >("error"),
-                  )
-                  .then(
-                    TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
-                      replaceWith<
-                        TableAbstractRendererState["customFormState"]["loadMore"]
-                      >(false),
-                    ),
-                  ),
+                TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                  replaceWith<
+                    TableAbstractRendererState["customFormState"]["loadMore"]
+                  >("error loading more"),
+                ),
               ),
         ),
       ),
