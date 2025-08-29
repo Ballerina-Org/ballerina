@@ -23,11 +23,17 @@ export const TableInitialiseFiltersAndSortingRunner = <
   parseFromApiByType: (
     type: DispatchParsedType<any>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+  parseToApiByType: (
+    type: DispatchParsedType<any>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>,
 ) =>
   Co<CustomPresentationContext, ExtraContext>().Template<any>(
     InitialiseFiltersAndSorting<CustomPresentationContext, ExtraContext>(
       tableApiSource,
       parseFromApiByType,
+      parseToApiByType,
       filterTypes,
     ),
     {
@@ -75,6 +81,7 @@ export const TableInfiniteLoaderRunner = <
       runFilter: (props) =>
         props.context.customFormState.isFilteringInitialized &&
         props.context.customFormState.loadingState == "loaded" &&
-        props.context.customFormState.loadMore == "load more",
+        (props.context.customFormState.loadMore == "load more" ||
+          props.context.customFormState.loadMore == "loading more"),
     },
   );

@@ -24,6 +24,13 @@ export const TableInfiniteLoader = <
   fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>,
 ) => {
   return Co<CustomPresentationContext, ExtraContext>().Seq([
+    Co<CustomPresentationContext, ExtraContext>().SetState(
+      TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+        replaceWith<TableAbstractRendererState["customFormState"]["loadMore"]>(
+          "loading more",
+        ),
+      ),
+    ),
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
       .then((current) =>

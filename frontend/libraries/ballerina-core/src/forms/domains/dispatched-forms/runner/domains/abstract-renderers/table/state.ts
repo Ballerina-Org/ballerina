@@ -53,7 +53,11 @@ export type TableAbstractRendererSelectedDetailRow = string | undefined;
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     loadingState: "loading" | "loaded" | "error" | "reload from 0";
-    loadMore: "load more" | "don't load more" | "error loading more";
+    loadMore:
+      | "load more"
+      | "loading more"
+      | "don't load more"
+      | "error loading more";
     isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
@@ -233,10 +237,14 @@ export const TableAbstractRendererState = {
         );
       },
       loadMore: (): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
-          replaceWith<
-            TableAbstractRendererState["customFormState"]["loadMore"]
-          >("load more"),
+        Updater((_) =>
+          _.customFormState.loadMore == "loading more"
+            ? _
+            : TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["loadMore"]
+                >("load more"),
+              )(_),
         ),
       reloadFrom0: (): Updater<TableAbstractRendererState> =>
         TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(

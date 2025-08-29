@@ -23,13 +23,6 @@ export const InitialiseTable = <
   fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>,
 ) => {
   return Co<CustomPresentationContext, ExtraContext>().Seq([
-    Co<CustomPresentationContext, ExtraContext>().SetState(
-      TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
-        replaceWith<
-          TableAbstractRendererState["customFormState"]["loadingState"]
-        >("loading"),
-      ),
-    ),
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
       .then((current) =>

@@ -23,6 +23,11 @@ export const InitialiseFiltersAndSorting = <
   parseFromApiByType: (
     type: DispatchParsedType<any>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+  parseToApiByType: (
+    type: DispatchParsedType<any>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>,
   filterTypes: Map<string, SumNType<any>>,
 ) => {
   const getDefaultFiltersAndSortingWithRetries =
@@ -80,10 +85,22 @@ export const InitialiseFiltersAndSorting = <
                     TableAbstractRendererState.Updaters.Core.customFormState.children.sorting(
                       replaceWith(filtersAndSorting.value.sorting),
                     ),
+                  )
+                  .then(
+                    TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                      replaceWith(
+                        TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                          filtersAndSorting.value.filters,
+                          filterTypes,
+                          filtersAndSorting.value.sorting,
+                          parseToApiByType,
+                          true,
+                        ),
+                      ),
+                    ),
                   ),
-              )
-            : // in case of permanent error, we don't want to block the flow, so just do nothing
-              Co<CustomPresentationContext, ExtraContext>().Wait(0),
+              ) // in case of permanent error, we don't want to block the flow, so just do nothing
+            : Co<CustomPresentationContext, ExtraContext>().Wait(0),
         ),
         Co<CustomPresentationContext, ExtraContext>().SetState(
           TableAbstractRendererState.Updaters.Core.customFormState.children.isFilteringInitialized(

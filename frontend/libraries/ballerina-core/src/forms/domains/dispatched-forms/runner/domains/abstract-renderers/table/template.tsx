@@ -155,17 +155,12 @@ export const TableAbstractRenderer = <
       Filters.map(({ filters }) => filters),
       tableApiSource,
       parseFromApiByType,
+      parseToApiByType,
     );
   const InstantiatedInitialiseTableRunner = TableInitialiseTableRunner<
     CustomPresentationContext,
     ExtraContext
   >(tableApiSource, fromTableApiParser);
-  // const InstantiatedEmbeddedValueInfiniteStreamTemplate =
-  //   EmbeddedValueInfiniteStreamTemplate<
-  //     CustomPresentationContext,
-  //     Flags,
-  //     ExtraContext
-  //   >();
 
   const embedCellTemplate =
     (
@@ -520,7 +515,6 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-
     if (props.context.customFormState.loadingState == "loading") {
       return <></>;
     }
