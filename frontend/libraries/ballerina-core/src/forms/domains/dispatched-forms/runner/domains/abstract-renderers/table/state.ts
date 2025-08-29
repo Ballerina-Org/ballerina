@@ -29,6 +29,7 @@ import {
   Value,
   SumNType,
   ValueSumN,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -48,7 +49,10 @@ export type TableAbstractRendererReadonlyContext<
   highlightedFilters: Array<string>;
 };
 
-export type TableAbstractRendererSelectedDetailRow = string | undefined;
+export type TableAbstractRendererSelectedDetailRow =
+  | string
+  | undefined
+  | ValueUnit;
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {

@@ -36,6 +36,7 @@ import {
   Updater,
   SumNType,
   DispatchTableApiSource,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -310,7 +311,21 @@ export const TableAbstractRenderer = <
             return undefined;
           }
 
-          const value = _.value.data.get(selectedDetailRow);
+          if (
+            !PredicateValue.Operations.IsString(selectedDetailRow) &&
+            !PredicateValue.Operations.IsUnit(selectedDetailRow)
+          ) {
+            console.error(
+              `Selected detail row is not a string or unit\n
+              ...When rendering table field\n
+              ...${_.domNodeAncestorPath}`,
+            );
+            return undefined;
+          }
+
+          const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
+            ? ValueUnit.Default()
+            : _.value.data.get(selectedDetailRow);
 
           if (value == undefined) {
             console.error(
@@ -321,9 +336,10 @@ export const TableAbstractRenderer = <
             return undefined;
           }
 
-          const rowState =
-            _.customFormState.rowStates.get(selectedDetailRow) ??
-            RecordAbstractRendererState.Default.fieldState(Map());
+          const rowState = PredicateValue.Operations.IsString(selectedDetailRow)
+            ? (_.customFormState.rowStates.get(selectedDetailRow) ??
+              RecordAbstractRendererState.Default.fieldState(Map()))
+            : RecordAbstractRendererState.Default.fieldState(Map());
 
           return {
             value,
@@ -353,7 +369,9 @@ export const TableAbstractRenderer = <
               );
               return id;
             }
-
+            if (!PredicateValue.Operations.IsString(selectedDetailRow)) {
+              return id;
+            }
             return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
               MapRepo.Updaters.upsert(
                 selectedDetailRow,
@@ -380,43 +398,48 @@ export const TableAbstractRenderer = <
                 return id;
               }
 
-              if (!selectedDetailRow) {
+              if (
+                !PredicateValue.Operations.IsString(selectedDetailRow) &&
+                !PredicateValue.Operations.IsUnit(selectedDetailRow)
+              ) {
                 console.error(
-                  `Chunk value key is undefined for selected detail row\n
+                  `Selected detail row is not a string or unit\n
                     ...When rendering table field\n
                     ...${props.context.domNodeAncestorPath}`,
                 );
                 return id;
               }
 
-              props.setState(
-                TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                  replaceWith(true),
-                ),
-              );
+              if (PredicateValue.Operations.IsString(selectedDetailRow)) {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                );
 
-              const delta: DispatchDelta<Flags> = {
-                kind: "TableValue",
-                id: selectedDetailRow,
-                nestedDelta: nestedDelta,
-                flags,
-                sourceAncestorLookupTypeNames:
-                  nestedDelta.sourceAncestorLookupTypeNames,
-              };
+                const delta: DispatchDelta<Flags> = {
+                  kind: "TableValue",
+                  id: selectedDetailRow,
+                  nestedDelta: nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
 
-              const updater =
-                nestedUpdater.kind == "l"
-                  ? nestedUpdater
-                  : Option.Default.some(
-                      ValueTable.Updaters.data(
-                        MapRepo.Updaters.update(
-                          selectedDetailRow,
-                          nestedUpdater.value,
+                const updater =
+                  nestedUpdater.kind == "l"
+                    ? nestedUpdater
+                    : Option.Default.some(
+                        ValueTable.Updaters.data(
+                          MapRepo.Updaters.update(
+                            selectedDetailRow,
+                            nestedUpdater.value,
+                          ),
                         ),
-                      ),
-                    );
+                      );
 
-              props.foreignMutations.onChange(updater, delta);
+                props.foreignMutations.onChange(updater, delta);
+              }
             },
           }))
     : undefined;
@@ -575,6 +598,15 @@ export const TableAbstractRenderer = <
       return <></>;
     }
 
+    // Detail row may have been deleted from outside the table
+    const isSelectedDetailRowValid =
+      props.context.customFormState.selectedDetailRow != undefined &&
+      !PredicateValue.Operations.IsUnit(
+        props.context.customFormState.selectedDetailRow,
+      ) &&
+      props.context.value.data.size > 0 &&
+      props.context.value.data.has(props.context.customFormState.selectedDetailRow);
+
     return (
       <>
         <IdProvider domNodeId={domNodeId}>
@@ -582,6 +614,12 @@ export const TableAbstractRenderer = <
             {...props}
             context={{
               ...props.context,
+              customFormState: {
+                ...props.context.customFormState,
+                selectedDetailRow: isSelectedDetailRowValid
+                  ? props.context.customFormState.selectedDetailRow
+                  : undefined,
+              },
               domNodeId,
               tableHeaders: validVisibleColumns,
               columnLabels: ColumnLabels,
