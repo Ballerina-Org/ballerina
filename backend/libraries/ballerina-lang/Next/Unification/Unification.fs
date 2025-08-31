@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Next
 
+[<AutoOpen>]
 module Unification =
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
@@ -15,22 +16,25 @@ module Unification =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.Eval
 
-  type UnificationContext = TypeExprEvalContext
+  type UnificationContext = TypeExprEvalState
 
   type UnificationState = EquivalenceClasses<TypeVar, TypeValue>
 
+  let private (!) = Identifier.LocalScope
+
   type TypeExpr with
-    static member FreeVariables(t: TypeExpr) : ReaderWithError<TypeExprEvalContext, Set<TypeVar>, Errors> =
+    static member FreeVariables(t: TypeExpr) : ReaderWithError<TypeExprEvalState, Set<TypeVar>, Errors> =
       reader {
         match t with
         | TypeExpr.Lambda(p, t) ->
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalContext.Updaters.Bindings(Map.add p.Name (TypeValue.Primitive PrimitiveType.Unit))
+              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit))
             )
         | TypeExpr.Exclude(l, r)
         | TypeExpr.Flatten(l, r)
+        | TypeExpr.Let(_, l, r)
         | TypeExpr.Apply(l, r)
         | TypeExpr.Arrow(l, r)
         | TypeExpr.Map(l, r) ->
@@ -50,7 +54,8 @@ module Unification =
           let! vars = es |> Seq.map (fun (_, v) -> TypeExpr.FreeVariables v) |> reader.All
           let! keys = es |> Seq.map (fun (k, _) -> TypeExpr.FreeVariables k) |> reader.All
           return keys @ vars |> Set.unionMany
-        | TypeExpr.Primitive _ -> return Set.empty
+        | TypeExpr.Primitive _
+        | TypeExpr.NewSymbol _ -> return Set.empty
         | TypeExpr.Lookup l ->
           let! t = UnificationContext.tryFindType l |> reader.Catch
 
@@ -60,13 +65,13 @@ module Unification =
       }
 
   and TypeValue with
-    static member FreeVariables(t: TypeValue) : ReaderWithError<TypeExprEvalContext, Set<TypeVar>, Errors> =
+    static member FreeVariables(t: TypeValue) : ReaderWithError<TypeExprEvalState, Set<TypeVar>, Errors> =
       reader {
         match t with
         | TypeValue.Var v ->
           let! ctx = reader.GetContext()
 
-          if ctx.Bindings.ContainsKey v.Name then
+          if ctx.Bindings.ContainsKey !v.Name then
             return Set.empty
           else
             return Set.singleton v
@@ -74,7 +79,7 @@ module Unification =
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalContext.Updaters.Bindings(Map.add p.Name (TypeValue.Primitive PrimitiveType.Unit))
+              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit))
             )
         | TypeValue.Arrow(l, r) ->
           let! lVars = TypeValue.FreeVariables l
@@ -84,6 +89,7 @@ module Unification =
           let! lVars = TypeValue.FreeVariables l
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
+        | TypeValue.Apply(_, e)
         | TypeValue.List e
         | TypeValue.Set e -> return! TypeValue.FreeVariables e
         | TypeValue.Tuple es
@@ -101,12 +107,12 @@ module Unification =
           return vars |> Set.unionMany
         | TypeValue.Primitive _ -> return Set.empty
         | Lookup l ->
-          let! t = UnificationContext.tryFindType l.Name
+          let! t = UnificationContext.tryFindType l
           return! TypeValue.FreeVariables t
       }
 
   type TypeValue with
-    static member MostSpecific(t1: TypeValue, t2: TypeValue) : ReaderWithError<TypeExprEvalContext, TypeValue, Errors> =
+    static member MostSpecific(t1: TypeValue, t2: TypeValue) : ReaderWithError<TypeExprEvalState, TypeValue, Errors> =
       reader {
         match t1, t2 with
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1 = p2 -> return t1
@@ -195,15 +201,16 @@ module Unification =
                   } })
       }
 
+    static member bind(var: TypeVar, value: TypeValue) =
+      TypeValue.EquivalenceClassesOp
+      <| EquivalenceClasses.Bind(
+        var,
+        match value with
+        | TypeValue.Var var -> Left var
+        | _ -> Right value
+      )
+
     static member Unify(left: TypeValue, right: TypeValue) : State<Unit, UnificationContext, UnificationState, Errors> =
-      let bind (var: TypeVar, value: TypeValue) =
-        TypeValue.EquivalenceClassesOp
-        <| EquivalenceClasses.Bind(
-          var,
-          match value with
-          | TypeValue.Var var -> Left var
-          | _ -> Right value
-        )
 
       // do Console.WriteLine($"Unifying {left} and {right}")
       // do Console.ReadLine() |> ignore
@@ -214,7 +221,7 @@ module Unification =
         | Lookup l1, Lookup l2 when l1 = l2 -> return ()
         | Lookup l, t2
         | t2, Lookup l ->
-          let! t1 = UnificationContext.tryFindType l.Name |> state.OfReader
+          let! t1 = UnificationContext.tryFindType l |> state.OfReader
           return! TypeValue.Unify(t1, t2)
         | TypeValue.Var v, t
         | t, TypeValue.Var v ->
@@ -224,7 +231,7 @@ module Unification =
           // do Console.WriteLine($"Context = {ctx.ToFSharpString} and state = {s.ToFSharpString}")
           // do Console.ReadLine() |> ignore
 
-          return! bind (v, t)
+          return! TypeValue.bind (v, t)
         | TypeValue.Lambda(p1, t1), TypeValue.Lambda(p2, t2) ->
           if p1.Kind <> p2.Kind then
             return!
@@ -241,22 +248,22 @@ module Unification =
                 if p1.Kind = Kind.Star then
                   let v1 = p1.Name |> TypeVar.Create
                   let v2 = p2.Name |> TypeVar.Create
-                  do! bind (v1, v2 |> TypeValue.Var)
+                  do! TypeValue.bind (v1, v2 |> TypeValue.Var)
                   let v1 = TypeValue.Var v1
                   let v2 = TypeValue.Var v2
 
                   ctx
-                  |> UnificationContext.Updaters.Bindings(Map.add p1.Name v1 >> Map.add p2.Name v2),
-                  ctx |> UnificationContext.Updaters.Bindings(Map.add p1.Name v1),
-                  ctx |> UnificationContext.Updaters.Bindings(Map.add p2.Name v2)
+                  |> UnificationContext.Updaters.Bindings(Map.add !p1.Name v1 >> Map.add !p2.Name v2),
+                  ctx |> UnificationContext.Updaters.Bindings(Map.add !p1.Name v1),
+                  ctx |> UnificationContext.Updaters.Bindings(Map.add !p2.Name v2)
                 else
                   let s1 = TypeSymbol.Create p1.Name
                   let s2 = TypeSymbol.Create p2.Name
 
                   ctx
-                  |> UnificationContext.Updaters.Symbols(Map.add p1.Name s1 >> Map.add p2.Name s2),
-                  ctx |> UnificationContext.Updaters.Symbols(Map.add p1.Name s1),
-                  ctx |> UnificationContext.Updaters.Symbols(Map.add p2.Name s2)
+                  |> UnificationContext.Updaters.Symbols(Map.add !p1.Name s1 >> Map.add !p2.Name s2),
+                  ctx |> UnificationContext.Updaters.Symbols(Map.add !p1.Name s1),
+                  ctx |> UnificationContext.Updaters.Symbols(Map.add !p2.Name s2)
               }
 
             let! v1 =
@@ -282,6 +289,9 @@ module Unification =
         | Map(l1, r1), Map(l2, r2) ->
           do! TypeValue.Unify(l1, l2)
           do! TypeValue.Unify(r1, r2)
+        | TypeValue.Apply(v1, a1), TypeValue.Apply(v2, a2) ->
+          do! TypeValue.Unify(v1 |> TypeValue.Var, v2 |> TypeValue.Var)
+          do! TypeValue.Unify(a1, a2)
         | List(e1), List(e2)
         | Set(e1), Set(e2) -> do! TypeValue.Unify(e1, e2)
         | TypeValue.Tuple(e1), TypeValue.Tuple(e2)
@@ -297,11 +307,11 @@ module Unification =
       }
 
   type TypeInstantiateContext =
-    { Bindings: TypeExprEvalContext
+    { Bindings: TypeExprEvalState
       VisitedVars: Set<TypeVar> }
 
     static member Empty =
-      { Bindings = TypeExprEvalContext.Empty
+      { Bindings = TypeExprEvalState.Empty
         VisitedVars = Set.empty }
 
     static member Updaters =
@@ -320,7 +330,8 @@ module Unification =
             let! ctx = state.GetContext()
 
             if ctx.VisitedVars.Contains v then
-              return! Errors.Singleton $"Infinite type instantiation for variable {v}" |> state.Throw
+              // return! Errors.Singleton $"Infinite type instantiation for variable {v}" |> state.Throw
+              return t
             else
               let! vClass =
                 EquivalenceClasses.tryFind v
@@ -354,7 +365,7 @@ module Unification =
 
             let! t =
               ctx.Bindings.Bindings
-              |> TypeBindings.tryFindWithError l.Name "lookup" l.Name
+              |> TypeBindings.tryFindWithError l "lookup" l.ToFSharpString
               |> state.OfSum
 
             return! TypeValue.Instantiate t
@@ -363,6 +374,9 @@ module Unification =
             let! l' = TypeValue.Instantiate l
             let! r' = TypeValue.Instantiate r
             return TypeValue.Arrow(l', r')
+          | TypeValue.Apply(v, e) ->
+            let! e' = TypeValue.Instantiate e
+            return TypeValue.Apply(v, e')
           | TypeValue.Map(l, r) ->
             let! l' = TypeValue.Instantiate l
             let! r' = TypeValue.Instantiate r

@@ -55,17 +55,17 @@ module Patterns =
       | other -> sum.Throw(Errors.Singleton $"Expected a type lambda but got {other}")
 
   type Expr<'T> with
-    static member AsUnionDes(e: Expr<'T>) : Sum<Map<string, CaseHandler<'T>>, Errors> =
+    static member AsUnionDes(e: Expr<'T>) : Sum<Map<Identifier, CaseHandler<'T>>, Errors> =
       match e with
       | Expr.UnionDes m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a union destruct but got {other}")
 
-    static member AsUnionCons(e: Expr<'T>) : Sum<string * Expr<'T>, Errors> =
+    static member AsUnionCons(e: Expr<'T>) : Sum<Identifier * Expr<'T>, Errors> =
       match e with
       | Expr.UnionCons(s, m) -> sum.Return(s, m)
       | other -> sum.Throw(Errors.Singleton $"Expected a union construct but got {other}")
 
-    static member AsTypeLet(e: Expr<'T>) : Sum<TypeIdentifier * 'T * Expr<'T>, Errors> =
+    static member AsTypeLet(e: Expr<'T>) : Sum<string * 'T * Expr<'T>, Errors> =
       match e with
       | Expr.TypeLet(i, a, e) -> sum.Return(i, a, e)
       | other -> sum.Throw(Errors.Singleton $"Expected a type let but got {other}")
@@ -100,12 +100,12 @@ module Patterns =
       | Expr.SumCons(i, m) -> sum.Return(i, m)
       | other -> sum.Throw(Errors.Singleton $"Expected a sum construct but got {other}")
 
-    static member AsRecordDes(e: Expr<'T>) : Sum<Expr<'T> * string, Errors> =
+    static member AsRecordDes(e: Expr<'T>) : Sum<Expr<'T> * Identifier, Errors> =
       match e with
       | Expr.RecordDes(e, s) -> sum.Return(e, s)
       | other -> sum.Throw(Errors.Singleton $"Expected a record destruct but got {other}")
 
-    static member AsRecordCons(e: Expr<'T>) : Sum<List<string * Expr<'T>>, Errors> =
+    static member AsRecordCons(e: Expr<'T>) : Sum<List<Identifier * Expr<'T>>, Errors> =
       match e with
       | Expr.RecordCons m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a record construct but got {other}")
@@ -115,7 +115,7 @@ module Patterns =
       | Expr.Primitive p -> sum.Return p
       | other -> sum.Throw(Errors.Singleton $"Expected a primitive type but got {other}")
 
-    static member AsLookup(e: Expr<'T>) : Sum<string, Errors> =
+    static member AsLookup(e: Expr<'T>) : Sum<Identifier, Errors> =
       match e with
       | Expr.Lookup l -> sum.Return l
       | other -> sum.Throw(Errors.Singleton $"Expected a lookup but got {other}")
@@ -125,9 +125,9 @@ module Patterns =
       | Expr.Let(i, a, e) -> sum.Return(i, a, e)
       | other -> sum.Throw(Errors.Singleton $"Expected a let but got {other}")
 
-    static member AsLambda(e: Expr<'T>) : Sum<Var * Expr<'T>, Errors> =
+    static member AsLambda(e: Expr<'T>) : Sum<Var * Option<'T> * Expr<'T>, Errors> =
       match e with
-      | Expr.Lambda(v, e) -> sum.Return(v, e)
+      | Expr.Lambda(v, t, e) -> sum.Return(v, t, e)
       | other -> sum.Throw(Errors.Singleton $"Expected a lambda but got {other}")
 
     static member AsIf(e: Expr<'T>) : Sum<Expr<'T> * Expr<'T> * Expr<'T>, Errors> =

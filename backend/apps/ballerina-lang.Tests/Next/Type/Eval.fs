@@ -6,19 +6,22 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Eval
 open Ballerina.DSL.Next.KitchenSink
-open Ballerina.Reader.WithError
+open Ballerina.State.WithError
 
 [<Test>]
 let ``LangNext-TypeEval lookup looks up existing types`` () =
   let t1 = TypeValue.Primitive PrimitiveType.String
 
   let actual =
-    TypeExpr.Lookup("T1")
+    TypeExpr.Lookup(Identifier.LocalScope "T1")
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(TypeExprEvalContext.Create([ "T1", t1 ] |> Map.ofSeq, Map.empty))
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create([ "T1" |> Identifier.LocalScope, t1 ] |> Map.ofSeq, Map.empty)
+    )
 
   match actual with
-  | Sum.Left actual ->
+  | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Primitive PrimitiveType.String -> Assert.Pass()
     | _ -> Assert.Fail $"Expected 'string' but got {actual}"
@@ -33,27 +36,31 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
 
   let t1 =
     TypeExpr.Union(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
 
   let t2 =
     TypeExpr.Union(
-      [ "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal
-        "D" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Bool ]
+      [ "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal
+        "D" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Bool ]
     )
 
   let actual =
     TypeExpr.Flatten(t1, t2)
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        D.Name |> Identifier.LocalScope, D ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   match actual with
-  | Sum.Left actual ->
+  | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Union(cases) ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
@@ -87,17 +94,23 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
     )
 
   let actual =
-    TypeExpr.Flatten(TypeExpr.Lookup("T1"), TypeExpr.Lookup("T2"))
+    TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      TypeExprEvalContext.Create(
-        [ "T1", t1; "T2", t2 ] |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create(
+        [ "T1" |> Identifier.LocalScope, t1; "T2" |> Identifier.LocalScope, t2 ]
+        |> Map.ofSeq,
+        [ A.Name |> Identifier.LocalScope, A
+          B.Name |> Identifier.LocalScope, B
+          C.Name |> Identifier.LocalScope, C
+          D.Name |> Identifier.LocalScope, D ]
+        |> Map.ofList
       )
     )
 
   match actual with
-  | Sum.Left actual ->
+  | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Union(cases) ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
@@ -131,17 +144,23 @@ let ``LangNext-TypeEval Flatten of named records`` () =
     )
 
   let actual =
-    TypeExpr.Flatten(TypeExpr.Lookup("T1"), TypeExpr.Lookup("T2"))
+    TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      TypeExprEvalContext.Create(
-        [ "T1", t1; "T2", t2 ] |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create(
+        [ "T1" |> Identifier.LocalScope, t1; "T2" |> Identifier.LocalScope, t2 ]
+        |> Map.ofSeq,
+        [ A.Name |> Identifier.LocalScope, A
+          B.Name |> Identifier.LocalScope, B
+          C.Name |> Identifier.LocalScope, C
+          D.Name |> Identifier.LocalScope, D ]
+        |> Map.ofList
       )
     )
 
   match actual with
-  | Sum.Left actual ->
+  | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Record(fields) ->
       match fields |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
@@ -160,8 +179,8 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
 
   let t1 =
     TypeExpr.Union(
-      [ TypeExpr.Lookup "A", TypeExpr.Primitive PrimitiveType.Int
-        TypeExpr.Lookup "B", TypeExpr.Primitive PrimitiveType.String ]
+      [ TypeExpr.Lookup("A" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int
+        TypeExpr.Lookup("B" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String ]
     )
 
   let t2 = TypeExpr.List(TypeExpr.Primitive PrimitiveType.Decimal)
@@ -169,7 +188,12 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
   let actual =
     TypeExpr.Flatten(t1, t2)
     |> TypeExpr.Eval
-    |> ReaderWithError.Run([ A.Name, A; B.Name, B ] |> Map.ofList |> TypeExprEvalContext.CreateFromSymbols)
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A; B.Name |> Identifier.LocalScope, B ]
+      |> Map.ofList
+      |> TypeExprEvalState.CreateFromSymbols
+    )
 
   match actual with
   | Sum.Right _err -> Assert.Pass()
@@ -183,19 +207,22 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
 
   let t1 =
     TypeExpr.Record(
-      [ TypeExpr.Lookup "A", TypeExpr.Primitive PrimitiveType.Int
-        TypeExpr.Lookup "B", TypeExpr.Primitive PrimitiveType.String
-        TypeExpr.Lookup "C", TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ TypeExpr.Lookup("A" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int
+        TypeExpr.Lookup("B" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String
+        TypeExpr.Lookup("C" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.KeyOf
 
   let actual =
     t1
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -207,7 +234,7 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -220,16 +247,16 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
 
   let t1 =
     TypeExpr.Record(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.KeyOf
 
   let t2 =
     TypeExpr.Record(
-      [ "D" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "E" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ "D" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "E" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
     |> TypeExpr.KeyOf
 
@@ -238,14 +265,19 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
   let actual =
     t3
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D; E.Name, E ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        D.Name |> Identifier.LocalScope, D
+        E.Name |> Identifier.LocalScope, E ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   match actual with
-  | Sum.Left actual ->
+  | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Union(cases) ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
@@ -267,16 +299,16 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
 
   let t1 =
     TypeExpr.Record(
-      [ A.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        B.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        C.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ A.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        B.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        C.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.KeyOf
 
   let t2 =
     TypeExpr.Record(
-      [ A.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        X.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ A.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        X.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
     |> TypeExpr.KeyOf
 
@@ -285,10 +317,14 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
   let actual =
     t3
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        X.Name |> Identifier.LocalScope, X ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -299,7 +335,7 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -311,15 +347,15 @@ let ``LangNext-TypeEval Exclude of Records`` () =
 
   let t1 =
     TypeExpr.Record(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
 
   let t2 =
     TypeExpr.Record(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "X" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "X" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
 
   let t3 = TypeExpr.Exclude(t1, t2)
@@ -327,10 +363,14 @@ let ``LangNext-TypeEval Exclude of Records`` () =
   let actual =
     t3
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        X.Name |> Identifier.LocalScope, X ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -341,7 +381,7 @@ let ``LangNext-TypeEval Exclude of Records`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -353,15 +393,15 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
 
   let t1 =
     TypeExpr.Union(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
 
   let t2 =
     TypeExpr.Union(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "X" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "X" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
 
   let t3 = TypeExpr.Exclude(t1, t2)
@@ -369,10 +409,14 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
   let actual =
     t3
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        X.Name |> Identifier.LocalScope, X ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -383,7 +427,7 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -395,15 +439,15 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
 
   let t1 =
     TypeExpr.Union(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
 
   let t2 =
     TypeExpr.Record(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "X" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "X" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
 
   let t3 = TypeExpr.Exclude(t1, t2)
@@ -411,23 +455,27 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
   let actual =
     t3
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C
+        X.Name |> Identifier.LocalScope, X ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   match actual with
-  | Sum.Left actual -> Assert.Fail $"Expected failure but got result: {actual}"
+  | Sum.Left(actual, _) -> Assert.Fail $"Expected failure but got result: {actual}"
   | Sum.Right _err -> Assert.Pass()
 
 [<Test>]
 let ``LangNext-TypeEval Rotate from union to record`` () =
   let t =
     TypeExpr.Union(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.Rotate
 
@@ -438,10 +486,13 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
   let actual =
     t
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -453,7 +504,7 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -464,19 +515,22 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
 
   let t =
     TypeExpr.Record(
-      [ "A" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
-        "B" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        "C" |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ "A" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int
+        "B" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        "C" |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.Rotate
 
   let actual =
     t
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      [ A.Name, A; B.Name, B; C.Name, C ]
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      [ A.Name |> Identifier.LocalScope, A
+        B.Name |> Identifier.LocalScope, B
+        C.Name |> Identifier.LocalScope, C ]
       |> Map.ofList
-      |> TypeExprEvalContext.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromSymbols
     )
 
   let expected =
@@ -488,7 +542,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -497,12 +551,18 @@ let ``LangNext-TypeEval (generic) Apply`` () =
     TypeExpr.Apply(
       TypeExpr.Lambda(
         TypeParameter.Create("a", Kind.Star),
-        TypeExpr.Tuple([ TypeExpr.Primitive PrimitiveType.Int; TypeExpr.Lookup("a") ])
+        TypeExpr.Tuple(
+          [ TypeExpr.Primitive PrimitiveType.Int
+            TypeExpr.Lookup(Identifier.LocalScope "a") ]
+        )
       ),
       TypeExpr.Primitive PrimitiveType.String
     )
 
-  let actual = t |> TypeExpr.Eval |> ReaderWithError.Run TypeExprEvalContext.Empty
+  let actual =
+    t
+    |> TypeExpr.Eval
+    |> State.Run(TypeExprEvalContext.Empty, TypeExprEvalState.Empty)
 
   let expected =
     TypeValue.Tuple(
@@ -511,7 +571,7 @@ let ``LangNext-TypeEval (generic) Apply`` () =
     )
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -520,9 +580,9 @@ let ``LangNext-TypeEval (generic) Apply over symbol`` () =
     TypeExpr.Apply(
       TypeExpr.Lambda(
         TypeParameter.Create("a", Kind.Symbol),
-        TypeExpr.Record([ TypeExpr.Lookup("a"), TypeExpr.Primitive PrimitiveType.Int ])
+        TypeExpr.Record([ TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Primitive PrimitiveType.Int ])
       ),
-      TypeExpr.Lookup("Value")
+      TypeExpr.Lookup(Identifier.LocalScope "Value")
     )
 
   let Value = TypeSymbol.Create "Value"
@@ -530,13 +590,16 @@ let ``LangNext-TypeEval (generic) Apply over symbol`` () =
   let actual =
     t
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(TypeExprEvalContext.Create(Map.empty, [ Value.Name, Value ] |> Map.ofList))
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create(Map.empty, [ Value.Name |> Identifier.LocalScope, Value ] |> Map.ofList)
+    )
 
   let expected =
     TypeValue.Record([ Value, TypeValue.Primitive PrimitiveType.Int ] |> Map.ofList)
 
   match actual with
-  | Sum.Left actual -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
@@ -545,7 +608,7 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
     TypeExpr.Apply(
       TypeExpr.Lambda(
         TypeParameter.Create("a", Kind.Symbol),
-        TypeExpr.Record([ TypeExpr.Lookup("a"), TypeExpr.Primitive PrimitiveType.Int ])
+        TypeExpr.Record([ TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Primitive PrimitiveType.Int ])
       ),
       TypeExpr.Primitive PrimitiveType.String
     )
@@ -553,8 +616,14 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
   let actual =
     t
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      TypeExprEvalContext.Create(Map.empty, [ "Value" ] |> Seq.map (fun s -> s, s |> TypeSymbol.Create) |> Map.ofSeq)
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create(
+        Map.empty,
+        [ "Value" ]
+        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> TypeSymbol.Create)
+        |> Map.ofSeq
+      )
     )
 
   match actual with
@@ -568,16 +637,25 @@ let ``LangNext-TypeEval (generic) Apply of symbol instead of type fails`` () =
     TypeExpr.Apply(
       TypeExpr.Lambda(
         TypeParameter.Create("a", Kind.Star),
-        TypeExpr.Tuple([ TypeExpr.Lookup("a"); TypeExpr.Primitive PrimitiveType.Int ])
+        TypeExpr.Tuple(
+          [ TypeExpr.Lookup(Identifier.LocalScope "a")
+            TypeExpr.Primitive PrimitiveType.Int ]
+        )
       ),
-      TypeExpr.Lookup("Value")
+      TypeExpr.Lookup(Identifier.LocalScope "Value")
     )
 
   let actual =
     t
     |> TypeExpr.Eval
-    |> ReaderWithError.Run(
-      TypeExprEvalContext.Create(Map.empty, [ "Value" ] |> Seq.map (fun s -> s, s |> TypeSymbol.Create) |> Map.ofSeq)
+    |> State.Run(
+      TypeExprEvalContext.Empty,
+      TypeExprEvalState.Create(
+        Map.empty,
+        [ "Value" ]
+        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> TypeSymbol.Create)
+        |> Map.ofSeq
+      )
     )
 
   match actual with

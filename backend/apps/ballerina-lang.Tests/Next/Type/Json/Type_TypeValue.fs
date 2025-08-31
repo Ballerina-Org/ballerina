@@ -12,7 +12,7 @@ type TypeValueTestCase =
     Json: string
     Expected: TypeValue }
 
-//todo: copy of this is in Value term, isolate it to one place
+let private (!) = Identifier.LocalScope
 
 let rec normalizeJson (json: JsonValue) : JsonValue =
   match json with
@@ -85,7 +85,7 @@ let testCases guid : TypeValueTestCase list =
       Expected = TypeValue.Var { Name = "MyTypeVar"; Guid = guid } }
     { Name = "Lookup"
       Json = """{"kind":"lookup","lookup":"SomeType"}"""
-      Expected = TypeValue.Lookup { Name = "SomeType" } }
+      Expected = TypeValue.Lookup !"SomeType" }
     { Name = "Lambda"
       Json =
         """{

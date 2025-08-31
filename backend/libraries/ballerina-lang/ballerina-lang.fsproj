@@ -31,6 +31,8 @@
         <Compile Include="Next/Next.fs" />
         <Compile Include="Next/Unification/EquivalenceClass.fs" />
         <Compile Include="Next/Unification/Unification.fs" />
+        <Compile Include="Next/Types/TypeCheck.fs" />
+
         <Compile Include="Next\Json\Json.fs" />
         <Compile Include="Next\Json\Type\Var.fs" />
         <Compile Include="Next\Json\Type\Symbol.fs" />
@@ -69,6 +71,7 @@
         <Compile Include="Next\Json\Types\TypeValue\List.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Lambda.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Arrow.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Apply.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Model.fs" />
         <Compile Include="Next\Json\Terms\Primitive.fs" />
         <Compile Include="Next\Json\Terms\Expr\UnionDes.fs" />

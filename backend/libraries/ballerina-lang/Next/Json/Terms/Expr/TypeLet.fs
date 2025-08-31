@@ -19,16 +19,15 @@ module TypeLet =
         reader {
           let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
           let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
-          let typeId = TypeIdentifier.Create typeId
           let! ctx = reader.GetContext()
           let! typeArg = typeArg |> ctx |> reader.OfSum
           let! body = body |> fromRootJson
           return Expr.TypeLet(typeId, typeArg, body)
         })
 
-    static member ToJsonTypeLet(rootToJson: Expr<'T> -> JsonValue) : TypeIdentifier * 'T * Expr<'T> -> JsonValue =
+    static member ToJsonTypeLet(rootToJson: Expr<'T> -> JsonValue) : string * 'T * Expr<'T> -> JsonValue =
       fun (typeId, typeArg, body) ->
-        let typeId = typeId |> TypeIdentifier.ToJson
+        let typeId = typeId |> JsonValue.String
 
         match box typeArg with
         | :? TypeExpr as typeExpr ->

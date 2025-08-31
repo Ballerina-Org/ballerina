@@ -11,6 +11,7 @@ open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 
 let private initialClasses = EquivalenceClasses<string, PrimitiveType>.Empty
+let private (!) = Identifier.LocalScope
 
 let private valueOperations =
   { tryCompare = fun (v1: PrimitiveType, v2: PrimitiveType) -> if v1 = v2 then Some v1 else None
@@ -221,8 +222,8 @@ let ``LangNext-Unify unifies type values inside type lambdas`` () =
   let b1 = TypeParameter.Create("b1", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a1, TypeExpr.Arrow(TypeExpr.Lookup a1.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b1, TypeExpr.Arrow(TypeExpr.Lookup b1.Name, TypeExpr.Primitive PrimitiveType.String))
+    TypeValue.Lambda(a1, TypeExpr.Arrow(TypeExpr.Lookup !a1.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b1, TypeExpr.Arrow(TypeExpr.Lookup !b1.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -249,7 +250,7 @@ let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
       TypeExpr.Lambda(
         a2,
         TypeExpr.Arrow(
-          TypeExpr.Tuple([ TypeExpr.Lookup a1.Name; TypeExpr.Lookup a2.Name ]),
+          TypeExpr.Tuple([ TypeExpr.Lookup !a1.Name; TypeExpr.Lookup !a2.Name ]),
           TypeExpr.Primitive PrimitiveType.String
         )
       )
@@ -259,7 +260,7 @@ let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
       TypeExpr.Lambda(
         b2,
         TypeExpr.Arrow(
-          TypeExpr.Tuple([ TypeExpr.Lookup b1.Name; TypeExpr.Lookup b2.Name ]),
+          TypeExpr.Tuple([ TypeExpr.Lookup !b1.Name; TypeExpr.Lookup !b2.Name ]),
           TypeExpr.Primitive PrimitiveType.String
         )
       )
@@ -283,8 +284,8 @@ let ``LangNext-Unify fails to unify incompatible type values inside type lambdas
   let b = TypeParameter.Create("b", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -300,8 +301,8 @@ let ``LangNext-Unify fails to unify incompatible params of type lambdas`` () =
   let b = TypeParameter.Create("b", Kind.Symbol)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.String))
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -316,8 +317,8 @@ let ``LangNext-Unify fails to unify type expressions inside type lambdas`` () =
   let b = TypeParameter.Create("b", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Exclude(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Exclude(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+    TypeValue.Lambda(a, TypeExpr.Exclude(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Exclude(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -516,12 +517,12 @@ let ``LangNext-Unify unifies can look lookups up`` () =
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ "T1", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (UnificationContext.Create([ !"T1", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
 
   match actual with
   | Sum.Left _ -> Assert.Pass()
@@ -534,13 +535,13 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
       .run (
-        UnificationContext.Create([ "T1", TypeValue.Primitive PrimitiveType.Decimal ] |> Map.ofList, Map.empty),
+        UnificationContext.Create([ !"T1", TypeValue.Primitive PrimitiveType.Decimal ] |> Map.ofList, Map.empty),
         EquivalenceClasses.Empty
       ))
 
@@ -555,12 +556,12 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ "T2", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (UnificationContext.Create([ !"T2", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
 
   match actual with
   | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"

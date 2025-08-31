@@ -187,6 +187,18 @@ module WithError =
         | Sum.Left(res) -> Sum.Left(res, None)
         | Sum.Right(err) -> Sum.Right(err, None))
 
+    member state.OfStateReader<'a, 'c, 's, 'e>(ReaderWithError r: ReaderWithError<'s, 'a, 'e>) : State<'a, 'c, 's, 'e> =
+      State(fun (_c, s) ->
+        match r s with
+        | Sum.Left(res) -> Sum.Left(res, None)
+        | Sum.Right(err) -> Sum.Right(err, None))
+
+    member state.ToReader<'a, 'c, 's, 'e>(State p: State<'a, 'c, 's, 'e>) : ReaderWithError<'c * 's, 'a, 'e> =
+      ReaderWithError(fun (c, s) ->
+        match p (c, s) with
+        | Sum.Left(res, _) -> Sum.Left(res)
+        | Sum.Right(err, _) -> Sum.Right(err))
+
     member state.OfSum s =
       match s with
       | Left res -> state.Return res
@@ -242,6 +254,19 @@ module WithError =
 
     member inline state.Either5 p1 p2 p3 p4 p5 =
       state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 p5)))
+
+    member inline state.Memo (get: 'i -> 's -> 'o option, set: 'i * 'o -> Updater<'s>) (f: 'i -> State<'o, _, 's, _>) =
+      fun (i: 'i) ->
+        state {
+          let! s = state.GetState()
+
+          match get i s with
+          | Some(v) -> return v
+          | None ->
+            let! v = f i
+            do! set (i, v) |> state.SetState
+            return v
+        }
 
     member state.RunOption(p: Option<State<'a, 'c, 's, 'e>>) =
       state {

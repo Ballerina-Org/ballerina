@@ -12,6 +12,8 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 
+let private (!) = Identifier.LocalScope
+
 let rec normalizeJson (json: JsonValue) : JsonValue =
   match json with
   | JsonValue.Record fields ->
@@ -70,7 +72,7 @@ let ``Dsl:Terms:Expr.Lambda json round-trip`` () =
   let json = """{"kind":"lambda","lambda":["x",{"kind":"int","int":"42"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.Lambda(Var.Create "x", Expr.Primitive(PrimitiveValue.Int 42))
+    Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int 42))
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -92,7 +94,7 @@ let ```Dsl:Terms:Expr.TypeApply json round-trip`` () =
     """{"kind":"type-apply","type-apply":[{"kind":"lookup","name":"f"}, {"kind":"int"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.TypeApply(Expr.Lookup "f", TypeExpr.Primitive PrimitiveType.Int)
+    Expr.TypeApply(Expr.Lookup("f" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -103,7 +105,10 @@ let ``Dsl:Terms:Expr.Apply json round-trip`` () =
     """{"kind":"apply","apply":[{"kind":"lambda","lambda":["x",{"kind":"int","int":"1"}]}, {"kind":"int","int":"2"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.Apply(Expr.Lambda(Var.Create "x", Expr.Primitive(PrimitiveValue.Int 1)), Expr.Primitive(PrimitiveValue.Int 2))
+    Expr.Apply(
+      Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int 1)),
+      Expr.Primitive(PrimitiveValue.Int 2)
+    )
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -125,7 +130,7 @@ let ``Dsl:Terms:Expr.TypeLet json round-trip`` () =
     """{"kind":"type-let","type-let":["T", {"kind":"int"}, {"kind":"int","int":"7"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.TypeLet(TypeIdentifier.Create "T", TypeExpr.Primitive PrimitiveType.Int, Expr.Primitive(PrimitiveValue.Int 7))
+    Expr.TypeLet("T", TypeExpr.Primitive PrimitiveType.Int, Expr.Primitive(PrimitiveValue.Int 7))
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -133,12 +138,12 @@ let ``Dsl:Terms:Expr.TypeLet json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.RecordCons json round-trip`` () =
   let json =
-    """{"kind":"record-cons","fields":[["foo",{"kind":"int","int":"1"}],["bar",{"kind":"string","string":"baz"}]]}"""
+    """{"kind":"record-cons","fields":[[{"kind":"id","name":"Bar"},{"kind":"int","int":"1"}],[{"kind":"id","name":"Foo"},{"kind":"string","string":"baz"}]]}"""
 
   let expected: Expr<TypeExpr> =
     Expr.RecordCons(
-      [ "foo", Expr.Primitive(PrimitiveValue.Int 1)
-        "bar", Expr.Primitive(PrimitiveValue.String "baz") ]
+      [ !"Bar", Expr.Primitive(PrimitiveValue.Int 1)
+        !"Foo", Expr.Primitive(PrimitiveValue.String "baz") ]
     )
 
   (expected, JsonValue.Parse json)
@@ -147,10 +152,10 @@ let ``Dsl:Terms:Expr.RecordCons json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.UnionCons json round-trip`` () =
   let json =
-    """{"kind":"union-case","union-case":["Foo",{"kind":"int","int":"42"}]}"""
+    """{"kind":"union-case","union-case":[{"kind":"id","name":"Foo"},{"kind":"int","int":"42"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.UnionCons("Foo", Expr.Primitive(PrimitiveValue.Int 42))
+    Expr.UnionCons(!"Foo", Expr.Primitive(PrimitiveValue.Int 42))
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -182,9 +187,10 @@ let ``Dsl:Terms:Expr.SumCons json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.RecordDes json round-trip`` () =
   let json =
-    """{"kind":"record-field-lookup","record-field-lookup":[{"kind":"lookup","name":"myRecord"},"field"]}"""
+    """{"kind":"record-field-lookup","record-field-lookup":[{"kind":"lookup","name":"myRecord"},{"kind":"id","name":"field"}]}"""
 
-  let expected: Expr<TypeExpr> = Expr.RecordDes(Expr.Lookup "myRecord", "field")
+  let expected: Expr<TypeExpr> =
+    Expr.RecordDes(Expr.Lookup("myRecord" |> Identifier.LocalScope), !"field")
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -192,13 +198,13 @@ let ``Dsl:Terms:Expr.RecordDes json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.UnionDes json round-trip`` () =
   let json =
-    """{"kind":"union-match","union-match":[["Foo",["x",{"kind":"int","int":"1"}]],["Bar",["y",{"kind":"int","int":"2"}]]]}"""
+    """{"kind":"union-match","union-match":[[{"kind":"id", "name":"Bar"},["y",{"kind":"int","int":"2"}]],[{"kind":"id", "name":"Foo"},["x",{"kind":"int","int":"1"}]]]}"""
 
   let expected: Expr<TypeExpr> =
     Expr.UnionDes(
       Map.ofList
-        [ "Foo", (Var.Create "x", Expr.Primitive(PrimitiveValue.Int 1))
-          "Bar", (Var.Create "y", Expr.Primitive(PrimitiveValue.Int 2)) ]
+        [ !"Foo", (Var.Create "x", Expr.Primitive(PrimitiveValue.Int 1))
+          !"Bar", (Var.Create "y", Expr.Primitive(PrimitiveValue.Int 2)) ]
     )
 
   (expected, JsonValue.Parse json)
@@ -207,10 +213,10 @@ let ``Dsl:Terms:Expr.UnionDes json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.TupleDes json round-trip`` () =
   let json =
-    """{"kind":"tuple-des","tuple-des":[{"kind":"lookup","name":"myTuple"},1,3]}"""
+    """{"kind":"tuple-des","tuple-des":[{"kind":"lookup","name":"myTuple"},1]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.TupleDes(Expr.Lookup "myTuple", { Index = 1; Count = 3 })
+    Expr.TupleDes(Expr.Lookup("myTuple" |> Identifier.LocalScope), { Index = 1 })
 
 
   (expected, JsonValue.Parse json)
@@ -258,7 +264,7 @@ let ``Dsl:Terms:Expr.Primitives json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.Lookup json round-trip`` () =
   let json = """{"kind":"lookup","name":"foo"}"""
-  let expected: Expr<TypeExpr> = Expr.Lookup "foo"
+  let expected: Expr<TypeExpr> = Expr.Lookup("foo" |> Identifier.LocalScope)
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``

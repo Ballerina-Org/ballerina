@@ -2,13 +2,14 @@ namespace Ballerina.DSL.Next.Types
 
 module KindCheck =
   open Ballerina.Collections.Sum
+  open Ballerina.StdLib.Object
   open Ballerina.Reader.WithError
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
 
-  type KindCheckContext = { Kinds: Map<string, Kind> }
+  type KindCheckContext = { Kinds: Map<Identifier, Kind> }
   type KindChecker = TypeExpr -> ReaderWithError<KindCheckContext, Kind, Errors>
 
   type KindCheckContext with
@@ -17,12 +18,12 @@ module KindCheck =
     static member Updaters =
       {| Kinds = fun u (c: KindCheckContext) -> { c with Kinds = c.Kinds |> u } |}
 
-    static member Create(kinds: Map<string, Kind>) : KindCheckContext =
+    static member Create(kinds: Map<Identifier, Kind>) : KindCheckContext =
       { KindCheckContext.Empty with
           Kinds = kinds }
 
-    static member tryFindKind(name: string) : ReaderWithError<KindCheckContext, Kind, Errors> =
-      ReaderWithError(fun ctx -> ctx.Kinds |> Map.tryFindWithError name "kinds" name)
+    static member tryFindKind(name: Identifier) : ReaderWithError<KindCheckContext, Kind, Errors> =
+      ReaderWithError(fun ctx -> ctx.Kinds |> Map.tryFindWithError name "kinds" name.ToFSharpString)
 
   type TypeExpr with
     static member KindCheck: KindChecker =
@@ -31,11 +32,22 @@ module KindCheck =
 
         reader {
           match t with
+          | TypeExpr.NewSymbol _ -> return Kind.Symbol
+          | TypeExpr.Let(x, t_x, rest) ->
+            let! t_x = !t_x
+
+            return!
+              !rest
+              |> reader.MapContext(Map.add (x |> Identifier.LocalScope) t_x |> KindCheckContext.Updaters.Kinds)
+
           | TypeExpr.Lookup id -> return! KindCheckContext.tryFindKind id
           | TypeExpr.Lambda(p, body) ->
             let! body =
               !body
-              |> reader.MapContext(Map.add p.Name p.Kind |> KindCheckContext.Updaters.Kinds)
+              |> reader.MapContext(
+                Map.add (p.Name |> Identifier.LocalScope) p.Kind
+                |> KindCheckContext.Updaters.Kinds
+              )
 
             return Kind.Arrow(p.Kind, body)
           | TypeExpr.Apply(f, a) ->

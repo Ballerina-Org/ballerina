@@ -41,7 +41,7 @@ let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr`` (expression: TypeExpr)
 let ``Dsl:Type:TypeExpr json round-trip`` () =
   let testCases =
     [ """{ "kind":"apply", "apply": [{"kind":"lookup", "lookup":"MyFunction"}, {"kind":"int"} ] }""",
-      TypeExpr.Apply(TypeExpr.Lookup "MyFunction", TypeExpr.Primitive PrimitiveType.Int)
+      TypeExpr.Apply(TypeExpr.Lookup("MyFunction" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
       """{ "kind":"lambda", "lambda": [{"name":"T", "kind":{"kind":"star"}}, {"kind":"int"}] }""",
       TypeExpr.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int)
       """{ "kind":"arrow", "arrow": [{"kind":"int"}, {"kind":"string"} ] }""",
@@ -49,8 +49,8 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
 
       """{ "kind":"record", "record": [[{"kind":"lookup", "lookup":"foo"}, {"kind":"int"}], [{"kind":"lookup", "lookup":"bar"}, {"kind":"string"}]] }""",
       TypeExpr.Record
-        [ (TypeExpr.Lookup "foo", TypeExpr.Primitive PrimitiveType.Int)
-          (TypeExpr.Lookup "bar", TypeExpr.Primitive PrimitiveType.String) ]
+        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
+          (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
 
       """{"kind":"int"}""", TypeExpr.Primitive PrimitiveType.Int
       """{"kind":"string"}""", TypeExpr.Primitive PrimitiveType.String
@@ -61,21 +61,23 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{"kind":"datetime"}""", TypeExpr.Primitive PrimitiveType.DateTime
       """{"kind":"dateonly"}""", TypeExpr.Primitive PrimitiveType.DateOnly
 
-      """{ "kind": "lookup", "lookup": "MyType" }""", TypeExpr.Lookup "MyType"
+      """{ "kind": "lookup", "lookup": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
       """{ "kind": "list", "list": {"kind": "int"} }""", TypeExpr.List(TypeExpr.Primitive PrimitiveType.Int)
       """{ "kind": "set", "set": {"kind": "string"} }""", TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
       """{ "kind": "map", "map": [{"kind": "bool"}, {"kind": "int"}] }""",
       TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int)
       """{ "kind": "keyOf", "keyOf": {"kind": "record", "record": [[{"kind": "lookup", "lookup": "foo"}, {"kind": "int"}]]} }""",
-      TypeExpr.KeyOf(TypeExpr.Record [ (TypeExpr.Lookup "foo", TypeExpr.Primitive PrimitiveType.Int) ])
+      TypeExpr.KeyOf(
+        TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int) ]
+      )
       """{ "kind": "tuple", "tuple": [{"kind": "int"}, {"kind": "string"}] }""",
       TypeExpr.Tuple
         [ TypeExpr.Primitive PrimitiveType.Int
           TypeExpr.Primitive PrimitiveType.String ]
       """{ "kind": "union", "union": [[{"kind":"lookup", "lookup": "foo"}, {"kind": "int"}], [{"kind": "lookup", "lookup": "bar"}, {"kind": "string"}]] }""",
       TypeExpr.Union
-        [ (TypeExpr.Lookup "foo", TypeExpr.Primitive PrimitiveType.Int)
-          (TypeExpr.Lookup "bar", TypeExpr.Primitive PrimitiveType.String) ]
+        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
+          (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
       """{ "kind": "sum", "sum": [{"kind": "int"}, {"kind": "string"}, {"kind": "bool"}] }""",
       TypeExpr.Sum
         [ TypeExpr.Primitive PrimitiveType.Int

@@ -10,8 +10,6 @@ module Model =
     | Star
     | Arrow of Kind * Kind
 
-  and TypeIdentifier = { Name: string }
-
   and TypeSymbol = { Name: string; Guid: Guid }
 
   and TypeVar =
@@ -25,9 +23,15 @@ module Model =
 
     override v.ToString() = v.Name
 
+  type Identifier =
+    | LocalScope of string
+    | FullyQualified of List<string> * string
+
   and TypeExpr =
     | Primitive of PrimitiveType
-    | Lookup of string
+    | Let of string * TypeExpr * TypeExpr
+    | NewSymbol of string
+    | Lookup of Identifier
     | Apply of TypeExpr * TypeExpr
     | Lambda of TypeParameter * TypeExpr
     | Arrow of TypeExpr * TypeExpr
@@ -44,14 +48,15 @@ module Model =
     | Rotate of TypeExpr
 
   and TypeBinding =
-    { Identifier: TypeIdentifier
+    { Identifier: Identifier
       Type: TypeExpr }
 
   and TypeValue =
     | Primitive of PrimitiveType
     | Var of TypeVar
-    | Lookup of TypeIdentifier
+    | Lookup of Identifier
     | Lambda of TypeParameter * TypeExpr
+    | Apply of TypeVar * TypeValue
     | Arrow of TypeValue * TypeValue
     | Record of Map<TypeSymbol, TypeValue>
     | Tuple of List<TypeValue>

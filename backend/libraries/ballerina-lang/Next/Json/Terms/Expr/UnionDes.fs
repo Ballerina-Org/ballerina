@@ -6,9 +6,10 @@ module UnionDes =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Types.Json
 
   type Expr<'T> with
     static member FromJsonUnionDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -21,7 +22,7 @@ module UnionDes =
             |> Seq.map (fun caseHandler ->
               reader {
                 let! (caseName, handler) = caseHandler |> JsonValue.AsPair |> reader.OfSum
-                let! caseName = caseName |> JsonValue.AsString |> reader.OfSum
+                let! caseName = caseName |> Identifier.FromJson |> reader.OfSum
                 let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
                 let handlerVar = Var.Create handlerVar
@@ -34,13 +35,13 @@ module UnionDes =
           return Expr.UnionDes(caseHandlers)
         })
 
-    static member ToJsonUnionDes(rootToJson: Expr<'T> -> JsonValue) : Map<string, CaseHandler<'T>> -> JsonValue =
+    static member ToJsonUnionDes(rootToJson: Expr<'T> -> JsonValue) : Map<Identifier, CaseHandler<'T>> -> JsonValue =
       fun union ->
         let cases =
           union
           |> Map.toList
           |> List.map (fun (caseName, (handlerVar, handlerExpr)) ->
-            let caseNameJson = JsonValue.String caseName
+            let caseNameJson = caseName |> Identifier.ToJson
 
             let handlerJson =
               JsonValue.Array [| JsonValue.String handlerVar.Name; rootToJson handlerExpr |]

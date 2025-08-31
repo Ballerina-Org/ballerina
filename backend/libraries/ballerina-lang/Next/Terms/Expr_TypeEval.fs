@@ -3,20 +3,21 @@ namespace Ballerina.DSL.Next.Terms
 module TypeEval =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.Reader.WithError
+  open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Eval
 
   type Expr<'T> with
-    static member TypeEval: Expr<TypeExpr> -> Reader<Expr<TypeValue>, TypeExprEvalContext, Errors> =
+    static member TypeEval: Expr<TypeExpr> -> State<Expr<TypeValue>, TypeExprEvalContext, TypeExprEvalState, Errors> =
       fun expr ->
         let (!) = Expr.TypeEval
 
-        reader {
+        state {
           match expr with
-          | Expr.Lambda(var, body) ->
+          | Expr.Lambda(var, t, body) ->
             let! bodyType = !body
-            return Expr.Lambda(var, bodyType)
+            let! t = t |> Option.map (TypeExpr.Eval) |> state.RunOption
+            return Expr.Lambda(var, t, bodyType)
           | Expr.Apply(func, arg) ->
             let! funcType = !func
             let! argType = !arg
@@ -29,18 +30,18 @@ module TypeEval =
             let! fieldTypes =
               fields
               |> List.map (fun (name, value) ->
-                reader {
+                state {
                   let! valueType = !value
                   return (name, valueType)
                 })
-              |> reader.All
+              |> state.All
 
             return Expr.RecordCons fieldTypes
           | Expr.UnionCons(name, value) ->
             let! valueType = !value
             return Expr.UnionCons(name, valueType)
           | Expr.TupleCons values ->
-            let! valueTypes = values |> List.map (!) |> reader.All
+            let! valueTypes = values |> List.map (!) |> state.All
             return Expr.TupleCons valueTypes
           | Expr.SumCons(selector, value) ->
             let! valueType = !value
@@ -52,11 +53,11 @@ module TypeEval =
             let! caseTypes =
               cases
               |> Map.map (fun _ (v, handler) ->
-                reader {
+                state {
                   let! handlerType = !handler
                   return v, handlerType
                 })
-              |> reader.AllMap
+              |> state.AllMap
 
             return Expr.UnionDes caseTypes
           | Expr.TupleDes(tuple, selector) ->
@@ -66,11 +67,11 @@ module TypeEval =
             let! caseTypes =
               cases
               |> Map.map (fun _ (i, handler) ->
-                reader {
+                state {
                   let! handlerType = !handler
                   return i, handlerType
                 })
-              |> reader.AllMap
+              |> state.AllMap
 
             return Expr.SumDes caseTypes
           | Expr.Primitive p -> return Expr.Primitive p
@@ -89,10 +90,9 @@ module TypeEval =
             return Expr.TypeApply(typeExprType, typeArg)
           | Expr.TypeLet(var, value, body) ->
             let! valueType = value |> TypeExpr.Eval
+            do! TypeExprEvalState.bindType var valueType
 
-            let! bodyType =
-              !body
-              |> reader.MapContext(TypeExprEvalContext.Updaters.Bindings(Map.add var.Name valueType))
+            let! bodyType = !body
 
             return Expr.TypeLet(var, valueType, bodyType)
         }

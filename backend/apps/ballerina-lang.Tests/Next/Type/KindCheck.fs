@@ -12,6 +12,8 @@ open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 open Ballerina.Reader.WithError
 
+let private (!) = Identifier.LocalScope
+
 [<Test>]
 let ``LangNext-Unify kind check of star over symbol fails`` () =
 
@@ -48,11 +50,14 @@ let ``LangNext-Unify kind check of symbol over symbol succeeds as the identity``
   let a = TypeParameter.Create("a", Kind.Symbol)
 
   let program =
-    TypeExpr.Apply(TypeExpr.Lambda(a, TypeExpr.Lookup a.Name), TypeExpr.Lookup a.Name)
+    TypeExpr.Apply(
+      TypeExpr.Lambda(a, TypeExpr.Lookup(a.Name |> Identifier.LocalScope)),
+      TypeExpr.Lookup(a.Name |> Identifier.LocalScope)
+    )
 
   let actual =
     TypeExpr.KindCheck program
-    |> ReaderWithError.Run(KindCheckContext.Create([ a.Name, Kind.Symbol ] |> Map.ofList))
+    |> ReaderWithError.Run(KindCheckContext.Create([ !a.Name, Kind.Symbol ] |> Map.ofList))
 
   match actual with
   | Sum.Left(Kind.Symbol) -> Assert.Pass()
@@ -73,17 +78,23 @@ let ``LangNext-Unify kind check of curried application succeeds`` () =
           f,
           TypeExpr.Lambda(
             t,
-            TypeExpr.Record([ TypeExpr.Lookup f.Name, TypeExpr.Arrow(TypeExpr.Lookup t.Name, TypeExpr.Lookup t.Name) ])
+            TypeExpr.Record(
+              [ TypeExpr.Lookup(f.Name |> Identifier.LocalScope),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(t.Name |> Identifier.LocalScope),
+                  TypeExpr.Lookup(t.Name |> Identifier.LocalScope)
+                ) ]
+            )
           )
         ),
-        TypeExpr.Lookup "a"
+        TypeExpr.Lookup("a" |> Identifier.LocalScope)
       ),
       TypeExpr.Primitive(PrimitiveType.Int)
     )
 
   let actual =
     TypeExpr.KindCheck program
-    |> ReaderWithError.Run(KindCheckContext.Create([ "a", Kind.Symbol ] |> Map.ofList))
+    |> ReaderWithError.Run(KindCheckContext.Create([ !"a", Kind.Symbol ] |> Map.ofList))
 
   match actual with
   | Sum.Left(Kind.Star) -> Assert.Pass()
@@ -99,13 +110,16 @@ let ``LangNext-Unify kind check of curried application identity succeeds`` () =
 
   let program =
     TypeExpr.Apply(
-      TypeExpr.Apply(TypeExpr.Lambda(f, TypeExpr.Lookup f.Name), TypeExpr.Lookup "Option"),
+      TypeExpr.Apply(
+        TypeExpr.Lambda(f, TypeExpr.Lookup(f.Name |> Identifier.LocalScope)),
+        TypeExpr.Lookup("Option" |> Identifier.LocalScope)
+      ),
       TypeExpr.Primitive(PrimitiveType.Int)
     )
 
   let actual =
     TypeExpr.KindCheck program
-    |> ReaderWithError.Run(KindCheckContext.Create([ "Option", Kind.Arrow(Kind.Star, Kind.Star) ] |> Map.ofList))
+    |> ReaderWithError.Run(KindCheckContext.Create([ !"Option", Kind.Arrow(Kind.Star, Kind.Star) ] |> Map.ofList))
 
   match actual with
   | Sum.Left(Kind.Star) -> Assert.Pass()
@@ -122,15 +136,24 @@ let ``LangNext-Unify kind check of curried application eta-identity succeeds`` (
   let program =
     TypeExpr.Apply(
       TypeExpr.Apply(
-        TypeExpr.Lambda(f, TypeExpr.Lambda(t, TypeExpr.Apply(TypeExpr.Lookup f.Name, TypeExpr.Lookup t.Name))),
-        TypeExpr.Lookup "Option"
+        TypeExpr.Lambda(
+          f,
+          TypeExpr.Lambda(
+            t,
+            TypeExpr.Apply(
+              TypeExpr.Lookup(f.Name |> Identifier.LocalScope),
+              TypeExpr.Lookup(t.Name |> Identifier.LocalScope)
+            )
+          )
+        ),
+        TypeExpr.Lookup("Option" |> Identifier.LocalScope)
       ),
       TypeExpr.Primitive(PrimitiveType.Int)
     )
 
   let actual =
     TypeExpr.KindCheck program
-    |> ReaderWithError.Run(KindCheckContext.Create([ "Option", Kind.Arrow(Kind.Star, Kind.Star) ] |> Map.ofList))
+    |> ReaderWithError.Run(KindCheckContext.Create([ !"Option", Kind.Arrow(Kind.Star, Kind.Star) ] |> Map.ofList))
 
   match actual with
   | Sum.Left(Kind.Star) -> Assert.Pass()
