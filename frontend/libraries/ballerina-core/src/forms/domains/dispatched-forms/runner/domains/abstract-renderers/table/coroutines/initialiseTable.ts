@@ -38,7 +38,7 @@ export const InitialiseTable = <
                       const updater = replaceWith<ValueTable>(
                         ValueTable.Default.fromParsed(
                           0,
-                          res.value.data.size,
+                          res.value.to,
                           res.value.hasMoreValues,
                           res.value.data,
                         ),

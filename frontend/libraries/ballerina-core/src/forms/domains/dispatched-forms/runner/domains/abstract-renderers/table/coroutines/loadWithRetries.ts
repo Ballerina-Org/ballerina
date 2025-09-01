@@ -45,7 +45,7 @@ export const TableLoadWithRetries =
                   from:
                     current.customFormState.loadingState == "reload from 0"
                       ? 0
-                      : current.value.data.size,
+                      : current.value.to + 1,
                   filtersAndSorting:
                     current.customFormState.filterAndSortParam === ""
                       ? undefined

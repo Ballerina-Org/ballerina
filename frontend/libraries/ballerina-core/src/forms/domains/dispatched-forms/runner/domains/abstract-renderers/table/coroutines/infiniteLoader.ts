@@ -44,7 +44,7 @@ export const TableInfiniteLoader = <
                   const updater = replaceWith<ValueTable>(
                     ValueTable.Default.fromParsed(
                       0,
-                      current.value.data.size + res.value.data.size, // validate this
+                      res.value.to,
                       res.value.hasMoreValues,
                       current.value.data.concat(res.value.data),
                     ),
