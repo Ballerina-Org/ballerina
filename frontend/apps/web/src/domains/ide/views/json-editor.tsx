@@ -96,7 +96,7 @@ export const V1Editor: JsonEditorView  = (props) => (
                         props.setState(
                             Bridge.Updaters.Template.setV1Body(
                                 Value.Default(value)
-                            )
+                            ).then(Bridge.Operations.dirty(true))
                         );
                     }}
 
@@ -108,10 +108,11 @@ export const V1Editor: JsonEditorView  = (props) => (
                
                         const value = JSON.stringify(x.newData)
                         props.setState(
-                            Bridge.Updaters.Template.setV1Body(
+                            Bridge.Updaters.Template.setV1Design(
                                 Value.Default(value)
-                            )
+                            ).then(Bridge.Operations.dirty(true))
                         );
+
                         
                     }}
                 />

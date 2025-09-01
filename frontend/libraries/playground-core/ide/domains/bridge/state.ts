@@ -15,7 +15,7 @@ import {List} from "immutable";
 import * as repl from "node:repl";
 
 export type SpecSource = {
-    specBody: Value<string>
+    specBody: Value<string>, dirty: boolean
 };
 
 export type SpecOutcome<V> = ValueOrErrors<V, string>
@@ -27,7 +27,7 @@ export type Bridge = Product<SpecV1, SpecV2>
 
 export const SpecDesign = {
     Default: (): SpecSource => ({
-        specBody: Value.Default("{}")
+        specBody: Value.Default("{}"), dirty: false
     }),
     Updaters: {
         Core: {
@@ -43,13 +43,13 @@ export const SpecV1 = {
     Default: () =>
         Product.Default<SpecSource,SpecOutcome<V1>>(SpecDesign.Default(), ValueOrErrors.Default.throwOne("V1 not yet available")),
     FromBody: (body: string) =>
-        Product.Default<SpecSource,SpecOutcome<V1>>({ specBody: Value.Default(body) }, ValueOrErrors.Default.throwOne("V1 not yet validated")),
+        Product.Default<SpecSource,SpecOutcome<V1>>({ specBody: Value.Default(body), dirty: false }, ValueOrErrors.Default.throwOne("V1 not yet validated")),
     FromError: (error: string[]) =>
-        Product.Default<SpecSource,SpecOutcome<V1>>({ specBody: Value.Default("") }, ValueOrErrors.Default.throw(List(error))),
+        Product.Default<SpecSource,SpecOutcome<V1>>({ specBody: Value.Default(""), dirty: false}, ValueOrErrors.Default.throw(List(error))),
     Updaters: {
         Core: {
             specBody: (v: Value<string>) : Updater<SpecV1> => 
-                Product.Updaters.left<SpecSource, SpecOutcome<V1>>(replaceWith({ specBody: v }))
+                Product.Updaters.left<SpecSource, SpecOutcome<V1>>(replaceWith<SpecSource>({ specBody: v, dirty: true }))
         }
     },
     Operations: {
@@ -65,13 +65,13 @@ export const SpecV2 = {
     Default: () =>
         Product.Default<SpecSource,SpecOutcome<V2>>(SpecDesign.Default(), ValueOrErrors.Default.throwOne("V1 not yet available")),
     FromBody: (body: string) =>
-        Product.Default<SpecSource,SpecOutcome<V2>>({ specBody: Value.Default(body) }, ValueOrErrors.Default.throwOne("V1 not yet validated")),
+        Product.Default<SpecSource,SpecOutcome<V2>>({ specBody: Value.Default(body), dirty: false }, ValueOrErrors.Default.throwOne("V1 not yet validated")),
     FromError: (error: string[]) =>
-        Product.Default<SpecSource,SpecOutcome<V2>>({ specBody: Value.Default("") }, ValueOrErrors.Default.throw(List(error))),
+        Product.Default<SpecSource,SpecOutcome<V2>>({ specBody: Value.Default(""), dirty: false }, ValueOrErrors.Default.throw(List(error))),
     Updaters: {
         Core: {
             specBody: (v: Value<string>) : Updater<SpecV2> =>
-                Product.Updaters.left<SpecSource, SpecOutcome<V2>>(replaceWith({ specBody: v }))
+                Product.Updaters.left<SpecSource, SpecOutcome<V2>>(replaceWith<SpecSource>({ specBody: v, dirty: false }))
         }
     },
     Operations: {
@@ -145,6 +145,13 @@ export const Bridge = {
                     (bs.bridge)
                 return ({...bs, bridge: b});
             }),
+            setV1Design: (v: Value<string>) => Updater<BridgeState>(bs => {
+                const l = Product.Updaters.left<SpecSource, SpecOutcome<V1>>(replaceWith<SpecSource>({specBody: v, dirty: false}))
+                let b =
+                    Product.Updaters.left<SpecV1, SpecV2>(l)
+                    (bs.bridge)
+                return ({...bs, bridge: b});
+            }),
             setV2Body: (v: Value<string>) => Updater<BridgeState>(bs => {
                 let b =
                     Product.Updaters.right<SpecV1, SpecV2>(replaceWith(SpecV2.FromBody(v.value)))
@@ -173,6 +180,21 @@ export const Bridge = {
         errors: (errors: string []): Updater<BridgeState> => {
             return Updater<BridgeState>(bs => {
                 return ({...bs, errors: errors});
+            })
+        },
+        dirty: (dirty: boolean): Updater<BridgeState> => {
+            return Updater<BridgeState>(bs => {
+                const designV1 = bs.bridge.left.left.specBody;
+
+
+                const b =
+                    Product.Updaters.left<SpecV1, SpecV2>(
+                        Product.Updaters.left<SpecSource,SpecOutcome<V1>>(
+                            replaceWith<SpecSource>({ specBody:designV1, dirty: dirty})
+                            )
+                        
+                    )(bs.bridge);
+                return ({...bs, errors: [], bridge: b });
             })
         },
         setV: (): Updater<BridgeState> => {

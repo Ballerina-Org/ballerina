@@ -1,107 +1,98 @@
-﻿import { faker } from "@faker-js/faker";
+﻿import {faker} from "@faker-js/faker";
 import {
-    PromiseRepo,
-    EntityApis,
-    unit,
-    Guid,
-    DispatchInfiniteStreamSources,
-    ValueOrErrors,
-    DispatchEnumOptionsSources,
-    DispatchTableApiSource,
     BasicFun,
-    PredicateValue,
-    ValueStreamPosition,
-    DispatchTableApiSources,
-    DispatchOneSource,
     DispatchLookupSources,
+    DispatchOneSource,
+    Guid,
+    PredicateValue,
+    PromiseRepo,
     TableAbstractRendererState,
-    DispatchTableFiltersAndSorting,
-    SumNType,
-    DispatchParsedType,
     Value,
-    ValueFilter,
+    ValueOrErrors,
+    ValueStreamPosition,
 } from "ballerina-core";
-import { Range, Map, List } from "immutable";
+import {Map, Range} from "immutable";
 
-import { v4 } from "uuid";
+import {v4} from "uuid";
 
-import {getSeedEntity, getSeedEntityUnlinked, getSeedEntityId} from "../seeds";
+import {getSeedEntityId, getSeedEntityUnlinked} from "../seeds";
+
 const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
 const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
 
 
-// const getFriends: DispatchOneSource = {
-//     get: (id: Guid) => {
-//         return PromiseRepo.Default.mock(
-//             () => ({
-//                 Id: v4(),
-//                 Name: "Tim",
-//                 Surname: "Pool",
-//                 Birthday: "1990-01-01",
-//                 Email: "tim.pool@example.com",
-//                 SubscribeToNewsletter: true,
-//                 FavoriteColor: {
-//                     Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-//                     IsSome: true,
-//                 },
-//                 Friends: {
-//                     From: 0,
-//                     To: 0,
-//                     HasMore: true,
-//                     Values: {},
-//                 },
-//             }),
-//             undefined,
-//             undefined,
-//             2,
-//         );
-//     },
-//     getManyUnlinked:
-//         (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-//             (id: Guid) =>
-//                 (streamParams: Map<string, string>) =>
-//                     ([streamPosition]: [ValueStreamPosition]) => {
-//                         console.debug("streamParams - getMany Friends", streamParams.toJS());
-//                         return PromiseRepo.Default.mock(() => ({
-//                             Values: Range(1, 5)
-//                                 .map((_) => ({
-//                                     Id: v4(),
-//                                     Name: faker.person.firstName(),
-//                                     Surname: faker.person.lastName(),
-//                                     Birthday: faker.date.birthdate().toISOString(),
-//                                     Email: faker.internet.email(),
-//                                     SubscribeToNewsletter: faker.datatype.boolean(),
-//                                     FavoriteColor: {
-//                                         Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-//                                         IsSome: true,
-//                                     },
-//                                     Friends: {
-//                                         From: 0,
-//                                         To: 0,
-//                                         HasMore: true,
-//                                         Values: {},
-//                                     },
-//                                 }))
-//                                 .reduce((acc, curr) => {
-//                                     acc[curr.Id] = curr;
-//                                     return acc;
-//                                 }, {} as any),
-//                             HasMore: false,
-//                             From: 1,
-//                             To: 5,
-//                         })).then((res) => ({
-//                             hasMoreValues: res.HasMore,
-//                             to: res.To,
-//                             from: res.From,
-//                             data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-//                                 res.Values,
-//                                 fromApiRaw,
-//                             ),
-//                         }));
-//                     },
-// };
+const getFriends: DispatchOneSource = {
+    get: (id: Guid) => {
+        return PromiseRepo.Default.mock(
+            () => ({
+                Id: v4(),
+                Name: "Tim",
+                Surname: "Pool",
+                Birthday: "1990-01-01",
+                Email: "tim.pool@example.com",
+                SubscribeToNewsletter: true,
+                FavoriteColor: {
+                    Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                    IsSome: true,
+                },
+                Friends: {
+                    From: 0,
+                    To: 0,
+                    HasMore: true,
+                    Values: {},
+                },
+            }),
+            undefined,
+            undefined,
+            2,
+        );
+    },
+    getManyUnlinked:
+        (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+            (id: Guid) =>
+                (streamParams: Map<string, string>) =>
+                    ([streamPosition]: [ValueStreamPosition]) => {
+                        console.debug("streamParams - getMany Friends", streamParams.toJS());
+                        return PromiseRepo.Default.mock(() => ({
+                            Values: Range(1, 5)
+                                .map((_) => ({
+                                    Id: v4(),
+                                    Name: faker.person.firstName(),
+                                    Surname: faker.person.lastName(),
+                                    Birthday: faker.date.birthdate().toISOString(),
+                                    Email: faker.internet.email(),
+                                    SubscribeToNewsletter: faker.datatype.boolean(),
+                                    FavoriteColor: {
+                                        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                                        IsSome: true,
+                                    },
+                                    Friends: {
+                                        From: 0,
+                                        To: 0,
+                                        HasMore: true,
+                                        Values: {},
+                                    },
+                                }))
+                                .reduce((acc, curr) => {
+                                    acc[curr.Id] = curr;
+                                    return acc;
+                                }, {} as any),
+                            HasMore: false,
+                            From: 1,
+                            To: 5,
+                        })).then((res) => ({
+                            hasMoreValues: res.HasMore,
+                            to: res.To,
+                            from: res.From,
+                            data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
+                                res.Values,
+                                fromApiRaw,
+                            ),
+                        }));
+                    },
+};
 
 // const lookupSources: DispatchLookupSources = (typeName: string) =>
 //     typeName == "User"
@@ -125,29 +116,9 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                     {
                         get: (id: Guid) => {
                             debugger
-                            return PromiseRepo.Default.mock(
-                                () => ({
-                                    Id: v4(),
-                                    Name: "Tim",
-                                    Surname: "Pool",
-                                    Birthday: "1990-01-01",
-                                    Email: "tim.pool@example.com",
-                                    SubscribeToNewsletter: true,
-                                    FavoriteColor: {
-                                        Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                                        IsSome: true,
-                                    },
-                                    Friends: {
-                                        From: 0,
-                                        To: 0,
-                                        HasMore: true,
-                                        Values: {},
-                                    },
-                                }),
-                                undefined,
-                                undefined,
-                                2,
-                            );
+                            const fieldName = apiName.replace(/Api$/, "");
+                            return getSeedEntityId("sample", typeName, id).then(valueOrErrors =>
+                                valueOrErrors.kind == "value" ? valueOrErrors.value : undefined);
                         },
                         getManyUnlinked:
                             (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
@@ -155,36 +126,46 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                                     (streamParams: Map<string, string>) =>
                                         ([streamPosition]: [ValueStreamPosition]) => {
                                             debugger
-                                            const call = getSeedEntityUnlinked("sample",typeName, id)
-                                            return PromiseRepo.Default.mock(() => ({
-                                                Values: Range(1, 5)
-                                                    .map((_) => ({
-                                                        Id: v4(),
-                                                        Name: faker.person.firstName(),
-                                                        Surname: faker.person.lastName(),
-                                                        Birthday: faker.date.birthdate().toISOString(),
-                                                        Email: faker.internet.email(),
-                                                        SubscribeToNewsletter: faker.datatype.boolean(),
-                                                        FavoriteColor: {
-                                                            Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-                                                            IsSome: true,
-                                                        },
-                                                        Friends: {
-                                                            From: 0,
-                                                            To: 0,
-                                                            HasMore: true,
-                                                            Values: {},
-                                                        },
+                                            const fieldName = apiName.replace(/Api$/, "");
+                                            //todo: in get many unlinked we dont call for unlinked ones' by design (for now)
+                                            const call = 
+                                                getSeedEntityUnlinked("sample",typeName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
+                                                    .then( valueOrErrors => ({
+                                                        Values: valueOrErrors.kind == "value" ? valueOrErrors.value : [],
+                                                        HasMore: false,//TODO
+                                                        From: 1,
+                                                        To: 5,
                                                     }))
-                                                    .reduce((acc, curr) => {
-                                                        acc[curr.Id] = curr;
-                                                        return acc;
-                                                    }, {} as any),
-                                                HasMore: false,
-                                                From: 1,
-                                                To: 5,
-                                            })
-                                            )
+                                            return call
+                                            // return PromiseRepo.Default.mock(() => ({
+                                            //     Values: Range(1, 5)
+                                            //         .map((_) => ({
+                                            //             Id: v4(),
+                                            //             Name: faker.person.firstName(),
+                                            //             Surname: faker.person.lastName(),
+                                            //             Birthday: faker.date.birthdate().toISOString(),
+                                            //             Email: faker.internet.email(),
+                                            //             SubscribeToNewsletter: faker.datatype.boolean(),
+                                            //             FavoriteColor: {
+                                            //                 Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                                            //                 IsSome: true,
+                                            //             },
+                                            //             Friends: {
+                                            //                 From: 0,
+                                            //                 To: 0,
+                                            //                 HasMore: true,
+                                            //                 Values: {},
+                                            //             },
+                                            //         }))
+                                            //         .reduce((acc, curr) => {
+                                            //             acc[curr.Id] = curr;
+                                            //             return acc;
+                                            //         }, {} as any),
+                                            //     HasMore: false,
+                                            //     From: 1,
+                                            //     To: 5,
+                                            // })
+                                            // )
                                             .then((res) => (
                                             //     {
                                             //     hasMoreValues: false, //res.HasMore,

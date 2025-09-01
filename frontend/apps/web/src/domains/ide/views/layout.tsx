@@ -88,14 +88,14 @@ export const IdeLayout: IdeView = (props) =>{
                                     async () => {
 
                                         //debugger
-                                        //if (props.context.bridge.bridge.right.right.kind == "value" && props.context.bridge.bridge.left.right.kind == "value") {
+                                        if (props.context.bridge.bridge.right.right.kind == "value" && props.context.bridge.bridge.left.right.kind == "value") {
                                             const spec = {
                                                 name: props.context.specName.value,
                                                 fields: props.context.bridge.bridge.right.right.value
                                             };
                                             debugger
                                             const t = await Api.updateBridge(props.context.bridge.bridge.left.right.value, spec);
-                                        //}
+                                        }
                                     }
                                 }
                                 // onReSeed={
@@ -174,54 +174,102 @@ export const IdeLayout: IdeView = (props) =>{
 
                     </div>
 
-                    <props.JsonEditor{...props} view={V1Editor}/>
+                    <props.JsonEditor{...props} view={V1Editor} />
                     <props.JsonEditor{...props} view={V2Editor}/>
                     <props.JsonEditor{...props} view={SeedEditor}/>
                 </>}
             header={
-                <div css={style.headerParent}>
-                    <div css={style.logoParent}>
-                        <img
-                            style={{height: 80}}
-                            src="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"
-                            alt="Ballerina"
-                        />
-                        <p>IDE</p>
-                        <HorizontalDropdown
-                            label={"Select spec"}
-                            onChange={async (name: string) => {
-
-                                const t = await Api.getSpec(name);
-                                props.setState(
-                                    Ide.Updaters.Core.bridge(
-                                        Bridge.Operations.load(t)
-                                    ).then(Ide.Updaters.Core.specName(replaceWith(Value.Default(name))))
-                                )
-
-                            }}
-                            options={props.context.specNames}/>
+                <div className="navbar bg-base-100 shadow-sm">
+                    <img
+                        style={{height: 80}}
+                        src="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"
+                        alt="Ballerina"
+                    />
+                    <div className="flex-1">
+                        <a className="btn btn-ghost text-xl">IDE</a>
                     </div>
-                    <div css={{flex: 1}}/>
-                    <details className="dropdown">
-                        <summary className="btn m-1">{theme}</summary>
-                        <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
-                            <li><a onClick={(e) => setTheme("wireframe")}>wireframe</a></li>
-                            <li><a onClick={(e) => setTheme("fantasy")}>fantasy</a></li>
-                            <li><a onClick={(e) => setTheme("winter")}>winter</a></li>
-                            <li><a onClick={(e) => setTheme("lofi")}>lofi</a></li>
-                            <li><a onClick={(e) => setTheme("dark")}>dark</a></li>
-                            <li><a onClick={(e) => setTheme("dracula")}>dracula</a></li>
-                            <li><a onClick={(e) => setTheme("bumblebee")}>bumblebee</a></li>
-                            <li><a onClick={(e) => setTheme("emerald")}>emerald</a></li>
-                            <li><a onClick={(e) => setTheme("halloween")}>halloween</a></li>
-                            <li><a onClick={(e) => setTheme("retro")}>retro</a></li>
-                            <li><a onClick={(e) => setTheme("cyberpunk")}>cyberpunk</a></li>
-                            <li><a onClick={(e) => setTheme("abyss")}>abyss</a></li>
+                             <HorizontalDropdown
+                                 label={"Select spec"}
+                                 onChange={async (name: string) => {
+                    
+                                     const t = await Api.getSpec(name);
+                                    props.setState(
+                                         Ide.Updaters.Core.bridge(
+                                             Bridge.Operations.load(t)
+                                         ).then(Ide.Updaters.Core.specName(replaceWith(Value.Default(name))))
+                                     )
+                    
+                                 }}
+                                 options={props.context.specNames}/>
+                    <div className="flex-none mr-32">
+                        <ul className="menu menu-horizontal px-1"  style={{zIndex: 10000, position:"relative"}}>
+                            <li><a>docs</a></li>
+                            <li>
+                                <details>
+                                    <summary>{theme}</summary>
+                                             <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                                                 <li><a onClick={(e) => setTheme("wireframe")}>wireframe</a></li>
+                                                 <li><a onClick={(e) => setTheme("fantasy")}>fantasy</a></li>
+                                                 <li><a onClick={(e) => setTheme("winter")}>winter</a></li>
+                                                 <li><a onClick={(e) => setTheme("lofi")}>lofi</a></li>
+                                                 <li><a onClick={(e) => setTheme("dark")}>dark</a></li>
+                                                 <li><a onClick={(e) => setTheme("dracula")}>dracula</a></li>
+                                                 <li><a onClick={(e) => setTheme("bumblebee")}>bumblebee</a></li>
+                                                 <li><a onClick={(e) => setTheme("emerald")}>emerald</a></li>
+                                                 <li><a onClick={(e) => setTheme("halloween")}>halloween</a></li>
+                                                 <li><a onClick={(e) => setTheme("retro")}>retro</a></li>
+                                                 <li><a onClick={(e) => setTheme("cyberpunk")}>cyberpunk</a></li>
+                                                <li><a onClick={(e) => setTheme("abyss")}>abyss</a></li>
+                                            </ul>
+                                </details>
+                            </li>
                         </ul>
-                    </details>
-
-
-                </div>}
+                    </div>
+                </div>
+                // <div css={style.headerParent}>
+                //     <div css={style.logoParent}>
+                //         <img
+                //             style={{height: 80}}
+                //             src="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"
+                //             alt="Ballerina"
+                //         />
+                //         <p>IDE</p>
+                //         <HorizontalDropdown
+                //             label={"Select spec"}
+                //             onChange={async (name: string) => {
+                //
+                //                 const t = await Api.getSpec(name);
+                //                 props.setState(
+                //                     Ide.Updaters.Core.bridge(
+                //                         Bridge.Operations.load(t)
+                //                     ).then(Ide.Updaters.Core.specName(replaceWith(Value.Default(name))))
+                //                 )
+                //
+                //             }}
+                //             options={props.context.specNames}/>
+                //     </div>
+                //     <div css={{flex: 1}}/>
+                //     <details className="dropdown">
+                //         <summary className="btn m-1 mr-24">{theme}</summary>
+                //         <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                //             <li><a onClick={(e) => setTheme("wireframe")}>wireframe</a></li>
+                //             <li><a onClick={(e) => setTheme("fantasy")}>fantasy</a></li>
+                //             <li><a onClick={(e) => setTheme("winter")}>winter</a></li>
+                //             <li><a onClick={(e) => setTheme("lofi")}>lofi</a></li>
+                //             <li><a onClick={(e) => setTheme("dark")}>dark</a></li>
+                //             <li><a onClick={(e) => setTheme("dracula")}>dracula</a></li>
+                //             <li><a onClick={(e) => setTheme("bumblebee")}>bumblebee</a></li>
+                //             <li><a onClick={(e) => setTheme("emerald")}>emerald</a></li>
+                //             <li><a onClick={(e) => setTheme("halloween")}>halloween</a></li>
+                //             <li><a onClick={(e) => setTheme("retro")}>retro</a></li>
+                //             <li><a onClick={(e) => setTheme("cyberpunk")}>cyberpunk</a></li>
+                //             <li><a onClick={(e) => setTheme("abyss")}>abyss</a></li>
+                //         </ul>
+                //     </details>
+                //
+                //
+                // </div>
+                }
             right={
                 <>
                     <Messages
@@ -241,12 +289,12 @@ export const IdeLayout: IdeView = (props) =>{
                                                 onChange={e => 
                                                     props.setState(Ide.Updaters.Core.liveUpdates(
                                                         replaceWith(
-                                                            props.context.liveUpdates.kind == "l" ? Option.Default.some(5): Option.Default.none()
+                                                            props.context.liveUpdates.kind == "l" ? Option.Default.some(3): Option.Default.none()
                                                         )
                                                     ))
                                                 } 
                                                 checked={props.context.liveUpdates.kind == "r"}
-                                                className="toggle border-indigo-600 bg-indigo-500 checked:border-orange-500 checked:bg-orange-400 checked:text-orange-800"
+                                                className="toggle"
                                             />
                                             {props.context.liveUpdates.kind == "r" &&  <span className="countdown">
   <span style={{"--value":props.context.liveUpdates.value} /* as React.CSSProperties */ } aria-live="polite" aria-label={props.context.liveUpdates.value}>{props.context.liveUpdates.value}</span>
@@ -277,6 +325,8 @@ export const IdeLayout: IdeView = (props) =>{
                                 />
                                     <DispatcherFormsApp
                                         specName={props.context.specName.value}
+                                        entityName={"People"}
+                                        typeName={"Person"}
                                         spec={props.context.bridge.bridge.left.right.value}/></>
                                 }
 

@@ -20,7 +20,7 @@ import {
     ErrorRendererProps,
     DispatchInjectedPrimitive,
     DispatchOnChange,
-    AggregatedFlags,
+    AggregatedFlags, LookupApiOne,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 
@@ -42,10 +42,9 @@ import {
 } from "../../dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
-import {DispatchFromConfigApis} from "playground-core";
+import {DispatchFromConfigApis, IdeFormProps} from "playground-core";
 // import {getSeedEntity, updateEntity, UnmockingApisEntities, UnmockingApisTables, UnmockingApisStreams, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
-import {getSeedEntity, updateEntity} from "playground-core";
-
+import {getSeedEntity, getLookup, GetLookupResponse, updateEntity, UnmockingApisLookups, findByDispatchType} from "playground-core";
 const ShowFormsParsingErrors = (
     parsedFormsConfig: DispatchSpecificationDeserializationResult<
         DispatchPassthroughFormInjectedTypes,
@@ -99,7 +98,7 @@ const InstantiatedDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
     DispatchPassthroughFormExtraContext
 >();
 
-export const DispatcherFormsApp = (props: {spec:any, specName: string}) => {
+export const DispatcherFormsApp = (props: IdeFormProps) => {
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
         DispatchFormsParserState<
             DispatchPassthroughFormInjectedTypes,
@@ -258,30 +257,80 @@ export const DispatcherFormsApp = (props: {spec:any, specName: string}) => {
     };
 
     useEffect(() => {
-        getSeedEntity(props.specName, "People")
-            .then((raw) => {
-                
-                if (
-                    specificationDeserializer.deserializedSpecification.sync.kind ==
-                    "loaded" &&
-                    specificationDeserializer.deserializedSpecification.sync.value.kind ==
-                    "value" && 
-                    raw.kind == "value"
-                ) {
-                    debugger
-                    const parsed =
-                        specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get("person-transparent")!
-                            .parseEntityFromApi(raw.value[0].value);
-                    
-                    if (parsed.kind == "errors") {
-                        console.error("parsed entity errors", parsed.errors);
-                    } else {
-                        setEntity(Sum.Default.left(parsed));
-                        setEntityId(raw.value[0].id);
+        if (
+            specificationDeserializer.deserializedSpecification.sync.kind ==
+            "loaded" &&
+            specificationDeserializer.deserializedSpecification.sync.value.kind ==
+            "value" 
+        ) {
+            const spec = specificationDeserializer.deserializedSpecification.sync.value.value
+            const {lookupSources, specApis} = specificationDeserializer.deserializedSpecification.sync.value.value.dispatcherContext
+
+            getSeedEntity(props.specName, props.entityName)
+                .then(async (raw) => {
+                   
+                    if (raw.kind == "value") {
+                        
+                        const id = raw.value[0].id
+                        debugger
+                        const parsed =
+                            spec.launchers.passthrough
+                                .get("person-transparent")!
+                                .parseEntityFromApi(raw.value[0].value);
+
+
+
+                        if (parsed.kind == "errors") {
+                            console.error("parsed entity errors", parsed.errors);
+                        } else {
+                            const entity = parsed.value;
+                            const e = entity as any;
+                            if(specApis.lookups && lookupSources){
+                                debugger
+                                const oneFields = findByDispatchType(specApis.lookups, props.typeName)
+                                const fields =
+                                    oneFields
+                                        .flatMap(x => {
+                                    const s = lookupSources(x.key);
+                                    return s.kind === "value" ? [{ api: x.key, sources: s.value }] : [];
+                                });
+                          
+                                const fetched =
+                                    await Promise.all(
+                                        fields.map(
+                                async field =>
+                                            ({ 
+                                                key: field.api.replace(/Api$/, ""),
+                                                value: await getLookup(props.specName, field.api.replace(/Api$/,""),  id)
+                                            })
+                                        ));
+                                const ones =  [...fetched, { key: "Id", value: ValueOrErrors.Default.return(id) }];
+                                
+                                const pairs = 
+                                    ones
+                                    .flatMap(x => {
+                                        const tmp =  x.value.kind === "value" ? x.key == "Id" ? x.value.value : PredicateValue.Default.option(true,PredicateValue.Default.record(x.value.value.values[0])) : null;
+                                        debugger
+                                        return x.value.kind === "value" ? [[x.key, tmp] as const] : []
+                                    });
+
+                                const updated = {
+                                    ...e,
+                                    fields: e.fields.merge(Object.fromEntries(pairs)),
+                                };
+                                debugger
+                                //setEntity(Sum.Default.left(parsed));
+                                setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));// pv));
+                                setEntityId(id);
+                                
+    
+                            }
+                            
+
+                        }
                     }
-                }
-            });
+                });
+        }
         //UnmockingApisEntities.entityApis
         DispatchFromConfigApis.entityApis
             .get("person-config")("")
@@ -327,7 +376,7 @@ export const DispatcherFormsApp = (props: {spec:any, specName: string}) => {
 
     return (
         <div className="App">
-            <h1>Ballerina 🩰</h1>
+            {/*<h1>Ballerina 🩰</h1>*/}
             <div className="card">
                 <table>
                     <tbody>
@@ -349,7 +398,7 @@ export const DispatcherFormsApp = (props: {spec:any, specName: string}) => {
                                     entityApis: DispatchFromConfigApis.entityApis, //UnmockingApisEntities.entityApis,
                                     tableApiSources:
                                     DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
-                                    lookupSources: DispatchFromConfigApis.lookupSources, // UnmockingApisLookups.lookupSources,
+                                    lookupSources: UnmockingApisLookups.lookupSources,
                                     getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
                                     IdWrapper,
                                     ErrorRenderer,
@@ -372,38 +421,38 @@ export const DispatcherFormsApp = (props: {spec:any, specName: string}) => {
                                 view={unit}
                                 foreignMutations={unit}
                             />
-                            <h3> Dispatcher Passthrough form</h3>
-
-                            <h4>Config</h4>
-                            <div style={{ border: "2px dashed lightblue" }}>
-                                <InstantiatedDispatchFormRunnerTemplate
-                                    context={{
-                                        ...specificationDeserializer,
-                                        ...entityConfigState,
-                                        launcherRef: {
-                                            name: "person-config",
-                                            kind: "passthrough",
-                                            entity: config,
-                                            config: Sum.Default.left(
-                                                ValueOrErrors.Default.return(
-                                                    PredicateValue.Default.record(OrderedMap()),
-                                                ),
-                                            ),
-                                            onEntityChange: onEntityConfigChange,
-                                        },
-                                        remoteEntityVersionIdentifier:
-                                        remoteConfigEntityVersionIdentifier,
-                                        showFormParsingErrors: ShowFormsParsingErrors,
-                                        extraContext: {
-                                            flags: Set(["BC", "X"]),
-                                        },
-                                    }}
-                                    setState={setEntityConfigState}
-                                    view={unit}
-                                    foreignMutations={unit}
-                                />
-                            </div>
-                            <h3>Person</h3>
+                            {/*<h3> Dispatcher Passthrough form</h3>*/}
+                            
+                            {/*<h4>Config</h4>*/}
+                            {/*<div style={{ border: "2px dashed lightblue" }}>*/}
+                            {/*    <InstantiatedDispatchFormRunnerTemplate*/}
+                            {/*        context={{*/}
+                            {/*            ...specificationDeserializer,*/}
+                            {/*            ...entityConfigState,*/}
+                            {/*            launcherRef: {*/}
+                            {/*                name: "person-config",*/}
+                            {/*                kind: "passthrough",*/}
+                            {/*                entity: config,*/}
+                            {/*                config: Sum.Default.left(*/}
+                            {/*                    ValueOrErrors.Default.return(*/}
+                            {/*                        PredicateValue.Default.record(OrderedMap()),*/}
+                            {/*                    ),*/}
+                            {/*                ),*/}
+                            {/*                onEntityChange: onEntityConfigChange,*/}
+                            {/*            },*/}
+                            {/*            remoteEntityVersionIdentifier:*/}
+                            {/*            remoteConfigEntityVersionIdentifier,*/}
+                            {/*            showFormParsingErrors: ShowFormsParsingErrors,*/}
+                            {/*            extraContext: {*/}
+                            {/*                flags: Set(["BC", "X"]),*/}
+                            {/*            },*/}
+                            {/*        }}*/}
+                            {/*        setState={setEntityConfigState}*/}
+                            {/*        view={unit}*/}
+                            {/*        foreignMutations={unit}*/}
+                            {/*    />*/}
+                            {/*</div>*/}
+                            {/*<h3>Person</h3>*/}
                             {entityPath && entityPath.kind == "value" && (
                   <pre
                     style={{

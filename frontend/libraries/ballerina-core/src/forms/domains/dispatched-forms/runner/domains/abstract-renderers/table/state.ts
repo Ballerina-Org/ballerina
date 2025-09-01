@@ -390,6 +390,7 @@ export const TableAbstractRendererState = {
     ): OrderedMap<string, ValueRecord> =>
       OrderedMap(
         Object.entries(values).map(([key, _]) => {
+     
           const parsedRow = fromApiRaw(_);
           if (parsedRow.kind == "errors") {
             console.error(parsedRow.errors.toJS());

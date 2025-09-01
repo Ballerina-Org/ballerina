@@ -51,8 +51,9 @@ export const Grid: React.FC<{
     }, []);
 
     return (
-        <div css={style.parent}  data-theme={theme}>
-            <div css={style.header}>{header}</div>
+        <div css={style.parent} data-theme={theme}>
+
+            {header}
             <div css={style.divider}>
                 <div
                     ref={leftRef}

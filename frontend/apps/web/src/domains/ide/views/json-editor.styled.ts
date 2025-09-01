@@ -4,7 +4,7 @@ export const myTheme = {
     fragments: { edit: 'rgb(42, 161, 152)' },
     styles: {
         container: {
-            backgroundColor: '#777777',
+            backgroundColor: 'rgb(255, 242, 72)',
             fontFamily: 'monospace',
         },
         collection: {},
@@ -50,17 +50,17 @@ export const style = {
   `,
 
     input: css`
-      padding: 0.5rem;
-      margin-left: 2em;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 0.25rem;
+      //padding: 0.5rem;
+      //margin-left: 2em;
+      //font-size: 1rem;
+      //border: 1px solid #ccc;
+      //border-radius: 0.25rem;
   `,
     select: css`
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 0.25rem;
+      //padding: 0.5rem;
+      //font-size: 1rem;
+      //border: 1px solid #ccc;
+      //border-radius: 0.25rem;
   `,
     output: css`
       margin-top: 1rem;

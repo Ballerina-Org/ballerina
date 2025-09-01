@@ -3,8 +3,11 @@
 @tailwind utilities;
     /******* overrides *******/
 #root { margin: 0; padding: 0; }
-
-/******* IDE *******/
+.jer-editor-container {
+    max-width: 100% !important;
+    border-radius: 0 !important;
+}
+    /******* IDE *******/
 
 .IDE {
     width: 100%;
