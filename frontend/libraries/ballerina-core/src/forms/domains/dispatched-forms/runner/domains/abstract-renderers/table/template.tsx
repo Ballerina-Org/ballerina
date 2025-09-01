@@ -570,29 +570,27 @@ export const TableAbstractRenderer = <
     }
 
     const disabledColumnKeysSet = Set(
-      disabledColumnKeys.value.filter((fieldName) => fieldName != null),
+      disabledColumnKeys.value.filter((fieldName) => fieldName != null), 
     );
 
     const hasMoreValues = props.context.value.hasMoreValues;
+
+    const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
+      CellTemplates.keySeq().toArray().includes(_),
+    );
 
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
-              .filter((_, column) =>
-                visibleColumns.value.columns.includes(column),
-              )
-              .map((_, column) => {
-                return EmbeddedCellTemplates.get(column)!(rowId)(
+              .filter((_, column) => validVisibleColumns.includes(column))
+              .map((_, column) =>
+                EmbeddedCellTemplates.get(column)!(rowId)(
                   rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column));
-              }),
+                )(disabledColumnKeysSet.has(column)),
+              ),
           );
-
-    const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
-      TableEntityType.fields.keySeq().toArray().includes(_),
-    );
 
     if (props.context.customFormState.isFilteringInitialized == false) {
       return <></>;
