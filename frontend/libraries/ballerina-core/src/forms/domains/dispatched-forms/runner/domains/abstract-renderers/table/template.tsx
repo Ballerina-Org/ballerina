@@ -570,7 +570,7 @@ export const TableAbstractRenderer = <
     }
 
     const disabledColumnKeysSet = Set(
-      disabledColumnKeys.value.filter((fieldName) => fieldName != null), 
+      disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
 
     const hasMoreValues = props.context.value.hasMoreValues;
