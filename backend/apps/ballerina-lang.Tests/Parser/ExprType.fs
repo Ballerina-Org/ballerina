@@ -213,6 +213,27 @@ let ``Should parse record`` () =
     result
     (ExprType.RecordType(Map.ofList [ "a", ExprType.PrimitiveType PrimitiveType.StringType; "b", ExprType.UnitType ]))
 
+[<Test>]
+let ``Should parse keyof`` () =
+  let json =
+    JsonValue.Record
+      [| "fun", JsonValue.String "KeyOf"
+         "args", JsonValue.Array [| JsonValue.String "record" |] |]
+
+  let result = parseExprType json
+  assertSuccess result (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, []))
+
+[<Test>]
+let ``Should parse keyof with excluded keys`` () =
+  let json =
+    JsonValue.Record
+      [| "fun", JsonValue.String "KeyOf"
+         "args", JsonValue.Array [| JsonValue.String "record"; JsonValue.Array [| JsonValue.String "a" |] |] |]
+
+  let result = parseExprType json
+  assertSuccess result (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, [ "a" ]))
+
+
 module ExprTypeToAndFromJsonTests =
   let private toAndFromJson (expr: ExprType) : Sum<ExprType, Errors> =
     expr |> ExprType.ToJson |> ExprType.Parse

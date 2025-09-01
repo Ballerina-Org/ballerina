@@ -92,26 +92,26 @@ let testCases guid : TypeValueTestCase list =
               "kind":"lambda",
               "lambda":{
             "param":{"name":"T","kind":{"kind":"star"}},
-            "body":{"kind":"int"}
+            "body":{"kind":"int32"}
               }
           }"""
-      Expected = TypeValue.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int) }
+      Expected = TypeValue.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
     { Name = "Arrow"
       Json =
         """{
               "kind":"arrow",
               "arrow":{
-            "param":{"kind":"int"},
+            "param":{"kind":"int32"},
             "returnType":{"kind":"string"}
               }
           }"""
-      Expected = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.String) }
+      Expected = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String) }
     { Name = "Union"
       Json =
         """{
           "kind":"union",
           "union":[
-            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int"}],
+            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}],
             [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}],
             [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"kind":"bool"}]
           ]
@@ -119,7 +119,7 @@ let testCases guid : TypeValueTestCase list =
       Expected =
         [ { TypeSymbol.Name = "foo"
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-          TypeValue.Primitive PrimitiveType.Int
+          TypeValue.Primitive PrimitiveType.Int32
           { TypeSymbol.Name = "bar"
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
           TypeValue.Primitive PrimitiveType.String
@@ -133,44 +133,44 @@ let testCases guid : TypeValueTestCase list =
         """{
           "kind":"tuple",
           "tuple":[
-                {"kind":"int"},
+                {"kind":"int32"},
                 {"kind":"string"}
             ]
           }"""
       Expected =
         TypeValue.Tuple
-          [ TypeValue.Primitive PrimitiveType.Int
+          [ TypeValue.Primitive PrimitiveType.Int32
             TypeValue.Primitive PrimitiveType.String ] }
     { Name = "Sum"
       Json =
         """{
           "kind":"sum",
           "sum":[
-            {"kind":"int"},
+            {"kind":"int32"},
             {"kind":"string"},
             {"kind":"bool"}
             ]
           }"""
       Expected =
         TypeValue.Sum
-          [ TypeValue.Primitive PrimitiveType.Int
+          [ TypeValue.Primitive PrimitiveType.Int32
             TypeValue.Primitive PrimitiveType.String
             TypeValue.Primitive PrimitiveType.Bool ] }
     { Name = "List"
-      Json = """{"kind":"list","list":{"kind":"int"}}"""
-      Expected = TypeValue.List(TypeValue.Primitive PrimitiveType.Int) }
+      Json = """{"kind":"list","list":{"kind":"int32"}}"""
+      Expected = TypeValue.List(TypeValue.Primitive PrimitiveType.Int32) }
     { Name = "Set"
       Json = """{"kind":"set","set":{"kind":"string"}}"""
       Expected = TypeValue.Set(TypeValue.Primitive PrimitiveType.String) }
     { Name = "Map"
-      Json = """{"kind":"map","map":[{"kind":"bool"}, {"kind":"int"}]}"""
-      Expected = TypeValue.Map(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Int) }
+      Json = """{"kind":"map","map":[{"kind":"bool"}, {"kind":"int32"}]}"""
+      Expected = TypeValue.Map(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Int32) }
     { Name = "Record"
       Json =
         """{
               "kind":"record",
               "record":[
-                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int"}],
+                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}],
                 [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}]
               ]
           }"""
@@ -179,7 +179,7 @@ let testCases guid : TypeValueTestCase list =
           Map.ofList
             [ { TypeSymbol.Name = "foo"
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-              TypeValue.Primitive PrimitiveType.Int
+              TypeValue.Primitive PrimitiveType.Int32
               { TypeSymbol.Name = "bar"
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
               TypeValue.Primitive PrimitiveType.String ]

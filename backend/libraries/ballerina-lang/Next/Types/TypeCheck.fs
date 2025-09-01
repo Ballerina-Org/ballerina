@@ -160,7 +160,7 @@ module TypeCheck =
         state {
           match t with
           | Expr.Primitive(PrimitiveValue.Int v) ->
-            return Expr.Primitive(PrimitiveValue.Int v), TypeValue.Primitive(PrimitiveType.Int)
+            return Expr.Primitive(PrimitiveValue.Int v), TypeValue.Primitive(PrimitiveType.Int32)
 
           | Expr.Primitive(PrimitiveValue.Bool v) ->
             return Expr.Primitive(PrimitiveValue.Bool v), TypeValue.Primitive(PrimitiveType.Bool)

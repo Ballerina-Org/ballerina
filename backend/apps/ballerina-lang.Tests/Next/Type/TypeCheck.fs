@@ -17,7 +17,9 @@ open Ballerina.Reader.WithError
 open Ballerina.Fun
 
 let private (!) = Identifier.LocalScope
-let (=>) t f = Identifier.FullyQualified([ t ], f)
+let private (=>) t f = Identifier.FullyQualified([ t ], f)
+let private (!!) = Identifier.LocalScope >> TypeExpr.Lookup
+let private (=>>) = Identifier.FullyQualified >> TypeExpr.Lookup
 
 [<Test>]
 let ``LangNext-TypeCheck let typechecks`` () =
@@ -37,8 +39,8 @@ let ``LangNext-TypeCheck let typechecks`` () =
       Map.add
         !"+"
         (TypeValue.Arrow(
-          TypeValue.Primitive PrimitiveType.Int,
-          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.Int)
+          TypeValue.Primitive PrimitiveType.Int32,
+          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
         ))
     )
 
@@ -46,7 +48,7 @@ let ``LangNext-TypeCheck let typechecks`` () =
     TypeExpr.TypeCheck program |> State.Run(initialContext, TypeCheckState.Empty)
 
   match actual with
-  | Sum.Left((_, TypeValue.Primitive(PrimitiveType.Int)), _) -> Assert.Pass()
+  | Sum.Left((_, TypeValue.Primitive(PrimitiveType.Int32)), _) -> Assert.Pass()
   | Sum.Left((_, t), _) -> Assert.Fail $"Expected typechecking to succeed with 'Int' but succeeded with: {t}"
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
@@ -68,8 +70,8 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
       Map.add
         !"+"
         (TypeValue.Arrow(
-          TypeValue.Primitive PrimitiveType.Int,
-          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.Int)
+          TypeValue.Primitive PrimitiveType.Int32,
+          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
         ))
     )
 
@@ -77,7 +79,7 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
     TypeExpr.TypeCheck program |> State.Run(initialContext, TypeCheckState.Empty)
 
   match actual with
-  | Sum.Left((_, TypeValue.Arrow(TypeValue.Primitive(PrimitiveType.Int), TypeValue.Primitive(PrimitiveType.Int))), _) ->
+  | Sum.Left((_, TypeValue.Arrow(TypeValue.Primitive(PrimitiveType.Int32), TypeValue.Primitive(PrimitiveType.Int32))), _) ->
     Assert.Pass()
   | Sum.Left((_, t), _) -> Assert.Fail $"Expected typechecking to succeed with 'Int -> Int' but succeeded with: {t}"
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
@@ -105,7 +107,7 @@ let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
 
   let expected =
     TypeValue.Record(
-      [ (X, TypeValue.Primitive PrimitiveType.Int)
+      [ (X, TypeValue.Primitive PrimitiveType.Int32)
         (Y, TypeValue.Primitive PrimitiveType.Bool) ]
       |> Map.ofList
     )
@@ -156,18 +158,18 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
       Map.add
         !"+"
         (TypeValue.Arrow(
-          TypeValue.Primitive PrimitiveType.Int,
-          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.Int)
+          TypeValue.Primitive PrimitiveType.Int32,
+          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
         ))
     )
 
   let actual = TypeExpr.TypeCheck program |> State.Run(initialContext, initialState)
 
   match actual with
-  | Sum.Left((_, TypeValue.Arrow(TypeValue.Union cases, TypeValue.Primitive PrimitiveType.Int)), _) when
+  | Sum.Left((_, TypeValue.Arrow(TypeValue.Union cases, TypeValue.Primitive PrimitiveType.Int32)), _) when
     cases |> Seq.length = 3
-    && cases |> Map.tryFind Case1Of3 = Some(TypeValue.Primitive PrimitiveType.Int)
-    && cases |> Map.tryFind Case2Of3 = Some(TypeValue.Primitive PrimitiveType.Int)
+    && cases |> Map.tryFind Case1Of3 = Some(TypeValue.Primitive PrimitiveType.Int32)
+    && cases |> Map.tryFind Case2Of3 = Some(TypeValue.Primitive PrimitiveType.Int32)
     ->
     Assert.Pass()
   | Sum.Left((_, t), _) ->
@@ -442,4 +444,85 @@ let ``LangNext-TypeCheck sum cons and des typecheck`` () =
   | Sum.Left((_, t), _) ->
     Assert.Fail
       $"Expected typechecking to succeed with '(Case1Of3 of Int | Case2Of3 of Int | Case3Of3 of _) -> Int' but succeeded with: {t}"
+  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+
+
+
+[<Test>]
+let ``LangNext-TypeCheck HKTs over option typechecks`` () =
+  let program =
+    Expr.TypeLet(
+      "Option",
+      TypeExpr.Let(
+        "Some",
+        TypeExpr.NewSymbol "Some",
+        TypeExpr.Let(
+          "None",
+          TypeExpr.NewSymbol "None",
+          TypeExpr.Lambda(
+            ("a", Kind.Star) |> TypeParameter.Create,
+            TypeExpr.Union([ (!!"Some", !!"a"); (!!"None", TypeExpr.Primitive PrimitiveType.Unit) ])
+          )
+        )
+      ),
+      Expr.Let(
+        "func" |> Var.Create,
+        Expr.TypeLambda(
+          ("f", Kind.Arrow(Kind.Star, Kind.Star)) |> TypeParameter.Create,
+          Expr.TypeLambda(
+            ("a", Kind.Star) |> TypeParameter.Create,
+            Expr.Lambda(
+              "cons" |> Var.Create,
+              Some(TypeExpr.Arrow(!!"a", TypeExpr.Apply(!!"f", !!"a"))),
+              Expr.Lambda(
+                "nil" |> Var.Create,
+                Some(TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Apply(!!"f", !!"a"))),
+                Expr.Lambda(
+                  "flag" |> Var.Create,
+                  Some(TypeExpr.Primitive PrimitiveType.Bool),
+                  Expr.Lambda(
+                    "x" |> Var.Create,
+                    Some(!!"a"),
+                    Expr.If(
+                      Expr.Lookup !"flag",
+                      Expr.Apply(Expr.Lookup !"cons", Expr.Lookup !"x"),
+                      Expr.Apply(Expr.Lookup !"nil", Expr.Primitive PrimitiveValue.Unit)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ),
+        Expr.TypeApply(Expr.TypeApply(Expr.Lookup !"func", !!"Option"), TypeExpr.Primitive PrimitiveType.Decimal)
+      )
+    )
+
+  let initialContext = TypeCheckContext.Empty
+
+  let initialState = TypeCheckState.Empty
+
+  let initialContext =
+    initialContext
+    |> TypeCheckContext.Updaters.Values(
+      Map.add
+        !"+"
+        (TypeValue.Arrow(
+          TypeValue.Primitive PrimitiveType.Decimal,
+          TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Decimal)
+        ))
+    )
+
+  let actual = TypeExpr.TypeCheck program |> State.Run(initialContext, initialState)
+
+  match actual with
+  | Sum.Left((_, // note: the unions are all instances of `Option[Decimal]` here, omitted for brevity
+              TypeValue.Arrow(TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Union(_)), // cons
+                              TypeValue.Arrow(TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Unit, TypeValue.Union(_)), // nil
+                                              TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Bool, // flag
+                                                              TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, // x
+                                                                              TypeValue.Union(_)))))),
+             _) when true -> Assert.Pass()
+  | Sum.Left((_, t), _) ->
+    Assert.Fail $"Expected typechecking to succeed with 'Decimal -> Option[Decimal]' but succeeded with: {t}"
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"

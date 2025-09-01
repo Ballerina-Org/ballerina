@@ -40,19 +40,22 @@ let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr`` (expression: TypeExpr)
 [<Test>]
 let ``Dsl:Type:TypeExpr json round-trip`` () =
   let testCases =
-    [ """{ "kind":"apply", "apply": [{"kind":"lookup", "lookup":"MyFunction"}, {"kind":"int"} ] }""",
-      TypeExpr.Apply(TypeExpr.Lookup("MyFunction" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
-      """{ "kind":"lambda", "lambda": [{"name":"T", "kind":{"kind":"star"}}, {"kind":"int"}] }""",
-      TypeExpr.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int)
-      """{ "kind":"arrow", "arrow": [{"kind":"int"}, {"kind":"string"} ] }""",
-      TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Int, TypeExpr.Primitive PrimitiveType.String)
+    [ """{ "kind":"apply", "apply": [{"kind":"lookup", "lookup":"MyFunction"}, {"kind":"int32"} ] }""",
+      TypeExpr.Apply(TypeExpr.Lookup("MyFunction" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
+      """{ "kind":"lambda", "lambda": [{"name":"T", "kind":{"kind":"star"}}, {"kind":"int32"}] }""",
+      TypeExpr.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32)
+      """{ "kind":"arrow", "arrow": [{"kind":"int32"}, {"kind":"string"} ] }""",
+      TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
 
-      """{ "kind":"record", "record": [[{"kind":"lookup", "lookup":"foo"}, {"kind":"int"}], [{"kind":"lookup", "lookup":"bar"}, {"kind":"string"}]] }""",
+      """{ "kind":"record", "record": [[{"kind":"lookup", "lookup":"foo"}, {"kind":"int32"}], [{"kind":"lookup", "lookup":"bar"}, {"kind":"string"}]] }""",
       TypeExpr.Record
-        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
+        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
           (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
 
-      """{"kind":"int"}""", TypeExpr.Primitive PrimitiveType.Int
+      """{"kind":"int32"}""", TypeExpr.Primitive PrimitiveType.Int32
+      """{"kind":"int64"}""", TypeExpr.Primitive PrimitiveType.Int64
+      """{"kind":"float32"}""", TypeExpr.Primitive PrimitiveType.Float32
+      """{"kind":"float64"}""", TypeExpr.Primitive PrimitiveType.Float64
       """{"kind":"string"}""", TypeExpr.Primitive PrimitiveType.String
       """{"kind":"bool"}""", TypeExpr.Primitive PrimitiveType.Bool
       """{"kind":"unit"}""", TypeExpr.Primitive PrimitiveType.Unit
@@ -62,32 +65,32 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{"kind":"dateonly"}""", TypeExpr.Primitive PrimitiveType.DateOnly
 
       """{ "kind": "lookup", "lookup": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
-      """{ "kind": "list", "list": {"kind": "int"} }""", TypeExpr.List(TypeExpr.Primitive PrimitiveType.Int)
+      """{ "kind": "list", "list": {"kind": "int32"} }""", TypeExpr.List(TypeExpr.Primitive PrimitiveType.Int32)
       """{ "kind": "set", "set": {"kind": "string"} }""", TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
-      """{ "kind": "map", "map": [{"kind": "bool"}, {"kind": "int"}] }""",
-      TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int)
-      """{ "kind": "keyOf", "keyOf": {"kind": "record", "record": [[{"kind": "lookup", "lookup": "foo"}, {"kind": "int"}]]} }""",
+      """{ "kind": "map", "map": [{"kind": "bool"}, {"kind": "int32"}] }""",
+      TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int32)
+      """{ "kind": "keyOf", "keyOf": {"kind": "record", "record": [[{"kind": "lookup", "lookup": "foo"}, {"kind": "int32"}]]} }""",
       TypeExpr.KeyOf(
-        TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int) ]
+        TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32) ]
       )
-      """{ "kind": "tuple", "tuple": [{"kind": "int"}, {"kind": "string"}] }""",
+      """{ "kind": "tuple", "tuple": [{"kind": "int32"}, {"kind": "string"}] }""",
       TypeExpr.Tuple
-        [ TypeExpr.Primitive PrimitiveType.Int
+        [ TypeExpr.Primitive PrimitiveType.Int32
           TypeExpr.Primitive PrimitiveType.String ]
-      """{ "kind": "union", "union": [[{"kind":"lookup", "lookup": "foo"}, {"kind": "int"}], [{"kind": "lookup", "lookup": "bar"}, {"kind": "string"}]] }""",
+      """{ "kind": "union", "union": [[{"kind":"lookup", "lookup": "foo"}, {"kind": "int32"}], [{"kind": "lookup", "lookup": "bar"}, {"kind": "string"}]] }""",
       TypeExpr.Union
-        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
+        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
           (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
-      """{ "kind": "sum", "sum": [{"kind": "int"}, {"kind": "string"}, {"kind": "bool"}] }""",
+      """{ "kind": "sum", "sum": [{"kind": "int32"}, {"kind": "string"}, {"kind": "bool"}] }""",
       TypeExpr.Sum
-        [ TypeExpr.Primitive PrimitiveType.Int
+        [ TypeExpr.Primitive PrimitiveType.Int32
           TypeExpr.Primitive PrimitiveType.String
           TypeExpr.Primitive PrimitiveType.Bool ]
-      """{ "kind": "flatten", "flatten": [{"kind": "int"}, {"kind": "string"}] }""",
-      TypeExpr.Flatten(TypeExpr.Primitive PrimitiveType.Int, TypeExpr.Primitive PrimitiveType.String)
-      """{ "kind": "exclude", "exclude": [{"kind": "int"}, {"kind": "string"}] }""",
-      TypeExpr.Exclude(TypeExpr.Primitive PrimitiveType.Int, TypeExpr.Primitive PrimitiveType.String)
-      """{ "kind": "rotate", "rotate": {"kind": "int"} }""", TypeExpr.Rotate(TypeExpr.Primitive PrimitiveType.Int) ]
+      """{ "kind": "flatten", "flatten": [{"kind": "int32"}, {"kind": "string"}] }""",
+      TypeExpr.Flatten(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
+      """{ "kind": "exclude", "exclude": [{"kind": "int32"}, {"kind": "string"}] }""",
+      TypeExpr.Exclude(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
+      """{ "kind": "rotate", "rotate": {"kind": "int32"} }""", TypeExpr.Rotate(TypeExpr.Primitive PrimitiveType.Int32) ]
 
   for (actualJson, expected) in testCases do
     (expected, JsonValue.Parse actualJson)

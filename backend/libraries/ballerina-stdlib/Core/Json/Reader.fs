@@ -9,7 +9,7 @@ module Reader =
   open Ballerina.Collections.Map
   open Ballerina.Errors
 
-  type ReaderWithErrorBuilder with
+  type ReaderBuilder with
     member _.AsRecord<'a, 'c>
       (fieldParsers: (List<string * (JsonValue -> Reader<'a, 'c, Errors>)>))
       (json: JsonValue)

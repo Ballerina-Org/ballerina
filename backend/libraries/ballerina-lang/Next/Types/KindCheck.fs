@@ -10,7 +10,7 @@ module KindCheck =
   open Ballerina.DSL.Next.Types.Patterns
 
   type KindCheckContext = { Kinds: Map<Identifier, Kind> }
-  type KindChecker = TypeExpr -> ReaderWithError<KindCheckContext, Kind, Errors>
+  type KindChecker = TypeExpr -> Reader<Kind, KindCheckContext, Errors>
 
   type KindCheckContext with
     static member Empty: KindCheckContext = { Kinds = Map.empty }
@@ -22,8 +22,8 @@ module KindCheck =
       { KindCheckContext.Empty with
           Kinds = kinds }
 
-    static member tryFindKind(name: Identifier) : ReaderWithError<KindCheckContext, Kind, Errors> =
-      ReaderWithError(fun ctx -> ctx.Kinds |> Map.tryFindWithError name "kinds" name.ToFSharpString)
+    static member tryFindKind(name: Identifier) : Reader<Kind, KindCheckContext, Errors> =
+      Reader(fun ctx -> ctx.Kinds |> Map.tryFindWithError name "kinds" name.ToFSharpString)
 
   type TypeExpr with
     static member KindCheck: KindChecker =

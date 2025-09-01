@@ -26,7 +26,10 @@ let ``Assert PrimitiveType -> ToJson -> FromJson = PrimitiveType``
 let testCases =
   [ ("""{"kind": "unit"}""", PrimitiveType.Unit)
     ("""{"kind": "guid"}""", PrimitiveType.Guid)
-    ("""{"kind": "int"}""", PrimitiveType.Int)
+    ("""{"kind": "int32"}""", PrimitiveType.Int32)
+    ("""{"kind": "int64"}""", PrimitiveType.Int64)
+    ("""{"kind": "float32"}""", PrimitiveType.Float32)
+    ("""{"kind": "float64"}""", PrimitiveType.Float64)
     ("""{"kind": "decimal"}""", PrimitiveType.Decimal)
     ("""{"kind": "string"}""", PrimitiveType.String)
     ("""{"kind": "bool"}""", PrimitiveType.Bool)

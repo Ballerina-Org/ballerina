@@ -23,7 +23,7 @@ module Unification =
   let private (!) = Identifier.LocalScope
 
   type TypeExpr with
-    static member FreeVariables(t: TypeExpr) : ReaderWithError<TypeExprEvalState, Set<TypeVar>, Errors> =
+    static member FreeVariables(t: TypeExpr) : Reader<Set<TypeVar>, TypeExprEvalState, Errors> =
       reader {
         match t with
         | TypeExpr.Lambda(p, t) ->
@@ -65,7 +65,7 @@ module Unification =
       }
 
   and TypeValue with
-    static member FreeVariables(t: TypeValue) : ReaderWithError<TypeExprEvalState, Set<TypeVar>, Errors> =
+    static member FreeVariables(t: TypeValue) : Reader<Set<TypeVar>, TypeExprEvalState, Errors> =
       reader {
         match t with
         | TypeValue.Var v ->
@@ -112,7 +112,7 @@ module Unification =
       }
 
   type TypeValue with
-    static member MostSpecific(t1: TypeValue, t2: TypeValue) : ReaderWithError<TypeExprEvalState, TypeValue, Errors> =
+    static member MostSpecific(t1: TypeValue, t2: TypeValue) : Reader<TypeValue, TypeExprEvalState, Errors> =
       reader {
         match t1, t2 with
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1 = p2 -> return t1
@@ -189,7 +189,7 @@ module Unification =
         return!
           op
           |> State.mapContext<UnificationContext> (fun (_ctx: UnificationContext) ->
-            { tryCompare = fun (v1, v2) -> TypeValue.MostSpecific(v1, v2) |> ReaderWithError.Run _ctx |> Sum.toOption
+            { tryCompare = fun (v1, v2) -> TypeValue.MostSpecific(v1, v2) |> Reader.Run _ctx |> Sum.toOption
               equalize =
                 fun (left, right) ->
                   state {
@@ -269,15 +269,15 @@ module Unification =
             let! v1 =
               t1
               |> TypeExpr.AsValue
-                (UnificationContext.tryFindType >> ReaderWithError.Run ctx1)
-                (UnificationContext.tryFindSymbol >> ReaderWithError.Run ctx1)
+                (UnificationContext.tryFindType >> Reader.Run ctx1)
+                (UnificationContext.tryFindSymbol >> Reader.Run ctx1)
               |> state.OfSum
 
             let! v2 =
               t2
               |> TypeExpr.AsValue
-                (UnificationContext.tryFindType >> ReaderWithError.Run ctx2)
-                (UnificationContext.tryFindSymbol >> ReaderWithError.Run ctx2)
+                (UnificationContext.tryFindType >> Reader.Run ctx2)
+                (UnificationContext.tryFindSymbol >> Reader.Run ctx2)
               |> state.OfSum
 
             // do Console.WriteLine($"Unifying lambda types: {v1} and {v2}")

@@ -181,20 +181,20 @@ module WithError =
       )
       |> state.Map(Map.ofSeq)
 
-    member state.OfReader<'a, 'c, 's, 'e>(ReaderWithError r: ReaderWithError<'c, 'a, 'e>) : State<'a, 'c, 's, 'e> =
+    member state.OfReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 'c, 'e>) : State<'a, 'c, 's, 'e> =
       State(fun (c, _s) ->
         match r c with
         | Sum.Left(res) -> Sum.Left(res, None)
         | Sum.Right(err) -> Sum.Right(err, None))
 
-    member state.OfStateReader<'a, 'c, 's, 'e>(ReaderWithError r: ReaderWithError<'s, 'a, 'e>) : State<'a, 'c, 's, 'e> =
+    member state.OfStateReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 's, 'e>) : State<'a, 'c, 's, 'e> =
       State(fun (_c, s) ->
         match r s with
         | Sum.Left(res) -> Sum.Left(res, None)
         | Sum.Right(err) -> Sum.Right(err, None))
 
-    member state.ToReader<'a, 'c, 's, 'e>(State p: State<'a, 'c, 's, 'e>) : ReaderWithError<'c * 's, 'a, 'e> =
-      ReaderWithError(fun (c, s) ->
+    member state.ToReader<'a, 'c, 's, 'e>(State p: State<'a, 'c, 's, 'e>) : Reader<'a, 'c * 's, 'e> =
+      Reader(fun (c, s) ->
         match p (c, s) with
         | Sum.Left(res, _) -> Sum.Left(res)
         | Sum.Right(err, _) -> Sum.Right(err))

@@ -91,10 +91,10 @@ let ``Dsl:Terms:Expr.TypeLambda json round-trip`` () =
 [<Test>]
 let ```Dsl:Terms:Expr.TypeApply json round-trip`` () =
   let json =
-    """{"kind":"type-apply","type-apply":[{"kind":"lookup","name":"f"}, {"kind":"int"}]}"""
+    """{"kind":"type-apply","type-apply":[{"kind":"lookup","name":"f"}, {"kind":"int32"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.TypeApply(Expr.Lookup("f" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int)
+    Expr.TypeApply(Expr.Lookup("f" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -127,10 +127,10 @@ let ``Dsl:Terms:Expr.Let json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.TypeLet json round-trip`` () =
   let json =
-    """{"kind":"type-let","type-let":["T", {"kind":"int"}, {"kind":"int","int":"7"}]}"""
+    """{"kind":"type-let","type-let":["T", {"kind":"int32"}, {"kind":"int","int":"7"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.TypeLet("T", TypeExpr.Primitive PrimitiveType.Int, Expr.Primitive(PrimitiveValue.Int 7))
+    Expr.TypeLet("T", TypeExpr.Primitive PrimitiveType.Int32, Expr.Primitive(PrimitiveValue.Int 7))
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
