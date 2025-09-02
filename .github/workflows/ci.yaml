@@ -17,11 +17,11 @@ jobs:
       - run: npx prettier . --check
       - run: yarn
       - run: yarn compile-ballerina-core
-  ballerina-core:
+  ballerina-forms:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend/libraries/ballerina-core
+        working-directory: backend/libraries/ballerina-forms
     steps:
       - uses: actions/checkout@v5.0.0
       - uses: actions/setup-dotnet@v4.3.1
@@ -30,11 +30,64 @@ jobs:
           dotnet tool restore
       - run: dotnet build
       - run: dotnet fantomas --check .
-  ballerina-core-tests:
+  ballerina-lang:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend/apps/ballerina-core.Tests
+        working-directory: backend/libraries/ballerina-lang
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - uses: actions/setup-dotnet@v4.3.1
+      - run: |
+          dotnet restore
+          dotnet tool restore
+      - run: dotnet build
+      - run: dotnet fantomas --check .
+  ballerina-cat:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/libraries/ballerina-cat
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - uses: actions/setup-dotnet@v4.3.1
+      - run: |
+          dotnet restore
+          dotnet tool restore
+      - run: dotnet build
+      - run: dotnet fantomas --check .
+  ballerina-cat-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/apps/ballerina-cat.Tests
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - uses: actions/setup-dotnet@v4.3.1
+      - run: |
+          dotnet restore
+          dotnet tool restore
+      - run: dotnet build
+      - run: dotnet fantomas --check .
+      - run: dotnet test
+  ballerina-stdlib:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/libraries/ballerina-stdlib
+    steps:
+      - uses: actions/checkout@v5.0.0
+      - uses: actions/setup-dotnet@v4.3.1
+      - run: |
+          dotnet restore
+          dotnet tool restore
+      - run: dotnet build
+      - run: dotnet fantomas --check .
+  ballerina-stdlib-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/apps/ballerina-stdlib.Tests
     steps:
       - uses: actions/checkout@v5.0.0
       - uses: actions/setup-dotnet@v4.3.1
