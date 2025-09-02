@@ -1789,7 +1789,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -1810,7 +1814,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -1923,6 +1931,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   enumSingleSelection: {
     defaultEnum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const isSome = props.context.value.isSome;
       const value =
         isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
@@ -2718,6 +2730,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sum: {
     defaultSum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       return (
         <>
           {props.context.value.value.kind == "l"
@@ -2749,6 +2765,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""
@@ -2884,6 +2904,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sumUnitDate: {
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""

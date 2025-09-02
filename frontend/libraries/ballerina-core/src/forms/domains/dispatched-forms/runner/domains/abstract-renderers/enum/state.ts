@@ -7,6 +7,7 @@ import {
   SingleSelectionType,
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { View } from "../../../../../../../template/state";
 import { Synchronized } from "../../../../../../../async/domains/synchronized/state";
@@ -24,7 +25,7 @@ export type EnumAbstractRendererReadonlyContext<
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   SingleSelectionType<any>,
-  ValueOption,
+  ValueOption | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 > &

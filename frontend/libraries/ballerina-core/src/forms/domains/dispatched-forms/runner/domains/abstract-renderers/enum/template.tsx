@@ -50,7 +50,10 @@ export const EnumAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[enum]";
 
-    if (!PredicateValue.Operations.IsOption(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsOption(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
         `Option expected but got: ${JSON.stringify(
           props.context.value,

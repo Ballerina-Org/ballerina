@@ -36,7 +36,10 @@ export const BoolAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[boolean]";
 
-    if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsBoolean(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
         `Boolean expected but got: ${JSON.stringify(
           props.context.value,

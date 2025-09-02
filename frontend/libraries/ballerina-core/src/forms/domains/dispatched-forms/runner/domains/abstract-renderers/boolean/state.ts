@@ -6,6 +6,7 @@ import {
   DispatchPrimitiveType,
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 
@@ -14,7 +15,7 @@ export type BoolAbstractRendererReadonlyContext<
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
   DispatchPrimitiveType<any>,
-  boolean,
+  boolean | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 >;
