@@ -18,6 +18,16 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-cat.Tests", "apps
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-stdlib.Tests", "apps\ballerina-stdlib.Tests\ballerina-stdlib.Tests.fsproj", "{CA372E4C-DB80-41C7-86A7-E3412C0CF64B}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-lang.Tests", "apps\ballerina-lang.Tests\ballerina-lang.Tests.fsproj", "{5599BE9F-AD62-4AB0-92DA-B91027F2A388}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-data.Tests", "apps\ballerina-data.Tests\ballerina-data.Tests.fsproj", "{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-seeds.Tests", "apps\ballerina-seeds.Tests\ballerina-seeds.Tests.fsproj", "{4D7A2D77-2700-45D4-9BC3-599B053CEA84}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-data", "libraries\ballerina-data\ballerina-data.fsproj", "{90DF9307-C078-4F46-AABB-9DD6619182A2}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ballerina-seeds", "libraries\ballerina-seeds\ballerina-seeds.fsproj", "{C69A07B8-579B-4B67-A661-A5DA8EBFEB47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +58,26 @@ Global
 		{CA372E4C-DB80-41C7-86A7-E3412C0CF64B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA372E4C-DB80-41C7-86A7-E3412C0CF64B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA372E4C-DB80-41C7-86A7-E3412C0CF64B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5599BE9F-AD62-4AB0-92DA-B91027F2A388}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5599BE9F-AD62-4AB0-92DA-B91027F2A388}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5599BE9F-AD62-4AB0-92DA-B91027F2A388}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5599BE9F-AD62-4AB0-92DA-B91027F2A388}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D7A2D77-2700-45D4-9BC3-599B053CEA84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D7A2D77-2700-45D4-9BC3-599B053CEA84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D7A2D77-2700-45D4-9BC3-599B053CEA84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D7A2D77-2700-45D4-9BC3-599B053CEA84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90DF9307-C078-4F46-AABB-9DD6619182A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90DF9307-C078-4F46-AABB-9DD6619182A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90DF9307-C078-4F46-AABB-9DD6619182A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90DF9307-C078-4F46-AABB-9DD6619182A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C69A07B8-579B-4B67-A661-A5DA8EBFEB47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C69A07B8-579B-4B67-A661-A5DA8EBFEB47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C69A07B8-579B-4B67-A661-A5DA8EBFEB47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C69A07B8-579B-4B67-A661-A5DA8EBFEB47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,6 +89,11 @@ Global
 		{840CF94B-A045-494F-9025-52B5AD087258} = {F2E35B3E-9711-EDEC-6202-DB40BDEED14A}
 		{948DCE1C-788F-40E7-91C0-B57F063F55E9} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
 		{CA372E4C-DB80-41C7-86A7-E3412C0CF64B} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
+		{5599BE9F-AD62-4AB0-92DA-B91027F2A388} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
+		{D63A5FC8-B0FF-4591-8F6B-35DF9DA944F9} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
+		{4D7A2D77-2700-45D4-9BC3-599B053CEA84} = {63BC0C22-EE83-47F2-9545-92B7D988F6B8}
+		{90DF9307-C078-4F46-AABB-9DD6619182A2} = {F2E35B3E-9711-EDEC-6202-DB40BDEED14A}
+		{C69A07B8-579B-4B67-A661-A5DA8EBFEB47} = {F2E35B3E-9711-EDEC-6202-DB40BDEED14A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2BC92A62-6F92-4DC8-ADB6-66FD290B6369}
