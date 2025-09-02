@@ -9,6 +9,7 @@ import {
   DispatchOnChange,
   Unit,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  ValueUnit,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -17,7 +18,7 @@ export type SumAbstractRendererReadonlyContext<
   ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   SumType<any>,
-  ValueSum,
+  ValueSum | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 >;

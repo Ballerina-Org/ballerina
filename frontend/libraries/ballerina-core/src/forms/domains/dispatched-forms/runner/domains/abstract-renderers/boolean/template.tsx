@@ -36,15 +36,18 @@ export const BoolAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[boolean]";
 
-    if (!PredicateValue.Operations.IsBoolean(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsBoolean(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `Boolean expected but got: ${JSON.stringify(
+        `Boolean or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Boolean expected but got ${JSON.stringify(
+          message={`${domNodeId}: Boolean or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
