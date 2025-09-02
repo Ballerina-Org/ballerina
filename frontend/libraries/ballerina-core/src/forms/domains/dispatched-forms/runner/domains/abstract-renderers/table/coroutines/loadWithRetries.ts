@@ -38,21 +38,26 @@ export const TableLoadWithRetries =
       ? Co<CustomPresentationContext, ExtraContext>()
           .GetState()
           .then((current) =>
-            Co<CustomPresentationContext, ExtraContext>().Await(
-              () =>
-                tableApiSource.getMany(fromTableApiParser)({
-                  chunkSize: DEFAULT_CHUNK_SIZE,
-                  from:
-                    current.customFormState.loadingState == "reload from 0"
-                      ? 0
-                      : current.value.to + 1,
-                  filtersAndSorting:
-                    current.customFormState.filterAndSortParam === ""
-                      ? undefined
-                      : current.customFormState.filterAndSortParam,
-                }),
-              () => "error" as const,
-            ),
+            Co<CustomPresentationContext, ExtraContext>()
+              .Wait(attempt > 0 ? 1000 : 0)
+              .then(() =>
+                Co<CustomPresentationContext, ExtraContext>().Await(
+                  () =>
+                    tableApiSource.getMany(fromTableApiParser)({
+                      chunkSize: DEFAULT_CHUNK_SIZE,
+                      from:
+                        current.customFormState.loadingState ==
+                          "reload from 0" || current.value.to == 0
+                          ? 0
+                          : current.value.to + 1,
+                      filtersAndSorting:
+                        current.customFormState.filterAndSortParam === ""
+                          ? undefined
+                          : current.customFormState.filterAndSortParam,
+                    }),
+                  () => "error" as const,
+                ),
+              ),
           )
           .then((apiResult) =>
             apiResult.kind == "l"
