@@ -228,13 +228,13 @@ export const SumAbstractRenderer = <
       !PredicateValue.Operations.IsUnit(props.context.value)
     ) {
       console.error(
-        `Sum expected but got: ${JSON.stringify(
+        `Sum or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Sum value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Sum or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

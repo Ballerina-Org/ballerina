@@ -55,13 +55,13 @@ export const EnumAbstractRenderer = <
       !PredicateValue.Operations.IsUnit(props.context.value)
     ) {
       console.error(
-        `Option expected but got: ${JSON.stringify(
+        `Option or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Option value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Option or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
