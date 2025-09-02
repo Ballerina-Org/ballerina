@@ -90,7 +90,7 @@ module Patterns =
       | Expr.TupleCons es -> sum.Return es
       | other -> sum.Throw(Errors.Singleton $"Expected a tuple construct but got {other}")
 
-    static member AsSumDes(e: Expr<'T>) : Sum<Map<int, CaseHandler<'T>>, Errors> =
+    static member AsSumDes(e: Expr<'T>) : Sum<List<CaseHandler<'T>>, Errors> =
       match e with
       | Expr.SumDes m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a sum destruct but got {other}")

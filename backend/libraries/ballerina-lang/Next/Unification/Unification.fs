@@ -30,7 +30,7 @@ module Unification =
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit))
+              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit, Kind.Star))
             )
         | TypeExpr.Exclude(l, r)
         | TypeExpr.Flatten(l, r)
@@ -60,7 +60,7 @@ module Unification =
           let! t = UnificationContext.tryFindType l |> reader.Catch
 
           match t with
-          | Left t -> return! TypeValue.FreeVariables t
+          | Left(t, _) -> return! TypeValue.FreeVariables t
           | Right _ -> return Set.empty
       }
 
@@ -79,7 +79,7 @@ module Unification =
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit))
+              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit, Kind.Star))
             )
         | TypeValue.Arrow(l, r) ->
           let! lVars = TypeValue.FreeVariables l
@@ -107,7 +107,7 @@ module Unification =
           return vars |> Set.unionMany
         | TypeValue.Primitive _ -> return Set.empty
         | Lookup l ->
-          let! t = UnificationContext.tryFindType l
+          let! t, _ = UnificationContext.tryFindType l
           return! TypeValue.FreeVariables t
       }
 
@@ -221,7 +221,7 @@ module Unification =
         | Lookup l1, Lookup l2 when l1 = l2 -> return ()
         | Lookup l, t2
         | t2, Lookup l ->
-          let! t1 = UnificationContext.tryFindType l |> state.OfReader
+          let! t1, _ = UnificationContext.tryFindType l |> state.OfReader
           return! TypeValue.Unify(t1, t2)
         | TypeValue.Var v, t
         | t, TypeValue.Var v ->
@@ -249,8 +249,8 @@ module Unification =
                   let v1 = p1.Name |> TypeVar.Create
                   let v2 = p2.Name |> TypeVar.Create
                   do! TypeValue.bind (v1, v2 |> TypeValue.Var)
-                  let v1 = TypeValue.Var v1
-                  let v2 = TypeValue.Var v2
+                  let v1 = TypeValue.Var v1, Kind.Star
+                  let v2 = TypeValue.Var v2, Kind.Star
 
                   ctx
                   |> UnificationContext.Updaters.Bindings(Map.add !p1.Name v1 >> Map.add !p2.Name v2),
@@ -269,14 +269,14 @@ module Unification =
             let! v1 =
               t1
               |> TypeExpr.AsValue
-                (UnificationContext.tryFindType >> Reader.Run ctx1)
+                (UnificationContext.tryFindType >> reader.Map fst >> Reader.Run ctx1)
                 (UnificationContext.tryFindSymbol >> Reader.Run ctx1)
               |> state.OfSum
 
             let! v2 =
               t2
               |> TypeExpr.AsValue
-                (UnificationContext.tryFindType >> Reader.Run ctx2)
+                (UnificationContext.tryFindType >> reader.Map fst >> Reader.Run ctx2)
                 (UnificationContext.tryFindSymbol >> Reader.Run ctx2)
               |> state.OfSum
 
@@ -363,7 +363,7 @@ module Unification =
           | TypeValue.Lookup l ->
             let! ctx = state.GetContext()
 
-            let! t =
+            let! t, _ =
               ctx.Bindings.Bindings
               |> TypeBindings.tryFindWithError l "lookup" l.ToFSharpString
               |> state.OfSum

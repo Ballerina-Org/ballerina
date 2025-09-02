@@ -277,11 +277,7 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Arrow(input, output) -> return (input, output)
-        | _ ->
-          return!
-            $"Error: expected arrow type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
+        | _ -> return! $"Error: expected arrow type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsMap(t: TypeValue) =

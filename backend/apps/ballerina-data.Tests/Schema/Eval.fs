@@ -62,8 +62,8 @@ let ``SpecNext-Schema evaluates`` () =
     { TypeExprEvalState.Empty with
         Bindings =
           Map.ofList
-            [ ("SomeType" |> Identifier.LocalScope, SomeType)
-              ("AnotherType" |> Identifier.LocalScope, AnotherType) ] }
+            [ ("SomeType" |> Identifier.LocalScope, (SomeType, Kind.Star))
+              ("AnotherType" |> Identifier.LocalScope, (AnotherType, Kind.Star)) ] }
 
   match
     source

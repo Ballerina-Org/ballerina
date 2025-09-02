@@ -27,7 +27,7 @@ module Model =
     | RecordDes of Expr<'T> * Identifier
     | UnionDes of Map<Identifier, CaseHandler<'T>>
     | TupleDes of Expr<'T> * TupleDesSelector
-    | SumDes of Map<int, CaseHandler<'T>>
+    | SumDes of List<CaseHandler<'T>>
     | Primitive of PrimitiveValue
     | Lookup of Identifier
     | If of Expr<'T> * Expr<'T> * Expr<'T>

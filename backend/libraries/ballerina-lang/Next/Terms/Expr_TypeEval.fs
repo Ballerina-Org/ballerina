@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Next.Terms
 module TypeEval =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Eval
@@ -12,11 +13,17 @@ module TypeEval =
       fun expr ->
         let (!) = Expr.TypeEval
 
+        let (!!) t =
+          state {
+            let! t, _ = t |> TypeExpr.Eval
+            return t
+          }
+
         state {
           match expr with
           | Expr.Lambda(var, t, body) ->
             let! bodyType = !body
-            let! t = t |> Option.map (TypeExpr.Eval) |> state.RunOption
+            let! t = t |> Option.map (!!) |> state.RunOption
             return Expr.Lambda(var, t, bodyType)
           | Expr.Apply(func, arg) ->
             let! funcType = !func
@@ -66,12 +73,12 @@ module TypeEval =
           | Expr.SumDes cases ->
             let! caseTypes =
               cases
-              |> Map.map (fun _ (i, handler) ->
+              |> Seq.map (fun (v, handler) ->
                 state {
                   let! handlerType = !handler
-                  return i, handlerType
+                  return v, handlerType
                 })
-              |> state.AllMap
+              |> state.All
 
             return Expr.SumDes caseTypes
           | Expr.Primitive p -> return Expr.Primitive p
@@ -86,7 +93,7 @@ module TypeEval =
             return Expr.TypeLambda(typeParam, bodyType)
           | Expr.TypeApply(typeExpr, typeArg) ->
             let! typeExprType = !typeExpr
-            let! typeArg = typeArg |> TypeExpr.Eval
+            let! typeArg, _ = typeArg |> TypeExpr.Eval
             return Expr.TypeApply(typeExprType, typeArg)
           | Expr.TypeLet(var, value, body) ->
             let! valueType = value |> TypeExpr.Eval
@@ -94,5 +101,5 @@ module TypeEval =
 
             let! bodyType = !body
 
-            return Expr.TypeLet(var, valueType, bodyType)
+            return Expr.TypeLet(var, valueType |> fst, bodyType)
         }

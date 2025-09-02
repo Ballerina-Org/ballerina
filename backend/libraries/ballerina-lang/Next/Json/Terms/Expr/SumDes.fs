@@ -20,26 +20,22 @@ module SumDes =
             caseHandlers
             |> Seq.map (fun caseHandler ->
               reader {
-                let! (caseIndex, handler) = caseHandler |> JsonValue.AsPair |> reader.OfSum
-                let! caseIndex = caseIndex |> JsonValue.AsInt |> reader.OfSum
-                let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
+                let! handlerVar, handlerBody = caseHandler |> JsonValue.AsPair |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
                 let handlerVar = Var.Create handlerVar
                 let! handlerBody = handlerBody |> fromRootJson
-                return (caseIndex, (handlerVar, handlerBody))
+                return (handlerVar, handlerBody)
               })
             |> reader.All
-            |> reader.Map Map.ofSeq
 
           return Expr.SumDes(caseHandlers)
         })
 
-    static member ToJsonSumDes(rootToJson: Expr<'T> -> JsonValue) : Map<int, CaseHandler<'T>> -> JsonValue =
-      Map.toArray
-      >> Array.map (fun (i, (v, c)) ->
-        let i = i |> decimal |> JsonValue.Number
+    static member ToJsonSumDes(rootToJson: Expr<'T> -> JsonValue) : List<CaseHandler<'T>> -> JsonValue =
+      List.map (fun (v, c) ->
         let v = v.Name |> JsonValue.String
         let c = c |> rootToJson
-        [| i; [| v; c |] |> JsonValue.Array |] |> JsonValue.Array)
+        [| v; c |] |> JsonValue.Array)
+      >> Array.ofList
       >> JsonValue.Array
       >> Json.kind "sum-des" "sum-des"

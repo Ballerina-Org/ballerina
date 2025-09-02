@@ -3,6 +3,7 @@ namespace Ballerina.Data
 module TypeEval =
   open Ballerina.State.WithError
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Data.Model
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.Errors
@@ -25,7 +26,8 @@ module TypeEval =
             schema.Entities
             |> Map.map (fun _ v ->
               state {
-                let! typeVal = v.Type |> TypeExpr.Eval
+                let! typeVal, typeValK = v.Type |> TypeExpr.Eval
+                do! typeValK |> Kind.AsStar |> state.OfSum |> state.Ignore
 
                 let! updaters =
                   v.Updaters

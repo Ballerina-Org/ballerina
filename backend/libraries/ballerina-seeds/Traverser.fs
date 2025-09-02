@@ -86,7 +86,7 @@ module Traverser =
           return cases |> List.map Value.UnionCase |> Value.Tuple
 
         | TypeValue.Lookup id ->
-          let! tv = TypeExprEvalState.tryFindType id |> reader.MapContext _.TypeContext
+          let! tv, _ = TypeExprEvalState.tryFindType id |> reader.MapContext _.TypeContext
           return! (!!id.ToFSharpString) tv
 
         | TypeValue.Record fields ->

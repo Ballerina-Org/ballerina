@@ -522,7 +522,10 @@ let ``LangNext-Unify unifies can look lookups up`` () =
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ !"T1", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (
+        UnificationContext.Create([ !"T1", (inputs |> fst, Kind.Star) ] |> Map.ofList, Map.empty),
+        EquivalenceClasses.Empty
+      ))
 
   match actual with
   | Sum.Left _ -> Assert.Pass()
@@ -541,7 +544,10 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
     (TypeValue
       .Unify(inputs)
       .run (
-        UnificationContext.Create([ !"T1", TypeValue.Primitive PrimitiveType.Decimal ] |> Map.ofList, Map.empty),
+        UnificationContext.Create(
+          [ !"T1", (TypeValue.Primitive PrimitiveType.Decimal, Kind.Star) ] |> Map.ofList,
+          Map.empty
+        ),
         EquivalenceClasses.Empty
       ))
 
@@ -561,7 +567,10 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ !"T2", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (
+        UnificationContext.Create([ !"T2", (inputs |> fst, Kind.Star) ] |> Map.ofList, Map.empty),
+        EquivalenceClasses.Empty
+      ))
 
   match actual with
   | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"

@@ -225,14 +225,13 @@ let ``Dsl:Terms:Expr.TupleDes json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.SumDes json round-trip`` () =
   let json =
-    """{"kind":"sum-des","sum-des":[[0,["a",{"kind":"int","int":"1"}]],[1,["b",{"kind":"int","int":"2"}]]]}"""
+    """{"kind":"sum-des","sum-des":[["a",{"kind":"int","int":"1"}],["b",{"kind":"int","int":"2"}]]}"""
 
   let expected =
     Expr<TypeExpr>
       .SumDes(
-        Map.ofList
-          [ 0, (Var.Create "a", Expr.Primitive(PrimitiveValue.Int 1))
-            1, (Var.Create "b", Expr.Primitive(PrimitiveValue.Int 2)) ]
+        [ (Var.Create "a", Expr.Primitive(PrimitiveValue.Int 1))
+          (Var.Create "b", Expr.Primitive(PrimitiveValue.Int 2)) ]
       )
 
   (expected, JsonValue.Parse json)

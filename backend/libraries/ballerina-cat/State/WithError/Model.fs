@@ -74,6 +74,7 @@ module WithError =
 
 
   type StateBuilder() =
+    member _.Ignore p = State.map ignore p
     member _.Map f p = State.map f p
     member _.MapContext f p = State.mapContext f p
     member _.MapError f p = State.mapError f p

@@ -10,7 +10,7 @@ let name = TypeSymbol.Create
 
 let private (!) = Identifier.LocalScope
 
-let context: Map<Identifier, TypeValue> =
+let context: Map<Identifier, TypeValue * Kind> =
   [ "Birthday", TypeValue.Primitive PrimitiveType.DateOnly
     "SubscribeToNewsletter", TypeValue.Primitive PrimitiveType.Bool
     "Emails", TypeValue.Tuple [ TypeValue.Primitive PrimitiveType.String ]
@@ -73,7 +73,7 @@ let context: Map<Identifier, TypeValue> =
           name "Job", TypeValue.Lookup !"Job"
           name "FavoriteColor", TypeValue.Lookup !"FavoriteColor" ]
     ) ]
-  |> Seq.map (fun (k, v) -> !k, v)
+  |> Seq.map (fun (k, v) -> !k, (v, Kind.Star))
   |> Map.ofSeq
 
 let unlimited = 10
@@ -115,12 +115,12 @@ let private familyLookups: Map<string, LookupDescriptor> =
 let private variousPeopleEntities: Map<string, EntityDescriptor<TypeValue>> =
   Map.ofList
     [ "PlainPeopleTable",
-      { Type = context |> Map.find !"Person"
+      { Type = context |> Map.find !"Person" |> fst
         Methods = entityMethods
         Updaters = []
         Predicates = Map.empty }
       "FamousPeopleTable",
-      { Type = context |> Map.find !"Person"
+      { Type = context |> Map.find !"Person" |> fst
         Methods = entityMethods
         Updaters = []
         Predicates = Map.empty } ]
@@ -128,12 +128,12 @@ let private variousPeopleEntities: Map<string, EntityDescriptor<TypeValue>> =
 let private familyEntities: Map<string, EntityDescriptor<TypeValue>> =
   Map.ofList
     [ "Parents",
-      { Type = context |> Map.find !"Person"
+      { Type = context |> Map.find !"Person" |> fst
         Methods = entityMethods
         Updaters = []
         Predicates = Map.empty }
       "Children",
-      { Type = context |> Map.find !"Person"
+      { Type = context |> Map.find !"Person" |> fst
         Methods = entityMethods
         Updaters = []
         Predicates = Map.empty } ]
