@@ -2,19 +2,17 @@ package ballerina_test
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 	"time"
 
 	ballerina "ballerina.com/core"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func assertErrorContains[T any](t *testing.T, expected string, actual ballerina.Sum[error, T]) {
 	ballerina.Fold(actual, func(err error) ballerina.Unit {
-		if !strings.Contains(err.Error(), expected) {
-			t.Errorf("expected error to contain '%s', but got '%s'", expected, err.Error())
-		}
+		assert.Contains(t, err.Error(), expected)
 		return ballerina.NewUnit()
 	}, func(value T) ballerina.Unit {
 		t.Errorf("expected error to contain '%s', but got value %v", expected, value)
