@@ -11,6 +11,7 @@ open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 
 let private initialClasses = EquivalenceClasses<string, PrimitiveType>.Empty
+let private (!) = Identifier.LocalScope
 
 let private valueOperations =
   { tryCompare = fun (v1: PrimitiveType, v2: PrimitiveType) -> if v1 = v2 then Some v1 else None
@@ -26,7 +27,7 @@ let ``LangNext-Unify binding trivial equivalence classes over primitives succeed
 
   let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
     state {
-      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int |> Right)
+      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right)
       do! EquivalenceClasses.Bind("v3", PrimitiveType.Decimal |> Right)
       do! EquivalenceClasses.Bind("v4", PrimitiveType.Decimal |> Right)
@@ -37,7 +38,7 @@ let ``LangNext-Unify binding trivial equivalence classes over primitives succeed
   let expected: EquivalenceClasses<string, PrimitiveType> =
     { Classes =
         Map.ofList
-          [ "v1", EquivalenceClass.Create("v1" |> Set.singleton, PrimitiveType.Int |> Some)
+          [ "v1", EquivalenceClass.Create("v1" |> Set.singleton, PrimitiveType.Int32 |> Some)
             "v2", EquivalenceClass.Create("v2" |> Set.singleton, PrimitiveType.String |> Some)
             "v3", EquivalenceClass.Create("v3" |> Set.singleton, PrimitiveType.Decimal |> Some)
             "v4", EquivalenceClass.Create("v4" |> Set.singleton, PrimitiveType.Decimal |> Some) ]
@@ -53,7 +54,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 
   let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
     state {
-      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int |> Right)
+      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right)
       do! EquivalenceClasses.Bind("v3", PrimitiveType.Decimal |> Right)
       do! EquivalenceClasses.Bind("v4", PrimitiveType.Decimal |> Right)
@@ -65,7 +66,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
   let expected: EquivalenceClasses<string, PrimitiveType> =
     { Classes =
         Map.ofList
-          [ "v1", EquivalenceClass.Create("v1" |> Set.singleton, PrimitiveType.Int |> Some)
+          [ "v1", EquivalenceClass.Create("v1" |> Set.singleton, PrimitiveType.Int32 |> Some)
             "v2", EquivalenceClass.Create("v2" |> Set.singleton, PrimitiveType.String |> Some)
             "v4", EquivalenceClass.Create([ "v3"; "v4" ] |> Set.ofList, PrimitiveType.Decimal |> Some) ]
       Variables = Map.ofList [ "v1", "v1"; "v2", "v2"; "v3", "v4"; "v4", "v4" ] }
@@ -79,7 +80,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 let ``LangNext-Unify binding equivalence classes over variables and primitives or variables fails`` () =
   let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
     state {
-      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int |> Right)
+      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right)
       do! EquivalenceClasses.Bind("v3", PrimitiveType.Decimal |> Right)
       do! EquivalenceClasses.Bind("v4", PrimitiveType.Decimal |> Right)
@@ -97,7 +98,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 let ``LangNext-Unify binding equivalence classes over variables and primitives or variables in a chain succeeds`` () =
   let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
     state {
-      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int |> Right)
+      do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right)
       do! EquivalenceClasses.Bind("v3", PrimitiveType.Decimal |> Right)
       do! EquivalenceClasses.Bind("v4", PrimitiveType.Decimal |> Right)
@@ -113,7 +114,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
   let expected: EquivalenceClasses<string, PrimitiveType> =
     { Classes =
         Map.ofList
-          [ "v1", EquivalenceClass.Create(Set.ofList [ "v1" ], PrimitiveType.Int |> Some)
+          [ "v1", EquivalenceClass.Create(Set.ofList [ "v1" ], PrimitiveType.Int32 |> Some)
             "v2", EquivalenceClass.Create(Set.ofList [ "v2" ], PrimitiveType.String |> Some)
             "v6", EquivalenceClass.Create(Set.ofList [ "v3"; "v4"; "v5"; "v6" ], PrimitiveType.Decimal |> Some) ]
       Variables = Map.ofList [ "v1", "v1"; "v2", "v2"; "v3", "v6"; "v4", "v6"; "v5", "v6"; "v6", "v6" ] }
@@ -132,26 +133,26 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 [<Test>]
 let ``LangNext-Unify unifies types without variables`` () =
   let inputs =
-    [ TypeValue.Primitive PrimitiveType.Int
-      TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.String)
-      TypeValue.List(TypeValue.Primitive PrimitiveType.Int)
-      TypeValue.Set(TypeValue.Primitive PrimitiveType.Int)
-      TypeValue.Map(TypeValue.Primitive PrimitiveType.Int, TypeValue.Primitive PrimitiveType.String)
+    [ TypeValue.Primitive PrimitiveType.Int32
+      TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String)
+      TypeValue.List(TypeValue.Primitive PrimitiveType.Int32)
+      TypeValue.Set(TypeValue.Primitive PrimitiveType.Int32)
+      TypeValue.Map(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String)
       TypeValue.Tuple(
-        [ TypeValue.Primitive PrimitiveType.Int
+        [ TypeValue.Primitive PrimitiveType.Int32
           TypeValue.Primitive PrimitiveType.String ]
       )
       TypeValue.Sum(
-        [ TypeValue.Primitive PrimitiveType.Int
+        [ TypeValue.Primitive PrimitiveType.Int32
           TypeValue.Primitive PrimitiveType.String ]
       )
       TypeValue.Record(
-        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int
+        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
           "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       )
       TypeValue.Union(
-        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int
+        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
           "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       ) ]
@@ -221,8 +222,8 @@ let ``LangNext-Unify unifies type values inside type lambdas`` () =
   let b1 = TypeParameter.Create("b1", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a1, TypeExpr.Arrow(TypeExpr.Lookup a1.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b1, TypeExpr.Arrow(TypeExpr.Lookup b1.Name, TypeExpr.Primitive PrimitiveType.String))
+    TypeValue.Lambda(a1, TypeExpr.Arrow(TypeExpr.Lookup !a1.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b1, TypeExpr.Arrow(TypeExpr.Lookup !b1.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -249,7 +250,7 @@ let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
       TypeExpr.Lambda(
         a2,
         TypeExpr.Arrow(
-          TypeExpr.Tuple([ TypeExpr.Lookup a1.Name; TypeExpr.Lookup a2.Name ]),
+          TypeExpr.Tuple([ TypeExpr.Lookup !a1.Name; TypeExpr.Lookup !a2.Name ]),
           TypeExpr.Primitive PrimitiveType.String
         )
       )
@@ -259,7 +260,7 @@ let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
       TypeExpr.Lambda(
         b2,
         TypeExpr.Arrow(
-          TypeExpr.Tuple([ TypeExpr.Lookup b1.Name; TypeExpr.Lookup b2.Name ]),
+          TypeExpr.Tuple([ TypeExpr.Lookup !b1.Name; TypeExpr.Lookup !b2.Name ]),
           TypeExpr.Primitive PrimitiveType.String
         )
       )
@@ -283,8 +284,8 @@ let ``LangNext-Unify fails to unify incompatible type values inside type lambdas
   let b = TypeParameter.Create("b", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int32))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -300,8 +301,8 @@ let ``LangNext-Unify fails to unify incompatible params of type lambdas`` () =
   let b = TypeParameter.Create("b", Kind.Symbol)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.String))
+    TypeValue.Lambda(a, TypeExpr.Arrow(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -316,8 +317,8 @@ let ``LangNext-Unify fails to unify type expressions inside type lambdas`` () =
   let b = TypeParameter.Create("b", Kind.Star)
 
   let inputs =
-    TypeValue.Lambda(a, TypeExpr.Exclude(TypeExpr.Lookup a.Name, TypeExpr.Primitive PrimitiveType.String)),
-    TypeValue.Lambda(b, TypeExpr.Exclude(TypeExpr.Lookup b.Name, TypeExpr.Primitive PrimitiveType.Int))
+    TypeValue.Lambda(a, TypeExpr.Exclude(TypeExpr.Lookup !a.Name, TypeExpr.Primitive PrimitiveType.String)),
+    TypeValue.Lambda(b, TypeExpr.Exclude(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int32))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -334,12 +335,12 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
   let inputs1 =
     TypeValue.Record(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Record(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -349,12 +350,12 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
   let inputs2 =
     TypeValue.Union(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Union(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -374,13 +375,13 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
 
   let inputs1 =
     TypeValue.Record(
-      [ s1, TypeValue.Primitive PrimitiveType.Int
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+      [ s1, TypeValue.Primitive PrimitiveType.Int32
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Record(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -395,7 +396,7 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
     ),
     TypeValue.Union(
       [ s1, TypeValue.Primitive PrimitiveType.String
-        s2, TypeValue.Primitive PrimitiveType.Int ]
+        s2, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -412,12 +413,12 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
   let inputs1 =
     TypeValue.Record(
       [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Record(
       [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -427,12 +428,12 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
   let inputs2 =
     TypeValue.Union(
       [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Union(
       [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int ]
+        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -448,11 +449,11 @@ let ``LangNext-Unify unifies structurally and symbolically identical tuples and 
   let inputs1 =
     TypeValue.Tuple(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     ),
     TypeValue.Tuple(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     )
 
   let actual1 =
@@ -461,11 +462,11 @@ let ``LangNext-Unify unifies structurally and symbolically identical tuples and 
   let inputs2 =
     TypeValue.Sum(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     ),
     TypeValue.Sum(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     )
 
   let actual2 =
@@ -486,7 +487,7 @@ let ``LangNext-Unify does not unify structurally different tuples and sums`` () 
     ),
     TypeValue.Tuple(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     )
 
   let actual1 =
@@ -499,7 +500,7 @@ let ``LangNext-Unify does not unify structurally different tuples and sums`` () 
     ),
     TypeValue.Sum(
       [ TypeValue.Primitive PrimitiveType.String
-        TypeValue.Primitive PrimitiveType.Int ]
+        TypeValue.Primitive PrimitiveType.Int32 ]
     )
 
   let actual2 =
@@ -516,12 +517,15 @@ let ``LangNext-Unify unifies can look lookups up`` () =
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ "T1", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (
+        UnificationContext.Create([ !"T1", (inputs |> fst, Kind.Star) ] |> Map.ofList, Map.empty),
+        EquivalenceClasses.Empty
+      ))
 
   match actual with
   | Sum.Left _ -> Assert.Pass()
@@ -534,13 +538,16 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
       .run (
-        UnificationContext.Create([ "T1", TypeValue.Primitive PrimitiveType.Decimal ] |> Map.ofList, Map.empty),
+        UnificationContext.Create(
+          [ !"T1", (TypeValue.Primitive PrimitiveType.Decimal, Kind.Star) ] |> Map.ofList,
+          Map.empty
+        ),
         EquivalenceClasses.Empty
       ))
 
@@ -555,12 +562,15 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
       [ TypeValue.Primitive PrimitiveType.String
         TypeValue.Primitive PrimitiveType.Decimal ]
     ),
-    TypeValue.Lookup("T1" |> TypeIdentifier.Create)
+    TypeValue.Lookup(!"T1")
 
   let actual =
     (TypeValue
       .Unify(inputs)
-      .run (UnificationContext.Create([ "T2", inputs |> fst ] |> Map.ofList, Map.empty), EquivalenceClasses.Empty))
+      .run (
+        UnificationContext.Create([ !"T2", (inputs |> fst, Kind.Star) ] |> Map.ofList, Map.empty),
+        EquivalenceClasses.Empty
+      ))
 
   match actual with
   | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"
@@ -574,7 +584,7 @@ let ``LangNext-Unify unifies fails on different constructors`` () =
 
   let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
     state {
-      do! EquivalenceClasses.Bind(b, PrimitiveType.Int |> TypeValue.Primitive |> Right)
+      do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.Set |> Right)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
     }
@@ -594,7 +604,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
 
   let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
     state {
-      do! EquivalenceClasses.Bind(b, PrimitiveType.Int |> TypeValue.Primitive |> Right)
+      do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(c, PrimitiveType.String |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
       do! EquivalenceClasses.Bind(a, c |> TypeValue.Var |> TypeValue.List |> Right)
@@ -619,7 +629,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
 
   let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
     state {
-      do! EquivalenceClasses.Bind(c, PrimitiveType.Int |> TypeValue.Primitive |> Right)
+      do! EquivalenceClasses.Bind(c, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(b, c |> Left)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
       do! EquivalenceClasses.Bind(a, c |> Left)

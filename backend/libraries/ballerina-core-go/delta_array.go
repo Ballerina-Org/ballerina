@@ -119,29 +119,36 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 }
 
 func MatchDeltaArray[a any, deltaA any, Result any](
-	onValue func(Tuple2[int, deltaA]) (Result, error),
+	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaArray[a, deltaA]) (Result, error) {
-	return func(delta DeltaArray[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case arrayValue:
-			return onValue(*delta.value)
-		case arrayAddAt:
-			return onAddAt(*delta.addAt)
-		case arrayRemoveAt:
-			return onRemoveAt(*delta.removeAt)
-		case arrayMoveFromTo:
-			return onMoveFromTo(*delta.moveFromTo)
-		case arrayDuplicateAt:
-			return onDuplicateAt(*delta.duplicateAt)
-		case arrayAdd:
-			return onAdd(*delta.add)
+) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Array[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case arrayValue:
+				arrayElement := MapReaderWithError[Unit](
+					func(value Array[a]) a {
+						return value[delta.value.Item1]
+					},
+				)(value)
+				return onValue(*delta.value)(arrayElement)
+			case arrayAddAt:
+				return onAddAt(*delta.addAt)
+			case arrayRemoveAt:
+				return onRemoveAt(*delta.removeAt)
+			case arrayMoveFromTo:
+				return onMoveFromTo(*delta.moveFromTo)
+			case arrayDuplicateAt:
+				return onDuplicateAt(*delta.duplicateAt)
+			case arrayAdd:
+				return onAdd(*delta.add)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 	}
 }

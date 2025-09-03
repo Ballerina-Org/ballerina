@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type deltaOptionEffectsEnum string
@@ -69,17 +70,32 @@ func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA]
 	}
 }
 func MatchDeltaOption[a any, deltaA any, Result any](
-	onReplace func(Option[a]) (Result, error),
-	onValue func(deltaA) (Result, error),
-) func(DeltaOption[a, deltaA]) (Result, error) {
-	return func(delta DeltaOption[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case optionReplace:
-			return onReplace(*delta.replace)
-		case optionValue:
-			return onValue(*delta.value)
+	onReplace func(Option[a]) func(ReaderWithError[Unit, Option[a]]) (Result, error),
+	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
+) func(DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+	return func(delta DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+		return func(option ReaderWithError[Unit, Option[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case optionReplace:
+				return onReplace(*delta.replace)(option)
+			case optionValue:
+				value := BindReaderWithError[Unit, Option[a], a](
+					func(one Option[a]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
+							Fold(
+								one.Sum,
+								func(Unit) Sum[error, a] {
+									return Left[error, a](fmt.Errorf("option is not set"))
+								},
+								Right[error, a],
+							),
+						)
+					},
+				)(option)
+				return onValue(*delta.value)(value)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 	}
 }

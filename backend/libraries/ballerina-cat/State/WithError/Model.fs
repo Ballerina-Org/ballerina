@@ -74,6 +74,7 @@ module WithError =
 
 
   type StateBuilder() =
+    member _.Ignore p = State.map ignore p
     member _.Map f p = State.map f p
     member _.MapContext f p = State.mapContext f p
     member _.MapError f p = State.mapError f p
@@ -181,11 +182,23 @@ module WithError =
       )
       |> state.Map(Map.ofSeq)
 
-    member state.OfReader<'a, 'c, 's, 'e>(ReaderWithError r: ReaderWithError<'c, 'a, 'e>) : State<'a, 'c, 's, 'e> =
+    member state.OfReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 'c, 'e>) : State<'a, 'c, 's, 'e> =
       State(fun (c, _s) ->
         match r c with
         | Sum.Left(res) -> Sum.Left(res, None)
         | Sum.Right(err) -> Sum.Right(err, None))
+
+    member state.OfStateReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 's, 'e>) : State<'a, 'c, 's, 'e> =
+      State(fun (_c, s) ->
+        match r s with
+        | Sum.Left(res) -> Sum.Left(res, None)
+        | Sum.Right(err) -> Sum.Right(err, None))
+
+    member state.ToReader<'a, 'c, 's, 'e>(State p: State<'a, 'c, 's, 'e>) : Reader<'a, 'c * 's, 'e> =
+      Reader(fun (c, s) ->
+        match p (c, s) with
+        | Sum.Left(res, _) -> Sum.Left(res)
+        | Sum.Right(err, _) -> Sum.Right(err))
 
     member state.OfSum s =
       match s with
@@ -242,6 +255,19 @@ module WithError =
 
     member inline state.Either5 p1 p2 p3 p4 p5 =
       state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 p5)))
+
+    member inline state.Memo (get: 'i -> 's -> 'o option, set: 'i * 'o -> Updater<'s>) (f: 'i -> State<'o, _, 's, _>) =
+      fun (i: 'i) ->
+        state {
+          let! s = state.GetState()
+
+          match get i s with
+          | Some(v) -> return v
+          | None ->
+            let! v = f i
+            do! set (i, v) |> state.SetState
+            return v
+        }
 
     member state.RunOption(p: Option<State<'a, 'c, 's, 'e>>) =
       state {

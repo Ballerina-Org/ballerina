@@ -18,7 +18,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int |> TypeValue.Primitive |> Some) ]
+          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int32 |> TypeValue.Primitive |> Some) ]
       Variables = Map.ofList [ a, a.Name ] }
 
   let program = TypeValue.Var a
@@ -26,7 +26,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
-  let expected = TypeValue.Primitive PrimitiveType.Int
+  let expected = TypeValue.Primitive PrimitiveType.Int32
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -40,7 +40,7 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int |> TypeValue.Primitive |> Some) ]
+          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int32 |> TypeValue.Primitive |> Some) ]
       Variables = Map.ofList [ a, a.Name ] }
 
   let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.List
@@ -49,7 +49,7 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
-    PrimitiveType.Int |> TypeValue.Primitive |> TypeValue.Set |> TypeValue.List
+    PrimitiveType.Int32 |> TypeValue.Primitive |> TypeValue.Set |> TypeValue.List
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)

@@ -410,18 +410,25 @@ module ExprType =
                             return!
                               sum {
                                 let! argsJson = fields |> sum.TryFindField "args"
-                                let! records = argsJson |> JsonValue.AsArray
+                                let! args = argsJson |> JsonValue.AsArray
 
-                                let! records = sum.All(records |> Seq.map (JsonValue.AsString))
+                                if args.Length = 1 || args.Length = 2 then
+                                  let! record = JsonValue.AsString args.[0]
 
-                                if records.Length <> 1 then
+                                  let! excludedKeys =
+                                    if args.Length = 2 then
+                                      args.[1] |> JsonValue.AsArray
+                                    else
+                                      sum.Return([||])
+
+                                  let! excludedKeys = sum.All(excludedKeys |> Seq.map JsonValue.AsString)
+                                  return ExprType.KeyOf(ExprType.LookupType { VarName = record }, excludedKeys)
+                                else
                                   return!
                                     sum.Throw(
                                       Errors.Singleton
-                                        $"Error: cannot parse generic type {funJson}. Expected a single type name, found {records}"
+                                        $"Error: cannot parse generic type {funJson}. Expected a single type name or a single type name and a list of excluded keys, found {args}"
                                     )
-                                else
-                                  return ExprType.KeyOf(ExprType.LookupType { VarName = records.[0] })
 
                               // return
                               //   ExprType.UnionType(
@@ -563,16 +570,25 @@ module ExprType =
             |> Seq.map (fun (name, typeBinding) ->
               state {
                 match typeBinding.Type with
-                | KeyOf(LookupType t) ->
+                | KeyOf(LookupType t, excludedKeys) ->
                   let! resolved = TypeContext.TryFindType ctx t.VarName |> state.OfSum
 
                   match resolved.Type with
                   | RecordType record ->
+                    excludedKeys
+                    |> List.map (fun key ->
+                      record
+                      |> Map.tryFind key
+                      |> Sum.fromOption (fun () -> Errors.Singleton $"Error: key {key} not found in record {record}"))
+                    |> sum.All
+                    |> state.OfSum
+
                     let union =
                       ExprType.UnionType(
-                        let fields = record |> Map.keys
 
-                        fields
+                        record
+                        |> Map.keys
+                        |> Seq.filter (fun (key) -> excludedKeys |> Seq.contains key |> not)
                         |> Seq.map (fun key ->
                           { CaseName = key },
                           { CaseName = key

@@ -1767,13 +1767,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     .toArray()
                     .map(([id, row], idx) => {
                       const isSelected =
-                        props.context.customFormState.selectedDetailRow &&
-                        PredicateValue.Operations.IsTuple(
-                          props.context.customFormState.selectedDetailRow,
-                        ) &&
-                        props.context.customFormState.selectedDetailRow.values.get(
-                          1,
-                        ) == id;
+                        props.context.customFormState.selectedDetailRow == id;
 
                       return (
                         <tr style={{ border: "1px solid black" }}>
@@ -1864,6 +1858,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             >
               <h3>Detail View</h3>
               {props.DetailsRenderer &&
+                props.context.customFormState.selectedDetailRow &&
                 props.DetailsRenderer(undefined)({
                   ...props,
                   context: {
@@ -1871,8 +1866,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     customFormState: {
                       ...props.context.customFormState,
                       selectedDetailRow:
-                        props.context.customFormState.selectedDetailRow ||
-                        PredicateValue.Default.unit(),
+                        props.context.customFormState.selectedDetailRow,
                     },
                   },
                   view: unit,
@@ -1975,7 +1969,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -1996,7 +1994,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -2130,6 +2132,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   enumSingleSelection: {
     defaultEnum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const isSome = props.context.value.isSome;
       const value =
         isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
@@ -2978,6 +2984,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sum: {
     defaultSum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       return (
         <>
           {props.context.value.value.kind == "l"
@@ -3009,6 +3019,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""
@@ -3144,6 +3158,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sumUnitDate: {
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""

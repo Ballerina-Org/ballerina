@@ -217,19 +217,21 @@ export const DispatcherFormsApp = (props: {}) => {
     PredicateValue,
     DispatchPassthroughFormFlags
   > = (updater, delta) => {
-    if (personEntity.kind == "r" || personEntity.value.kind == "errors") {
-      return;
-    }
-
-    const newEntity =
-      updater.kind == "r"
-        ? updater.value(personEntity.value.value)
-        : personEntity.value.value;
-    console.log("patching entity", newEntity);
-    console.log("delta", JSON.stringify(delta, null, 2));
-    setPersonEntity(
-      replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
-    );
+    setPersonEntity((prev) => {
+      if (prev.kind == "r" || prev.value.kind == "errors") {
+        return prev;
+      }
+      const newEntity =
+        updater.kind == "r"
+          ? updater.value(prev.value.value)
+          : prev.value.value;
+      return replaceWith(
+        Sum.Default.left<
+          ValueOrErrors<PredicateValue, string>,
+          "not initialized"
+        >(ValueOrErrors.Default.return(newEntity)),
+      )(prev);
+    });
     if (
       specificationDeserializer.deserializedSpecification.sync.kind ==
         "loaded" &&

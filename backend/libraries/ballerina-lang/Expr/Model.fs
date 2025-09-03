@@ -151,7 +151,7 @@ module Model =
     | CustomType of string
     | VarType of VarName
     | LookupType of ExprTypeId
-    | KeyOf of ExprType
+    | KeyOf of ExprType * List<string>
     | PrimitiveType of PrimitiveType
     | RecordType of Map<string, ExprType>
     | UnionType of Map<CaseName, UnionCase>
@@ -175,7 +175,13 @@ module Model =
       match t with
       | ExprType.CustomType l -> l
       | ExprType.LookupType l -> l.VarName
-      | ExprType.KeyOf t -> $"KeyOf<{!t}>"
+      | ExprType.KeyOf(t, excludedKeys) ->
+        let excludedKeysRepr =
+          excludedKeys
+          |> List.map (fun k -> $"'{k}'")
+          |> fun keys -> String.Join(", ", keys)
+
+        $"KeyOf<{!t}, {excludedKeysRepr}>"
       | ExprType.PrimitiveType p -> p.ToString()
       | ExprType.UnitType -> "()"
       | ExprType.VarType v -> v.VarName

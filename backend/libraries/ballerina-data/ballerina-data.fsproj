@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>ballerina_data</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Arity\Model.fs" />
+    <Compile Include="Delta\Model.fs" />
+    <Compile Include="Delta\ToUpdater.fs" />
+    <Compile Include="Delta\Patterns.fs" />
+    <Compile Include="Delta\Json\Parser.fs" />
+    <Compile Include="Delta\Json\Multiple.fs" />
+    <Compile Include="Delta\Json\Replace.fs" />
+    <Compile Include="Delta\Json\Union.fs" />
+    <Compile Include="Delta\Json\Record.fs" />
+    <Compile Include="Delta\Json\Tuple.fs" />
+    <Compile Include="Delta\Json\Sum.fs" />
+    <Compile Include="Delta\Json\Model.fs" />
+    <Compile Include="Schema\Model.fs" />
+    <Compile Include="Schema\Json\Schema.fs" />
+    <Compile Include="Schema\TypeEval.fs" />
+    <Compile Include="Spec.fs" />
+    <Compile Include="Seeds.fs" />
+    <Compile Include="Db.fs" />
+    <Compile Include="Api.fs" />
+    <Content Include="todo.md" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="9.0.303" />
+    <PackageReference Include="AutoBogus" Version="2.13.1" />
+    <PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
+  </ItemGroup>
+
+</Project>

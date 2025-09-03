@@ -282,6 +282,11 @@ export const TableDispatcher = {
                             tableEntityType,
                             AllowedFilters,
                             dispatcherContext.parseToApiByType,
+                            dispatcherContext.parseFromApiByType,
+                            dispatcherContext.parseFromApiByType(
+                              renderer.type.arg,
+                            ),
+                            tableApiSource,
                           )
                             .mapContext((_: any) => ({
                               ..._,
@@ -292,15 +297,8 @@ export const TableDispatcher = {
                                   : (dispatcherContext.specApis.tables?.get(
                                       api!,
                                     )?.methods ?? []),
-                              tableApiSource,
                               sorting,
                               highlightedFilters,
-                              fromTableApiParser:
-                                dispatcherContext.parseFromApiByType(
-                                  renderer.type.arg,
-                                ),
-                              parseFromApiByType:
-                                dispatcherContext.parseFromApiByType,
                             }))
                             .withView(concreteRenderer),
                         );

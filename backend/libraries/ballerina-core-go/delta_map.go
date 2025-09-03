@@ -96,23 +96,35 @@ func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) D
 }
 
 func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
-	onKey func(Tuple2[int, deltaK]) (Result, error),
-	onValue func(Tuple2[int, deltaV]) (Result, error),
+	onKey func(Tuple2[int, deltaK]) func(ReaderWithError[Unit, k]) (Result, error),
+	onValue func(Tuple2[int, deltaV]) func(ReaderWithError[Unit, v]) (Result, error),
 	onAdd func(Tuple2[k, v]) (Result, error),
 	onRemove func(int) (Result, error),
-) func(DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
-	return func(delta DeltaMap[k, v, deltaK, deltaV]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case mapKey:
-			return onKey(*delta.key)
-		case mapValue:
-			return onValue(*delta.value)
-		case mapAdd:
-			return onAdd(*delta.add)
-		case mapRemove:
-			return onRemove(*delta.remove)
+) func(DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[Unit, Map[k, v]]) (Result, error) {
+	return func(delta DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[Unit, Map[k, v]]) (Result, error) {
+		return func(mapReader ReaderWithError[Unit, Map[k, v]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case mapKey:
+				key := MapReaderWithError[Unit, Map[k, v], k](
+					func(m Map[k, v]) k {
+						return m[delta.key.Item1].Key
+					},
+				)(mapReader)
+				return onKey(*delta.key)(key)
+			case mapValue:
+				value := MapReaderWithError[Unit, Map[k, v], v](
+					func(m Map[k, v]) v {
+						return m[delta.value.Item1].Value
+					},
+				)(mapReader)
+				return onValue(*delta.value)(value)
+			case mapAdd:
+				return onAdd(*delta.add)
+			case mapRemove:
+				return onRemove(*delta.remove)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaMap")
 	}
 }

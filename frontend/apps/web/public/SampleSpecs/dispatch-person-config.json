@@ -655,7 +655,7 @@
               "renderer": "defaultString"
             },
             "type": "string",
-            "operators": ["=", "contains", "startsWith"]
+            "operators": ["=", "contains", "startswith"]
           },
           "Surname": {
             "display": {

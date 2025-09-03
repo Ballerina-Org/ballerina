@@ -50,15 +50,18 @@ export const EnumAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[enum]";
 
-    if (!PredicateValue.Operations.IsOption(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsOption(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `Option expected but got: ${JSON.stringify(
+        `Option or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Option value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Option or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

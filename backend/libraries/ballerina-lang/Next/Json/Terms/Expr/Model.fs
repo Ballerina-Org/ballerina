@@ -44,7 +44,7 @@ module ExprJson =
     static member ToJson: Expr<'T> -> JsonValue =
       fun expr ->
         match expr with
-        | Expr.Lambda(name, body) -> Expr.ToJsonLambda Expr.ToJson (name, body)
+        | Expr.Lambda(name, _, body) -> Expr.ToJsonLambda Expr.ToJson (name, body)
         | Expr.TypeLambda(name, body) -> Expr.ToJsonTypeLambda Expr.ToJson (name, body)
         | Expr.TypeApply(name, body) -> Expr.ToJsonTypeApply Expr.ToJson (name, body)
         | Expr.Apply(name, body) -> Expr.ToJsonApply Expr.ToJson (name, body)

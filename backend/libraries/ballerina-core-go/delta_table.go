@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+
 	"github.com/google/uuid"
 )
 
@@ -128,32 +129,39 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 }
 
 func MatchDeltaTable[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
 	onAddEmpty func() (Result, error),
-) func(DeltaTable[a, deltaA]) (Result, error) {
-	return func(delta DeltaTable[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case tableValue:
-			return onValue(*delta.value)
-		case tableAddAt:
-			return onAddAt(*delta.addAt)
-		case tableRemoveAt:
-			return onRemoveAt(*delta.removeAt)
-		case tableMoveFromTo:
-			return onMoveFromTo(*delta.moveFromTo)
-		case tableDuplicateAt:
-			return onDuplicateAt(*delta.duplicateAt)
-		case tableAdd:
-			return onAdd(*delta.add)
-		case tableAddEmpty:
-			return onAddEmpty()
+) func(DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
+	return func(delta DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
+		return func(table ReaderWithError[Unit, Table[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case tableValue:
+				value := MapReaderWithError[Unit, Table[a], a](
+					func(table Table[a]) a {
+						return table.Values[table.IdToIndex[delta.value.Item1]]
+					},
+				)(table)
+				return onValue(*delta.value)(value)
+			case tableAddAt:
+				return onAddAt(*delta.addAt)
+			case tableRemoveAt:
+				return onRemoveAt(*delta.removeAt)
+			case tableMoveFromTo:
+				return onMoveFromTo(*delta.moveFromTo)
+			case tableDuplicateAt:
+				return onDuplicateAt(*delta.duplicateAt)
+			case tableAdd:
+				return onAdd(*delta.add)
+			case tableAddEmpty:
+				return onAddEmpty()
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTable")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTable")
 	}
 }

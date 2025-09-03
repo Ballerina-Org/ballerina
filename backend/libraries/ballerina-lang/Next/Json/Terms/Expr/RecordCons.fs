@@ -8,7 +8,9 @@ module RecordCons =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Types.Json
 
   type Expr<'T> with
     static member FromJsonRecordCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -21,7 +23,7 @@ module RecordCons =
             |> Seq.map (fun field ->
               reader {
                 let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
-                let! k = k |> JsonValue.AsString |> reader.OfSum
+                let! k = k |> Identifier.FromJson |> reader.OfSum
                 let! v = v |> fromRootJson
                 return (k, v)
               })
@@ -30,10 +32,10 @@ module RecordCons =
           return Expr.RecordCons(fields)
         })
 
-    static member ToJsonRecordCons(rootToJson: Expr<'T> -> JsonValue) : List<string * Expr<'T>> -> JsonValue =
+    static member ToJsonRecordCons(rootToJson: Expr<'T> -> JsonValue) : List<Identifier * Expr<'T>> -> JsonValue =
       List.map (fun (field, expr) ->
         let expr = rootToJson expr
-        let field = JsonValue.String field
+        let field = Identifier.ToJson field
         [| field; expr |] |> JsonValue.Array)
       >> List.toArray
       >> JsonValue.Array

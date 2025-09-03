@@ -58,6 +58,14 @@ module EquivalenceClasses =
       { Classes = Map.empty
         Variables = Map.empty }
 
+    static member EnsureVariableExists (var: 'var) (classes: EquivalenceClasses<'var, 'value>) =
+      if classes.Variables.ContainsKey var then
+        classes
+      else
+        classes
+        |> (EquivalenceClasses.Updaters.Variables(Map.add var $"{var}")
+            >> EquivalenceClasses.Updaters.Classes(Map.add $"{var}" (EquivalenceClass.FromVariable var)))
+
     static member private tryGetKey(var: 'var) =
       state {
         let! (classes: EquivalenceClasses<'var, 'value>) = state.GetState()
@@ -131,6 +139,34 @@ module EquivalenceClasses =
           do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add key initialClass))
 
           return initialClass
+      }
+
+    static member TryDeleteFreeVariable
+      (var: 'var)
+      : State<Unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      state {
+        let! classes = state.GetState()
+
+        if classes.Variables.ContainsKey var |> not then
+          return ()
+        else
+          let! var_key = EquivalenceClasses.getKey var
+          let! var_class = EquivalenceClasses.getVarClass var_key var
+
+          match var_class.Representative with
+          | Some representative ->
+            return!
+              $"Error: cannot remove variable {var.ToString()} because it is not free - it has a representative {representative.ToFSharpString}"
+              |> Errors.Singleton
+              |> state.Throw
+          | None ->
+            if var_class.Variables.Count = 1 then
+              do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.remove var_key))
+            else
+              return!
+                $"Error: cannot remove variable {var.ToString()} because it is bound to other variables {var_class.Variables.ToFSharpString}"
+                |> Errors.Singleton
+                |> state.Throw
       }
 
     static member private mergeRepresentative

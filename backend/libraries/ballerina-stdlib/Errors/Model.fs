@@ -4,6 +4,7 @@ module Errors =
 
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
+  open Ballerina.Reader.WithError
   open System
   open Ballerina.StdLib.String
 
@@ -100,3 +101,7 @@ module Errors =
   type StateBuilder with
     member state.WithErrorContext err =
       state.MapError(Errors.Map(String.appendNewline err))
+
+  type ReaderBuilder with
+    member reader.WithErrorContext err =
+      reader.MapError(Errors.Map(String.appendNewline err))

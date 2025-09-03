@@ -67,7 +67,7 @@ module Patterns =
       sum {
         match t with
         | ExprType.UnitType -> return ()
-        | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a lookup.""")
+        | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a unit.""")
       }
 
     static member AsLambda(t: ExprType) : Sum<_, Errors> =

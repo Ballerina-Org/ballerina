@@ -6,21 +6,23 @@ module UnionCons =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Types.Json
 
   type Expr<'T> with
     static member FromJsonUnionCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
       reader.AssertKindAndContinueWithField "union-case" "union-case" (fun unionCaseJson ->
         reader {
           let! (k, v) = unionCaseJson |> JsonValue.AsPair |> reader.OfSum
-          let! k = k |> JsonValue.AsString |> reader.OfSum
+          let! k = k |> Identifier.FromJson |> reader.OfSum
           let! v = v |> fromRootJson
           return Expr.UnionCons(k, v)
         })
 
-    static member ToJsonUnionCons(rootToJson: Expr<'T> -> JsonValue) : string * Expr<'T> -> JsonValue =
+    static member ToJsonUnionCons(rootToJson: Expr<'T> -> JsonValue) : Identifier * Expr<'T> -> JsonValue =
       fun (k, v) ->
-        let k = k |> JsonValue.String
+        let k = k |> Identifier.ToJson
         let v = v |> rootToJson
         [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"

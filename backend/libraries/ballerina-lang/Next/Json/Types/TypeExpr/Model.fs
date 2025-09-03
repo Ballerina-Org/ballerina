@@ -55,3 +55,5 @@ module TypeExpr =
         | TypeExpr.KeyOf k -> TypeExpr.ToJsonKeyOf TypeExpr.ToJson k
         | TypeExpr.Flatten(a, b) -> TypeExpr.ToJsonFlatten TypeExpr.ToJson (a, b)
         | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude TypeExpr.ToJson (a, b)
+        | TypeExpr.NewSymbol _ -> JsonValue.Null
+        | TypeExpr.Let(_, _, rest) -> TypeExpr.ToJson rest
