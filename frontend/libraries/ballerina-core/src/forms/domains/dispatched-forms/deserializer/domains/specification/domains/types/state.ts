@@ -49,7 +49,7 @@ export type SerializedKeyOfType<T> = {
 
 export type ValidatedSerializedKeyOfType<T> = {
   fun: "KeyOf";
-  args: Array<string>;
+  args: [string, Array<string>?];
 };
 
 export type SerializedLookupType = string;
@@ -183,7 +183,7 @@ export const SerializedType = {
     _.fun == "KeyOf" &&
     "args" in _ &&
     Array.isArray(_.args) &&
-    _.args.length == 1 &&
+    (_.args.length == 1 || (_.args.length == 2 && Array.isArray(_.args[1]))) &&
     DispatchisString(_.args[0]),
   isOne: <T>(
     _: SerializedType<T>,
@@ -852,6 +852,7 @@ export const DispatchParsedType = {
                   Map(
                     parsingResult[0].fields
                       .keySeq()
+                      .filter((key) => rawType.args[1] == undefined || !rawType.args[1].includes(key))
                       .toArray()
                       .map((key) => [
                         key,
