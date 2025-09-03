@@ -185,7 +185,7 @@ module TypeCheck =
             return Expr.Primitive(PrimitiveValue.Unit), TypeValue.Primitive(PrimitiveType.Unit), Kind.Star
 
           | Expr.Lookup id ->
-            let! t_id, id_k = TypeCheckContext.TryFindVar id
+            let! t_id, id_k = state.Either (TypeCheckContext.TryFindVar id) (TypeCheckState.TryFindType id)
             return Expr.Lookup id, t_id, id_k
 
           | Expr.Apply(f, a) ->
@@ -629,6 +629,7 @@ module TypeCheck =
                   |> Expr.liftTypeEval
 
                 let! body, t_body, body_k = !body
+
 
                 // pop binding
                 match t_par_type with

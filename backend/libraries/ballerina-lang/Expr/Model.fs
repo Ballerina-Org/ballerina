@@ -73,6 +73,7 @@ module Model =
     | LetType of ExprTypeId * ExprType * Expr<'ExprExtension, 'ValueExtension>
     | GenericApply of Expr<'ExprExtension, 'ValueExtension> * ExprType
     | Annotate of Expr<'ExprExtension, 'ValueExtension> * ExprType
+    | Prepend of List<string> * Expr<'ExprExtension, 'ValueExtension>
     | Extension of 'ExprExtension
 
     override e.ToString() =
@@ -106,6 +107,7 @@ module Model =
       | LetType(typeName, expr, rest) -> $"type {typeName} = {expr} in {rest}"
       | GenericApply(e, t) -> $"{e}[{t}]"
       | Annotate(e, t) -> $"{e} : {t}"
+      | Prepend(elements, e) -> $"prepend {e} with {elements}"
       | Extension ext -> ext.ToString()
 
   and PrimitiveType =

@@ -1214,3 +1214,81 @@ let ``LangNext-TypeCheck type lambda fails when the variable cannot be generaliz
     Assert.Pass()
   | Sum.Right(err, _) ->
     Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
+
+
+
+[<Test>]
+let ``LangNext-TypeCheck type lambda succeeds when concrete type is passed to *->*`` () =
+  let program =
+    Expr.TypeApply(
+      Expr.TypeLambda(("x", Kind.Star) |> TypeParameter.Create, Expr.Lookup(!"x")),
+      TypeExpr.Primitive PrimitiveType.Decimal
+    )
+
+  let initialContext = TypeCheckContext.Empty
+
+  let initialState = TypeCheckState.Empty
+  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+
+  let expected = TypeValue.Primitive PrimitiveType.Decimal
+
+  match actual with
+  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
+  | Sum.Left((_, t, k), _) ->
+    Assert.Fail $"Expected typechecking to succeed with 'Decimal' but succeeded with: {t}::{k}"
+  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+
+
+[<Test>]
+let ``LangNext-TypeCheck type lambda succeeds when *->* type is passed to (*->*)->(*->*)`` () =
+  let program =
+    Expr.TypeLet(
+      "id",
+      TypeExpr.Lambda(("x", Kind.Star) |> TypeParameter.Create, !!"x"),
+      Expr.TypeLet(
+        "idid",
+        TypeExpr.Lambda(("f", Kind.Arrow(Kind.Star, Kind.Star)) |> TypeParameter.Create, !!"f"),
+        Expr.TypeApply(Expr.TypeApply(Expr.Lookup !"idid", !!"id"), TypeExpr.Primitive PrimitiveType.Unit)
+      )
+    )
+
+  let initialContext = TypeCheckContext.Empty
+
+  let initialState = TypeCheckState.Empty
+  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+
+  let expected = TypeValue.Primitive PrimitiveType.Unit
+
+  match actual with
+  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
+  | Sum.Left((_, t, k), _) -> Assert.Fail $"Expected typechecking to succeed with 'Unit' but succeeded with: {t}::{k}"
+  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+
+
+[<Test>]
+let ``LangNext-TypeCheck type lambda fails when passing *->* to *->*`` () =
+  let program =
+    Expr.TypeLet(
+      "id",
+      TypeExpr.Lambda(("x", Kind.Star) |> TypeParameter.Create, !!"x"),
+      Expr.TypeApply(Expr.Lookup !"id", !!"id")
+    )
+
+  let initialContext = initialContext PrimitiveType.Decimal
+
+  let initialState = TypeCheckState.Empty
+
+  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+
+  let expected_error_messages =
+    [ "mismatched kind"; "expected Star"; "got Arrow (Star, Star)" ]
+
+  match actual with
+  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
+  | Sum.Right(err, _) when
+    expected_error_messages
+    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    ->
+    Assert.Pass()
+  | Sum.Right(err, _) ->
+    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"

@@ -371,6 +371,29 @@ module Expr =
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
 
+    static member private ParsePrepend
+      (parseExpr: ExprParser<'ExprExtension, 'ValueExtension>)
+      (json: JsonValue)
+      : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors> =
+      sum {
+        let! fieldsJson = assertKindIsAndGetFields "prepend" json
+
+        return!
+          sum {
+            let! operandsJson = fieldsJson |> sum.TryFindField "operands"
+            let! operandNewCasesJson, operandExprJson = JsonValue.AsPair operandsJson
+
+            let! operandNewCases =
+              operandNewCasesJson
+              |> JsonValue.AsArray
+              |> Sum.bind (fun cases -> Seq.map JsonValue.AsString cases |> sum.All)
+
+            let! operandExpr = operandExprJson |> parseExpr
+            return Expr.Prepend(operandNewCases, operandExpr)
+          }
+          |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+      }
+
     static member Parse
       (parseExtension: ExprParser<'ExprExtension, 'ValueExtension> -> ExprParser<'ExprExtension, 'ValueExtension>)
       (json: JsonValue)
@@ -391,6 +414,7 @@ module Expr =
             Expr.ParseFieldLookup (Expr.Parse parseExtension) json
             Expr.ParseVarLookup json
             Expr.ParseItemLookup (Expr.Parse parseExtension) json
+            Expr.ParsePrepend (Expr.Parse parseExtension) json
             parseExtension (Expr.Parse parseExtension) json
             sum.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
         )
@@ -506,6 +530,20 @@ module Expr =
               (Expr.ToJson toJsonTailExpr toJsonTailValue)
               (Value.ToJson toJsonTailExpr toJsonTailValue)
               exprExt
+        | Expr.Prepend(newCases, expr) ->
+          let! (jsonNewCases: JsonValue) =
+            newCases
+            |> List.map JsonValue.String
+            |> Array.ofList
+            |> JsonValue.Array
+            |> sum.Return
+
+          let! jsonExpr = !expr
+
+          JsonValue.Record(
+            [| "kind", JsonValue.String "prepend"
+               "operands", JsonValue.Array [| jsonNewCases; jsonExpr |] |]
+          )
       }
       |> sum.MapError Errors.HighestPriority
 

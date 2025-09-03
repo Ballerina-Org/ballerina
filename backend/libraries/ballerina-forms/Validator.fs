@@ -17,6 +17,8 @@ module Validator =
   open Ballerina.Errors
   open System
 
+  let private (>>=) m f = sum.Bind(m, f)
+
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
@@ -533,31 +535,28 @@ module Validator =
                   |> state.OfSum
 
                 let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
-                let! eTypeRefId = ExprType.AsLookupId eTypeSetArg |> state.OfSum
 
-                let! eTypeRef =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
-                  |> state.OfSum
+                let getLookedUpExprType (eType: ExprType) : Sum<ExprType, Errors> =
+                  sum {
+                    match eType with
+                    | ExprType.LookupType l ->
+                      let! typeBinding = ctx.Types |> Map.tryFindWithError l.VarName "types" "types"
+                      return typeBinding.Type
+                    | _ -> return eType
+                  }
 
-                let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
+                let! eTypeInSet = getLookedUpExprType eTypeSetArg >>= ExprType.AsRecord |> state.OfSum
 
-                let! eTypeEnum = eTypeRefFields |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
-                let! eTypeEnumId = ExprType.AsLookupId eTypeEnum |> state.OfSum
+                let! eTypeEnum = eTypeInSet |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
 
-                let! eTypeEnum =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
-                  |> state.OfSum
-
-                let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
+                let! eTypeEnumCases = getLookedUpExprType eTypeEnum >>= ExprType.AsUnion |> state.OfSum
 
                 match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
                 | Some nonUnitCaseFields ->
                   return!
                     state.Throw(
                       Errors.Singleton
-                        $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
+                        $"Error: all cases of {eTypeEnum.ToString()} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
                     )
                 | _ ->
                   let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
