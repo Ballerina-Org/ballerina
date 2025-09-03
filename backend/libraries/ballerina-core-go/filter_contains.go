@@ -12,6 +12,10 @@ func NewContains[T any](value T) Contains[T] {
 	return Contains[T]{contains: value}
 }
 
+func (e Contains[T]) GetContains() T {
+	return e.contains
+}
+
 var _ json.Unmarshaler = &Contains[Unit]{}
 var _ json.Marshaler = Contains[Unit]{}
 
