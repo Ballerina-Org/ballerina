@@ -24,18 +24,18 @@ export type GetLookupResponse ={
     hasMore: boolean
 }
 
-export async function getLookup(specName: string, lookupName: string, source: Guid)
-    : Promise<ValueOrErrors<any, Errors<string>>> {
-    
-    const url = `${BASE_URL}/lookup/${lookupName}/${source}?skip=0&take=1`
-    
-    const result =
-        await axios.get<ValueOrErrors<GetLookupResponse, Errors<string>>>(url, {
-                headers: {
-                    "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
-                    "X-Spec-Id": specName
-                },
-            });
-    return result.data;
-}
+// export async function getLookup(specName: string, lookupName: string, source: Guid)
+//     : Promise<ValueOrErrors<any, Errors<string>>> {
+//    
+//     const url = `${BASE_URL}/lookup/${lookupName}/${source}?skip=0&take=1`
+//    
+//     const result =
+//         await axios.get<ValueOrErrors<GetLookupResponse, Errors<string>>>(url, {
+//                 headers: {
+//                     "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
+//                     "X-Spec-Id": specName
+//                 },
+//             });
+//     return result.data;
+// }
 

@@ -43,7 +43,7 @@ import {
 import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 import {DispatchFromConfigApis, IdeFormProps} from "playground-core";
-// import {getSeedEntity, updateEntity, UnmockingApisEntities, UnmockingApisTables, UnmockingApisStreams, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
+import { UnmockingApisStreams} from "playground-core";
 import {getSeedEntity, getLookup, GetLookupResponse, updateEntity, UnmockingApisLookups, findByDispatchType} from "playground-core";
 const ShowFormsParsingErrors = (
     parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -58,7 +58,89 @@ const ShowFormsParsingErrors = (
             JSON.stringify(parsedFormsConfig.errors)}
     </div>
 );
+import {  isCollection, isKeyed } from "immutable";
 
+type AnyObject = Record<string, unknown>;
+
+const isPlainObject = (x: unknown): x is AnyObject =>
+    !!x && typeof x === "object" && (x as object).constructor === Object;
+
+/** Convert ANY input into an OrderedMap<string, unknown>. */
+function toOrderedMap(src: unknown): OrderedMap<string, unknown> {
+    // Already OrderedMap?
+    if ((OrderedMap as any).isOrderedMap?.(src)) {
+        return src as OrderedMap<string, unknown>;
+    }
+
+    // Any Immutable collection (Map/OrderedMap/List/etc.)
+    if (isCollection(src as any)) {
+        const col: any = src;
+        const entries: Array<[string, unknown]> = [];
+        // forEach(value, key) exists on both keyed & indexed collections (index used as key for indexed)
+        col.forEach((v: unknown, k: unknown) => entries.push([String(k), v]));
+        return OrderedMap(entries);
+    }
+
+    // Native Map
+    if (src instanceof Map) {
+        return OrderedMap(Array.from(src, ([k, v]) => [String(k), v] as [string, unknown]));
+    }
+
+    // Array → indices as keys
+    if (Array.isArray(src)) {
+        return OrderedMap(src.map((v, i) => [String(i), v] as [string, unknown]));
+    }
+
+    // Plain object
+    if (isPlainObject(src)) {
+        return OrderedMap(Object.entries(src));
+    }
+
+    // Primitives
+    return OrderedMap([["value", src]]);
+}
+
+/**
+ * Recursively normalize any value. Whenever a property/key is named `fields`,
+ * convert its value to an OrderedMap. Works for plain objects, arrays,
+ * Immutable keyed collections (Map/OrderedMap/Record), and indexed (List).
+ * Does not mutate inputs.
+ */
+export function normalizeFieldsToOrderedMap<T = unknown>(value: T): T {
+    // Immutable collections
+    if (isCollection(value as any)) {
+        const col: any = value;
+
+        if (isKeyed(col)) {
+            // We can see keys (including 'fields')
+            return col.mapEntries(([k, v]: [unknown, unknown]) => {
+                const nv = normalizeFieldsToOrderedMap(v);
+                return [k, String(k) === "fields" ? toOrderedMap(nv) : nv];
+            }) as T;
+        }
+
+        // Indexed (e.g., List) — only values
+        return col.map((v: unknown) => normalizeFieldsToOrderedMap(v)) as T;
+    }
+
+    // Arrays
+    if (Array.isArray(value)) {
+        return value.map(v => normalizeFieldsToOrderedMap(v)) as unknown as T;
+    }
+
+    // Plain objects
+    if (isPlainObject(value)) {
+        const out: AnyObject = {};
+        for (const [k, v] of Object.entries(value)) {
+            const nv = normalizeFieldsToOrderedMap(v);
+            out[k] = k === "fields" ? toOrderedMap(nv) : nv;
+        }
+        return out as unknown as T;
+    }
+
+    // Primitives
+    return value;
+}
 const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
     <div id={domNodeId}>{children}</div>
 );
@@ -221,7 +303,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         PredicateValue,
         DispatchPassthroughFormFlags
     > = (updater, delta) => {
-        debugger
+
         if (entity.kind == "r" || entity.value.kind == "errors") {
             return;
         }
@@ -272,7 +354,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     if (raw.kind == "value") {
                         
                         const id = raw.value[0].id
-                        debugger
+     
                         const parsed =
                             spec.launchers.passthrough
                                 .get("person-transparent")!
@@ -284,9 +366,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                             console.error("parsed entity errors", parsed.errors);
                         } else {
                             const entity = parsed.value;
+                            debugger
                             const e = entity as any;
-                            if(specApis.lookups && lookupSources){
-                                debugger
+                            if(specApis.lookups && specApis.streams && lookupSources){
+                  
                                 const oneFields = findByDispatchType(specApis.lookups, props.typeName)
                                 const fields =
                                     oneFields
@@ -298,10 +381,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 const fetched =
                                     await Promise.all(
                                         fields.map(
-                                async field =>
+                                            async field =>
                                             ({ 
                                                 key: field.api.replace(/Api$/, ""),
-                                                value: await getLookup(props.specName, field.api.replace(/Api$/,""),  id)
+                                                value: await getLookup(props.specName, field.api.replace(/Api$/,""),  id, 0, 1)
                                             })
                                         ));
                                 const ones =  [...fetched, { key: "Id", value: ValueOrErrors.Default.return(id) }];
@@ -309,24 +392,21 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 const pairs = 
                                     ones
                                     .flatMap(x => {
-                                        const tmp =  x.value.kind === "value" ? x.key == "Id" ? x.value.value : PredicateValue.Default.option(true,PredicateValue.Default.record(x.value.value.values[0])) : null;
-                                        debugger
-                                        return x.value.kind === "value" ? [[x.key, tmp] as const] : []
+                                        const opt =  x.value.kind === "value" ? x.key == "Id" ? x.value.value : PredicateValue.Default.option(true,PredicateValue.Default.record(OrderedMap(x.value.value.values[0]))) : null;
+                                    
+                                        return x.value.kind === "value" ? [[x.key, opt] as const] : []
                                     });
 
                                 const updated = {
                                     ...e,
                                     fields: e.fields.merge(Object.fromEntries(pairs)),
                                 };
+                    
                                 debugger
                                 //setEntity(Sum.Default.left(parsed));
                                 setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));// pv));
                                 setEntityId(id);
-                                
-    
                             }
-                            
-
                         }
                     }
                 });
@@ -393,7 +473,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     DispatchEntityNestedContainerFormView,
                                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                                     infiniteStreamSources:
-                                    DispatchFromConfigApis.streamApis, //UnmockingApisStreams.streamApis,
+                                    UnmockingApisStreams.streamApis,
                                     enumOptionsSources:DispatchFromConfigApis.enumApis, // UnmockingApisEnums.enumApis,
                                     entityApis: DispatchFromConfigApis.entityApis, //UnmockingApisEntities.entityApis,
                                     tableApiSources:

@@ -19,13 +19,15 @@ import {
     SumNType,
     DispatchParsedType,
     Value,
-    ValueFilter,
+    ValueFilter, SearchableInfiniteStreamState, OrderedMapRepo, Errors,
 } from "ballerina-core";
 import { Range, Map, List } from "immutable";
 
 import { AddressApi } from "../../../person/domains/address/apis/mocks";
 import { v4 } from "uuid";
 import { PersonApi } from "../../../person/apis/mocks";
+import {getStreams} from "../seeds";
+import {City} from "../../../person/domains/address/state";
 
 const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
@@ -33,14 +35,24 @@ const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
 
 
+const Api = {
+    process:
+        (res:Promise<ValueOrErrors<any, Errors<string>>>): SearchableInfiniteStreamState["customFormState"]["getChunk"] =>
 
-
+            
+   (_searchText) =>
+                (_streamPosition) =>
+                    res.then ((res) =>
+                    {
+                        console.log("****************************")
+                        return res.kind == "errors" ? ({data: OrderedMapRepo.Default.fromIdentifiables([]), hasMoreValues: false}) : ({
+                        data: OrderedMapRepo.Default.fromIdentifiables(res.value.value),
+                        hasMoreValues: true,
+                    })}),
+};
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
-    streamName == "departments"
-        ? ValueOrErrors.Default.return(PersonApi.getDepartments())
-        : streamName == "cities"
-            ? ValueOrErrors.Default.return(AddressApi.getCities())
-            : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
+    ValueOrErrors.Default.return(Api.process(getStreams("sample",streamName, 0, 11)));
+
 
 
 

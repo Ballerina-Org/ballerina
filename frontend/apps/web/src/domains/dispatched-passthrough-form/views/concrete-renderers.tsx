@@ -462,7 +462,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           </>
         );
       }
-      debugger
+
       if (props.context.customFormState.stream.kind === "r") {
         return (
           <>
@@ -591,21 +591,201 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       );
     },
-    eagerEditableOne: () => (props) => {
-      const maybeOption = props.context.value;
-      if (PredicateValue.Operations.IsUnit(maybeOption)) {
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: value option expected but got unit</>
-          </>
-        );
-      }
+    bestFriendDaisy: () => (props) => {
+          const maybeOption = props.context.value;
+          if (PredicateValue.Operations.IsUnit(maybeOption)) {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got unit</>
+                  </>
+              );
+          }
 
-      if (!PredicateValue.Operations.IsOption(maybeOption)) {
-        console.error("value option expected but got", maybeOption);
-        return (
-          <>
+          if (!PredicateValue.Operations.IsOption(maybeOption)) {
+              console.error("value option expected but got", maybeOption);
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got</>
+                  </>
+              );
+          }
+
+          if (!maybeOption.isSome) {
+              console.debug("loading");
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Loading...</>
+                  </>
+              );
+          }
+
+          const optionValue = maybeOption.value;
+
+          if (!PredicateValue.Operations.IsRecord(optionValue)) {
+              console.error("one option inner value is not a record", optionValue);
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: one option inner value is not a record</>
+                  </>
+              );
+          }
+
+          if (props.context.customFormState.stream.kind === "r") {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: stream missing</>
+                  </>
+              );
+          }
+
+          return (
+
+              <>
+
+                  <div className="card bg-base-100 w-96 shadow-sm">
+
+                      <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                          <legend className="fieldset-legend">details</legend>
+                          <div className="tooltip">
+                              <div className="tooltip-content">
+                                  <div className="animate-bounce text-orange-400 -rotate-10 text-2xl font-black">{props.context.tooltip}
+                                  </div>
+                              </div>
+                              {props.DetailsRenderer?.(undefined)({
+                                  ...props,
+                                  context: {
+                                      ...props.context,
+                                  },
+                                  foreignMutations: {
+                                      ...props.foreignMutations,
+                                  },
+                                  view: unit,
+                              })}
+                          </div>
+   
+                      </fieldset>
+
+                      <div className="card-body">
+                          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                          <legend className="fieldset-legend">preview</legend>
+
+                              {props?.PreviewRenderer &&
+                                  props?.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
+                                      ...props,
+                                      context: {
+                                          ...props.context,
+                                      },
+                                      foreignMutations: {
+                                          ...props.foreignMutations,
+                                      },
+                                      view: unit,
+                                  })}</fieldset>
+                              <div className="card-actions justify-end">
+                                  <button className="btn btn-primary" disabled={props.context.disabled}
+                                          onClick={() => props.foreignMutations.toggleOpen()}>toggle
+                                  </button>
+                              </div>
+                          </div>
+                  </div>
+
+
+                  {props.context.customFormState.status == "closed" ? (
+                      <></>
+                  ) : (
+                      <>
+                          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                              <legend className="fieldset-legend">Page title</legend>
+                              <input type="text" className="input" placeholder="search" disabled={props.context.disabled}
+                                     value={
+                                         props.context.customFormState.streamParams.value.get(
+                                             "search",
+                                         ) ?? ""
+                                     }
+                                     onChange={(e) =>
+                                         props.foreignMutations.setStreamParam(
+                                             "search",
+                                             e.currentTarget.value,
+                                         )
+                                     }/>
+                              <p className="label">You can edit page title later on from settings</p>
+                          </fieldset>
+
+                          <ul>
+                              {props.context.customFormState.stream.value.loadedElements
+                                  .entrySeq()
+                                  .map(([key, chunk]) =>
+                                      chunk.data.valueSeq().map((element: any) => {
+                                          return (
+                                              <li>
+                                                  <button
+                                                      disabled={props.context.disabled}
+                                                      onClick={() =>
+                                                          props.foreignMutations.select(element, undefined)
+                                                      }
+                                                  >
+                                                      <div
+                                                          onClick={() =>
+                                                              props.foreignMutations.select(
+                                                                  element,
+                                                                  undefined,
+                                                              )
+                                                          }
+                                                          style={{
+                                                              display: "flex",
+                                                              flexDirection: "row",
+                                                              gap: "10px",
+                                                          }}
+                                                      />
+                                                      {props?.PreviewRenderer &&
+                                                          props.PreviewRenderer(element)(key.toString())(
+                                                              undefined,
+                                                          )?.({
+                                                              ...props,
+                                                              context: {
+                                                                  ...props.context,
+                                                              },
+                                                              foreignMutations: {
+                                                                  ...props.foreignMutations,
+                                                              },
+                                                              view: unit,
+                                                          })}
+                                                  </button>
+                                              </li>
+                                          );
+                                      }),
+                                  )}
+                          </ul>
+                      </>
+                  )}
+                  <button
+                      disabled={props.context.hasMoreValues == false}
+                      onClick={() => props.foreignMutations.loadMore()}
+                  >
+                      ⋯
+                  </button>
+              </>
+          );
+    },
+      eagerEditableOne: () => (props) => {
+          const maybeOption = props.context.value;
+          if (PredicateValue.Operations.IsUnit(maybeOption)) {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got unit</>
+                  </>
+              );
+          }
+
+          if (!PredicateValue.Operations.IsOption(maybeOption)) {
+              console.error("value option expected but got", maybeOption);
+              return (
+                  <>
             <h2>{props.context.label}</h2>
             <>Error: value option expected but got</>
           </>

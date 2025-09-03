@@ -92,7 +92,12 @@ export const RecordAbstractRenderer = <
               ExtraContext
             > &
               RecordAbstractRendererState,
-          ) => ({
+          ) => {
+              if(!PredicateValue.Operations.IsUnit(_.value) && typeof _.value.fields.get !== "function"){
+                  debugger
+                  const test = "breakpoint"
+              }
+              return ({
             value: PredicateValue.Operations.IsUnit(_.value)
               ? _.value
               : _.value.fields.get(fieldName)!,
@@ -111,7 +116,7 @@ export const RecordAbstractRenderer = <
               _.typeAncestors,
             ),
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          })},
         )
         .mapState(
           (

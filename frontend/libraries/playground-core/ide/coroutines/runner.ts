@@ -12,5 +12,5 @@ export const SpecsObserver =
 
 export const LiveUpdatesCounter =
     Co.Template<Unit>(liveUpdatesCounter, {
-        runFilter: (props) => props.context.bridge.bridge.left.left.dirty  //props.context.liveUpdates.kind == "r" && props.context.liveUpdates.value >= 0,
+        runFilter: (props) =>  props.context.bridge.bridge.left.left.dirty  //props.context.liveUpdates.kind == "r" && props.context.liveUpdates.value >= 0,
     });

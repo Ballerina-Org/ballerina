@@ -167,7 +167,7 @@ export const Bridge = {
                 data.kind === "value" ? SpecV1.FromBody(JSON.stringify(data.value[0])): SpecV1.FromError(data.errors.toArray());
             const right =
                 data.kind === "value" ? SpecV2.FromBody(JSON.stringify(data.value[1])): SpecV1.FromError(data.errors.toArray());
-            debugger
+    
             return Updater<BridgeState>(bs => {
                 let b =
                     Product.Updaters.left<SpecV1, SpecV2>(replaceWith(left))

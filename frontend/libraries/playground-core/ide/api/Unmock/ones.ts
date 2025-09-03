@@ -15,7 +15,8 @@ import {Map, Range} from "immutable";
 
 import {v4} from "uuid";
 
-import {getSeedEntityId, getSeedEntityUnlinked} from "../seeds";
+import {getSeedEntityId, getLookup} from "../seeds";
+// import {getLookup} from "../seeds-lookups";
 
 const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
@@ -129,7 +130,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                                             const fieldName = apiName.replace(/Api$/, "");
                                             //todo: in get many unlinked we dont call for unlinked ones' by design (for now)
                                             const call = 
-                                                getSeedEntityUnlinked("sample",typeName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
+                                                getLookup("sample",fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
                                                     .then( valueOrErrors => ({
                                                         Values: valueOrErrors.kind == "value" ? valueOrErrors.value : [],
                                                         HasMore: false,//TODO
