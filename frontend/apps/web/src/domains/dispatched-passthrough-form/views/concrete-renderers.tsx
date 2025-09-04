@@ -629,6 +629,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
           if (!PredicateValue.Operations.IsRecord(optionValue)) {
               console.error("one option inner value is not a record", optionValue);
+              
               return (
                   <>
                       <h2>{props.context.label}</h2>
