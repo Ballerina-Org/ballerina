@@ -1625,7 +1625,6 @@ export const Expr = {
             PredicateValue.Operations.IsRecord(e) ||
             PredicateValue.Operations.IsTuple(e) ||
             PredicateValue.Operations.IsUnionCase(e) ||
-            PredicateValue.Operations.IsUnit(e) ||
             PredicateValue.Operations.IsSum(e)
             ? ValueOrErrors.Default.return(e)
             : PredicateValue.Operations.IsVarLookup(e)
