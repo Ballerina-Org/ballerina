@@ -202,7 +202,7 @@
     },
     "AddressesFieldsEnum": {
       "fun": "KeyOf",
-      "args": ["AddressFields"]
+      "args": ["AddressFields", ["Departments"]]
     },
     "AddressesFieldRef": {
       "fields": {
@@ -2149,13 +2149,19 @@
             "addresses": {
               "groups": {
                 "main": {
-                  "kind": "fieldLookup",
+                  "kind": "prepend",
                   "operands": [
+                    ["Departments"],
                     {
-                      "kind": "varLookup",
-                      "varName": "global"
-                    },
-                    "ActiveAddressFields"
+                      "kind": "fieldLookup",
+                      "operands": [
+                        {
+                          "kind": "varLookup",
+                          "varName": "global"
+                        },
+                        "ActiveAddressFields"
+                      ]
+                    }
                   ]
                 }
               }
