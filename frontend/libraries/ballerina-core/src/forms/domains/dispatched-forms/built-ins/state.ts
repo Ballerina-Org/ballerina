@@ -1833,6 +1833,7 @@ export const dispatchToAPIRawValue =
         }
 
         if (raw.isSome) {
+            debugger
           if (!PredicateValue.Operations.IsRecord(raw.value)) {
             return ValueOrErrors.Default.throwOne(
               `Record expected but got ${JSON.stringify(raw.value)}`,

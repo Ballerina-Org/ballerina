@@ -41,17 +41,27 @@ const Api = {
 
             
    (_searchText) =>
-                (_streamPosition) =>
-                    res.then ((res) =>
+                (_streamPosition) =>{
+                    debugger
+                    return res.then ((res) =>
                     {
-                        console.log("****************************")
+                        console.log(`${JSON.stringify(res)}`)
+                        debugger
                         return res.kind == "errors" ? ({data: OrderedMapRepo.Default.fromIdentifiables([]), hasMoreValues: false}) : ({
-                        data: OrderedMapRepo.Default.fromIdentifiables(res.value.value),
+                        data: OrderedMapRepo.Default.fromIdentifiables(res.value.map(x => x.value)),
                         hasMoreValues: true,
-                    })}),
+                    })})},
 };
-const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
-    ValueOrErrors.Default.return(Api.process(getStreams("sample",streamName, 0, 11)));
+const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
+
+    const s = getStreams("sample", streamName, 0, 11);
+    const c = Api.process(s.then( x=> {
+        
+   
+        return x
+    }))
+    return ValueOrErrors.Default.return(c);
+}
 
 
 

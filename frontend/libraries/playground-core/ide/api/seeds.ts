@@ -68,10 +68,10 @@ export async function getLookup(specName: string, entityName: string, id: Guid, 
 }
 export async function getStreams(specName: string, entityName: string, skip: number, take: number)
     : Promise<ValueOrErrors<any, Errors<string>>> {
-    debugger
+
     const result =
-        await axios.get<ValueOrErrors<any, Errors<string>>>(
-            `${BASE_URL}/entity/many/${entityName}Streams?skip=${skip}&take=${take}`, {
+        await axios.get<ValueOrErrors<{ value: CollectionReference[]}, Errors<string>>>(
+            `${BASE_URL}/entity/many/${entityName}?skip=${skip}&take=${take}`, {
                 headers: {
                     "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
                     "X-Spec-Id": specName
@@ -84,7 +84,7 @@ export async function getSeedEntityId(specName: string, entityName: string, id: 
 
     const result =
         await axios.get<ValueOrErrors<any, Errors<string>>>(
-            `${BASE_URL}/entity/${entityName}?skip=0&take=1`, {
+            `${BASE_URL}/entity/${entityName}/${id}?skip=0&take=1`, {
                 headers: {
                     "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
                     "X-Spec-Id": specName

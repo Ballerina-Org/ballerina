@@ -220,6 +220,16 @@ export const IdeLayout: IdeView = (props) =>{
                                                  <li><a onClick={(e) => setTheme("retro")}>retro</a></li>
                                                  <li><a onClick={(e) => setTheme("cyberpunk")}>cyberpunk</a></li>
                                                 <li><a onClick={(e) => setTheme("abyss")}>abyss</a></li>
+
+                                                 <li><a onClick={(e) => setTheme("sunset")}>sunset</a></li>
+                                                 <li><a onClick={(e) => setTheme("dim")}>dim</a></li>
+                                                 <li><a onClick={(e) => setTheme("business")}>business</a></li>
+                                                 <li><a onClick={(e) => setTheme("luxury")}>luxury</a></li>
+                                                 <li><a onClick={(e) => setTheme("black")}>black</a></li>
+                                                 <li><a onClick={(e) => setTheme("pastel")}>pastel</a></li>
+                                                 <li><a onClick={(e) => setTheme("aqua")}>aqua</a></li>
+                                                 <li><a onClick={(e) => setTheme("forest")}>forest</a></li>
+                                                 
                                             </ul>
                                 </details>
                             </li>
@@ -278,7 +288,7 @@ export const IdeLayout: IdeView = (props) =>{
                     />
 
                    <>
-                        <div className="card bg-base-100 w-full shadow-sm">
+                        <div className="card bg-base-100 w-full mt-5">
                             <div className="card-body w-full">
                               
                                     <div className="join">

@@ -145,8 +145,9 @@ export const OneAbstractRendererState = {
           `local binding is not a record when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
         );
       }
-
+        
       if (!local.fields.has("Id")) {
+          debugger
         return ValueOrErrors.Default.throwOne(
           `local binding is missing Id (check casing) when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
         );

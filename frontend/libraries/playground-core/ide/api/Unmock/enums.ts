@@ -22,77 +22,44 @@ import {
     ValueFilter,
 } from "ballerina-core";
 import { Range, Map, List } from "immutable";
+import {all} from "axios";
 
 
 const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
-const genders = ["M", "F", "X"];
+const genders = ["M", "F", "X", "P"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
 
+const allergy = ["Soy","Peanuts","Eggs","CowMilk"];
 
+const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
 
-const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
-    enumName == "colors"
-        ? ValueOrErrors.Default.return(() =>
-            PromiseRepo.Default.mock(
-                () => colors.map((_) => ({ Value: _ })),
-                undefined,
-                1,
-                0,
-            ),
-        )
-        : enumName == "permissions"
-            ? ValueOrErrors.Default.return(() =>
-                PromiseRepo.Default.mock(
-                    () => permissions.map((_) => ({ Value: _ })),
+    return enumName == "genders"
+        ? ValueOrErrors.Default.return(() => {
+          
+                return PromiseRepo.Default.mock(
+                    () => genders.map((_) => ({Value: _})),
                     undefined,
                     1,
                     0,
-                ),
-            )
-            : enumName == "genders"
-                ? ValueOrErrors.Default.return(() =>
-                    PromiseRepo.Default.mock(
-                        () => genders.map((_) => ({ Value: _ })),
+                )
+            },
+        )
+        : (enumName == "allergy"
+            ? ValueOrErrors.Default.return(() => {
+            
+                    return PromiseRepo.Default.mock(
+                        () => allergy.map((_) => ({Value: _})),
                         undefined,
                         1,
                         0,
-                    ),
-                )
-                : enumName == "interests"
-                    ? ValueOrErrors.Default.return(() =>
-                        PromiseRepo.Default.mock(
-                            () => interests.map((_) => ({ Value: _ })),
-                            undefined,
-                            1,
-                            0,
-                        ),
                     )
-                    : enumName == "addressesFields"
-                        ? ValueOrErrors.Default.return(() =>
-                            PromiseRepo.Default.mock(
-                                () =>
-                                    [
-                                        "AddressesByCity",
-                                        "Departments",
-                                        "SchoolAddress",
-                                        "MainAddress",
-                                        "AddressesAndAddressesWithLabel",
-                                        "AddressesWithColorLabel",
-                                        "AddressesBy",
-                                        "Permissions",
-                                        "CityByDepartment",
-                                        "Holidays",
-                                        "FriendsAddresses",
-                                    ].map((_) => ({ Value: _ })),
-                                undefined,
-                                1,
-                                0,
-                            ),
-                        )
-                        : ValueOrErrors.Default.throwOne(
-                            `Cannot find enum API ${enumName}`,
-                        );
+                },
+            )
+            : ValueOrErrors.Default.throwOne(
+                `Cannot find enum API ${enumName}`,
+            ));
+}
 
 export const UnmockingApisEnums = {
 

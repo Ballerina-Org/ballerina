@@ -118,8 +118,10 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                         get: (id: Guid) => {
                             debugger
                             const fieldName = apiName.replace(/Api$/, "");
-                            return getSeedEntityId("sample", typeName, id).then(valueOrErrors =>
-                                valueOrErrors.kind == "value" ? valueOrErrors.value : undefined);
+                            return getLookup("sample",fieldName, id, 0, 1).then(valueOrErrors => {
+                                debugger
+                                return valueOrErrors.kind == "value" ? valueOrErrors.value.values[0] : undefined
+                            });
                         },
                         getManyUnlinked:
                             (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
