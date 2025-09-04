@@ -556,6 +556,7 @@ export type ExprBinaryOperator = {
   kind: BinaryOperator;
   operands: [Expr, Expr];
 };
+export type ExprPrepend = { kind: "prepend"; operands: [Array<string>, Expr] };
 
 export type Expr =
   | PredicateValue
@@ -565,7 +566,9 @@ export type Expr =
   | ExprBinaryOperator
   | ExprLambda
   | ExprMatchCase
-  | ExprCase;
+  | ExprCase
+  | ExprPrepend;
+
 
 export const BinaryOperators = ["or", "equals"] as const;
 export const BinaryOperatorsSet = Set(BinaryOperators);
@@ -1314,6 +1317,10 @@ export const PredicateValue = {
 
 export const Expr = {
   Default: {
+    prepend: (prependCases: Array<string>, e: Expr): Expr => ({
+      kind: "prepend",
+      operands: [prependCases, e],
+    }),
     itemLookup: (e: Expr, i: number): Expr => ({
       kind: "itemLookup",
       operands: [e, i],
@@ -1346,6 +1353,13 @@ export const Expr = {
     }),
   },
   Operations: {
+    IsPrepend: (e: Expr): e is ExprPrepend => {
+      return (
+        typeof e == "object" &&
+        !PredicateValue.Operations.IsDate(e) &&
+        e.kind == "prepend"
+      );
+    },
     IsItemLookup: (e: Expr): e is ExprItemLookup => {
       return (
         typeof e == "object" &&
@@ -1485,6 +1499,12 @@ export const Expr = {
             : ValueOrErrors.Default.throwOne(
                 `expected lambda expression, got ${JSON.stringify(handler)}`,
               ),
+        );
+      }
+      if (Expr.Operations.IsPrepend(json)) {
+        const [casesToPrepend, expr]: [Array<string>, Expr] = json["operands"];
+        return Expr.Operations.parse(expr).Then((expr) =>
+          ValueOrErrors.Default.return(Expr.Default.prepend(casesToPrepend, expr)),
         );
       }
       return ValueOrErrors.Default.throwOne(
@@ -1701,6 +1721,16 @@ export const Expr = {
                                     ),
                                   ),
                                 ),
+                              )
+                            : 
+                            Expr.Operations.IsPrepend(e)
+                            ? Expr.Operations.Evaluate(vars)(e.operands[1]).Then((v) =>
+                                Expr.Operations.EvaluateAsRecord(vars)(v).Then((v) => {
+                                  const prependEntries: [string, PredicateValue][] = e.operands[0].map((c: string) => [c, PredicateValue.Default.record(OrderedMap([["Value", c]]))]);
+                                  const existingEntries: [string, PredicateValue][] = Array.from(v.fields.entries());
+                                  let returnValue = PredicateValue.Default.record(OrderedMap(prependEntries.concat(existingEntries)));
+                                  return ValueOrErrors.Default.return(returnValue);
+                                })
                               )
                             : ValueOrErrors.Default.throwOne(
                                 `Error: unsupported expression ${JSON.stringify(e)}`,
