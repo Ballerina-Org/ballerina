@@ -17,9 +17,9 @@ const (
 	case8Of8 sum8CasesEnum = "case8Of8"
 )
 
-var AllSum8CasesEnum = [...]sum8CasesEnum{case1Of8, case2Of8, case3Of8, case4Of8, case5Of8, case6Of8, case7Of8, case8Of8}
+var allSum8CasesEnum = [...]sum8CasesEnum{case1Of8, case2Of8, case3Of8, case4Of8, case5Of8, case6Of8, case7Of8, case8Of8}
 
-func DefaultSum8CasesEnum() sum8CasesEnum { return AllSum8CasesEnum[0] }
+func DefaultSum8CasesEnum() sum8CasesEnum { return allSum8CasesEnum[0] }
 
 type Sum8[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any, case7 any, case8 any] struct {
 	discriminator sum8CasesEnum

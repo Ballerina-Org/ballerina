@@ -19,12 +19,12 @@ const (
 	case10Of10 sum10CasesEnum = "case10Of10"
 )
 
-var AllSum10CasesEnum = [...]sum10CasesEnum{
+var allSum10CasesEnum = [...]sum10CasesEnum{
 	case1Of10, case2Of10, case3Of10, case4Of10, case5Of10,
 	case6Of10, case7Of10, case8Of10, case9Of10, case10Of10,
 }
 
-func DefaultSum10CasesEnum() sum10CasesEnum { return AllSum10CasesEnum[0] }
+func DefaultSum10CasesEnum() sum10CasesEnum { return allSum10CasesEnum[0] }
 
 type Sum10[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any, case7 any, case8 any, case9 any, case10 any] struct {
 	discriminator sum10CasesEnum

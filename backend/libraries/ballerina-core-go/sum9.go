@@ -18,9 +18,9 @@ const (
 	case9Of9 sum9CasesEnum = "case9Of9"
 )
 
-var AllSum9CasesEnum = [...]sum9CasesEnum{case1Of9, case2Of9, case3Of9, case4Of9, case5Of9, case6Of9, case7Of9, case8Of9, case9Of9}
+var allSum9CasesEnum = [...]sum9CasesEnum{case1Of9, case2Of9, case3Of9, case4Of9, case5Of9, case6Of9, case7Of9, case8Of9, case9Of9}
 
-func DefaultSum9CasesEnum() sum9CasesEnum { return AllSum9CasesEnum[0] }
+func DefaultSum9CasesEnum() sum9CasesEnum { return allSum9CasesEnum[0] }
 
 type Sum9[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any, case7 any, case8 any, case9 any] struct {
 	discriminator sum9CasesEnum

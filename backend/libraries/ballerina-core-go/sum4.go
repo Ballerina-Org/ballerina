@@ -13,9 +13,9 @@ const (
 	case4Of4 sum4CasesEnum = "case4Of4"
 )
 
-var AllSum4CasesEnum = [...]sum4CasesEnum{case1Of4, case2Of4, case3Of4, case4Of4}
+var allSum4CasesEnum = [...]sum4CasesEnum{case1Of4, case2Of4, case3Of4, case4Of4}
 
-func DefaultSum4CasesEnum() sum4CasesEnum { return AllSum4CasesEnum[0] }
+func DefaultSum4CasesEnum() sum4CasesEnum { return allSum4CasesEnum[0] }
 
 type Sum4[case1 any, case2 any, case3 any, case4 any] struct {
 	discriminator sum4CasesEnum
