@@ -852,7 +852,11 @@ export const DispatchParsedType = {
                   Map(
                     parsingResult[0].fields
                       .keySeq()
-                      .filter((key) => rawType.args[1] == undefined || !rawType.args[1].includes(key))
+                      .filter(
+                        (key) =>
+                          rawType.args[1] == undefined ||
+                          !rawType.args[1].includes(key),
+                      )
                       .toArray()
                       .map((key) => [
                         key,
