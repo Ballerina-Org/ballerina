@@ -26,7 +26,9 @@ module RecordTypeExpr =
               })
             |> sum.All
 
-          return TypeExpr.Record(fieldTypes)
+          let record = TypeExpr.Record(fieldTypes)
+          let! wrappedRecord = AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst)
+          return wrappedRecord
         })
 
     static member ToJsonRecord(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr * TypeExpr> -> JsonValue =
