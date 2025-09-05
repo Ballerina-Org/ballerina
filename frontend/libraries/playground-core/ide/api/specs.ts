@@ -59,13 +59,12 @@ export async function updateBridge(v1: V1, spec: V2): Promise<ValueOrErrors<Unit
             "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
             "X-Spec-Id": spec.name
         },
-
     });
     return result.data;
 }
 
-export async function reseed(specName: string): Promise<ValueOrErrors<Unit, Errors<string>>> {
-    const result = await axios.put<ValueOrErrors<Unit, Errors<string>>>(`${BASE_URL}/spec/seeds/${specName}`, {"test":"test"},{
+export async function reseed(specName: string, spec: any): Promise<ValueOrErrors<Unit, Errors<string>>> {
+    const result = await axios.put<ValueOrErrors<Unit, Errors<string>>>(`${BASE_URL}/spec/seeds/${specName}`, spec,{
         headers: {
             "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd","X-Spec-Id": specName
         },

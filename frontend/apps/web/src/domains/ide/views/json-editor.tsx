@@ -1,19 +1,11 @@
 ﻿/** @jsxImportSource @emotion/react */
-import {
-    Ide,
-    JsonEditorView,
-    JsonEditorReadonlyContext
-} from "playground-core";
-import {HeadlessTemplateProps, replaceWith, Value} from "ballerina-core";
-import { JsonEditor, githubLightTheme,githubDarkTheme,psychedelicTheme,monoLightTheme } from 'json-edit-react';
+import {JsonEditorView} from "playground-core";
+import {Value} from "ballerina-core";
+import {JsonEditor, monoLightTheme} from 'json-edit-react';
 import {myTheme, style} from "./json-editor.styled.ts";
 import React from "react";
-import {CheckCircle, Edit, Delete, Check, SquareX, ArrowDown} from "lucide-react";
 import {Bridge} from "playground-core";
-import {
-    VscCopilot, VscDiffRemoved, VscExpandAll, VscClose, VscDiffAdded, VscEdit, VscArrowSmallRight, VscCheck,
-    VscCopy, VscDash
-} from "react-icons/vsc";
+import {VscDiffRemoved,  VscClose, VscDiffAdded, VscEdit,  VscCheck, VscCopy, VscDash} from "react-icons/vsc";
 
 export const V2Editor: JsonEditorView = (props) => (
     <>
@@ -46,22 +38,17 @@ export const V2Editor: JsonEditorView = (props) => (
                     }}
 
                     // onEditEvent={ x => {}},
-                    onChange={x => {
-                        // const value = JSON.stringify(x.newValue)
-                        // debugger
-                        // props.setState(
-                        //     Bridge.Updaters.Template.setV2Body(
-                        //         Value.Default(value)
-                        //     )
-                        // );
-                        return x.newValue}}
+                    onChange={x => x.newValue}
                     onUpdate={x =>
                     {
                         const value = JSON.stringify(x.newData)
+                        debugger
                         props.setState(
                             Bridge.Updaters.Template.setV2Body(
                                 Value.Default(value)
-                            )
+                            ).then(Bridge.Updaters.Template.setV2(
+                                Value.Default(value)
+                            ))
                         );
                     }}
                 />
@@ -73,7 +60,6 @@ export const V1Editor: JsonEditorView  = (props) => (
     <>
 
         <div css={style.editor.container}>
-            {/*<p>{props.context.indicator.kind}</p>*/}
             <div css={style.editor.left}>
                 <JsonEditor
                     icons={{
@@ -96,7 +82,7 @@ export const V1Editor: JsonEditorView  = (props) => (
                         props.setState(
                             Bridge.Updaters.Template.setV1Body(
                                 Value.Default(value)
-                            ).then(Bridge.Operations.dirty(true))
+                            )
                         );
                     }}
 
@@ -108,12 +94,10 @@ export const V1Editor: JsonEditorView  = (props) => (
                
                         const value = JSON.stringify(x.newData)
                         props.setState(
-                            Bridge.Updaters.Template.setV1Design(
+                            Bridge.Updaters.Template.setV1Body(
                                 Value.Default(value)
-                            ).then(Bridge.Operations.dirty(true))
+                            )
                         );
-
-                        
                     }}
                 />
             </div>
@@ -122,9 +106,7 @@ export const V1Editor: JsonEditorView  = (props) => (
 );
 export const SeedEditor: JsonEditorView  = (props) => (
     <>
-
         <div css={style.editor.container}>
-            {/*<p>{props.context.indicator.kind}</p>*/}
             <div css={style.editor.left}>
                 <JsonEditor
                     icons={{

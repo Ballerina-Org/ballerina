@@ -30,26 +30,26 @@ export const liveUpdatesCounter =
                     )
                 ])
             ),
-            Co.GetState().then((context: Ide) => 
-              Co.SetState(
-           
-                     Ide.Updaters.Core.bridge(Bridge.Updaters.Template.setV1Body(
-                           context.bridge.bridge.left.left.specBody
-                       ))
-  
-              )
-            ),
+
             Co.GetState().then(context =>
                 Co.Await(()=> Ide.Operations.validateV1(context), x => {})
-                .then( (s) =>  
-        
-                            Co.SetState(s.kind == "l"?s.value: replaceWith(context))
-                    ))
+                .then( (s) => 
+                    Co.SetState(s.kind == "l" ? s.value : replaceWith(context))
+                   ))
             ,
+            // Co.GetState().then((context: Ide) => 
+            //   Co.SetState(
+            //
+            //          Ide.Updaters.Core.bridge(Bridge.Updaters.Template.setV1Body(
+            //                context.bridge.bridge.left.left.specBody
+            //            ))
+            //
+            //   )
+            // ),
             Co.SetState(Ide.Updaters.Core.liveUpdates(
-                replaceWith(Option.Default.some(3))
+                replaceWith(Option.Default.some(0))
 
-            ).then(Ide.Updaters.Core.bridge(Bridge.Operations.dirty(false)))),
+            ).then(Ide.Updaters.Core.bridge(Bridge.Operations.undirty()))),
 
         ])
     )

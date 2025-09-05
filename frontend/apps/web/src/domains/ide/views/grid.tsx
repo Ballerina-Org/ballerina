@@ -34,8 +34,6 @@ export const Grid: React.FC<{
             isResizing = false;
             document.body.style.cursor = "default";
         };
-
-        //divider.addEventListener("mousedown", handleMouseDown);
         divider.addEventListener("mousedown", () => {
             isResizing = true;
             document.body.style.cursor = "col-resize";

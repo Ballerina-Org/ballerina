@@ -339,6 +339,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     };
 
     useEffect(() => {
+        debugger
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
@@ -451,7 +452,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     }
                 }
             });
-    }, [specificationDeserializer.deserializedSpecification.sync.kind]);
+    }, [specificationDeserializer.deserializedSpecification.sync.kind, props.spec]);
     
 
     if (
@@ -496,7 +497,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     tableApiSources: DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
                                     lookupSources: UnmockingApisLookups.lookupSources,
                                     
-                                    getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
+                                    getFormsConfig: () => PromiseRepo.Default.mock(() => JSON.parse(props.spec)),
                                     IdWrapper,
                                     ErrorRenderer,
                                     injectedPrimitives: [

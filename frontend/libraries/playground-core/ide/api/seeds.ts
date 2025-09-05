@@ -79,6 +79,19 @@ export async function getStreams(specName: string, entityName: string, skip: num
             });
     return result.data;
 }
+export async function getEnums(specName: string, entityName: string, skip: number, take: number)
+    : Promise<ValueOrErrors<any, Errors<string>>> {
+
+    const result =
+        await axios.get<ValueOrErrors<{ value: CollectionReference[]}, Errors<string>>>(
+            `${BASE_URL}/entity/many/${entityName}?skip=${skip}&take=${take}`, {
+                headers: {
+                    "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
+                    "X-Spec-Id": specName
+                },
+            });
+    return result.data;
+}
 export async function getSeedEntityId(specName: string, entityName: string, id: Guid)
     : Promise<ValueOrErrors<any, Errors<string>>> {
 

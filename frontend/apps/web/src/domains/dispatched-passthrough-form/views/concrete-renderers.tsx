@@ -2461,13 +2461,15 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
 
                     <label className="label">
-                        <input type="checkbox" className="toggle"
+                        {(props.context.activeOptions == "unloaded" ||
+                  
+                        props.context.activeOptions == "loading") && <input type="checkbox" className="toggle"
                                checked={
                                    (props.context.activeOptions != "unloaded" &&
                                        props.context.activeOptions != "loading")
                                }
                                onChange={() => props.foreignMutations.loadOptions()}
-                        />
+                        />}
                         {props.context.details}
                         {(props.context.activeOptions != "unloaded" &&
                             props.context.activeOptions != "loading") && <form className="filter">
@@ -2564,7 +2566,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   />
                   {props.context.details}
                   {(props.context.activeOptions != "unloaded" &&
-                      props.context.activeOptions != "loading") && <form className="filter">
+                      props.context.activeOptions != "loading") && <form>
                       <input className="btn btn-square" type="reset" value="×"/>
                       {
 

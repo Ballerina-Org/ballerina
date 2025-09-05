@@ -55,13 +55,10 @@ export const Ide = {
     Operations: {
         validateV1 : async (ide: Ide) => {
             const res = await validateV1(ide.specName.value, ide.bridge.bridge.left.left);
-
+      
             return res.kind == "errors" ?
                 ((x: Ide) => Ide.Updaters.Core.bridge(Bridge.Operations.errors(res.errors as unknown as string []))(x))
-                
                 :
-
-
                 ((x:Ide) =>Ide.Updaters.Core.bridge(Bridge.Operations.setV())
                     .then(Ide.Updaters.Core.launchers(replaceWith(res.value)))(x));
               

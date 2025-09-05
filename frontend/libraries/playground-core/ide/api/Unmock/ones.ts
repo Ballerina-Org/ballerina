@@ -128,7 +128,6 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                                 (id: Guid) =>
                                     (streamParams: Map<string, string>) =>
                                         ([streamPosition]: [ValueStreamPosition]) => {
-                                            debugger
                                             const fieldName = apiName.replace(/Api$/, "");
                                             //todo: in get many unlinked we dont call for unlinked ones' by design (for now)
                                             const call = 
