@@ -40,6 +40,7 @@
         <Compile Include="Next\Json\Type\Parameter.fs" />
         <Compile Include="Next\Json\Type\Identifier.fs" />
 
+        <Compile Include="Next\Json\Types\TypeExpr\AutomaticSymbolCreation.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Union.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Tuple.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Sum.fs" />
@@ -72,6 +73,7 @@
         <Compile Include="Next\Json\Types\TypeValue\Arrow.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Apply.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Model.fs" />
+
         <Compile Include="Next\Json\Terms\Primitive.fs" />
         <Compile Include="Next\Json\Terms\Expr\UnionDes.fs" />
         <Compile Include="Next\Json\Terms\Expr\UnionCons.fs" />

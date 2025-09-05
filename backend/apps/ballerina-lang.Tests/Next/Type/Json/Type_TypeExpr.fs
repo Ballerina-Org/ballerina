@@ -48,9 +48,17 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
 
       """{ "kind":"record", "record": [[{"kind":"lookup", "lookup":"foo"}, {"kind":"int32"}], [{"kind":"lookup", "lookup":"bar"}, {"kind":"string"}]] }""",
-      TypeExpr.Record
-        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
-          (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
+      TypeExpr.Let(
+        "foo",
+        TypeExpr.NewSymbol "foo",
+        TypeExpr.Let(
+          "bar",
+          TypeExpr.NewSymbol "bar",
+          TypeExpr.Record
+            [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
+              (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
+        )
+      )
 
       """{"kind":"int32"}""", TypeExpr.Primitive PrimitiveType.Int32
       """{"kind":"int64"}""", TypeExpr.Primitive PrimitiveType.Int64
@@ -71,16 +79,28 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int32)
       """{ "kind": "keyOf", "keyOf": {"kind": "record", "record": [[{"kind": "lookup", "lookup": "foo"}, {"kind": "int32"}]]} }""",
       TypeExpr.KeyOf(
-        TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32) ]
+        TypeExpr.Let(
+          "foo",
+          TypeExpr.NewSymbol "foo",
+          TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32) ]
+        )
       )
       """{ "kind": "tuple", "tuple": [{"kind": "int32"}, {"kind": "string"}] }""",
       TypeExpr.Tuple
         [ TypeExpr.Primitive PrimitiveType.Int32
           TypeExpr.Primitive PrimitiveType.String ]
       """{ "kind": "union", "union": [[{"kind":"lookup", "lookup": "foo"}, {"kind": "int32"}], [{"kind": "lookup", "lookup": "bar"}, {"kind": "string"}]] }""",
-      TypeExpr.Union
-        [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
-          (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
+      TypeExpr.Let(
+        "foo",
+        TypeExpr.NewSymbol "foo",
+        TypeExpr.Let(
+          "bar",
+          TypeExpr.NewSymbol "bar",
+          TypeExpr.Union
+            [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
+              (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
+        )
+      )
       """{ "kind": "sum", "sum": [{"kind": "int32"}, {"kind": "string"}, {"kind": "bool"}] }""",
       TypeExpr.Sum
         [ TypeExpr.Primitive PrimitiveType.Int32
