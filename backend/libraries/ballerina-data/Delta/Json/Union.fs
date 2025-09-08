@@ -10,8 +10,8 @@ module Union =
 
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonUnion(fromJsonRoot: DeltaParser) : DeltaParser =
+  type Delta<'valueExtension> with
+    static member FromJsonUnion(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
       reader.AssertKindAndContinueWithField "union" "union" (fun json ->
         reader {
           let! caseName, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
@@ -20,7 +20,9 @@ module Union =
           return Delta.Union(caseName, caseDelta)
         })
 
-    static member ToJsonUnion(rootToJson: Delta -> JsonValue) : string * Delta -> JsonValue =
+    static member ToJsonUnion
+      (rootToJson: Delta<'valueExtension> -> JsonValue)
+      : string * Delta<'valueExtension> -> JsonValue =
       fun (caseName, caseDelta) ->
         let caseName = caseName |> JsonValue.String
         let caseDelta = caseDelta |> rootToJson

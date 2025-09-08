@@ -1,4 +1,4 @@
-﻿namespace Ballerina.Seeds
+namespace Ballerina.Seeds
 
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.Eval
@@ -23,11 +23,11 @@ type SeedingContext<'T> =
     Label: SeedingClue
     Options: SeedTarget
     InfinitiveVarNamesIndex: int
-    Generator: BogusDataGenerator<Value<'T>> }
+    Generator: BogusDataGenerator<Value<'T, Unit>> }
 
 module Traverser =
 
-  let rec seed: TypeValue -> Reader<Value<TypeValue>, SeedingContext<TypeValue>, Errors> =
+  let rec seed: TypeValue -> Reader<Value<TypeValue, Unit>, SeedingContext<TypeValue>, Errors> =
     fun typeValue ->
 
       let (!) = seed
@@ -51,8 +51,9 @@ module Traverser =
                   InfinitiveVarNamesIndex = ctx.InfinitiveVarNamesIndex + 1 })
 
           return
-            [ TypeSymbol.Create "Guid", ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
-              TypeSymbol.Create "Name",
+            [ TypeSymbol.Create(Identifier.LocalScope "Guid"),
+              ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
+              TypeSymbol.Create(Identifier.LocalScope "Name"),
               ctx.InfinitiveVarNamesIndex
               |> (VarName >> ctx.Generator.String >> PrimitiveValue.String >> Value.Primitive) ]
             |> Map.ofList
@@ -69,7 +70,13 @@ module Traverser =
         | TypeValue.Map(key, value) ->
           let! k = !key
           let! v = !value
-          return Value.Record(Map.ofList [ TypeSymbol.Create "Key", k; TypeSymbol.Create "Value", v ])
+
+          return
+            Value.Record(
+              Map.ofList
+                [ TypeSymbol.Create(Identifier.LocalScope "Key"), k
+                  TypeSymbol.Create(Identifier.LocalScope "Value"), v ]
+            )
 
         | TypeValue.Union cases ->
           let! cases =
@@ -78,7 +85,7 @@ module Traverser =
             |> List.randomSample 1
             |> List.map (fun (ts, tv) ->
               reader {
-                let! value = !! ts.Name tv
+                let! value = !! ts.Name.LocalName tv
                 return ts, value
               })
             |> reader.All
@@ -95,7 +102,7 @@ module Traverser =
             |> Map.toList
             |> List.map (fun (ts, tv) ->
               reader {
-                let! tv = !! ts.Name tv
+                let! tv = !! ts.Name.LocalName tv
                 return ts, tv
               })
             |> reader.All

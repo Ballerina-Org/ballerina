@@ -155,7 +155,7 @@ module Unification =
             e1
             |> Map.map (fun k v1 ->
               reader {
-                let! v2 = e2 |> Map.tryFindWithError k "record" k.Name |> reader.OfSum
+                let! v2 = e2 |> Map.tryFindWithError k "record" k.Name.LocalName |> reader.OfSum
                 return! TypeValue.MostSpecific(v1, v2)
               })
             |> reader.AllMap
@@ -166,7 +166,7 @@ module Unification =
             e1
             |> Map.map (fun k v1 ->
               reader {
-                let! v2 = e2 |> Map.tryFindWithError k "union" k.Name |> reader.OfSum
+                let! v2 = e2 |> Map.tryFindWithError k "union" k.Name.LocalName |> reader.OfSum
                 return! TypeValue.MostSpecific(v1, v2)
               })
             |> reader.AllMap
@@ -257,8 +257,8 @@ module Unification =
                   ctx |> UnificationContext.Updaters.Bindings(Map.add !p1.Name v1),
                   ctx |> UnificationContext.Updaters.Bindings(Map.add !p2.Name v2)
                 else
-                  let s1 = TypeSymbol.Create p1.Name
-                  let s2 = TypeSymbol.Create p2.Name
+                  let s1 = TypeSymbol.Create(Identifier.LocalScope p1.Name)
+                  let s2 = TypeSymbol.Create(Identifier.LocalScope p2.Name)
 
                   ctx
                   |> UnificationContext.Updaters.Symbols(Map.add !p1.Name s1 >> Map.add !p2.Name s2),
@@ -301,7 +301,7 @@ module Unification =
         | TypeValue.Record(e1), TypeValue.Record(e2)
         | TypeValue.Union(e1), TypeValue.Union(e2) when Map.count e1 = Map.count e2 ->
           for (k1, v1) in e1 |> Map.toSeq do
-            let! v2 = e2 |> Map.tryFindWithError k1 "record" k1.Name |> state.OfSum
+            let! v2 = e2 |> Map.tryFindWithError k1 "record" k1.Name.LocalName |> state.OfSum
             do! TypeValue.Unify(v1, v2)
         | _ -> return! $"Cannot unify types: {left} and {right}" |> Errors.Singleton |> state.Throw
       }

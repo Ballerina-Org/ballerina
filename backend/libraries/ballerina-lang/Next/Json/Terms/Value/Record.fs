@@ -12,10 +12,12 @@ module Record =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Json
 
-  type FromJsonRoot<'T> = JsonValue -> Reader<Value<'T>, JsonParser<'T>, Errors>
+  type FromJsonRoot<'T, 'valueExtension> = JsonValue -> Reader<Value<'T, 'valueExtension>, JsonParser<'T>, Errors>
 
-  type Value<'T> with
-    static member FromJsonRecord(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonRecord
+      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
 
@@ -44,7 +46,9 @@ module Record =
               (json)
         }
 
-    static member ToJsonRecord(toRootJson: Value<'T> -> JsonValue) : Map<TypeSymbol, Value<'T>> -> JsonValue =
+    static member ToJsonRecord
+      (toRootJson: Value<'T, 'valueExtension> -> JsonValue)
+      : Map<TypeSymbol, Value<'T, 'valueExtension>> -> JsonValue =
       fun fields ->
         let fieldsJson =
           fields

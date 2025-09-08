@@ -12,14 +12,17 @@ module Value =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
 
-  type Value<'T> with
-    static member FromJson(json: JsonValue) : ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJson
+      (fromJsonExt: JsonParser<'valueExtension>)
+      (json: JsonValue)
+      : ValueParser<'T, 'valueExtension> =
       reader.Any(
         Value.FromJsonPrimitive json,
-        [ Value.FromJsonRecord Value.FromJson json
-          Value.FromJsonUnion Value.FromJson json
-          Value.FromJsonTuple Value.FromJson json
-          Value.FromJsonSum Value.FromJson json
+        [ Value.FromJsonRecord (Value.FromJson fromJsonExt) json
+          Value.FromJsonUnion (Value.FromJson fromJsonExt) json
+          Value.FromJsonTuple (Value.FromJson fromJsonExt) json
+          Value.FromJsonSum (Value.FromJson fromJsonExt) json
           Value.FromJsonVar json
           Value.FromJsonLambda Expr.FromJson json
           Value.FromJsonTypeLambda Expr.FromJson json
@@ -30,14 +33,15 @@ module Value =
       )
       |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: Value<'T> -> JsonValue =
-      fun value ->
+    static member ToJson: ('valueExtension -> JsonValue) -> Value<'T, 'valueExtension> -> JsonValue =
+      fun toJsonExt value ->
         match value with
         | Value.Primitive p -> Value.ToJsonPrimitive p
-        | Value.Record m -> Value.ToJsonRecord Value.ToJson m
-        | Value.UnionCase(s, v) -> Value.ToJsonUnion Value.ToJson (s, v)
-        | Value.Tuple vs -> Value.ToJsonTuple Value.ToJson vs
-        | Value.Sum(i, v) -> Value.ToJsonSum Value.ToJson (i, v)
+        | Value.Record m -> Value.ToJsonRecord (Value.ToJson toJsonExt) m
+        | Value.UnionCase(s, v) -> Value.ToJsonUnion (Value.ToJson toJsonExt) (s, v)
+        | Value.Tuple vs -> Value.ToJsonTuple (Value.ToJson toJsonExt) vs
+        | Value.Sum(i, v) -> Value.ToJsonSum (Value.ToJson toJsonExt) (i, v)
         | Value.Var v -> Value.ToJsonVar v
         | Value.Lambda(a, b) -> Value.ToJsonLambda Expr.ToJson (a, b)
         | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda Expr.ToJson (a, b)
+        | Value.Ext e -> toJsonExt e

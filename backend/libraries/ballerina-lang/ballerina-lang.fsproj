@@ -31,6 +31,8 @@
         <Compile Include="Next/Unification/EquivalenceClass.fs" />
         <Compile Include="Next/Unification/Unification.fs" />
         <Compile Include="Next/Terms/TypeCheck.fs" />
+        <Compile Include="Next/Terms/Expr_Eval.fs" />
+
 
         <Compile Include="Next\Json\Json.fs" />
         <Compile Include="Next\Json\Type\Var.fs" />

@@ -9,7 +9,7 @@ open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
 
 let symbol name : TypeSymbol =
-  { Name = name
+  { Name = name |> Identifier.LocalScope
     Guid = Guid.CreateVersion7() }
 
 [<Test>]
@@ -21,17 +21,17 @@ let ``Delta.Union: Updates matching union case correctly`` () =
   let unionType = TypeValue.Union(Map.ofList [ caseSymbol, caseType ])
 
   let unionValue =
-    Value.UnionCase(caseSymbol, PrimitiveValue.Int 10 |> Value.Primitive)
+    Value<Unit>.UnionCase(caseSymbol, PrimitiveValue.Int 10 |> Value<Unit>.Primitive)
 
   let delta =
-    Delta.Union(caseName, Delta.Replace(PrimitiveValue.Int 99 |> Value.Primitive))
+    Delta<Unit>.Union(caseName, Delta.Replace(PrimitiveValue.Int 99 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater unionType delta with
   | Sum.Left updater ->
     match updater unionValue with
     | Sum.Left(Value.UnionCase(updatedSymbol, updatedValue)) ->
       Assert.That(updatedSymbol, Is.EqualTo caseSymbol)
-      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int 99 |> Value.Primitive))
+      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int 99 |> Value<Unit>.Primitive))
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
@@ -45,10 +45,10 @@ let ``Delta.Union: Returns original value when case does not match`` () =
   let unionType = TypeValue.Union(Map.ofList [ unmatchedSymbol, caseType ])
 
   let unionValue =
-    Value.UnionCase(actualSymbol, PrimitiveValue.Int 42 |> Value.Primitive)
+    Value<Unit>.UnionCase(actualSymbol, PrimitiveValue.Int 42 |> Value<Unit>.Primitive)
 
   let delta =
-    Delta.Union(unmatchedSymbol.Name, Delta.Replace(PrimitiveValue.Int 999 |> Value.Primitive))
+    Delta.Union("unmatched", Delta.Replace(PrimitiveValue.Int 999 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater unionType delta with
   | Sum.Left updater ->
@@ -62,7 +62,7 @@ let ``Delta.Union: Fails when case not found in type`` () =
   let unionType = TypeValue.Union(Map.empty)
 
   let delta =
-    Delta.Union("missing", Delta.Replace(PrimitiveValue.Int 1 |> Value.Primitive))
+    Delta.Union("missing", Delta.Replace(PrimitiveValue.Int 1 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater unionType delta with
   | Sum.Left _ -> Assert.Fail "Expected failure due to missing case in union type"

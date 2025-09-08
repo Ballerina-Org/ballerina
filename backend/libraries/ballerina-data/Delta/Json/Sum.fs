@@ -9,8 +9,8 @@ module Sum =
   open Ballerina.Data.Delta.Model
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonSum(fromJsonRoot: DeltaParser) : DeltaParser =
+  type Delta<'valueExtension> with
+    static member FromJsonSum(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
       reader.AssertKindAndContinueWithField "sum" "sum" (fun json ->
         reader {
           let! caseIndex, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
@@ -19,7 +19,9 @@ module Sum =
           return Delta.Sum(caseIndex, caseDelta)
         })
 
-    static member ToJsonSum(rootToJson: Delta -> JsonValue) : int * Delta -> JsonValue =
+    static member ToJsonSum
+      (rootToJson: Delta<'valueExtension> -> JsonValue)
+      : int * Delta<'valueExtension> -> JsonValue =
       fun (caseName, caseDelta) ->
         let caseName = caseName |> decimal |> JsonValue.Number
         let caseDelta = caseDelta |> rootToJson

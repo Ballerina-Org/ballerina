@@ -13,7 +13,7 @@ module Patterns =
         Guid = Guid.CreateVersion7() }
 
   type TypeSymbol with
-    static member Create(name: string) : TypeSymbol =
+    static member Create(name: Identifier) : TypeSymbol =
       { Name = name
         Guid = Guid.CreateVersion7() }
 
@@ -22,6 +22,12 @@ module Patterns =
 
   type TypeParameter with
     static member Create(name: string, kind: Kind) : TypeParameter = { Name = name; Kind = kind }
+
+  type Identifier with
+    member id.LocalName =
+      match id with
+      | LocalScope name -> name
+      | FullyQualified(_, name) -> name
 
   type Kind with
     static member AsStar(kind: Kind) =
@@ -354,14 +360,14 @@ module Patterns =
         TypeExpr.Record(
           fields
           |> Map.toList
-          |> List.map (fun (k, v) -> k.Name |> Identifier.LocalScope |> TypeExpr.Lookup, v.AsExpr)
+          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Tuple(elements) -> TypeExpr.Tuple(elements |> List.map (fun e -> e.AsExpr))
       | Union(cases) ->
         TypeExpr.Union(
           cases
           |> Map.toList
-          |> List.map (fun (k, v) -> k.Name |> Identifier.LocalScope |> TypeExpr.Lookup, v.AsExpr)
+          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Sum(elements) -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
       | List(element) -> TypeExpr.List(element.AsExpr)

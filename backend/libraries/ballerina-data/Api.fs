@@ -9,13 +9,13 @@ module Model =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Data.Spec
 
-  type Value = Ballerina.DSL.Next.Terms.Model.Value<TypeValue>
+  type Value = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, Unit>
 
   type EntitiesApi =
     { Get: string -> Guid -> Sum<Value, Errors>
       GetMany: string -> int * int -> Sum<{| Values: List<Value>; HasMore: bool |}, Errors>
       Create: string -> Value -> Sum<Guid, Errors>
-      Update: string -> Guid * Delta -> Sum<Unit, Errors>
+      Update: string -> Guid * Delta<Unit> -> Sum<Unit, Errors>
       Delete: string -> Guid -> Sum<Unit, Errors> }
 
   type LookupsApi =

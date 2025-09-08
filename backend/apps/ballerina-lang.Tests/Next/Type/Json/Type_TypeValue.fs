@@ -117,13 +117,13 @@ let testCases guid : TypeValueTestCase list =
           ]
           }"""
       Expected =
-        [ { TypeSymbol.Name = "foo"
+        [ { TypeSymbol.Name = "foo" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
           TypeValue.Primitive PrimitiveType.Int32
-          { TypeSymbol.Name = "bar"
+          { TypeSymbol.Name = "bar" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
           TypeValue.Primitive PrimitiveType.String
-          { TypeSymbol.Name = "baz"
+          { TypeSymbol.Name = "baz" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000003") },
           TypeValue.Primitive PrimitiveType.Bool ]
         |> Map.ofList
@@ -177,10 +177,10 @@ let testCases guid : TypeValueTestCase list =
       Expected =
         TypeValue.Record(
           Map.ofList
-            [ { TypeSymbol.Name = "foo"
+            [ { TypeSymbol.Name = "foo" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
               TypeValue.Primitive PrimitiveType.Int32
-              { TypeSymbol.Name = "bar"
+              { TypeSymbol.Name = "bar" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
               TypeValue.Primitive PrimitiveType.String ]
         ) } ]

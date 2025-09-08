@@ -9,8 +9,8 @@ module Multiple =
   open Ballerina.Data.Delta.Model
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonMultiple(fromJsonRoot: DeltaParser) : DeltaParser =
+  type Delta<'valueExtension> with
+    static member FromJsonMultiple(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
       reader.AssertKindAndContinueWithField "multiple" "multiple" (fun json ->
         reader {
           let! deltas = json |> JsonValue.AsArray |> reader.OfSum
@@ -18,7 +18,9 @@ module Multiple =
           return deltas |> Seq.toList |> Delta.Multiple
         })
 
-    static member ToJsonMultiple(rootToJson: Delta -> JsonValue) : List<Delta> -> JsonValue =
+    static member ToJsonMultiple
+      (rootToJson: Delta<'valueExtension> -> JsonValue)
+      : List<Delta<'valueExtension>> -> JsonValue =
       fun deltas ->
         let jsonDeltas = deltas |> List.map rootToJson
         JsonValue.Array(jsonDeltas |> List.toArray) |> Json.kind "multiple" "multiple"

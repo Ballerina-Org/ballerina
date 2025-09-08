@@ -11,8 +11,10 @@ module Union =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
 
-  type Value<'T> with
-    static member FromJsonUnion(fromJsonRoot: JsonValue -> ValueParser<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonUnion
+      (fromJsonRoot: JsonValue -> ValueParser<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!
@@ -29,7 +31,7 @@ module Union =
               (json)
         }
 
-    static member ToJsonUnion(rootToJson) : TypeSymbol * Value<'T> -> JsonValue =
+    static member ToJsonUnion(rootToJson) : TypeSymbol * Value<'T, 'valueExtension> -> JsonValue =
       fun (k, v) ->
         let k = TypeSymbol.ToJson k
         let v = rootToJson v

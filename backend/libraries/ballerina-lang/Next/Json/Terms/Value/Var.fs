@@ -21,8 +21,8 @@ module Var =
           return name |> Var.Create
         })
 
-  type Value<'T> with
-    static member FromJsonVar: JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonVar: JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json -> json |> Var.FromJson |> sum.Map(Value.Var) |> reader.OfSum
 
     static member ToJsonVar: Var -> JsonValue =

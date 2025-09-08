@@ -47,12 +47,13 @@ module Model =
     | DateTime of DateTime
     | Unit
 
-  and Value<'T> =
+  and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * Expr<'T>
     | Lambda of Var * Expr<'T>
-    | Record of Map<TypeSymbol, Value<'T>>
-    | UnionCase of TypeSymbol * Value<'T>
-    | Tuple of List<Value<'T>>
-    | Sum of int * Value<'T>
+    | Record of Map<TypeSymbol, Value<'T, 'valueExt>>
+    | UnionCase of TypeSymbol * Value<'T, 'valueExt>
+    | Tuple of List<Value<'T, 'valueExt>>
+    | Sum of int * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
     | Var of Var
+    | Ext of 'valueExt

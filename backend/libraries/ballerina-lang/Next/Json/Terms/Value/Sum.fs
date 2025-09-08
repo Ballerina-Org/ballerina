@@ -9,8 +9,10 @@ module Sum =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
-  type Value<'T> with
-    static member FromJsonSum(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonSum
+      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!
@@ -27,7 +29,9 @@ module Sum =
               (json)
         }
 
-    static member ToJsonSum(rootToJson: Value<'T> -> JsonValue) : int * Value<'T> -> JsonValue =
+    static member ToJsonSum
+      (rootToJson: Value<'T, 'valueExtension> -> JsonValue)
+      : int * Value<'T, 'valueExtension> -> JsonValue =
       fun (i, v) ->
         let i = JsonValue.Number(decimal i)
         let v = rootToJson v

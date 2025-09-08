@@ -94,7 +94,7 @@ module Eval =
           let (!!) = TypeExpr.Eval
 
           match t with
-          | TypeExpr.NewSymbol name -> return TypeSymbol.Create name
+          | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
           | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindSymbol v |> state.OfStateReader
           | TypeExpr.Apply(f, a) ->
             let! f, f_k = !!f

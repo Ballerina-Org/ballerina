@@ -23,6 +23,7 @@
     <Compile Include="Next\Term\Json\Value_TypeValue_Primitive.fs" />
     <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
     <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
+    <Compile Include="Next\Term\Expr_Eval.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

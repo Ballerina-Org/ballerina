@@ -23,7 +23,7 @@ type FakeOrRealValue =
   | RealValue of obj
   | FakeValue of FakeValue
 
-type PrimitiveGenerator<'T> = PrimitiveType -> FakeOrRealValue -> Value<'T>
+type PrimitiveGenerator<'T> = PrimitiveType -> FakeOrRealValue -> Value<'T, Unit>
 
 [<AutoOpen>]
 module private Patterns =

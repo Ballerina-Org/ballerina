@@ -314,7 +314,6 @@ module Runner =
         let! operators = json |> Map.tryFindWithError "operators" "operators" "operators" |> state.OfSum
         let! operators = operators |> JsonValue.AsArray |> state.OfSum
         let! operators = operators |> Seq.map TableFilteringOperator.Parse |> state.All
-        let operators = operators |> Set.ofList
 
         let! exprType = json |> Map.tryFindWithError "type" "type" "type" |> state.OfSum
         let! exprType = exprType |> ExprType.Parse |> state.OfSum

@@ -29,10 +29,10 @@ let ``LangNext-TypeEval lookup looks up existing types`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Flatten of anonymous unions`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let D = TypeSymbol.Create "D"
+  let A = TypeSymbol.Create("A" |> Identifier.LocalScope)
+  let B = TypeSymbol.Create("B" |> Identifier.LocalScope)
+  let C = TypeSymbol.Create("C" |> Identifier.LocalScope)
+  let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
     TypeExpr.Union(
@@ -51,10 +51,7 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        D.Name |> Identifier.LocalScope, D ]
+      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -64,20 +61,20 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
     match actual with
     | TypeValue.Union(cases), Kind.Star ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ ("A", TypeValue.Primitive PrimitiveType.Int32)
-          ("B", TypeValue.Primitive PrimitiveType.String)
-          ("C", TypeValue.Primitive PrimitiveType.Decimal)
-          ("D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
+      | [ (Identifier.LocalScope "A", TypeValue.Primitive PrimitiveType.Int32)
+          (Identifier.LocalScope "B", TypeValue.Primitive PrimitiveType.String)
+          (Identifier.LocalScope "C", TypeValue.Primitive PrimitiveType.Decimal)
+          (Identifier.LocalScope "D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
 let ``LangNext-TypeEval Flatten of named unions`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let D = TypeSymbol.Create "D"
+  let A = TypeSymbol.Create("A" |> Identifier.LocalScope)
+  let B = TypeSymbol.Create("B" |> Identifier.LocalScope)
+  let C = TypeSymbol.Create("C" |> Identifier.LocalScope)
+  let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
     TypeValue.Union(
@@ -102,11 +99,7 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
         [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
           "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name |> Identifier.LocalScope, A
-          B.Name |> Identifier.LocalScope, B
-          C.Name |> Identifier.LocalScope, C
-          D.Name |> Identifier.LocalScope, D ]
-        |> Map.ofList
+        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
       )
     )
 
@@ -115,20 +108,20 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
     match actual with
     | TypeValue.Union(cases) ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ ("A", TypeValue.Primitive PrimitiveType.Int32)
-          ("B", TypeValue.Primitive PrimitiveType.String)
-          ("C", TypeValue.Primitive PrimitiveType.Decimal)
-          ("D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
+      | [ (Identifier.LocalScope "A", TypeValue.Primitive PrimitiveType.Int32)
+          (Identifier.LocalScope "B", TypeValue.Primitive PrimitiveType.String)
+          (Identifier.LocalScope "C", TypeValue.Primitive PrimitiveType.Decimal)
+          (Identifier.LocalScope "D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
 let ``LangNext-TypeEval Flatten of named records`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let D = TypeSymbol.Create "D"
+  let A = TypeSymbol.Create("A" |> Identifier.LocalScope)
+  let B = TypeSymbol.Create("B" |> Identifier.LocalScope)
+  let C = TypeSymbol.Create("C" |> Identifier.LocalScope)
+  let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
     TypeValue.Record(
@@ -153,11 +146,7 @@ let ``LangNext-TypeEval Flatten of named records`` () =
         [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
           "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name |> Identifier.LocalScope, A
-          B.Name |> Identifier.LocalScope, B
-          C.Name |> Identifier.LocalScope, C
-          D.Name |> Identifier.LocalScope, D ]
-        |> Map.ofList
+        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
       )
     )
 
@@ -166,18 +155,18 @@ let ``LangNext-TypeEval Flatten of named records`` () =
     match actual with
     | TypeValue.Record(fields) ->
       match fields |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ ("A", TypeValue.Primitive PrimitiveType.Int32)
-          ("B", TypeValue.Primitive PrimitiveType.String)
-          ("C", TypeValue.Primitive PrimitiveType.Decimal)
-          ("D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
+      | [ (Identifier.LocalScope "A", TypeValue.Primitive PrimitiveType.Int32)
+          (Identifier.LocalScope "B", TypeValue.Primitive PrimitiveType.String)
+          (Identifier.LocalScope "C", TypeValue.Primitive PrimitiveType.Decimal)
+          (Identifier.LocalScope "D", TypeValue.Primitive PrimitiveType.Bool) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {fields}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
 let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
+  let A = TypeSymbol.Create("A" |> Identifier.LocalScope)
+  let B = TypeSymbol.Create("B" |> Identifier.LocalScope)
 
   let t1 =
     TypeExpr.Union(
@@ -192,9 +181,7 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A; B.Name |> Identifier.LocalScope, B ]
-      |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      [ A.Name, A; B.Name, B ] |> Map.ofList |> TypeExprEvalState.CreateFromSymbols
     )
 
   match actual with
@@ -203,9 +190,9 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Keyof extracts record keys`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
 
   let t1 =
     TypeExpr.Record(
@@ -220,9 +207,7 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C ]
+      [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -241,11 +226,11 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
 
 [<Test>]
 let ``LangNext-TypeEval flatten of Keyofs`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let D = TypeSymbol.Create "D"
-  let E = TypeSymbol.Create "E"
+  let A = TypeSymbol.Create("A" |> Identifier.LocalScope)
+  let B = TypeSymbol.Create("B" |> Identifier.LocalScope)
+  let C = TypeSymbol.Create("C" |> Identifier.LocalScope)
+  let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
+  let E = TypeSymbol.Create("E" |> Identifier.LocalScope)
 
   let t1 =
     TypeExpr.Record(
@@ -269,11 +254,7 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        D.Name |> Identifier.LocalScope, D
-        E.Name |> Identifier.LocalScope, E ]
+      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D; E.Name, E ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -283,34 +264,34 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
     match actual with
     | TypeValue.Union(cases) ->
       match cases |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ ("A", TypeValue.Primitive PrimitiveType.Unit)
-          ("B", TypeValue.Primitive PrimitiveType.Unit)
-          ("C", TypeValue.Primitive PrimitiveType.Unit)
-          ("D", TypeValue.Primitive PrimitiveType.Unit)
-          ("E", TypeValue.Primitive PrimitiveType.Unit) ] -> Assert.Pass()
+      | [ (Identifier.LocalScope "A", TypeValue.Primitive PrimitiveType.Unit)
+          (Identifier.LocalScope "B", TypeValue.Primitive PrimitiveType.Unit)
+          (Identifier.LocalScope "C", TypeValue.Primitive PrimitiveType.Unit)
+          (Identifier.LocalScope "D", TypeValue.Primitive PrimitiveType.Unit)
+          (Identifier.LocalScope "E", TypeValue.Primitive PrimitiveType.Unit) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
 let ``LangNext-TypeEval Exclude of Keyofs`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let X = TypeSymbol.Create "X"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
+  let X = TypeSymbol.Create(Identifier.LocalScope "X")
 
   let t1 =
     TypeExpr.Record(
-      [ A.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int32
-        B.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
-        C.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
+      [ A.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int32
+        B.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String
+        C.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Decimal ]
     )
     |> TypeExpr.KeyOf
 
   let t2 =
     TypeExpr.Record(
-      [ A.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int32
-        X.Name |> Identifier.LocalScope |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
+      [ A.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.Int32
+        X.Name |> TypeExpr.Lookup, TypeExpr.Primitive PrimitiveType.String ]
     )
     |> TypeExpr.KeyOf
 
@@ -321,10 +302,7 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        X.Name |> Identifier.LocalScope, X ]
+      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -342,10 +320,10 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Exclude of Records`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let X = TypeSymbol.Create "X"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
+  let X = TypeSymbol.Create(Identifier.LocalScope "X")
 
   let t1 =
     TypeExpr.Record(
@@ -367,10 +345,7 @@ let ``LangNext-TypeEval Exclude of Records`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        X.Name |> Identifier.LocalScope, X ]
+      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -388,10 +363,10 @@ let ``LangNext-TypeEval Exclude of Records`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Exclude of Unions`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let X = TypeSymbol.Create "X"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
+  let X = TypeSymbol.Create(Identifier.LocalScope "X")
 
   let t1 =
     TypeExpr.Union(
@@ -413,10 +388,7 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        X.Name |> Identifier.LocalScope, X ]
+      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -434,10 +406,10 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
-  let X = TypeSymbol.Create "X"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
+  let X = TypeSymbol.Create(Identifier.LocalScope "X")
 
   let t1 =
     TypeExpr.Union(
@@ -459,10 +431,7 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C
-        X.Name |> Identifier.LocalScope, X ]
+      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -481,18 +450,16 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
     )
     |> TypeExpr.Rotate
 
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
 
   let actual =
     t
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C ]
+      [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -511,9 +478,9 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
 
 [<Test>]
 let ``LangNext-TypeEval Rotate from record to union`` () =
-  let A = TypeSymbol.Create "A"
-  let B = TypeSymbol.Create "B"
-  let C = TypeSymbol.Create "C"
+  let A = TypeSymbol.Create(Identifier.LocalScope "A")
+  let B = TypeSymbol.Create(Identifier.LocalScope "B")
+  let C = TypeSymbol.Create(Identifier.LocalScope "C")
 
   let t =
     TypeExpr.Record(
@@ -528,9 +495,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
     |> TypeExpr.Eval
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name |> Identifier.LocalScope, A
-        B.Name |> Identifier.LocalScope, B
-        C.Name |> Identifier.LocalScope, C ]
+      [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromSymbols
     )
@@ -587,14 +552,14 @@ let ``LangNext-TypeEval (generic) Apply`` () =
 //       TypeExpr.Lookup(Identifier.LocalScope "Value")
 //     )
 
-//   let Value = TypeSymbol.Create "Value"
+//   let Value = TypeSymbol.Create(Identifier.LocalScope "Value"
 
 //   let actual =
 //     t
 //     |> TypeExpr.Eval
 //     |> State.Run(
 //       TypeExprEvalContext.Empty,
-//       TypeExprEvalState.Create(Map.empty, [ Value.Name |> Identifier.LocalScope, Value ] |> Map.ofList)
+//       TypeExprEvalState.Create(Map.empty, [ Value.Name, Value ] |> Map.ofList)
 //     )
 
 //   let expected =
@@ -623,7 +588,7 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
       TypeExprEvalState.Create(
         Map.empty,
         [ "Value" ]
-        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> TypeSymbol.Create)
+        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
       )
     )
@@ -655,7 +620,7 @@ let ``LangNext-TypeEval (generic) Apply of symbol instead of type fails`` () =
       TypeExprEvalState.Create(
         Map.empty,
         [ "Value" ]
-        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> TypeSymbol.Create)
+        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
       )
     )

@@ -410,7 +410,7 @@ module TypeCheck =
                       let! t_field =
                         t_fields
                         |> Map.toSeq
-                        |> Seq.tryFind (fun (k, _) -> k.Name = localFieldName)
+                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
                         |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> Errors.Singleton)
                         |> state.OfSum
                         |> state.Map snd
@@ -585,7 +585,7 @@ module TypeCheck =
                     |> Map.toSeq
                     |> Seq.map (fun (k, _) ->
                       state {
-                        do! TypeExprEvalState.bindType k.Name typeDefinition |> Expr.liftTypeEval
+                        do! TypeExprEvalState.bindType k.Name.LocalName typeDefinition |> Expr.liftTypeEval
 
                         do! TypeExprEvalState.bindType typeIdentifier typeDefinition |> Expr.liftTypeEval
                       })

@@ -106,8 +106,8 @@ let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
 
   let initialContext = TypeCheckContext.Empty
 
-  let X = TypeSymbol.Create "X"
-  let Y = TypeSymbol.Create "Y"
+  let X = "X" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Y = "Y" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let initialState =
     TypeCheckState.Empty
@@ -145,9 +145,9 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
       |> Map.ofList
     )
 
-  let Case1Of3 = TypeSymbol.Create "Case1Of3"
-  let Case2Of3 = TypeSymbol.Create "Case2Of3"
-  let Case3Of3 = TypeSymbol.Create "Case3Of3"
+  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let initialContext = TypeCheckContext.Empty
 
@@ -157,9 +157,9 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
       TypeExprEvalState.Updaters.Symbols(
         replaceWith (
           Map.ofList
-            [ (!Case1Of3.Name, Case1Of3)
-              (!Case2Of3.Name, Case2Of3)
-              (!Case3Of3.Name, Case3Of3) ]
+            [ (Case1Of3.Name, Case1Of3)
+              (Case2Of3.Name, Case2Of3)
+              (Case3Of3.Name, Case3Of3) ]
         )
       )
     )
@@ -557,8 +557,8 @@ let ``LangNext-TypeCheck record cons fail when symbol does not exist`` () =
 
   let initialContext = TypeCheckContext.Empty
 
-  let X = TypeSymbol.Create "X"
-  let Y = TypeSymbol.Create "Y"
+  let X = "X" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Y = "Y" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let initialState =
     TypeCheckState.Empty
@@ -692,9 +692,9 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
       |> Map.ofList
     )
 
-  let Case1Of3 = TypeSymbol.Create "Case1Of3"
-  let Case2Of3 = TypeSymbol.Create "Case2Of3"
-  let Case3Of3 = TypeSymbol.Create "Case3Of3"
+  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let initialContext = TypeCheckContext.Empty
 
@@ -704,9 +704,9 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
       TypeExprEvalState.Updaters.Symbols(
         replaceWith (
           Map.ofList
-            [ (!Case1Of3.Name, Case1Of3)
-              (!Case2Of3.Name, Case2Of3)
-              (!Case3Of3.Name, Case3Of3) ]
+            [ (Case1Of3.Name, Case1Of3)
+              (Case2Of3.Name, Case2Of3)
+              (Case3Of3.Name, Case3Of3) ]
         )
       )
     )
@@ -753,9 +753,9 @@ let ``LangNext-TypeCheck union des fails when branches differ in return type`` (
       |> Map.ofList
     )
 
-  let Case1Of3 = TypeSymbol.Create "Case1Of3"
-  let Case2Of3 = TypeSymbol.Create "Case2Of3"
-  let Case3Of3 = TypeSymbol.Create "Case3Of3"
+  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
+  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let initialState =
     TypeCheckState.Empty
@@ -763,9 +763,9 @@ let ``LangNext-TypeCheck union des fails when branches differ in return type`` (
       TypeExprEvalState.Updaters.Symbols(
         replaceWith (
           Map.ofList
-            [ (!Case1Of3.Name, Case1Of3)
-              (!Case2Of3.Name, Case2Of3)
-              (!Case3Of3.Name, Case3Of3) ]
+            [ (Case1Of3.Name, Case1Of3)
+              (Case2Of3.Name, Case2Of3)
+              (Case3Of3.Name, Case3Of3) ]
         )
       )
     )

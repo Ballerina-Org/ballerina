@@ -15,8 +15,10 @@ module TypeLambda =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
-  type Value<'T> with
-    static member FromJsonTypeLambda(_fromJsonRoot: JsonValue -> ExprParser<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonTypeLambda
+      (_fromJsonRoot: JsonValue -> ExprParser<'T>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!

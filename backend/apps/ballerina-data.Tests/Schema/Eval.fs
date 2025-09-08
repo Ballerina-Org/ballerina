@@ -35,10 +35,14 @@ let ``SpecNext-Schema evaluates`` () =
       Lookups = Map.empty }
 
   let SomeType =
-    TypeValue.Record(Map.ofList [ ("Foo" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32) ])
+    TypeValue.Record(
+      Map.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32) ]
+    )
 
   let AnotherType =
-    TypeValue.Record(Map.ofList [ ("Bar" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String) ])
+    TypeValue.Record(
+      Map.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String) ]
+    )
 
   let expected: Schema<TypeValue> =
     { Entities =

@@ -154,25 +154,21 @@ module Validator =
           do! !l.Details.Renderer |> Sum.map ignore
 
           let! apiMethods =
-            match l.OneApiId with
-            | Some(Choice2Of2(apiTypeId, apiName)) ->
-              sum {
-                let! (oneApi, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
-                let! oneApi = ctx.TryFindType oneApi.TypeId.VarName
-                let oneApi = oneApi.Type
+            sum {
+              let! oneApiEntity, oneApiMethods = ctx.TryFindOne (fst l.OneApiId).VarName (snd l.OneApiId)
+              let! oneApiType = ctx.TryFindType oneApiEntity.TypeId.VarName
+              let oneApi = oneApiType.Type
 
-                do!
-                  ExprType.Unify
-                    Map.empty
-                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                    fr.Type
-                    (oneApi |> ExprType.OneType)
-                  |> Sum.map ignore
+              do!
+                ExprType.Unify
+                  Map.empty
+                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                  fr.Type
+                  (oneApi |> ExprType.OneType)
+                |> Sum.map ignore
 
-                return oneApiMethods
-              }
-            | Some(Choice1Of2(_)) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
-            | _ -> sum { return Set.empty }
+              return oneApiMethods
+            }
 
           match l.Preview with
           | Some preview ->

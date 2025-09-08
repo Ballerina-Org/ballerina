@@ -3,6 +3,15 @@ namespace Ballerina.DSL.Next.Types
 module Model =
   open System
 
+  type Identifier =
+    | LocalScope of string
+    | FullyQualified of List<string> * string
+
+    override id.ToString() =
+      match id with
+      | LocalScope name -> name
+      | FullyQualified(names, name) -> String.Join(".", names) + "." + name
+
   type TypeParameter = { Name: string; Kind: Kind }
 
   and Kind =
@@ -10,7 +19,7 @@ module Model =
     | Star
     | Arrow of Kind * Kind
 
-  and TypeSymbol = { Name: string; Guid: Guid }
+  and TypeSymbol = { Name: Identifier; Guid: Guid }
 
   and TypeVar =
     { Name: string
@@ -22,10 +31,6 @@ module Model =
     { Name: string }
 
     override v.ToString() = v.Name
-
-  type Identifier =
-    | LocalScope of string
-    | FullyQualified of List<string> * string
 
   and TypeExpr =
     | Primitive of PrimitiveType

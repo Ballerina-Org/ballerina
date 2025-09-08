@@ -6,7 +6,7 @@ open Ballerina.Data.Model
 
 let entityMethods: Set<EntityMethod> = Set.empty
 let lookupMethods: Set<LookupMethod> = Set.empty
-let name = TypeSymbol.Create
+let name = Identifier.LocalScope >> TypeSymbol.Create
 
 let private (!) = Identifier.LocalScope
 

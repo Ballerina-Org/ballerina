@@ -6,7 +6,7 @@ open Ballerina.Data.Seeds.Model
 
 module Db =
 
-  type Specs<'T> = Map<string, Map<Guid, Value<'T>>>
+  type Specs<'T> = Map<string, Map<Guid, Value<'T, Unit>>>
 
   type Db<'T> = { Seeds: Seeds<'T>; Specs: Specs<'T> }
 

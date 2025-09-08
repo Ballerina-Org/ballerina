@@ -147,13 +147,13 @@ let ``LangNext-Unify unifies types without variables`` () =
           TypeValue.Primitive PrimitiveType.String ]
       )
       TypeValue.Record(
-        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
-          "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
+        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
+          "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       )
       TypeValue.Union(
-        [ "a" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
-          "b" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
+        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32
+          "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String ]
         |> Map.ofList
       ) ]
 
@@ -329,8 +329,8 @@ let ``LangNext-Unify fails to unify type expressions inside type lambdas`` () =
 
 [<Test>]
 let ``LangNext-Unify unifies structurally and symbolically identical records and unions`` () =
-  let s1 = TypeSymbol.Create "s1"
-  let s2 = TypeSymbol.Create "s2"
+  let s1 = "s1" |> Identifier.LocalScope |> TypeSymbol.Create
+  let s2 = "s2" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let inputs1 =
     TypeValue.Record(
@@ -370,8 +370,8 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
 
 [<Test>]
 let ``LangNext-Unify does not unify structurally different records and unions`` () =
-  let s1 = TypeSymbol.Create "s1"
-  let s2 = TypeSymbol.Create "s2"
+  let s1 = "s1" |> Identifier.LocalScope |> TypeSymbol.Create
+  let s2 = "s2" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let inputs1 =
     TypeValue.Record(
@@ -412,13 +412,13 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
 
   let inputs1 =
     TypeValue.Record(
-      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Record(
-      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
@@ -427,13 +427,13 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
 
   let inputs2 =
     TypeValue.Union(
-      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     ),
     TypeValue.Union(
-      [ TypeSymbol.Create "s1", TypeValue.Primitive PrimitiveType.String
-        TypeSymbol.Create "s2", TypeValue.Primitive PrimitiveType.Int32 ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32 ]
       |> Map.ofList
     )
 
