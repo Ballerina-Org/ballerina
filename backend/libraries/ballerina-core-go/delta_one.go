@@ -118,7 +118,7 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 						return PureReader[Unit, Sum[error, a]](
 							Fold(
 								one.Sum,
-								func(Unit) Sum[error, a] {
+								func(LazyOneValue) Sum[error, a] {
 									return Left[error, a](fmt.Errorf("one is not set"))
 								},
 								Right[error, a],
