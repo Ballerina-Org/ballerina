@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 )
 
@@ -31,7 +32,9 @@ func (d *SmallerThan[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		SmallerThan T
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.smallerThan = aux.SmallerThan

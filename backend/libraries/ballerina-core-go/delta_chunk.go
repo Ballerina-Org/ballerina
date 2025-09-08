@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/google/uuid"
@@ -69,7 +70,9 @@ func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
 		Add           *a
 	}
 	var aux chunkAlias
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

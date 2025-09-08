@@ -1,6 +1,9 @@
 package ballerina
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+)
 
 type deltaSetEffectsEnum string
 
@@ -49,7 +52,9 @@ func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 		Add           *a
 		Remove        *a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

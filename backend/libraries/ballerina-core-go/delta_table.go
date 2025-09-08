@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/google/uuid"
@@ -69,7 +70,9 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 		DuplicateAt   *uuid.UUID
 		Add           *a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 )
 
@@ -54,7 +55,9 @@ func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 		UnlinkedItems *DeltaChunk[T, deltaT]
 		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

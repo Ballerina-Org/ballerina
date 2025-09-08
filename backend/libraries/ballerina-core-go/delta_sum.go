@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -52,7 +53,9 @@ func (d *DeltaSum[a, b, deltaA, deltaB]) UnmarshalJSON(data []byte) error {
 		Left          *deltaA
 		Right         *deltaB
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
