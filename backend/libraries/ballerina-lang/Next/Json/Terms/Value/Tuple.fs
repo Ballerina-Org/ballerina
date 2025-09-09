@@ -32,8 +32,9 @@ module Tuple =
         }
 
     static member ToJsonTuple
-      (rootToJson: Value<'T, 'valueExtension> -> JsonValue)
-      : Value<'T, 'valueExtension> list -> JsonValue =
-      fun elements ->
-        let elementsJson = elements |> Seq.map rootToJson
-        elementsJson |> Seq.toArray |> JsonValue.Array |> Json.kind "tuple" "elements"
+      : ValueEncoder<'T, 'valueExtension> -> Value<'T, 'valueExtension> list -> JsonEncoder<'T, 'valueExtension> =
+      fun rootToJson elements ->
+        elements
+        |> Seq.map rootToJson
+        |> reader.All
+        |> reader.Map(Seq.toArray >> JsonValue.Array >> Json.kind "tuple" "elements")

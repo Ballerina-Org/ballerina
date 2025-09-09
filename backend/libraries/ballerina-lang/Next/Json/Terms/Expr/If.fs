@@ -9,6 +9,7 @@ module If =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonIf(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -21,9 +22,12 @@ module If =
           return Expr.If(cond, thenBranch, elseBranch)
         })
 
-    static member ToJsonIf(rootToJson: Expr<'T> -> JsonValue) : Expr<'T> * Expr<'T> * Expr<'T> -> JsonValue =
-      fun (cond, thenBranch, elseBranch) ->
-        let condJson = cond |> rootToJson
-        let thenJson = thenBranch |> rootToJson
-        let elseJson = elseBranch |> rootToJson
-        [| condJson; thenJson; elseJson |] |> JsonValue.Array |> Json.kind "if" "if"
+    static member ToJsonIf
+      : ExprEncoder<'T> -> Expr<'T> -> Expr<'T> -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson cond thenBranch elseBranch ->
+        reader {
+          let! condJson = cond |> rootToJson
+          let! thenJson = thenBranch |> rootToJson
+          let! elseJson = elseBranch |> rootToJson
+          return [| condJson; thenJson; elseJson |] |> JsonValue.Array |> Json.kind "if" "if"
+        }

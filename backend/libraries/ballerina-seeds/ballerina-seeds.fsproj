@@ -12,7 +12,6 @@
     <Compile Include="Traverser.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Runner.fs" />
-    <Compile Include="Samples\DispatchPerson.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,6 +11,7 @@ module TypeLambda =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonTypeLambda(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -22,11 +23,15 @@ module TypeLambda =
           return Expr.TypeLambda(typeParam, body)
         })
 
-    static member ToJsonTypeLambda(rootToJson: Expr<'T> -> JsonValue) : TypeParameter * Expr<'T> -> JsonValue =
-      fun (typeParam, body) ->
-        let typeParamJson = typeParam |> TypeParameter.ToJson
-        let bodyJson = body |> rootToJson
+    static member ToJsonTypeLambda
+      : ExprEncoder<'T> -> TypeParameter -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson typeParam body ->
+        reader {
+          let typeParamJson = typeParam |> TypeParameter.ToJson
+          let! bodyJson = body |> rootToJson
 
-        [| typeParamJson; bodyJson |]
-        |> JsonValue.Array
-        |> Json.kind "type-lambda" "type-lambda"
+          return
+            [| typeParamJson; bodyJson |]
+            |> JsonValue.Array
+            |> Json.kind "type-lambda" "type-lambda"
+        }

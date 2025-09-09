@@ -14,61 +14,9 @@ type TypeValueTestCase =
 
 let private (!) = Identifier.LocalScope
 
-let rec normalizeJson (json: JsonValue) : JsonValue =
-  match json with
-  | JsonValue.Record fields ->
-    fields
-    |> Array.map (fun (k, v) -> k, normalizeJson v)
-    |> Array.sortBy fst
-    |> JsonValue.Record
-
-  | JsonValue.Array items ->
-    let normalized = items |> Array.map normalizeJson
-
-    let isUnionMatchCase =
-      normalized
-      |> Array.forall (function
-        | JsonValue.Array inner when inner.Length > 0 ->
-          match inner.[0] with
-          | JsonValue.String _ -> true
-          | _ -> false
-        | _ -> false)
-
-    let isRecordFieldArray =
-      normalized
-      |> Array.forall (function
-        | JsonValue.Array [| JsonValue.Record symbol; _ |] -> symbol |> Array.exists (fun (k, _) -> k = "name")
-        | _ -> false)
-
-    if isUnionMatchCase then
-      normalized
-      |> Array.sortBy (function
-        | JsonValue.Array inner ->
-          match inner.[0] with
-          | JsonValue.String tag -> tag
-          | _ -> ""
-        | _ -> "")
-      |> JsonValue.Array
-
-    elif isRecordFieldArray then
-      normalized
-      |> Array.sortBy (function
-        | JsonValue.Array [| JsonValue.Record symbol; _ |] ->
-          symbol
-          |> Array.tryFind (fun (k, _) -> k = "name")
-          |> Option.map (fun (_, v) -> v.ToString())
-          |> Option.defaultValue ""
-        | _ -> "")
-      |> JsonValue.Array
-
-    else
-      JsonValue.Array normalized
-
-  | _ -> json
-
 let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeValue) (expectedJson: JsonValue) =
-  let toStr j =
-    normalizeJson j |> _.ToString(JsonSaveOptions.DisableFormatting)
+  let toStr (j: JsonValue) =
+    j.ToString(JsonSaveOptions.DisableFormatting)
 
   let toJson = TypeValue.ToJson expression
   Assert.That(toStr toJson, Is.EqualTo(toStr expectedJson))
@@ -111,21 +59,21 @@ let testCases guid : TypeValueTestCase list =
         """{
           "kind":"union",
           "union":[
-            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}],
             [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}],
-            [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"kind":"bool"}]
+            [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"kind":"bool"}],
+            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}]
           ]
           }"""
       Expected =
-        [ { TypeSymbol.Name = "foo" |> Identifier.LocalScope
-            TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-          TypeValue.Primitive PrimitiveType.Int32
-          { TypeSymbol.Name = "bar" |> Identifier.LocalScope
+        [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
           TypeValue.Primitive PrimitiveType.String
           { TypeSymbol.Name = "baz" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000003") },
-          TypeValue.Primitive PrimitiveType.Bool ]
+          TypeValue.Primitive PrimitiveType.Bool
+          { TypeSymbol.Name = "foo" |> Identifier.LocalScope
+            TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
+          TypeValue.Primitive PrimitiveType.Int32 ]
         |> Map.ofList
         |> TypeValue.Union }
     { Name = "Tuple"
@@ -170,19 +118,19 @@ let testCases guid : TypeValueTestCase list =
         """{
               "kind":"record",
               "record":[
-                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}],
-                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}]
+                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}],
+                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}]
               ]
           }"""
       Expected =
         TypeValue.Record(
           Map.ofList
-            [ { TypeSymbol.Name = "foo" |> Identifier.LocalScope
-                TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-              TypeValue.Primitive PrimitiveType.Int32
-              { TypeSymbol.Name = "bar" |> Identifier.LocalScope
+            [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-              TypeValue.Primitive PrimitiveType.String ]
+              TypeValue.Primitive PrimitiveType.String
+              { TypeSymbol.Name = "foo" |> Identifier.LocalScope
+                TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
+              TypeValue.Primitive PrimitiveType.Int32 ]
         ) } ]
 
 [<Test>]

@@ -14,4 +14,5 @@ module PrimitiveValue =
       (PrimitiveValue.FromJson >> reader.OfSum)
       >>= (fun primitive -> reader.Return(Value.Primitive primitive))
 
-    static member ToJsonPrimitive: PrimitiveValue -> JsonValue = PrimitiveValue.ToJson
+    static member ToJsonPrimitive: PrimitiveValue -> JsonEncoder<'T, 'valueExtension> =
+      PrimitiveValue.ToJson >> reader.Return

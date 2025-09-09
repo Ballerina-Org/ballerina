@@ -1,7 +1,10 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Multiple =
+  open Ballerina.Errors
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.Json.Reader
@@ -19,8 +22,9 @@ module Multiple =
         })
 
     static member ToJsonMultiple
-      (rootToJson: Delta<'valueExtension> -> JsonValue)
-      : List<Delta<'valueExtension>> -> JsonValue =
-      fun deltas ->
-        let jsonDeltas = deltas |> List.map rootToJson
-        JsonValue.Array(jsonDeltas |> List.toArray) |> Json.kind "multiple" "multiple"
+      : DeltaEncoder<'valueExtension> -> List<Delta<'valueExtension>> -> JsonEncoder<TypeValue, 'valueExtension> =
+      fun rootToJson deltas ->
+        reader {
+          let! jsonDeltas = deltas |> List.map rootToJson |> reader.All
+          return JsonValue.Array(jsonDeltas |> List.toArray) |> Json.kind "multiple" "multiple"
+        }

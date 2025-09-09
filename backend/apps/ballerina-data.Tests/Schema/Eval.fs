@@ -1,12 +1,12 @@
 module Ballerina.Data.Tests.Schema.Eval
 
+open Ballerina.Data.Schema.Model
 open Ballerina.State.WithError
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Eval
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.Data.Model
 open Ballerina.Data.TypeEval
 open Ballerina.DSL.Next.Terms.Model
 

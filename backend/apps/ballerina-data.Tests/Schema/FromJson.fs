@@ -1,5 +1,6 @@
 module Ballerina.Data.Tests.Schema.FromJson
 
+open Ballerina.Data.Schema.Model
 open Ballerina.Reader.WithError
 open Ballerina.Collections.Sum
 open NUnit.Framework
@@ -9,7 +10,7 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
-open Ballerina.Data.Model
+
 open Ballerina.Data.Json.Schema
 open FSharp.Data
 

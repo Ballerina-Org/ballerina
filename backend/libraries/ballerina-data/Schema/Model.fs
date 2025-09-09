@@ -1,4 +1,4 @@
-namespace Ballerina.Data
+namespace Ballerina.Data.Schema
 
 module Model =
   open Ballerina.Data.Arity.Model

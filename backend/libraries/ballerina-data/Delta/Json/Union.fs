@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Union =
   open Ballerina.Reader.WithError
@@ -7,6 +9,7 @@ module Union =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.Data.Delta.Model
+  open Ballerina.Errors
 
   open FSharp.Data
 
@@ -21,9 +24,10 @@ module Union =
         })
 
     static member ToJsonUnion
-      (rootToJson: Delta<'valueExtension> -> JsonValue)
-      : string * Delta<'valueExtension> -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> JsonValue.String
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "union" "union"
+      : DeltaEncoder<'valueExtension> -> string -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
+      fun rootToJson caseName caseDelta ->
+        reader {
+          let caseName = caseName |> JsonValue.String
+          let! caseDelta = caseDelta |> rootToJson
+          return [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "union" "union"
+        }

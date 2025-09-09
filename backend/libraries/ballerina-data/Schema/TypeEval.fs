@@ -1,10 +1,12 @@
 namespace Ballerina.Data
 
+open Ballerina.Data.Schema.Model
+
 module TypeEval =
+
   open Ballerina.State.WithError
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
-  open Ballerina.Data.Model
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model

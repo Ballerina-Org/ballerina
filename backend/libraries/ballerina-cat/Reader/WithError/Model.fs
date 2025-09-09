@@ -1,10 +1,6 @@
 namespace Ballerina.Reader
 
 module WithError =
-  open Ballerina.Fun
-  open Ballerina.Collections.Sum
-  open Ballerina.Collections
-  open Ballerina.Collections.NonEmptyList
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
 

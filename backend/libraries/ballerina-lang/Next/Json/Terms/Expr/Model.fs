@@ -41,23 +41,23 @@ module ExprJson =
         )
         |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: Expr<'T> -> JsonValue =
+    static member ToJson: ExprEncoder<'T> =
       fun expr ->
         match expr with
-        | Expr.Lambda(name, _, body) -> Expr.ToJsonLambda Expr.ToJson (name, body)
-        | Expr.TypeLambda(name, body) -> Expr.ToJsonTypeLambda Expr.ToJson (name, body)
-        | Expr.TypeApply(name, body) -> Expr.ToJsonTypeApply Expr.ToJson (name, body)
-        | Expr.Apply(name, body) -> Expr.ToJsonApply Expr.ToJson (name, body)
-        | Expr.Let(v, e1, e2) -> Expr.ToJsonLet Expr.ToJson (v, e1, e2)
-        | Expr.TypeLet(v, e1, e2) -> Expr.ToJsonTypeLet Expr.ToJson (v, e1, e2)
+        | Expr.Lambda(name, _, body) -> Expr.ToJsonLambda Expr.ToJson name body
+        | Expr.TypeLambda(name, body) -> Expr.ToJsonTypeLambda Expr.ToJson name body
+        | Expr.TypeApply(t, e) -> Expr.ToJsonTypeApply Expr.ToJson t e
+        | Expr.Apply(e1, e2) -> Expr.ToJsonApply Expr.ToJson e1 e2
+        | Expr.Let(v, e1, e2) -> Expr.ToJsonLet Expr.ToJson v e1 e2
+        | Expr.TypeLet(v, e1, e2) -> Expr.ToJsonTypeLet Expr.ToJson v e1 e2
         | Expr.RecordCons t -> Expr.ToJsonRecordCons Expr.ToJson t
-        | Expr.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson (a, b)
+        | Expr.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson a b
         | Expr.TupleCons t -> Expr.ToJsonTupleCons Expr.ToJson t
-        | Expr.SumCons(i, t) -> Expr.ToJsonSumCons Expr.ToJson (i, t)
-        | Expr.RecordDes(v, e) -> Expr.ToJsonRecordDes Expr.ToJson (v, e)
+        | Expr.SumCons(i, t) -> Expr.ToJsonSumCons Expr.ToJson i t
+        | Expr.RecordDes(v, e) -> Expr.ToJsonRecordDes Expr.ToJson v e
         | Expr.UnionDes t -> Expr.ToJsonUnionDes Expr.ToJson t
-        | Expr.TupleDes(v, e) -> Expr.ToJsonTupleDes Expr.ToJson (v, e)
+        | Expr.TupleDes(v, e) -> Expr.ToJsonTupleDes Expr.ToJson v e
         | Expr.SumDes m -> Expr.ToJsonSumDes Expr.ToJson m
-        | Expr.If(cond, thenExpr, elseExpr) -> Expr.ToJsonIf Expr.ToJson (cond, thenExpr, elseExpr)
+        | Expr.If(cond, thenExpr, elseExpr) -> Expr.ToJsonIf Expr.ToJson cond thenExpr elseExpr
         | Expr.Primitive p -> Expr.ToJsonPrimitive p
         | Expr.Lookup s -> Expr.ToJsonLookup s

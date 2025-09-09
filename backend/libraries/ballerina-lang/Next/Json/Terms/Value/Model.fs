@@ -33,15 +33,20 @@ module Value =
       )
       |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: ('valueExtension -> JsonValue) -> Value<'T, 'valueExtension> -> JsonValue =
-      fun toJsonExt value ->
-        match value with
-        | Value.Primitive p -> Value.ToJsonPrimitive p
-        | Value.Record m -> Value.ToJsonRecord (Value.ToJson toJsonExt) m
-        | Value.UnionCase(s, v) -> Value.ToJsonUnion (Value.ToJson toJsonExt) (s, v)
-        | Value.Tuple vs -> Value.ToJsonTuple (Value.ToJson toJsonExt) vs
-        | Value.Sum(i, v) -> Value.ToJsonSum (Value.ToJson toJsonExt) (i, v)
-        | Value.Var v -> Value.ToJsonVar v
-        | Value.Lambda(a, b) -> Value.ToJsonLambda Expr.ToJson (a, b)
-        | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda Expr.ToJson (a, b)
-        | Value.Ext e -> toJsonExt e
+    static member ToJson: ValueEncoder<'T, 'valueExtension> =
+      fun value ->
+        reader {
+          let! _, extEncoder = reader.GetContext()
+
+          return!
+            match value with
+            | Value.Primitive p -> Value.ToJsonPrimitive p
+            | Value.Record m -> Value.ToJsonRecord Value.ToJson m
+            | Value.UnionCase(s, v) -> Value.ToJsonUnion Value.ToJson s v
+            | Value.Tuple vs -> Value.ToJsonTuple Value.ToJson vs
+            | Value.Sum(i, v) -> Value.ToJsonSum Value.ToJson i v
+            | Value.Var v -> Value.ToJsonVar v |> reader.Return
+            | Value.Lambda(a, b) -> Value.ToJsonLambda Expr.ToJson a b
+            | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda Expr.ToJson a b
+            | Value.Ext e -> extEncoder e |> reader.Return
+        }

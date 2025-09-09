@@ -6,7 +6,7 @@ module Lambda =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
@@ -31,8 +31,10 @@ module Lambda =
               (json)
         }
 
-    static member ToJsonLambda(toRootJson: Expr<'T> -> JsonValue) : Var * Expr<'T> -> JsonValue =
-      fun (var, body) ->
-        let var = var.Name |> JsonValue.String
-        let body = body |> toRootJson
-        [| var; body |] |> JsonValue.Array |> Json.kind "lambda" "lambda"
+    static member ToJsonLambda: ExprEncoder<'T> -> Var -> Expr<'T> -> JsonEncoder<'T, 'valueExtension> =
+      fun root var body ->
+        reader {
+          let var = var.Name |> JsonValue.String
+          let! body = body |> root |> reader.MapContext fst
+          return [| var; body |] |> JsonValue.Array |> Json.kind "lambda" "lambda"
+        }

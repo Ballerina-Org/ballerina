@@ -1,7 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json.Expr
 
 open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.Types.Json
+open Ballerina.Errors
 
 [<AutoOpen>]
 module TypeLet =
@@ -25,16 +25,16 @@ module TypeLet =
           return Expr.TypeLet(typeId, typeArg, body)
         })
 
-    static member ToJsonTypeLet(rootToJson: Expr<'T> -> JsonValue) : string * 'T * Expr<'T> -> JsonValue =
-      fun (typeId, typeArg, body) ->
-        let typeId = typeId |> JsonValue.String
+    static member ToJsonTypeLet
+      : ExprEncoder<'T> -> string -> 'T -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson typeId typeArg body ->
+        reader {
+          let! ctx = reader.GetContext()
+          let typeId = typeId |> JsonValue.String
+          let! body = rootToJson body
 
-        match box typeArg with
-        | :? TypeExpr as typeExpr ->
-          let argJson = TypeExpr.ToJson typeExpr
-          let body = body |> rootToJson
-
-          [| typeId; argJson; body |]
-          |> JsonValue.Array
-          |> Json.kind "type-let" "type-let"
-        | other -> failwith $"Expected a TypeExpr but got {other.GetType().Name}"
+          return
+            [| typeId; ctx typeArg; body |]
+            |> JsonValue.Array
+            |> Json.kind "type-let" "type-let"
+        }

@@ -4,68 +4,35 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 open NUnit.Framework
 open FSharp.Data
-open Ballerina.Errors
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
-open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 
 let private (!) = Identifier.LocalScope
-
-let rec normalizeJson (json: JsonValue) : JsonValue =
-  match json with
-  | JsonValue.Record fields ->
-    fields
-    |> Array.map (fun (k, v) -> k, normalizeJson v)
-    |> Array.sortBy fst
-    |> JsonValue.Record
-
-  | JsonValue.Array items ->
-    let normalized = items |> Array.map normalizeJson
-
-    let isUnionMatchCase =
-      normalized
-      |> Array.forall (function
-        | JsonValue.Array inner when inner.Length > 0 ->
-          match inner.[0] with
-          | JsonValue.String _ -> true
-          | _ -> false
-        | _ -> false)
-
-    if isUnionMatchCase then
-      normalized
-      |> Array.sortBy (function
-        | JsonValue.Array inner ->
-          match inner.[0] with
-          | JsonValue.String tag -> tag
-          | _ -> ""
-        | _ -> "")
-      |> JsonValue.Array
-    else
-      JsonValue.Array normalized
-
-  | _ -> json
 
 let ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
   (expression: Expr<TypeExpr>)
   (expectedJson: JsonValue)
   =
-  let toJson = Expr.ToJson expression
+  let toJson = Expr.ToJson >> Reader.Run TypeExpr.ToJson
 
-  let toStr j =
-    normalizeJson j |> _.ToString(JsonSaveOptions.DisableFormatting)
+  match toJson expression with
+  | Right err -> Assert.Fail $"Encode failed: {err}"
+  | Left json ->
+    let toStr (j: JsonValue) =
+      j.ToString(JsonSaveOptions.DisableFormatting)
 
-  Assert.That(toStr toJson, Is.EqualTo(toStr expectedJson))
+    Assert.That(toStr json, Is.EqualTo(toStr expectedJson))
 
-  let parser = Expr.FromJson >> Reader.Run TypeExpr.FromJson
+    let parser = Expr.FromJson >> Reader.Run TypeExpr.FromJson
 
-  let parsed = parser expectedJson
+    let parsed = parser expectedJson
 
-  match parsed with
-  | Right err -> Assert.Fail $"Parse failed: {err}"
-  | Left result -> Assert.That(result, Is.EqualTo(expression))
+    match parsed with
+    | Right err -> Assert.Fail $"Parse failed: {err}"
+    | Left result -> Assert.That(result, Is.EqualTo(expression))
 
 [<Test>]
 let ``Dsl:Terms:Expr.Lambda json round-trip`` () =

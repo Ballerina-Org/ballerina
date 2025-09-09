@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Record =
   open Ballerina.Reader.WithError
@@ -20,9 +22,10 @@ module Record =
         })
 
     static member ToJsonRecord
-      (rootToJson: Delta<'valueExtension> -> JsonValue)
-      : string * Delta<'valueExtension> -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> JsonValue.String
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "record" "record"
+      : DeltaEncoder<'valueExtension> -> string -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
+      fun rootToJson name delta ->
+        reader {
+          let name = name |> JsonValue.String
+          let! delta = delta |> rootToJson
+          return [| name; delta |] |> JsonValue.Array |> Json.kind "record" "record"
+        }

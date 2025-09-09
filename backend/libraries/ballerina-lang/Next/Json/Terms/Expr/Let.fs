@@ -10,7 +10,7 @@ module Let =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
-  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonLet(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -24,9 +24,12 @@ module Let =
           return Expr.Let(var, value, body)
         })
 
-    static member ToJsonLet(rootToJson: Expr<'T> -> JsonValue) : Var * Expr<'T> * Expr<'T> -> JsonValue =
-      fun (var, value, body) ->
-        let var = var.Name |> JsonValue.String
-        let value = value |> rootToJson
-        let body = body |> rootToJson
-        [| var; value; body |] |> JsonValue.Array |> Json.kind "let" "let"
+    static member ToJsonLet
+      : ExprEncoder<'T> -> Var -> Expr<'T> -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson var value body ->
+        reader {
+          let var = var.Name |> JsonValue.String
+          let! value = value |> rootToJson
+          let! body = body |> rootToJson
+          return [| var; value; body |] |> JsonValue.Array |> Json.kind "let" "let"
+        }

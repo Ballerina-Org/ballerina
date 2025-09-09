@@ -5,12 +5,8 @@ module TypeLambda =
   open Ballerina.Reader.WithError
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
-  open Ballerina.Collections.Sum
-  open Ballerina.Collections.Sum.Operators
-  open Ballerina.Errors
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
@@ -27,16 +23,18 @@ module TypeLambda =
               "type-lambda"
               (fun typeParamJson ->
                 reader {
-                  let! (typeParam, body) = typeParamJson |> JsonValue.AsPair |> reader.OfSum
+                  let! typeParam, body = typeParamJson |> JsonValue.AsPair |> reader.OfSum
                   let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
                   let! body = body |> Expr.FromJson
                   return Value.TypeLambda(typeParam, body)
                 })
-              (json)
+              json
         }
 
-    static member ToJsonTypeLambda(toJsonRoot: Expr<'T> -> JsonValue) : TypeParameter * Expr<'T> -> JsonValue =
-      fun (tp, body) ->
-        let tp = TypeParameter.ToJson tp
-        let bodyJson = toJsonRoot body
-        [| tp; bodyJson |] |> JsonValue.Array |> Json.kind "type-lambda" "type-lambda"
+    static member ToJsonTypeLambda: ExprEncoder<'T> -> TypeParameter -> Expr<'T> -> JsonEncoder<'T, 'valueExtension> =
+      fun root tp body ->
+        reader {
+          let tp = TypeParameter.ToJson tp
+          let! bodyJson = root body |> reader.MapContext fst
+          return [| tp; bodyJson |] |> JsonValue.Array |> Json.kind "type-lambda" "type-lambda"
+        }

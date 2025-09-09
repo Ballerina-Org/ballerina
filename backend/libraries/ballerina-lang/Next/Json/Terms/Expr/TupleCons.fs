@@ -1,6 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json.Expr
 
 open Ballerina.DSL.Next.Json
+open Ballerina.Errors
 
 [<AutoOpen>]
 module TupleCons =
@@ -19,8 +20,9 @@ module TupleCons =
           return Expr.TupleCons(elements)
         })
 
-    static member ToJsonTupleCons(rootToJson: Expr<'T> -> JsonValue) : List<Expr<'T>> -> JsonValue =
-      List.map rootToJson
-      >> Array.ofList
-      >> JsonValue.Array
-      >> Json.kind "tuple-cons" "elements"
+    static member ToJsonTupleCons: ExprEncoder<'T> -> List<Expr<'T>> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson tuple ->
+        tuple
+        |> List.map rootToJson
+        |> reader.All
+        |> reader.Map(Array.ofList >> JsonValue.Array >> Json.kind "tuple-cons" "elements")

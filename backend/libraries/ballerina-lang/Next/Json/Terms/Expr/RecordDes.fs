@@ -10,7 +10,7 @@ module RecordDes =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Json
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Json
 
   type Expr<'T> with
@@ -23,12 +23,15 @@ module RecordDes =
           return Expr.RecordDes(expr, field)
         })
 
-    static member ToJsonRecordDes(rootToJson: Expr<'T> -> JsonValue) : Expr<'T> * Identifier -> JsonValue =
-      fun (expr, field) ->
+    static member ToJsonRecordDes
+      : ExprEncoder<'T> -> Expr<'T> -> Identifier -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson expr field ->
+        reader {
+          let! expr = rootToJson expr
+          let field = field |> Identifier.ToJson
 
-        let expr = rootToJson expr
-        let field = field |> Identifier.ToJson
-
-        [| expr; field |]
-        |> JsonValue.Array
-        |> Json.kind "record-field-lookup" "record-field-lookup"
+          return
+            [| expr; field |]
+            |> JsonValue.Array
+            |> Json.kind "record-field-lookup" "record-field-lookup"
+        }

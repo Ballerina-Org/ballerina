@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Tuple =
   open Ballerina.Reader.WithError
@@ -20,9 +22,10 @@ module Tuple =
         })
 
     static member ToJsonTuple
-      (rootToJson: Delta<'valueExtension> -> JsonValue)
-      : int * Delta<'valueExtension> -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> decimal |> JsonValue.Number
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "tuple" "tuple"
+      : DeltaEncoder<'valueExtension> -> int -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
+      fun rootToJson i v ->
+        reader {
+          let i = i |> decimal |> JsonValue.Number
+          let! v = v |> rootToJson
+          return [| i; v |] |> JsonValue.Array |> Json.kind "tuple" "tuple"
+        }

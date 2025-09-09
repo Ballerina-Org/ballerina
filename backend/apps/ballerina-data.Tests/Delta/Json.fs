@@ -2,7 +2,6 @@ module Ballerina.Data.Tests.Delta.Json
 
 open NUnit.Framework
 open FSharp.Data
-
 open Ballerina.Reader.WithError
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types.Model
@@ -16,18 +15,25 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (e
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
-  let toJson = Delta<Unit>.ToJson (fun _ -> JsonValue.Null) expression
-  Assert.That(normalize toJson, Is.EqualTo(normalize expectedJson))
+  let encoder =
+    Delta<Unit>.ToJson >> Reader.Run(TypeValue.ToJson, fun _ -> JsonValue.Null)
 
-  let parser =
-    Value<TypeValue, Unit>.FromJson((fun _ -> sum.Return()))
-    >> Reader.Run TypeValue.FromJson
+  let encoded = encoder expression
 
-  let parsed = Delta<Unit>.FromJson expectedJson |> Reader.Run parser
+  match encoded with
+  | Right err -> Assert.Fail $"Encode failed: {err}"
+  | Left json ->
+    Assert.That(normalize json, Is.EqualTo(normalize expectedJson))
 
-  match parsed with
-  | Right err -> Assert.Fail $"Parse failed: {err}"
-  | Left result -> Assert.That(result, Is.EqualTo(expression))
+    let parser =
+      Value<TypeValue, Unit>.FromJson(fun _ -> sum.Return())
+      >> Reader.Run TypeValue.FromJson
+
+    let parsed = Delta<Unit>.FromJson expectedJson |> Reader.Run parser
+
+    match parsed with
+    | Right err -> Assert.Fail $"Parse failed: {err}"
+    | Left result -> Assert.That(result, Is.EqualTo(expression))
 
 
 [<Test>]

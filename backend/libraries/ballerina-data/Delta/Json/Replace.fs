@@ -2,7 +2,7 @@
 
 [<AutoOpen>]
 module Replace =
-
+  open Ballerina.Errors
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
@@ -21,7 +21,8 @@ module Replace =
           return value |> Delta.Replace
         })
 
-    static member ToJsonReplace: ('valueExtension -> JsonValue) -> Value<TypeValue, 'valueExtension> -> JsonValue =
-      fun extToJson ->
-        (Value<TypeValue, 'valueExtension>.ToJson extToJson)
-        >> Json.kind "replace" "replace"
+    static member ToJsonReplace
+      : Value<TypeValue, 'valueExtension>
+          -> Reader<JsonValue, JsonEncoder<TypeValue> * JsonEncoder<'valueExtension>, Errors> =
+      Value<TypeValue, 'valueExtension>.ToJson
+      >> reader.Map(Json.kind "replace" "replace")

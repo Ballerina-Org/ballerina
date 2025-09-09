@@ -7,6 +7,7 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Errors
 open Ballerina.Seeds.Fakes
 open Ballerina.Reader.WithError
+open Ballerina.State.WithError
 open Ballerina.StdLib.Object
 
 type SeedingClue =
@@ -23,32 +24,36 @@ type SeedingContext<'T> =
     Label: SeedingClue
     Options: SeedTarget
     InfinitiveVarNamesIndex: int
+    InfinitiveNamesIndex: Map<string, int>
     Generator: BogusDataGenerator<Value<'T, Unit>> }
 
 module Traverser =
 
-  let rec seed: TypeValue -> Reader<Value<TypeValue, Unit>, SeedingContext<TypeValue>, Errors> =
+  let rec seed
+    : TypeValue
+        -> State<Value<TypeValue, 'valueExtension>, SeedingContext<TypeValue>, SeedingContext<TypeValue>, Errors> =
     fun typeValue ->
 
       let (!) = seed
 
-      let (!!) (label: string) (t: TypeValue) =
-        seed t |> reader.MapContext(fun ctx -> { ctx with Label = FromContext label })
+      let setLabel label =
+        state.SetState(fun s -> { s with Label = FromContext label })
 
-      reader {
-        let! ctx = reader.GetContext()
+      let (!!) label (t: TypeValue) = setLabel label >>= fun () -> !t
+
+      state {
+        let! ctx = state.GetContext()
 
         match typeValue with
         | TypeValue.Arrow _
         | TypeValue.Apply _
-        | TypeValue.Lambda _ -> return! reader.Throw(Errors.Singleton "Arrow/Lambda seeds not implemented yet")
+        | TypeValue.Lambda _ -> return! state.Throw(Errors.Singleton "Arrow/Lambda seeds not implemented yet")
 
         | TypeValue.Var _ ->
-          let! ctx =
-            reader.GetContext()
-            |> reader.MapContext(fun ctx ->
-              { ctx with
-                  InfinitiveVarNamesIndex = ctx.InfinitiveVarNamesIndex + 1 })
+          do!
+            state.SetState(fun s ->
+              { s with
+                  InfinitiveVarNamesIndex = s.InfinitiveVarNamesIndex + 1 })
 
           return
             [ TypeSymbol.Create(Identifier.LocalScope "Guid"),
@@ -60,11 +65,11 @@ module Traverser =
             |> Value.Record
 
         | TypeValue.Sum elements ->
-          let! values = elements |> Seq.map (!) |> reader.All
+          let! values = elements |> Seq.map (!) |> state.All
           return Value.Sum(0, values.Head)
 
         | TypeValue.Tuple elements ->
-          let! values = elements |> Seq.map (!) |> reader.All
+          let! values = elements |> Seq.map (!) |> state.All
           return Value.Tuple values
 
         | TypeValue.Map(key, value) ->
@@ -79,43 +84,56 @@ module Traverser =
             )
 
         | TypeValue.Union cases ->
+          let sampled = cases |> Map.toList |> List.randomSample 1
+
           let! cases =
-            cases
-            |> Map.toList
-            |> List.randomSample 1
+            sampled
             |> List.map (fun (ts, tv) ->
-              reader {
-                let! value = !! ts.Name.LocalName tv
-                return ts, value
+              state {
+                let! v = !! ts.Name.LocalName tv
+                return ts, v
               })
-            |> reader.All
+            |> state.All
 
           return cases |> List.map Value.UnionCase |> Value.Tuple
 
         | TypeValue.Lookup id ->
-          let! tv, _ = TypeExprEvalState.tryFindType id |> reader.MapContext _.TypeContext
+          let! ctx = state.GetContext()
+          let! tv, _ = TypeExprEvalState.tryFindType id |> Reader.Run ctx.TypeContext |> state.OfSum
           return! (!!id.ToFSharpString) tv
 
         | TypeValue.Record fields ->
-          let! fieldValues =
+          let! fields =
             fields
             |> Map.toList
             |> List.map (fun (ts, tv) ->
-              reader {
-                let! tv = !! ts.Name.LocalName tv
-                return ts, tv
+              state {
+                let! v = !! ts.Name.LocalName tv
+                return ts, v
               })
-            |> reader.All
+            |> state.All
 
-          return Value.Record(Map.ofList fieldValues)
+          return Value.Record(Map.ofList fields)
 
         | TypeValue.Primitive p ->
-          let value =
-            match ctx.Label with
-            | Absent -> FakeValue Unsupervised
-            | FromContext label -> FakeValue(Supervised(label, 0))
+          match ctx.Label with
+          | Absent ->
+            let value = FakeValue Unsupervised
+            return ctx.Generator.PrimitiveValueCons p value
 
-          return ctx.Generator.PrimitiveValueCons p value
+          | FromContext label ->
+            do!
+              state.SetState(fun s ->
+                { s with
+                    InfinitiveNamesIndex =
+                      s.InfinitiveNamesIndex
+                      |> Map.change label (function
+                        | Some i -> Some(i + 1)
+                        | None -> Some 0) })
+
+            let! ctx = state.GetState()
+            let value = FakeValue(Supervised(label, ctx.InfinitiveNamesIndex[label]))
+            return ctx.Generator.PrimitiveValueCons p value
 
         | TypeValue.List element
         | TypeValue.Set element ->
@@ -130,4 +148,5 @@ type SeedingContext<'T> with
       Generator = Runner.en ()
       Label = Absent
       InfinitiveVarNamesIndex = 0
+      InfinitiveNamesIndex = Map.empty
       Options = FullStructure }

@@ -9,6 +9,7 @@ module TupleDes =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonTupleDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -20,9 +21,12 @@ module TupleDes =
           return Expr.TupleDes(expr, { Index = index })
         })
 
-    static member ToJsonTupleDes(rootToJson: Expr<'T> -> JsonValue) : Expr<'T> * TupleDesSelector -> JsonValue =
-      fun (e, sel) ->
-        let e = e |> rootToJson
-        let index = sel.Index |> decimal |> JsonValue.Number
+    static member ToJsonTupleDes
+      : ExprEncoder<'T> -> Expr<'T> -> TupleDesSelector -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson e sel ->
+        reader {
+          let! e = e |> rootToJson
+          let index = sel.Index |> decimal |> JsonValue.Number
 
-        [| e; index |] |> JsonValue.Array |> Json.kind "tuple-des" "tuple-des"
+          return [| e; index |] |> JsonValue.Array |> Json.kind "tuple-des" "tuple-des"
+        }
