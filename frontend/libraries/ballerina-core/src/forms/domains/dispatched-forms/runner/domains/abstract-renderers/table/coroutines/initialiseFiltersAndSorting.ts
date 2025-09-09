@@ -94,7 +94,6 @@ export const InitialiseFiltersAndSorting = <
                           filterTypes,
                           filtersAndSorting.value.sorting,
                           parseToApiByType,
-                          true,
                         ),
                       ),
                     ),

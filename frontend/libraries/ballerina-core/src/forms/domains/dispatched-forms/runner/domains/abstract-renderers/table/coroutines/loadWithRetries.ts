@@ -51,9 +51,7 @@ export const TableLoadWithRetries =
                           ? 0
                           : current.value.to + 1,
                       filtersAndSorting:
-                        current.customFormState.filterAndSortParam === ""
-                          ? undefined
-                          : current.customFormState.filterAndSortParam,
+                        current.customFormState.filterAndSortParam,
                     }),
                   () => "error" as const,
                 ),

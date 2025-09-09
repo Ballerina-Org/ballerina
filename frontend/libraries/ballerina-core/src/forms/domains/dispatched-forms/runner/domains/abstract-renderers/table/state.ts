@@ -149,7 +149,6 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     _.customFormState.sorting,
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -188,7 +187,6 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -226,7 +224,6 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -269,15 +266,7 @@ export const TableAbstractRendererState = {
         value: PredicateValue,
         state: any,
       ) => ValueOrErrors<any, string>,
-      isFilteringInitialized: boolean,
     ): string => {
-      if (
-        !isFilteringInitialized ||
-        (filterValues.valueSeq().every((filters) => filters.size == 0) &&
-          sorting.size == 0)
-      ) {
-        return "";
-      }
       const filterTypes = sumNFilterTypes.map(
         (sumNType) => sumNType.args as Array<FilterType<any>>,
       );
