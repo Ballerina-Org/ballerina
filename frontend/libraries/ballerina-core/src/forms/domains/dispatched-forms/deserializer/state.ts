@@ -200,7 +200,7 @@ export type DispatchTableFiltersAndSorting = {
 export type TableGetManyParams = {
   chunkSize: number;
   from: number;
-  filtersAndSorting?: string;
+  filtersAndSorting: string;
 };
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
