@@ -8,13 +8,11 @@ import (
 type deltaOneEffectsEnum string
 
 const (
-	oneReplace     deltaOneEffectsEnum = "OneReplace"
-	oneValue       deltaOneEffectsEnum = "OneValue"
-	oneCreateValue deltaOneEffectsEnum = "OneCreateValue"
-	oneDeleteValue deltaOneEffectsEnum = "OneDeleteValue"
+	oneReplace deltaOneEffectsEnum = "OneReplace"
+	oneValue   deltaOneEffectsEnum = "OneValue"
 )
 
-var allDeltaOneEffectsEnumCases = [...]deltaOneEffectsEnum{oneReplace, oneValue, oneCreateValue, oneDeleteValue}
+var allDeltaOneEffectsEnumCases = [...]deltaOneEffectsEnum{oneReplace, oneValue}
 
 func DefaultDeltaOneEffectsEnum() deltaOneEffectsEnum { return allDeltaOneEffectsEnumCases[0] }
 
@@ -97,8 +95,6 @@ func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
 func MatchDeltaOne[a any, deltaA any, Result any](
 	onReplace func(a) func(ReaderWithError[Unit, One[a]]) (Result, error),
 	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
-	onCreateValue func(a) (Result, error),
-	onDeleteValue func() (Result, error),
 ) func(DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
 	return func(delta DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
 		return func(one ReaderWithError[Unit, One[a]]) (Result, error) {
@@ -127,13 +123,6 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 					},
 				)(one)
 				return onValue(*delta.value)(value)
-			case oneCreateValue:
-				if delta.createValue == nil {
-					return result, NewInvalidDiscriminatorError("nil createValue", "DeltaOne")
-				}
-				return onCreateValue(*delta.createValue)
-			case oneDeleteValue:
-				return onDeleteValue()
 			}
 			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOne")
 		}
