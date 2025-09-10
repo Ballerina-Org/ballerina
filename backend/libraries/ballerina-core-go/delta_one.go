@@ -79,19 +79,7 @@ func NewDeltaOneValue[a any, deltaA any](delta deltaA) DeltaOne[a, deltaA] {
 		value:         &delta,
 	}
 }
-func NewDeltaOneCreateValue[a any, deltaA any](value a) DeltaOne[a, deltaA] {
-	return DeltaOne[a, deltaA]{
-		discriminator: oneCreateValue,
-		createValue:   &value,
-	}
-}
-func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
-	unit := NewUnit()
-	return DeltaOne[a, deltaA]{
-		discriminator: oneDeleteValue,
-		deleteValue:   &unit,
-	}
-}
+
 func MatchDeltaOne[a any, deltaA any, Result any](
 	onReplace func(a) func(ReaderWithError[Unit, One[a]]) (Result, error),
 	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
