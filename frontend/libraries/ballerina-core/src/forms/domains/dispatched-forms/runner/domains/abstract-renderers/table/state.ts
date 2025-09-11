@@ -49,6 +49,26 @@ export type TableAbstractRendererReadonlyContext<
   highlightedFilters: Array<string>;
 };
 
+type FiltersAndSorting = {
+  Filters: object;
+  Sorting: any[];
+};
+
+const FiltersAndSorting = {
+  Default: (
+    Filters: FiltersAndSorting["Filters"],
+    Sorting: FiltersAndSorting["Sorting"],
+  ): FiltersAndSorting => ({
+    Filters,
+    Sorting,
+  }),
+  Operations: {
+    Serialize: (filtersAndSorting: FiltersAndSorting): string => {
+      return btoa(JSON.stringify(filtersAndSorting));
+    },
+  },
+};
+
 export type TableAbstractRendererSelectedDetailRow =
   | string
   | undefined
@@ -81,7 +101,9 @@ export const TableAbstractRendererState = {
       isFilteringInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      filterAndSortParam: "",
+      filterAndSortParam: FiltersAndSorting.Operations.Serialize(
+        FiltersAndSorting.Default({}, []),
+      ),
       rowStates: Map(),
       filters: Map(),
       sorting: Map(),
@@ -355,11 +377,11 @@ export const TableAbstractRendererState = {
           ? []
           : parsedValueSorting.value.toArray();
 
-      const params = {
-        Filters: parsedFiltersValues,
-        Sorting: finalSorting,
-      };
-      return btoa(JSON.stringify(params));
+      const params = FiltersAndSorting.Default(
+        parsedFiltersValues,
+        finalSorting,
+      );
+      return FiltersAndSorting.Operations.Serialize(params);
     },
     tableValuesToValueRecord: (
       values: any,
