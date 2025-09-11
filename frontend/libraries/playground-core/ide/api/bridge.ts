@@ -1,7 +1,5 @@
-﻿import {CollectionReference, Errors, Identifiable, Unit, ValidationResult, Value, ValueOrErrors} from "ballerina-core";
+﻿import { Unit, ValueOrErrors} from "ballerina-core";
 import axios from "axios";
-import {V1} from "./specs";
-import {SpecSource} from "../domains/bridge/state";
 
 const BASE_URL = "http://localhost:5021";
 
@@ -27,13 +25,13 @@ export async function validate(specName: string, launcher: string): Promise<Valu
     return response.data
 }
 
-export async function validateV1(specName: string, v1: SpecSource): Promise<ValueOrErrors<string[], string>> {
-    const response =
-        await axios.post<ValueOrErrors<string[], string>>(`${BASE_URL}/bridge-validate/v1body`,v1.specBody.value,{
-            headers: {
-                "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
-                 "X-Spec-Id": specName
-            }
-        });
-    return response.data
-}
+// export async function validateV1(specName: string, v1: SpecSource): Promise<ValueOrErrors<string[], string>> {
+//     const response =
+//         await axios.post<ValueOrErrors<string[], string>>(`${BASE_URL}/bridge-validate/v1body`,v1.specBody.value,{
+//             headers: {
+//                 "X-Tenant-Id": "c0a8011e-3f7e-4a44-9c3a-97bcb80b10fd",
+//                  "X-Spec-Id": specName
+//             }
+//         });
+//     return response.data
+// }

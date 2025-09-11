@@ -3,8 +3,12 @@
 import React from "react";
 import {style} from "./actions.styled";
 import {VscCheck, VscCheckAll, VscDatabase, VscLock, VscSave, VscNewFile, VscRedo} from "react-icons/vsc";
+import {Ide} from "playground-core";
 
 export const Actions: React.FC<{
+    context:  Ide,
+    onNew?: () => void;
+    onLock?: () => void;
     onSeed?: () => void;
     onReSeed?: () => void;
     onRun?: () => void;
@@ -14,30 +18,30 @@ export const Actions: React.FC<{
     onValidateBridge?: () => void;
     onValidateV1?: () => void;
 
-}> = ({onSeed, onReSeed, onRun, onDownload, onSave, onRunCondition, onValidateBridge, onValidateV1}) => (
+}> = ({context, onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onRunCondition, onValidateBridge, onValidateV1}) => (
     <div css={style.layout}>
         <div css={style.buttonSection}>
             <button className="btn tooltip tooltip-bottom" data-tip="Lock spec">
-                <VscLock size={20} onClick={()=>{}}/>
+                <VscLock size={20} onClick={onLock}/>
             </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="New spec">
-                <VscNewFile size={20} />
-            </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="Save changes">
-                <VscSave size={20} onClick={onSave}/>
-            </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="Seed">
+            { context.phase == "choose" && context.activeTab == "existing" &&  <button className="btn tooltip tooltip-bottom" data-tip="New spec">
+                <VscNewFile size={20} onClick={onNew}/>
+            </button>}
+            {/*<button className="btn tooltip tooltip-bottom" data-tip="Save changes">*/}
+            {/*    <VscSave size={20} onClick={onSave}/>*/}
+            {/*</button>*/}
+            { context.phase == "locked" && <button className="btn tooltip tooltip-bottom" data-tip="Seed">
                 <VscDatabase size={20} onClick={onSeed}/>
-            </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="ReSeed">
-                <VscRedo size={20} onClick={onReSeed}/>
-            </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="Validate v1">
-                <VscCheck size={20} onClick={onValidateV1}/>
-            </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="Validate bridge">
-                <VscCheckAll size={20} onClick={onValidateBridge}/>
-            </button>
+            </button>}
+            {/*<button className="btn tooltip tooltip-bottom" data-tip="ReSeed">*/}
+            {/*    <VscRedo size={20} onClick={onReSeed}/>*/}
+            {/*</button>*/}
+            {/*<button className="btn tooltip tooltip-bottom" data-tip="Validate v1">*/}
+            {/*    <VscCheck size={20} onClick={onValidateV1}/>*/}
+            {/*</button>*/}
+            {/*<button className="btn tooltip tooltip-bottom" data-tip="Validate bridge">*/}
+            {/*    <VscCheckAll size={20} onClick={onValidateBridge}/>*/}
+            {/*</button>*/}
         </div>
     </div>
 );

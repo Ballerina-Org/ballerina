@@ -2,6 +2,8 @@
 import "react-grid-layout/css/styles.css";
 import React, {useEffect, useRef} from "react";
 import { style } from "./grid.styled";
+
+
 export const Grid: React.FC<{
     theme: string;
     header: React.ReactNode;

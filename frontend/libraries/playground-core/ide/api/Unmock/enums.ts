@@ -11,7 +11,6 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
         () => 
             call.then(
                 res => {
-                    debugger
                     return res.kind == "errors" ? []:
                     res.value.map((_:any) => ({Value: _.value[0].Discriminator}))})
     )

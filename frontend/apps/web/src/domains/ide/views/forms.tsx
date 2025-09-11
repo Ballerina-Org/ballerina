@@ -44,7 +44,7 @@ import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/a
 import { v4 } from "uuid";
 import {DispatchFromConfigApis, IdeFormProps, UnmockingApisEnums} from "playground-core";
 import { UnmockingApisStreams} from "playground-core";
-import {getSeedEntity, getLookup, GetLookupResponse, updateEntity, UnmockingApisLookups, findByDispatchType} from "playground-core";
+import {getSeedEntity, getLookup,  updateEntity, UnmockingApisLookups} from "playground-core";
 const ShowFormsParsingErrors = (
     parsedFormsConfig: DispatchSpecificationDeserializationResult<
         DispatchPassthroughFormInjectedTypes,
@@ -347,7 +347,6 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value" 
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-            const {lookupSources, specApis} = specificationDeserializer.deserializedSpecification.sync.value.value.dispatcherContext
 
             getSeedEntity(props.specName, props.entityName)
                 .then(async (raw) => {
@@ -367,66 +366,14 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                             const entity = parsed.value;
                             
                             const e = entity as any;
-                           // if(specApis.lookups && lookupSources){
-                  
-                                //const {ones, streams} = findByDispatchType(props.entityName, specApis.lookups, props.typeName)
-                                // const oneFields =
-                                //     ones
-                                //         .flatMap(x => {
-                                //             const s = lookupSources(x.key);
-                                //             return s.kind === "value" ? [{ api: x.key, sources: s.value }] : [];
-                                //         });
-                                // debugger
-                                // const ss = 
-                                //     specApis.streams ? 
-                                //         specApis.streams.map(async (apiName,dispatchTypeName) =>
-                                //   
-                                //                 ({
-                                //                     key: apiName,
-                                //                     value: await getSeedEntity(props.specName, apiName)
-                                //                 })
-                                //         )
-                                //         :[];
 
-                                // const fetched =
-                                //     await Promise.all(
-                                //         [...oneFields.map(
-                                //             async field =>
-                                //             ({ 
-                                //                 key: field.api.replace(/Api$/, ""),
-                                //                 value: await getLookup(props.specName, field.api.replace(/Api$/,""),  id, 0, 1)
-                                //             })
-                                //         )
-                                //         ]
-                                //     );
-                                //
-                                //
-                                // const pairs =
-                                //     [...fetched, { key: "Id", value: ValueOrErrors.Default.return(id) }]
-                                //     .flatMap(x => {
-                                //         const opt =  x.value.kind === "value" ? x.key == "Id" ? x.value.value : PredicateValue.Default.option(true,PredicateValue.Default.record(OrderedMap(x.value.value.values[0]))) : null;
-                                //    
-                                //         return x.value.kind === "value" ? [[x.key, opt] as const] : []
-                                //     });
-                                //
-                                const t = 
-                                    e.fields.merge(Object.fromEntries([[
-                                        "Spouse", PredicateValue.Default.option(false,PredicateValue.Default.record(OrderedMap()))] as const]));
-                                //const t2 = [...t,["Id",  id]]
-                                // const updated = {
-                                //     ...e,
-                                //     fields: e.fields.merge(Object.fromEntries(pairs)),
-                                // };
-                                //
-                                debugger
-                                const updated = {
-                                    ...e,
-                                    fields: e.fields.merge(Object.fromEntries([["Id",  id]])),
-                                };
-                                //setEntity(Sum.Default.left(parsed));
-                                setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));// pv));
-                                setEntityId(id);
-                           // }
+                            const updated = {
+                                ...e,
+                                fields: e.fields.merge(Object.fromEntries([["Id",  id]])),
+                            };
+                            //setEntity(Sum.Default.left(parsed));
+                            setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
+                            setEntityId(id);
                         }
                     }
                 });

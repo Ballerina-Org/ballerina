@@ -1,16 +1,8 @@
-﻿import { Debounced, Unit } from "ballerina-core";
+﻿import { Unit } from "ballerina-core";
 import { Co } from "./builder";
-import {specNames} from "./specs-observer";
-import {liveUpdatesCounter} from "./live-updates-counter";
+import { bootstrap } from "./ide-bootstrap";
 
-
-export const SpecsObserver =
-    Co.Template<Unit>(specNames, {
+export const Bootstrap =
+    Co.Template<Unit>(bootstrap, {
         runFilter: (props) => true,
-    });
-
-
-export const LiveUpdatesCounter =
-    Co.Template<Unit>(liveUpdatesCounter, {
-        runFilter: (props) =>  props.context.bridge.bridge.left.left.dirty  
     });

@@ -12,6 +12,8 @@
     "@emotion/styled": "^11.14.1",
     "@faker-js/faker": "^8.4.1",
     "ballerina-core": "*",
+    "dotenv": "^17.2.2",
+    "dotenv-expand": "^12.0.3",
     "i18next": "^23.11.5",
     "immutable": "^5.0.0-beta.5",
     "json-edit-react": "^1.28.2",
@@ -20,6 +22,7 @@
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.4",
     "react-icons": "^5.5.0",
+    "sonner": "^2.0.7",
     "theme-change": "^2.5.0",
     "uuid": "^9.0.1"
   },

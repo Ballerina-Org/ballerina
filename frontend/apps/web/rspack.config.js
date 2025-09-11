@@ -1,6 +1,22 @@
 const rspack = require("@rspack/core");
 const refreshPlugin = require("@rspack/plugin-react-refresh");
 const isDev = process.env.NODE_ENV === "development";
+const dotenv = require("dotenv");
+const dotenvExpand = require("dotenv-expand");
+const fs = require("node:fs");
+const envFile = fs.existsSync(".env.ide") ? ".env.ide" : ".env";
+dotenv.config({ path: envFile });
+
+console.log(`Loaded env file: ${envFile}`);
+const isIDE = process.env.APP_FLAVOR === "ide";
+
+const parsed = dotenv.config();       
+dotenvExpand.expand(parsed);
+const PUBLIC_KEYS = ["APP_FLAVOR", "API_ORIGIN", "API_PREFIX", "TENANT_ID"];
+const injected = Object.fromEntries(
+    PUBLIC_KEYS.map(k => [`process.env.${k}`, JSON.stringify(process.env[k] ?? "")])
+);
+
 /**
  * @type {import('@rspack/cli').Configuration}
  */
@@ -54,10 +70,24 @@ module.exports = {
   },
   devServer: {
     port: 5001,
+      ...(isIDE && {
+          proxy: {
+              [process.env.API_PREFIX]: {
+                  target: process.env.API_ORIGIN,
+                  changeOrigin: true,
+                  onProxyReq(proxyReq /*, req, res */) {
+                      proxyReq.setHeader("Tenant-Id", process.env.TENANT_ID);
+                  },
+              },
+          },
+      }),
   },
   plugins: [
     new rspack.DefinePlugin({
       "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+        //IDE
+        __ENV__: JSON.stringify(injected), 
+        ...injected,
     }),
     new rspack.ProgressPlugin({}),
     new rspack.HtmlRspackPlugin({

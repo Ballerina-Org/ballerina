@@ -1,13 +1,10 @@
 ﻿import React, { useState } from "react";
 import {Option} from "ballerina-core";
 
-
-type RadioButtonsProps = {
+const LauncherSelector = (props: {
     options: string[];
     onChange?: (value: string) => void;
-};
-
-const RadioButtons = (props: RadioButtonsProps) => {
+}) => {
     const [selected, setSelected] = useState(Option.Default.none());
 
     const handleChange = (value: string) => {
@@ -22,4 +19,4 @@ const RadioButtons = (props: RadioButtonsProps) => {
     );
 };
 
-export default RadioButtons;
+export default LauncherSelector;

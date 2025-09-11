@@ -1,11 +1,15 @@
-﻿import {Template} from "ballerina-core";
+﻿import {Template, Option} from "ballerina-core";
 import {Ide, IdeForeignMutationsExpected, IdeReadonlyContext, IdeView, IdeWritableState} from "./state";
 import {JsonEditorTemplate} from "./domains/editor/template";
-import {LiveUpdatesCounter, SpecsObserver} from "./coroutines/runner";
+import {Bootstrap} from "./coroutines/runner";
 
-export const ChildTemplateEmbedded = JsonEditorTemplate.mapContext<
+export const JsonEditorEmbedded = JsonEditorTemplate.mapContext<
     IdeReadonlyContext & IdeWritableState
->((p) => p.bridge).mapState(Ide.Updaters.Core.bridge)
+>((p) =>
+    p.phase == "locked"
+        ? Option.Default.some(p.locked.bridge)
+        : Option.Default.none()
+).mapState(Ide.Template.bridge.id)
 
 export const IdeTemplate = Template.Default<
     IdeReadonlyContext,
@@ -15,6 +19,6 @@ export const IdeTemplate = Template.Default<
 >((props) =>
     <props.view
         {...props}
-        JsonEditor={ChildTemplateEmbedded}
+        JsonEditor={JsonEditorEmbedded}
     />
-).any([SpecsObserver,LiveUpdatesCounter]);
+).any([Bootstrap]);
