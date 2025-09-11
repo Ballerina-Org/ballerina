@@ -1,22 +1,25 @@
 package ballerina
 
-import "encoding/json"
-
-type DeltaSetEffectsEnum string
-
-const (
-	SetValue  DeltaSetEffectsEnum = "SetValue"
-	SetAdd    DeltaSetEffectsEnum = "SetAdd"
-	SetRemove DeltaSetEffectsEnum = "SetRemove"
+import (
+	"bytes"
+	"encoding/json"
 )
 
-var AllDeltaSetEffectsEnumCases = [...]DeltaSetEffectsEnum{SetValue, SetAdd, SetRemove}
+type deltaSetEffectsEnum string
 
-func DefaultDeltaSetEffectsEnum() DeltaSetEffectsEnum { return AllDeltaSetEffectsEnumCases[0] }
+const (
+	setValue  deltaSetEffectsEnum = "SetValue"
+	setAdd    deltaSetEffectsEnum = "SetAdd"
+	setRemove deltaSetEffectsEnum = "SetRemove"
+)
+
+var allDeltaSetEffectsEnumCases = [...]deltaSetEffectsEnum{setValue, setAdd, setRemove}
+
+func DefaultDeltaSetEffectsEnum() deltaSetEffectsEnum { return allDeltaSetEffectsEnumCases[0] }
 
 type DeltaSet[a comparable, deltaA any] struct {
 	DeltaBase
-	discriminator DeltaSetEffectsEnum
+	discriminator deltaSetEffectsEnum
 	value         *Tuple2[a, deltaA]
 	add           *a
 	remove        *a
@@ -28,7 +31,7 @@ var _ json.Marshaler = DeltaSet[Unit, Unit]{}
 func (d DeltaSet[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaSetEffectsEnum
+		Discriminator deltaSetEffectsEnum
 		Value         *Tuple2[a, deltaA]
 		Add           *a
 		Remove        *a
@@ -44,12 +47,14 @@ func (d DeltaSet[a, deltaA]) MarshalJSON() ([]byte, error) {
 func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		DeltaBase
-		Discriminator DeltaSetEffectsEnum
+		Discriminator deltaSetEffectsEnum
 		Value         *Tuple2[a, deltaA]
 		Add           *a
 		Remove        *a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -63,19 +68,19 @@ func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 func NewDeltaSetValue[a comparable, deltaA any](index a, delta deltaA) DeltaSet[a, deltaA] {
 	tmp := NewTuple2(index, delta)
 	return DeltaSet[a, deltaA]{
-		discriminator: SetValue,
+		discriminator: setValue,
 		value:         &tmp,
 	}
 }
 func NewDeltaSetAdd[a comparable, deltaA any](newElement a) DeltaSet[a, deltaA] {
 	return DeltaSet[a, deltaA]{
-		discriminator: SetAdd,
+		discriminator: setAdd,
 		add:           &newElement,
 	}
 }
 func NewDeltaSetRemove[a comparable, deltaA any](element a) DeltaSet[a, deltaA] {
 	return DeltaSet[a, deltaA]{
-		discriminator: SetRemove,
+		discriminator: setRemove,
 		remove:        &element,
 	}
 }
@@ -88,11 +93,11 @@ func MatchDeltaSet[a comparable, deltaA any, Result any](
 	return func(delta DeltaSet[a, deltaA]) (Result, error) {
 		var result Result
 		switch delta.discriminator {
-		case SetValue:
+		case setValue:
 			return onValue(*delta.value)
-		case SetAdd:
+		case setAdd:
 			return onAdd(*delta.add)
-		case SetRemove:
+		case setRemove:
 			return onRemove(*delta.remove)
 		}
 		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaSet")

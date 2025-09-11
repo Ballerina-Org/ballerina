@@ -22,7 +22,6 @@
         <Compile Include="Next/Types/Model.fs" />
         <Compile Include="Next/Types/Patterns.fs" />
         <Compile Include="Next/Types/Eval.fs" />
-        <Compile Include="Next/Types/KindCheck.fs" />
 
         <Compile Include="Next/Terms/Model.fs" />
         <Compile Include="Next/Terms/Patterns.fs" />
@@ -31,6 +30,10 @@
         <Compile Include="Next/Next.fs" />
         <Compile Include="Next/Unification/EquivalenceClass.fs" />
         <Compile Include="Next/Unification/Unification.fs" />
+        <Compile Include="Next/Terms/TypeCheck.fs" />
+        <Compile Include="Next/Terms/Expr_Eval.fs" />
+
+
         <Compile Include="Next\Json\Json.fs" />
         <Compile Include="Next\Json\Type\Var.fs" />
         <Compile Include="Next\Json\Type\Symbol.fs" />
@@ -39,6 +42,7 @@
         <Compile Include="Next\Json\Type\Parameter.fs" />
         <Compile Include="Next\Json\Type\Identifier.fs" />
 
+        <Compile Include="Next\Json\Types\TypeExpr\AutomaticSymbolCreation.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Union.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Tuple.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Sum.fs" />
@@ -69,7 +73,9 @@
         <Compile Include="Next\Json\Types\TypeValue\List.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Lambda.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Arrow.fs" />
+        <Compile Include="Next\Json\Types\TypeValue\Apply.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Model.fs" />
+
         <Compile Include="Next\Json\Terms\Primitive.fs" />
         <Compile Include="Next\Json\Terms\Expr\UnionDes.fs" />
         <Compile Include="Next\Json\Terms\Expr\UnionCons.fs" />

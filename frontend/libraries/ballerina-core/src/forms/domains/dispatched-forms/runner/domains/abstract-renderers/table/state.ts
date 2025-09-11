@@ -1,18 +1,15 @@
-import { Map, OrderedMap, Set } from "immutable";
+import { Map, OrderedMap, Set, List } from "immutable";
 
 import {
   simpleUpdater,
-  BasicUpdater,
   Updater,
   SimpleCallback,
   simpleUpdaterWithChildren,
-  MapRepo,
   ValueOrErrors,
   PredicateValue,
   ValueRecord,
   ValueTable,
   replaceWith,
-  DispatchTableApiSource,
   DispatchOnChange,
   Unit,
   ValueCallbackWithOptionalFlags,
@@ -24,14 +21,17 @@ import {
   TableMethod,
   CommonAbstractRendererViewOnlyReadonlyContext,
   RecordType,
-  ValueTuple,
+  FilterType,
+  MapRepo,
+  ValueFilter,
+  DispatchParsedType,
+  CommonAbstractRendererForeignMutationsExpected,
+  Value,
+  SumNType,
+  ValueSumN,
   ValueUnit,
 } from "../../../../../../../../main";
-import { Debounced } from "../../../../../../../debounced/state";
-import { BasicFun } from "../../../../../../../fun/state";
 import { Template, View } from "../../../../../../../template/state";
-
-import { ValueInfiniteStreamState } from "../../../../../../../value-infinite-data-stream/state";
 
 export type TableAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
@@ -42,64 +42,66 @@ export type TableAbstractRendererReadonlyContext<
   CustomPresentationContext,
   ExtraContext
 > & {
-  tableApiSource: DispatchTableApiSource;
-  fromTableApiParser: (value: unknown) => ValueOrErrors<PredicateValue, string>;
   tableHeaders: string[];
   columnLabels: Map<string, string | undefined>;
   apiMethods: Array<TableMethod>;
+  sorting: Array<string>;
+  highlightedFilters: Array<string>;
 };
 
 export type TableAbstractRendererSelectedDetailRow =
-  | ValueTuple
-  | ValueUnit
-  | undefined;
+  | string
+  | undefined
+  | ValueUnit;
 
 export type TableAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
+    loadingState: "loading" | "loaded" | "error" | "reload from 0";
+    loadMore:
+      | "load more"
+      | "loading more"
+      | "don't load more"
+      | "error loading more";
+    isFilteringInitialized: boolean;
     selectedRows: Set<string>;
     rowStates: Map<string, RecordAbstractRendererState>;
     selectedDetailRow: TableAbstractRendererSelectedDetailRow;
-    initializationStatus: "not initialized" | "initialized" | "reinitializing";
-    streamParams: Debounced<Map<string, string>>;
-    stream: ValueInfiniteStreamState;
-    getChunkWithParams: BasicFun<
-      Map<string, string>,
-      ValueInfiniteStreamState["getChunk"]
-    >;
-    previousRemoteEntityVersionIdentifier: string;
-    shouldReinitialize: boolean;
+    filters: Map<string, List<ValueFilter>>;
+    sorting: Map<string, "Ascending" | "Descending" | undefined>;
+    filterAndSortParam: string;
+    filterStates: Map<string, List<any>>;
   };
 };
 export const TableAbstractRendererState = {
   Default: (): TableAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
-      initializationStatus: "not initialized",
+      loadingState: "loading",
+      loadMore: "don't load more",
+      isFilteringInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      streamParams: Debounced.Default(Map()),
+      filterAndSortParam: "",
       rowStates: Map(),
-      // TODO: replace with sum
-      getChunkWithParams: undefined as any,
-      stream: undefined as any,
-      previousRemoteEntityVersionIdentifier: "",
-      shouldReinitialize: false,
+      filters: Map(),
+      sorting: Map(),
+      filterStates: Map(),
     },
   }),
   Updaters: {
     Core: {
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "getChunkWithParams",
+          "filterAndSortParam",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "stream",
+          "loadMore",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "streamParams",
+          "filters",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "initializationStatus",
+          "sorting",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "selectedDetailRow",
@@ -108,13 +110,16 @@ export const TableAbstractRendererState = {
           "selectedRows",
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "previousRemoteEntityVersionIdentifier",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
-          "shouldReinitialize",
-        ),
-        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "rowStates",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "filterStates",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "isFilteringInitialized",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "loadingState",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -124,27 +129,238 @@ export const TableAbstractRendererState = {
       })("commonFormState"),
     },
     Template: {
-      searchText: (
-        key: string,
-        _: BasicUpdater<string>,
+      updateFilters: (
+        filters: Map<string, List<ValueFilter>>,
+        filterTypes: Map<string, SumNType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
       ): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
-          Debounced.Updaters.Template.value(
-            MapRepo.Updaters.upsert(key, () => "", _),
-          ),
+        Updater((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .filters(replaceWith(filters))
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    filters,
+                    filterTypes,
+                    _.customFormState.sorting,
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["loadingState"]
+                >("reload from 0"),
+              ),
+            )(_),
         ),
+      addSorting: (
+        columnName: string,
+        direction: "Ascending" | "Descending" | undefined,
+        filterTypes: Map<string, SumNType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
+      ): Updater<TableAbstractRendererState> => {
+        const sortingUpdater = MapRepo.Updaters.upsert(
+          columnName,
+          () => undefined,
+          replaceWith(direction),
+        );
+        return Updater<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .sorting(sortingUpdater)
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    _.customFormState.filters,
+                    filterTypes,
+                    sortingUpdater(_.customFormState.sorting),
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["loadingState"]
+                >("reload from 0"),
+              ),
+            )(_),
+        );
+      },
+      removeSorting: (
+        columnName: string,
+        filterTypes: Map<string, SumNType<any>>,
+        toApiRaw: (
+          type: DispatchParsedType<any>,
+          value: PredicateValue,
+          state: any,
+        ) => ValueOrErrors<any, string>,
+      ): Updater<TableAbstractRendererState> => {
+        const sortingUpdater = MapRepo.Updaters.remove<
+          string,
+          "Ascending" | "Descending" | undefined
+        >(columnName);
+        return Updater<TableAbstractRendererState>((_) =>
+          TableAbstractRendererState.Updaters.Core.customFormState.children
+            .sorting(sortingUpdater)
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.filterAndSortParam(
+                replaceWith(
+                  TableAbstractRendererState.Operations.parseFiltersAndSortingToBase64String(
+                    _.customFormState.filters,
+                    filterTypes,
+                    sortingUpdater(_.customFormState.sorting),
+                    toApiRaw,
+                  ),
+                ),
+              ),
+            )
+            .then(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["loadingState"]
+                >("reload from 0"),
+              ),
+            )(_),
+        );
+      },
       loadMore: (): Updater<TableAbstractRendererState> =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.stream(
-          ValueInfiniteStreamState.Updaters.Template.loadMore(),
+        Updater((_) =>
+          _.customFormState.loadMore == "loading more"
+            ? _
+            : TableAbstractRendererState.Updaters.Core.customFormState.children.loadMore(
+                replaceWith<
+                  TableAbstractRendererState["customFormState"]["loadMore"]
+                >("load more"),
+              )(_),
         ),
-      shouldReinitialize: (_: boolean) =>
-        TableAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
-          replaceWith(_),
+      reloadFrom0: (): Updater<TableAbstractRendererState> =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+          replaceWith<
+            TableAbstractRendererState["customFormState"]["loadingState"]
+          >("reload from 0"),
         ),
     },
   },
   // TODO: clean up the streams to accept data as a value or errors
   Operations: {
+    parseFiltersAndSortingToBase64String: (
+      filterValues: Map<string, List<ValueFilter>>,
+      sumNFilterTypes: Map<string, SumNType<any>>,
+      sorting: Map<string, "Ascending" | "Descending" | undefined>,
+      toApiRaw: (
+        type: DispatchParsedType<any>,
+        value: PredicateValue,
+        state: any,
+      ) => ValueOrErrors<any, string>,
+    ): string => {
+      const filterTypes = sumNFilterTypes.map(
+        (sumNType) => sumNType.args as Array<FilterType<any>>,
+      );
+      const parsedFilters = filterValues.map((filters, columnName) =>
+        filters.map((filter) => {
+          const filterTypeIndex = filterTypes
+            .get(columnName)
+            ?.findIndex((f) => f.kind == filter.kind);
+          if (filterTypeIndex == undefined || filterTypeIndex < 0) {
+            console.error(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+            return ValueOrErrors.Default.throwOne(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+          }
+          const filterType = sumNFilterTypes.get(columnName);
+
+          if (!filterType) {
+            console.error(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+            return ValueOrErrors.Default.throwOne(
+              `filter ${filter.kind} type not found for column ${columnName}`,
+            );
+          }
+
+          const sumValue = ValueSumN.Default(
+            filterTypeIndex,
+            filterType.args.length,
+            filter,
+          );
+
+          return toApiRaw(filterType, sumValue, {});
+        }),
+      );
+      if (
+        parsedFilters.some((filter) => filter.some((f) => f.kind == "errors"))
+      ) {
+        console.error(
+          "error parsing filters to api",
+          parsedFilters
+            .filter((filter) => filter.some((f) => f.kind == "errors"))
+            .toJS(),
+        );
+        return "";
+      }
+
+      // TODO: Deal with this monadically
+      const parsedFiltersValues = parsedFilters
+        .map((filter) => filter.map((f) => (f as Value<PredicateValue>).value))
+        .toJS();
+
+      const valueSorting = sorting
+        .entrySeq()
+        .filter(([_, direction]) => direction != undefined)
+        .map(([columnName, direction]) =>
+          PredicateValue.Default.tuple(List([columnName, direction as string])),
+        );
+
+      const parsedValueSorting = ValueOrErrors.Operations.All(
+        valueSorting
+          .map((sorting) =>
+            toApiRaw(
+              DispatchParsedType.Default.tuple([
+                {
+                  kind: "primitive",
+                  name: "string",
+                  asString: () => "string",
+                },
+                {
+                  kind: "primitive",
+                  name: "string",
+                  asString: () => "string",
+                },
+              ]),
+              sorting,
+              {},
+            ),
+          )
+          .toList(),
+      );
+
+      const finalSorting =
+        parsedValueSorting.kind == "errors"
+          ? []
+          : parsedValueSorting.value.toArray();
+
+      const params = {
+        Filters: parsedFiltersValues,
+        Sorting: finalSorting,
+      };
+      return btoa(JSON.stringify(params));
+    },
     tableValuesToValueRecord: (
       values: any,
       fromApiRaw: (value: any) => ValueOrErrors<PredicateValue, string>,
@@ -204,7 +420,13 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
-  reinitialize: SimpleCallback<void>;
+  updateFilters: (filters: Map<string, List<ValueFilter>>) => void;
+  addSorting: (
+    columnName: string,
+    direction: "Ascending" | "Descending" | undefined,
+  ) => void;
+  removeSorting: (columnName: string) => void;
+  reloadFrom0: () => void;
 };
 
 export type TableAbstractRendererView<
@@ -251,5 +473,30 @@ export type TableAbstractRendererView<
       TableAbstractRendererState,
       TableAbstractRendererForeignMutationsExpected<Flags>
     >;
+    AllowedFilters: Map<
+      string,
+      {
+        template: (
+          index: number,
+        ) => Template<
+          CommonAbstractRendererReadonlyContext<
+            DispatchParsedType<any>,
+            PredicateValue,
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          CommonAbstractRendererForeignMutationsExpected
+        >;
+        type: DispatchParsedType<any>;
+        filters: Array<FilterType<any>>;
+        GetDefaultValue: () => PredicateValue;
+        GetDefaultState: () => CommonAbstractRendererState;
+      }
+    >;
+    AllowedSorting: Array<string>;
+    HighlightedFilters: Array<string>;
+    isFilteringSortAndLoadingEnabled: boolean;
   }
 >;

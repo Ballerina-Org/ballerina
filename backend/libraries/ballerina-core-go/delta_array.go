@@ -1,25 +1,28 @@
 package ballerina
 
-import "encoding/json"
-
-type DeltaArrayEffectsEnum string
-
-const (
-	ArrayValue       DeltaArrayEffectsEnum = "ArrayValue"
-	ArrayAddAt       DeltaArrayEffectsEnum = "ArrayAddAt"
-	ArrayRemoveAt    DeltaArrayEffectsEnum = "ArrayRemoveAt"
-	ArrayMoveFromTo  DeltaArrayEffectsEnum = "ArrayMoveFromTo"
-	ArrayDuplicateAt DeltaArrayEffectsEnum = "ArrayDuplicateAt"
-	ArrayAdd         DeltaArrayEffectsEnum = "ArrayAdd"
+import (
+	"bytes"
+	"encoding/json"
 )
 
-var AllDeltaArrayEffectsEnumCases = [...]DeltaArrayEffectsEnum{ArrayValue, ArrayAddAt, ArrayRemoveAt, ArrayMoveFromTo, ArrayDuplicateAt, ArrayAdd}
+type deltaArrayEffectsEnum string
 
-func DefaultDeltaArrayEffectsEnum() DeltaArrayEffectsEnum { return AllDeltaArrayEffectsEnumCases[0] }
+const (
+	arrayValue       deltaArrayEffectsEnum = "ArrayValue"
+	arrayAddAt       deltaArrayEffectsEnum = "ArrayAddAt"
+	arrayRemoveAt    deltaArrayEffectsEnum = "ArrayRemoveAt"
+	arrayMoveFromTo  deltaArrayEffectsEnum = "ArrayMoveFromTo"
+	arrayDuplicateAt deltaArrayEffectsEnum = "ArrayDuplicateAt"
+	arrayAdd         deltaArrayEffectsEnum = "ArrayAdd"
+)
+
+var allDeltaArrayEffectsEnumCases = [...]deltaArrayEffectsEnum{arrayValue, arrayAddAt, arrayRemoveAt, arrayMoveFromTo, arrayDuplicateAt, arrayAdd}
+
+func DefaultDeltaArrayEffectsEnum() deltaArrayEffectsEnum { return allDeltaArrayEffectsEnumCases[0] }
 
 type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
-	discriminator DeltaArrayEffectsEnum
+	discriminator deltaArrayEffectsEnum
 	value         *Tuple2[int, deltaA]
 	addAt         *Tuple2[int, a]
 	removeAt      *int
@@ -34,7 +37,7 @@ var _ json.Marshaler = DeltaArray[Unit, Unit]{}
 func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaArrayEffectsEnum
+		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
@@ -56,7 +59,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		DeltaBase
-		Discriminator DeltaArrayEffectsEnum
+		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
@@ -64,7 +67,9 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 		DuplicateAt   *int
 		Add           *a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -81,67 +86,74 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 func NewDeltaArrayValue[a any, deltaA any](index int, delta deltaA) DeltaArray[a, deltaA] {
 	tmp := NewTuple2(index, delta)
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayValue,
+		discriminator: arrayValue,
 		value:         &tmp,
 	}
 }
 func NewDeltaArrayAddAt[a any, deltaA any](index int, newElement a) DeltaArray[a, deltaA] {
 	tmp := NewTuple2(index, newElement)
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayAddAt,
+		discriminator: arrayAddAt,
 		addAt:         &tmp,
 	}
 }
 func NewDeltaArrayRemoveAt[a any, deltaA any](index int) DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayRemoveAt,
+		discriminator: arrayRemoveAt,
 		removeAt:      &index,
 	}
 }
 func NewDeltaArrayMoveFromTo[a any, deltaA any](from int, to int) DeltaArray[a, deltaA] {
 	tmp := NewTuple2(from, to)
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayMoveFromTo,
+		discriminator: arrayMoveFromTo,
 		moveFromTo:    &tmp,
 	}
 }
 func NewDeltaArrayDuplicateAt[a any, deltaA any](index int) DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayDuplicateAt,
+		discriminator: arrayDuplicateAt,
 		duplicateAt:   &index,
 	}
 }
 func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
-		discriminator: ArrayAdd,
+		discriminator: arrayAdd,
 		add:           &newElement,
 	}
 }
 
 func MatchDeltaArray[a any, deltaA any, Result any](
-	onValue func(Tuple2[int, deltaA]) (Result, error),
+	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaArray[a, deltaA]) (Result, error) {
-	return func(delta DeltaArray[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case ArrayValue:
-			return onValue(*delta.value)
-		case ArrayAddAt:
-			return onAddAt(*delta.addAt)
-		case ArrayRemoveAt:
-			return onRemoveAt(*delta.removeAt)
-		case ArrayMoveFromTo:
-			return onMoveFromTo(*delta.moveFromTo)
-		case ArrayDuplicateAt:
-			return onDuplicateAt(*delta.duplicateAt)
-		case ArrayAdd:
-			return onAdd(*delta.add)
+) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Array[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case arrayValue:
+				arrayElement := MapReaderWithError[Unit](
+					func(value Array[a]) a {
+						return value[delta.value.Item1]
+					},
+				)(value)
+				return onValue(*delta.value)(arrayElement)
+			case arrayAddAt:
+				return onAddAt(*delta.addAt)
+			case arrayRemoveAt:
+				return onRemoveAt(*delta.removeAt)
+			case arrayMoveFromTo:
+				return onMoveFromTo(*delta.moveFromTo)
+			case arrayDuplicateAt:
+				return onDuplicateAt(*delta.duplicateAt)
+			case arrayAdd:
+				return onAdd(*delta.add)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 	}
 }

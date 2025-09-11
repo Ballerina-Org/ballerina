@@ -15,8 +15,13 @@ module Lookup =
       sum.AssertKindAndContinueWithField "lookup" "lookup" (fun lookupFields ->
         sum {
           let! name = lookupFields |> JsonValue.AsString
-          return TypeValue.Lookup { Name = name }
+          return TypeValue.Lookup(Identifier.LocalScope name)
         })
 
-    static member ToJsonLookup: TypeIdentifier -> JsonValue =
-      fun id -> JsonValue.String id.Name |> Json.kind "lookup" "lookup"
+    static member ToJsonLookup(id: Identifier) : JsonValue =
+      match id with
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "lookup"
+      | Identifier.FullyQualified(scope, name) ->
+        (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
+        |> JsonValue.Array
+        |> Json.kind "lookup" "lookup"

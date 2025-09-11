@@ -7,16 +7,13 @@ module Patterns =
   open System
   open Ballerina.DSL.Next.Types.Model
 
-  type TypeIdentifier with
-    static member Create(name: string) : TypeIdentifier = { Name = name }
-
   type TypeVar with
     static member Create(name: string) : TypeVar =
       { Name = name
         Guid = Guid.CreateVersion7() }
 
   type TypeSymbol with
-    static member Create(name: string) : TypeSymbol =
+    static member Create(name: Identifier) : TypeSymbol =
       { Name = name
         Guid = Guid.CreateVersion7() }
 
@@ -25,6 +22,12 @@ module Patterns =
 
   type TypeParameter with
     static member Create(name: string, kind: Kind) : TypeParameter = { Name = name; Kind = kind }
+
+  type Identifier with
+    member id.LocalName =
+      match id with
+      | LocalScope name -> name
+      | FullyQualified(_, name) -> name
 
   type Kind with
     static member AsStar(kind: Kind) =
@@ -51,8 +54,8 @@ module Patterns =
       }
 
     static member AsValue
-      (tryFind: string -> Sum<TypeValue, Errors>)
-      (tryFindSymbol: string -> Sum<TypeSymbol, Errors>)
+      (tryFind: Identifier -> Sum<TypeValue, Errors>)
+      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Errors>)
       (t: TypeExpr)
       : Sum<TypeValue, Errors> =
       let (!) = TypeExpr.AsValue tryFind tryFindSymbol
@@ -280,11 +283,7 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Arrow(input, output) -> return (input, output)
-        | _ ->
-          return!
-            $"Error: expected arrow type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
+        | _ -> return! $"Error: expected arrow type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsMap(t: TypeValue) =
@@ -339,4 +338,58 @@ module Patterns =
         match t with
         | TypeValue.Primitive p -> return p
         | _ -> return! $"Error: expected primitive type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsApply(t: TypeValue) =
+      sum {
+        match t with
+        | TypeValue.Apply(v, a) -> return v, a
+        | _ -> return! $"Error: expected apply type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+  type TypeValue with
+    member t.AsExpr: TypeExpr =
+      match t with
+      | Primitive p -> TypeExpr.Primitive p
+      | Var id -> TypeExpr.Lookup(Identifier.LocalScope id.Name)
+      | Apply(v, a) -> TypeExpr.Apply((v |> TypeValue.Var).AsExpr, a.AsExpr)
+      | Lookup id -> TypeExpr.Lookup id
+      | Lambda(param, body) -> TypeExpr.Lambda(param, body)
+      | Arrow(input, output) -> TypeExpr.Arrow(input.AsExpr, output.AsExpr)
+      | Record(fields) ->
+        TypeExpr.Record(
+          fields
+          |> Map.toList
+          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
+        )
+      | Tuple(elements) -> TypeExpr.Tuple(elements |> List.map (fun e -> e.AsExpr))
+      | Union(cases) ->
+        TypeExpr.Union(
+          cases
+          |> Map.toList
+          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
+        )
+      | Sum(elements) -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
+      | List(element) -> TypeExpr.List(element.AsExpr)
+      | Set(element) -> TypeExpr.Set(element.AsExpr)
+      | Map(key, value) -> TypeExpr.Map(key.AsExpr, value.AsExpr)
+
+
+  type Identifier with
+    static member AsLocalScope(i: Identifier) =
+      sum {
+        match i with
+        | Identifier.LocalScope s -> s
+        | FullyQualified _ -> return! $"Error: expected local scope, got {i}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsFullyQualified(i: Identifier) =
+      sum {
+        match i with
+        | Identifier.FullyQualified(s, x) -> s, x
+        | Identifier.LocalScope _ ->
+          return!
+            $"Error: expected fully qualified identifier, got {i}"
+            |> Errors.Singleton
+            |> sum.Throw
       }

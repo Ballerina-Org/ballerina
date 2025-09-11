@@ -7,15 +7,18 @@ open Ballerina.Reader.WithError
 open Ballerina.DSL.Next.Types.Model
 open FSharp.Data
 
-type ValueParser = JsonValue -> Sum<Value<TypeValue>, Errors>
+type ValueParser<'valueExtension> = JsonValue -> Sum<Value<TypeValue, 'valueExtension>, Errors>
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
-type ValueParser<'T> = Reader<Value<'T>, JsonParser<'T>, Errors>
+
+type JsonEncoder<'T> = 'T -> JsonValue
+
+type ValueParser<'T, 'valueExtension> = Reader<Value<'T, 'valueExtension>, JsonParser<'T>, Errors>
 type ExprParser<'T> = Reader<Expr<'T>, JsonParser<'T>, Errors>
 
-type TypeValueSerializer = TypeValue -> Sum<JsonValue, Errors>
-type TypeValueParser = JsonValue -> Sum<TypeValue, Errors>
+type JsonEncoder<'T, 'valueExtension> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'valueExtension>, Errors>
+type ValueEncoder<'T, 'valueExtension> = Value<'T, 'valueExtension> -> JsonEncoder<'T, 'valueExtension>
+type ExprEncoder<'T> = Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors>
 
-type TypeExprSerializer = TypeExpr -> Sum<JsonValue, Errors>
 type TypeExprParser = JsonValue -> Sum<TypeExpr, Errors>
 
 module Json =

@@ -2,8 +2,10 @@
 
 [<AutoOpen>]
 module Union =
-  open Ballerina.Reader.WithError
+
   open FSharp.Data
+  open Ballerina.Errors
+  open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Terms.Model
@@ -11,8 +13,10 @@ module Union =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
 
-  type Value<'T> with
-    static member FromJsonUnion(fromJsonRoot: JsonValue -> ValueParser<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonUnion
+      (fromJsonRoot: JsonValue -> ValueParser<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!
@@ -29,8 +33,14 @@ module Union =
               (json)
         }
 
-    static member ToJsonUnion(rootToJson) : TypeSymbol * Value<'T> -> JsonValue =
-      fun (k, v) ->
-        let k = TypeSymbol.ToJson k
-        let v = rootToJson v
-        [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"
+    static member ToJsonUnion
+      : ValueEncoder<'T, 'valueExtension>
+          -> TypeSymbol
+          -> Value<'T, 'valueExtension>
+          -> JsonEncoder<'T, 'valueExtension> =
+      fun rootToJson k v ->
+        reader {
+          let k = TypeSymbol.ToJson k
+          let! v = rootToJson v
+          return [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"
+        }

@@ -10,10 +10,12 @@ module Tuple =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
-  type FromJsonRoot<'T> = JsonValue -> Reader<Value<'T>, JsonParser<'T>, Errors>
+  type FromJsonRoot<'T, 'valueExtension> = JsonValue -> Reader<Value<'T, 'valueExtension>, JsonParser<'T>, Errors>
 
-  type Value<'T> with
-    static member FromJsonTuple(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonTuple
+      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!
@@ -29,7 +31,10 @@ module Tuple =
               (json)
         }
 
-    static member ToJsonTuple(rootToJson: Value<'T> -> JsonValue) : Value<'T> list -> JsonValue =
-      fun elements ->
-        let elementsJson = elements |> Seq.map rootToJson
-        elementsJson |> Seq.toArray |> JsonValue.Array |> Json.kind "tuple" "elements"
+    static member ToJsonTuple
+      : ValueEncoder<'T, 'valueExtension> -> Value<'T, 'valueExtension> list -> JsonEncoder<'T, 'valueExtension> =
+      fun rootToJson elements ->
+        elements
+        |> Seq.map rootToJson
+        |> reader.All
+        |> reader.Map(Seq.toArray >> JsonValue.Array >> Json.kind "tuple" "elements")

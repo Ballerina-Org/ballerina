@@ -6,7 +6,18 @@ import {
   PredicateValue,
   Sum,
   toAPIRawValue,
+  ValueFilterContains,
+  ValueFilterEqualsTo,
+  ValueFilterGreaterThan,
+  ValueFilterGreaterThanOrEqualsTo,
+  ValueFilterIsNotNull,
+  ValueFilterIsNull,
+  ValueFilterNotEqualsTo,
+  ValueFilterSmallerThanOrEqualsTo,
+  ValueFilterSmallerThan,
+  ValueFilterStartsWith,
   ValueOption,
+  ValueSumN,
 } from "ballerina-core";
 import { List, OrderedMap, Map } from "immutable";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
@@ -153,6 +164,22 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         Value: _.value,
       }),
     },
+    SumN: {
+      fromAPIRawValue: (_: any) => {
+        const caseIndex =
+          parseInt(_.Discriminator.split("Of")[0].split("case")[1]) - 1;
+        const arity = parseInt(_.Discriminator.split("Of")[1]);
+        const discriminator = `Case${caseIndex + 1}`;
+
+        return ValueSumN.Default(caseIndex, arity, _[discriminator]);
+      },
+      toAPIRawValue: ([_, __]) => {
+        return {
+          Discriminator: `case${_.caseIndex + 1}Of${_.arity}`,
+          [`Case${_.caseIndex + 1}`]: _.value,
+        };
+      },
+    },
     SumUnitDate: {
       fromAPIRawValue: (_: any) =>
         _?.IsRight ? Sum.Default.right(_.Value) : Sum.Default.left(_.Value),
@@ -201,5 +228,68 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         // Wrap value in ReadOnly field structure
         return _;
       },
+    },
+    // Filters
+    Contains: {
+      fromAPIRawValue: (_) => ValueFilterContains.Default(_.Contains),
+      toAPIRawValue: ([_, __]) => ({
+        Contains: _.contains,
+      }),
+    },
+    "=": {
+      fromAPIRawValue: (_) => ValueFilterEqualsTo.Default(_.EqualsTo),
+      toAPIRawValue: ([_, __]) => ({
+        EqualsTo: _.equalsTo,
+      }),
+    },
+    "!=": {
+      fromAPIRawValue: (_) => ValueFilterNotEqualsTo.Default(_.NotEqualsTo),
+      toAPIRawValue: ([_, __]) => ({
+        NotEqualsTo: _.notEqualsTo,
+      }),
+    },
+    ">=": {
+      fromAPIRawValue: (_) =>
+        ValueFilterGreaterThanOrEqualsTo.Default(_.GreaterThanOrEqualsTo),
+      toAPIRawValue: ([_, __]) => ({
+        GreaterThanOrEqualsTo: _.greaterThanOrEqualsTo,
+      }),
+    },
+    ">": {
+      fromAPIRawValue: (_) => ValueFilterGreaterThan.Default(_.GreaterThan),
+      toAPIRawValue: ([_, __]) => ({
+        GreaterThan: _.greaterThan,
+      }),
+    },
+    "!=null": {
+      fromAPIRawValue: (_) => ValueFilterIsNotNull.Default(),
+      toAPIRawValue: ([_, __]) => ({
+        IsNotNull: {},
+      }),
+    },
+    "=null": {
+      fromAPIRawValue: (_) => ValueFilterIsNull.Default(),
+      toAPIRawValue: ([_, __]) => ({
+        IsNull: {},
+      }),
+    },
+    "<=": {
+      fromAPIRawValue: (_) =>
+        ValueFilterSmallerThanOrEqualsTo.Default(_.SmallerThanOrEqualsTo),
+      toAPIRawValue: ([_, __]) => ({
+        SmallerThanOrEqualsTo: _.smallerThanOrEqualsTo,
+      }),
+    },
+    "<": {
+      fromAPIRawValue: (_) => ValueFilterSmallerThan.Default(_.SmallerThan),
+      toAPIRawValue: ([_, __]) => ({
+        SmallerThan: _.smallerThan,
+      }),
+    },
+    StartsWith: {
+      fromAPIRawValue: (_) => ValueFilterStartsWith.Default(_.StartsWith),
+      toAPIRawValue: ([_, __]) => ({
+        StartsWith: _.startsWith,
+      }),
     },
   };

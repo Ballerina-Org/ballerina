@@ -17,6 +17,69 @@ module Validator =
   open Ballerina.Errors
   open System
 
+  let private (>>=) m f = sum.Bind(m, f)
+
+  let private validateGroupPredicates
+    (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+    (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
+    (vars: Map<VarName, ExprType>)
+    (localType: ExprType)
+    (visibleExpr: Expr<'ExprExtension, 'ValueExtension>)
+    : State<Unit, CodeGenConfig, ValidationState, Errors> =
+    state {
+      let! eType =
+        typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars visibleExpr
+        |> state.OfSum
+
+      let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
+
+      let getLookedUpExprType (eType: ExprType) : Sum<ExprType, Errors> =
+        sum {
+          match eType with
+          | ExprType.LookupType l ->
+            let! typeBinding = ctx.Types |> Map.tryFindWithError l.VarName "types" "types"
+            return typeBinding.Type
+          | _ -> return eType
+        }
+
+      let! eTypeInSet = getLookedUpExprType eTypeSetArg >>= ExprType.AsRecord |> state.OfSum
+
+      let! eTypeEnum = eTypeInSet |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
+
+      let! eTypeEnumCases = getLookedUpExprType eTypeEnum >>= ExprType.AsUnion |> state.OfSum
+
+
+      match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
+      | Some nonUnitCaseFields ->
+        return!
+          state.Throw(
+            Errors.Singleton
+              $"Error: all cases of {eTypeEnum.ToString()} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
+          )
+      | _ ->
+        let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
+        let! fields = localType |> ExprType.AsRecord |> state.OfSum
+        let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
+
+        let missingFields = caseNames - fields
+        let missingCaseNames = fields - caseNames
+
+        let warn (msg: string) =
+          do Console.ForegroundColor <- ConsoleColor.DarkMagenta
+          Console.WriteLine msg
+          do Console.ResetColor()
+
+        if missingFields |> Set.isEmpty |> not then
+          warn
+            $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so toggling that field will have no effect!"
+
+        if missingCaseNames |> Set.isEmpty |> not then
+          warn
+            $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
+
+        return ()
+    }
+
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
@@ -91,25 +154,21 @@ module Validator =
           do! !l.Details.Renderer |> Sum.map ignore
 
           let! apiMethods =
-            match l.OneApiId with
-            | Some(Choice2Of2(apiTypeId, apiName)) ->
-              sum {
-                let! (oneApi, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
-                let! oneApi = ctx.TryFindType oneApi.TypeId.VarName
-                let oneApi = oneApi.Type
+            sum {
+              let! oneApiEntity, oneApiMethods = ctx.TryFindOne (fst l.OneApiId).VarName (snd l.OneApiId)
+              let! oneApiType = ctx.TryFindType oneApiEntity.TypeId.VarName
+              let oneApi = oneApiType.Type
 
-                do!
-                  ExprType.Unify
-                    Map.empty
-                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                    fr.Type
-                    (oneApi |> ExprType.OneType)
-                  |> Sum.map ignore
+              do!
+                ExprType.Unify
+                  Map.empty
+                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+                  fr.Type
+                  (oneApi |> ExprType.OneType)
+                |> Sum.map ignore
 
-                return oneApiMethods
-              }
-            | Some(Choice1Of2(_)) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
-            | _ -> sum { return Set.empty }
+              return oneApiMethods
+            }
 
           match l.Preview with
           | Some preview ->
@@ -528,59 +587,7 @@ module Validator =
                   |> Seq.map (VarName.Create <*> id)
                   |> Map.ofSeq
 
-                let! eType =
-                  typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars e
-                  |> state.OfSum
-
-                let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
-                let! eTypeRefId = ExprType.AsLookupId eTypeSetArg |> state.OfSum
-
-                let! eTypeRef =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
-                  |> state.OfSum
-
-                let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
-
-                let! eTypeEnum = eTypeRefFields |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
-                let! eTypeEnumId = ExprType.AsLookupId eTypeEnum |> state.OfSum
-
-                let! eTypeEnum =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
-                  |> state.OfSum
-
-                let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
-
-                match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
-                | Some nonUnitCaseFields ->
-                  return!
-                    state.Throw(
-                      Errors.Singleton
-                        $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
-                    )
-                | _ ->
-                  let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
-                  let! fields = localType |> ExprType.AsRecord |> state.OfSum
-                  let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
-
-                  let missingFields = caseNames - fields
-                  let missingCaseNames = fields - caseNames
-
-                  let warn (msg: string) =
-                    do Console.ForegroundColor <- ConsoleColor.DarkMagenta
-                    Console.WriteLine msg
-                    do Console.ResetColor()
-
-                  if missingFields |> Set.isEmpty |> not then
-                    warn
-                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so enabling that field will have no effect!"
-
-                  if missingCaseNames |> Set.isEmpty |> not then
-                    warn
-                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
-
-                  return ()
+                return! validateGroupPredicates ctx typeCheck vars localType e
               | _ -> return ()
       }
 
@@ -627,7 +634,9 @@ module Validator =
                 match formCases.Cases |> Map.tryFind typeCase.Key.CaseName with
                 | None ->
                   sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
-                | Some formCase -> NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase)
+                | Some formCase ->
+                  NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase
+                  |> sum.WithErrorContext $"...when validating case {typeCase.Key.CaseName}")
               |> sum.All
               |> Sum.map ignore
 
@@ -759,60 +768,7 @@ module Validator =
             let vars =
               [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
 
-            let! eType =
-              typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars visibleExpr
-              |> state.OfSum
-
-            let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
-            let! eTypeRefId = ExprType.AsLookupId eTypeSetArg |> state.OfSum
-
-            let! eTypeRef =
-              ctx.Types
-              |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
-              |> state.OfSum
-
-            let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
-
-            let! eTypeEnum = eTypeRefFields |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
-            let! eTypeEnumId = ExprType.AsLookupId eTypeEnum |> state.OfSum
-
-            let! eTypeEnum =
-              ctx.Types
-              |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
-              |> state.OfSum
-
-            let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
-
-            match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
-            | Some nonUnitCaseFields ->
-              return!
-                state.Throw(
-                  Errors.Singleton
-                    $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
-                )
-            | _ ->
-              let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
-              let! fields = localType |> ExprType.AsRecord |> state.OfSum
-              let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
-
-              let missingFields = caseNames - fields
-              let missingCaseNames = fields - caseNames
-
-              let warn (msg: string) =
-                do Console.ForegroundColor <- ConsoleColor.DarkMagenta
-                Console.WriteLine msg
-                do Console.ResetColor()
-
-              if missingFields |> Set.isEmpty |> not then
-                warn
-                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so toggling that field will have no effect!"
-
-              if missingCaseNames |> Set.isEmpty |> not then
-                warn
-                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
-
-              return ()
-
+            return! validateGroupPredicates ctx typeCheck vars localType visibleExpr
       }
 
   and FormConfig<'ExprExtension, 'ValueExtension> with

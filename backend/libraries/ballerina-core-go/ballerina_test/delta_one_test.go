@@ -23,18 +23,6 @@ func (s *DeltaOneSerializationTestSuite) TestValue() {
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
-func (s *DeltaOneSerializationTestSuite) TestCreateValue() {
-	delta := ballerina.NewDeltaOneCreateValue[string, ballerina.DeltaString]("new value")
-
-	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
-}
-
-func (s *DeltaOneSerializationTestSuite) TestDeleteValue() {
-	delta := ballerina.NewDeltaOneDeleteValue[string, ballerina.DeltaString]()
-
-	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
-}
-
 func TestDeltaOneSerializationTestSuite(t *testing.T) {
 	suite.Run(t, new(DeltaOneSerializationTestSuite))
 }

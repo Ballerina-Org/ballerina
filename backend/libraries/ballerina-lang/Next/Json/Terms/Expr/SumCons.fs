@@ -9,6 +9,7 @@ module SumCons =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonSumCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -21,9 +22,12 @@ module SumCons =
           return Expr.SumCons({ Case = case; Count = count }, v)
         })
 
-    static member ToJsonSumCons(rootToJson: Expr<'T> -> JsonValue) : SumConsSelector * Expr<'T> -> JsonValue =
-      fun (sel, e) ->
-        let case = sel.Case |> decimal |> JsonValue.Number
-        let count = sel.Count |> decimal |> JsonValue.Number
-        let e = e |> rootToJson
-        [| case; count; e |] |> JsonValue.Array |> Json.kind "sum" "case"
+    static member ToJsonSumCons
+      : ExprEncoder<'T> -> SumConsSelector -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson sel e ->
+        reader {
+          let case = sel.Case |> decimal |> JsonValue.Number
+          let count = sel.Count |> decimal |> JsonValue.Number
+          let! e = e |> rootToJson
+          return [| case; count; e |] |> JsonValue.Array |> Json.kind "sum" "case"
+        }

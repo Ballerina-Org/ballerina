@@ -483,32 +483,21 @@ module Renderers =
                 |> Option.map (fun previewJson -> state { return! parseNestedRenderer previewJson })
                 |> state.RunOption
 
-              let! apiRendererJson = parentJsonFields |> sum.TryFindField "api" |> state.OfSum |> state.Catch
+              let! apiSourceTypeNameJson, oneApiNameJson =
+                parentJsonFields
+                |> sum.TryFindField "api"
+                |> Sum.bind JsonValue.AsPair
+                |> state.OfSum
 
+              let! apiSourceTypeName, oneApiName =
+                state.All2
+                  (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
+                  (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
 
-              let! oneApiId =
-                match apiRendererJson with
-                | Right _ -> state { return None }
-                | Left apiRendererJson ->
-                  state.Either
-                    (state {
-                      let! entityApiNameJson = apiRendererJson |> JsonValue.AsString |> state.OfSum
+              let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
+              let! oneApi, _ = formsState.TryFindOne apiType.TypeId.VarName oneApiName |> state.OfSum
 
-                      let! entityApi = formsState.TryFindTableApi entityApiNameJson |> state.OfSum
-                      return Choice1Of2(entityApi |> fst |> TableApi.Id) |> Some
-                    })
-                    (state {
-                      let! (apiSourceTypeNameJson, oneApiNameJson) = apiRendererJson |> JsonValue.AsPair |> state.OfSum
-
-                      let! (apiSourceTypeName, oneApiName) =
-                        state.All2
-                          (apiSourceTypeNameJson |> JsonValue.AsString |> state.OfSum)
-                          (oneApiNameJson |> JsonValue.AsString |> state.OfSum)
-
-                      let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-                      let! (oneApi, _) = formsState.TryFindOne apiType.TypeId.VarName oneApiName |> state.OfSum
-                      return Choice2Of2(apiType.TypeId, oneApi.EntityName) |> Some
-                    })
+              let oneApiId: ExprTypeId * string = apiType.TypeId, oneApi.EntityName
 
               return
                 OneRenderer

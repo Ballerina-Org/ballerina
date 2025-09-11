@@ -35,7 +35,7 @@ export type SerializedSpecification = {
 
 export type Specification<T> = {
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
-  apis: SpecificationApis;
+  apis: SpecificationApis<T>;
   forms: Map<string, Renderer<T>>;
   launchers: {
     create: Map<string, CreateLauncher>;
@@ -261,7 +261,10 @@ export const Specification = {
                                 serializedSpecifications.apis.searchableStreams,
                               ).Then((streams) =>
                                 TableApis.Operations.Deserialize(
+                                  concreteRenderers,
+                                  allTypes,
                                   serializedSpecifications.apis.tables,
+                                  injectedPrimitives,
                                 ).Then((tables) =>
                                   LookupApis.Operations.Deserialize(
                                     serializedSpecifications.apis.lookups,

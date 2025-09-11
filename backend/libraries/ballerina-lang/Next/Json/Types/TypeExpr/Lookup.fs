@@ -12,7 +12,15 @@ module LookupTypeExpr =
 
   type TypeExpr with
     static member FromJsonLookup: TypeExprParser =
-      sum.AssertKindAndContinueWithField "lookup" "lookup" (JsonValue.AsString >>= (TypeExpr.Lookup >> sum.Return))
+      sum.AssertKindAndContinueWithField
+        "lookup"
+        "lookup"
+        (JsonValue.AsString >>= (Identifier.LocalScope >> TypeExpr.Lookup >> sum.Return))
 
-    static member ToJsonLookup: string -> JsonValue =
-      JsonValue.String >> Json.kind "lookup" "lookup"
+    static member ToJsonLookup(id: Identifier) : JsonValue =
+      match id with
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "lookup"
+      | Identifier.FullyQualified(scope, name) ->
+        (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
+        |> JsonValue.Array
+        |> Json.kind "lookup" "lookup"

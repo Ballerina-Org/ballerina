@@ -15,8 +15,14 @@ import {
   DispatchOneSource,
   DispatchLookupSources,
   TableAbstractRendererState,
+  DispatchTableFiltersAndSorting,
+  SumNType,
+  DispatchParsedType,
+  Value,
+  ValueFilter,
+  TableGetManyParams,
 } from "ballerina-core";
-import { Range, Map } from "immutable";
+import { Range, Map, List } from "immutable";
 import { City } from "../../address/state";
 import { AddressApi } from "../../address/apis/mocks";
 import { v4 } from "uuid";
@@ -66,8 +72,7 @@ const getActiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -142,16 +147,97 @@ const getActiveUsers: DispatchTableApiSource = {
         HasMore: true,
         From: 1,
         To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        Filters: {
+          Name: [
+            {
+              Discriminator: "case1of2",
+              Case1: {
+                EqualsTo: "John",
+              },
+              Case2: null,
+            },
+          ],
+        },
+        Sorting: [["Name", "Ascending"]],
+      })).then((res) => {
+        const parsedFilters: [string, ValueOrErrors<ValueFilter, string>[]][] =
+          Object.entries(res.Filters).map(
+            ([columnName, filters]) =>
+              [
+                columnName,
+                filters.map((filter) => {
+                  const filterType = filterTypes.get(columnName);
+                  if (!filterType) {
+                    console.error(
+                      `filter type not found for column ${columnName}`,
+                    );
+                    return ValueOrErrors.Default.throwOne<ValueFilter, string>(
+                      `filter type not found for column ${columnName}`,
+                    );
+                  }
+                  return parseFromApiByType(filterType)(
+                    filter,
+                  ) as ValueOrErrors<ValueFilter, string>;
+                }),
+              ] as const,
+          );
+        const parsedFiltersMap = Map(parsedFilters);
+        if (
+          parsedFiltersMap.some((filters) =>
+            filters.some((f) => f.kind == "errors"),
+          )
+        ) {
+          console.error(
+            "error parsing filters to api",
+            parsedFiltersMap.filter((filters) =>
+              filters.some((f) => f.kind == "errors"),
+            ),
+          );
+          return {
+            filters: Map(),
+            sorting: Map(),
+          };
+        }
+
+        // TODO: Deal with this monadically
+        const parsedFiltersValues = parsedFiltersMap.map((filters) =>
+          List(filters.map((f) => (f as Value<ValueFilter>).value)),
+        );
+
+        return {
+          filters: parsedFiltersValues,
+          sorting: Map<string, "Ascending" | "Descending" | undefined>(
+            res.Sorting.map(
+              (s) =>
+                [s[0], s[1]] as [
+                  string,
+                  "Ascending" | "Descending" | undefined,
+                ],
+            ),
+          ),
+        };
+      }),
 };
 
 const getActiveFriends: DispatchTableApiSource = {
@@ -177,60 +263,78 @@ const getActiveFriends: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
-      return PromiseRepo.Default.mock(() => ({
-        Values: {
-          [v4()]: {
-            Id: v4(),
-            Name: faker.person.firstName(),
-            Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: faker.datatype.boolean(),
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
+    (streamParams: TableGetManyParams) => {
+      return PromiseRepo.Default.mock(
+        () => ({
+          Values: {
+            [v4()]: {
+              Id: v4(),
+              Name: faker.person.firstName(),
+              Surname: faker.person.lastName(),
+              Birthday: faker.date.birthdate().toISOString(),
+              Email: faker.internet.email(),
+              SubscribeToNewsletter: faker.datatype.boolean(),
+              FavoriteColor: {
+                Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                IsSome: true,
+              },
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: true,
+                Values: {},
+              },
             },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
+            [v4()]: {
+              Id: v4(),
+              Name: faker.person.firstName(),
+              Surname: faker.person.lastName(),
+              Birthday: faker.date.birthdate().toISOString(),
+              Email: faker.internet.email(),
+              SubscribeToNewsletter: faker.datatype.boolean(),
+              FavoriteColor: {
+                Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+                IsSome: true,
+              },
+              Friends: {
+                From: 0,
+                To: 0,
+                HasMore: true,
+                Values: {},
+              },
             },
           },
-          [v4()]: {
-            Id: v4(),
-            Name: faker.person.firstName(),
-            Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: faker.datatype.boolean(),
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
-            },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
-            },
-          },
-        },
-        HasMore: true,
-        From: 1,
-        To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+          HasMore: true,
+          From: 1,
+          To: 2,
+        }),
+        undefined,
+        undefined,
+        1000,
+      ).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getChildren: DispatchTableApiSource = {
@@ -272,8 +376,7 @@ const getChildren: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -348,16 +451,30 @@ const getChildren: DispatchTableApiSource = {
         HasMore: true,
         From: 1,
         To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getFriends: DispatchOneSource = {
@@ -654,11 +771,90 @@ const entityApis: EntityApis = {
               },
             },
             Friends: {
+              Values: {
+                [v4()]: {
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  FavoriteColor: {
+                    Value: {
+                      Value: colors[Math.round(Math.random() * 10) % 3],
+                    },
+                    IsSome: true,
+                  },
+                  City: {
+                    IsSome: true,
+                    Value: {
+                      ...City.Default(v4(), faker.location.city()),
+                    },
+                  },
+                  StreetNumberAndCity: {
+                    Item1: faker.location.street(),
+                    Item2: 100,
+                    Item3: {
+                      IsSome: true,
+                      Value: {
+                        ...City.Default(v4(), faker.location.city()),
+                      },
+                    },
+                  },
+                  Friends: {
+                    From: 0,
+                    To: 0,
+                    HasMore: true,
+                    Values: {},
+                  },
+                },
+                [v4()]: {
+                  Id: v4(),
+                  Name: faker.person.firstName(),
+                  Surname: faker.person.lastName(),
+                  Birthday: faker.date.birthdate().toISOString(),
+                  Email: faker.internet.email(),
+                  SubscribeToNewsletter: faker.datatype.boolean(),
+                  FavoriteColor: {
+                    Value: {
+                      Value: colors[Math.round(Math.random() * 10) % 3],
+                    },
+                    IsSome: true,
+                  },
+                  City: {
+                    IsSome: true,
+                    Value: {
+                      ...City.Default(v4(), faker.location.city()),
+                    },
+                  },
+                  StreetNumberAndCity: {
+                    Item1: faker.location.street(),
+                    Item2: 100,
+                    Item3: {
+                      IsSome: true,
+                      Value: {
+                        ...City.Default(v4(), faker.location.city()),
+                      },
+                    },
+                  },
+                  Friends: {
+                    From: 0,
+                    To: 0,
+                    HasMore: true,
+                    Values: {},
+                  },
+                },
+              },
+              HasMore: true,
               From: 0,
               To: 0,
-              HasMore: true,
-              Values: {},
             },
+            // Friends: {
+            //   From: 0,
+            //   To: 0,
+            //   HasMore: true,
+            //   Values: {},
+            // },
             Children: {
               From: 0,
               To: 0,

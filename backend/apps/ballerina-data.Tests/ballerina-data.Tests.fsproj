@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>ballerina_data.Tests</RootNamespace>
+        <LangVersion>latest</LangVersion>
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Delta\Json.fs" />
+        <Compile Include="Delta\Record.fs" />
+        <Compile Include="Delta\Union.fs" />
+        <Compile Include="Delta\Tuple.fs" />
+        <Compile Include="Delta\Sum.fs" />
+        <Compile Include="Delta\Replace.fs" />
+        <Compile Include="Delta\Multiple.fs" />
+        <Compile Include="Schema/FromJson.fs" />
+        <Compile Include="Schema/Eval.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+        <PackageReference Include="NUnit" Version="4.3.2" />
+        <PackageReference Include="NUnit.Analyzers" Version="4.9.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-data\ballerina-data.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-lang\ballerina-lang.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
+    </ItemGroup>
+
+</Project>

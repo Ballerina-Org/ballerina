@@ -12,8 +12,14 @@ import {
   DispatchDelta,
   Option,
   ConcreteRenderers,
+  MapRepo,
+  id,
+  FilterTypeKind,
+  ListRepo,
+  BasicUpdater,
 } from "ballerina-core";
-import { OrderedMap, Set } from "immutable";
+import { OrderedMap, Map, Set, List } from "immutable";
+import { useEffect, useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 
 export type DispatchPassthroughFormFlags = {
@@ -31,6 +37,13 @@ export type DispatchPassthroughFormExtraContext = {
 export type DispatchPassthroughFormCustomPresentationContext = {
   listElement: ListElementCustomPresentationContext;
 };
+
+export type ColumnFilter = {
+  kind: FilterTypeKind;
+  value: PredicateValue;
+};
+
+export type ColumnFilters = Map<string, List<ColumnFilter>>;
 
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
@@ -1225,9 +1238,192 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     streamingTable: () => (props) => {
+      const [colFilterDisplays, setColFilterDisplays] = useState<
+        Map<string, boolean>
+      >(Map(props.AllowedFilters.map((_) => false)));
+
+      // TODO: initialise with response from new endpoint
+      const [colFilters, setColFilters] = useState<ColumnFilters>(
+        Map(props.AllowedFilters.map((_) => List([]))),
+      );
+
+      useEffect(() => {
+        const filters = colFilters.map((_) =>
+          _.map(({ kind, value }) =>
+            PredicateValue.Operations.KindAndValueToFilter(kind, value),
+          ),
+        );
+        props.foreignMutations.updateFilters(filters);
+      }, [colFilters]);
+
+      const handleFilterValueChange = (
+        columnName: string,
+        filterIndex: number,
+        updater: BasicUpdater<PredicateValue>,
+      ) => {
+        const filterValue =
+          colFilters.get(columnName)!.get(filterIndex)?.value ??
+          props.AllowedFilters.get(columnName)!.GetDefaultValue();
+
+        const filterKind =
+          colFilters.get(columnName)!.get(filterIndex)?.kind ??
+          props.AllowedFilters.get(columnName)!.filters[0].kind;
+
+        const newFilter = {
+          kind: filterKind,
+          value: updater(filterValue),
+        };
+
+        if (colFilters.get(columnName)!.get(filterIndex)) {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.update(filterIndex, replaceWith(newFilter)),
+            ),
+          );
+        } else {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.push(newFilter),
+            ),
+          );
+        }
+      };
+
+      const handleFilterKindChange = (
+        columnName: string,
+        filterIndex: number,
+        filterKind: FilterTypeKind,
+      ) => {
+        const filterValue =
+          colFilters.get(columnName)!.get(filterIndex)?.value ??
+          props.AllowedFilters.get(columnName)!.GetDefaultValue();
+
+        const newFilter = {
+          kind: filterKind,
+          value: filterValue,
+        };
+
+        if (colFilters.get(columnName)!.get(filterIndex)) {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.update(filterIndex, replaceWith(newFilter)),
+            ),
+          );
+        } else {
+          setColFilters(
+            MapRepo.Updaters.update(
+              columnName,
+              ListRepo.Updaters.push(newFilter),
+            ),
+          );
+        }
+      };
+
+      const handleFilterRemove = (columnName: string, filterIndex: number) => {
+        setColFilters(
+          MapRepo.Updaters.update(
+            columnName,
+            ListRepo.Updaters.remove(filterIndex),
+          ),
+        );
+      };
+
+      const handleSortingChange = (columnName: string) => {
+        if (props.AllowedSorting.includes(columnName)) {
+          if (props.context.customFormState.sorting.has(columnName)) {
+            if (
+              props.context.customFormState.sorting.get(columnName) ==
+              "Ascending"
+            ) {
+              props.foreignMutations.addSorting(columnName, "Descending");
+            } else {
+              props.foreignMutations.addSorting(columnName, "Ascending");
+            }
+          } else {
+            props.foreignMutations.addSorting(columnName, "Ascending");
+          }
+        }
+      };
+
+      const handleSortingRemove = (columnName: string) => {
+        if (props.AllowedSorting.includes(columnName)) {
+          props.foreignMutations.removeSorting(columnName);
+        }
+      };
+
       return (
         <>
           <h3>{props.context.label}</h3>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "10px",
+            }}
+          >
+            {props.HighlightedFilters.map((filterName: string) => (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "10px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <select
+                  style={{ height: "30px", width: "100px" }}
+                  onChange={(_) =>
+                    handleFilterKindChange(
+                      filterName,
+                      0,
+                      _.currentTarget.value as FilterTypeKind,
+                    )
+                  }
+                >
+                  {props.AllowedFilters.get(filterName)!.filters.map(
+                    (filter) => (
+                      <option value={filter.kind}>{filter.kind}</option>
+                    ),
+                  )}
+                </select>
+                {props.AllowedFilters.get(filterName)!.template(0)({
+                  ...props,
+                  context: {
+                    ...props.context,
+                    value:
+                      colFilters.get(filterName)!.get(0)?.value ??
+                      props.AllowedFilters.get(filterName)!.GetDefaultValue(),
+                  },
+                  foreignMutations: {
+                    onChange: (updaterOption) => {
+                      if (updaterOption.kind == "r") {
+                        handleFilterValueChange(
+                          filterName,
+                          0,
+                          updaterOption.value,
+                        );
+                      }
+                    },
+                  },
+                  view: unit,
+                })}
+                <button onClick={() => handleFilterRemove(filterName, 0)}>
+                  ❌
+                </button>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: "10px",
+            }}
+          ></div>
           <div
             style={{
               display: "flex",
@@ -1270,7 +1466,119 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                       />
                     </th>
                     {props.context.tableHeaders.map((header: any) => (
-                      <th style={{ border: "1px solid black" }}>{header}</th>
+                      <th style={{ border: "1px solid black" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            gap: "10px",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {header}
+                          {props.AllowedFilters.has(header) && (
+                            <button
+                              onClick={() =>
+                                setColFilterDisplays(
+                                  MapRepo.Updaters.update(header, (_) => !_),
+                                )
+                              }
+                            >
+                              🔎
+                            </button>
+                          )}
+                          {props.AllowedSorting.includes(header) &&
+                            props.context.customFormState.sorting.get(
+                              header,
+                            ) && (
+                              <>
+                                <button
+                                  onClick={() => handleSortingChange(header)}
+                                >
+                                  {props.context.customFormState.sorting.get(
+                                    header,
+                                  ) == "Ascending"
+                                    ? "⬆️"
+                                    : "⬇️"}
+                                </button>
+                                <button
+                                  onClick={() => handleSortingRemove(header)}
+                                >
+                                  ❌
+                                </button>
+                              </>
+                            )}
+                          {props.AllowedSorting.includes(header) &&
+                            !props.context.customFormState.sorting.get(
+                              header,
+                            ) && (
+                              <button
+                                onClick={() => handleSortingChange(header)}
+                              >
+                                ⬆️
+                              </button>
+                            )}
+                        </div>
+                        {colFilterDisplays.get(header) && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "row",
+                              gap: "10px",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <select
+                              style={{ height: "30px", width: "100px" }}
+                              onChange={(_) =>
+                                handleFilterKindChange(
+                                  header,
+                                  0,
+                                  _.currentTarget.value as FilterTypeKind,
+                                )
+                              }
+                            >
+                              {props.AllowedFilters.get(header)!.filters.map(
+                                (filter) => (
+                                  <option value={filter.kind}>
+                                    {filter.kind}
+                                  </option>
+                                ),
+                              )}
+                            </select>
+                            {props.AllowedFilters.get(header)!.template(0)({
+                              ...props,
+                              context: {
+                                ...props.context,
+                                value:
+                                  colFilters.get(header)!.get(0)?.value ??
+                                  props.AllowedFilters.get(
+                                    header,
+                                  )!.GetDefaultValue(),
+                              },
+                              foreignMutations: {
+                                onChange: (updaterOption) => {
+                                  if (updaterOption.kind == "r") {
+                                    handleFilterValueChange(
+                                      header,
+                                      0,
+                                      updaterOption.value,
+                                    );
+                                  }
+                                },
+                              },
+                              view: unit,
+                            })}
+                            <button
+                              onClick={() => handleFilterRemove(header, 0)}
+                            >
+                              ❌
+                            </button>
+                          </div>
+                        )}
+                      </th>
                     ))}
                   </tr>
                 </thead>
@@ -1279,13 +1587,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     .toArray()
                     .map(([id, row], idx) => {
                       const isSelected =
-                        props.context.customFormState.selectedDetailRow &&
-                        PredicateValue.Operations.IsTuple(
-                          props.context.customFormState.selectedDetailRow,
-                        ) &&
-                        props.context.customFormState.selectedDetailRow.values.get(
-                          1,
-                        ) == id;
+                        props.context.customFormState.selectedDetailRow == id;
 
                       return (
                         <tr style={{ border: "1px solid black" }}>
@@ -1376,6 +1678,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             >
               <h3>Detail View</h3>
               {props.DetailsRenderer &&
+                props.context.customFormState.selectedDetailRow &&
                 props.DetailsRenderer(undefined)({
                   ...props,
                   context: {
@@ -1383,8 +1686,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     customFormState: {
                       ...props.context.customFormState,
                       selectedDetailRow:
-                        props.context.customFormState.selectedDetailRow ||
-                        PredicateValue.Default.unit(),
+                        props.context.customFormState.selectedDetailRow,
                     },
                   },
                   view: unit,
@@ -1487,7 +1789,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -1508,7 +1814,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <input
           disabled={props.context.disabled}
           type="checkbox"
-          checked={props.context.value}
+          checked={
+            PredicateValue.Operations.IsBoolean(props.context.value)
+              ? props.context.value
+              : false
+          }
           onChange={(e) =>
             props.foreignMutations.setNewValue(
               e.currentTarget.checked,
@@ -1621,6 +1931,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   enumSingleSelection: {
     defaultEnum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const isSome = props.context.value.isSome;
       const value =
         isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
@@ -2416,6 +2730,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sum: {
     defaultSum: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       return (
         <>
           {props.context.value.value.kind == "l"
@@ -2447,6 +2765,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""
@@ -2582,6 +2904,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   sumUnitDate: {
     maybeDate: () => (props) => {
+      if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        return <></>;
+      }
+
       const displayValue =
         props.context.value.value.kind == "l"
           ? ""

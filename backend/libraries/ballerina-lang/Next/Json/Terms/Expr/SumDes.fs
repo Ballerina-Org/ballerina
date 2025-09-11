@@ -7,7 +7,7 @@ module SumDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Json
 
   type Expr<'T> with
@@ -20,26 +20,25 @@ module SumDes =
             caseHandlers
             |> Seq.map (fun caseHandler ->
               reader {
-                let! (caseIndex, handler) = caseHandler |> JsonValue.AsPair |> reader.OfSum
-                let! caseIndex = caseIndex |> JsonValue.AsInt |> reader.OfSum
-                let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
+                let! handlerVar, handlerBody = caseHandler |> JsonValue.AsPair |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
                 let handlerVar = Var.Create handlerVar
                 let! handlerBody = handlerBody |> fromRootJson
-                return (caseIndex, (handlerVar, handlerBody))
+                return (handlerVar, handlerBody)
               })
             |> reader.All
-            |> reader.Map Map.ofSeq
 
           return Expr.SumDes(caseHandlers)
         })
 
-    static member ToJsonSumDes(rootToJson: Expr<'T> -> JsonValue) : Map<int, CaseHandler<'T>> -> JsonValue =
-      Map.toArray
-      >> Array.map (fun (i, (v, c)) ->
-        let i = i |> decimal |> JsonValue.Number
-        let v = v.Name |> JsonValue.String
-        let c = c |> rootToJson
-        [| i; [| v; c |] |> JsonValue.Array |] |> JsonValue.Array)
-      >> JsonValue.Array
-      >> Json.kind "sum-des" "sum-des"
+    static member ToJsonSumDes: ExprEncoder<'T> -> List<CaseHandler<'T>> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson caseHandlers ->
+        caseHandlers
+        |> List.map (fun (v, c) ->
+          reader {
+            let v = v.Name |> JsonValue.String
+            let! c = c |> rootToJson
+            return [| v; c |] |> JsonValue.Array
+          })
+        |> reader.All
+        |> reader.Map(Array.ofList >> JsonValue.Array >> Json.kind "sum-des" "sum-des")

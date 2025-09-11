@@ -12,10 +12,12 @@ module Record =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Json
 
-  type FromJsonRoot<'T> = JsonValue -> Reader<Value<'T>, JsonParser<'T>, Errors>
+  type FromJsonRoot<'T, 'valueExtension> = JsonValue -> Reader<Value<'T, 'valueExtension>, JsonParser<'T>, Errors>
 
-  type Value<'T> with
-    static member FromJsonRecord(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonRecord
+      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
 
@@ -31,7 +33,7 @@ module Record =
                     fields
                     |> Seq.map (fun field ->
                       reader {
-                        let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
+                        let! k, v = field |> JsonValue.AsPair |> reader.OfSum
                         let! k = TypeSymbol.FromJson k |> reader.OfSum
                         let! v = (fromJsonRoot v)
                         return (k, v)
@@ -41,18 +43,26 @@ module Record =
 
                   return Value.Record(fields)
                 })
-              (json)
+              json
         }
 
-    static member ToJsonRecord(toRootJson: Value<'T> -> JsonValue) : Map<TypeSymbol, Value<'T>> -> JsonValue =
-      fun fields ->
-        let fieldsJson =
-          fields
-          |> Map.toList
-          |> List.map (fun (ts, v) ->
+    static member ToJsonRecord
+      : ValueEncoder<'T, 'valueExtension>
+          -> Map<TypeSymbol, Value<'T, 'valueExtension>>
+          -> JsonEncoder<'T, 'valueExtension> =
 
-            let k = TypeSymbol.ToJson ts
-            let v = toRootJson v
-            [| k; v |] |> JsonValue.Array)
+      fun rootToJson fields ->
+        reader {
+          let! fieldsJson =
+            fields
+            |> Map.toList
+            |> List.map (fun (ts, v) ->
+              reader {
+                let k = TypeSymbol.ToJson ts
+                let! v = rootToJson v
+                return [| k; v |] |> JsonValue.Array
+              })
+            |> reader.All
 
-        JsonValue.Array(fieldsJson |> Array.ofSeq) |> Json.kind "record" "fields"
+          return JsonValue.Array(fieldsJson |> Array.ofSeq) |> Json.kind "record" "fields"
+        }

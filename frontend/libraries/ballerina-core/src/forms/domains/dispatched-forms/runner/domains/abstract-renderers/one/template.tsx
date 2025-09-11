@@ -25,6 +25,7 @@ import {
   DispatchParsedType,
   BaseFlags,
   Sum,
+  ValueStreamPosition,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -342,6 +343,16 @@ export const OneAbstractRenderer = <
                   OneAbstractRendererState.Updaters.Template.streamParam(
                     key,
                     replaceWith(_),
+                  ).then(
+                    OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                      Sum.Updaters.left(
+                        ValueInfiniteStreamState.Updaters.Core.position(
+                          ValueStreamPosition.Updaters.Core.nextStart(
+                            replaceWith(0),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               loadMore: () =>

@@ -7,6 +7,7 @@ import {
   DispatchGenericTypes,
   MapRepo,
   DispatchInjectedPrimitives,
+  ParsedType,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -48,7 +49,7 @@ export type SerializedKeyOfType<T> = {
 
 export type ValidatedSerializedKeyOfType<T> = {
   fun: "KeyOf";
-  args: Array<string>;
+  args: [string, Array<string>?];
 };
 
 export type SerializedLookupType = string;
@@ -182,7 +183,7 @@ export const SerializedType = {
     _.fun == "KeyOf" &&
     "args" in _ &&
     Array.isArray(_.args) &&
-    _.args.length == 1 &&
+    (_.args.length == 1 || (_.args.length == 2 && Array.isArray(_.args[1]))) &&
     DispatchisString(_.args[0]),
   isOne: <T>(
     _: SerializedType<T>,
@@ -324,6 +325,21 @@ export const SumType = {
   },
 };
 
+export type SumNType<T> = {
+  kind: "sumN";
+  args: Array<DispatchParsedType<T>>;
+  asString: () => StringSerializedType;
+};
+
+export const SumNType = {
+  SerializeToString: (
+    serializedArgs: Array<StringSerializedType>,
+    arity: number,
+  ): StringSerializedType => {
+    return `[sumN; arity: ${arity}; args: [${serializedArgs.join(", ")}]]`;
+  },
+};
+
 export type MapType<T> = {
   kind: "map";
   args: Array<DispatchParsedType<T>>;
@@ -380,6 +396,168 @@ export const OneType = {
   },
 };
 
+// Filters
+export type FilterContainsType<T> = {
+  kind: "contains";
+  contains: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterContainsType = {
+  SerializeToString: (
+    serializedContains: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; contains: ${serializedContains}]`;
+  },
+};
+
+export type FilterEqualsToType<T> = {
+  kind: "=";
+  equalsTo: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterEqualsToType = {
+  SerializeToString: (
+    serializedEqualsTo: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; equalsTo: ${serializedEqualsTo}]`;
+  },
+};
+
+export type FilterNotEqualsToType<T> = {
+  kind: "!=";
+  notEqualsTo: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterNotEqualsToType = {
+  SerializeToString: (
+    serializedNotEqualsTo: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; != ${serializedNotEqualsTo}]`;
+  },
+};
+
+export type FilterGreaterThanOrEqualsToType<T> = {
+  kind: ">=";
+  greaterThanOrEqualsTo: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterGreaterThanOrEqualsToType = {
+  SerializeToString: (
+    serializedGreaterThanOrEqualsTo: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; >= ${serializedGreaterThanOrEqualsTo}]`;
+  },
+};
+
+export type FilterGreaterThanType<T> = {
+  kind: ">";
+  greaterThan: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterGreaterThanType = {
+  SerializeToString: (
+    serializedGreaterThan: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; > ${serializedGreaterThan}]`;
+  },
+};
+
+export type FilterIsNotNullType<T> = {
+  kind: "!=null";
+  asString: () => StringSerializedType;
+};
+
+export const FilterIsNotNullType = {
+  SerializeToString: (): StringSerializedType => {
+    return `[filter; !=null]`;
+  },
+};
+
+export type FilterIsNullType<T> = {
+  kind: "=null";
+  asString: () => StringSerializedType;
+};
+
+export const FilterIsNullType = {
+  SerializeToString: (): StringSerializedType => {
+    return `[filter; =null]`;
+  },
+};
+
+export type FilterSmallerThanOrEqualsToType<T> = {
+  kind: "<=";
+  smallerThanOrEqualsTo: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterSmallerThanOrEqualsToType = {
+  SerializeToString: (
+    serializedSmallerThanOrEqualsTo: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; <= ${serializedSmallerThanOrEqualsTo}]`;
+  },
+};
+
+export type FilterSmallerThanType<T> = {
+  kind: "<";
+  smallerThan: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterSmallerThanType = {
+  SerializeToString: (
+    serializedSmallerThan: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; < ${serializedSmallerThan}]`;
+  },
+};
+
+export type FilterStartsWithType<T> = {
+  kind: "startsWith";
+  startsWith: DispatchParsedType<T>;
+  asString: () => StringSerializedType;
+};
+
+export const FilterStartsWithType = {
+  SerializeToString: (
+    serializedStartsWith: StringSerializedType,
+  ): StringSerializedType => {
+    return `[filter; startsWith ${serializedStartsWith}]`;
+  },
+};
+
+export type FilterType<T> =
+  | FilterContainsType<T>
+  | FilterEqualsToType<T>
+  | FilterNotEqualsToType<T>
+  | FilterGreaterThanOrEqualsToType<T>
+  | FilterGreaterThanType<T>
+  | FilterIsNotNullType<T>
+  | FilterIsNullType<T>
+  | FilterSmallerThanOrEqualsToType<T>
+  | FilterSmallerThanType<T>
+  | FilterStartsWithType<T>;
+
+export const FilterTypeKinds = [
+  "contains",
+  "=",
+  "!=",
+  ">=",
+  ">",
+  "!=null",
+  "=null",
+  "<=",
+  "<",
+  "startsWith",
+] as const;
+
+export type FilterTypeKind = (typeof FilterTypeKinds)[number];
+
 export type DispatchParsedType<T> =
   | RecordType<T>
   | LookupType
@@ -390,10 +568,12 @@ export type DispatchParsedType<T> =
   | ListType<T>
   | TupleType<T>
   | SumType<T>
+  | SumNType<T>
   | MapType<T>
   | TableType<T>
   | OneType<T>
-  | ReadOnlyType<T>;
+  | ReadOnlyType<T>
+  | FilterType<T>;
 
 export const DispatchParsedType = {
   Default: {
@@ -449,6 +629,15 @@ export const DispatchParsedType = {
       args,
       asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
     }),
+    sumN: <T>(args: Array<DispatchParsedType<T>>): SumNType<T> => ({
+      kind: "sumN",
+      args,
+      asString: () =>
+        SumNType.SerializeToString(
+          args.map((v) => v.asString()),
+          args.length,
+        ),
+    }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
       args,
@@ -476,6 +665,80 @@ export const DispatchParsedType = {
       kind: "one",
       arg,
       asString: () => OneType.SerializeToString(arg.asString()),
+    }),
+    filterContains: <T>(
+      contains: DispatchParsedType<T>,
+    ): FilterContainsType<T> => ({
+      kind: "contains",
+      contains,
+      asString: () => FilterContainsType.SerializeToString(contains.asString()),
+    }),
+    filterEqualsTo: <T>(
+      equalsTo: DispatchParsedType<T>,
+    ): FilterEqualsToType<T> => ({
+      kind: "=",
+      equalsTo,
+      asString: () => FilterEqualsToType.SerializeToString(equalsTo.asString()),
+    }),
+    filterNotEqualsTo: <T>(
+      notEqualsTo: DispatchParsedType<T>,
+    ): FilterNotEqualsToType<T> => ({
+      kind: "!=",
+      notEqualsTo,
+      asString: () =>
+        FilterNotEqualsToType.SerializeToString(notEqualsTo.asString()),
+    }),
+    filterGreaterThanOrEqualsTo: <T>(
+      greaterThanOrEqualsTo: DispatchParsedType<T>,
+    ): FilterGreaterThanOrEqualsToType<T> => ({
+      kind: ">=",
+      greaterThanOrEqualsTo,
+      asString: () =>
+        FilterGreaterThanOrEqualsToType.SerializeToString(
+          greaterThanOrEqualsTo.asString(),
+        ),
+    }),
+    filterGreaterThan: <T>(
+      greaterThan: DispatchParsedType<T>,
+    ): FilterGreaterThanType<T> => ({
+      kind: ">",
+      greaterThan,
+      asString: () =>
+        FilterGreaterThanType.SerializeToString(greaterThan.asString()),
+    }),
+    filterIsNotNull: <T>(): FilterIsNotNullType<T> => ({
+      kind: "!=null",
+      asString: () => FilterIsNotNullType.SerializeToString(),
+    }),
+    filterIsNull: <T>(): FilterIsNullType<T> => ({
+      kind: "=null",
+      asString: () => FilterIsNullType.SerializeToString(),
+    }),
+    filterSmallerThanOrEqualsTo: <T>(
+      smallerThanOrEqualsTo: DispatchParsedType<T>,
+    ): FilterSmallerThanOrEqualsToType<T> => ({
+      kind: "<=",
+      smallerThanOrEqualsTo,
+      asString: () =>
+        FilterSmallerThanOrEqualsToType.SerializeToString(
+          smallerThanOrEqualsTo.asString(),
+        ),
+    }),
+    filterSmallerThan: <T>(
+      smallerThan: DispatchParsedType<T>,
+    ): FilterSmallerThanType<T> => ({
+      kind: "<",
+      smallerThan,
+      asString: () =>
+        FilterSmallerThanType.SerializeToString(smallerThan.asString()),
+    }),
+    filterStartsWith: <T>(
+      startsWith: DispatchParsedType<T>,
+    ): FilterStartsWithType<T> => ({
+      kind: "startsWith",
+      startsWith,
+      asString: () =>
+        FilterStartsWithType.SerializeToString(startsWith.asString()),
     }),
   },
   Operations: {
@@ -589,6 +852,11 @@ export const DispatchParsedType = {
                   Map(
                     parsingResult[0].fields
                       .keySeq()
+                      .filter(
+                        (key) =>
+                          rawType.args[1] == undefined ||
+                          !rawType.args[1].includes(key),
+                      )
                       .toArray()
                       .map((key) => [
                         key,
@@ -654,6 +922,13 @@ export const DispatchParsedType = {
               DispatchParsedType.Operations.SerializeToString(v),
             ),
           );
+        case "sumN":
+          return SumNType.SerializeToString(
+            type.args.map((v) =>
+              DispatchParsedType.Operations.SerializeToString(v),
+            ),
+            type.args.length,
+          );
         case "map":
           return MapType.SerializeToString(
             type.args.map((v) =>
@@ -668,6 +943,38 @@ export const DispatchParsedType = {
           );
         case "lookup":
           return LookupType.SerializeToString(type.name);
+        case "contains":
+          return FilterContainsType.SerializeToString(type.contains.asString());
+        case "=":
+          return FilterEqualsToType.SerializeToString(type.equalsTo.asString());
+        case "!=":
+          return FilterNotEqualsToType.SerializeToString(
+            type.notEqualsTo.asString(),
+          );
+        case ">=":
+          return FilterGreaterThanOrEqualsToType.SerializeToString(
+            type.greaterThanOrEqualsTo.asString(),
+          );
+        case ">":
+          return FilterGreaterThanType.SerializeToString(
+            type.greaterThan.asString(),
+          );
+        case "!=null":
+          return FilterIsNotNullType.SerializeToString();
+        case "=null":
+          return FilterIsNullType.SerializeToString();
+        case "<=":
+          return FilterSmallerThanOrEqualsToType.SerializeToString(
+            type.smallerThanOrEqualsTo.asString(),
+          );
+        case "<":
+          return FilterSmallerThanType.SerializeToString(
+            type.smallerThan.asString(),
+          );
+        case "startsWith":
+          return FilterStartsWithType.SerializeToString(
+            type.startsWith.asString(),
+          );
         default:
           throw new Error(`Unknown type: ${JSON.stringify(type)}`);
       }
@@ -856,6 +1163,67 @@ export const DispatchParsedType = {
                   ),
                 ),
             ),
+    ParseRawFilterType: <T>(
+      rawFilterType: unknown,
+      arg: DispatchParsedType<T>,
+    ): ValueOrErrors<FilterType<T>, string> => {
+      if (typeof rawFilterType != "string") {
+        return ValueOrErrors.Default.throwOne<FilterType<T>, string>(
+          `rawType is not a string`,
+        );
+      }
+
+      switch (rawFilterType) {
+        case "contains":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterContains(arg),
+          );
+        case "equalsTo":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterEqualsTo(arg),
+          );
+        case "startswith":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterStartsWith(arg),
+          );
+        case "!=":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterNotEqualsTo(arg),
+          );
+        case "=":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterEqualsTo(arg),
+          );
+        case ">=":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterGreaterThanOrEqualsTo(arg),
+          );
+        case ">":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterGreaterThan(arg),
+          );
+        case "<=":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterSmallerThanOrEqualsTo(arg),
+          );
+        case "<":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterSmallerThan(arg),
+          );
+        case "=null":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterIsNull(),
+          );
+        case "!=null":
+          return ValueOrErrors.Default.return(
+            DispatchParsedType.Default.filterIsNotNull(),
+          );
+        default:
+          return ValueOrErrors.Default.throwOne<FilterType<T>, string>(
+            `Unknown filter type: ${rawFilterType}`,
+          );
+      }
+    },
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,

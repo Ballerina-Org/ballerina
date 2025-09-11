@@ -9,6 +9,7 @@ module Apply =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.Errors
 
   type Expr<'T> with
     static member FromJsonApply(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
@@ -20,8 +21,10 @@ module Apply =
           return Expr.Apply(f, arg)
         })
 
-    static member ToJsonApply(rootToJson: Expr<'T> -> JsonValue) : Expr<'T> * Expr<'T> -> JsonValue =
-      fun (f, arg) ->
-        let f = f |> rootToJson
-        let arg = arg |> rootToJson
-        [| f; arg |] |> JsonValue.Array |> Json.kind "apply" "apply"
+    static member ToJsonApply: ExprEncoder<'T> -> Expr<'T> -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      fun rootToJson f arg ->
+        reader {
+          let! f = f |> rootToJson
+          let! arg = arg |> rootToJson
+          return [| f; arg |] |> JsonValue.Array |> Json.kind "apply" "apply"
+        }

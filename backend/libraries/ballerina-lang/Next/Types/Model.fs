@@ -3,6 +3,15 @@ namespace Ballerina.DSL.Next.Types
 module Model =
   open System
 
+  type Identifier =
+    | LocalScope of string
+    | FullyQualified of List<string> * string
+
+    override id.ToString() =
+      match id with
+      | LocalScope name -> name
+      | FullyQualified(names, name) -> String.Join(".", names) + "." + name
+
   type TypeParameter = { Name: string; Kind: Kind }
 
   and Kind =
@@ -10,9 +19,7 @@ module Model =
     | Star
     | Arrow of Kind * Kind
 
-  and TypeIdentifier = { Name: string }
-
-  and TypeSymbol = { Name: string; Guid: Guid }
+  and TypeSymbol = { Name: Identifier; Guid: Guid }
 
   and TypeVar =
     { Name: string
@@ -27,7 +34,9 @@ module Model =
 
   and TypeExpr =
     | Primitive of PrimitiveType
-    | Lookup of string
+    | Let of string * TypeExpr * TypeExpr
+    | NewSymbol of string
+    | Lookup of Identifier
     | Apply of TypeExpr * TypeExpr
     | Lambda of TypeParameter * TypeExpr
     | Arrow of TypeExpr * TypeExpr
@@ -44,14 +53,15 @@ module Model =
     | Rotate of TypeExpr
 
   and TypeBinding =
-    { Identifier: TypeIdentifier
+    { Identifier: Identifier
       Type: TypeExpr }
 
   and TypeValue =
     | Primitive of PrimitiveType
     | Var of TypeVar
-    | Lookup of TypeIdentifier
+    | Lookup of Identifier
     | Lambda of TypeParameter * TypeExpr
+    | Apply of TypeVar * TypeValue
     | Arrow of TypeValue * TypeValue
     | Record of Map<TypeSymbol, TypeValue>
     | Tuple of List<TypeValue>
@@ -64,7 +74,10 @@ module Model =
   and PrimitiveType =
     | Unit
     | Guid
-    | Int
+    | Int32
+    | Int64
+    | Float32
+    | Float64
     | Decimal
     | Bool
     | String

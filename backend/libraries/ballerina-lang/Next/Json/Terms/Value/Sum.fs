@@ -9,8 +9,10 @@ module Sum =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
-  type Value<'T> with
-    static member FromJsonSum(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
+  type Value<'T, 'valueExtension> with
+    static member FromJsonSum
+      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
+      : JsonValue -> ValueParser<'T, 'valueExtension> =
       fun json ->
         reader {
           return!
@@ -19,16 +21,19 @@ module Sum =
               "case"
               (fun elementsJson ->
                 reader {
-                  let! (k, v) = elementsJson |> JsonValue.AsPair |> reader.OfSum
+                  let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
                   let! k = k |> JsonValue.AsInt |> reader.OfSum
                   let! v = (fromJsonRoot v)
                   return Value.Sum(k, v)
                 })
-              (json)
+              json
         }
 
-    static member ToJsonSum(rootToJson: Value<'T> -> JsonValue) : int * Value<'T> -> JsonValue =
-      fun (i, v) ->
-        let i = JsonValue.Number(decimal i)
-        let v = rootToJson v
-        [| i; v |] |> JsonValue.Array |> Json.kind "sum" "case"
+    static member ToJsonSum
+      : ValueEncoder<'T, 'valueExtension> -> int -> Value<'T, 'valueExtension> -> JsonEncoder<'T, 'valueExtension> =
+      fun rootToJson i v ->
+        reader {
+          let i = JsonValue.Number(decimal i)
+          let! v = rootToJson v
+          return [| i; v |] |> JsonValue.Array |> Json.kind "sum" "case"
+        }

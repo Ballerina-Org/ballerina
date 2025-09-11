@@ -153,7 +153,6 @@ module Model =
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
       DefaultConstructor: string
-      Const: bool
       DeltaTypeName: string
       RequiredImport: Option<string>
       SupportedRenderers: Set<string> }
@@ -283,7 +282,7 @@ module Model =
     | IsNotNull
 
   and TableFilter<'ExprExtension, 'ValueExtension> =
-    { Operators: Set<TableFilteringOperator>
+    { Operators: List<TableFilteringOperator>
       Type: ExprType
       Display: NestedRenderer<'ExprExtension, 'ValueExtension> }
 
@@ -452,7 +451,7 @@ module Model =
       {| One: Renderer<'ExprExtension, 'ValueExtension>
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
          Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         OneApiId: Option<Choice<TableApiId, ExprTypeId * string>> |}
+         OneApiId: ExprTypeId * string |}
 
     | ManyRenderer of ManyRenderer<'ExprExtension, 'ValueExtension>
 

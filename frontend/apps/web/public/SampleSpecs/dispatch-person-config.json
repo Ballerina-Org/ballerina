@@ -202,7 +202,7 @@
     },
     "AddressesFieldsEnum": {
       "fun": "KeyOf",
-      "args": ["AddressFields"]
+      "args": ["AddressFields", ["Departments"]]
     },
     "AddressesFieldRef": {
       "fields": {
@@ -646,7 +646,25 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User",
-        "methods": ["move", "duplicate"]
+        "methods": ["move", "duplicate"],
+        "sorting": ["Name", "City"],
+        "highlightedFilters": ["Name"],
+        "filtering": {
+          "Name": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "startswith"]
+          },
+          "Surname": {
+            "display": {
+              "renderer": "defaultString"
+            },
+            "type": "string",
+            "operators": ["=", "contains", "=null", "!=null"]
+          }
+        }
       },
       "ActiveFriendsApi": {
         "type": "Friend",
@@ -2131,13 +2149,19 @@
             "addresses": {
               "groups": {
                 "main": {
-                  "kind": "fieldLookup",
+                  "kind": "prepend",
                   "operands": [
+                    ["Departments"],
                     {
-                      "kind": "varLookup",
-                      "varName": "global"
-                    },
-                    "ActiveAddressFields"
+                      "kind": "fieldLookup",
+                      "operands": [
+                        {
+                          "kind": "varLookup",
+                          "varName": "global"
+                        },
+                        "ActiveAddressFields"
+                      ]
+                    }
                   ]
                 }
               }

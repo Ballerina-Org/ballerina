@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 )
 
@@ -10,6 +11,10 @@ type Contains[T any] struct {
 
 func NewContains[T any](value T) Contains[T] {
 	return Contains[T]{contains: value}
+}
+
+func (e Contains[T]) GetContains() T {
+	return e.contains
 }
 
 var _ json.Unmarshaler = &Contains[Unit]{}
@@ -27,7 +32,9 @@ func (d *Contains[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		Contains T
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.contains = aux.Contains

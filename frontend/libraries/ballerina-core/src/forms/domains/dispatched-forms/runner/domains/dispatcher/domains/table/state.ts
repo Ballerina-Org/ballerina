@@ -10,6 +10,10 @@ import {
   PredicateValue,
   LookupType,
   LookupTypeAbstractRenderer,
+  Dispatcher,
+  Value,
+  FilterType,
+  SumNType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
@@ -177,15 +181,98 @@ export const TableDispatcher = {
                   dispatcherContext,
                   isInlined,
                   tableApi,
-                ).Then((detailsRenderer) =>
-                  dispatcherContext
+                ).Then((detailsRenderer) => {
+                  const api = renderer.api ?? tableApi;
+                  const filtering =
+                    api == undefined
+                      ? undefined
+                      : (dispatcherContext.specApis.tables?.get(api!)
+                          ?.filtering ?? undefined);
+
+                  // TODO - this can be significantly improved, also to provide an error if something fails
+                  const AllowedFilters: Map<
+                    string,
+                    {
+                      template: Template<any, any, any, any>;
+                      filters: SumNType<any>;
+                      type: DispatchParsedType<any>;
+                      GetDefaultValue: () => PredicateValue;
+                      GetDefaultState: () => any;
+                    }
+                  > = (() => {
+                    if (filtering == undefined) {
+                      return Map();
+                    }
+                    return filtering
+                      .map((columnFilters) => ({
+                        template: Dispatcher.Operations.DispatchAs(
+                          columnFilters.displayRenderer,
+                          dispatcherContext,
+                          "table column filter renderer",
+                          false,
+                          isInlined,
+                          tableApi,
+                        ),
+                        filters: columnFilters.filters,
+                        type: columnFilters.displayType,
+                        GetDefaultValue: () =>
+                          dispatcherContext.defaultValue(
+                            columnFilters.displayType,
+                            columnFilters.displayRenderer,
+                          ),
+                        GetDefaultState: () =>
+                          dispatcherContext.defaultState(
+                            columnFilters.displayType,
+                            columnFilters.displayRenderer,
+                          ),
+                      }))
+                      .filter(
+                        (dispatchedFilterRenderer) =>
+                          dispatchedFilterRenderer.template.kind == "value" &&
+                          dispatchedFilterRenderer.GetDefaultValue().kind ==
+                            "value" &&
+                          dispatchedFilterRenderer.GetDefaultState().kind ==
+                            "value",
+                      )
+                      .map((dispatchedFilterRenderer) => ({
+                        template: (
+                          dispatchedFilterRenderer.template as Value<
+                            Template<any, any, any, any>
+                          >
+                        ).value,
+                        filters: dispatchedFilterRenderer.filters,
+                        type: dispatchedFilterRenderer.type,
+                        GetDefaultValue: () =>
+                          (
+                            dispatchedFilterRenderer.GetDefaultValue() as Value<PredicateValue>
+                          ).value,
+                        GetDefaultState: () =>
+                          (
+                            dispatchedFilterRenderer.GetDefaultState() as Value<any>
+                          ).value,
+                      }));
+                  })();
+
+                  return dispatcherContext
                     .getConcreteRenderer("table", renderer.concreteRenderer)
                     .Then((concreteRenderer) =>
                       TableDispatcher.Operations.GetApi(
                         renderer.api ?? tableApi,
                         dispatcherContext,
-                      ).Then((tableApiSource) =>
-                        ValueOrErrors.Default.return(
+                      ).Then((tableApiSource) => {
+                        const highlightedFilters =
+                          api == undefined
+                            ? []
+                            : (dispatcherContext.specApis.tables
+                                ?.get(api!)
+                                ?.highlightedFilters?.toArray() ?? []);
+
+                        const sorting =
+                          api == undefined
+                            ? []
+                            : (dispatcherContext.specApis.tables?.get(api!)
+                                ?.sorting ?? []);
+                        return ValueOrErrors.Default.return(
                           TableAbstractRenderer(
                             Map(cellTemplates),
                             detailsRenderer,
@@ -193,27 +280,31 @@ export const TableDispatcher = {
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                             tableEntityType,
+                            AllowedFilters,
+                            dispatcherContext.parseToApiByType,
+                            dispatcherContext.parseFromApiByType,
+                            dispatcherContext.parseFromApiByType(
+                              renderer.type.arg,
+                            ),
+                            tableApiSource,
                           )
                             .mapContext((_: any) => ({
                               ..._,
                               type: renderer.type,
                               apiMethods:
-                                tableApi == undefined
+                                api == undefined
                                   ? []
                                   : (dispatcherContext.specApis.tables?.get(
-                                      tableApi!,
+                                      api!,
                                     )?.methods ?? []),
-                              tableApiSource,
-                              fromTableApiParser:
-                                dispatcherContext.parseFromApiByType(
-                                  renderer.type.arg,
-                                ),
+                              sorting,
+                              highlightedFilters,
                             }))
                             .withView(concreteRenderer),
-                        ),
-                      ),
-                    ),
-                ),
+                        );
+                      }),
+                    );
+                }),
               )
             : ValueOrErrors.Default.throwOne<
                 Template<any, any, any, any>,

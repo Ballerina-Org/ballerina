@@ -40,6 +40,17 @@ import {
   UnionAbstractRendererView,
   DispatchInjectablesTypes,
   SpecificationApis,
+  ValueFilterContains,
+  ValueFilterEqualsTo,
+  ValueFilterGreaterThanOrEqualsTo,
+  ValueFilterGreaterThan,
+  ValueFilterIsNotNull,
+  ValueFilterIsNull,
+  ValueFilterSmallerThanOrEqualsTo,
+  ValueFilterSmallerThan,
+  ValueFilterStartsWith,
+  ValueSumN,
+  ValueFilterNotEqualsTo,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -183,10 +194,21 @@ type BuiltInApiConverters = {
   Map: ApiConverter<List<[any, any]>>;
   Tuple: ApiConverter<List<any>>;
   Sum: ApiConverter<Sum<any, any>>;
+  SumN: ApiConverter<ValueSumN>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
   One: ApiConverter<ValueOption>;
   ReadOnly: ApiConverter<any>;
+  Contains: ApiConverter<ValueFilterContains>;
+  "=": ApiConverter<ValueFilterEqualsTo>;
+  "!=": ApiConverter<ValueFilterNotEqualsTo>;
+  ">=": ApiConverter<ValueFilterGreaterThanOrEqualsTo>;
+  ">": ApiConverter<ValueFilterGreaterThan>;
+  "!=null": ApiConverter<ValueFilterIsNotNull>;
+  "=null": ApiConverter<ValueFilterIsNull>;
+  "<=": ApiConverter<ValueFilterSmallerThanOrEqualsTo>;
+  "<": ApiConverter<ValueFilterSmallerThan>;
+  StartsWith: ApiConverter<ValueFilterStartsWith>;
 };
 
 export type ConcreteRenderers<
@@ -635,7 +657,7 @@ export const dispatchDefaultState =
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
-    specApis: SpecificationApis,
+    specApis: SpecificationApis<T>,
   ) =>
   (
     t: DispatchParsedType<T>,
@@ -1468,6 +1490,21 @@ export const dispatchFromAPIRawValue =
         );
       }
 
+      if (t.kind == "sumN") {
+        const result = converters["SumN"].fromAPIRawValue(raw);
+
+        return dispatchFromAPIRawValue(
+          t.args[result.caseIndex],
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.value).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.sumN(result.caseIndex, result.arity, value),
+          ),
+        );
+      }
+
       if (t.kind == "lookup")
         return MapRepo.Operations.tryFindWithError(
           t.name, // TODO -- double check this is correct instead of typeName, and maybe remove typeName
@@ -1509,8 +1546,11 @@ export const dispatchFromAPIRawValue =
                     injectedPrimitives,
                   )(record).Then((value) =>
                     PredicateValue.Operations.IsRecord(value)
-                      ? ValueOrErrors.Default.return([key, value])
-                      : ValueOrErrors.Default.throwOne(
+                      ? ValueOrErrors.Default.return([key, value] as const)
+                      : ValueOrErrors.Default.throwOne<
+                          [string, ValueRecord],
+                          string
+                        >(
                           `record expected but got ${PredicateValue.Operations.GetKind(
                             value,
                           )}`,
@@ -1591,6 +1631,129 @@ export const dispatchFromAPIRawValue =
         }
         return ValueOrErrors.Default.return(
           PredicateValue.Default.record(result),
+        );
+      }
+
+      // Filters
+      if (t.kind == "contains") {
+        const result = converters["Contains"].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.contains,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.contains).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterContains(value),
+          ),
+        );
+      }
+
+      if (t.kind == "=") {
+        const result = converters["="].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.equalsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.equalsTo).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterEqualsTo(value),
+          ),
+        );
+      }
+
+      if (t.kind == "!=") {
+        const result = converters["!="].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.notEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.notEqualsTo).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterNotEqualsTo(value),
+          ),
+        );
+      }
+
+      if (t.kind == ">=") {
+        const result = converters[">="].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.greaterThanOrEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.greaterThanOrEqualsTo).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterGreaterThanOrEqualsTo(value),
+          ),
+        );
+      }
+
+      if (t.kind == ">") {
+        const result = converters[">"].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.greaterThan,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.greaterThan).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterGreaterThan(value),
+          ),
+        );
+      }
+
+      if (t.kind == "!=null")
+        return ValueOrErrors.Operations.Return(
+          converters["!=null"].fromAPIRawValue(raw),
+        );
+
+      if (t.kind == "=null")
+        return ValueOrErrors.Operations.Return(
+          converters["=null"].fromAPIRawValue(raw),
+        );
+
+      if (t.kind == "<=") {
+        const result = converters["<="].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.smallerThanOrEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.smallerThanOrEqualsTo).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterSmallerThanOrEqualsTo(value),
+          ),
+        );
+      }
+
+      if (t.kind == "<") {
+        const result = converters["<"].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.smallerThan,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.smallerThan).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterSmallerThan(value),
+          ),
+        );
+      }
+
+      if (t.kind == "startsWith") {
+        const result = converters.StartsWith.fromAPIRawValue(raw);
+        return dispatchFromAPIRawValue(
+          t.startsWith,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.startsWith).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.filterStartsWith(value),
+          ),
         );
       }
 
@@ -1872,6 +2035,27 @@ export const dispatchToAPIRawValue =
         );
       }
 
+      if (t.kind == "sumN") {
+        if (!PredicateValue.Operations.IsSumN(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `SumN expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.args[raw.caseIndex],
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.value, formState?.commonFormState?.modifiedByUser).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["SumN"].toAPIRawValue([
+              PredicateValue.Default.sumN(raw.caseIndex, raw.arity, value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
       if (t.kind == "tuple") {
         if (!PredicateValue.Operations.IsTuple(raw)) {
           return ValueOrErrors.Default.throwOne(
@@ -2022,6 +2206,204 @@ export const dispatchToAPIRawValue =
             raw,
             formState?.commonFormState?.modifiedByUser ?? false,
           ]),
+        );
+      }
+
+      // Filters
+      if (t.kind == "contains") {
+        if (!PredicateValue.Operations.IsFilterContains(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterContains expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.contains,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.contains, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["Contains"].toAPIRawValue([
+              PredicateValue.Default.filterContains(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == "=") {
+        if (!PredicateValue.Operations.IsFilterEqualsTo(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterEqualsTo expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.equalsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.equalsTo, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["="].toAPIRawValue([
+              PredicateValue.Default.filterEqualsTo(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == "!=") {
+        if (!PredicateValue.Operations.IsFilterNotEqualsTo(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterNotEqualsTo expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.notEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.notEqualsTo, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["!="].toAPIRawValue([
+              PredicateValue.Default.filterNotEqualsTo(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == ">=") {
+        if (!PredicateValue.Operations.IsFilterGreaterThanOrEqualsTo(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterGreaterThanOrEqualsTo expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.greaterThanOrEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.greaterThanOrEqualsTo, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters[">="].toAPIRawValue([
+              PredicateValue.Default.filterGreaterThanOrEqualsTo(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == ">") {
+        if (!PredicateValue.Operations.IsFilterGreaterThan(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterGreaterThan expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.greaterThan,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.greaterThan, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters[">"].toAPIRawValue([
+              PredicateValue.Default.filterGreaterThan(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == "!=null") {
+        if (!PredicateValue.Operations.IsFilterIsNotNull(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterIsNotNull expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return ValueOrErrors.Default.return(
+          converters["!=null"].toAPIRawValue([
+            raw,
+            formState?.commonFormState?.modifiedByUser ?? false,
+          ]),
+        );
+      }
+
+      if (t.kind == "=null") {
+        if (!PredicateValue.Operations.IsFilterIsNull(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterIsNull expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+
+        return ValueOrErrors.Default.return(
+          converters["=null"].toAPIRawValue([
+            raw,
+            formState?.commonFormState?.modifiedByUser ?? false,
+          ]),
+        );
+      }
+
+      if (t.kind == "<=") {
+        if (!PredicateValue.Operations.IsFilterSmallerThanOrEqualsTo(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterSmallerThanOrEqualsTo expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.smallerThanOrEqualsTo,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.smallerThanOrEqualsTo, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["<="].toAPIRawValue([
+              PredicateValue.Default.filterSmallerThanOrEqualsTo(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == "<") {
+        if (!PredicateValue.Operations.IsFilterSmallerThan(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterSmallerThan expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.smallerThan,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.smallerThan, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["<"].toAPIRawValue([
+              PredicateValue.Default.filterSmallerThan(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
+      }
+
+      if (t.kind == "startsWith") {
+        if (!PredicateValue.Operations.IsFilterStartsWith(raw)) {
+          return ValueOrErrors.Default.throwOne(
+            `FilterStartsWith expected but got ${JSON.stringify(raw)}`,
+          );
+        }
+        return dispatchToAPIRawValue(
+          t.startsWith,
+          types,
+          converters,
+          injectedPrimitives,
+        )(raw.startsWith, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["StartsWith"].toAPIRawValue([
+              PredicateValue.Default.filterStartsWith(value),
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
         );
       }
 

@@ -2,23 +2,24 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
-type DeltaOptionEffectsEnum string
+type deltaOptionEffectsEnum string
 
 const (
-	OptionReplace DeltaOptionEffectsEnum = "OptionReplace"
-	OptionValue   DeltaOptionEffectsEnum = "OptionValue"
+	optionReplace deltaOptionEffectsEnum = "OptionReplace"
+	optionValue   deltaOptionEffectsEnum = "OptionValue"
 )
 
-var AllDeltaOptionEffectsEnumCases = [...]DeltaOptionEffectsEnum{OptionReplace, OptionValue}
+var allDeltaOptionEffectsEnumCases = [...]deltaOptionEffectsEnum{optionReplace, optionValue}
 
-func DefaultDeltaOptionEffectsEnum() DeltaOptionEffectsEnum { return AllDeltaOptionEffectsEnumCases[0] }
+func DefaultDeltaOptionEffectsEnum() deltaOptionEffectsEnum { return allDeltaOptionEffectsEnumCases[0] }
 
 type DeltaOption[a any, deltaA any] struct {
 	DeltaBase
-	discriminator DeltaOptionEffectsEnum
-	replace       *a
+	discriminator deltaOptionEffectsEnum
+	replace       *Option[a]
 	value         *deltaA
 }
 
@@ -28,8 +29,8 @@ var _ json.Marshaler = DeltaOption[Unit, Unit]{}
 func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
-		Discriminator DeltaOptionEffectsEnum
-		Replace       *a
+		Discriminator deltaOptionEffectsEnum
+		Replace       *Option[a]
 		Value         *deltaA
 	}{
 		DeltaBase:     d.DeltaBase,
@@ -42,8 +43,8 @@ func (d DeltaOption[a, deltaA]) MarshalJSON() ([]byte, error) {
 func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 	var tmp struct {
 		DeltaBase
-		Discriminator DeltaOptionEffectsEnum
-		Replace       *a
+		Discriminator deltaOptionEffectsEnum
+		Replace       *Option[a]
 		Value         *deltaA
 	}
 	if err := json.Unmarshal(data, &tmp); err != nil {
@@ -56,30 +57,45 @@ func (d *DeltaOption[a, deltaA]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaOptionReplace[a any, deltaA any](val a) DeltaOption[a, deltaA] {
+func NewDeltaOptionReplace[a any, deltaA any](val Option[a]) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
-		discriminator: OptionReplace,
+		discriminator: optionReplace,
 		replace:       &val,
 	}
 }
 func NewDeltaOptionValue[a any, deltaA any](delta deltaA) DeltaOption[a, deltaA] {
 	return DeltaOption[a, deltaA]{
-		discriminator: OptionValue,
+		discriminator: optionValue,
 		value:         &delta,
 	}
 }
 func MatchDeltaOption[a any, deltaA any, Result any](
-	onReplace func(a) (Result, error),
-	onValue func(deltaA) (Result, error),
-) func(DeltaOption[a, deltaA]) (Result, error) {
-	return func(delta DeltaOption[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case OptionReplace:
-			return onReplace(*delta.replace)
-		case OptionValue:
-			return onValue(*delta.value)
+	onReplace func(Option[a]) func(ReaderWithError[Unit, Option[a]]) (Result, error),
+	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
+) func(DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+	return func(delta DeltaOption[a, deltaA]) func(ReaderWithError[Unit, Option[a]]) (Result, error) {
+		return func(option ReaderWithError[Unit, Option[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case optionReplace:
+				return onReplace(*delta.replace)(option)
+			case optionValue:
+				value := BindReaderWithError[Unit, Option[a], a](
+					func(one Option[a]) ReaderWithError[Unit, a] {
+						return PureReader[Unit, Sum[error, a]](
+							Fold(
+								one.Sum,
+								func(Unit) Sum[error, a] {
+									return Left[error, a](fmt.Errorf("option is not set"))
+								},
+								Right[error, a],
+							),
+						)
+					},
+				)(option)
+				return onValue(*delta.value)(value)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOption")
 	}
 }

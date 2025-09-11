@@ -12,6 +12,9 @@ import {
   DispatchOneSource,
   DispatchLookupSources,
   TableAbstractRendererState,
+  DispatchParsedType,
+  SumNType,
+  TableGetManyParams,
 } from "ballerina-core";
 import { Map, Range } from "immutable";
 import { ValueStreamPosition } from "ballerina-core";
@@ -125,8 +128,7 @@ const getActiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: {
           [v4()]: {
@@ -203,16 +205,30 @@ const getActiveUsers: DispatchTableApiSource = {
         HasMore: true,
         From: 1,
         To: 2,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getInactiveUsers: DispatchTableApiSource = {
@@ -228,8 +244,7 @@ const getInactiveUsers: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: Range(1, 5)
           .map((_) => ({
@@ -247,16 +262,30 @@ const getInactiveUsers: DispatchTableApiSource = {
         HasMore: false,
         From: 1,
         To: 5,
-      })).then((res) => ({
-        hasMoreValues: res.HasMore,
-        to: res.To,
-        from: res.From,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getAdmin: DispatchTableApiSource = {
@@ -272,8 +301,7 @@ const getAdmin: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) => {
+    (streamParams: TableGetManyParams) => {
       return PromiseRepo.Default.mock(() => ({
         Values: Range(1, 5)
           .map((_) => ({
@@ -291,16 +319,30 @@ const getAdmin: DispatchTableApiSource = {
         HasMore: false,
         From: 1,
         To: 5,
-      })).then((res) => ({
-        hasMoreValues: res.HasMore,
-        to: res.To,
-        from: res.From,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
-      }));
+      );
     },
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
+      })),
 };
 
 const getUserGroups: DispatchTableApiSource = {
@@ -313,8 +355,7 @@ const getUserGroups: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) =>
+    (streamParams: TableGetManyParams) =>
       PromiseRepo.Default.mock(() => ({
         Values: {
           1: {
@@ -326,14 +367,28 @@ const getUserGroups: DispatchTableApiSource = {
         HasMore: false,
         From: 1,
         To: 1,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
+      ),
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
       })),
 };
 
@@ -347,8 +402,7 @@ const getActivities: DispatchTableApiSource = {
   },
   getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
-    (streamParams: Map<string, string>) =>
-    ([streamPosition]: [ValueStreamPosition]) =>
+    (streamParams: TableGetManyParams) =>
       PromiseRepo.Default.mock(() => ({
         Values: {
           1: {
@@ -360,14 +414,28 @@ const getActivities: DispatchTableApiSource = {
         HasMore: false,
         From: 1,
         To: 1,
-      })).then((res) => ({
-        from: res.From,
-        to: res.To,
-        hasMoreValues: res.HasMore,
-        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
-          res.Values,
-          fromApiRaw,
+      })).then((res) =>
+        PredicateValue.Default.table(
+          res.From,
+          res.To,
+          TableAbstractRendererState.Operations.tableValuesToValueRecord(
+            res.Values,
+            fromApiRaw,
+          ),
+          res.HasMore,
         ),
+      ),
+  getDefaultFiltersAndSorting:
+    (filterTypes: Map<string, SumNType<any>>) =>
+    (
+      parseFromApiByType: (
+        type: DispatchParsedType<any>,
+      ) => (raw: any) => ValueOrErrors<PredicateValue, string>,
+    ) =>
+    () =>
+      PromiseRepo.Default.mock(() => ({
+        filters: Map(),
+        sorting: Map(),
       })),
 };
 

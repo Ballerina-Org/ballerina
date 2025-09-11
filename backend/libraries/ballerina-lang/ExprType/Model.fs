@@ -10,10 +10,7 @@ module Model =
 
   type TypeVarBindings = Map<VarName, ExprType>
 
-  and TypeBinding =
-    { TypeId: ExprTypeId
-      Type: ExprType
-      Const: bool }
+  and TypeBinding = { TypeId: ExprTypeId; Type: ExprType }
 
   and TypeBindingId = { TypeId: ExprTypeId }
 
@@ -26,8 +23,7 @@ module Model =
 
     static member Create(name, exprType) =
       { TypeBinding.TypeId = name
-        TypeBinding.Type = exprType
-        Const = false }
+        TypeBinding.Type = exprType }
 
   type ExprType with
     static member Extend t1 t2 =
@@ -50,7 +46,7 @@ module Model =
       | ExprType.CustomType _
       | ExprType.VarType _ -> Set.empty
       | ExprType.TupleType ts -> ts |> Seq.map (!) |> Seq.fold (+) Set.empty
-      | ExprType.KeyOf t
+      | ExprType.KeyOf(t, _) -> !t
       | ExprType.ListType t
       | ExprType.TableType t
       | ExprType.SetType t
@@ -83,7 +79,7 @@ module Model =
         match tvars |> Map.tryFind v with
         | None -> t
         | Some t -> t
-      | ExprType.KeyOf t -> ExprType.KeyOf(!t)
+      | ExprType.KeyOf(t, excludedKeys) -> ExprType.KeyOf(!t, excludedKeys)
       | ExprType.ListType t -> ExprType.ListType(!t)
       | ExprType.TableType t -> ExprType.TableType(!t)
       | ExprType.SetType t -> ExprType.SetType(!t)
@@ -146,11 +142,13 @@ module Model =
           |> Seq.toArray
 
         JsonValue.Record [| "fun", JsonValue.String "Union"; "args", JsonValue.Array jsonCases |]
-      | ExprType.KeyOf(ExprType.LookupType l) ->
+      | ExprType.KeyOf(t, excludedKeys) ->
         JsonValue.Record
           [| "fun", JsonValue.String "KeyOf"
-             "args", JsonValue.Array [| JsonValue.String l.VarName |] |]
-      | ExprType.KeyOf t -> JsonValue.Record [| "fun", JsonValue.String "KeyOf"; "args", JsonValue.Array [| !t |] |]
+             "args",
+             JsonValue.Array
+               [| !t
+                  JsonValue.Array(excludedKeys |> List.map (fun k -> JsonValue.String k) |> List.toArray) |] |]
       | ExprType.RecordType fields ->
         let jsonFields =
           fields

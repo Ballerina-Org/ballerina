@@ -1,17 +1,19 @@
 package ballerina
 
+type LazyOneValue Unit
+
 type One[a any] struct {
-	Option[a] // NOTE: struct embedding is needed to be able to access Sum's JSON methods
+	Sum[LazyOneValue, a] // NOTE: struct embedding is needed to be able to access Sum's JSON methods
 }
 
 // type some[a any] struct { One[a]; Value a; Kind string }
 func Loaded[a any](value a) One[a] {
-	return One[a]{Some[a](value)}
+	return One[a]{Right[LazyOneValue, a](value)}
 }
 
 // type none[a any] struct { One[a]; Kind string }
 func Lazy[a any]() One[a] {
-	return One[a]{None[a]()}
+	return One[a]{Left[LazyOneValue, a](LazyOneValue(NewUnit()))}
 }
 
 func DefaultOne[a any]() One[a] {
@@ -23,5 +25,9 @@ func DefaultOne[a any]() One[a] {
 // }
 
 func MapOne[a any, b any](self One[a], f func(a) b) One[b] {
-	return Fold(self.Sum, func(_ Unit) One[b] { return Lazy[b]() }, func(value a) One[b] { return Loaded[b](f(value)) })
+	return Fold(
+		self.Sum,
+		func(_ LazyOneValue) One[b] { return Lazy[b]() },
+		func(value a) One[b] { return Loaded[b](f(value)) },
+	)
 }

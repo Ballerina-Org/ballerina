@@ -1,28 +1,30 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
+
 	"github.com/google/uuid"
 )
 
-type DeltaChunkEffectsEnum string
+type deltaChunkEffectsEnum string
 
 const (
-	ChunkValue       DeltaChunkEffectsEnum = "ChunkValue"
-	ChunkAddAt       DeltaChunkEffectsEnum = "ChunkAddAt"
-	ChunkRemoveAt    DeltaChunkEffectsEnum = "ChunkRemoveAt"
-	ChunkMoveFromTo  DeltaChunkEffectsEnum = "ChunkMoveFromTo"
-	ChunkDuplicateAt DeltaChunkEffectsEnum = "ChunkDuplicateAt"
-	ChunkAdd         DeltaChunkEffectsEnum = "ChunkAdd"
+	chunkValue       deltaChunkEffectsEnum = "ChunkValue"
+	chunkAddAt       deltaChunkEffectsEnum = "ChunkAddAt"
+	chunkRemoveAt    deltaChunkEffectsEnum = "ChunkRemoveAt"
+	chunkMoveFromTo  deltaChunkEffectsEnum = "ChunkMoveFromTo"
+	chunkDuplicateAt deltaChunkEffectsEnum = "ChunkDuplicateAt"
+	chunkAdd         deltaChunkEffectsEnum = "ChunkAdd"
 )
 
-var AllDeltaChunkEffectsEnumCases = [...]DeltaChunkEffectsEnum{ChunkValue, ChunkAddAt, ChunkRemoveAt, ChunkMoveFromTo, ChunkDuplicateAt, ChunkAdd}
+var allDeltaChunkEffectsEnumCases = [...]deltaChunkEffectsEnum{chunkValue, chunkAddAt, chunkRemoveAt, chunkMoveFromTo, chunkDuplicateAt, chunkAdd}
 
-func DefaultDeltaChunkEffectsEnum() DeltaChunkEffectsEnum { return AllDeltaChunkEffectsEnumCases[0] }
+func DefaultDeltaChunkEffectsEnum() deltaChunkEffectsEnum { return allDeltaChunkEffectsEnumCases[0] }
 
 type DeltaChunk[a any, deltaA any] struct {
 	DeltaBase
-	discriminator DeltaChunkEffectsEnum
+	discriminator deltaChunkEffectsEnum
 	value         *Tuple2[uuid.UUID, deltaA]
 	addAt         *Tuple2[uuid.UUID, a]
 	removeAt      *uuid.UUID
@@ -37,7 +39,7 @@ var _ json.Marshaler = DeltaChunk[Unit, Unit]{}
 func (d DeltaChunk[a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		DeltaBase
-		Discriminator DeltaChunkEffectsEnum
+		Discriminator deltaChunkEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
@@ -59,7 +61,7 @@ func (d DeltaChunk[a, deltaA]) MarshalJSON() ([]byte, error) {
 func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
 	type chunkAlias struct {
 		DeltaBase
-		Discriminator DeltaChunkEffectsEnum
+		Discriminator deltaChunkEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
@@ -68,7 +70,9 @@ func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
 		Add           *a
 	}
 	var aux chunkAlias
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -85,67 +89,74 @@ func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
 func NewDeltaChunkValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaChunk[a, deltaA] {
 	tmp := NewTuple2[uuid.UUID, deltaA](index, delta)
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkValue,
+		discriminator: chunkValue,
 		value:         &tmp,
 	}
 }
 func NewDeltaChunkAddAt[a any, deltaA any](index uuid.UUID, newElement a) DeltaChunk[a, deltaA] {
 	tmp := NewTuple2[uuid.UUID, a](index, newElement)
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkAddAt,
+		discriminator: chunkAddAt,
 		addAt:         &tmp,
 	}
 }
 func NewDeltaChunkRemoveAt[a any, deltaA any](index uuid.UUID) DeltaChunk[a, deltaA] {
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkRemoveAt,
+		discriminator: chunkRemoveAt,
 		removeAt:      &index,
 	}
 }
 func NewDeltaChunkMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaChunk[a, deltaA] {
 	tmp := NewTuple2[uuid.UUID, uuid.UUID](from, to)
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkMoveFromTo,
+		discriminator: chunkMoveFromTo,
 		moveFromTo:    &tmp,
 	}
 }
 func NewDeltaChunkDuplicateAt[a any, deltaA any](index uuid.UUID) DeltaChunk[a, deltaA] {
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkDuplicateAt,
+		discriminator: chunkDuplicateAt,
 		duplicateAt:   &index,
 	}
 }
 func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
 	return DeltaChunk[a, deltaA]{
-		discriminator: ChunkAdd,
+		discriminator: chunkAdd,
 		add:           &newElement,
 	}
 }
 
 func MatchDeltaChunk[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) (Result, error),
+	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaChunk[a, deltaA]) (Result, error) {
-	return func(delta DeltaChunk[a, deltaA]) (Result, error) {
-		var result Result
-		switch delta.discriminator {
-		case ChunkValue:
-			return onValue(*delta.value)
-		case ChunkAddAt:
-			return onAddAt(*delta.addAt)
-		case ChunkRemoveAt:
-			return onRemoveAt(*delta.removeAt)
-		case ChunkMoveFromTo:
-			return onMoveFromTo(*delta.moveFromTo)
-		case ChunkDuplicateAt:
-			return onDuplicateAt(*delta.duplicateAt)
-		case ChunkAdd:
-			return onAdd(*delta.add)
+) func(DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+	return func(delta DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+		return func(chunk ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case chunkValue:
+				value := MapReaderWithError[Unit, Chunk[a], a](
+					func(chunk Chunk[a]) a {
+						return chunk.Values[chunk.IdToIndex[delta.value.Item1]]
+					},
+				)(chunk)
+				return onValue(*delta.value)(value)
+			case chunkAddAt:
+				return onAddAt(*delta.addAt)
+			case chunkRemoveAt:
+				return onRemoveAt(*delta.removeAt)
+			case chunkMoveFromTo:
+				return onMoveFromTo(*delta.moveFromTo)
+			case chunkDuplicateAt:
+				return onDuplicateAt(*delta.duplicateAt)
+			case chunkAdd:
+				return onAdd(*delta.add)
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaChunk")
 		}
-		return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaChunk")
 	}
 }

@@ -6,8 +6,9 @@ open Ballerina.DSL.Next.Json
 module Lookup =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
-
+  open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
 
@@ -16,8 +17,14 @@ module Lookup =
       reader.AssertKindAndContinueWithField "lookup" "name" (fun nameJson ->
         reader {
           let! name = nameJson |> JsonValue.AsString |> reader.OfSum
-          return Expr.Lookup name
+          return Expr.Lookup(name |> Identifier.LocalScope)
         })
 
-    static member ToJsonLookup: string -> JsonValue =
-      JsonValue.String >> Json.kind "lookup" "name"
+    static member ToJsonLookup(id: Identifier) : Reader<JsonValue, JsonEncoder<'T>, Errors> =
+      (match id with
+       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "name"
+       | Identifier.FullyQualified(scope, name) ->
+         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
+         |> JsonValue.Array
+         |> Json.kind "lookup" "name")
+      |> reader.Return

@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module PrimitiveType =
@@ -16,8 +16,17 @@ module PrimitiveType =
     static member private FromJsonGuid: JsonValue -> Sum<PrimitiveType, Errors> =
       sum.AssertKindAndContinue "guid" (fun _ -> sum { return PrimitiveType.Guid })
 
-    static member private FromJsonInt: JsonValue -> Sum<PrimitiveType, Errors> =
-      sum.AssertKindAndContinue "int" (fun _ -> sum { return PrimitiveType.Int })
+    static member private FromJsonInt32: JsonValue -> Sum<PrimitiveType, Errors> =
+      sum.AssertKindAndContinue "int32" (fun _ -> sum { return PrimitiveType.Int32 })
+
+    static member private FromJsonInt64: JsonValue -> Sum<PrimitiveType, Errors> =
+      sum.AssertKindAndContinue "int64" (fun _ -> sum { return PrimitiveType.Int64 })
+
+    static member private FromJsonFloat32: JsonValue -> Sum<PrimitiveType, Errors> =
+      sum.AssertKindAndContinue "float32" (fun _ -> sum { return PrimitiveType.Float32 })
+
+    static member private FromJsonFloat64: JsonValue -> Sum<PrimitiveType, Errors> =
+      sum.AssertKindAndContinue "float64" (fun _ -> sum { return PrimitiveType.Float64 })
 
     static member private FromJsonDecimal: JsonValue -> Sum<PrimitiveType, Errors> =
       sum.AssertKindAndContinue "decimal" (fun _ -> sum { return PrimitiveType.Decimal })
@@ -38,7 +47,10 @@ module PrimitiveType =
       sum.Any(
         PrimitiveType.FromJsonUnit(json),
         [ PrimitiveType.FromJsonGuid(json)
-          PrimitiveType.FromJsonInt(json)
+          PrimitiveType.FromJsonInt32(json)
+          PrimitiveType.FromJsonInt64(json)
+          PrimitiveType.FromJsonFloat32(json)
+          PrimitiveType.FromJsonFloat64(json)
           PrimitiveType.FromJsonDecimal(json)
           PrimitiveType.FromJsonString(json)
           PrimitiveType.FromJsonBool(json)
@@ -51,7 +63,15 @@ module PrimitiveType =
 
     static member private ToJsonGuid() : JsonValue = JsonValue.Parse """{"kind": "guid"}"""
 
-    static member private ToJsonInt() : JsonValue = JsonValue.Parse """{"kind": "int"}"""
+    static member private ToJsonInt32() : JsonValue = JsonValue.Parse """{"kind": "int32"}"""
+
+    static member private ToJsonInt64() : JsonValue = JsonValue.Parse """{"kind": "int64"}"""
+
+    static member private ToJsonFloat32() : JsonValue =
+      JsonValue.Parse """{"kind": "float32"}"""
+
+    static member private ToJsonFloat64() : JsonValue =
+      JsonValue.Parse """{"kind": "float64"}"""
 
     static member private ToJsonDecimal() : JsonValue =
       JsonValue.Parse """{"kind": "decimal"}"""
@@ -71,7 +91,10 @@ module PrimitiveType =
       function
       | PrimitiveType.Unit -> PrimitiveType.ToJsonUnit()
       | PrimitiveType.Guid -> PrimitiveType.ToJsonGuid()
-      | PrimitiveType.Int -> PrimitiveType.ToJsonInt()
+      | PrimitiveType.Int32 -> PrimitiveType.ToJsonInt32()
+      | PrimitiveType.Float32 -> PrimitiveType.ToJsonFloat32()
+      | PrimitiveType.Int64 -> PrimitiveType.ToJsonInt64()
+      | PrimitiveType.Float64 -> PrimitiveType.ToJsonFloat64()
       | PrimitiveType.Decimal -> PrimitiveType.ToJsonDecimal()
       | PrimitiveType.String -> PrimitiveType.ToJsonString()
       | PrimitiveType.Bool -> PrimitiveType.ToJsonBool()

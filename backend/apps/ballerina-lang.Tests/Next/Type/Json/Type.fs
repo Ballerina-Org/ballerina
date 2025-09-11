@@ -81,7 +81,7 @@ let ``Dsl:Type.Symbol json round-trip`` () =
   let json = $"""{{"name": "MyType", "guid": "{guid}"}}"""
 
   let expected =
-    { TypeSymbol.Name = "MyType"
+    { TypeSymbol.Name = "MyType" |> Identifier.LocalScope
       TypeSymbol.Guid = guid }
 
   (expected, JsonValue.Parse json)

@@ -3,6 +3,8 @@ import { List, Map } from "immutable";
 import {
   DispatchParsedType,
   DispatchTypeName,
+  FilterType,
+  SumNType,
 } from "./domains/specification/domains/types/state";
 import { unit, Unit } from "../../../../fun/domains/unit/state";
 import {
@@ -24,6 +26,8 @@ import {
   TableApis,
   SpecificationApis,
   LookupTypeAbstractRendererView,
+  ValueFilter,
+  ValueTable,
 } from "../../../../../main";
 
 import {
@@ -79,7 +83,7 @@ export type DispatcherContext<
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
-  specApis: SpecificationApis;
+  specApis: SpecificationApis<T>;
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
   entityApis: DispatchEntityApis;
@@ -127,6 +131,11 @@ export type DispatcherContext<
   parseFromApiByType: (
     type: DispatchParsedType<T>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
+  parseToApiByType: (
+    type: DispatchParsedType<T>,
+    value: PredicateValue,
+    state: any,
+  ) => ValueOrErrors<any, string>;
 };
 
 export type DeserializedDispatchSpecification<
@@ -184,12 +193,31 @@ export type DispatchInfiniteStreamSources = BasicFun<
     string
   >
 >;
+export type DispatchTableFiltersAndSorting = {
+  filters: Map<string, List<ValueFilter>>;
+  sorting: Map<string, "Ascending" | "Descending" | undefined>;
+};
+export type TableGetManyParams = {
+  chunkSize: number;
+  from: number;
+  filtersAndSorting: string;
+};
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
   get: BasicFun<Guid, Promise<any>>;
   getMany: BasicFun<
     BasicFun<any, ValueOrErrors<PredicateValue, string>>,
-    BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+    BasicFun<TableGetManyParams, Promise<ValueTable>>
+  >;
+  getDefaultFiltersAndSorting: BasicFun<
+    Map<string, SumNType<any>>,
+    BasicFun<
+      BasicFun<
+        DispatchParsedType<any>,
+        BasicFun<any, ValueOrErrors<PredicateValue, string>>
+      >,
+      BasicFun<Unit, Promise<DispatchTableFiltersAndSorting>>
+    >
   >;
 };
 
@@ -390,6 +418,17 @@ export const parseDispatchFormsToLaunchers =
               ),
             IdProvider,
             ErrorRenderer,
+            parseToApiByType: (
+              type: DispatchParsedType<T>,
+              value: PredicateValue,
+              state: any,
+            ) =>
+              dispatchToAPIRawValue(
+                type,
+                specification.types,
+                apiConverters,
+                injectedPrimitives,
+              )(value, state),
           },
           parseEntityFromApiByTypeLookupName: (
             typeLookupName: string,

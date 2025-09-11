@@ -47,3 +47,4 @@ module TypeValue =
         | TypeValue.List itemType -> TypeValue.ToJsonList TypeValue.ToJson itemType
         | TypeValue.Set itemType -> TypeValue.ToJsonSet TypeValue.ToJson itemType
         | TypeValue.Map(keyType, valueType) -> TypeValue.ToJsonMap TypeValue.ToJson (keyType, valueType)
+        | TypeValue.Apply(var, arg) -> TypeValue.ToJsonApply TypeValue.ToJson (var, arg)

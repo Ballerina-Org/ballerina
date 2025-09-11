@@ -66,7 +66,9 @@ export const SumAbstractRenderer = <
               ..._.customFormState.left,
               disabled: _.disabled,
               locked: _.locked,
-              value: _.value.value.value,
+              value: PredicateValue.Operations.IsUnit(_.value)
+                ? _.value
+                : _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,
               type: _.type.args[0],
@@ -147,7 +149,9 @@ export const SumAbstractRenderer = <
               ..._.customFormState.right,
               disabled: _.disabled,
               locked: _.locked,
-              value: _.value.value.value,
+              value: PredicateValue.Operations.IsUnit(_.value)
+                ? _.value
+                : _.value.value.value,
               bindings: _.bindings,
               extraContext: _.extraContext,
               type: _.type.args[1],
@@ -219,15 +223,18 @@ export const SumAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[sum]";
 
-    if (!PredicateValue.Operations.IsSum(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsSum(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `Sum expected but got: ${JSON.stringify(
+        `Sum or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: Sum value expected but got ${JSON.stringify(
+          message={`${domNodeId}: Sum or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />
