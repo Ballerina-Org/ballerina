@@ -31,11 +31,16 @@ module Eval =
       (Map<Identifier, CaseHandler<TypeValue>> -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
 
   and ValueExtensionOps<'valueExtension> =
-    { Eval: 'valueExtension -> ExtEvalResult<'valueExtension> }
+    { Eval: 'valueExtension -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>> }
 
   and ExprEvaluator<'valueExtension, 'res> = Reader<'res, ExprEvalContext<'valueExtension>, Errors>
 
   type ExprEvalContext<'valueExtension> with
+    static member Empty: ExprEvalContext<'valueExtension> =
+      { Values = Map.empty
+        ExtensionOps = { Eval = fun _ -> $"Error: cannot evaluate empty extension" |> Errors.Singleton |> reader.Throw }
+        Symbols = Map.empty }
+
     static member Getters =
       {| Values = fun (c: ExprEvalContext<'valueExtension>) -> c.Values
          ExtensionOps = fun (c: ExprEvalContext<'valueExtension>) -> c.ExtensionOps
@@ -50,6 +55,17 @@ module Eval =
          Symbols = fun u (c: ExprEvalContext<'valueExtension>) -> { c with Symbols = u (c.Symbols) } |}
 
   type Expr<'T> with
+
+    static member EvalApply(fV, argV) =
+      reader {
+        let! fVVar, fvBody = fV |> Value.AsLambda |> reader.OfSum
+
+        return!
+          fvBody
+          |> Expr.Eval
+          |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope fVVar.Name) argV))
+      }
+
     static member Eval<'valueExtension>
       (e: Expr<TypeValue>)
       : ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>> =
@@ -168,7 +184,7 @@ module Eval =
                 let! ctx = reader.GetContext()
                 let unionV = ctx.ExtensionOps.Eval unionV
 
-                match unionV with
+                match! unionV with
                 | Matchable f -> return! f cases
                 | _ ->
                   return!
@@ -211,7 +227,7 @@ module Eval =
                   let! ctx = reader.GetContext()
                   let fExt = ctx.ExtensionOps.Eval fExt
 
-                  match fExt with
+                  match! fExt with
                   | Applicable f -> return! f argV
                   | _ ->
                     return!

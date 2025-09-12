@@ -54,7 +54,7 @@ let ``SpecNext-Schema lookup method parses`` () =
 let ``SpecNext-Schema updater descriptor parses`` () =
   let json =
     """ 
-      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int","int":"100"}]
+      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int32","int32":"100"}]
     """
     |> JsonValue.Parse
 
@@ -66,7 +66,7 @@ let ``SpecNext-Schema updater descriptor parses`` () =
           UpdaterPathStep.UnionCase("CaseName", Var.Create "VariableBoundToChangedCase")
           UpdaterPathStep.SumCase(3, Var.Create "VariableBoundToChangedSum") ]
       Condition = Expr.Primitive(PrimitiveValue.Bool true)
-      Expr = Expr.Primitive(PrimitiveValue.Int 100) }
+      Expr = Expr.Primitive(PrimitiveValue.Int32 100) }
 
   match json |> Updater.FromJson |> Reader.Run TypeExpr.FromJson with
   | Right e -> Assert.Fail($"Failed to parse updater descriptor: {e}")

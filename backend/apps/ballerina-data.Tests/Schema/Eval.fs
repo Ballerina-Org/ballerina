@@ -21,7 +21,7 @@ let ``SpecNext-Schema evaluates`` () =
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
@@ -53,7 +53,7 @@ let ``SpecNext-Schema evaluates`` () =
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates = Map.ofList [ ("SomePredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool false)) ] })
             ("TargetTable",
              { Type = AnotherType

@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Next.Terms
 
+[<AutoOpen>]
 module Model =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
@@ -38,7 +39,10 @@ module Model =
   and CaseHandler<'T> = Var * Expr<'T>
 
   and PrimitiveValue =
-    | Int of int
+    | Int32 of Int32
+    | Int64 of Int64
+    | Float32 of float32
+    | Float64 of float
     | Decimal of decimal
     | Bool of bool
     | Guid of Guid
