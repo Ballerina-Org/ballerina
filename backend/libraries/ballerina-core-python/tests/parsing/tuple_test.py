@@ -1,3 +1,6 @@
+import pytest
+from typing_extensions import assert_never
+
 from ballerina_core.parsing.parsing_types import Json
 from ballerina_core.parsing.primitives import int_from_json, int_to_json
 from ballerina_core.parsing.tuple import (
@@ -155,3 +158,16 @@ def test_tuple_10_roundtrip() -> None:
         int_from_json,
     )
     assert parser(serializer(value)) == Sum.right(value)
+
+
+def test_tuple_3_error_context_on_second_element() -> None:
+    serialized: Json = {"kind": "tuple", "elements": [int_to_json(1), {"kind": "int", "value": 123}, int_to_json(3)]}
+    parser = tuple_3_from_json(int_from_json, int_from_json, int_from_json)
+    result = parser(serialized)
+    match result.value:
+        case Sum.Left(value):
+            assert value.message() == "Parsing error at Parsing tuple:\n\tparsing element 2 of 3:\n\tNot an int: 123"
+        case Sum.Right(_):
+            pytest.fail("Expected an error")
+        case _:
+            assert_never(result.value)
