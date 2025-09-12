@@ -338,11 +338,16 @@ export const OneAbstractRenderer = <
                         : id,
                     ),
                 ),
-              setStreamParam: (key: string, _) =>
+              setStreamParam: (
+                key: string,
+                value: string,
+                shouldReload: boolean,
+              ) =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Template.streamParam(
                     key,
-                    replaceWith(_),
+                    replaceWith(value),
+                    shouldReload,
                   ).then(
                     OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                       Sum.Updaters.left(
@@ -457,18 +462,20 @@ export const OneAbstractRenderer = <
       return {
         ...props.context,
         onDebounce: () => {
-          props.setState(
-            OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-              Sum.Updaters.left(
-                ValueInfiniteStreamState.Updaters.Template.reload(
-                  // safe because we check for undefined in the runFilter
-                  props.context.customFormState.getChunkWithParams!(
-                    maybeId.value,
-                  )(props.context.customFormState.streamParams.value),
+          if (props.context.customFormState.streamParams.value[1]) {
+            props.setState(
+              OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                Sum.Updaters.left(
+                  ValueInfiniteStreamState.Updaters.Template.reload(
+                    // safe because we check for undefined in the runFilter
+                    props.context.customFormState.getChunkWithParams!(
+                      maybeId.value,
+                    )(props.context.customFormState.streamParams.value[0]),
+                  ),
                 ),
               ),
-            ),
-          );
+            );
+          }
         },
       };
     }),

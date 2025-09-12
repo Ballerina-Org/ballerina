@@ -15,7 +15,7 @@ export const debouncer = <
   DebouncerCo<CustomPresentationContext, ExtraContext>().Repeat(
     DebouncerCo<CustomPresentationContext, ExtraContext>().Seq([
       Debounce<
-        Value<Map<string, string>>,
+        Value<[Map<string, string>, boolean]>,
         { onDebounce: SimpleCallback<void> }
       >(
         DebouncedCo.GetState()

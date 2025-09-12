@@ -20,7 +20,6 @@ import {
   RecordAbstractRendererState,
   ValueUnit,
   MapRepo,
-  BasicFun2,
   Value,
   ValueCallbackWithOptionalFlags,
   VoidCallbackWithOptionalFlags,
@@ -31,6 +30,7 @@ import {
   BaseFlags,
   Sum,
   PredicateValue,
+  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -52,7 +52,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
-    streamParams: Debounced<Value<Map<string, string>>>;
+    streamParams: Debounced<Value<[Map<string, string>, boolean]>>;
     status: "open" | "closed";
     stream: Sum<ValueInfiniteStreamState, "not initialized">;
     getChunkWithParams:
@@ -77,7 +77,7 @@ export const OneAbstractRendererState = {
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
       previewStates: Map(),
-      streamParams: Debounced.Default(Value.Default(Map())),
+      streamParams: Debounced.Default(Value.Default([Map(), false])),
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
@@ -112,10 +112,14 @@ export const OneAbstractRendererState = {
       streamParam: (
         key: string,
         _: BasicUpdater<string>,
+        shouldReload: boolean,
       ): Updater<OneAbstractRendererState> =>
         OneAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
-            Value.Updaters.value(MapRepo.Updaters.upsert(key, () => "", _)),
+            Value.Updaters.value((__) => [
+              MapRepo.Updaters.upsert(key, () => "", _)(__[0]),
+              shouldReload,
+            ]),
           ),
         ),
     },
@@ -182,7 +186,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
   {
     onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
     toggleOpen: SimpleCallback<void>;
-    setStreamParam: BasicFun2<string, string, void>;
+    setStreamParam: (key: string, value: string, shouldReload: boolean) => void;
     select: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
     create: ValueCallbackWithOptionalFlags<ValueRecord, Flags>;
     delete?: VoidCallbackWithOptionalFlags<Flags>;

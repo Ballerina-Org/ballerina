@@ -32,7 +32,7 @@ export const initializeStream = <
                 100,
                 // safe because we check for undefined in the runFilter
                 current.customFormState.getChunkWithParams!(maybeId.value)(
-                  current.customFormState.streamParams.value,
+                  current.customFormState.streamParams.value[0],
                 ),
               ),
             ),
