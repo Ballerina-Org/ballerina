@@ -756,12 +756,16 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
-              updateFilters: (filters: Map<string, List<ValueFilter>>) => {
+              updateFilters: (
+                filters: Map<string, List<ValueFilter>>,
+                shouldReload: boolean,
+              ) => {
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.updateFilters(
                     filters,
                     Filters.map(({ filters }) => filters),
                     parseToApiByType,
+                    shouldReload,
                   ),
                 );
               },

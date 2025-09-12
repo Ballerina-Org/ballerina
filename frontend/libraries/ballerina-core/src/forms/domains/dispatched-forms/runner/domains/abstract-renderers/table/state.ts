@@ -30,6 +30,7 @@ import {
   SumNType,
   ValueSumN,
   ValueUnit,
+  id,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -159,6 +160,7 @@ export const TableAbstractRendererState = {
           value: PredicateValue,
           state: any,
         ) => ValueOrErrors<any, string>,
+        shouldReload: boolean,
       ): Updater<TableAbstractRendererState> =>
         Updater((_) =>
           TableAbstractRendererState.Updaters.Core.customFormState.children
@@ -176,11 +178,13 @@ export const TableAbstractRendererState = {
               ),
             )
             .then(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
-                replaceWith<
-                  TableAbstractRendererState["customFormState"]["loadingState"]
-                >("reload from 0"),
-              ),
+              shouldReload
+                ? TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+                    replaceWith<
+                      TableAbstractRendererState["customFormState"]["loadingState"]
+                    >("reload from 0"),
+                  )
+                : id,
             )(_),
         ),
       addSorting: (
@@ -442,7 +446,10 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
-  updateFilters: (filters: Map<string, List<ValueFilter>>) => void;
+  updateFilters: (
+    filters: Map<string, List<ValueFilter>>,
+    shouldReload: boolean,
+  ) => void;
   addSorting: (
     columnName: string,
     direction: "Ascending" | "Descending" | undefined,
