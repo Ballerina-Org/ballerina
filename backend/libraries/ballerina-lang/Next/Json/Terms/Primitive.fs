@@ -24,8 +24,47 @@ module Primitive =
     static member ToJsonString: int -> JsonValue =
       fun i ->
         JsonValue.Record
-          [| "kind", JsonValue.String "int"
-             "int", JsonValue.String(i.ToString(CultureInfo.InvariantCulture)) |]
+          [| "kind", JsonValue.String "int32"
+             "int32", JsonValue.String(i.ToString(CultureInfo.InvariantCulture)) |]
+
+  type Int64 with
+    static member FromString: string -> Sum<int64, Errors> =
+      Int64.TryParse
+      >> function
+        | true, value -> sum.Return value
+        | false, _ -> sum.Throw(Errors.Singleton "Error: expected int64, found non-integer string")
+
+    static member ToJsonString: int64 -> JsonValue =
+      fun i ->
+        JsonValue.Record
+          [| "kind", JsonValue.String "int64"
+             "int64", JsonValue.String(i.ToString(CultureInfo.InvariantCulture)) |]
+
+  type Single with
+    static member FromString: string -> Sum<float32, Errors> =
+      Single.TryParse
+      >> function
+        | true, value -> sum.Return value
+        | false, _ -> sum.Throw(Errors.Singleton "Error: expected float32, found non-float32 string")
+
+    static member ToJsonString: float32 -> JsonValue =
+      fun f ->
+        JsonValue.Record
+          [| "kind", JsonValue.String "float32"
+             "float32", JsonValue.String(f.ToString(CultureInfo.InvariantCulture)) |]
+
+  type Double with
+    static member FromString: string -> Sum<float, Errors> =
+      Double.TryParse
+      >> function
+        | true, value -> sum.Return value
+        | false, _ -> sum.Throw(Errors.Singleton "Error: expected float64, found non-float64 string")
+
+    static member ToJsonString: float -> JsonValue =
+      fun f ->
+        JsonValue.Record
+          [| "kind", JsonValue.String "float64"
+             "float64", JsonValue.String(f.ToString(CultureInfo.InvariantCulture)) |]
 
   type Guid with
     static member FromString: string -> Sum<System.Guid, Errors> =
@@ -92,13 +131,41 @@ module Primitive =
              "datetime", JsonValue.String(d.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)) |]
 
   type PrimitiveValue with
-    static member private FromJsonInt =
+    static member private FromJsonInt32 =
       sum.AssertKindAndContinueWithField
-        "int"
-        "int"
-        (JsonValue.AsString >>= Int32.FromString >>= (PrimitiveValue.Int >> sum.Return))
+        "int32"
+        "int32"
+        (JsonValue.AsString >>= Int32.FromString >>= (PrimitiveValue.Int32 >> sum.Return))
 
-    static member private ToJsonInt: int -> JsonValue = Int32.ToJsonString
+    static member private ToJsonInt32: int -> JsonValue = Int32.ToJsonString
+
+    static member private FromJsonInt64 =
+      sum.AssertKindAndContinueWithField
+        "int64"
+        "int64"
+        (JsonValue.AsString >>= Int64.FromString >>= (PrimitiveValue.Int64 >> sum.Return))
+
+    static member private ToJsonInt64: int64 -> JsonValue = Int64.ToJsonString
+
+    static member private FromJsonFloat32 =
+      sum.AssertKindAndContinueWithField
+        "float32"
+        "float32"
+        (JsonValue.AsString
+         >>= Single.FromString
+         >>= (PrimitiveValue.Float32 >> sum.Return))
+
+    static member private ToJsonFloat32: float32 -> JsonValue = Single.ToJsonString
+
+    static member private FromJsonFloat64 =
+      sum.AssertKindAndContinueWithField
+        "float64"
+        "float64"
+        (JsonValue.AsString
+         >>= Double.FromString
+         >>= (PrimitiveValue.Float64 >> sum.Return))
+
+    static member private ToJsonFloat64: float -> JsonValue = Double.ToJsonString
 
     static member private FromJsonDecimal =
       sum.AssertKindAndContinueWithField
@@ -176,8 +243,11 @@ module Primitive =
 
     static member FromJson json =
       sum.Any(
-        PrimitiveValue.FromJsonInt json,
-        [ PrimitiveValue.FromJsonDecimal json
+        PrimitiveValue.FromJsonInt32 json,
+        [ PrimitiveValue.FromJsonInt64 json
+          PrimitiveValue.FromJsonFloat32 json
+          PrimitiveValue.FromJsonFloat64 json
+          PrimitiveValue.FromJsonDecimal json
           PrimitiveValue.FromJsonBoolean json
           PrimitiveValue.FromJsonGuid json
           PrimitiveValue.FromJsonDate json
@@ -189,7 +259,10 @@ module Primitive =
     static member ToJson: PrimitiveValue -> JsonValue =
       fun pt ->
         match pt with
-        | PrimitiveValue.Int p -> Int32.ToJsonString p
+        | PrimitiveValue.Int32 p -> Int32.ToJsonString p
+        | PrimitiveValue.Int64 p -> Int64.ToJsonString p
+        | PrimitiveValue.Float32 p -> Single.ToJsonString p
+        | PrimitiveValue.Float64 p -> Double.ToJsonString p
         | PrimitiveValue.Decimal p -> Decimal.ToJsonString p
         | PrimitiveValue.Bool p -> Boolean.ToJsonString p
         | PrimitiveValue.Guid p -> System.Guid.ToJsonString p

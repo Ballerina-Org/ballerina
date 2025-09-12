@@ -40,6 +40,7 @@ module ExprJson =
             |> reader.Throw ]
         )
         |> reader.MapError(Errors.HighestPriority)
+        |> reader.MapError(Errors.Map(fun e -> $"{e}\n..when parsing {json.ToString().ReasonablyClamped}"))
 
     static member ToJson: ExprEncoder<'T> =
       fun expr ->

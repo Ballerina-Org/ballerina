@@ -1,5 +1,6 @@
 namespace Ballerina
 
+[<AutoOpen>]
 module Fun =
 
   type U<'s> = 's -> 's

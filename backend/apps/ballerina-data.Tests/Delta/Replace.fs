@@ -10,8 +10,8 @@ open Ballerina.Collections.Sum
 [<Test>]
 let ``Delta.Replace: replaces primitive int value`` () =
   let t = TypeValue.Primitive PrimitiveType.Int32
-  let original = Value<Unit>.Primitive(PrimitiveValue.Int 10)
-  let replacement = Value<Unit>.Primitive(PrimitiveValue.Int 99)
+  let original = Value<Unit>.Primitive(PrimitiveValue.Int32 10)
+  let replacement = Value<Unit>.Primitive(PrimitiveValue.Int32 99)
   let delta = Delta.Replace(replacement)
 
   match Delta.ToUpdater t delta with

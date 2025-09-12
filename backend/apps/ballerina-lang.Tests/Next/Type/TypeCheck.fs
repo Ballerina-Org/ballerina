@@ -34,8 +34,8 @@ let ``LangNext-TypeCheck let typechecks`` () =
   let program =
     Expr.Let(
       "x" |> Var.Create,
-      Expr.Primitive(PrimitiveValue.Int 10),
-      Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int 5))
+      Expr.Primitive(PrimitiveValue.Int32 10),
+      Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 5))
     )
 
   let initialContext = TypeCheckContext.Empty
@@ -67,7 +67,7 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
     Expr.Lambda(
       "x" |> Var.Create,
       None,
-      Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int 5))
+      Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 5))
     )
 
   let initialContext = TypeCheckContext.Empty
@@ -100,7 +100,7 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
 let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
   let program =
     Expr.RecordCons(
-      [ !"X", Expr.Primitive(PrimitiveValue.Int 10)
+      [ !"X", Expr.Primitive(PrimitiveValue.Int32 10)
         !"Y", Expr.Primitive(PrimitiveValue.Bool true) ]
     )
 
@@ -137,11 +137,11 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
     Expr.UnionDes(
       [ (!"Case1Of3",
          ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int 1))))
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
         (!"Case2Of3",
          ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int 2))))
-        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int 3))) ]
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
+        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
       |> Map.ofList
     )
 
@@ -551,7 +551,7 @@ let ``LangNext-TypeCheck HKTs over option typechecks`` () =
 let ``LangNext-TypeCheck record cons fail when symbol does not exist`` () =
   let program =
     Expr.RecordCons(
-      [ !"X", Expr.Primitive(PrimitiveValue.Int 10)
+      [ !"X", Expr.Primitive(PrimitiveValue.Int32 10)
         !"NON_EXISTENT_ID", Expr.Primitive(PrimitiveValue.Bool true) ]
     )
 
@@ -684,11 +684,11 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
     Expr.UnionDes(
       [ (!"NON_EXISTENT_CASE",
          ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int 1))))
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
         (!"Case2Of3",
          ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int 2))))
-        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int 3))) ]
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
+        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
       |> Map.ofList
     )
 
@@ -745,10 +745,10 @@ let ``LangNext-TypeCheck union des fails when branches differ in return type`` (
     Expr.UnionDes(
       [ (!"Case1Of3",
          ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int 1))))
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
         (!"Case2Of3",
          ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int 2))))
+          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
         (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.String "not an int eh"))) ]
       |> Map.ofList
     )
@@ -791,7 +791,10 @@ let ``LangNext-TypeCheck union des fails when branches differ in return type`` (
 [<Test>]
 let ``LangNext-TypeCheck lookup fails when variable is not bound to a term`` () =
   let program =
-    Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Primitive(PrimitiveValue.Int 1)), Expr.Primitive(PrimitiveValue.Int 2))
+    Expr.Apply(
+      Expr.Apply(Expr.Lookup !"+", Expr.Primitive(PrimitiveValue.Int32 1)),
+      Expr.Primitive(PrimitiveValue.Int32 2)
+    )
 
   let initialContext = TypeCheckContext.Empty
 
@@ -816,8 +819,8 @@ let ``LangNext-TypeCheck lookup fails when variable is not bound to a term`` () 
 let ``LangNext-TypeCheck application fails when applicand is not an arrow`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup !"++", Expr.Primitive(PrimitiveValue.Int 1)),
-      Expr.Primitive(PrimitiveValue.Int 2)
+      Expr.Apply(Expr.Lookup !"++", Expr.Primitive(PrimitiveValue.Int32 1)),
+      Expr.Primitive(PrimitiveValue.Int32 2)
     )
 
   let initialContext =

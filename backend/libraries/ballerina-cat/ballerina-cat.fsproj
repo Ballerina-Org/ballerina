@@ -23,6 +23,7 @@
         <Compile Include="Collections/Sum/Model.fs" />
         <Compile Include="Collections/Option/Model.fs" />
         <Compile Include="Collections/Map/Model.fs" />
+        <Compile Include="Lenses/Model.fs" />
         <Compile Include="Reader/WithError/Model.fs" />
         <Compile Include="State/Model.fs" />
         <Compile Include="State/WithError/Model.fs" />
