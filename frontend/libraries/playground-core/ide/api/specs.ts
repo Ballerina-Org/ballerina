@@ -10,7 +10,7 @@
 } from "ballerina-core";
 import axios, {AxiosRequestConfig} from "axios";
 import {axiosVOE} from "./api";
-import {FullSpec, V1, V2} from "../state";
+import {FullSpec, V1, V2, VSpec} from "../state";
 
 
 
@@ -28,8 +28,15 @@ export const getSpec = async (name: string) =>
 
 export const seed = async (name: string) =>
     await axiosVOE<any>({
-        method: "POST",
+        method: "PUT",
         url: `/specs/${name}/seed`,
+    });
+
+export const update = async (name: string, vspec: VSpec) =>
+    await axiosVOE<any>({
+        method: "PUT",
+        data: vspec,
+        url: `/specs/${name}`,
     });
 //
 // export async function listSpecs(): Promise<ValueOrErrors<string[], string>> {

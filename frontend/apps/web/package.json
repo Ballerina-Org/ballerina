@@ -22,6 +22,7 @@
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.4",
     "react-icons": "^5.5.0",
+    "react-resizable-panels": "^3.0.6",
     "sonner": "^2.0.7",
     "theme-change": "^2.5.0",
     "uuid": "^9.0.1"

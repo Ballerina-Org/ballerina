@@ -8,7 +8,7 @@
     ValueStreamPosition,
 } from "ballerina-core";
 import {Map} from "immutable";
-import {getLookup} from "../seeds";
+import {getLookups} from "../seeds";
 
 const lookupSources: DispatchLookupSources = (typeName: string) =>{
 
@@ -17,9 +17,9 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                 ValueOrErrors.Default.return(
                     {
                         get: (id: Guid) => {
-                            const fieldName = apiName.replace(/Api$/, "");
-                            return getLookup("sample",fieldName, id, 0, 1).then(valueOrErrors => {
-                                return valueOrErrors.kind == "value" ? valueOrErrors.value.values[0] : undefined
+                            // const fieldName = apiName.replace(/Api$/, "");
+                            return getLookups("sample",apiName, id, 0, 1).then(valueOrErrors => {
+                                return valueOrErrors.kind == "value" ? valueOrErrors.value[0] : undefined
                             });
                         },
                         getManyUnlinked:
@@ -29,7 +29,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                                         ([streamPosition]: [ValueStreamPosition]) => {
                                             const fieldName = apiName.replace(/Api$/, "");
                                             const call = 
-                                                getLookup("sample",fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
+                                                getLookups("sample",fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
                                                     .then( valueOrErrors => ({
                                                         Values: valueOrErrors.kind == "value" ? valueOrErrors.value : [],
                                                         HasMore: false,//TODO

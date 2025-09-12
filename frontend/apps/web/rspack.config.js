@@ -75,6 +75,7 @@ module.exports = {
               [process.env.API_PREFIX]: {
                   target: process.env.API_ORIGIN,
                   changeOrigin: true,
+                  secure: false,
                   onProxyReq(proxyReq /*, req, res */) {
                       proxyReq.setHeader("Tenant-Id", process.env.TENANT_ID);
                   },

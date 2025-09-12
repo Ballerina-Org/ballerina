@@ -2,7 +2,7 @@
 import { test } from "../domains/storage/local";
 import {ValueOrErrors} from "ballerina-core";
 import {List} from "immutable";
-export const api = axios.create({ baseURL: `${process.env.API_ORIGIN ?? ""}${process.env.API_PREFIX ?? "/api"}` });
+export const api = axios.create({ baseURL: process.env.API_PREFIX ?? "/api/preview" });
 
 api.interceptors.request.use((cfg) => {
     const t = test.get();

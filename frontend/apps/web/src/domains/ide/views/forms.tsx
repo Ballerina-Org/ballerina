@@ -42,9 +42,9 @@ import {
 } from "../../dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
-import {DispatchFromConfigApis, IdeFormProps, UnmockingApisEnums} from "playground-core";
-import { UnmockingApisStreams} from "playground-core";
-import {getSeedEntity, getLookup,  updateEntity, UnmockingApisLookups} from "playground-core";
+import {DispatchFromConfigApis, IdeFormProps, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
+import { UnmockingApisStreams, getSeed} from "playground-core";
+// import {getSeedEntity, getLookup,  updateEntity, UnmockingApisLookups} from "playground-core";
 const ShowFormsParsingErrors = (
     parsedFormsConfig: DispatchSpecificationDeserializationResult<
         DispatchPassthroughFormInjectedTypes,
@@ -59,88 +59,13 @@ const ShowFormsParsingErrors = (
     </div>
 );
 import {  isCollection, isKeyed } from "immutable";
+import {FormsSeedEntity} from "playground-core/ide/domains/seeds/state.ts";
 
 type AnyObject = Record<string, unknown>;
 
 const isPlainObject = (x: unknown): x is AnyObject =>
     !!x && typeof x === "object" && (x as object).constructor === Object;
 
-/** Convert ANY input into an OrderedMap<string, unknown>. */
-function toOrderedMap(src: unknown): OrderedMap<string, unknown> {
-    // Already OrderedMap?
-    if ((OrderedMap as any).isOrderedMap?.(src)) {
-        return src as OrderedMap<string, unknown>;
-    }
-
-    // Any Immutable collection (Map/OrderedMap/List/etc.)
-    if (isCollection(src as any)) {
-        const col: any = src;
-        const entries: Array<[string, unknown]> = [];
-        // forEach(value, key) exists on both keyed & indexed collections (index used as key for indexed)
-        col.forEach((v: unknown, k: unknown) => entries.push([String(k), v]));
-        return OrderedMap(entries);
-    }
-
-    // Native Map
-    if (src instanceof Map) {
-        return OrderedMap(Array.from(src, ([k, v]) => [String(k), v] as [string, unknown]));
-    }
-
-    // Array → indices as keys
-    if (Array.isArray(src)) {
-        return OrderedMap(src.map((v, i) => [String(i), v] as [string, unknown]));
-    }
-
-    // Plain object
-    if (isPlainObject(src)) {
-        return OrderedMap(Object.entries(src));
-    }
-
-    // Primitives
-    return OrderedMap([["value", src]]);
-}
-
-/**
- * Recursively normalize any value. Whenever a property/key is named `fields`,
- * convert its value to an OrderedMap. Works for plain objects, arrays,
- * Immutable keyed collections (Map/OrderedMap/Record), and indexed (List).
- * Does not mutate inputs.
- */
-export function normalizeFieldsToOrderedMap<T = unknown>(value: T): T {
-    // Immutable collections
-    if (isCollection(value as any)) {
-        const col: any = value;
-
-        if (isKeyed(col)) {
-            // We can see keys (including 'fields')
-            return col.mapEntries(([k, v]: [unknown, unknown]) => {
-                const nv = normalizeFieldsToOrderedMap(v);
-                return [k, String(k) === "fields" ? toOrderedMap(nv) : nv];
-            }) as T;
-        }
-
-        // Indexed (e.g., List) — only values
-        return col.map((v: unknown) => normalizeFieldsToOrderedMap(v)) as T;
-    }
-
-    // Arrays
-    if (Array.isArray(value)) {
-        return value.map(v => normalizeFieldsToOrderedMap(v)) as unknown as T;
-    }
-
-    // Plain objects
-    if (isPlainObject(value)) {
-        const out: AnyObject = {};
-        for (const [k, v] of Object.entries(value)) {
-            const nv = normalizeFieldsToOrderedMap(v);
-            out[k] = k === "fields" ? toOrderedMap(nv) : nv;
-        }
-        return out as unknown as T;
-    }
-
-    // Primitives
-    return value;
-}
 const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
     <div id={domNodeId}>{children}</div>
 );
@@ -339,7 +264,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     };
 
     useEffect(() => {
-        debugger
+        console.log("re-rendering");
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
@@ -348,17 +273,17 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
 
-            getSeedEntity(props.specName, props.entityName)
+            getSeed(props.specName, props.entityName)
                 .then(async (raw) => {
                    
                     if (raw.kind == "value") {
-                        
-                        const id = raw.value[0].id
+                        const res: FormsSeedEntity = raw.value;
+     
      
                         const parsed =
                             spec.launchers.passthrough
                                 .get("person-transparent")!
-                                .parseEntityFromApi(raw.value[0].value);
+                                .parseEntityFromApi(raw.value.value);
 
                         if (parsed.kind == "errors") {
                             console.error("parsed entity errors", parsed.errors);
@@ -369,11 +294,11 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
 
                             const updated = {
                                 ...e,
-                                fields: e.fields.merge(Object.fromEntries([["Id",  id]])),
+                                fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
                             };
                             //setEntity(Sum.Default.left(parsed));
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
-                            setEntityId(id);
+                            setEntityId(res.id as any);
                         }
                     }
                 });

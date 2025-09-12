@@ -2,7 +2,7 @@
 
 import React from "react";
 import {style} from "./actions.styled";
-import {VscCheck, VscCheckAll, VscDatabase, VscLock, VscSave, VscNewFile, VscRedo} from "react-icons/vsc";
+import {VscCheck, VscCheckAll, VscDatabase, VscLock, VscSave, VscNewFile, VscRedo, VscPlay} from "react-icons/vsc";
 import {Ide} from "playground-core";
 
 export const Actions: React.FC<{
@@ -27,11 +27,14 @@ export const Actions: React.FC<{
             { context.phase == "choose" && context.activeTab == "existing" &&  <button className="btn tooltip tooltip-bottom" data-tip="New spec">
                 <VscNewFile size={20} onClick={onNew}/>
             </button>}
-            {/*<button className="btn tooltip tooltip-bottom" data-tip="Save changes">*/}
-            {/*    <VscSave size={20} onClick={onSave}/>*/}
-            {/*</button>*/}
+            { context.phase == "locked" && <button className="btn tooltip tooltip-bottom" data-tip="Save changes">
+                <VscSave size={20} onClick={onSave}/>
+            </button>}
             { context.phase == "locked" && <button className="btn tooltip tooltip-bottom" data-tip="Seed">
                 <VscDatabase size={20} onClick={onSeed}/>
+            </button>}
+            { context.phase == "locked" && context.step == "design" && <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
+                <VscPlay size={20} onClick={onRun}/>
             </button>}
             {/*<button className="btn tooltip tooltip-bottom" data-tip="ReSeed">*/}
             {/*    <VscRedo size={20} onClick={onReSeed}/>*/}

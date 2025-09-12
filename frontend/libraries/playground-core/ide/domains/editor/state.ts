@@ -1,10 +1,11 @@
 ﻿import {Option, View} from "ballerina-core";
 import { Unit } from "ballerina-core";
 import {BridgeState} from "../bridge/state";
+import {Ide} from "../../state";
 
 
 export type JsonEditorReadonlyContext = {};
-export type JsonEditorWritableState = Option<BridgeState> ;
+export type JsonEditorWritableState = Ide ;
 
 export type JsonEditorForeignMutationsExpected = Unit
 

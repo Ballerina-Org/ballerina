@@ -47,25 +47,40 @@ type Props = {
 export const HorizontalDropdown: React.FC<Props> = ({ label, options, onChange }) => {
     const [selected, setSelected] = useState<string>("");
     
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value;
-        setSelected(value);
-        if (onChange) onChange(value);
+    const handleChange = (opt:string) => {
+  
+        setSelected(opt);
+        if (onChange) onChange(opt);
     };
     return (
-        <Wrapper>
-            <Select
-                id="dropdown"
-                value={selected}
-                onChange={handleChange}
-            >
-                <option value="" disabled hidden>{label}</option>
-                {options.map((opt) => (
-                    <option key={opt} value={opt}>
-                         {opt}
-                    </option>
-                ))}
-            </Select>
-        </Wrapper>
-    );
-};
+        <details className="pl-12">
+            <summary>{label}</summary>
+            <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                {
+                    options.map(opt =>
+                        (
+                            <li>
+                                <a onClick={(x) => handleChange(opt)}>
+                                    {opt}
+                                </a>
+                            </li>
+                        )
+                    )
+                }
+            </ul>
+        </details>)
+}
+        // <Wrapper>
+        //     <Select
+        //         id="dropdown"
+        //         value={selected}
+        //         onChange={handleChange}
+        //     >
+        //         <option value="" disabled hidden>{label}</option>
+        //         {options.map((opt) => (
+        //             <option key={opt} value={opt}>
+        //                  {opt}
+        //             </option>
+        //         ))}
+        //     </Select>
+        // </Wrapper>

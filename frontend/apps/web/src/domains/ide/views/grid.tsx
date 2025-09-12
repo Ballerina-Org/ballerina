@@ -9,7 +9,8 @@ export const Grid: React.FC<{
     header: React.ReactNode;
     left: React.ReactNode;
     right: React.ReactNode;
-}> = ({ theme, header, left, right }) => {
+    bottom: React.ReactNode;
+}> = ({ theme, header, left, right, bottom }) => {
     const leftRef = useRef<HTMLDivElement>(null);
     const dividerRef = useRef<HTMLDivElement>(null);
 
@@ -65,6 +66,7 @@ export const Grid: React.FC<{
                 ></div>
                 <div css={style.dividerRight}>{right}</div>
             </div>
+            {bottom}
         </div>
     );
 };

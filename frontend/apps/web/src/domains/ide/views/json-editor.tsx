@@ -1,5 +1,5 @@
 ﻿/** @jsxImportSource @emotion/react */
-import {JsonEditorView} from "playground-core";
+import {Ide, JsonEditorView} from "playground-core";
 import {Value, Option, replaceWith} from "ballerina-core";
 import {JsonEditor, monoLightTheme} from 'json-edit-react';
 import {myTheme, style} from "./json-editor.styled.ts";
@@ -10,10 +10,11 @@ import {VscDiffRemoved,  VscClose, VscDiffAdded, VscEdit,  VscCheck, VscCopy, Vs
 export const V2Editor: JsonEditorView = (props) => (
     <>
         {
-            props.context.kind == "l" ? <p>spec is not yet locked</p>:
+            props.context.phase != 'locked' ? <p>spec is not yet locked</p>:
         
         <div css={style.editor.container}>
             <div css={style.editor.left}>
+                <div className="[&>*]:!bg-[hsl(var(--b1))] [&_*]:!text-[hsl(var(--bc))]">
                 <JsonEditor
                     icons={{
                         delete: <VscDiffRemoved size={20} />,
@@ -27,18 +28,18 @@ export const V2Editor: JsonEditorView = (props) => (
 
                     collapse={1}
                     rootName="V2"
-                    data={JSON.parse(props.context.value.spec.right.specBody.value)}
+                    data={JSON.parse(props.context.locked.bridge.spec.right.specBody.value)}
                     theme={monoLightTheme}
                     onDelete={ x =>
                     {
-                        const value = JSON.stringify(x.newData)
-                        props.setState(
-                            Option.Updaters.some(Bridge.Updaters.Template.setV2Body(
-                                Value.Default(value)
-                            ))
-                            
-                        );
-                    }}
+                    //     const value = JSON.stringify(x.newData)
+                    //     props.setState(
+                    //         Option.Updaters.some(Bridge.Updaters.Template.setV2Body(
+                    //             Value.Default(value)
+                    //         ))
+                    //        
+                    //     );
+                     }}
 
                     // onEditEvent={ x => {}},
                     onChange={x => x.newValue}
@@ -53,97 +54,92 @@ export const V2Editor: JsonEditorView = (props) => (
                         //     )))
                         // );
                     }}
-                />
+                /></div>
             </div>
         </div>}
     </>
 );
-// export const V1Editor: JsonEditorView  = (props) => (
-//     <>
-//         <div css={style.editor.container}>
-//             <div css={style.editor.left}>
-//                 <JsonEditor
-//                     icons={{
-//                         delete: <VscDiffRemoved size={20} />,
-//                         edit:<VscEdit size={20}/>,
-//                         ok: <VscCheck size={20}/>,
-//                         cancel: <VscClose  size={20}/>,
-//                         add:<VscDiffAdded size={20}/>,
-//                         chevron:<VscDash size={20}/>,
-//                         copy:<VscCopy size={20}/>,
-//                     }}
-//                     collapse={1}
-//                     rootName="V1"
-//                     data={JSON.parse(props.context.spec.left.left.specBody.value)}
-//                     theme={monoLightTheme}
-//                     onDelete={ x =>
-//                     {
-//                         const value = JSON.stringify(x.newData)
-//                         props.setState(
-//                             Bridge.Updaters.Template.setV1Body(
-//                                 Value.Default(value)
-//                             )
-//                         );
-//                     }}
-//                     // onEditEvent={ x => {}},
-//                     // onChange={x => {
-//                     //     return x.newValue}}
-//                     onUpdate={x =>
-//                     {
-//               
-//                         const value = JSON.stringify(x.newData)
-//                         props.setState(
-//                             Bridge.Updaters.Template.setV1Body(
-//                                 Value.Default(value)
-//                             )
-//                         );
-//                     }}
-//                 />
-//             </div>
-//         </div>
-//     </>
-// );
-// export const SeedEditor: JsonEditorView  = (props) => (
-//     <>
-//         <div css={style.editor.container}>
-//             <div css={style.editor.left}>
-//                 <JsonEditor
-//                     icons={{
-//                         delete: <VscDiffRemoved size={20} />,
-//                         edit:<VscEdit size={20}/>,
-//                         ok: <VscCheck size={20}/>,
-//                         cancel: <VscClose  size={20}/>,
-//                         add:<VscDiffAdded size={20}/>,
-//                         chevron:<VscDash size={20}/>,
-//                         copy:<VscCopy size={20}/>,
-//                     }}
-//
-//                     collapse={1}
-//                     rootName="Seeds"
-//                     data={props.context.seeds}
-//                     theme={monoLightTheme}
-//                     onDelete={ x =>
-//                     {
-//                         const value = JSON.stringify(x.newData)
-//                         props.setState(
-//                             Bridge.Updaters.Template.setV2Body(
-//                                 Value.Default(value)
-//                             )
-//                         );
-//                     }}
-//
-//                     // onEditEvent={ x => {}},
-//                     onChange={x => {
-//                         return x.newValue}}
-//                     onUpdate={x =>
-//                     {   const value = x.newValue as any
-//                         const id = value.id
-//                         const entityName = "SourceTable";
-//                         //SpecEditor.Operations.updateEntity(props.context.name.value,entityName,id,value.value)
-//                     }}
-//                 />
-//             </div>
-//         </div>
-//     </>
-// );
+export const V1Editor: JsonEditorView  = (props) => (
+    <> {
+        props.context.phase != 'locked' ? <p>spec is not yet locked</p>:
+        <div css={style.editor.container}>
+            <div css={style.editor.left}>
+                <div className="[&>*]:!bg-[hsl(var(--b1))] [&_*]:!text-[hsl(var(--bc))]">
+                <JsonEditor
+                    icons={{
+                        delete: <VscDiffRemoved size={20} />,
+                        edit:<VscEdit size={20}/>,
+                        ok: <VscCheck size={20}/>,
+                        cancel: <VscClose  size={20}/>,
+                        add:<VscDiffAdded size={20}/>,
+                        chevron:<VscDash size={20}/>,
+                        copy:<VscCopy size={20}/>,
+                    }}
+                    collapse={1}
+                    
+                    rootName="V1"
+                    data={JSON.parse(props.context.locked.bridge.spec.left.specBody.value)}
+                    theme={monoLightTheme}
+                    onDelete={ x =>
+                    {
+                        const value = JSON.stringify(x.newData)
+                        props.setState(Ide.Updaters.lockedSpec.bridge.v1(value))
+                        
+                    }}
+
+                    // onEditEvent={ x => {}},
+                    onChange={x => x.newValue}
+                    onUpdate={x =>
+                    {
+                        const value = JSON.stringify(x.newData);
+                        props.setState(
+                            Ide.Updaters.lockedSpec.bridge.v1(value)
+                        );
+                    }}
+                />
+                </div>
+            </div>
+        </div>}
+    </>
+);
+export const SeedEditor: JsonEditorView  = (props) => (
+    <>{
+        props.context.phase != 'locked' ? <p>spec is not yet locked</p>:
+        <div css={style.editor.container}>
+            <div css={style.editor.left}>
+                <div className="[&>*]:!bg-[hsl(var(--b1))] [&_*]:!text-[hsl(var(--bc))]">
+                <JsonEditor
+                    icons={{
+                        delete: <VscDiffRemoved size={20} />,
+                        edit:<VscEdit size={20}/>,
+                        ok: <VscCheck size={20}/>,
+                        cancel: <VscClose  size={20}/>,
+                        add:<VscDiffAdded size={20}/>,
+                        chevron:<VscDash size={20}/>,
+                        copy:<VscCopy size={20}/>,
+                    }}
+
+                    collapse={1}
+                    rootName="Seeds"
+                    data={props.context.locked.bridge.seeds}
+                    theme={monoLightTheme}
+                    onDelete={ x =>
+                    {
+ 
+                    }}
+
+                    // onEditEvent={ x => {}},
+                    onChange={x => {
+                        return x.newValue}}
+                    onUpdate={x =>
+                    {   const value = x.newValue as any
+                        const id = value.id
+                        const entityName = "SourceTable";
+                        //SpecEditor.Operations.updateEntity(props.context.name.value,entityName,id,value.value)
+                    }}
+                /></div>
+            </div>
+        </div>}
+    </>
+);
 

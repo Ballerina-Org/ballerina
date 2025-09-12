@@ -2,7 +2,7 @@
     DispatchInfiniteStreamSources, ValueOrErrors,
     SearchableInfiniteStreamState, OrderedMapRepo, SearchableInfiniteStreamAbstractRendererState
 } from "ballerina-core";
-import {getStreams} from "../seeds";
+import {getSeeds} from "../seeds";
 import {OrderedMap} from "immutable";
 
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
@@ -10,7 +10,7 @@ const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
         (searchText: string, index: number, size: number)
         : Promise<{data: OrderedMap<any, any>, hasMoreValues: boolean}> =>
         
-        getStreams("sample", streamName, index, size)
+        getSeeds("sample", streamName, index, size)
             .then((res) =>
         
                 res.kind == "errors" ? ({data: OrderedMapRepo.Default.fromIdentifiables([]), hasMoreValues: false}) : ({

@@ -8,7 +8,7 @@
     ValueOrErrors
 } from "ballerina-core";
 
-import {FullSpec, IdeReadonlyContext, IdeWritableState} from "../../state";
+import {FullSpec, IdeReadonlyContext, IdeWritableState, VSpec} from "../../state";
 import {Product} from "ballerina-core";
 import {V1, V2} from "playground-core";
 import {List} from "immutable";
@@ -64,6 +64,7 @@ export const Bridge = {
     },
 
     Operations: {
+        toVSpec: (b: Bridge): VSpec => ({ v1: JSON.parse(b.left.specBody.value), v2: JSON.parse(b.right.specBody.value)})
         // getV1: (b: Bridge) : Option<V1> => {
         //     return b.left.right.kind === "value" ? Option.Default.some(b.left.right.value) : Option.Default.none();
         // },

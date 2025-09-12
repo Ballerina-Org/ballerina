@@ -20,6 +20,11 @@ export type FullSpec = {
     seeds: any,
     config: any
 }
+
+export type VSpec = {
+    v1: ParsedFormJSON<any>,
+    v2: any
+}
 export const FullSpec = {
     Default: (): FullSpec => ({
         v1: {} as  ParsedFormJSON<any>,
@@ -70,25 +75,16 @@ const CommonUI = {
         lockingError: Option.Default.none(),
     })
 }
-
+type LockedStep =
+    | { step: "design"; }
+    | { step: "outcome"; };
 export type Ide =
     CommonUI & (
     | { phase: 'bootstrap', bootstrap: Bootstrap }
     | { phase: 'choose' }
-    | { phase: 'locked'; source: 'existing' | 'new'; locked: LockedSpec }
+    | ({ phase: 'locked'; source: 'existing' | 'new'; locked: LockedSpec } & LockedStep)
     );
 
-export function lock(
-    s: Extract<Ide, { phase: 'choose' }>,
-    buildLocked: (specName: string) => LockedSpec
-): Ide {
-    const fromExisting = s.activeTab === 'existing' &&  s.existing.selected.kind == "r";
-    const specName = fromExisting
-        ? s.existing.selected.value
-        : s.create.name.value;
-
-    return { ...s, phase: 'locked', source: fromExisting ? 'existing' : 'new', locked: buildLocked(<string>specName) };
-}
 
 export const Ide = {
     Default: (): Ide => {
@@ -126,14 +122,41 @@ export const Ide = {
                         : ide;
             },
         },
+        lockedSpec: {
+          seed: (seeds: any): BasicUpdater<Ide>  => (ide: Ide): Ide =>
+              ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, bridge: {...ide.locked.bridge, seeds: seeds}}}), 
+          selectLauncher: (name: string): BasicUpdater<Ide> => 
+            (ide: Ide): Ide =>
+                ide.phase == 'locked'
+                    ? ({...ide, locked: {...ide.locked, selectedLauncher: Option.Default.some(Value.Default(name))}})
+                    : ({...ide}),
+          bridge: {
+              v1: (value: string): BasicUpdater<Ide> => 
+                  (ide: Ide): Ide =>
+                      ide.phase == 'locked'
+                          ? ({...ide, locked: {...ide.locked, bridge: Bridge.Updaters.Template.setV1Body(Value.Default(value))(ide.locked.bridge)}})
+                          : ({...ide}),
+          }
+                
+        },
         toChoose: (): BasicUpdater<Ide>  => (ide: Ide): Ide => ({...ide, phase: 'choose', activeTab: 'existing'}),
         chooseNew: (): BasicUpdater<Ide>  => (ide: Ide): Ide => ({...ide, phase: 'choose', activeTab: 'new'}),
-        lock: (origin:  'existing' | 'new',  spec: FullSpec): BasicUpdater<Ide> => {
+        lock: (origin:  'existing' | 'new', name: string,  spec: FullSpec): BasicUpdater<Ide> => {
                 return (ide: Ide): Ide =>
             ide.phase === 'choose'
-                ? { ...ide, phase: 'locked', source: origin, locked: LockedSpec.Updaters.Core.Default(spec) }
+                ? { ...ide, phase: 'locked', step: 'design', create : { name: Value.Default(name)}, source: origin, locked: LockedSpec.Updaters.Core.Default(spec) }
                 : { ...ide, lockingError: Option.Default.some(List([]))};
             },
+        runForms: () : BasicUpdater<Ide> => {
+            return (ide: Ide): Ide =>
+                ide.phase === 'locked'
+                    ? {
+                        ...ide,
+                        phase: 'locked',
+                        step: 'outcome'
+                    }
+                    : ide;
+        },
         specName: (name: string): BasicUpdater<Ide> =>
             (ide: Ide): Ide => 
                 ide.phase == "choose" && ide.activeTab == "new" ? 
@@ -148,7 +171,7 @@ export const Ide = {
                 origin == "existing" ? await getSpec(name) : ValueOrErrors.Default.return(FullSpec.Default());
 
             return spec.kind == "value" ?
-                Ide.Updaters.lock(origin, spec.value)
+                Ide.Updaters.lock(origin, name, spec.value)
                 : (ide: Ide): Ide => ({...ide, lockingError: Option.Default.some(spec.errors)})
             
         }
