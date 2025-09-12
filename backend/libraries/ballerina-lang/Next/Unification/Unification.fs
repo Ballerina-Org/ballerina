@@ -43,7 +43,6 @@ module Unification =
           return Set.union lVars rVars
         | TypeExpr.KeyOf e
         | TypeExpr.Rotate e
-        | TypeExpr.List e
         | TypeExpr.Set e -> return! TypeExpr.FreeVariables e
         | TypeExpr.Tuple es
         | TypeExpr.Sum es ->
@@ -55,6 +54,7 @@ module Unification =
           let! keys = es |> Seq.map (fun (k, _) -> TypeExpr.FreeVariables k) |> reader.All
           return keys @ vars |> Set.unionMany
         | TypeExpr.Primitive _
+        | TypeExpr.Imported _
         | TypeExpr.NewSymbol _ -> return Set.empty
         | TypeExpr.Lookup l ->
           let! t = UnificationContext.tryFindType l |> reader.Catch
@@ -90,7 +90,6 @@ module Unification =
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
         | TypeValue.Apply(_, e)
-        | TypeValue.List e
         | TypeValue.Set e -> return! TypeValue.FreeVariables e
         | TypeValue.Tuple es
         | TypeValue.Sum es ->
@@ -105,6 +104,7 @@ module Unification =
             |> reader.All
 
           return vars |> Set.unionMany
+        | TypeValue.Imported _
         | TypeValue.Primitive _ -> return Set.empty
         | Lookup l ->
           let! t, _ = UnificationContext.tryFindType l
@@ -134,8 +134,7 @@ module Unification =
           let! l = TypeValue.MostSpecific(l1, l2)
           let! r = TypeValue.MostSpecific(r1, r2)
           return TypeValue.Map(l, r)
-        | TypeValue.List e1, TypeValue.List e2 -> return! TypeValue.MostSpecific(e1, e2) |> reader.Map(TypeValue.List)
-        | TypeValue.Set e1, TypeValue.List e2 -> return! TypeValue.MostSpecific(e1, e2) |> reader.Map(TypeValue.Set)
+        | TypeValue.Set e1, TypeValue.Set e2 -> return! TypeValue.MostSpecific(e1, e2) |> reader.Map(TypeValue.Set)
         | TypeValue.Tuple e1, TypeValue.Tuple e2 when e1.Length = e2.Length ->
           let! items =
             List.zip e1 e2
@@ -223,15 +222,16 @@ module Unification =
         | t2, Lookup l ->
           let! t1, _ = UnificationContext.tryFindType l |> state.OfReader
           return! TypeValue.Unify(t1, t2)
-        | TypeValue.Var v, t
-        | t, TypeValue.Var v ->
-          // let! ctx = state.GetContext()
-          // let! s = state.GetState()
-          // do Console.WriteLine($"Binding variable {v} to type {t}")
-          // do Console.WriteLine($"Context = {ctx.ToFSharpString} and state = {s.ToFSharpString}")
-          // do Console.ReadLine() |> ignore
+        | TypeValue.Imported i1, TypeValue.Imported i2 when i1.Sym = i2.Sym && i1.Arguments.Length = i2.Arguments.Length ->
+          do!
+            List.zip i1.Arguments i2.Arguments
+            |> List.map (fun (a1, a2) -> TypeValue.Unify(a1, a2))
+            |> state.All
+            |> state.Ignore
 
-          return! TypeValue.bind (v, t)
+          return ()
+        | TypeValue.Var v, t
+        | t, TypeValue.Var v -> return! TypeValue.bind (v, t)
         | TypeValue.Lambda(p1, t1), TypeValue.Lambda(p2, t2) ->
           if p1.Kind <> p2.Kind then
             return!
@@ -292,7 +292,6 @@ module Unification =
         | TypeValue.Apply(v1, a1), TypeValue.Apply(v2, a2) ->
           do! TypeValue.Unify(v1 |> TypeValue.Var, v2 |> TypeValue.Var)
           do! TypeValue.Unify(a1, a2)
-        | List(e1), List(e2)
         | Set(e1), Set(e2) -> do! TypeValue.Unify(e1, e2)
         | TypeValue.Tuple(e1), TypeValue.Tuple(e2)
         | TypeValue.Sum(e1), TypeValue.Sum(e2) when List.length e1 = List.length e2 ->
@@ -301,7 +300,7 @@ module Unification =
         | TypeValue.Record(e1), TypeValue.Record(e2)
         | TypeValue.Union(e1), TypeValue.Union(e2) when Map.count e1 = Map.count e2 ->
           for (k1, v1) in e1 |> Map.toSeq do
-            let! v2 = e2 |> Map.tryFindWithError k1 "record" k1.Name.LocalName |> state.OfSum
+            let! v2 = e2 |> Map.tryFindWithError k1 "union" k1.Name.LocalName |> state.OfSum
             do! TypeValue.Unify(v1, v2)
         | _ -> return! $"Cannot unify types: {left} and {right}" |> Errors.Singleton |> state.Throw
       }
@@ -326,6 +325,7 @@ module Unification =
       fun t ->
         state {
           match t with
+          | TypeValue.Imported _ -> return t
           | TypeValue.Var v ->
             let! ctx = state.GetContext()
 
@@ -381,9 +381,6 @@ module Unification =
             let! l' = TypeValue.Instantiate l
             let! r' = TypeValue.Instantiate r
             return TypeValue.Map(l', r')
-          | TypeValue.List e ->
-            let! e' = TypeValue.Instantiate e
-            return TypeValue.List e'
           | TypeValue.Set e ->
             let! e' = TypeValue.Instantiate e
             return TypeValue.Set e'

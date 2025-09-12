@@ -615,6 +615,10 @@ module Validator =
       sum {
         match localType, body with
         | ExprType.UnionType typeCases, FormBody.Union formCases ->
+          let unallowedCases =
+            typeCases
+            |> Map.filter (fun _ typeCase -> typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType |> not)
+
           let typeCaseNames =
             typeCases |> Map.values |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
 
@@ -627,6 +631,12 @@ module Validator =
             return! sum.Throw(Errors.Singleton $"Error: missing type cases {missingTypeCases.ToFSharpString}")
           elif missingFormCases |> Set.isEmpty |> not then
             return! sum.Throw(Errors.Singleton $"Error: missing form cases {missingFormCases.ToFSharpString}")
+          elif unallowedCases |> Map.isEmpty |> not then
+            return!
+              sum.Throw(
+                Errors.Singleton
+                  $"Error: case(s) {unallowedCases |> Map.keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq} have unallowed type(s), only lookup types and unit types are allowed"
+              )
           else
             do!
               typeCases
@@ -1080,21 +1090,30 @@ module Validator =
         let! (idField: ExprType) =
           sum.Any2
             (sum {
-              let! fields = lookupType.Type |> ExprType.AsRecord
+              let! fields =
+                lookupType.Type
+                |> ExprType.AsRecord
+                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
 
               return!
-                sum.Any2
+                (sum.Any2
                   (fields |> Map.tryFindWithError "id" "key" "id")
-                  (fields |> Map.tryFindWithError "Id" "key" "Id")
+                  (fields |> Map.tryFindWithError "Id" "key" "Id"))
+                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
             })
             (sum {
-              let! fields = lookupType.Type |> ExprType.AsTuple
+              let! fields =
+                lookupType.Type
+                |> ExprType.AsTuple
+                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
 
               return!
                 fields
                 |> Seq.tryHead
                 |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
+                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
             })
+          |> sum.MapError Errors.HighestPriority
 
         match idField with
         | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
@@ -1121,7 +1140,9 @@ module Validator =
           sum.All(
             ctx.Apis.Enums
             |> Map.values
-            |> Seq.map (EnumApi.Validate codegenTargetConfig.EnumValueFieldName ctx)
+            |> Seq.map (fun enumApi ->
+              EnumApi.Validate codegenTargetConfig.EnumValueFieldName ctx enumApi
+              |> sum.WithErrorContext(sprintf "...when validating enum API for enum %s" enumApi.EnumName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1131,7 +1152,9 @@ module Validator =
           sum.All(
             ctx.Apis.Streams
             |> Map.values
-            |> Seq.map (StreamApi.Validate codegenTargetConfig ctx)
+            |> Seq.map (fun streamApi ->
+              StreamApi.Validate codegenTargetConfig ctx streamApi
+              |> sum.WithErrorContext(sprintf "...when validating stream API for stream %s" streamApi.StreamName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1143,7 +1166,9 @@ module Validator =
           sum.All(
             ctx.Apis.Tables
             |> Map.values
-            |> Seq.map (TableApi.Validate codegenTargetConfig codegenConfig ctx)
+            |> Seq.map (fun tableApi ->
+              TableApi.Validate codegenTargetConfig codegenConfig ctx tableApi
+              |> sum.WithErrorContext(sprintf "...when validating table API for table %s" (tableApi |> fst).TableName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1153,7 +1178,9 @@ module Validator =
           sum.All(
             ctx.Apis.Lookups
             |> Map.values
-            |> Seq.map (LookupApi.Validate codegenTargetConfig ctx)
+            |> Seq.map (fun lookupApi ->
+              LookupApi.Validate codegenTargetConfig ctx lookupApi
+              |> sum.WithErrorContext(sprintf "...when validating lookup API for entity %s" lookupApi.EntityName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1166,7 +1193,9 @@ module Validator =
           sum.All(
             ctx.Forms
             |> Map.values
-            |> Seq.map (FormConfig.Validate codegenConfig ctx)
+            |> Seq.map (fun formConfig ->
+              FormConfig.Validate codegenConfig ctx formConfig
+              |> sum.WithErrorContext(sprintf "...when validating form config for form %s" formConfig.FormName))
             |> Seq.toList
           )
           |> Sum.map ignore

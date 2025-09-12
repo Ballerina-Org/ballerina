@@ -9,7 +9,6 @@ module Model =
     | GetMany
     | Create
     | Delete
-    | Update
     | Link
     | Unlink
 
@@ -18,7 +17,6 @@ module Model =
     | GetMany
     | Create
     | Delete
-    | Update
 
   type DirectedLookupDescriptor =
     { Arity: LookupArity

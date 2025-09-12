@@ -10,9 +10,9 @@ open Ballerina.Collections.Sum
 [<Test>]
 let ``Delta.Multiple: applies multiple replace deltas sequentially`` () =
   let t = TypeValue.Primitive PrimitiveType.Int32
-  let v0 = Value<Unit>.Primitive(PrimitiveValue.Int 1)
-  let v1 = Value<Unit>.Primitive(PrimitiveValue.Int 2)
-  let v2 = Value<Unit>.Primitive(PrimitiveValue.Int 3)
+  let v0 = Value<Unit>.Primitive(PrimitiveValue.Int32 1)
+  let v1 = Value<Unit>.Primitive(PrimitiveValue.Int32 2)
+  let v2 = Value<Unit>.Primitive(PrimitiveValue.Int32 3)
 
   let delta = Delta.Multiple([ Delta.Replace(v1); Delta.Replace(v2) ])
 

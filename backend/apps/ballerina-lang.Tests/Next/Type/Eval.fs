@@ -174,7 +174,7 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
         TypeExpr.Lookup("B" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String ]
     )
 
-  let t2 = TypeExpr.List(TypeExpr.Primitive PrimitiveType.Decimal)
+  let t2 = TypeExpr.Primitive PrimitiveType.Decimal
 
   let actual =
     TypeExpr.Flatten(t1, t2)

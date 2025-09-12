@@ -23,7 +23,6 @@ module TypeExpr =
           TypeExpr.FromJsonLookup json
           TypeExpr.FromJsonUnion TypeExpr.FromJson json
           TypeExpr.FromJsonSum TypeExpr.FromJson json
-          TypeExpr.FromJsonList TypeExpr.FromJson json
           TypeExpr.FromJsonSet TypeExpr.FromJson json
           TypeExpr.FromJsonMap TypeExpr.FromJson json
           TypeExpr.FromJsonKeyOf TypeExpr.FromJson json
@@ -49,7 +48,6 @@ module TypeExpr =
         | TypeExpr.Lookup l -> TypeExpr.ToJsonLookup l
         | TypeExpr.Union u -> TypeExpr.ToJsonUnion TypeExpr.ToJson u
         | TypeExpr.Sum s -> TypeExpr.ToJsonSum TypeExpr.ToJson s
-        | TypeExpr.List l -> TypeExpr.ToJsonList TypeExpr.ToJson l
         | TypeExpr.Set s -> TypeExpr.ToJsonSet TypeExpr.ToJson s
         | TypeExpr.Map(a, b) -> TypeExpr.ToJsonMap TypeExpr.ToJson (a, b)
         | TypeExpr.KeyOf k -> TypeExpr.ToJsonKeyOf TypeExpr.ToJson k
@@ -57,3 +55,4 @@ module TypeExpr =
         | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude TypeExpr.ToJson (a, b)
         | TypeExpr.NewSymbol _ -> JsonValue.Null
         | TypeExpr.Let(_, _, rest) -> TypeExpr.ToJson rest
+        | TypeExpr.Imported _ -> failwith "Not implemented"

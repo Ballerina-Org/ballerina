@@ -118,6 +118,20 @@ module Eval =
           let (!!) = TypeExpr.EvalAsSymbol
 
           match t with
+          | TypeExpr.Imported i ->
+            let! parameters =
+              i.Parameters
+              |> List.map (fun p -> !(TypeExpr.Lookup(Identifier.LocalScope p.Name)) |> state.Map fst)
+              |> state.All
+
+            let! args = i.Arguments |> List.map (fun p -> !p.AsExpr |> state.Map fst) |> state.All
+
+            return
+              TypeValue.Imported
+                { i with
+                    Parameters = []
+                    Arguments = parameters @ args },
+              Kind.Star
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> Errors.Singleton |> state.Throw
           | TypeExpr.Primitive p -> return TypeValue.Primitive p, Kind.Star
           | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindType v |> state.OfStateReader
@@ -169,7 +183,6 @@ module Eval =
                       |> state.Throw
                   else
                     return TypeValue.Apply(f_var, a), f_k_o
-
                 })
           | TypeExpr.Lambda(param, body) ->
             let fresh_var_t =
@@ -228,10 +241,6 @@ module Eval =
               |> state.Map(Map.ofSeq)
 
             return TypeValue.Union(cases), Kind.Star
-          | TypeExpr.List(element) ->
-            let! element, element_k = !element
-            do! element_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-            return TypeValue.List(element), Kind.Star
           | TypeExpr.Set(element) ->
             let! element, element_k = !element
             do! element_k |> Kind.AsStar |> state.OfSum |> state.Ignore

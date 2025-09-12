@@ -17,17 +17,17 @@ let ``SpecNext-Schema evaluates`` () =
         Map.ofList
           [ ("SourceTable",
              { Type = "SomeType" |> Identifier.LocalScope |> TypeExpr.Lookup
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
             ("TargetTable",
              { Type = "AnotherType" |> Identifier.LocalScope |> TypeExpr.Lookup
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
                  [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)) ]
@@ -49,15 +49,15 @@ let ``SpecNext-Schema evaluates`` () =
         Map.ofList
           [ ("SourceTable",
              { Type = SomeType
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates = Map.ofList [ ("SomePredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool false)) ] })
             ("TargetTable",
              { Type = AnotherType
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates = Map.ofList [ ("AnotherPredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)) ] }) ]
       Lookups = Map.empty }

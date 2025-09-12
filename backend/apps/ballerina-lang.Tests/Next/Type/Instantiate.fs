@@ -43,13 +43,12 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
           [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int32 |> TypeValue.Primitive |> Some) ]
       Variables = Map.ofList [ a, a.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.List
+  let program = TypeValue.Var a |> TypeValue.Set
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
-  let expected =
-    PrimitiveType.Int32 |> TypeValue.Primitive |> TypeValue.Set |> TypeValue.List
+  let expected = PrimitiveType.Int32 |> TypeValue.Primitive |> TypeValue.Set
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -63,21 +62,17 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.List |> Some)
+          [ "a", EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.Set |> Some)
             "b", EquivalenceClass.Create(b |> Set.singleton, PrimitiveType.String |> TypeValue.Primitive |> Some) ]
       Variables = Map.ofList [ a, a.Name; b, b.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.List
+  let program = TypeValue.Var a |> TypeValue.Set
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
-    PrimitiveType.String
-    |> TypeValue.Primitive
-    |> TypeValue.List
-    |> TypeValue.Set
-    |> TypeValue.List
+    PrimitiveType.String |> TypeValue.Primitive |> TypeValue.Set |> TypeValue.Set
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -92,11 +87,11 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ a.Name, EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.List |> Some)
+          [ a.Name, EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.Set |> Some)
             c.Name, EquivalenceClass.Create(c |> Set.singleton, PrimitiveType.String |> TypeValue.Primitive |> Some) ]
       Variables = Map.ofList [ a, a.Name; b, c.Name; c, c.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.List
+  let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.Set
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
@@ -104,9 +99,9 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let expected =
     PrimitiveType.String
     |> TypeValue.Primitive
-    |> TypeValue.List
     |> TypeValue.Set
-    |> TypeValue.List
+    |> TypeValue.Set
+    |> TypeValue.Set
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)

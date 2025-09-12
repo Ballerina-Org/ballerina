@@ -135,7 +135,6 @@ let ``LangNext-Unify unifies types without variables`` () =
   let inputs =
     [ TypeValue.Primitive PrimitiveType.Int32
       TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String)
-      TypeValue.List(TypeValue.Primitive PrimitiveType.Int32)
       TypeValue.Set(TypeValue.Primitive PrimitiveType.Int32)
       TypeValue.Map(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String)
       TypeValue.Tuple(
@@ -201,8 +200,8 @@ let ``LangNext-Unify unifies lists of tuples`` () =
   let b = TypeVar.Create "b"
 
   let inputs =
-    TypeValue.List(TypeValue.Tuple([ TypeValue.Var(a); TypeValue.Primitive PrimitiveType.String ])),
-    TypeValue.List(TypeValue.Tuple([ TypeValue.Var(b); TypeValue.Primitive PrimitiveType.String ]))
+    TypeValue.Set(TypeValue.Tuple([ TypeValue.Var(a); TypeValue.Primitive PrimitiveType.String ])),
+    TypeValue.Set(TypeValue.Tuple([ TypeValue.Var(b); TypeValue.Primitive PrimitiveType.String ]))
 
   let actual =
     (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -578,25 +577,6 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
 
 
 [<Test>]
-let ``LangNext-Unify unifies fails on different constructors`` () =
-  let a = TypeVar.Create("a")
-  let b = TypeVar.Create("b")
-
-  let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
-    state {
-      do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
-      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.Set |> Right)
-      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
-    }
-    |> TypeValue.EquivalenceClassesOp
-
-  let actual = program.run (UnificationContext.Empty, EquivalenceClasses.Empty)
-
-  match actual with
-  | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"
-  | Sum.Right _ -> Assert.Pass()
-
-[<Test>]
 let ``LangNext-Unify unifies fails on different transitively unified generic arguments`` () =
   let a = TypeVar.Create("a")
   let b = TypeVar.Create("b")
@@ -606,8 +586,8 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
     state {
       do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(c, PrimitiveType.String |> TypeValue.Primitive |> Right)
-      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
-      do! EquivalenceClasses.Bind(a, c |> TypeValue.Var |> TypeValue.List |> Right)
+      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.Set |> Right)
+      do! EquivalenceClasses.Bind(a, c |> TypeValue.Var |> TypeValue.Set |> Right)
     }
     |> TypeValue.EquivalenceClassesOp
 
@@ -631,7 +611,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
     state {
       do! EquivalenceClasses.Bind(c, PrimitiveType.Int32 |> TypeValue.Primitive |> Right)
       do! EquivalenceClasses.Bind(b, c |> Left)
-      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.List |> Right)
+      do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.Set |> Right)
       do! EquivalenceClasses.Bind(a, c |> Left)
     }
     |> TypeValue.EquivalenceClassesOp

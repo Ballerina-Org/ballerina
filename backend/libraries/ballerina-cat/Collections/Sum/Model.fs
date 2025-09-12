@@ -42,6 +42,16 @@ module Sum =
     static member bind<'a, 'b, 'c>(k: 'a -> Sum<'c, 'b>) : Sum<'a, 'b> -> Sum<'c, 'b> =
       Sum.map<'a, 'b, Sum<'c, 'b>> k >> Sum.flatten
 
+    static member AsLeft<'a, 'b>(p: Sum<'a, 'b>) : Option<'a> =
+      match p with
+      | Left a -> Some a
+      | Right _ -> None
+
+    static member AsRight<'a, 'b>(p: Sum<'a, 'b>) : Option<'b> =
+      match p with
+      | Left _ -> None
+      | Right b -> Some b
+
   let inline (<+>) (f: 'a -> 'a1) (g: 'b -> 'b1) = Sum.map2<'a, 'b, 'a1, 'b1> f g
 
   type SumBuilder() =

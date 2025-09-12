@@ -104,9 +104,6 @@ let testCases guid : TypeValueTestCase list =
           [ TypeValue.Primitive PrimitiveType.Int32
             TypeValue.Primitive PrimitiveType.String
             TypeValue.Primitive PrimitiveType.Bool ] }
-    { Name = "List"
-      Json = """{"kind":"list","list":{"kind":"int32"}}"""
-      Expected = TypeValue.List(TypeValue.Primitive PrimitiveType.Int32) }
     { Name = "Set"
       Json = """{"kind":"set","set":{"kind":"string"}}"""
       Expected = TypeValue.Set(TypeValue.Primitive PrimitiveType.String) }

@@ -160,8 +160,17 @@ module TypeCheck =
 
         state {
           match t with
-          | Expr.Primitive(PrimitiveValue.Int v) ->
-            return Expr.Primitive(PrimitiveValue.Int v), TypeValue.Primitive(PrimitiveType.Int32), Kind.Star
+          | Expr.Primitive(PrimitiveValue.Int32 v) ->
+            return Expr.Primitive(PrimitiveValue.Int32 v), TypeValue.Primitive(PrimitiveType.Int32), Kind.Star
+
+          | Expr.Primitive(PrimitiveValue.Int64 v) ->
+            return Expr.Primitive(PrimitiveValue.Int64 v), TypeValue.Primitive(PrimitiveType.Int64), Kind.Star
+
+          | Expr.Primitive(PrimitiveValue.Float32 v) ->
+            return Expr.Primitive(PrimitiveValue.Float32 v), TypeValue.Primitive(PrimitiveType.Float32), Kind.Star
+
+          | Expr.Primitive(PrimitiveValue.Float64 v) ->
+            return Expr.Primitive(PrimitiveValue.Float64 v), TypeValue.Primitive(PrimitiveType.Float64), Kind.Star
 
           | Expr.Primitive(PrimitiveValue.Bool v) ->
             return Expr.Primitive(PrimitiveValue.Bool v), TypeValue.Primitive(PrimitiveType.Bool), Kind.Star
@@ -197,11 +206,28 @@ module TypeCheck =
                 do! a_k |> Kind.AsStar |> state.OfSum |> state.Ignore
                 let! (f_input, f_output) = TypeValue.AsArrow t_f |> state.OfSum
 
-                do! TypeValue.Unify(f_input, t_a) |> Expr<'T>.liftUnification
+                return!
+                  state.Any(
+                    state {
+                      do! TypeValue.Unify(f_input, t_a) |> Expr<'T>.liftUnification
+                      let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                      return Expr.Apply(f, a), f_output, Kind.Star
+                    },
+                    [ state {
+                        let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> state.OfSum
 
-                let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                        let! aCasesT =
+                          aCasesT
+                          |> Map.map (fun _ -> TypeExpr.Eval >> Expr<'T>.liftTypeEval)
+                          |> state.AllMap
 
-                return Expr.Apply(f, a), f_output, Kind.Star
+                        let aCasesT = aCasesT |> Map.map (fun _ -> fst)
+
+                        do! TypeValue.Unify(f_input, TypeValue.Union aCasesT) |> Expr<'T>.liftUnification
+                        let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                        return Expr.Apply(f, a), f_output, Kind.Star
+                      } ]
+                  )
               }
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a} `"))
 
@@ -251,15 +277,14 @@ module TypeCheck =
                 // (p: State<'a, UnificationContext, UnificationState, Errors>)
                 // : State<'a, TypeCheckContext, TypeCheckState, Errors> =
 
+                let freshVar =
+                  { TypeVar.Name = x.Name
+                    Guid = Guid.CreateVersion7() }
+
                 let freshVarType =
-                  Option.defaultWith
-                    (fun () ->
-                      TypeValue.Var(
-                        { TypeVar.Name = x.Name
-                          Guid = Guid.CreateVersion7() }
-                      ),
-                      Kind.Star)
-                    t
+                  Option.defaultWith (fun () -> freshVar |> TypeValue.Var, Kind.Star) t
+
+                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
 
                 let! body, t_body, body_k =
                   !body
@@ -556,7 +581,7 @@ module TypeCheck =
                 )
               )
 
-          | TypeLet(typeIdentifier, typeDefinition, rest) ->
+          | Expr.TypeLet(typeIdentifier, typeDefinition, rest) ->
             return!
               state {
                 let! typeDefinition =
