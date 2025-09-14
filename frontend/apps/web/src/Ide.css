@@ -7,6 +7,9 @@
     max-width: 100% !important;
     border-radius: 0 !important;
 }
+.jer-collection-text-edit div {
+    width: 100%;
+}
     /******* IDE *******/
 
 .IDE {

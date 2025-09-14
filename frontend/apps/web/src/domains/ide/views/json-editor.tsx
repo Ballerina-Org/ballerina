@@ -26,7 +26,11 @@ export const V2Editor: JsonEditorView = (props) => (
                         copy:<VscCopy size={20}/>,
                     }}
 
-                    collapse={1}
+                    collapse={(n) => {
+                        debugger
+                        return n.key != "Name" &&  n.level < 3 && JSON.stringify(n.path) !== JSON.stringify(["schema"])
+           
+                    }}
                     rootName="V2"
                     data={JSON.parse(props.context.locked.bridge.spec.right.specBody.value)}
                     theme={monoLightTheme}

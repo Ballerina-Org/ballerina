@@ -2,7 +2,17 @@
 
 import React from "react";
 import {style} from "./actions.styled";
-import {VscCheck, VscCheckAll, VscDatabase, VscLock, VscSave, VscNewFile, VscRedo, VscPlay} from "react-icons/vsc";
+import {
+    VscCheck,
+    VscCheckAll,
+    VscDatabase,
+    VscLock,
+    VscSave,
+    VscNewFile,
+    VscRedo,
+    VscPlay,
+    VscTriangleLeft, VscTriangleRight
+} from "react-icons/vsc";
 import {Ide} from "playground-core";
 
 export const Actions: React.FC<{
@@ -17,8 +27,10 @@ export const Actions: React.FC<{
     onSave?: () => void;
     onValidateBridge?: () => void;
     onValidateV1?: () => void;
+    onLeft?: () => void;
+    onRight?: () => void;
 
-}> = ({context, onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onRunCondition, onValidateBridge, onValidateV1}) => (
+}> = ({context, onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight, onRunCondition, onValidateBridge, onValidateV1}) => (
     <div css={style.layout}>
         <div css={style.buttonSection}>
             <button className="btn tooltip tooltip-bottom" data-tip="Lock spec">
@@ -36,6 +48,12 @@ export const Actions: React.FC<{
             { context.phase == "locked" && context.step == "design" && <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
                 <VscPlay size={20} onClick={onRun}/>
             </button>}
+            <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
+                <VscTriangleLeft size={20} onClick={onLeft}/>
+            </button>
+            <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
+                <VscTriangleRight size={20} onClick={onRight}/>
+            </button>
             {/*<button className="btn tooltip tooltip-bottom" data-tip="ReSeed">*/}
             {/*    <VscRedo size={20} onClick={onReSeed}/>*/}
             {/*</button>*/}
