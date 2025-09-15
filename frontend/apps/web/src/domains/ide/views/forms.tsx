@@ -297,6 +297,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
                             };
                             //setEntity(Sum.Default.left(parsed));
+                            debugger
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
                             setEntityId(res.id as any);
                         }

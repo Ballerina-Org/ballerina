@@ -1,15 +1,14 @@
 ﻿/** @jsxImportSource @emotion/react */
 
 import { style as editorStyle } from "./json-editor.styled.ts";
-import {Ide, IdeView, update, seed, Bridge} from "playground-core";
+import {Ide, IdeView, update, seed, Bridge, VfsWorkspace} from "playground-core";
 import {V2Editor, V1Editor, SeedEditor} from "./json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
 import {Actions} from "./actions"
-import {Messages} from "./messages";
+
 import { Toaster } from 'sonner';
-import {replaceWith,Value, Option} from "ballerina-core";
-import {Grid} from "./grid.tsx";
+import {replaceWith, Value, Option, Updater} from "ballerina-core";
 import LauncherSelector from "./launcher-selector.tsx";
 import {HorizontalDropdown} from "./dropdown.tsx";
 import {themeChange} from 'theme-change'
@@ -22,14 +21,18 @@ import {DispatcherFormsApp} from "./forms.tsx";
 import {Panel, PanelGroup,PanelResizeHandle} from "react-resizable-panels";
 import {drawer} from "./domains/vfs/drawer.tsx";
 import {VscDatabase, VscFolder, VscGithub} from "react-icons/vsc";
+import {NoSpescInfo} from "./domains/bootstrap/NoSpecsInfo.tsx";
+import * as repl from "node:repl";
+import {breadcrumbs} from "./domains/vfs/breadcrumbs.tsx";
+import {folderFilter} from "./domains/vfs/folder-filter.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
 export type DockItem = 'folders' | 'about'
 export const IdeLayout: IdeView = (props) =>{
-    const [theme, setTheme] = useState("fantasy");
+    const [theme, setTheme] = useState("lofi");
     const [dockItem, setDockItem] = useState('folders' as DockItem);
-    const [hideLeft, setHideLeft] = useState(false);
+    //const [hideLeft, setHideLeft] = useState(false);
     const [hideRight, setHideRight] = useState(false);
     useEffect(() => {
         themeChange(false)
@@ -47,7 +50,9 @@ export const IdeLayout: IdeView = (props) =>{
         }
     }, [props.context.bootstrappingError])
     return (
-        <div data-theme={theme} className="flex flex-col min-h-screen"><Toaster />
+        <div data-theme={theme} className="flex flex-col min-h-screen">
+            <Toaster />
+            {props.context.phase == "choose" && props.context.existing.specs.length == 0 && <NoSpescInfo />}
             {props.context.phase == "bootstrap"
                 && props.context.bootstrap.kind == "initializing"
                 && <div className="w-screen h-screen  flex items-center justify-center">
@@ -100,6 +105,7 @@ export const IdeLayout: IdeView = (props) =>{
                                                     ideToast({
                                                         title: `${props.context.create.name.value} has been locked`,
                                                         description: 'From now on your focus is on playing with that spec',
+                                                        position: 'top-center',
                                                         button: {
                                                             label: 'Undo',
                                                             onClick: () => sonnerToast.dismiss(),
@@ -108,15 +114,11 @@ export const IdeLayout: IdeView = (props) =>{
                                                 }
                                                 }
                                             >GO</button>
-                                            <fieldset className="fieldset join-item">
-
-                                                <input type="file" className="file-input" />
-                                                <label className="label">Max size 2MB</label>
-                                            </fieldset>
+                 
                                         </div>
                                     </fieldset>}
                                     { props.context.phase == "choose" && props.context.activeTab == "existing" && <HorizontalDropdown
-                                        label={"Select spec"}
+                                        label={"Select spec 2"}
                                         onChange={async (name: string) => {
                                             const u = await Ide.Operations.toLockedSpec('existing', name);
                                             ideToast({
@@ -132,7 +134,15 @@ export const IdeLayout: IdeView = (props) =>{
                                         }}
                                         options={props.context.existing.specs}/>
                                     }
+                                    {props.context.phase == 'locked' && <fieldset className="fieldset pl-5">
+                                        <legend className="fieldset-legend">Specification name</legend>
+                                        <input disabled={true} type="text" className="input" value={props.context.create.name.value} placeholder="My awesome page" />
+                                        
+                                    </fieldset>}
+                              
                                     <Actions
+                                        //hideLeft={hideLeft}
+                                        hideRight={hideRight}
                                         context={props.context}
                                         onValidateBridge={async () => {
                                             // if (props.context.selectedLauncher.kind == "r") {
@@ -144,27 +154,14 @@ export const IdeLayout: IdeView = (props) =>{
                                             //         );
                                             // }
                                         }}
+                                        
                                         onValidateV1={async () => {
                                             // const u = await Ide.Operations.validateV1(props.context);
                                             // props.setState(u);
                                         }}
-                                        onLeft={() => setHideLeft(!hideLeft)}
+                                        //onLeft={() => setHideLeft(!hideLeft)}
                                         onRight={() => setHideRight(!hideRight)}
                                         onNew={() => props.setState(Ide.Updaters.chooseNew())}
-                                        onLock={() =>
-                                        {
-
-                                            ideToast({
-                                                title: 'This is a headless toast',
-                                                description: 'You have full control of styles and jsx, while still having the animations.',
-                                                button: {
-                                                    label: 'Reply',
-                                                    onClick: () => sonnerToast.dismiss(),
-                                                },
-                                            });
-
-                                            return;
-                                        }}
                                         onSave={
                                             async () => {
                                                 if(props.context.phase != "locked") {
@@ -205,32 +202,90 @@ export const IdeLayout: IdeView = (props) =>{
                                     />
                                 </div>
                             </div>
+                           
+                            {props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" &&
+                                <fieldset className="fieldset ml-5">
+                                    {breadcrumbs(props.context.locked.virtualFolders.selectedFolder.value.folder)}
+        
+                                    <div className="join">
+                                        <div className="filter mb-7  join-item">
+                                            <input className="btn filter-reset" type="radio" name="virtual-files" aria-label="All"/>
+                                            {props.context.locked.virtualFolders.selectedFolder.value.files.map(f =>
+                                                (<div className="tooltip tooltip-bottom" data-tip={f.path}>
+                                                    <input
+                                                        className="btn"
+                                                        type="radio"
+                                                        name="virtual-files"
+                                                        checked={
+                                                            props.context.phase == 'locked'
+                                                            && props.context.locked.virtualFolders.selectedFile.kind == "r"
+                                                            && props.context.locked.virtualFolders.selectedFile.value == f.name}
+                                                        onClick={()=>
+                                                            props.setState(
+                                                                Ide.Updaters.lockedSpec.vfs.selectedFolder(
+                                                                    (Updater(VfsWorkspace.Updaters.Core.selectedFile(
 
+                                                                        f.name
+
+                                                                    )))
+                                                                )
+                                                            )} aria-label={f.name?.replace(/\.json$/,"")}/>
+                                                </div>))}
+
+                                        </div>
+                                        {folderFilter(props.context.locked.virtualFolders.selectedFolder.value,props.context.locked.virtualFolders.selectedFile)}
+                                        <div className="ml-5  join-item">
+                                            <button 
+                                                className="btn join-item"
+                                                onClick={async () =>{
+                                                    if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" && props.context.locked.virtualFolders.selectedFile.kind == "r"))
+                                                        return;
+                                                    const file = props.context.locked.virtualFolders.selectedFolder.value.folder.children.get(props.context.locked.virtualFolders.selectedFile.value)!;
+                                                    if(file.kind == "file"){
+                                                        const content = await file.value.fileRef?.text()!;
+                                                        props.setState(Ide.Updaters.lockedSpec.bridge.v1(content));
+                                                    } }}
+                                            >Load</button>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                }
 
                             {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V1Editor}/>}
                             {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V2Editor}/>}
                             {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={SeedEditor}/>}
                             {/*<props.JsonEditor{...props} view={SeedEditor}/>*/}
-                            { drawer(dockItem)}
-                            <div className="dock  bg-neutral text-neutral-content absolute bottom-0 left-0 right-0">
-                                <label
-                                    htmlFor="my-drawer" onClick={() => setDockItem('folders')} 
-                                    className="flex flex-col items-center justify-center gap-1"
-                                >
-                                    <VscFolder size={20}  />
-                                    <span className="dock-label">Folders</span>
-                                </label>
-
-                                <label
-                                    onClick={() => setDockItem('about')}
-                                    htmlFor="my-drawer"
-                                    className="flex flex-col items-center justify-center gap-1"
-                                >
-                                    <VscGithub size={20}  className="drawer-button" />
-                                    <span className="dock-label">About</span>
-                                </label>
-        
-                            </div>
+                            { drawer(dockItem, 
+                                node => {
+                                    const next = 
+                                        Updater(VfsWorkspace.Updaters.Core.selectedNode(node))
+                                    
+                                    props.setState(
+                                        Ide.Updaters.lockedSpec.vfs.selectedFolder(
+                                            next
+                                        )
+                                    )
+                                }
+                            )}
+                            {/*<div className="dock  bg-neutral text-neutral-content absolute bottom-0 left-0 right-0">*/}
+                            {/*    <label*/}
+                            {/*        htmlFor="my-drawer" onClick={() => setDockItem('folders')} */}
+                            {/*        className="flex flex-col items-center justify-center gap-1"*/}
+                            {/*    >*/}
+                            {/*        <VscFolder size={20}  />*/}
+                            {/*        <span className="dock-label">Folders</span>*/}
+                            {/*    </label>*/}
+                            
+                            {/*    <label*/}
+                            {/*        onClick={() => setDockItem('about')}*/}
+                            {/*        htmlFor="my-drawer"*/}
+                            {/*        className="flex flex-col items-center justify-center gap-1"*/}
+                            {/*    >*/}
+                            {/*        <VscGithub size={20}  className="drawer-button" />*/}
+                            {/*        <span className="dock-label">About</span>*/}
+                            {/*    </label>*/}
+                            
+                            {/*</div>*/}
                             {/*<div className="dock absolute bottom-0 left-0 right-0">*/}
 
                             {/*    <label htmlFor="my-drawer" className="drawer-button">       <svg className="size-[1.2em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="currentColor" strokeLinejoin="miter" strokeLinecap="butt"><polyline points="3 14 9 14 9 17 15 17 15 14 21 14" fill="none" stroke="currentColor" stroke-miterlimit="10" strokeWidth="2"></polyline><rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" strokeLinecap="square" stroke-miterlimit="10" strokeWidth="2"></rect></g></svg>*/}
@@ -252,6 +307,9 @@ export const IdeLayout: IdeView = (props) =>{
                         <Panel>
                             <PanelGroup direction="vertical">
                                 <Panel>
+                                    <div className="mockup-window border border-base-300 w-full">
+                                      
+                            
                         <aside className="relative h-full">
 
                             {props.context.phase == "bootstrap" && <p> {props.context.bootstrap.kind}</p> }
@@ -300,13 +358,16 @@ export const IdeLayout: IdeView = (props) =>{
        
        
 
-                        </aside>
+                        </aside>        </div>
                                 </Panel>
                                 <PanelResizeHandle  className="h-0.5 bg-neutral text-neutral-content" />
-                                <Panel minSize={10} defaultSize={30} maxSize={50}><div className="mockup-code w-full">
-                                    <pre data-prefix="1"><code>npm i daisyui</code></pre>
-                                    <pre data-prefix="2"><code>installing...</code></pre>
-                                    <pre data-prefix="3" className="bg-warning text-warning-content"><code>Error!</code></pre>
+                                <Panel minSize={10} defaultSize={20} maxSize={30}><div className="no-radius w-full">
+                                    <pre data-prefix="1" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
+                                    <pre data-prefix="2" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
+                                    <pre data-prefix="3" className="pl-3 bg-accent text-primary-content"><code>Error!</code> Can't find the ...</pre>
+                                    <pre data-prefix="4" className="pl-3 bg-warning text-warning-content"><code>Error!</code> Can't find the ...</pre>
+                                    <pre data-prefix="5" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
+                                    <pre data-prefix="6" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
                                 </div></Panel>
                             </PanelGroup>
                     </Panel>}

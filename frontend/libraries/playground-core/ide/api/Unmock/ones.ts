@@ -16,17 +16,26 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
             one: (apiName: string) =>
                 ValueOrErrors.Default.return(
                     {
-                        get: (id: Guid) => {
-                            // const fieldName = apiName.replace(/Api$/, "");
-                            return getLookups("sample",apiName, id, 0, 1).then(valueOrErrors => {
-                                return valueOrErrors.kind == "value" ? valueOrErrors.value[0] : undefined
+                        get:async (id: Guid) => {
+                            const fieldName = apiName.replace(/Api$/, "");
+                            
+                            const check =
+                                await getLookups("sample",fieldName, id, 0, 1).then(valueOrErrors => {
+                                    debugger
+                                    if (valueOrErrors.kind == "value" && valueOrErrors.value.values.length == 0) {
+                                    return ValueOrErrors.Default.throwOne("Lookup sources has no matched entity");
+                                }
+                                return valueOrErrors.kind == "value" ? (valueOrErrors.value.values as any)[0] : {}
                             });
+                            
+                            return check;
                         },
                         getManyUnlinked:
                             (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
                                 (id: Guid) =>
                                     (streamParams: Map<string, string>) =>
                                         ([streamPosition]: [ValueStreamPosition]) => {
+               
                                             const fieldName = apiName.replace(/Api$/, "");
                                             const call = 
                                                 getLookups("sample",fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
@@ -39,7 +48,6 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                                             return call
  
                                             .then((res) => (
-
                                                 {
                                                     hasMoreValues: res.HasMore,
                                                     to: res.To,

@@ -1,7 +1,6 @@
 ﻿/** @jsxImportSource @emotion/react */
 
 import React from "react";
-import {style} from "./actions.styled";
 import {
     VscCheck,
     VscCheckAll,
@@ -11,12 +10,24 @@ import {
     VscNewFile,
     VscRedo,
     VscPlay,
-    VscTriangleLeft, VscTriangleRight
+    VscTriangleLeft, VscTriangleRight, VscFolderLibrary
 } from "react-icons/vsc";
+
+
 import {Ide} from "playground-core";
 
-export const Actions: React.FC<{
-    context:  Ide,
+
+
+type ActionKey =
+    | "new" | "folders" | "save" | "seed" | "reseed"
+    | "run" | "validateBridge" | "validateV1"
+    | "left" | "right" | "lock" | "download";
+
+type ActionsProps = {
+    context: Ide;
+    hideRight?: boolean;
+    onAction?: (action: ActionKey) => void;
+    canRun?: boolean;
     onNew?: () => void;
     onLock?: () => void;
     onSeed?: () => void;
@@ -29,40 +40,82 @@ export const Actions: React.FC<{
     onValidateV1?: () => void;
     onLeft?: () => void;
     onRight?: () => void;
+    
+};
 
-}> = ({context, onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight, onRunCondition, onValidateBridge, onValidateV1}) => (
-    <div css={style.layout}>
-        <div css={style.buttonSection}>
-            <button className="btn tooltip tooltip-bottom" data-tip="Lock spec">
-                <VscLock size={20} onClick={onLock}/>
+export const Actions: React.FC<ActionsProps> = ({
+                                                    context,
+                                                    hideRight = false,
+                                                    onAction,
+                                                    canRun = true,
+                                                    onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight
+
+                                                }) => (
+    <div className={"p-5 mt-7 flex space-x-1"}>
+        {context.phase === "choose" && context.activeTab === "existing" && (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="New spec"
+                onClick={onNew}
+            >
+                <VscNewFile size={20} />
             </button>
-            { context.phase == "choose" && context.activeTab == "existing" &&  <button className="btn tooltip tooltip-bottom" data-tip="New spec">
-                <VscNewFile size={20} onClick={onNew}/>
-            </button>}
-            { context.phase == "locked" && <button className="btn tooltip tooltip-bottom" data-tip="Save changes">
-                <VscSave size={20} onClick={onSave}/>
-            </button>}
-            { context.phase == "locked" && <button className="btn tooltip tooltip-bottom" data-tip="Seed">
-                <VscDatabase size={20} onClick={onSeed}/>
-            </button>}
-            { context.phase == "locked" && context.step == "design" && <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
-                <VscPlay size={20} onClick={onRun}/>
-            </button>}
-            <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
-                <VscTriangleLeft size={20} onClick={onLeft}/>
+        )}
+
+        { context.phase == "locked" &&
+            <label
+                htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Virtual Folders">
+                <VscFolderLibrary className="mt-2" size={20}/>
+            </label>}
+
+        {context.phase === "locked" && (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Save changes"
+                onClick={onSave}
+            >
+                <VscSave size={20} />
             </button>
-            <button className="btn tooltip tooltip-bottom" data-tip="Run Forms Engine">
-                <VscTriangleRight size={20} onClick={onRight}/>
+        )}
+
+        {context.phase === "locked" && (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Seed"
+                onClick={onSeed}
+            >
+                <VscDatabase size={20} />
             </button>
-            {/*<button className="btn tooltip tooltip-bottom" data-tip="ReSeed">*/}
-            {/*    <VscRedo size={20} onClick={onReSeed}/>*/}
-            {/*</button>*/}
-            {/*<button className="btn tooltip tooltip-bottom" data-tip="Validate v1">*/}
-            {/*    <VscCheck size={20} onClick={onValidateV1}/>*/}
-            {/*</button>*/}
-            {/*<button className="btn tooltip tooltip-bottom" data-tip="Validate bridge">*/}
-            {/*    <VscCheckAll size={20} onClick={onValidateBridge}/>*/}
-            {/*</button>*/}
-        </div>
+        )}
+
+        {context.phase === "locked" && context.step === "design" && (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Run Forms Engine"
+                onClick={onRun}
+                disabled={!canRun}
+            >
+                <VscPlay size={20} />
+            </button>
+        )}
+
+        {!hideRight ? (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Hide Forms"
+                onClick={onRight}
+            >
+                <VscTriangleLeft size={20} />
+            </button>
+        ) : (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Show Forms"
+                onClick={onLeft}
+            >
+                <VscTriangleRight size={20} />
+            </button>
+        )}
     </div>
 );
+

@@ -6,6 +6,7 @@ interface ToastProps {
     id: string | number;
     title: string;
     description: string;
+    position?: string,
     button: {
         label: string;
         onClick: () => void;
@@ -17,6 +18,7 @@ export function ideToast(toast: Omit<ToastProps, 'id'>) {
       id={id}
       title={toast.title}
       description={toast.description}
+      position={toast.position || 'top-center'}
       button={{
         label: toast.button.label,
         onClick: () => console.log('Button clicked'),
@@ -24,8 +26,7 @@ export function ideToast(toast: Omit<ToastProps, 'id'>) {
     />
   ));
 }
- 
-/** A fully custom toast that still maintains the animations and interactions. */
+
 function Toast(props: ToastProps) {
   const { title, description, button, id } = props;
  

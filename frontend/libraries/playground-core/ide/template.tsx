@@ -4,13 +4,6 @@ import {JsonEditorTemplate} from "./domains/editor/template";
 import {Bootstrap} from "./coroutines/runner";
 
 export const JsonEditorEmbedded = JsonEditorTemplate
-//     .mapContext<
-//     IdeReadonlyContext & IdeWritableState
-// >((p) =>
-//     p.phase == "locked"
-//         ? Option.Default.some(p.locked.bridge)
-//         : Option.Default.none()
-// ).mapState(Ide.Template.bridge.id)
 
 export const IdeTemplate = Template.Default<
     IdeReadonlyContext,

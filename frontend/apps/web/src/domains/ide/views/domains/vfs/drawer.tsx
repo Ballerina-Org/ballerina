@@ -1,203 +1,115 @@
-﻿import { DockItem } from "../../layout.tsx";
-import React from "react";
-import { Option } from "ballerina-core";
-import TreeView, { INode, NodeId } from "react-accessible-treeview";
-import {VscFile, VscFolder} from "react-icons/vsc";
+﻿import React from "react";
+import { DockItem } from "../../layout.tsx";
 
+import AccessibleTreeVfs, {getDirectFilesFromFolder} from "./tree-view";
+import {VirtualFolderNode, VirtualFolders, VirtualJsonFile} from "playground-core";
+import {BasicFun, Option, Unit} from "ballerina-core";
 
-type Node =
-    | { kind: "dir"; name: string; children: Record<string, Node> }
-    | { kind: "file"; name: string; file: File };
+function filesToVfsFromFileList(specName: string, list: FileList): VirtualFolderNode {
+    const root: VirtualFolderNode = {
+        kind: "folder",
+        name: specName,
+        path: specName,
+        children: new Map()
+    };
 
-type DirNode = Extract<Node, { kind: "dir" }>;
-
-
-function filesToTree(files: File[]): Node {
-    const root: Node = { kind: "dir", name: "/", children: {} };
-    const filtered = files.filter(isJson);
-    for (const f of filtered) {
-        const rel = (f as any).webkitRelativePath || f.name;
-        const parts = rel.split("/").filter(Boolean);
-        let cur = root as DirNode;
-
-        for (let i = 0; i < parts.length; i++) {
-            const name = parts[i];
-            const isLeaf = i === parts.length - 1;
-
-            if (isLeaf) {
-                cur.children[name] = { kind: "file", name, file: f };
-            } else {
-                if (!cur.children[name]) {
-                    cur.children[name] = { kind: "dir", name, children: {} };
-                }
-                cur = cur.children[name] as DirNode;
+    const ensureFolder = (folderPathParts: string[]): VirtualFolderNode => {
+        let current = root;
+        for (let i = 0; i < folderPathParts.length; i++) {
+            const seg = folderPathParts[i];
+            let next = current.children.get(seg);
+            if (!next) {
+                const path = current.path === "/" ? `/${seg}` : `${current.path}/${seg}`;
+                next = {
+                    kind: "folder",
+                    name: seg,
+                    path,
+                    children: new Map()
+                };
+                current.children.set(seg, next);
             }
+            if (next.kind !== "folder") {
+                const path = current.path === "/" ? `/${seg}` : `${current.path}/${seg}`;
+                next = {
+                    kind: "folder",
+                    name: seg,
+                    path,
+                    children: new Map()
+                };
+                current.children.set(seg, next);
+            }
+            current = next;
         }
-    }
+        return current;
+    };
+
+
+    const defaultFolderParts = [ "core" ];
+
+    Array.from(list).forEach((file) => {
+        const rel = (file as any).webkitRelativePath as string | undefined;
+        const relParts = (rel && rel.length > 0)
+            ? rel.split("/").filter(Boolean)
+            : [...defaultFolderParts, file.name];
+
+        const folderParts = relParts.slice(0, -1);
+        const filename = relParts[relParts.length - 1];
+
+        const parentFolder = ensureFolder(folderParts);
+        if(parentFolder.kind != "folder") return;
+        const fullPath = `${parentFolder.path}/${filename}`;
+
+        const vfile: VirtualJsonFile = {
+            name: "",
+            path: fullPath,
+            fileRef: file,
+            content: {},   
+            topLevels: []      
+        };
+
+        parentFolder.children.set(filename, { kind: "file", value: vfile });
+    });
 
     return root;
 }
+export const drawer = (dockItem: DockItem, selectNode: BasicFun<{ folder: VirtualFolderNode, files: VirtualJsonFile []}, void> ) => {
 
-function formatBytes(n?: number) {
-    if (!n) return "";
-    const k = 1024,
-        u = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.min(u.length - 1, Math.floor(Math.log(n) / Math.log(k)));
-    return `${(n / Math.pow(k, i)).toFixed(1)} ${u[i]}`;
-}
+    const [root, setRoot] = React.useState<Option<VirtualFolderNode>>(Option.Default.none());
+    const [open, setOpen] = React.useState(false);
 
-
-type Meta = { path: string; kind: "dir" | "file"; size?: number };
-
-function toTreeViewData(root: DirNode): INode<Meta>[] {
-    const items: INode<Meta>[] = [];
-
-    function walk(node: Node, path: string[], parent: NodeId | null) {
-        const id: NodeId = path.join("/");
-
-        if (node.kind === "dir") {
-            const names = Object.keys(node.children).sort();
-            const childIds: NodeId[] = names.map((n) => [...path, n].join("/"));
-
-            items.push({
-                id,
-                name: node.name,
-                parent,
-                children: childIds, // leafs must use [], not undefined
-                metadata: { path: String(id), kind: "dir" },
-            });
-
-            for (const n of names) {
-                walk(node.children[n], [...path, n], id);
-            }
-        } else {
-            items.push({
-                id,
-                name: node.name,
-                parent,
-                children: [], // leaf
-                metadata: { path: String(id), kind: "file", size: node.file.size },
-            });
-        }
-    }
-
-    // multiple roots: children of "/" become parent=null
-    for (const name of Object.keys(root.children).sort()) {
-        walk(root.children[name], [name], null);
-    }
-    return items;
-}
-
-
-function AccessibleTree({ root }: { root: DirNode }) {
-    const data = React.useMemo(() => toTreeViewData(root), [root]);
-    
-    const folderIds = React.useMemo<NodeId[]>(
-        () => data.filter((d) => d.children.length > 0).map((d) => d.id),
-        [data]
-    );
-    
-    const [checked, setChecked] = React.useState<Set<NodeId>>(() => new Set([]))//; folderIds));
-    React.useEffect(() => setChecked(new Set([])), []); // folderIds)), [folderIds]);
-
-    return (
-        <div className="card bg-base-100 shadow w-full">
-            <div className="card-body p-3">
-                <TreeView
-                    data={data}
-                    aria-label="Files"
-                    className="text-sm"
-                    defaultExpandedIds={folderIds}
-                    nodeRenderer={({ element, getNodeProps, level, isBranch, isExpanded, handleExpand }) => {
-                        const isFolder = element.metadata?.kind === "dir";
-                        return (
-                            <div
-                                {...getNodeProps({ onClick: handleExpand })}
-                                className="flex items-center gap-2 py-1"
-                                style={{ marginLeft: (level - 1) * 16 }}
-                            >
-                                {isBranch ? (
-                                    <span className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}>▸</span>
-                                ) : (
-                                    <span className="w-3 inline-block" />
-                                )}
-
-                                {isFolder ? <VscFolder size={15} /> : <VscFile size={15} />}
-
-                                <span className={isFolder ? "font-medium" : "opacity-80"}>{element.name}</span>
-
-
-                                {isFolder && (
-                                    <input
-                                        type="checkbox"
-                                        className="toggle toggle-xs ml-1"
-                                        checked={checked.has(element.id)}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            const id = element.id as NodeId;
-                                            setChecked((prev) => {
-                                                const next = new Set(prev);
-                                                e.target.checked ? next.add(id) : next.delete(id);
-                                                return next;
-                                            });
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                )}
-                                
-                                {!isFolder && element.metadata?.size != null && (
-                                    <span className="badge badge-ghost badge-xs ml-1">
-                    {formatBytes(element.metadata.size as any)}
-                  </span>
-                                )}
-                            </div>
-                        );
-                    }}
-                />
-            </div>
-        </div>
-    );
-}
-const isJson = (f: File) =>
-    f.type === "application/json" || /\.json$/i.test(f.name);
-
-
-export const drawer = (dockItem: DockItem) => {
-    const [node, setNode] = React.useState<Option<Node>>(Option.Default.none());
+    const [stagedPath, setStagedPath] = React.useState<string | null>(null);
 
     const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
         const list = e.currentTarget.files;
-        if (!list) return;
-
-        const files = Array.from(list);
-        const tree = filesToTree(files);
-
-        console.log(`Total files: ${files.length}`);
-        console.log("/");
+        if (!list || list.length === 0) return;
         
-        const printTree = (n: Node, prefix = ""): void => {
-            if (n.kind === "dir") {
-                const entries = Object.values(n.children).sort((a, b) => {
-                    if (a.kind !== b.kind) return a.kind === "dir" ? -1 : 1;
-                    return a.name.localeCompare(b.name);
-                });
-                entries.forEach((child, idx) => {
-                    const isLast = idx === entries.length - 1;
-                    const branch = isLast ? "└─ " : "├─ ";
-                    const nextPrefix = prefix + (isLast ? "   " : "│  ");
-                    if (child.kind === "dir") {
-                        console.log(prefix + branch + child.name + "/");
-                        printTree(child, nextPrefix);
-                    } else {
-                        console.log(prefix + branch + `${child.name} (${formatBytes(child.file.size)})`);
-                    }
-                });
+        const specName = "spec";
+        const vfsRoot = filesToVfsFromFileList(specName, list);
+        
+        const maybeCore = ((): string | null => {
+            if (vfsRoot.kind !== "folder") return null;
+            const core = vfsRoot.children.get("core");
+            if (core && core.kind === "folder" && VirtualFolders.Operations.isLeafFolderNode(core)) {
+                return core.path;
             }
-        };
-        printTree(tree);
+            return null;
+        })();
 
-        setNode(Option.Default.some(tree));
+        if (maybeCore) {
+   
+            setStagedPath(maybeCore);
+        } else {
+            setStagedPath(null);
+        }
+
+        setRoot(Option.Default.some(vfsRoot));
     };
+
+
+    const filesToEdit: Option<{ folder: VirtualFolderNode, files: VirtualJsonFile []}> = 
+        root.kind == "l" ? Option.Default.none() : Option.Default.some(getDirectFilesFromFolder(root.value,  stagedPath!));
+    const canAccept = stagedPath !== null && filesToEdit.kind == "r"; 
+
 
     return (
         <div className="drawer pt-16">
@@ -205,106 +117,67 @@ export const drawer = (dockItem: DockItem) => {
             <div className="drawer-content" />
 
             <div className="drawer-side top-16 h-[calc(100vh-4rem)] z-40">
-                <label htmlFor="my-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
+                <label htmlFor="my-drawer" aria-label="close sidebar" className="drawer-overlay !bg-transparent" />
 
-                <ul className="menu bg-base-200 text-base-content min-h-full w-[50vw] p-4">
-                    {dockItem == "about" && (
-                        <>
-                            <div className="hero bg-base-200 min-h-screen">
-                                <div className="hero-content flex-col lg:flex-row">
-                                    <img
-                                        src="https://framerusercontent.com/images/0YOFGJQT6BszWKZYV9kMTT629JA.png?scale-down-to=1024"
-                                        className="max-w-sm rounded-lg shadow-2xl"
-                                    />
-                                    <div>
-                                        <h1 className="text-5xl font-bold">Created at BLP</h1>
-                                        <p className="py-6">
-                                            Native-AI for ERP automation
-                                            At BLP, we design and engineer our own AI models for true, complex, end-to-end ERP automation.
-                                        </p>
-                                        <button className="btn btn-primary">Join us!</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <footer className="footer sm:footer-horizontal bg-neutral text-neutral-content p-10">
-                                <nav>
-                                    <h6 className="footer-title">Services</h6>
-                                    <a className="link link-hover">Branding</a>
-                                    <a className="link link-hover">Design</a>
-                                    <a className="link link-hover">Marketing</a>
-                                    <a className="link link-hover">Advertisement</a>
-                                </nav>
-                                <nav>
-                                    <h6 className="footer-title">Company</h6>
-                                    <a className="link link-hover">About us</a>
-                                    <a className="link link-hover">Contact</a>
-                                    <a className="link link-hover">Jobs</a>
-                                    <a className="link link-hover">Press kit</a>
-                                </nav>
-                                <nav>
-                                    <h6 className="footer-title">Legal</h6>
-                                    <a className="link link-hover">Terms of use</a>
-                                    <a className="link link-hover">Privacy policy</a>
-                                    <a className="link link-hover">Cookie policy</a>
-                                </nav>
-                            </footer>
-                        </>
-                    )}
-
-                    {dockItem == "folders" && (
+                <ul className="menu bg-base-200 text-base-content min-h-full w-[40vw] p-4">
+                    
                         <>
                             <div className="flex w-full">
-                                <div className="card bg-warning text-neutral-content w-1/2">
+                                <div className="card bg-primary text-neutral-content w-1/2">
                                     <div className="card-body items-start gap-3">
-                                        <h2 className="card-title">Select files</h2>
+                                        <h2 className="card-title">Select file</h2>
                                         <div className="flex flex-wrap gap-3">
                                             <input
                                                 type="file"
                                                 multiple
                                                 onChange={handlePick}
-                                                className="file-input file-input-accent"
+                                                className="file-input file-input-ghost"
                                             />
-                                     
                                         </div>
                                     </div>
                                 </div>
                                 <div className="divider divider-horizontal">OR</div>
-                             <div className="card bg-warning text-neutral-content w-1/2">
+                                <div className="card bg-primary text-neutral-content w-1/2">
                                     <div className="card-body items-start gap-3">
                                         <h2 className="card-title">Select folder</h2>
                                         <div className="flex flex-wrap gap-3">
-                                       
                                             <input
                                                 type="file"
                                                 multiple
                                                 onChange={handlePick}
-                                                className="file-input file-input-accent"
-                                                {...{ webkitdirectory: "", directory: "" }}
+                                                className="file-input file-input-ghost"
+                                                {...({ webkitdirectory: "", directory: "" } as any)}
                                             />
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                      
-                            <div className="indicator w-full mt-12 ">
-                                <span className="indicator-item indicator-center badge badge-accent">{checked.length}</span>
-                                <button className="btn btn-block btn-accent w-full">Accept selected</button>
-                            </div>
-                                
+
+                            <button 
+                                disabled={!canAccept && filesToEdit.kind == "l"} 
+                                className="btn btn-accent btn-block mt-7" 
+                                onClick={() =>{
+                                    
+                                    debugger
+                                    return filesToEdit.kind == "r" && selectNode(filesToEdit.value) } }>
+                                Accept selected
+                            </button>
                            
-                           
-                          
-                            {/* render the accessible tree when we have data */}
-                            {node.kind === "r" && node.value.kind === "dir" && (
+
+                            {root.kind == "r" && root.value.kind === "folder" && 
                                 <div className="mt-4">
-                                    <AccessibleTree root={node.value} />
-                                </div>
-                            )}
+                                    <AccessibleTreeVfs
+                                        root={root.value}
+                                        stagedPath={stagedPath}
+                                        onStageChange={setStagedPath}
+                                        expandFoldersByDefault
+                                    />
+                                </div>}
+                        
                         </>
-                    )}
+                    
                 </ul>
             </div>
         </div>
     );
-};
+}

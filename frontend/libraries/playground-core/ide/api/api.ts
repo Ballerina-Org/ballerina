@@ -14,11 +14,10 @@ api.interceptors.request.use((cfg) => {
     return cfg;
 });
 
-/** Returns the ValueOrError **/
+
 export async function axiosVOE<T>(
     config: AxiosRequestConfig
 ): Promise<ValueOrErrors<T, string>> {
-    // Don't throw on non-2xx; we'll map status ourselves.
 
     try {
         const res = await api.request<T>({

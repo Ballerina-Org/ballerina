@@ -27,7 +27,7 @@ export const V2Editor: JsonEditorView = (props) => (
                     }}
 
                     collapse={(n) => {
-                        debugger
+                    
                         return n.key != "Name" &&  n.level < 3 && JSON.stringify(n.path) !== JSON.stringify(["schema"])
            
                     }}
@@ -82,7 +82,7 @@ export const V1Editor: JsonEditorView  = (props) => (
                     collapse={1}
                     
                     rootName="V1"
-                    data={JSON.parse(props.context.locked.bridge.spec.left.specBody.value)}
+                    data={JSON.parse(props.context.locked.bridge.spec.left.specBody.value || '{}')}
                     theme={monoLightTheme}
                     onDelete={ x =>
                     {

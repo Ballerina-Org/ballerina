@@ -2,42 +2,6 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
 
-
-const Wrapper = styled.div`
-    display: flex;
-    align-items: center;
-    margin-left: 50px;
-    margin-right:50px;
-
-    min-width: 250px;
-    max-width: 250px;
-    gap: 1rem;
-    overflow: visible;
-    flex-shrink: 0;
-`;
-
-const Select = styled.select`
-    flex: 1; /* fills remaining space within wrapper */
-    padding: 0.5rem 1rem;
-    width: 100%; // or a fixed value like 150px
-    min-width: 100px;
-    padding-right: 2rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: white;
-    cursor: pointer;
-
-    &:hover {
-        border-color: #888;
-    }
-
-    &:focus {
-        outline: none;
-        border-color: #007acc;
-    }
-`;
-
 type Props = {
     label: string;
     options: string[];
@@ -70,17 +34,3 @@ export const HorizontalDropdown: React.FC<Props> = ({ label, options, onChange }
             </ul>
         </details>)
 }
-        // <Wrapper>
-        //     <Select
-        //         id="dropdown"
-        //         value={selected}
-        //         onChange={handleChange}
-        //     >
-        //         <option value="" disabled hidden>{label}</option>
-        //         {options.map((opt) => (
-        //             <option key={opt} value={opt}>
-        //                  {opt}
-        //             </option>
-        //         ))}
-        //     </Select>
-        // </Wrapper>
