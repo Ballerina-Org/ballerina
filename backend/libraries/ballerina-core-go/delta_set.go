@@ -15,8 +15,6 @@ const (
 
 var allDeltaSetEffectsEnumCases = [...]deltaSetEffectsEnum{setValue, setAdd, setRemove}
 
-func DefaultDeltaSetEffectsEnum() deltaSetEffectsEnum { return allDeltaSetEffectsEnumCases[0] }
-
 type DeltaSet[a comparable, deltaA any] struct {
 	DeltaBase
 	discriminator deltaSetEffectsEnum

@@ -15,8 +15,6 @@ const (
 
 var allDeltaMapEffectsEnumCases = [...]deltaMapEffectsEnum{mapKey, mapValue, mapAdd, mapRemove}
 
-func DefaultDeltaMapEffectsEnum() deltaMapEffectsEnum { return allDeltaMapEffectsEnumCases[0] }
-
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 	DeltaBase
 	discriminator deltaMapEffectsEnum

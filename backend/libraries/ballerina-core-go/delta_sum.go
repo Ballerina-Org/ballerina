@@ -16,8 +16,6 @@ const (
 
 var allDeltaSumEffectsEnumCases = [...]deltaSumEffectsEnum{sumReplace, sumLeft, sumRight}
 
-func DefaultDeltaSumEffectsEnum() deltaSumEffectsEnum { return allDeltaSumEffectsEnumCases[0] }
-
 type DeltaSum[a any, b any, deltaA any, deltaB any] struct {
 	DeltaBase
 	discriminator deltaSumEffectsEnum

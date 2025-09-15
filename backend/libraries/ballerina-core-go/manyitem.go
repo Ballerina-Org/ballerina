@@ -21,7 +21,3 @@ func MapManyItem[T, U any](item ManyItem[T], f func(T) U) ManyItem[U] {
 		CanChangeLink: item.CanChangeLink,
 	}
 }
-
-func DefaultManyItem[T any](value T) ManyItem[T] {
-	return ManyItem[T]{Value: value, IsLinked: false, CanChangeLink: true}
-}

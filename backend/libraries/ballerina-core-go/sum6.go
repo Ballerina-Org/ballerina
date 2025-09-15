@@ -18,8 +18,6 @@ const (
 
 var allSum6CasesEnum = [...]sum6CasesEnum{case1Of6, case2Of6, case3Of6, case4Of6, case5Of6, case6Of6}
 
-func DefaultSum6CasesEnum() sum6CasesEnum { return allSum6CasesEnum[0] }
-
 type Sum6[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any] struct {
 	discriminator sum6CasesEnum
 
