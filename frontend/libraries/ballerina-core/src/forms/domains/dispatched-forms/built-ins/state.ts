@@ -1821,7 +1821,14 @@ export const dispatchToAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(raw.fields, formState);
+        )(raw.fields, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["union"].toAPIRawValue([
+              { caseName, fields: value },
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
       }
 
       if (t.kind == "singleSelection") {
