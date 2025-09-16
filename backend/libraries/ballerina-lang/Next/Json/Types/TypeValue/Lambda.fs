@@ -12,9 +12,12 @@ module Lambda =
   open Ballerina.Collections.Sum.Operators
   open Ballerina.DSL.Next.Json
 
+  let private kindKey = "lambda"
+  let private fieldKey = "lambda"
+
   type TypeValue with
     static member FromJsonLambda(fromExpr: JsonValue -> Sum<TypeExpr, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "lambda" "lambda" (fun lambdaFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun lambdaFields ->
         sum {
           let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
 
@@ -33,4 +36,4 @@ module Lambda =
         let bodyJson = body |> rootToJson
 
         JsonValue.Record [| ("param", paramJson); ("body", bodyJson) |]
-        |> Json.kind "lambda" "lambda"
+        |> Json.kind kindKey fieldKey

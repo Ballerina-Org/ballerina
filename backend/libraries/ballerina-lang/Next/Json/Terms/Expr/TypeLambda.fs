@@ -13,9 +13,12 @@ module TypeLambda =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Errors
 
+  let private kindKey = "type-lambda"
+  let private fieldKey = "type-lambda"
+
   type Expr<'T> with
-    static member FromJsonTypeLambda(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "type-lambda" "type-lambda" (fun typeParamJson ->
+    static member FromJsonTypeLambda (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun typeParamJson ->
         reader {
           let! (typeParam, body) = typeParamJson |> JsonValue.AsPair |> reader.OfSum
           let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
@@ -24,14 +27,13 @@ module TypeLambda =
         })
 
     static member ToJsonTypeLambda
-      : ExprEncoder<'T> -> TypeParameter -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson typeParam body ->
-        reader {
-          let typeParamJson = typeParam |> TypeParameter.ToJson
-          let! bodyJson = body |> rootToJson
+      (rootToJson: ExprEncoder<'T>)
+      (typeParam: TypeParameter)
+      (body: Expr<'T>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let typeParamJson = typeParam |> TypeParameter.ToJson
+        let! bodyJson = body |> rootToJson
 
-          return
-            [| typeParamJson; bodyJson |]
-            |> JsonValue.Array
-            |> Json.kind "type-lambda" "type-lambda"
-        }
+        return [| typeParamJson; bodyJson |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

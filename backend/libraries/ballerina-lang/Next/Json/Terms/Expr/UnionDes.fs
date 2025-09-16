@@ -12,9 +12,12 @@ module UnionDes =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
 
+  let private kindKey = "union-match"
+  let private fieldKey = "union-match"
+
   type Expr<'T> with
-    static member FromJsonUnionDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "union-match" "union-match" (fun unionDesJson ->
+    static member FromJsonUnionDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun unionDesJson ->
         reader {
           let! caseHandlers = unionDesJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -37,23 +40,24 @@ module UnionDes =
         })
 
     static member ToJsonUnionDes
-      : ExprEncoder<'T> -> Map<Identifier, CaseHandler<'T>> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson union ->
-        reader {
-          let! cases =
-            union
-            |> Map.toList
-            |> List.map (fun (caseName, (handlerVar, handlerExpr)) ->
-              reader {
-                let caseNameJson = caseName |> Identifier.ToJson
-                let! handlerExpr = rootToJson handlerExpr
+      (rootToJson: ExprEncoder<'T>)
+      (union: Map<Identifier, CaseHandler<'T>>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! cases =
+          union
+          |> Map.toList
+          |> List.map (fun (caseName, (handlerVar, handlerExpr)) ->
+            reader {
+              let caseNameJson = caseName |> Identifier.ToJson
+              let! handlerExpr = rootToJson handlerExpr
 
-                let handlerJson =
-                  JsonValue.Array [| JsonValue.String handlerVar.Name; handlerExpr |]
+              let handlerJson =
+                JsonValue.Array [| JsonValue.String handlerVar.Name; handlerExpr |]
 
-                return JsonValue.Array [| caseNameJson; handlerJson |]
-              })
-            |> reader.All
+              return JsonValue.Array [| caseNameJson; handlerJson |]
+            })
+          |> reader.All
 
-          return JsonValue.Array(List.toArray cases) |> Json.kind "union-match" "union-match"
-        }
+        return JsonValue.Array(List.toArray cases) |> Json.kind kindKey fieldKey
+      }

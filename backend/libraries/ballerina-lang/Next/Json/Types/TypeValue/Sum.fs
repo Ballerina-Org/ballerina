@@ -10,9 +10,12 @@ module Sum =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "sum"
+  let private fieldKey = "sum"
+
   type TypeValue with
     static member FromJsonSum(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "sum" "sum" (fun sumFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun sumFields ->
         sum {
           let! cases = sumFields |> JsonValue.AsArray
           let! caseTypes = cases |> Array.map (fun case -> case |> fromRootJson) |> sum.All
@@ -20,4 +23,7 @@ module Sum =
         })
 
     static member ToJsonSum(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =
-      List.toArray >> Array.map rootToJson >> JsonValue.Array >> Json.kind "sum" "sum"
+      List.toArray
+      >> Array.map rootToJson
+      >> JsonValue.Array
+      >> Json.kind kindKey fieldKey

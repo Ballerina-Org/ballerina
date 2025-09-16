@@ -33,8 +33,52 @@
         <Compile Include="Next/Terms/TypeCheck.fs" />
         <Compile Include="Next/Terms/Expr_Eval.fs" />
 
-
         <Compile Include="Next\Json\Json.fs" />
+
+        <Compile Include="Next/Extensions/Model.fs" />
+        <Compile Include="Next/Extensions/Patterns.fs" />
+        <Compile Include="Next/Extensions/Types.fs" />
+        <Compile Include="Next/Extensions/Operations.fs" />
+
+        <Compile Include="Next/Stdlib/Option/Model.fs" />
+        <Compile Include="Next/Stdlib/Option/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Option/Extension.fs" />
+
+        <Compile Include="Next/Stdlib/List/Model.fs" />
+        <Compile Include="Next/Stdlib/List/Patterns.fs" />
+        <Compile Include="Next/Stdlib/List/Extension.fs" />
+
+        <Compile Include="Next/Stdlib/Int32/Model.fs" />
+        <Compile Include="Next/Stdlib/Int32/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Int32/Extension.fs" />
+        <Compile Include="Next/Stdlib/Int64/Model.fs" />
+        <Compile Include="Next/Stdlib/Int64/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Int64/Extension.fs" />
+        <Compile Include="Next/Stdlib/Float32/Model.fs" />
+        <Compile Include="Next/Stdlib/Float32/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Float32/Extension.fs" />
+        <Compile Include="Next/Stdlib/Float64/Model.fs" />
+        <Compile Include="Next/Stdlib/Float64/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Float64/Extension.fs" />
+        <Compile Include="Next/Stdlib/Decimal/Model.fs" />
+        <Compile Include="Next/Stdlib/Decimal/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Decimal/Extension.fs" />
+        <Compile Include="Next/Stdlib/String/Model.fs" />
+        <Compile Include="Next/Stdlib/String/Patterns.fs" />
+        <Compile Include="Next/Stdlib/String/Extension.fs" />
+        <Compile Include="Next/Stdlib/Bool/Model.fs" />
+        <Compile Include="Next/Stdlib/Bool/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Bool/Extension.fs" />
+        <Compile Include="Next/Stdlib/Guid/Model.fs" />
+        <Compile Include="Next/Stdlib/Guid/Patterns.fs" />
+        <Compile Include="Next/Stdlib/Guid/Extension.fs" />
+        <Compile Include="Next/Stdlib/DateTime/Model.fs" />
+        <Compile Include="Next/Stdlib/DateTime/Patterns.fs" />
+        <Compile Include="Next/Stdlib/DateTime/Extension.fs" />
+        <Compile Include="Next/Stdlib/DateOnly/Model.fs" />
+        <Compile Include="Next/Stdlib/DateOnly/Patterns.fs" />
+        <Compile Include="Next/Stdlib/DateOnly/Extension.fs" />
+
         <Compile Include="Next\Json\Type\Var.fs" />
         <Compile Include="Next\Json\Type\Symbol.fs" />
         <Compile Include="Next\Json\Type\Primitive.fs" />
@@ -53,7 +97,6 @@
 
         <Compile Include="Next\Json\Types\TypeExpr\Map.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Lookup.fs" />
-        <Compile Include="Next\Json\Types\TypeExpr\List.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Lambda.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\KeyOf.fs" />
         <Compile Include="Next\Json\Types\TypeExpr\Flatten.fs" />
@@ -70,7 +113,6 @@
         <Compile Include="Next\Json\Types\TypeValue\Primitive.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Map.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Lookup.fs" />
-        <Compile Include="Next\Json\Types\TypeValue\List.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Lambda.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Arrow.fs" />
         <Compile Include="Next\Json\Types\TypeValue\Apply.fs" />
@@ -104,6 +146,7 @@
         <Compile Include="Next\Json\Terms\Value\Primitive.fs" />
         <Compile Include="Next\Json\Terms\Value\Lambda.fs" />
         <Compile Include="Next\Json\Terms\Value\Model.fs" />
+        <Compile Include="Next\Json\Terms\Value\Extension.fs" />
 
         <Compile Include="ExprType/Model.fs" />
         <Compile Include="ExprType/Patterns.fs" />

@@ -12,8 +12,11 @@ module Sum =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonSum(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField "sum" "sum" (fun json ->
+    static member FromJsonSum
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "sum" "sum" (fun json ->
         reader {
           let! caseIndex, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! caseIndex = caseIndex |> JsonValue.AsInt |> reader.OfSum
@@ -22,10 +25,12 @@ module Sum =
         })
 
     static member ToJsonSum
-      : DeltaEncoder<'valueExtension> -> int -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
-      fun rootToJson i v ->
-        reader {
-          let i = i |> decimal |> JsonValue.Number
-          let! v = v |> rootToJson
-          return [| i; v |] |> JsonValue.Array |> Json.kind "sum" "sum"
-        }
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (i: int)
+      (v: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = v |> rootToJson
+        return [| i; v |] |> JsonValue.Array |> Json.kind "sum" "sum"
+      }

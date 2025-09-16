@@ -13,9 +13,12 @@ module RecordCons =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
 
+  let private kindKey = "record-cons"
+  let private fieldKey = "fields"
+
   type Expr<'T> with
-    static member FromJsonRecordCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "record-cons" "fields" (fun fieldsJson ->
+    static member FromJsonRecordCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -34,18 +37,19 @@ module RecordCons =
         })
 
     static member ToJsonRecordCons
-      : ExprEncoder<'T> -> List<Identifier * Expr<'T>> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson record ->
-        reader {
-          let! all =
-            record
-            |> List.map (fun (field, expr) ->
-              reader {
-                let! expr = rootToJson expr
-                let field = Identifier.ToJson field
-                return [| field; expr |] |> JsonValue.Array
-              })
-            |> reader.All
+      (rootToJson: ExprEncoder<'T>)
+      (record: List<Identifier * Expr<'T>>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! all =
+          record
+          |> List.map (fun (field, expr) ->
+            reader {
+              let! expr = rootToJson expr
+              let field = Identifier.ToJson field
+              return [| field; expr |] |> JsonValue.Array
+            })
+          |> reader.All
 
-          return all |> (List.toArray >> JsonValue.Array >> Json.kind "record-cons" "fields")
-        }
+        return all |> (List.toArray >> JsonValue.Array >> Json.kind kindKey fieldKey)
+      }

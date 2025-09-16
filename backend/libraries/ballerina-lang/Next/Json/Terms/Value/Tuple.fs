@@ -10,31 +10,26 @@ module Tuple =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
-  type FromJsonRoot<'T, 'valueExtension> = JsonValue -> Reader<Value<'T, 'valueExtension>, JsonParser<'T>, Errors>
+  let private kindKey = "tuple"
+  let private fieldKey = "elements"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonTuple
-      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
-      : JsonValue -> ValueParser<'T, 'valueExtension> =
-      fun json ->
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun elementsJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "tuple"
-              "elements"
-              (fun elementsJson ->
-                reader {
-                  let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
-                  let! elements = elements |> Seq.map fromJsonRoot |> reader.All
-                  return Value.Tuple elements
-                })
-              (json)
-        }
+          let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
+          let! elements = elements |> Seq.map fromJsonRoot |> reader.All
+          return Value.Tuple elements
+        })
 
     static member ToJsonTuple
-      : ValueEncoder<'T, 'valueExtension> -> Value<'T, 'valueExtension> list -> JsonEncoder<'T, 'valueExtension> =
-      fun rootToJson elements ->
-        elements
-        |> Seq.map rootToJson
-        |> reader.All
-        |> reader.Map(Seq.toArray >> JsonValue.Array >> Json.kind "tuple" "elements")
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (elements: List<Value<'T, 'valueExtension>>)
+      : ValueEncoderReader<'T> =
+      reader {
+        let! elements = elements |> List.map rootToJson |> reader.All
+        return elements |> List.toArray |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

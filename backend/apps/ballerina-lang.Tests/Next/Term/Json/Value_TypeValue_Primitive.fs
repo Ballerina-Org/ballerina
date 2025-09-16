@@ -27,7 +27,7 @@ let ``Assert PrimitiveValue -> ToJson -> FromJson -> PrimitiveValue``
 [<Test>]
 let ``Dsl:Term:Value.PrimitiveValue json round-trip`` () =
   let testCases =
-    [ """{"kind": "int", "int":"123"}""", PrimitiveValue.Int 123
+    [ """{"kind": "int32", "int32":"123"}""", PrimitiveValue.Int32 123
       """{"kind": "decimal", "decimal":"123.456"}""", PrimitiveValue.Decimal 123.456M
       """{"kind": "boolean", "boolean":"true"}""", PrimitiveValue.Bool true
       """{"kind": "guid", "guid":"00000000-0000-0000-0000-000000000001"}""",

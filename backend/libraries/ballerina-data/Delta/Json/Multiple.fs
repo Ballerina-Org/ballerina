@@ -13,8 +13,11 @@ module Multiple =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonMultiple(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField "multiple" "multiple" (fun json ->
+    static member FromJsonMultiple
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "multiple" "multiple" (fun json ->
         reader {
           let! deltas = json |> JsonValue.AsArray |> reader.OfSum
           let! deltas = deltas |> Seq.map fromJsonRoot |> Seq.toList |> reader.All
@@ -22,9 +25,10 @@ module Multiple =
         })
 
     static member ToJsonMultiple
-      : DeltaEncoder<'valueExtension> -> List<Delta<'valueExtension>> -> JsonEncoder<TypeValue, 'valueExtension> =
-      fun rootToJson deltas ->
-        reader {
-          let! jsonDeltas = deltas |> List.map rootToJson |> reader.All
-          return JsonValue.Array(jsonDeltas |> List.toArray) |> Json.kind "multiple" "multiple"
-        }
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (deltas: List<Delta<'valueExtension>>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let! jsonDeltas = deltas |> List.map rootToJson |> reader.All
+        return jsonDeltas |> List.toArray |> JsonValue.Array |> Json.kind "multiple" "multiple"
+      }

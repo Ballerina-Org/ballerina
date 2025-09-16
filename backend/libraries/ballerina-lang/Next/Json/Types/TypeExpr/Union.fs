@@ -9,9 +9,12 @@ module UnionTypeExpr =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "union"
+  let private fieldKey = "union"
+
   type TypeExpr with
     static member FromJsonUnion(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "union" "union" (fun unionFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray
 
@@ -40,4 +43,4 @@ module UnionTypeExpr =
             let caseTypeJson = rootToJson caseType
             JsonValue.Array [| caseKeyJson; caseTypeJson |])
 
-        JsonValue.Array(caseTypes |> Array.ofSeq) |> Json.kind "union" "union"
+        JsonValue.Array(caseTypes |> Array.ofSeq) |> Json.kind kindKey fieldKey

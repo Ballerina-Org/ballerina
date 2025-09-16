@@ -12,11 +12,14 @@ module Union =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
+  let private kindKey = "union"
+  let private fieldKey = "union"
+
   type TypeValue with
     static member FromJsonUnion
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "union" "union" (fun unionFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray
 
@@ -39,4 +42,4 @@ module Union =
       Map.toArray
       >> Array.map (fun (symbol, value) -> JsonValue.Array [| TypeSymbol.ToJson symbol; rootToJson value |])
       >> JsonValue.Array
-      >> Json.kind "union" "union"
+      >> Json.kind kindKey fieldKey

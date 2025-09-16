@@ -13,9 +13,12 @@ module TypeLet =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
 
+  let private kindKey = "type-let"
+  let private fieldKey = "type-let"
+
   type Expr<'T> with
-    static member FromJsonTypeLet(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "type-let" "type-let" (fun typeLetJson ->
+    static member FromJsonTypeLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun typeLetJson ->
         reader {
           let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
           let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
@@ -26,15 +29,15 @@ module TypeLet =
         })
 
     static member ToJsonTypeLet
-      : ExprEncoder<'T> -> string -> 'T -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson typeId typeArg body ->
-        reader {
-          let! ctx = reader.GetContext()
-          let typeId = typeId |> JsonValue.String
-          let! body = rootToJson body
+      (rootToJson: ExprEncoder<'T>)
+      (typeId: string)
+      (typeArg: 'T)
+      (body: Expr<'T>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! ctx = reader.GetContext()
+        let typeId = typeId |> JsonValue.String
+        let! body = rootToJson body
 
-          return
-            [| typeId; ctx typeArg; body |]
-            |> JsonValue.Array
-            |> Json.kind "type-let" "type-let"
-        }
+        return [| typeId; ctx typeArg; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

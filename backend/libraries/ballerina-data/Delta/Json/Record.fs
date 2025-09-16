@@ -12,8 +12,11 @@ module Record =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonRecord(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField "record" "record" (fun json ->
+    static member FromJsonRecord
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "record" "record" (fun json ->
         reader {
           let! fieldName, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! fieldName = fieldName |> JsonValue.AsString |> reader.OfSum
@@ -22,10 +25,12 @@ module Record =
         })
 
     static member ToJsonRecord
-      : DeltaEncoder<'valueExtension> -> string -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
-      fun rootToJson name delta ->
-        reader {
-          let name = name |> JsonValue.String
-          let! delta = delta |> rootToJson
-          return [| name; delta |] |> JsonValue.Array |> Json.kind "record" "record"
-        }
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (name: string)
+      (delta: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let name = name |> JsonValue.String
+        let! delta = delta |> rootToJson
+        return [| name; delta |] |> JsonValue.Array |> Json.kind "record" "record"
+      }

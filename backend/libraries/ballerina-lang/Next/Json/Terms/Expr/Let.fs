@@ -12,9 +12,12 @@ module Let =
   open Ballerina.Reader.WithError
   open Ballerina.Errors
 
+  let private kindKey = "let"
+  let private fieldKey = "let"
+
   type Expr<'T> with
-    static member FromJsonLet(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "let" "let" (fun letJson ->
+    static member FromJsonLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun letJson ->
         reader {
           let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
           let! var = var |> JsonValue.AsString |> reader.OfSum
@@ -25,11 +28,14 @@ module Let =
         })
 
     static member ToJsonLet
-      : ExprEncoder<'T> -> Var -> Expr<'T> -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson var value body ->
-        reader {
-          let var = var.Name |> JsonValue.String
-          let! value = value |> rootToJson
-          let! body = body |> rootToJson
-          return [| var; value; body |] |> JsonValue.Array |> Json.kind "let" "let"
-        }
+      (rootToJson: ExprEncoder<'T>)
+      (var: Var)
+      (value: Expr<'T>)
+      (body: Expr<'T>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let var = var.Name |> JsonValue.String
+        let! value = value |> rootToJson
+        let! body = body |> rootToJson
+        return [| var; value; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

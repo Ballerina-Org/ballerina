@@ -12,9 +12,12 @@ module UnionCons =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
 
+  let private kindKey = "union-case"
+  let private fieldKey = "union-case"
+
   type Expr<'T> with
-    static member FromJsonUnionCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "union-case" "union-case" (fun unionCaseJson ->
+    static member FromJsonUnionCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun unionCaseJson ->
         reader {
           let! (k, v) = unionCaseJson |> JsonValue.AsPair |> reader.OfSum
           let! k = k |> Identifier.FromJson |> reader.OfSum
@@ -22,11 +25,9 @@ module UnionCons =
           return Expr.UnionCons(k, v)
         })
 
-    static member ToJsonUnionCons
-      : ExprEncoder<'T> -> Identifier -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson k v ->
-        reader {
-          let k = k |> Identifier.ToJson
-          let! v = v |> rootToJson
-          return [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"
-        }
+    static member ToJsonUnionCons (rootToJson: ExprEncoder<'T>) (k: Identifier) (v: Expr<'T>) : ExprEncoderReader<'T> =
+      reader {
+        let k = k |> Identifier.ToJson
+        let! v = v |> rootToJson
+        return [| k; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

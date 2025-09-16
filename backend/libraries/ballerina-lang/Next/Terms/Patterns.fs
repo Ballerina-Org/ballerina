@@ -13,6 +13,62 @@ module Patterns =
   type Var with
     static member Create(name: string) : Var = { Name = name }
 
+  type PrimitiveValue with
+    static member AsInt32(v: PrimitiveValue) : Sum<int32, Errors> =
+      match v with
+      | PrimitiveValue.Int32 i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected an int but got {other}")
+
+    static member AsInt64(v: PrimitiveValue) : Sum<int64, Errors> =
+      match v with
+      | PrimitiveValue.Int64 i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected an int64 but got {other}")
+
+    static member AsFloat32(v: PrimitiveValue) : Sum<float32, Errors> =
+      match v with
+      | PrimitiveValue.Float32 i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a float32 but got {other}")
+
+    static member AsFloat64(v: PrimitiveValue) : Sum<float, Errors> =
+      match v with
+      | PrimitiveValue.Float64 i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a float64 but got {other}")
+
+    static member AsDecimal(v: PrimitiveValue) : Sum<decimal, Errors> =
+      match v with
+      | PrimitiveValue.Decimal i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a decimal but got {other}")
+
+    static member AsBool(v: PrimitiveValue) : Sum<bool, Errors> =
+      match v with
+      | PrimitiveValue.Bool i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a bool but got {other}")
+
+    static member AsGuid(v: PrimitiveValue) : Sum<Guid, Errors> =
+      match v with
+      | PrimitiveValue.Guid i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a guid but got {other}")
+
+    static member AsString(v: PrimitiveValue) : Sum<string, Errors> =
+      match v with
+      | PrimitiveValue.String i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a string but got {other}")
+
+    static member AsDate(v: PrimitiveValue) : Sum<DateOnly, Errors> =
+      match v with
+      | PrimitiveValue.Date i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a date but got {other}")
+
+    static member AsDateTime(v: PrimitiveValue) : Sum<DateTime, Errors> =
+      match v with
+      | PrimitiveValue.DateTime i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a datetime but got {other}")
+
+    static member AsUnit(v: PrimitiveValue) : Sum<unit, Errors> =
+      match v with
+      | PrimitiveValue.Unit -> sum.Return()
+      | other -> sum.Throw(Errors.Singleton $"Expected a unit but got {other}")
+
   type Value<'T, 'valueExt> with
     static member AsRecord(v: Value<'T, 'valueExt>) : Sum<Map<TypeSymbol, Value<'T, 'valueExt>>, Errors> =
       match v with

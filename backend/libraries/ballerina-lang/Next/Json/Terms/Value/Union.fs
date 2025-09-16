@@ -13,34 +13,29 @@ module Union =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "union-case"
+  let private fieldKey = "union-case"
+
   type Value<'T, 'valueExtension> with
     static member FromJsonUnion
-      (fromJsonRoot: JsonValue -> ValueParser<'T, 'valueExtension>)
-      : JsonValue -> ValueParser<'T, 'valueExtension> =
-      fun json ->
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun caseJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "union-case"
-              "union-case"
-              (fun caseJson ->
-                reader {
-                  let! (k, v) = caseJson |> JsonValue.AsPair |> reader.OfSum
-                  let! k = TypeSymbol.FromJson k |> reader.OfSum
-                  let! v = (fromJsonRoot v)
-                  return Value.UnionCase(k, v)
-                })
-              (json)
-        }
+          let! k, v = caseJson |> JsonValue.AsPair |> reader.OfSum
+          let! k = TypeSymbol.FromJson k |> reader.OfSum
+          let! v = fromJsonRoot v
+          return Value.UnionCase(k, v)
+        })
 
     static member ToJsonUnion
-      : ValueEncoder<'T, 'valueExtension>
-          -> TypeSymbol
-          -> Value<'T, 'valueExtension>
-          -> JsonEncoder<'T, 'valueExtension> =
-      fun rootToJson k v ->
-        reader {
-          let k = TypeSymbol.ToJson k
-          let! v = rootToJson v
-          return [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"
-        }
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (k: TypeSymbol)
+      (v: Value<'T, 'valueExtension>)
+      : ValueEncoderReader<'T> =
+      reader {
+        let k = TypeSymbol.ToJson k
+        let! v = rootToJson v
+        return [| k; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

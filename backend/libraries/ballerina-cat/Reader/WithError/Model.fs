@@ -102,6 +102,16 @@ module WithError =
 
     member _.GetContext() : Reader<'c, 'c, 'e> = Reader(fun c -> sum { return c })
 
+    member reader.RunOption(p: Option<Reader<'a, 'c, 'e>>) =
+      reader {
+        match p with
+        | Some p ->
+          let! a = p
+          return Some a
+        | None -> return None
+      }
+
+
   let reader = ReaderBuilder()
 
   module Operators =

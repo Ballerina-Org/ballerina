@@ -9,9 +9,12 @@ module KeyOf =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "keyOf"
+  let private fieldKey = "keyOf"
+
   type TypeExpr with
     static member FromJsonKeyOf(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "keyOf" "keyOf" (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
 
     static member ToJsonKeyOf(rootToJson: TypeExpr -> JsonValue) : TypeExpr -> JsonValue =
-      rootToJson >> Json.kind "keyOf" "keyOf"
+      rootToJson >> Json.kind kindKey fieldKey

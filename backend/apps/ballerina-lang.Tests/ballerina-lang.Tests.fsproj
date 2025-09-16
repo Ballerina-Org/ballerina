@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ExtensionsBootstrap.fs" />
     <Compile Include="Parser/Common.fs" />
     <Compile Include="Parser/ExprType.fs" />
     <Compile Include="ExprType/Unification.fs" />

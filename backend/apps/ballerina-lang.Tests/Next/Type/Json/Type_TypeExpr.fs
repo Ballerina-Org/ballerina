@@ -73,7 +73,6 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{"kind":"dateonly"}""", TypeExpr.Primitive PrimitiveType.DateOnly
 
       """{ "kind": "lookup", "lookup": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
-      """{ "kind": "list", "list": {"kind": "int32"} }""", TypeExpr.List(TypeExpr.Primitive PrimitiveType.Int32)
       """{ "kind": "set", "set": {"kind": "string"} }""", TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
       """{ "kind": "map", "map": [{"kind": "bool"}, {"kind": "int32"}] }""",
       TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int32)

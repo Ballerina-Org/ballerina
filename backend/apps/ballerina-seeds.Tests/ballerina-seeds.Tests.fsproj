@@ -28,7 +28,6 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
-        <ProjectReference Include="..\..\libraries\ballerina-seeds\ballerina-seeds.fsproj" />
         <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
     </ItemGroup>
 

@@ -11,30 +11,24 @@ module TypeLambda =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
-  type Value<'T, 'valueExtension> with
-    static member FromJsonTypeLambda
-      (_fromJsonRoot: JsonValue -> ExprParser<'T>)
-      : JsonValue -> ValueParser<'T, 'valueExtension> =
-      fun json ->
-        reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "type-lambda"
-              "type-lambda"
-              (fun typeParamJson ->
-                reader {
-                  let! typeParam, body = typeParamJson |> JsonValue.AsPair |> reader.OfSum
-                  let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
-                  let! body = body |> Expr.FromJson
-                  return Value.TypeLambda(typeParam, body)
-                })
-              json
-        }
+  let private kindKey = "type-lambda"
+  let private fieldKey = "type-lambda"
 
-    static member ToJsonTypeLambda: ExprEncoder<'T> -> TypeParameter -> Expr<'T> -> JsonEncoder<'T, 'valueExtension> =
-      fun root tp body ->
+  type Value<'T, 'valueExtension> with
+    static member FromJsonTypeLambda(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun typeParamJson ->
         reader {
-          let tp = TypeParameter.ToJson tp
-          let! bodyJson = root body |> reader.MapContext fst
-          return [| tp; bodyJson |] |> JsonValue.Array |> Json.kind "type-lambda" "type-lambda"
-        }
+          let! exprFromJsonRoot, _ = reader.GetContext()
+          let! typeParam, body = typeParamJson |> JsonValue.AsPair |> reader.OfSum
+          let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
+          let! body = body |> exprFromJsonRoot |> reader.OfSum
+          return Value.TypeLambda(typeParam, body)
+        })
+
+    static member ToJsonTypeLambda (typeParam: TypeParameter) (body: Expr<'T>) : ValueEncoderReader<'T> =
+      reader {
+        let! rootExprEncoder, _ = reader.GetContext()
+        let tp = TypeParameter.ToJson typeParam
+        let! bodyJson = body |> rootExprEncoder |> reader.OfSum
+        return [| tp; bodyJson |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }
