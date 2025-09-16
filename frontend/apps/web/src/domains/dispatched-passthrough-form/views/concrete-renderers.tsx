@@ -991,7 +991,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   record: {
     personDetails: () => (props) => {
-      console.debug("props.DisabledFieldKeys", props.DisabledFieldKeys.toArray());
+      console.debug(
+        "props.DisabledFieldKeys",
+        props.DisabledFieldKeys.toArray(),
+      );
       return (
         <>
           <table>
