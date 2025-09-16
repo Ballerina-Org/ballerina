@@ -39,7 +39,7 @@ export const RecordRenderer = {
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
     disabledFields: PredicateComputedOrInlined,
-    concreteRenderer?: string
+    concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
@@ -152,20 +152,21 @@ export const RecordRenderer = {
               ValueOrErrors.Operations.All(
                 List<
                   ValueOrErrors<
-                    (PredicateFormLayout | PredicateComputedOrInlined),
+                    PredicateFormLayout | PredicateComputedOrInlined,
                     string
                   >
                 >([
-                  FormLayout.Operations.ParseLayout(validRecordForm)
-                    .MapErrors((errors) =>
+                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
+                    (errors) =>
                       errors.map((error) => `${error}\n...When parsing tabs`),
+                  ),
+                  DisabledFields.Operations.ParseLayout(
+                    validRecordForm,
+                  ).MapErrors((errors) =>
+                    errors.map(
+                      (error) => `${error}\n...When parsing disabled fields`,
                     ),
-                  DisabledFields.Operations.ParseLayout(validRecordForm)
-                    .MapErrors((errors) =>
-                      errors.map(
-                        (error) => `${error}\n...When parsing disabled fields`,
-                      ),
-                    ),
+                  ),
                 ]),
               ).Then(([tabs, disabledFields]) =>
                 ValueOrErrors.Default.return(
