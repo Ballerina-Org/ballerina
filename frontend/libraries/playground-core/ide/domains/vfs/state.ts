@@ -1,7 +1,7 @@
 ﻿import {BasicUpdater, Option, simpleUpdater, Updater} from "ballerina-core";
-import {BridgeState} from "../bridge/state";
+import {Ide} from "../../state";
 
-export type TopLevelKey = "types" | "forms" | "apis" | "launchers";
+export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
 export type JsonSection<K extends TopLevelKey = TopLevelKey> = Record<string, any>;
 
@@ -146,7 +146,7 @@ export const VirtualFolders = {
             };
         },
         createEmptySpec(specName: string): VfsWorkspace {
-            const topLevelKeys: TopLevelKey[] = ["types", "forms", "apis", "launchers"];
+            const topLevelKeys: TopLevelKey[] = ["types", "forms", "apis", "launchers", "typesV2", "schema", "config"];
 
             const files: VirtualJsonFile[] = topLevelKeys.map(key => {
                 const fileName = `${key}.json`;
@@ -214,8 +214,12 @@ export const VfsWorkspace = {
         Core: {
             selectedNode: (node: { folder: VirtualFolderNode, files: VirtualJsonFile []}): BasicUpdater<VfsWorkspace> =>
                 (vfs: VfsWorkspace) => ({...vfs, selectedFolder: Option.Default.some(node)}),
-            selectedFile: (name: string): BasicUpdater<VfsWorkspace> =>
-                (vfs: VfsWorkspace) => ({...vfs, selectedFile: Option.Default.some(name)})
+            selectedFile: (name: string): Updater<VfsWorkspace> =>
+                Updater((vfs: VfsWorkspace) => ({...vfs, selectedFile: Option.Default.some(name)})),
+            selectedFolder: (vfs: Updater<VfsWorkspace>): Updater<Ide> => Updater((ide: Ide): Ide =>
+                  ide.phase == 'locked'
+                      ? ({...ide, locked: {...ide.locked, virtualFolders: vfs(ide.locked.virtualFolders) }})
+                      : ({...ide})),
         }
     }
 }

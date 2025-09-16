@@ -17,7 +17,7 @@ import {
     DispatchPassthroughFormFlags
 } from "web/src/domains/dispatched-passthrough-form/views/concrete-renderers";
 import {axiosVOE} from "./api";
-import {FullSpec} from "../state";
+import {Spec} from "../state";
 import {FormsSeedEntity} from "../domains/seeds/state";
 import {VirtualFolderNode} from "../domains/vfs/state";
 

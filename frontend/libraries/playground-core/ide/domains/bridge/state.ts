@@ -9,7 +9,7 @@ import {
     ValueOrErrors
 } from "ballerina-core";
 
-import {FullSpec, IdeReadonlyContext, IdeWritableState, VSpec} from "../../state";
+import {Spec, IdeReadonlyContext, IdeWritableState, SpecVx} from "../../state";
 import {Product} from "ballerina-core";
 
 
@@ -52,7 +52,7 @@ export const Bridge = {
             spec: Product.Default(SpecRaw.Default(), SpecRaw.Default()),
             seeds: {},
             errors: [] }),
-    Default: (fullSpec: FullSpec): BridgeState =>
+    Default: (fullSpec: Spec): BridgeState =>
         ({
             spec: Product.Default(SpecRaw.Default(JSON.stringify(fullSpec.v1)), SpecRaw.Default(JSON.stringify(fullSpec.v2))),
             seeds: fullSpec.seeds,
@@ -70,7 +70,7 @@ export const Bridge = {
     },
 
     Operations: {
-        toVSpec: (b: Bridge): VSpec => ({ v1: JSON.parse(b.left.specBody.value), v2: JSON.parse(b.right.specBody.value)})
+        toVSpec: (b: Bridge): SpecVx => ({ v1: JSON.parse(b.left.specBody.value), v2: JSON.parse(b.right.specBody.value)})
     },
     ForeignMutations: (
         _: ForeignMutationsInput<IdeReadonlyContext, IdeWritableState>,

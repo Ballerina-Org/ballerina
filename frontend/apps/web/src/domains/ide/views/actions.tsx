@@ -44,15 +44,15 @@ type ActionsProps = {
 };
 
 export const Actions: React.FC<ActionsProps> = ({
-                                                    context,
-                                                    hideRight = false,
-                                                    onAction,
-                                                    canRun = true,
-                                                    onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight
+            context,
+            hideRight = false,
+            onAction,
+            canRun = true,
+            onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight
 
-                                                }) => (
+        }) => (
     <div className={"p-5 mt-7 flex space-x-1"}>
-        {context.phase === "choose" && context.activeTab === "existing" && (
+        {context.phase === "choose" && context.specOrigin === "existing" && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="New spec"
@@ -99,15 +99,15 @@ export const Actions: React.FC<ActionsProps> = ({
             </button>
         )}
 
-        {!hideRight ? (
+        {context.phase === "locked" && !hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Forms"
                 onClick={onRight}
             >
                 <VscTriangleLeft size={20} />
-            </button>
-        ) : (
+            </button>}
+        {context.phase === "locked" && !hideRight && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Show Forms"

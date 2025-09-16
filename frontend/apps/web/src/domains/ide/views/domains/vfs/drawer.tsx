@@ -155,10 +155,9 @@ export const drawer = (dockItem: DockItem, selectNode: BasicFun<{ folder: Virtua
 
                             <button 
                                 disabled={!canAccept && filesToEdit.kind == "l"} 
-                                className="btn btn-accent btn-block mt-7" 
+                                className="btn btn-accent btn-block mt-7 accept-selected" 
                                 onClick={() =>{
-                                    
-                                    debugger
+          
                                     return filesToEdit.kind == "r" && selectNode(filesToEdit.value) } }>
                                 Accept selected
                             </button>

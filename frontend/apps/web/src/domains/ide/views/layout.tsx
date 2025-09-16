@@ -24,7 +24,9 @@ import {VscDatabase, VscFolder, VscGithub} from "react-icons/vsc";
 import {NoSpescInfo} from "./domains/bootstrap/NoSpecsInfo.tsx";
 import * as repl from "node:repl";
 import {breadcrumbs} from "./domains/vfs/breadcrumbs.tsx";
-import {folderFilter} from "./domains/vfs/folder-filter.tsx";
+import {FolderFilter} from "./domains/vfs/folder-filter.tsx";
+import MonacoEditor from "./monaco.tsx";
+import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -32,6 +34,7 @@ export type DockItem = 'folders' | 'about'
 export const IdeLayout: IdeView = (props) =>{
     const [theme, setTheme] = useState("lofi");
     const [dockItem, setDockItem] = useState('folders' as DockItem);
+    const [mode, setMode] = useState('spec' as 'spec' | 'schema');
     //const [hideLeft, setHideLeft] = useState(false);
     const [hideRight, setHideRight] = useState(false);
     useEffect(() => {
@@ -56,7 +59,14 @@ export const IdeLayout: IdeView = (props) =>{
             {props.context.phase == "bootstrap"
                 && props.context.bootstrap.kind == "initializing"
                 && <div className="w-screen h-screen  flex items-center justify-center">
-                    <p className="text-center p-7">{props.context.bootstrap.message}</p>
+                    <div className="relative w-120  mx-auto">
+                        <span className="loading loading-infinity loading-xl"></span>
+                        <div className="absolute inset-0 grid place-items-center">
+                            <span className="px-3 py-1 rounded-full bg-black/60 text-white text-sm">{props.context.bootstrap.message}</span>
+                        </div>
+                    </div>
+
+            
 
                 </div> }
             <div className="navbar bg-base-100 shadow-sm sticky top-0 z-50 h-16  ">
@@ -70,21 +80,26 @@ export const IdeLayout: IdeView = (props) =>{
                 </div>
 
                 <div className="flex-none mr-32">
-                    <ul className="menu menu-horizontal px-1"  style={{zIndex: 10000, position:"relative"}}>
+                    <ul className="menu menu-horizontal px-1" style={{zIndex: 10000, position: "relative"}}>
                         <li>
                             {Themes.dropdown(theme, setTheme)}
                         </li>
                     </ul>
                 </div>
+                <div className="avatar avatar-online avatar-placeholder">
+                    <div className="bg-neutral text-neutral-content w-12 rounded-full">
+                        <span className="text-xl">PS</span>
+                    </div>
+                </div>
             </div>
-           
-                <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
-                    {<Panel  minSize={20} defaultSize={50}>
-                        <aside className="relative h-full">
+
+            <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
+                {<Panel minSize={20} defaultSize={50}>
+                    <aside className="relative h-full">
 
                             <div css={editorStyle.container}>
                                 <div css={editorStyle.row}>
-                                    { props.context.phase == "choose" && props.context.activeTab == "new" && <fieldset className="fieldset ml-4">
+                                    { props.context.phase == "choose" && props.context.specOrigin == "create" && <fieldset className="fieldset ml-4">
                                         <div className="join">
                                             <input
                                                 type="text"
@@ -99,7 +114,7 @@ export const IdeLayout: IdeView = (props) =>{
                                             <button
                                                 className="btn join-item"
                                                 onClick={ async () => {
-                                                    const u = await Ide.Operations.toLockedSpec('new', props.context.create.name.value);
+                                                    const u = await Ide.Operations.toLockedSpec('create', props.context.create.name.value);
 
                                                     props.setState(u);
                                                     ideToast({
@@ -117,7 +132,7 @@ export const IdeLayout: IdeView = (props) =>{
                  
                                         </div>
                                     </fieldset>}
-                                    { props.context.phase == "choose" && props.context.activeTab == "existing" && <HorizontalDropdown
+                                    { props.context.phase == "choose" && props.context.specOrigin == "existing" && <HorizontalDropdown
                                         label={"Select spec 2"}
                                         onChange={async (name: string) => {
                                             const u = await Ide.Operations.toLockedSpec('existing', name);
@@ -196,72 +211,60 @@ export const IdeLayout: IdeView = (props) =>{
                                                 const call = await seed(props.context.create.name.value)
                                                 seedSpecErrorHandler(call);
                                                 if(call.kind == "value")
-                                                    props.setState(Ide.Updaters.lockedSpec.seed(call.value));
+                                                    props.setState(LockedSpec.Updaters.Core.seed(call.value));
                                             }
                                         }
                                     />
                                 </div>
                             </div>
-                           
+                            
                             {props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" &&
                                 <fieldset className="fieldset ml-5">
                                     {breadcrumbs(props.context.locked.virtualFolders.selectedFolder.value.folder)}
         
                                     <div className="join">
-                                        <div className="filter mb-7  join-item">
-                                            <input className="btn filter-reset" type="radio" name="virtual-files" aria-label="All"/>
-                                            {props.context.locked.virtualFolders.selectedFolder.value.files.map(f =>
-                                                (<div className="tooltip tooltip-bottom" data-tip={f.path}>
-                                                    <input
-                                                        className="btn"
-                                                        type="radio"
-                                                        name="virtual-files"
-                                                        checked={
-                                                            props.context.phase == 'locked'
-                                                            && props.context.locked.virtualFolders.selectedFile.kind == "r"
-                                                            && props.context.locked.virtualFolders.selectedFile.value == f.name}
-                                                        onClick={()=>
-                                                            props.setState(
-                                                                Ide.Updaters.lockedSpec.vfs.selectedFolder(
-                                                                    (Updater(VfsWorkspace.Updaters.Core.selectedFile(
-
-                                                                        f.name
-
-                                                                    )))
-                                                                )
-                                                            )} aria-label={f.name?.replace(/\.json$/,"")}/>
-                                                </div>))}
-
-                                        </div>
-                                        {folderFilter(props.context.locked.virtualFolders.selectedFolder.value,props.context.locked.virtualFolders.selectedFile)}
-                                        <div className="ml-5  join-item">
-                                            <button 
-                                                className="btn join-item"
-                                                onClick={async () =>{
-                                                    if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" && props.context.locked.virtualFolders.selectedFile.kind == "r"))
-                                                        return;
-                                                    const file = props.context.locked.virtualFolders.selectedFolder.value.folder.children.get(props.context.locked.virtualFolders.selectedFile.value)!;
-                                                    if(file.kind == "file"){
-                                                        const content = await file.value.fileRef?.text()!;
-                                                        props.setState(Ide.Updaters.lockedSpec.bridge.v1(content));
-                                                    } }}
-                                            >Load</button>
-                                        </div>
+                                        <FolderFilter 
+                                            data={props.context.locked.virtualFolders.selectedFolder.value} 
+                                            selected={props.context.locked.virtualFolders.selectedFile} 
+                                            mode={mode} 
+                                            setMode={setMode}
+                                            update={props.setState} />
+                                        {/*<div className="ml-5  join-item">*/}
+                                        {/*    <button */}
+                                        {/*        className="btn join-item"*/}
+                                        {/*        onClick={async () =>{*/}
+                                        {/*            if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" && props.context.locked.virtualFolders.selectedFile.kind == "r"))*/}
+                                        {/*                return;*/}
+                                        {/*            const file = props.context.locked.virtualFolders.selectedFolder.value.folder.children.get(props.context.locked.virtualFolders.selectedFile.value)!;*/}
+                                        {/*            if(file.kind == "file"){*/}
+                                        {/*                const content = await file.value.fileRef?.text()!;*/}
+                                        {/*                props.setState(Ide.Updaters.lockedSpec.bridge.v1(content));*/}
+                                        {/*            } }}*/}
+                                        {/*    >Load</button>*/}
+                                        {/*</div>*/}
                                     </div>
                                 </fieldset>
                                 }
-
-                            {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V1Editor}/>}
-                            {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V2Editor}/>}
-                            {props.context.phase == "locked" &&  <props.JsonEditor{...props} view={SeedEditor}/>}
+             
+                            {props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" && props.context.locked.virtualFolders.selectedFile.kind == "r"
+                                && <MonacoEditor 
+                                    onChange={()=>{}}
+                                    key={props.context.locked.bridge.spec.left.specBody.value}
+                                    content={props.context.locked.bridge.spec.left.specBody.value}/> }
+                            {/*{props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V1Editor}/>}*/}
+                            {/*{props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V2Editor}/>}*/}
+                            {/*{props.context.phase == "locked" &&  <props.JsonEditor{...props} view={SeedEditor}/>}*/}
                             {/*<props.JsonEditor{...props} view={SeedEditor}/>*/}
                             { drawer(dockItem, 
                                 node => {
                                     const next = 
-                                        Updater(VfsWorkspace.Updaters.Core.selectedNode(node))
+                                        Updater(VfsWorkspace.Updaters.Core.selectedNode(node)).then(vfs => 
+                                            vfs.files.length > 0
+                                            ? ({...vfs, selectedFile: Option.Default.some(vfs.files[0].name || vfs.files[0].fileRef?.name!)}): ({...vfs})
+                                        )
                                     
                                     props.setState(
-                                        Ide.Updaters.lockedSpec.vfs.selectedFolder(
+                                        VfsWorkspace.Updaters.Core.selectedFolder(
                                             next
                                         )
                                     )
@@ -302,19 +305,19 @@ export const IdeLayout: IdeView = (props) =>{
                             {/*</div>*/}
                         </aside>
                     </Panel> }
-                    <PanelResizeHandle  className="w-0.5 bg-neutral text-neutral-content" />
+                    <PanelResizeHandle  className="w-[1px] bg-neutral text-neutral-content" />
                     {!hideRight && 
                         <Panel>
                             <PanelGroup direction="vertical">
                                 <Panel>
-                                    <div className="mockup-window border border-base-300 w-full">
+                                    <div className="mockup-window border border-base-300 w-full h-full">
                                       
                             
                         <aside className="relative h-full">
 
                             {props.context.phase == "bootstrap" && <p> {props.context.bootstrap.kind}</p> }
                             {props.context.bootstrappingError.kind == "r" && <p> {props.context.bootstrappingError.value}</p> }
-                            {!(props.context.phase == 'locked' && props.context.step == 'outcome') && <div className="flex w-full flex-col gap-4 p-7  shadow-sm backdrop-blur-md">
+                            {!(props.context.phase == 'locked' && props.context.step == 'outcome') && <div className="flex w-full  h-full flex-col gap-4 p-7  shadow-sm backdrop-blur-md ">
                                 <div className="skeleton h-32 w-full animate-none"></div>
                                 <div className="skeleton h-4 w-28"></div>
                                 <div className="skeleton h-4 w-full animate-none"></div>
@@ -337,7 +340,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         onChange={async (value: string) => {
 
                                             props.setState(
-                                                Ide.Updaters.lockedSpec.selectLauncher(value)
+                                                LockedSpec.Updaters.Core.selectLauncher(value)
                                             )
                                         }}
                                         options={props.context.locked.launchers}
@@ -360,22 +363,38 @@ export const IdeLayout: IdeView = (props) =>{
 
                         </aside>        </div>
                                 </Panel>
-                                <PanelResizeHandle  className="h-0.5 bg-neutral text-neutral-content" />
-                                <Panel minSize={10} defaultSize={20} maxSize={30}><div className="no-radius w-full">
-                                    <pre data-prefix="1" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
-                                    <pre data-prefix="2" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
-                                    <pre data-prefix="3" className="pl-3 bg-accent text-primary-content"><code>Error!</code> Can't find the ...</pre>
-                                    <pre data-prefix="4" className="pl-3 bg-warning text-warning-content"><code>Error!</code> Can't find the ...</pre>
-                                    <pre data-prefix="5" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
-                                    <pre data-prefix="6" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>
-                                </div></Panel>
+                                <PanelResizeHandle  className="h-[1px] bg-neutral text-neutral-content" />
+                                <Panel minSize={10} defaultSize={20} maxSize={90}>
+                                    <div className="no-radius w-full mx-auto">
+                                        <div className="relative w-120  mx-auto">
+                                            <img src="https://framerusercontent.com/images/umluhwUKaIcQzUGEWAe9SRafnc4.png?width=1024&height=1024" alt="Descriptive alt"
+                                                 className="w-full object-cover rounded-lg"/>
+                                            <div className="absolute inset-0 grid place-items-center">
+                                                <span className="px-3 py-1 rounded-full bg-black/60 text-white text-sm">No issues so far</span>
+                                            </div>
+                                        </div>
+                                
+                                        {props.context.bootstrappingError.kind == "r" && <pre data-prefix="6"
+                                                                                              className="pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{props.context.bootstrappingError.value}</pre>}
+                                        {props.context.choosingError.kind == "r" && <pre data-prefix="6"
+                                                                                         className="pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{props.context.choosingError.value}</pre>}
+                                        {props.context.lockingError.kind == "r" && <pre data-prefix="6"
+                                                                                        className="pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{props.context.lockingError.value}</pre>}
+
+                                        {/*<pre data-prefix="1" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                        {/*<pre data-prefix="2" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                        {/*<pre data-prefix="3" className="pl-3 bg-accent text-primary-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                        {/*<pre data-prefix="4" className="pl-3 bg-warning text-warning-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                        {/*<pre data-prefix="5" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                        {/*<pre data-prefix="6" className="pl-3 bg-gray-300 text-warning-content"><code>Error!</code> Can't find the ...</pre>*/}
+                                    </div>
+                                </Panel>
                             </PanelGroup>
-                    </Panel>}
+                        </Panel>}
 
                 </PanelGroup>
-         
-           
 
-            </div>
+
+        </div>
     )
 };

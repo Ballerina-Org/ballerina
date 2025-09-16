@@ -1,6 +1,6 @@
 ﻿
 import {axiosVOE} from "./api";
-import {FullSpec, V1, V2, VSpec} from "../state";
+import {Spec, V1, V2, SpecVx} from "../state";
 
 
 export const listSpecs = async () =>
@@ -10,7 +10,7 @@ export const listSpecs = async () =>
     });
 
 export const getSpec = async (name: string) =>
-    await axiosVOE<FullSpec>({
+    await axiosVOE<Spec>({
         method: "GET",
         url: `/specs/${name}`,
     });
@@ -21,7 +21,7 @@ export const seed = async (name: string) =>
         url: `/specs/${name}/seed`,
     });
 
-export const update = async (name: string, vspec: VSpec) =>
+export const update = async (name: string, vspec: SpecVx) =>
     await axiosVOE<any>({
         method: "PUT",
         data: vspec,

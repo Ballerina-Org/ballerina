@@ -173,6 +173,8 @@ export function AccessibleTreeVfs({
                         e.stopPropagation();
                         const next = e.currentTarget.checked ? path : null;
                         onStageChange?.(next);
+                        const el = document.querySelector(".accept-selected") as HTMLElement | null; 
+                        el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`Stage folder ${element.name}`}
