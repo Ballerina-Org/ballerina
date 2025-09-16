@@ -6,7 +6,7 @@ import {
   TableAbstractRendererState,
   TableLayout,
   Expr,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
   DispatchDelta,
   ValueOrErrors,
   TableAbstractRendererReadonlyContext,
@@ -79,7 +79,7 @@ export const TableAbstractRenderer = <
         RecordAbstractRendererForeignMutationsExpected<Flags>
       >
     | undefined,
-  Layout: PredicateVisibleColumns,
+  Layout: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,

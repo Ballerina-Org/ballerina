@@ -8,7 +8,7 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   isString,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
   TableLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -28,7 +28,7 @@ export type TableRenderer<T> = {
   kind: "tableRenderer";
   type: TableType<T>;
   columns: Map<string, TableCellRenderer<T>>;
-  visibleColumns: PredicateVisibleColumns;
+  visibleColumns: PredicateComputedOrInlined;
   concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
   api?: string;
@@ -38,7 +38,7 @@ export const TableRenderer = {
   Default: <T>(
     type: TableType<T>,
     columns: Map<string, TableCellRenderer<T>>,
-    visibleColumns: PredicateVisibleColumns,
+    visibleColumns: PredicateComputedOrInlined,
     concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
     api?: string,

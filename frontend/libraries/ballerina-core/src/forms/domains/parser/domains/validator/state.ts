@@ -13,7 +13,7 @@ import {
   PredicateFormLayout,
   FormLayout,
   TableLayout,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
 } from "../../../../../../main";
 import { ValueOrErrors } from "../../../../../collections/domains/valueOrErrors/state";
 import { ParsedRenderer } from "../renderer/state";
@@ -57,7 +57,7 @@ export type ParsedTableFormConfig<T> = {
   type: ParsedType<T>;
   columns: Map<FieldName, ParsedRenderer<T>>;
   renderer: string;
-  visibleColumns: PredicateVisibleColumns;
+  visibleColumns: PredicateComputedOrInlined;
   header?: string;
 };
 

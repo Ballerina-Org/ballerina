@@ -21,6 +21,8 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
   StringSerializedType,
+  DisabledFields,
+  PredicateComputedOrInlined,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -56,6 +58,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   Layout: PredicateFormLayout,
+  DisabledFieldsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -263,11 +266,23 @@ export const RecordAbstractRenderer = <
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
+    const calculatedDisabledFields = DisabledFields.Operations.Compute(
+      updatedBindings,
+      DisabledFieldsPredicate,
+    );
+
+    const disabledFieldsValue =
+      calculatedDisabledFields.kind == "value"
+        ? calculatedDisabledFields.value.fields
+        : [];
+
     const disabledFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map(({ disabled }, fieldName) =>
           disabled == undefined
-            ? ValueOrErrors.Default.return(null)
+            ? disabledFieldsValue.includes(fieldName)
+              ? ValueOrErrors.Default.return(fieldName)
+              : ValueOrErrors.Default.return(null)
             : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
                 disabled,
               ).Then((value) =>

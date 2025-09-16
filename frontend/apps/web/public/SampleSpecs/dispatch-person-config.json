@@ -2111,6 +2111,7 @@
           }
         }
       },
+      "disabledFields": ["Job"],
       "tabs": {
         "main": {
           "columns": {

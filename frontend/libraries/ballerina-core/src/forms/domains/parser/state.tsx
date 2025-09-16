@@ -42,7 +42,7 @@ import {
   ParsedRecordFormConfig,
   ParsedTableFormConfig,
   TableApiSources,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
 } from "../../../../main";
 import { EnumReference } from "../collection/domains/reference/state";
 import { SearchableInfiniteStreamState } from "../primitives/domains/searchable-infinite-stream/state";
@@ -64,7 +64,7 @@ export type ParsedTableForm<T> = {
   formConfig: any;
   formName: string;
   formDef: ParsedTableFormConfig<T>;
-  visibleColumns: PredicateVisibleColumns;
+  visibleColumns: PredicateComputedOrInlined;
   columnHeaders: Map<FieldName, string | undefined>;
   form: EntityFormTemplate<any, any, any, any>;
 };
