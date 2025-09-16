@@ -991,10 +991,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   record: {
     personDetails: () => (props) => {
-      console.debug(
-        "props.DisabledFieldKeys",
-        props.DisabledFieldKeys.toArray(),
-      );
       return (
         <>
           <table>
@@ -1938,8 +1934,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
         return <></>;
       }
-
-      console.debug("props.context.disabled", props.context.disabled);
 
       const isSome = props.context.value.isSome;
       const value =
