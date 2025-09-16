@@ -1215,9 +1215,9 @@ export const dispatchDefaultValue =
               injectedPrimitives,
               types,
               forms,
-            )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
+            )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
               ValueOrErrors.Default.return(
-                PredicateValue.Default.sum(Sum.Default.right(right)),
+                PredicateValue.Default.sum(Sum.Default.left(left)),
               ),
             )
           : renderer.kind == "sumUnitDateRenderer"
