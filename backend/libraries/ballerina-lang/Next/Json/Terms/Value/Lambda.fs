@@ -10,31 +10,25 @@ module Lambda =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
-  type Value<'T, 'valueExtension> with
-    static member FromJsonLambda
-      (fromJsonRoot: JsonValue -> ExprParser<'T>)
-      : JsonValue -> ValueParser<'T, 'valueExtension> =
-      fun json ->
-        reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "lambda"
-              "lambda"
-              (fun lambdaJson ->
-                reader {
-                  let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
-                  let! var = var |> JsonValue.AsString |> reader.OfSum
-                  let var = Var.Create var
-                  let! body = body |> fromJsonRoot
-                  return Value.Lambda(var, body)
-                })
-              (json)
-        }
+  let private kindKey = "lambda"
+  let private fieldKey = "lambda"
 
-    static member ToJsonLambda: ExprEncoder<'T> -> Var -> Expr<'T> -> JsonEncoder<'T, 'valueExtension> =
-      fun root var body ->
+  type Value<'T, 'valueExtension> with
+    static member FromJsonLambda(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun lambdaJson ->
         reader {
-          let var = var.Name |> JsonValue.String
-          let! body = body |> root |> reader.MapContext fst
-          return [| var; body |] |> JsonValue.Array |> Json.kind "lambda" "lambda"
-        }
+          let! exprFromJsonRoot, _ = reader.GetContext()
+          let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
+          let! var = var |> JsonValue.AsString |> reader.OfSum
+          let var = Var.Create var
+          let! body = body |> exprFromJsonRoot |> reader.OfSum
+          return Value.Lambda(var, body)
+        })
+
+    static member ToJsonLambda (var: Var) (body: Expr<'T>) : ValueEncoderReader<'T> =
+      reader {
+        let! rootExprEncoder, _ = reader.GetContext()
+        let var = var.Name |> JsonValue.String
+        let! body = body |> rootExprEncoder |> reader.OfSum
+        return [| var; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

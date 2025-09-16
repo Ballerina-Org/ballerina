@@ -22,17 +22,17 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   let recordType = TypeValue.Record(Map.ofList [ typeSymbol, typeValue ])
 
   let recordValue =
-    Value<Unit>.Record(Map.ofList [ typeSymbol, Value<Unit>.Primitive(PrimitiveValue.Int 99) ])
+    Value<Unit>.Record(Map.ofList [ typeSymbol, Value<Unit>.Primitive(PrimitiveValue.Int32 99) ])
 
   let delta =
-    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int 100 |> Value<Unit>.Primitive))
+    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater recordType delta with
   | Sum.Left updater ->
     match updater recordValue with
     | Sum.Left(Value.Record updated) ->
       let updatedValue = updated.[typeSymbol]
-      Assert.That(PrimitiveValue.Int 100 |> Value<Unit>.Primitive, Is.EqualTo updatedValue)
+      Assert.That(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive, Is.EqualTo updatedValue)
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
@@ -42,7 +42,7 @@ let ``Delta.Record: Fails when field not found in type`` () =
   let recordType = TypeValue.Record(Map.empty)
 
   let delta =
-    Delta.Record("missing", Delta.Replace(PrimitiveValue.Int 1 |> Value<Unit>.Primitive))
+    Delta.Record("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater recordType delta with
   | Sum.Left _ -> Assert.Fail "Expected failure when field is missing in type"
@@ -57,7 +57,7 @@ let ``Delta.Record: Fails when field not found in value`` () =
   let recordValue = Value<Unit>.Record(Map.empty)
 
   let delta =
-    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int 100 |> Value<Unit>.Primitive))
+    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater recordType delta with
   | Sum.Left updater ->

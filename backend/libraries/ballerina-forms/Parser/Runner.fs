@@ -212,7 +212,6 @@ module Runner =
             crudCase "getAll" CrudMethod.GetAll
             crudCase "getManyLinked" CrudMethod.GetManyLinked
             crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked
-            crudCase "update" CrudMethod.Update
             crudCase "default" CrudMethod.Default ]
         )
       )

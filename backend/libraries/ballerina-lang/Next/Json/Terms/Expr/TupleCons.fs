@@ -11,18 +11,20 @@ module TupleCons =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
 
+  let private kindKey = "tuple-cons"
+  let private fieldKey = "elements"
+
   type Expr<'T> with
-    static member FromJsonTupleCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "tuple-cons" "elements" (fun elementsJson ->
+    static member FromJsonTupleCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
           let! elements = elements |> Seq.map fromRootJson |> reader.All
           return Expr.TupleCons(elements)
         })
 
-    static member ToJsonTupleCons: ExprEncoder<'T> -> List<Expr<'T>> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson tuple ->
-        tuple
-        |> List.map rootToJson
-        |> reader.All
-        |> reader.Map(Array.ofList >> JsonValue.Array >> Json.kind "tuple-cons" "elements")
+    static member ToJsonTupleCons (rootToJson: ExprEncoder<'T>) (tuple: List<Expr<'T>>) : ExprEncoderReader<'T> =
+      tuple
+      |> List.map rootToJson
+      |> reader.All
+      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.kind kindKey fieldKey)

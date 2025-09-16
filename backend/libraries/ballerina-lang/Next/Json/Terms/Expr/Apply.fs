@@ -11,9 +11,12 @@ module Apply =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
 
+  let private kindKey = "apply"
+  let private fieldKey = "apply"
+
   type Expr<'T> with
-    static member FromJsonApply(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "apply" "apply" (fun application ->
+    static member FromJsonApply (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun application ->
         reader {
           let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
           let! f = f |> fromRootJson
@@ -21,10 +24,9 @@ module Apply =
           return Expr.Apply(f, arg)
         })
 
-    static member ToJsonApply: ExprEncoder<'T> -> Expr<'T> -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson f arg ->
-        reader {
-          let! f = f |> rootToJson
-          let! arg = arg |> rootToJson
-          return [| f; arg |] |> JsonValue.Array |> Json.kind "apply" "apply"
-        }
+    static member ToJsonApply (rootToJson: ExprEncoder<'T>) (f: Expr<'T>) (arg: Expr<'T>) : ExprEncoderReader<'T> =
+      reader {
+        let! f = f |> rootToJson
+        let! arg = arg |> rootToJson
+        return [| f; arg |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

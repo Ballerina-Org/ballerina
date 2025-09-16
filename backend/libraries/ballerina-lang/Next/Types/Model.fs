@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Next.Types
 
+[<AutoOpen>]
 module Model =
   open System
 
@@ -43,7 +44,6 @@ module Model =
     | Record of List<TypeExpr * TypeExpr>
     | Tuple of List<TypeExpr>
     | Union of List<TypeExpr * TypeExpr>
-    | List of TypeExpr
     | Set of TypeExpr
     | Map of TypeExpr * TypeExpr
     | KeyOf of TypeExpr
@@ -51,6 +51,7 @@ module Model =
     | Flatten of TypeExpr * TypeExpr
     | Exclude of TypeExpr * TypeExpr
     | Rotate of TypeExpr
+    | Imported of ImportedTypeValue
 
   and TypeBinding =
     { Identifier: Identifier
@@ -67,9 +68,17 @@ module Model =
     | Tuple of List<TypeValue>
     | Union of Map<TypeSymbol, TypeValue>
     | Sum of List<TypeValue>
-    | List of TypeValue
     | Set of TypeValue
     | Map of TypeValue * TypeValue
+    | Imported of ImportedTypeValue
+
+  and ImportedTypeValue =
+    { Id: Identifier
+      Sym: TypeSymbol
+      Parameters: List<TypeParameter>
+      Arguments: List<TypeValue>
+      UnionLike: Option<Map<TypeSymbol, TypeExpr>>
+      RecordLike: Option<Map<TypeSymbol, TypeExpr>> }
 
   and PrimitiveType =
     | Unit

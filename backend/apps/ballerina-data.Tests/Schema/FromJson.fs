@@ -17,11 +17,7 @@ open FSharp.Data
 [<Test>]
 let ``SpecNext-Schema entity method parses`` () =
   let tests =
-    [ ("get", Get)
-      ("getMany", GetMany)
-      ("create", Create)
-      ("delete", Delete)
-      ("update", Update) ]
+    [ ("get", Get); ("getMany", GetMany); ("create", Create); ("delete", Delete) ]
 
   for (jsonValue, expected) in tests do
     let json = jsonValue |> JsonValue.String
@@ -38,7 +34,6 @@ let ``SpecNext-Schema lookup method parses`` () =
       ("getMany", LookupMethod.GetMany)
       ("create", LookupMethod.Create)
       ("delete", LookupMethod.Delete)
-      ("update", LookupMethod.Update)
       ("link", LookupMethod.Link)
       ("unlink", LookupMethod.Unlink) ]
 
@@ -54,7 +49,7 @@ let ``SpecNext-Schema lookup method parses`` () =
 let ``SpecNext-Schema updater descriptor parses`` () =
   let json =
     """ 
-      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int","int":"100"}]
+      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int32","int32":"100"}]
     """
     |> JsonValue.Parse
 
@@ -66,7 +61,7 @@ let ``SpecNext-Schema updater descriptor parses`` () =
           UpdaterPathStep.UnionCase("CaseName", Var.Create "VariableBoundToChangedCase")
           UpdaterPathStep.SumCase(3, Var.Create "VariableBoundToChangedSum") ]
       Condition = Expr.Primitive(PrimitiveValue.Bool true)
-      Expr = Expr.Primitive(PrimitiveValue.Int 100) }
+      Expr = Expr.Primitive(PrimitiveValue.Int32 100) }
 
   match json |> Updater.FromJson |> Reader.Run TypeExpr.FromJson with
   | Right e -> Assert.Fail($"Failed to parse updater descriptor: {e}")
@@ -78,7 +73,7 @@ let ``SpecNext-Schema entity descriptor parses`` () =
     """ 
     {
       "type": { "kind":"lookup", "lookup":"MyType" },
-      "methods": ["get", "getMany", "create", "delete", "update"],
+      "methods": ["get", "getMany", "create", "delete"],
       "updaters": [],
       "predicates": {}
     }
@@ -87,7 +82,7 @@ let ``SpecNext-Schema entity descriptor parses`` () =
 
   let expected =
     { Type = "MyType" |> Identifier.LocalScope |> TypeExpr.Lookup
-      Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+      Methods = Set.ofList [ Get; GetMany; Create; Delete ]
       Updaters = []
       Predicates = Map.empty }
 
@@ -101,7 +96,7 @@ let ``SpecNext-Schema directed lookup descriptor parses`` () =
     """ 
     {
       "arity": { "min":1, "max":2 },
-      "methods": ["get", "getMany", "create", "delete", "update", "link", "unlink"],
+      "methods": ["get", "getMany", "create", "delete", "link", "unlink"],
       "path": [["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]]
     }
     """
@@ -115,7 +110,6 @@ let ``SpecNext-Schema directed lookup descriptor parses`` () =
             LookupMethod.GetMany
             LookupMethod.Create
             LookupMethod.Delete
-            LookupMethod.Update
             LookupMethod.Link
             LookupMethod.Unlink ]
       Path =
@@ -138,14 +132,14 @@ let ``SpecNext-Schema lookup descriptor parses`` () =
       "target": "TargetTable",
       "forward": {
         "arity": { "min": 1 },
-        "methods": ["get", "getMany", "create", "delete", "update", "link", "unlink"],
+        "methods": ["get", "getMany", "create", "delete", "link", "unlink"],
         "path": []
       },
       "backward": {
         "name": "TargetToSource",
         "descriptor": {
           "arity": {},
-          "methods": ["get", "getMany", "create", "delete", "update", "link", "unlink"],
+          "methods": ["get", "getMany", "create", "delete", "link", "unlink"],
           "path": []
         }
       }
@@ -164,7 +158,6 @@ let ``SpecNext-Schema lookup descriptor parses`` () =
                 LookupMethod.GetMany
                 LookupMethod.Create
                 LookupMethod.Delete
-                LookupMethod.Update
                 LookupMethod.Link
                 LookupMethod.Unlink ]
           Path = [] }
@@ -178,7 +171,6 @@ let ``SpecNext-Schema lookup descriptor parses`` () =
                   LookupMethod.GetMany
                   LookupMethod.Create
                   LookupMethod.Delete
-                  LookupMethod.Update
                   LookupMethod.Link
                   LookupMethod.Unlink ]
             Path = [] }
@@ -196,13 +188,13 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
       "entities": {
         "SourceTable": {
           "type": { "kind":"lookup", "lookup":"SomeType" },
-          "methods": ["get", "getMany", "create", "delete", "update"],
+          "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
           "predicates": { "SomePredicate": {"kind":"bool","bool":"false"} }
         },
         "TargetTable": {
           "type": { "kind":"lookup", "lookup":"AnotherType" },
-          "methods": ["get", "getMany", "create", "delete", "update"],
+          "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
           "predicates": { "AnotherPredicate": {"kind":"bool","bool":"true"} }
         }
@@ -213,7 +205,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
           "target": "TargetTable",
           "forward": {
             "arity": { "min": 1 },
-            "methods": ["get", "getMany", "create", "delete", "update", "link", "unlink"],
+            "methods": ["get", "getMany", "create", "delete", "link", "unlink"],
             "path":[]
           },
           "backward": {
@@ -235,14 +227,14 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
         Map.ofList
           [ ("SourceTable",
              { Type = TypeExpr.Lookup("SomeType" |> Identifier.LocalScope)
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
             ("TargetTable",
              { Type = TypeExpr.Lookup("AnotherType" |> Identifier.LocalScope)
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
                  [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)) ]
@@ -260,7 +252,6 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                          LookupMethod.GetMany
                          LookupMethod.Create
                          LookupMethod.Delete
-                         LookupMethod.Update
                          LookupMethod.Link
                          LookupMethod.Unlink ]
                    Path = [] }

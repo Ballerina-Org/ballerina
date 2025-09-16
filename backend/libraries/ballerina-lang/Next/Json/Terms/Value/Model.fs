@@ -14,18 +14,18 @@ module Value =
 
   type Value<'T, 'valueExtension> with
     static member FromJson
-      (fromJsonExt: JsonParser<'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
       (json: JsonValue)
-      : ValueParser<'T, 'valueExtension> =
+      : ValueParserReader<'T, 'valueExtension> =
       reader.Any(
         Value.FromJsonPrimitive json,
-        [ Value.FromJsonRecord (Value.FromJson fromJsonExt) json
-          Value.FromJsonUnion (Value.FromJson fromJsonExt) json
-          Value.FromJsonTuple (Value.FromJson fromJsonExt) json
-          Value.FromJsonSum (Value.FromJson fromJsonExt) json
+        [ Value.FromJsonRecord fromJsonRoot json
+          Value.FromJsonUnion fromJsonRoot json
+          Value.FromJsonTuple fromJsonRoot json
+          Value.FromJsonSum fromJsonRoot json
           Value.FromJsonVar json
-          Value.FromJsonLambda Expr.FromJson json
-          Value.FromJsonTypeLambda Expr.FromJson json
+          Value.FromJsonLambda json
+          Value.FromJsonTypeLambda json
           $"Unknown Value JSON: {json.ToFSharpString.ReasonablyClamped}"
           |> Errors.Singleton
           |> Errors.WithPriority ErrorPriority.Medium
@@ -33,20 +33,17 @@ module Value =
       )
       |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: ValueEncoder<'T, 'valueExtension> =
-      fun value ->
-        reader {
-          let! _, extEncoder = reader.GetContext()
-
-          return!
-            match value with
-            | Value.Primitive p -> Value.ToJsonPrimitive p
-            | Value.Record m -> Value.ToJsonRecord Value.ToJson m
-            | Value.UnionCase(s, v) -> Value.ToJsonUnion Value.ToJson s v
-            | Value.Tuple vs -> Value.ToJsonTuple Value.ToJson vs
-            | Value.Sum(i, v) -> Value.ToJsonSum Value.ToJson i v
-            | Value.Var v -> Value.ToJsonVar v |> reader.Return
-            | Value.Lambda(a, b) -> Value.ToJsonLambda Expr.ToJson a b
-            | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda Expr.ToJson a b
-            | Value.Ext e -> extEncoder e |> reader.Return
-        }
+    static member ToJson
+      (toJsonRoot: ValueEncoder<'T, 'valueExtension>)
+      (value: Value<'T, 'valueExtension>)
+      : ValueEncoderReader<'T> =
+      match value with
+      | Value.Primitive p -> Value.ToJsonPrimitive p
+      | Value.Record m -> Value.ToJsonRecord toJsonRoot m
+      | Value.UnionCase(s, v) -> Value.ToJsonUnion toJsonRoot s v
+      | Value.Tuple vs -> Value.ToJsonTuple toJsonRoot vs
+      | Value.Sum(i, v) -> Value.ToJsonSum toJsonRoot i v
+      | Value.Var v -> Value.ToJsonVar v |> reader.Return
+      | Value.Lambda(a, b) -> Value.ToJsonLambda a b
+      | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
+      | Value.Ext e -> reader.Throw(Errors.Singleton $"Extension parsing not yet implemented: {e}")

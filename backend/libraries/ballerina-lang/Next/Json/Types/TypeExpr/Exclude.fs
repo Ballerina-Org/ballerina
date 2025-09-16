@@ -9,9 +9,12 @@ module Exclude =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "exclude"
+  let private fieldKey = "exclude"
+
   type TypeExpr with
     static member FromJsonExclude(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "exclude" "exclude" (fun excludeFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun excludeFields ->
         sum {
           let! (type1, type2) = excludeFields |> JsonValue.AsPair
           let! type1 = type1 |> fromJsonRoot
@@ -23,4 +26,4 @@ module Exclude =
       fun (type1, type2) ->
         let type1 = rootToJson type1
         let type2 = rootToJson type2
-        JsonValue.Array [| type1; type2 |] |> Json.kind "exclude" "exclude"
+        JsonValue.Array [| type1; type2 |] |> Json.kind kindKey fieldKey

@@ -11,9 +11,12 @@ module TupleDes =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.Errors
 
+  let private kindKey = "tuple-des"
+  let private fieldKey = "tuple-des"
+
   type Expr<'T> with
-    static member FromJsonTupleDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "tuple-des" "tuple-des" (fun tupleDesJson ->
+    static member FromJsonTupleDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun tupleDesJson ->
         reader {
           let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
@@ -22,11 +25,13 @@ module TupleDes =
         })
 
     static member ToJsonTupleDes
-      : ExprEncoder<'T> -> Expr<'T> -> TupleDesSelector -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson e sel ->
-        reader {
-          let! e = e |> rootToJson
-          let index = sel.Index |> decimal |> JsonValue.Number
+      (rootToJson: ExprEncoder<'T>)
+      (e: Expr<'T>)
+      (sel: TupleDesSelector)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! e = e |> rootToJson
+        let index = sel.Index |> decimal |> JsonValue.Number
 
-          return [| e; index |] |> JsonValue.Array |> Json.kind "tuple-des" "tuple-des"
-        }
+        return [| e; index |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

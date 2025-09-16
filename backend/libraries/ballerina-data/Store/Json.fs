@@ -16,8 +16,9 @@ module Model =
 
   type SpecData<'T, 'valueExtension> with
     static member ToJson
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (seeds: SpecData<'T, 'valueExtension>)
-      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'valueExtension>, Errors> =
+      : ValueEncoderReader<'T> =
       reader {
         let! entities =
           seeds.Entities
@@ -29,13 +30,13 @@ module Model =
                 |> Map.toList
                 |> Seq.map (fun (id, value) ->
                   reader {
-                    let! value = value |> Value.ToJson
-                    let! id = id |> PrimitiveValue.Guid |> Primitive |> Value.ToJson
+                    let! value = value |> rootToJson
+                    let! id = id |> PrimitiveValue.Guid |> Primitive |> rootToJson
                     return JsonValue.Record [| "id", id; "value", value |]
                   })
                 |> reader.All
 
-              let! name = name |> PrimitiveValue.String |> Primitive |> Value.ToJson
+              let! name = name |> PrimitiveValue.String |> Primitive |> rootToJson
               return JsonValue.Record [| "name", name; "values", values |> Seq.toArray |> JsonValue.Array |]
             })
           |> reader.All
@@ -45,19 +46,19 @@ module Model =
           |> Map.toList
           |> List.map (fun (name, values) ->
             reader {
-              let! name = name |> PrimitiveValue.String |> Primitive |> Value.ToJson
+              let! name = name |> PrimitiveValue.String |> Primitive |> rootToJson
 
               let! values =
                 values
                 |> Map.toList
                 |> Seq.map (fun (id, v) ->
                   reader {
-                    let! id = id |> PrimitiveValue.Guid |> Primitive |> Value.ToJson
+                    let! id = id |> PrimitiveValue.Guid |> Primitive |> rootToJson
 
                     let! value =
                       v
                       |> Set.toArray
-                      |> Array.map (PrimitiveValue.Guid >> Primitive >> Value.ToJson)
+                      |> Array.map (PrimitiveValue.Guid >> Primitive >> rootToJson)
                       |> reader.All
 
                     return JsonValue.Record [| "id", id; "value", value |> List.toArray |> JsonValue.Array |]
@@ -75,10 +76,13 @@ module Model =
       }
 
     static member FromJson
-      (json: JsonValue, fromJsonExt: JsonParser<'valueExtension>)
+      (rootFromJson: ValueParser<TypeValue, 'valueExtension>)
+      (json: JsonValue)
       : Sum<SpecData<TypeValue, 'valueExtension>, Errors> =
 
-      let parser = Value.FromJson fromJsonExt >> Reader.Run TypeValue.FromJson
+      let rootExprFromJson = Expr.FromJson >> Reader.Run TypeValue.FromJson
+
+      let parser = rootFromJson >> Reader.Run(rootExprFromJson, TypeValue.FromJson)
 
       sum {
         let! container = JsonValue.AsRecord json

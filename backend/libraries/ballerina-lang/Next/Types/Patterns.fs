@@ -108,9 +108,6 @@ module Patterns =
           let! key = !key
           let! value = !value
           return TypeValue.Map(key, value)
-        | TypeExpr.List(element) ->
-          let! element = !element
-          return TypeValue.List(element)
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.Set(element)
@@ -165,13 +162,6 @@ module Patterns =
         match t with
         | TypeExpr.Map(key, value) -> return (key, value)
         | _ -> return! $"Error: expected map type, got {t}" |> Errors.Singleton |> sum.Throw
-      }
-
-    static member AsList(t: TypeExpr) =
-      sum {
-        match t with
-        | TypeExpr.List(element) -> return element
-        | _ -> return! $"Error: expected list type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsLambda(t: TypeExpr) =
@@ -286,6 +276,22 @@ module Patterns =
         | _ -> return! $"Error: expected arrow type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
+    static member AsImported(t: TypeValue) =
+      sum {
+        match t with
+        | TypeValue.Imported i -> return i
+        | _ -> return! $"Error: expected imported type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsImportedUnionLike(t: TypeValue) =
+      sum {
+        match t with
+        | TypeValue.Imported { Sym = _
+                               UnionLike = Some u
+                               RecordLike = _ } -> return u
+        | _ -> return! $"Error: expected imported type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
     static member AsMap(t: TypeValue) =
       sum {
         match t with
@@ -293,17 +299,6 @@ module Patterns =
         | _ ->
           return!
             $"Error: expected map type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
-      }
-
-    static member AsList(t: TypeValue) =
-      sum {
-        match t with
-        | TypeValue.List(element) -> return element
-        | _ ->
-          return!
-            $"Error: expected list type (ie generic), got {t}"
             |> Errors.Singleton
             |> sum.Throw
       }
@@ -370,9 +365,9 @@ module Patterns =
           |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Sum(elements) -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
-      | List(element) -> TypeExpr.List(element.AsExpr)
       | Set(element) -> TypeExpr.Set(element.AsExpr)
       | Map(key, value) -> TypeExpr.Map(key.AsExpr, value.AsExpr)
+      | Imported i -> TypeExpr.Imported i
 
 
   type Identifier with

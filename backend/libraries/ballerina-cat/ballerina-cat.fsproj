@@ -17,18 +17,21 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Fix/Model.fs" />
         <Compile Include="Updater/Model.fs" />
         <Compile Include="Collections/Tuple/Model.fs" />
         <Compile Include="Collections/NonEmptyList/Model.fs" />
         <Compile Include="Collections/Sum/Model.fs" />
         <Compile Include="Collections/Option/Model.fs" />
         <Compile Include="Collections/Map/Model.fs" />
+        <Compile Include="Lenses/Model.fs" />
         <Compile Include="Reader/WithError/Model.fs" />
         <Compile Include="State/Model.fs" />
         <Compile Include="State/WithError/Model.fs" />
         <Compile Include="State/WithError/Seq/Model.fs" />
         <Compile Include="Coroutine/Model.fs" />
         <Compile Include="Coroutine/Runner.fs" />
+        <Compile Include="Parser/Model.fs" />
 
     </ItemGroup>
     <ItemGroup>

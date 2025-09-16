@@ -11,9 +11,12 @@ module SumCons =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
 
+  let private kindKey = "sum"
+  let private fieldKey = "case"
+
   type Expr<'T> with
-    static member FromJsonSumCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "sum" "case" (fun elementsJson ->
+    static member FromJsonSumCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun elementsJson ->
         reader {
           let! (case, count, v) = elementsJson |> JsonValue.AsTriple |> reader.OfSum
           let! case = case |> JsonValue.AsInt |> reader.OfSum
@@ -23,11 +26,13 @@ module SumCons =
         })
 
     static member ToJsonSumCons
-      : ExprEncoder<'T> -> SumConsSelector -> Expr<'T> -> Reader<JsonValue, JsonEncoder<'T>, Errors> =
-      fun rootToJson sel e ->
-        reader {
-          let case = sel.Case |> decimal |> JsonValue.Number
-          let count = sel.Count |> decimal |> JsonValue.Number
-          let! e = e |> rootToJson
-          return [| case; count; e |] |> JsonValue.Array |> Json.kind "sum" "case"
-        }
+      (rootToJson: ExprEncoder<'T>)
+      (sel: SumConsSelector)
+      (e: Expr<'T>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let case = sel.Case |> decimal |> JsonValue.Number
+        let count = sel.Count |> decimal |> JsonValue.Number
+        let! e = e |> rootToJson
+        return [| case; count; e |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

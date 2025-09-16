@@ -12,8 +12,11 @@ module Tuple =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonTuple(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField "tuple" "tuple" (fun json ->
+    static member FromJsonTuple
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "tuple" "tuple" (fun json ->
         reader {
           let! fieldIndex, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! fieldIndex = fieldIndex |> JsonValue.AsInt |> reader.OfSum
@@ -22,10 +25,12 @@ module Tuple =
         })
 
     static member ToJsonTuple
-      : DeltaEncoder<'valueExtension> -> int -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
-      fun rootToJson i v ->
-        reader {
-          let i = i |> decimal |> JsonValue.Number
-          let! v = v |> rootToJson
-          return [| i; v |] |> JsonValue.Array |> Json.kind "tuple" "tuple"
-        }
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (i: int)
+      (v: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = v |> rootToJson
+        return [| i; v |] |> JsonValue.Array |> Json.kind "tuple" "tuple"
+      }

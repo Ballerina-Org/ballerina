@@ -11,11 +11,14 @@ module Record =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
+  let private kindKey = "record"
+  let private fieldKey = "record"
+
   type TypeValue with
     static member FromJsonRecord
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "record" "record" (fun recordFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun recordFields ->
         sum {
           let! fields = recordFields |> JsonValue.AsArray
 
@@ -41,4 +44,4 @@ module Record =
         let fieldValue = rootToJson fieldValue
         JsonValue.Array [| fieldKey; fieldValue |])
       >> JsonValue.Array
-      >> Json.kind "record" "record"
+      >> Json.kind kindKey fieldKey

@@ -11,6 +11,9 @@ module Kind =
   open Ballerina.DSL.Next.Types.Patterns
   open FSharp.Data
 
+  let private kindKey = "arrow"
+  let private fieldKey = "arrow"
+
   type Kind with
     static member private FromJsonSymbol: JsonValue -> Sum<Kind, Errors> =
       sum.AssertKindAndContinue "symbol" (fun _ -> sum { return Kind.Symbol })
@@ -25,7 +28,7 @@ module Kind =
       JsonValue.Record([| "kind", JsonValue.String "star" |])
 
     static member private FromJsonArrow: JsonValue -> Sum<Kind, Errors> =
-      sum.AssertKindAndContinueWithField "arrow" "arrow" (fun arrowFields ->
+      sum.AssertKindAndContinueWithField kindKey fieldKey (fun arrowFields ->
         sum {
           let! arrowFields = arrowFields |> JsonValue.AsRecordMap
           let! param = arrowFields |> (Map.tryFindWithError "param" "arrow" "param" >>= Kind.FromJson)
@@ -40,8 +43,8 @@ module Kind =
     static member private ToJsonArrow: Kind * Kind -> JsonValue =
       fun (param, returnType) ->
         JsonValue.Record
-          [| "kind", JsonValue.String "arrow"
-             "arrow", JsonValue.Record [| "param", Kind.ToJson param; "returnType", Kind.ToJson returnType |] |]
+          [| "kind", JsonValue.String kindKey
+             fieldKey, JsonValue.Record [| "param", Kind.ToJson param; "returnType", Kind.ToJson returnType |] |]
 
     static member FromJson(json: JsonValue) : Sum<Kind, Errors> =
       sum.Any(Kind.FromJsonStar(json), [ Kind.FromJsonSymbol(json); Kind.FromJsonArrow(json) ])

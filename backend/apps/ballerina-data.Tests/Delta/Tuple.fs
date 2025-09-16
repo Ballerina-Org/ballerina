@@ -20,18 +20,18 @@ let ``Delta.Tuple: Updates correct index in a tuple`` () =
     |> TypeValue.Tuple
 
   let tupleValue =
-    [ PrimitiveValue.Int 42 |> Value<Unit>.Primitive
+    [ PrimitiveValue.Int32 42 |> Value<Unit>.Primitive
       PrimitiveValue.String "hello" |> Value<Unit>.Primitive ]
     |> Value<Unit>.Tuple
 
   let delta =
-    Delta.Tuple(0, Delta.Replace(PrimitiveValue.Int 99 |> Value<Unit>.Primitive))
+    Delta.Tuple(0, Delta.Replace(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater tupleType delta with
   | Sum.Left updater ->
     match updater tupleValue with
     | Sum.Left(Value.Tuple [ updated; second ]) ->
-      Assert.That(updated, Is.EqualTo(PrimitiveValue.Int 99 |> Value<Unit>.Primitive))
+      Assert.That(updated, Is.EqualTo(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
       Assert.That(second, Is.EqualTo(PrimitiveValue.String "hello" |> Value<Unit>.Primitive))
     | _ -> Assert.Fail "Unexpected shape of updated tuple"
   | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -41,7 +41,7 @@ let ``Delta.Tuple: Fails if index out of bounds in type`` () =
   let tupleType = [ TypeValue.Primitive PrimitiveType.Int32 ] |> TypeValue.Tuple
 
   let delta =
-    Delta.Tuple(5, Delta.Replace(PrimitiveValue.Int 1 |> Value<Unit>.Primitive))
+    Delta.Tuple(5, Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
 
   match Delta.ToUpdater tupleType delta with
   | Sum.Left _ -> Assert.Fail "Expected error due to out-of-range index"
@@ -55,7 +55,7 @@ let ``Delta.Tuple: Fails if index out of bounds in value`` () =
     |> TypeValue.Tuple
 
   let tupleValue =
-    [ PrimitiveValue.Int 1 |> Value<Unit>.Primitive ] |> Value<Unit>.Tuple
+    [ PrimitiveValue.Int32 1 |> Value<Unit>.Primitive ] |> Value<Unit>.Tuple
 
   let delta =
     Delta.Tuple(1, Delta.Replace(PrimitiveValue.String "changed" |> Value<Unit>.Primitive))
