@@ -9,31 +9,29 @@ module Sum =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
 
+  let private kindKey = "sum"
+  let private fieldKey = "case"
+
   type Value<'T, 'valueExtension> with
     static member FromJsonSum
-      (fromJsonRoot: FromJsonRoot<'T, 'valueExtension>)
-      : JsonValue -> ValueParser<'T, 'valueExtension> =
-      fun json ->
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun elementsJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "sum"
-              "case"
-              (fun elementsJson ->
-                reader {
-                  let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
-                  let! k = k |> JsonValue.AsInt |> reader.OfSum
-                  let! v = (fromJsonRoot v)
-                  return Value.Sum(k, v)
-                })
-              json
-        }
+          let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
+          let! k = k |> JsonValue.AsInt |> reader.OfSum
+          let! v = fromJsonRoot v
+          return Value.Sum(k, v)
+        })
 
     static member ToJsonSum
-      : ValueEncoder<'T, 'valueExtension> -> int -> Value<'T, 'valueExtension> -> JsonEncoder<'T, 'valueExtension> =
-      fun rootToJson i v ->
-        reader {
-          let i = JsonValue.Number(decimal i)
-          let! v = rootToJson v
-          return [| i; v |] |> JsonValue.Array |> Json.kind "sum" "case"
-        }
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (i: int)
+      (v: Value<'T, 'valueExtension>)
+      : ValueEncoderReader<'T> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = rootToJson v
+        return [| i; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+      }

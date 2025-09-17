@@ -23,7 +23,7 @@ type FakeOrRealValue =
   | RealValue of obj
   | FakeValue of FakeValue
 
-type PrimitiveGenerator<'T> = PrimitiveType -> FakeOrRealValue -> Value<'T, Unit>
+type PrimitiveGenerator<'T, 'valueExtension> = PrimitiveType -> FakeOrRealValue -> Value<'T, 'valueExtension>
 
 [<AutoOpen>]
 module private Patterns =
@@ -103,11 +103,16 @@ type BogusDataGenerator<'Value>(cultureCode: string) =
     Seq.initInfinite (fun i -> t.Suggestion(person i, suggestion))
 
   member t.Bool() = random.Next(0, 2) = 1
-  member t.Int(min, max) = random.Next(min, max)
+  member t.Int32(min, max) = random.Next(min, max)
+  member t.Int64(min, max) = random.NextInt64(min, max)
 
-  member t.Float(min, max) =
+  member t.Float32(min, max) =
+    let value = random.NextSingle() * (max - min) + min
+    single value
+
+  member t.Float64(min, max) =
     let value = random.NextDouble() * (max - min) + min
-    decimal value
+    double value
 
   member t.Guid() = Guid.CreateVersion7()
 
@@ -115,18 +120,36 @@ type BogusDataGenerator<'Value>(cultureCode: string) =
 
     let result =
       match pt, input with
-      | PrimitiveType.String, FakeValue Unsupervised -> PrimitiveValue.String(t.String(Word))
+      | PrimitiveType.String, FakeValue Unsupervised -> PrimitiveValue.String(t.String Word)
       | PrimitiveType.String, FakeValue(Supervised(label, i)) ->
         PrimitiveValue.String(t.InfiniteSource label |> Seq.skip i |> Seq.head)
       | PrimitiveType.String, RealValue v -> PrimitiveValue.String(string v)
 
-      | PrimitiveType.Int32, FakeValue _ -> PrimitiveValue.Int(t.Int(0, 1000))
+      | PrimitiveType.Int32, FakeValue _ -> PrimitiveValue.Int32(t.Int32(0, 1000))
       | PrimitiveType.Int32, RealValue v ->
         match v with
-        | AsInt i -> PrimitiveValue.Int i
+        | AsInt i -> PrimitiveValue.Int32 i
         | _ -> failwith "Expected int"
 
-      | PrimitiveType.Decimal, FakeValue _ -> PrimitiveValue.Decimal(t.Float(0., 1000.) |> decimal)
+      | PrimitiveType.Int64, FakeValue _ -> PrimitiveValue.Int64(t.Int64(0L, 1000L))
+      | PrimitiveType.Int64, RealValue v ->
+        match v with
+        | AsInt i -> PrimitiveValue.Int64(int64 i)
+        | _ -> failwith "Expected int"
+
+      | PrimitiveType.Float32, FakeValue _ -> PrimitiveValue.Float32(t.Float32(0.f, 1000.f) |> single)
+      | PrimitiveType.Float32, RealValue v ->
+        match v with
+        | AsFloat i -> PrimitiveValue.Float32(single i)
+        | _ -> failwith "Expected float"
+
+      | PrimitiveType.Float64, FakeValue _ -> PrimitiveValue.Float64(t.Float64(0., 1000.))
+      | PrimitiveType.Float64, RealValue v ->
+        match v with
+        | AsFloat i -> PrimitiveValue.Float64 i
+        | _ -> failwith "Expected float"
+
+      | PrimitiveType.Decimal, FakeValue _ -> PrimitiveValue.Decimal(t.Float64(0., 1000.) |> decimal)
       | PrimitiveType.Decimal, RealValue v ->
         match v with
         | AsDecimal i -> PrimitiveValue.Decimal i
@@ -144,14 +167,14 @@ type BogusDataGenerator<'Value>(cultureCode: string) =
       | PrimitiveType.Guid, RealValue v -> PrimitiveValue.String(string v)
 
       | PrimitiveType.DateTime, FakeValue _ ->
-        DateTime.Now.AddDays(float (t.Int(-365, 0))) |> fd |> PrimitiveValue.String
+        DateTime.Now.AddDays(float (t.Int32(-365, 0))) |> fd |> PrimitiveValue.String
       | PrimitiveType.DateTime, RealValue v ->
         match v with
         | AsDateTime dt -> fd dt |> PrimitiveValue.String
         | _ -> failwith "Expected DateTime"
 
       | PrimitiveType.DateOnly, FakeValue _ ->
-        DateTime.Now.AddDays(float (t.Int(-365, 0))) |> fd |> PrimitiveValue.String
+        DateTime.Now.AddDays(float (t.Int32(-365, 0))) |> fd |> PrimitiveValue.String
       | PrimitiveType.DateOnly, RealValue v ->
         match v with
         | AsDateTime d -> fd d |> PrimitiveValue.String
@@ -159,7 +182,6 @@ type BogusDataGenerator<'Value>(cultureCode: string) =
 
       | PrimitiveType.Unit, RealValue _
       | PrimitiveType.Unit, FakeValue _ -> PrimitiveValue.Unit
-      | _ -> failwith $"Seed not supported for primitive type {t}"
 
     result |> Value.Primitive
 

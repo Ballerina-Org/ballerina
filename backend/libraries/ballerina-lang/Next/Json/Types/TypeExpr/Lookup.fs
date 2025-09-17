@@ -10,17 +10,20 @@ module LookupTypeExpr =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
 
+  let private kindKey = "lookup"
+  let private fieldKey = "lookup"
+
   type TypeExpr with
     static member FromJsonLookup: TypeExprParser =
       sum.AssertKindAndContinueWithField
-        "lookup"
-        "lookup"
+        kindKey
+        fieldKey
         (JsonValue.AsString >>= (Identifier.LocalScope >> TypeExpr.Lookup >> sum.Return))
 
     static member ToJsonLookup(id: Identifier) : JsonValue =
       match id with
-      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "lookup"
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind kindKey fieldKey
       | Identifier.FullyQualified(scope, name) ->
         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
         |> JsonValue.Array
-        |> Json.kind "lookup" "lookup"
+        |> Json.kind kindKey fieldKey

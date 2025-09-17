@@ -2,16 +2,6 @@
   "version": 1,
   "dependencies": {
     "net9.0": {
-      "AutoBogus": {
-        "type": "Direct",
-        "requested": "[2.13.1, )",
-        "resolved": "2.13.1",
-        "contentHash": "9bvwy/Y53M/AWXzYaClv0jU9Xg/Ycyth3cQuUFWZRw5Dv4UsHV00iSrDplcheG6l5mL5SI/eif7X2INhuBvjQw==",
-        "dependencies": {
-          "Bogus": "31.0.3",
-          "System.Data.DataSetExtensions": "4.5.0"
-        }
-      },
       "FSharp.Core": {
         "type": "Direct",
         "requested": "[9.0.303, )",
@@ -23,11 +13,6 @@
         "requested": "[6.0.0-beta2, )",
         "resolved": "6.0.0-beta2",
         "contentHash": "ew55vr5MqCEokG0jRsndoRSPNxdDvSgGwhWyxEFhzc8EuGn3TNtSGKRppCcpHnwXtjFiUvFBN+BBo75yrdKOrQ=="
-      },
-      "Bogus": {
-        "type": "Transitive",
-        "resolved": "31.0.3",
-        "contentHash": "CMVbZndfEihsd7A5GgdfMQTNiUzjTTng2IPoTe4J2cyxUaEqCW5M5HO8uGF/Qkq1NL219AbLHX+4dx9MxWDSiA=="
       },
       "FSharp.Data": {
         "type": "Transitive",
@@ -197,11 +182,6 @@
         "type": "Transitive",
         "resolved": "9.0.7",
         "contentHash": "ti/zD9BuuO50IqlvhWQs9GHxkCmoph5BHjGiWKdg2t6Or8XoyAfRJiKag+uvd/fpASnNklfsB01WpZ4fhAe0VQ=="
-      },
-      "System.Data.DataSetExtensions": {
-        "type": "Transitive",
-        "resolved": "4.5.0",
-        "contentHash": "221clPs1445HkTBZPL+K9sDBdJRB8UN8rgjO3ztB0CQ26z//fmJXtlsr6whGatscsKGBrhJl5bwJuKSA8mwFOw=="
       },
       "Ballerina.Cat": {
         "type": "Project",

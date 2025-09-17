@@ -30,12 +30,11 @@ module Model =
         )
         |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: DeltaEncoder<'valueExtension> =
-      fun delta ->
-        match delta with
-        | Delta.Multiple deltas -> Delta.ToJsonMultiple Delta.ToJson deltas
-        | Delta.Replace v -> Delta.ToJsonReplace v
-        | Delta.Record(fieldName, fieldDelta) -> Delta.ToJsonRecord Delta.ToJson fieldName fieldDelta
-        | Delta.Union(caseName, caseDelta) -> Delta.ToJsonUnion Delta.ToJson caseName caseDelta
-        | Delta.Tuple(fieldIndex, fieldDelta) -> Delta.ToJsonTuple Delta.ToJson fieldIndex fieldDelta
-        | Delta.Sum(index, fieldDelta) -> Delta.ToJsonSum Delta.ToJson index fieldDelta
+    static member ToJson(delta: Delta<'valueExtension>) : DeltaEncoderReader<'valueExtension> =
+      match delta with
+      | Delta.Multiple deltas -> Delta.ToJsonMultiple Delta.ToJson deltas
+      | Delta.Replace v -> Delta.ToJsonReplace v
+      | Delta.Record(fieldName, fieldDelta) -> Delta.ToJsonRecord Delta.ToJson fieldName fieldDelta
+      | Delta.Union(caseName, caseDelta) -> Delta.ToJsonUnion Delta.ToJson caseName caseDelta
+      | Delta.Tuple(fieldIndex, fieldDelta) -> Delta.ToJsonTuple Delta.ToJson fieldIndex fieldDelta
+      | Delta.Sum(index, fieldDelta) -> Delta.ToJsonSum Delta.ToJson index fieldDelta

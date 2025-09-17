@@ -41,7 +41,6 @@
 
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="9.0.303" />
-    <PackageReference Include="AutoBogus" Version="2.13.1" />
     <PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
   </ItemGroup>
 

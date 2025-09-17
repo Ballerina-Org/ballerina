@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.Data.Store
 
+open Ballerina.DSL.Next.Types
+
 module Model =
 
   open System
@@ -33,7 +35,7 @@ module Model =
 
   type Workspace<'T, 'valueExtension> =
     { SeedSpecEval:
-        TenantId * Spec * Seeder<'T, 'valueExtension> * TypeExprEvalContext
+        TenantId * Spec * Seeder<TypeValue, 'valueExtension> * TypeExprEvalState
           -> State<unit, TypeExprEvalContext, TypeExprEvalState, Errors>
       SeedSpec: TenantId * Spec * SpecData<'T, 'valueExtension> -> Sum<unit, Errors>
       GetSeeds: TenantId -> SpecName -> Sum<SpecData<'T, 'valueExtension>, Errors> }

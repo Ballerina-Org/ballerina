@@ -212,7 +212,6 @@ module Runner =
             crudCase "getAll" CrudMethod.GetAll
             crudCase "getManyLinked" CrudMethod.GetManyLinked
             crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked
-            crudCase "update" CrudMethod.Update
             crudCase "default" CrudMethod.Default ]
         )
       )
@@ -653,6 +652,7 @@ module Runner =
                             Renderer.PrimitiveRenderer
                               { PrimitiveRendererName = ""
                                 PrimitiveRendererId = Guid.CreateVersion7()
+                                Label = None
                                 Type = ExprType.UnitType }
                            Cases = Map.empty
                            UnionType = formType.Type |}

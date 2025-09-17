@@ -20,6 +20,7 @@
         <Compile Include="Core\StringBuilder\Model.fs" />
         <Compile Include="Core\Object\Model.fs" />
         <Compile Include="Core\Map\Model.fs" />
+        <Compile Include="Core\Guid\Model.fs" />
         <Compile Include="Errors\Model.fs" />
         <Compile Include="Core\Json\Patterns.fs" />
         <Compile Include="Core\Json\Reader.fs" />

@@ -10,26 +10,37 @@ open Ballerina.DSL.Next.Terms.Json.Value
 open Ballerina.Data.Delta.Model
 open Ballerina.DSL.Next.Delta.Json.Model
 open Ballerina.DSL.Next.Types.Json.TypeValue
+open Ballerina.DSL.Next.Json
+open Ballerina.Collections.NonEmptyList
+open Ballerina.DSL.Next.Terms.Json
 
 let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (expectedJson: JsonValue) =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
-  let encoder =
-    Delta<Unit>.ToJson >> Reader.Run(TypeValue.ToJson, fun _ -> JsonValue.Null)
+  let rootExprToJson = Expr.ToJson >> Reader.Run TypeValue.ToJson
 
-  let encoded = encoder expression
+  let rootValueToJson =
+    Json.buildRootEncoder<TypeValue, Unit> (NonEmptyList.OfList(Value.ToJson, []))
+
+  let valueEncoder = rootValueToJson >> Reader.Run(rootExprToJson, TypeValue.ToJson)
+
+  let encoded = Delta.ToJson expression |> Reader.Run valueEncoder
 
   match encoded with
   | Right err -> Assert.Fail $"Encode failed: {err}"
   | Left json ->
     Assert.That(normalize json, Is.EqualTo(normalize expectedJson))
 
-    let parser =
-      Value<TypeValue, Unit>.FromJson(fun _ -> sum.Return())
-      >> Reader.Run TypeValue.FromJson
+    let rootExprFromJson = Expr.FromJson >> Reader.Run TypeValue.FromJson
 
-    let parsed = Delta<Unit>.FromJson expectedJson |> Reader.Run parser
+    let rootValueFromJson =
+      Json.buildRootParser<TypeValue, Unit> (NonEmptyList.OfList(Value.FromJson, []))
+
+    let valueParser =
+      rootValueFromJson >> Reader.Run(rootExprFromJson, TypeValue.FromJson)
+
+    let parsed = Delta.FromJson expectedJson |> Reader.Run valueParser
 
     match parsed with
     | Right err -> Assert.Fail $"Parse failed: {err}"
@@ -65,12 +76,12 @@ let ``Delta.Replace json round-trip`` () =
     """ 
       {
       "kind":"replace",
-      "replace": {"kind":"int","int":"99"}
+      "replace": {"kind":"int32","int32":"99"}
       }
     """
     |> JsonValue.Parse
 
-  let delta = Delta<Unit>.Replace(Value.Primitive(PrimitiveValue.Int 99))
+  let delta = Delta<Unit>.Replace(Value.Primitive(PrimitiveValue.Int32 99))
 
   (delta, json) ||> ``Assert Delta -> ToJson -> FromJson -> Delta``
 
@@ -78,7 +89,7 @@ let ``Delta.Replace json round-trip`` () =
 [<Test>]
 let ``Delta.Record json round-trip`` () =
   let delta =
-    Delta<Unit>.Record("Foo", Delta.Replace(Value.Primitive(PrimitiveValue.Int 99)))
+    Delta<Unit>.Record("Foo", Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
 
   let json =
     """ 
@@ -87,7 +98,7 @@ let ``Delta.Record json round-trip`` () =
       "record": ["Foo", 
         {
           "kind":"replace",
-          "replace": {"kind":"int","int":"99"}
+          "replace": {"kind":"int32","int32":"99"}
         }
       ]
       }
@@ -100,7 +111,7 @@ let ``Delta.Record json round-trip`` () =
 [<Test>]
 let ``Delta.Union json round-trip`` () =
   let delta =
-    Delta.Union("Case1", Delta.Replace(Value.Primitive(PrimitiveValue.Int 99)))
+    Delta.Union("Case1", Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
 
   let json =
     """ 
@@ -109,7 +120,7 @@ let ``Delta.Union json round-trip`` () =
       "union": ["Case1", 
         {
           "kind":"replace",
-          "replace": {"kind":"int","int":"99"}
+          "replace": {"kind":"int32","int32":"99"}
         }
       ]
       }
@@ -121,7 +132,7 @@ let ``Delta.Union json round-trip`` () =
 
 [<Test>]
 let ``Delta.Tuple json round-trip`` () =
-  let delta = Delta.Tuple(3, Delta.Replace(Value.Primitive(PrimitiveValue.Int 99)))
+  let delta = Delta.Tuple(3, Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
 
   let json =
     """ 
@@ -130,7 +141,7 @@ let ``Delta.Tuple json round-trip`` () =
       "tuple": [3, 
         {
           "kind":"replace",
-          "replace": {"kind":"int","int":"99"}
+          "replace": {"kind":"int32","int32":"99"}
         }
       ]
       }
@@ -142,7 +153,7 @@ let ``Delta.Tuple json round-trip`` () =
 
 [<Test>]
 let ``Delta.Sum json round-trip`` () =
-  let delta = Delta.Sum(3, Delta.Replace(Value.Primitive(PrimitiveValue.Int 99)))
+  let delta = Delta.Sum(3, Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
 
   let json =
     """ 
@@ -151,7 +162,7 @@ let ``Delta.Sum json round-trip`` () =
       "sum": [3, 
         {
           "kind":"replace",
-          "replace": {"kind":"int","int":"99"}
+          "replace": {"kind":"int32","int32":"99"}
         }
       ]
       }

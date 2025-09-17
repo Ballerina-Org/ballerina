@@ -12,19 +12,31 @@ module Lookup =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
 
-  type Expr<'T> with
-    static member FromJsonLookup: JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "lookup" "name" (fun nameJson ->
-        reader {
-          let! name = nameJson |> JsonValue.AsString |> reader.OfSum
-          return Expr.Lookup(name |> Identifier.LocalScope)
-        })
+  let private kindKey = "lookup"
+  let private fieldKey = "name"
 
-    static member ToJsonLookup(id: Identifier) : Reader<JsonValue, JsonEncoder<'T>, Errors> =
+  type Expr<'T> with
+    static member FromJsonLookup(value: JsonValue) : ExprParserReader<'T> =
+      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun nameJson ->
+        reader.Any2
+          (reader {
+            let! name = nameJson |> JsonValue.AsString |> reader.OfSum
+            return Expr.Lookup(name |> Identifier.LocalScope)
+          })
+          (reader {
+            let! path = nameJson |> JsonValue.AsArray |> reader.OfSum
+            let! path = path |> Seq.map (JsonValue.AsString >> reader.OfSum) |> reader.All
+
+            match path |> List.rev with
+            | [] -> return! Errors.Singleton "Empty path in fully qualified identifier" |> reader.Throw
+            | x :: xs -> return Expr.Lookup(Identifier.FullyQualified(xs, x))
+          }))
+
+    static member ToJsonLookup(id: Identifier) : ExprEncoderReader<'T> =
       (match id with
-       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "name"
+       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind kindKey fieldKey
        | Identifier.FullyQualified(scope, name) ->
-         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
+         (name :: scope |> List.rev |> Seq.map JsonValue.String |> Seq.toArray)
          |> JsonValue.Array
-         |> Json.kind "lookup" "name")
+         |> Json.kind kindKey fieldKey)
       |> reader.Return

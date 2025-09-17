@@ -3,6 +3,7 @@
 [<AutoOpen>]
 module Replace =
   open Ballerina.Errors
+  open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
@@ -13,16 +14,17 @@ module Replace =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonReplace: DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField<ValueParser<'valueExtension>, _> "replace" "replace" (fun json ->
+    static member FromJsonReplace(json: JsonValue) : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "replace" "replace" (fun json ->
         reader {
           let! ctx = reader.GetContext()
-          let! value = json |> ctx |> reader.OfSum
+          let! value = ctx json |> reader.OfSum
           return value |> Delta.Replace
         })
 
-    static member ToJsonReplace
-      : Value<TypeValue, 'valueExtension>
-          -> Reader<JsonValue, JsonEncoder<TypeValue> * JsonEncoder<'valueExtension>, Errors> =
-      Value<TypeValue, 'valueExtension>.ToJson
-      >> reader.Map(Json.kind "replace" "replace")
+    static member ToJsonReplace(value: Value<TypeValue, 'valueExtension>) : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let! rootToJson = reader.GetContext()
+        let! value = value |> rootToJson |> reader.OfSum
+        return value |> Json.kind "replace" "replace"
+      }

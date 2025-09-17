@@ -22,7 +22,6 @@ module Schema =
         | "getMany" -> return GetMany
         | "create" -> return Create
         | "delete" -> return Delete
-        | "update" -> return Update
         | _ -> return! $"Invalid entity method: {jsonValue}" |> Errors.Singleton |> sum.Throw
       }
 
@@ -32,7 +31,6 @@ module Schema =
       | GetMany -> JsonValue.String "getMany"
       | Create -> JsonValue.String "create"
       | Delete -> JsonValue.String "delete"
-      | Update -> JsonValue.String "update"
 
   type UpdaterPathStep with
     static member FromJson(jsonValue: JsonValue) : Sum<UpdaterPathStep, Errors> =
@@ -114,7 +112,6 @@ module Schema =
         | "getMany" -> return LookupMethod.GetMany
         | "create" -> return LookupMethod.Create
         | "delete" -> return LookupMethod.Delete
-        | "update" -> return LookupMethod.Update
         | "link" -> return LookupMethod.Link
         | "unlink" -> return LookupMethod.Unlink
         | _ -> return! $"Invalid lookup method: {jsonValue}" |> Errors.Singleton |> sum.Throw
@@ -126,7 +123,6 @@ module Schema =
       | LookupMethod.GetMany -> JsonValue.String "getMany"
       | LookupMethod.Create -> JsonValue.String "create"
       | LookupMethod.Delete -> JsonValue.String "delete"
-      | LookupMethod.Update -> JsonValue.String "update"
       | LookupMethod.Link -> JsonValue.String "link"
       | LookupMethod.Unlink -> JsonValue.String "unlink"
 

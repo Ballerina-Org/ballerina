@@ -392,6 +392,7 @@ module Model =
 
   and FormFields<'ExprExtension, 'ValueExtension> =
     { Fields: Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>
+      Disabled: FormGroup<'ExprExtension, 'ValueExtension>
       Tabs: FormTabs<'ExprExtension, 'ValueExtension> }
 
   and FormTabs<'ExprExtension, 'ValueExtension> =
@@ -430,25 +431,31 @@ module Model =
       {| First:
            {| Name: string
               NestedRenderer: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-         Rest: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> |}
+         Rest: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>>
+         Label: string option |}
     | PrimitiveRenderer of PrimitiveRenderer
     | MapRenderer of
-      {| Map: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Map: Renderer<'ExprExtension, 'ValueExtension>
          Key: NestedRenderer<'ExprExtension, 'ValueExtension>
          Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | TupleRenderer of
-      {| Tuple: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Tuple: Renderer<'ExprExtension, 'ValueExtension>
          Elements: List<NestedRenderer<'ExprExtension, 'ValueExtension>> |}
     | OptionRenderer of
-      {| Option: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Option: Renderer<'ExprExtension, 'ValueExtension>
          Some: NestedRenderer<'ExprExtension, 'ValueExtension>
          None: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | ListRenderer of
-      {| List: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         List: Renderer<'ExprExtension, 'ValueExtension>
          Element: NestedRenderer<'ExprExtension, 'ValueExtension>
          MethodLabels: Map<TableMethod, string> |}
     | OneRenderer of
-      {| One: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         One: Renderer<'ExprExtension, 'ValueExtension>
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
          Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          OneApiId: ExprTypeId * string |}
@@ -456,14 +463,16 @@ module Model =
     | ManyRenderer of ManyRenderer<'ExprExtension, 'ValueExtension>
 
     | ReadOnlyRenderer of
-      {| ReadOnly: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         ReadOnly: Renderer<'ExprExtension, 'ValueExtension>
          Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer
     //      Children: RendererChildren |}
     | SumRenderer of
-      {| Sum: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Sum: Renderer<'ExprExtension, 'ValueExtension>
          Left: NestedRenderer<'ExprExtension, 'ValueExtension>
          Right: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | EnumRenderer of EnumApiId * Renderer<'ExprExtension, 'ValueExtension>
@@ -482,12 +491,14 @@ module Model =
 
   and ManyRenderer<'ExprExtension, 'ValueExtension> =
     | ManyLinkedUnlinkedRenderer of
-      {| Many: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Many: Renderer<'ExprExtension, 'ValueExtension>
          Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
          Unlinked: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          ManyApiId: Option<ExprTypeId * string> |}
     | ManyAllRenderer of
-      {| Many: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: string option
+         Many: Renderer<'ExprExtension, 'ValueExtension>
          Element: NestedRenderer<'ExprExtension, 'ValueExtension>
          ManyApiId: Option<ExprTypeId * string> |}
 
@@ -512,6 +523,7 @@ module Model =
     { PrimitiveRendererName: string
       PrimitiveRendererId: Guid
       Type: ExprType
+      Label: string option
     // Children: RendererChildren
     }
 

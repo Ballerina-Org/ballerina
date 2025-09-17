@@ -14,8 +14,11 @@ module Union =
   open FSharp.Data
 
   type Delta<'valueExtension> with
-    static member FromJsonUnion(fromJsonRoot: DeltaParser<'valueExtension>) : DeltaParser<'valueExtension> =
-      reader.AssertKindAndContinueWithField "union" "union" (fun json ->
+    static member FromJsonUnion
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      reader.AssertKindAndContinueWithField json "union" "union" (fun json ->
         reader {
           let! caseName, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! caseName = caseName |> JsonValue.AsString |> reader.OfSum
@@ -24,10 +27,12 @@ module Union =
         })
 
     static member ToJsonUnion
-      : DeltaEncoder<'valueExtension> -> string -> Delta<'valueExtension> -> JsonEncoder<TypeValue, 'valueExtension> =
-      fun rootToJson caseName caseDelta ->
-        reader {
-          let caseName = caseName |> JsonValue.String
-          let! caseDelta = caseDelta |> rootToJson
-          return [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "union" "union"
-        }
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (caseName: string)
+      (caseDelta: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let caseName = caseName |> JsonValue.String
+        let! caseDelta = caseDelta |> rootToJson
+        return [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "union" "union"
+      }

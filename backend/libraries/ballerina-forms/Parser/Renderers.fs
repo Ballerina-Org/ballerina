@@ -21,6 +21,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseBoolRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -39,6 +40,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.BoolType }
         else
           return!
@@ -47,6 +49,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseDateRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -65,6 +68,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.DateOnlyType }
         else
           return!
@@ -74,6 +78,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseUnitRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -92,6 +97,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.UnitType }
         else
           return!
@@ -100,6 +106,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseGuidRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -118,6 +125,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.GuidType }
         else
           return!
@@ -126,6 +134,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseIntRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -144,6 +153,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.IntType }
         else
           return!
@@ -152,6 +162,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseStringRenderer
+      (label: string option)
       (_: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -170,6 +181,7 @@ module Renderers =
             PrimitiveRenderer
               { PrimitiveRendererName = s
                 PrimitiveRendererId = Guid.CreateVersion7()
+                Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.StringType }
         else
           return!
@@ -180,6 +192,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseEnumRenderer
+      (label: string option)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -218,6 +231,7 @@ module Renderers =
                   PrimitiveRenderer
                     { PrimitiveRendererName = s
                       PrimitiveRendererId = Guid.CreateVersion7()
+                      Label = label
                       Type = containerTypeConstructor (enumType.Type) }
                 )
             }
@@ -229,6 +243,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseStreamRenderer
+      (label: string option)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
       : State<
@@ -302,6 +317,7 @@ module Renderers =
                   PrimitiveRenderer
                     { PrimitiveRendererName = s
                       PrimitiveRendererId = Guid.CreateVersion7()
+                      Label = label
                       Type = containerTypeConstructor (ExprType.LookupType streamType.TypeId) }
                 )
             }
@@ -315,6 +331,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseMapRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -342,10 +359,12 @@ module Renderers =
 
               return
                 MapRenderer
-                  {| Map =
+                  {| Label = label
+                     Map =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = label
                           Type = ExprType.MapType(keyRenderer.Renderer.Type, valueRenderer.Renderer.Type) }
 
                      Key = keyRenderer
@@ -359,6 +378,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseSumRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -390,8 +410,9 @@ module Renderers =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = None
                           Type = ExprType.SumType(leftRenderer.Renderer.Type, rightRenderer.Renderer.Type) }
-
+                     Label = label
                      Left = leftRenderer
                      Right = rightRenderer |}
             }
@@ -403,6 +424,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseOptionRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -428,10 +450,12 @@ module Renderers =
 
               let res =
                 OptionRenderer
-                  {| Option =
+                  {| Label = label
+                     Option =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = label
                           Type = ExprType.OptionType someRenderer.Renderer.Type }
 
                      Some = someRenderer
@@ -449,6 +473,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseOneRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -501,10 +526,12 @@ module Renderers =
 
               return
                 OneRenderer
-                  {| One =
+                  {| Label = label
+                     One =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = label
                           Type = ExprType.OneType details.Type }
 
                      OneApiId = oneApiId
@@ -519,6 +546,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseReadOnlyRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -545,8 +573,9 @@ module Renderers =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = None
                           Type = ExprType.ReadOnlyType valueRenderer.Renderer.Type }
-
+                     Label = label
                      Value = valueRenderer |}
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -559,6 +588,7 @@ module Renderers =
 
   type Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseListRenderer
+      (label: string option)
       (parseNestedRenderer)
       (parentJsonFields: (string * JsonValue)[])
       (json: JsonValue)
@@ -592,10 +622,12 @@ module Renderers =
 
               return
                 ListRenderer
-                  {| List =
+                  {| Label = label
+                     List =
                       PrimitiveRenderer
                         { PrimitiveRendererName = s
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = label
                           Type = ExprType.ListType elementRenderer.Renderer.Type }
                      Element = elementRenderer
                      MethodLabels = actionLabels |}
@@ -608,6 +640,7 @@ module Renderers =
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member ParseCustomRenderer
+      (label: string option)
       (_)
       (_: (string * JsonValue)[])
       (json: JsonValue)
@@ -637,6 +670,7 @@ module Renderers =
               PrimitiveRenderer
                 { PrimitiveRendererName = s
                   PrimitiveRendererId = Guid.CreateVersion7()
+                  Label = label
                   Type = t.Type }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -700,6 +734,7 @@ module Renderers =
                       PrimitiveRenderer
                         { PrimitiveRendererName = renderer
                           PrimitiveRendererId = Guid.CreateVersion7()
+                          Label = None
                           Type = t.Type }
 
                      UnionType = t.Type |}
@@ -886,26 +921,52 @@ module Renderers =
           let! s = json |> JsonValue.AsString |> state.OfSum
           let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
 
+          let label =
+            parentJsonFields
+            |> sum.TryFindField "label"
+            |> Sum.toOption
+            |> Option.bind (JsonValue.AsString >> Sum.toOption)
+
           return!
             state.Any(
               NonEmptyList.OfList(
-                Renderer.ParseBoolRenderer parentJsonFields json,
-                [ Renderer.ParseDateRenderer parentJsonFields json
-                  Renderer.ParseUnitRenderer parentJsonFields json
-                  Renderer.ParseGuidRenderer parentJsonFields json
-                  Renderer.ParseIntRenderer parentJsonFields json
-                  Renderer.ParseStringRenderer parentJsonFields json
-                  Renderer.ParseEnumRenderer parentJsonFields json
-                  Renderer.ParseStreamRenderer parentJsonFields json
-                  Renderer.ParseMapRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseSumRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseOptionRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseOneRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseManyAllRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseManyItemRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseReadOnlyRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseListRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
-                  Renderer.ParseCustomRenderer (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                Renderer.ParseBoolRenderer label parentJsonFields json,
+                [ Renderer.ParseDateRenderer label parentJsonFields json
+                  Renderer.ParseUnitRenderer label parentJsonFields json
+                  Renderer.ParseGuidRenderer label parentJsonFields json
+                  Renderer.ParseIntRenderer label parentJsonFields json
+                  Renderer.ParseStringRenderer label parentJsonFields json
+                  Renderer.ParseEnumRenderer label parentJsonFields json
+                  Renderer.ParseStreamRenderer label parentJsonFields json
+                  Renderer.ParseMapRenderer label (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseSumRenderer label (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseOptionRenderer
+                    label
+                    (NestedRenderer.Parse primitivesExt exprParser)
+                    parentJsonFields
+                    json
+                  Renderer.ParseOneRenderer label (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseManyAllRenderer
+                    label
+                    (NestedRenderer.Parse primitivesExt exprParser)
+                    parentJsonFields
+                    json
+                  Renderer.ParseManyItemRenderer
+                    label
+                    (NestedRenderer.Parse primitivesExt exprParser)
+                    parentJsonFields
+                    json
+                  Renderer.ParseReadOnlyRenderer
+                    label
+                    (NestedRenderer.Parse primitivesExt exprParser)
+                    parentJsonFields
+                    json
+                  Renderer.ParseListRenderer label (NestedRenderer.Parse primitivesExt exprParser) parentJsonFields json
+                  Renderer.ParseCustomRenderer
+                    label
+                    (NestedRenderer.Parse primitivesExt exprParser)
+                    parentJsonFields
+                    json
 
                   state {
                     return!
@@ -928,6 +989,7 @@ module Renderers =
                                         PrimitiveRenderer
                                           { PrimitiveRendererName = s
                                             PrimitiveRendererId = Guid.CreateVersion7()
+                                            Label = label
                                             Type = g.Type }
 
                                     else
@@ -964,10 +1026,12 @@ module Renderers =
                                   else
                                     return
                                       TupleRenderer
-                                        {| Tuple =
+                                        {| Label = label
+                                           Tuple =
                                             PrimitiveRenderer
                                               { PrimitiveRendererName = s
                                                 PrimitiveRendererId = Guid.CreateVersion7()
+                                                Label = label
                                                 Type =
                                                   ExprType.TupleType(
                                                     itemRenderers |> Seq.map (fun nr -> nr.Type) |> List.ofSeq
@@ -1091,7 +1155,8 @@ module Renderers =
                       {| First =
                           {| Name = firstName
                              NestedRenderer = firstRenderer |}
-                         Rest = gs |> Map.ofList |}
+                         Rest = gs |> Map.ofList
+                         Label = None |}
               })
 
 
@@ -1271,11 +1336,22 @@ module Renderers =
             let fieldConfigs = fieldConfigs |> Map.ofSeq
             let fieldConfigs = Map.mergeMany (fun x _ -> x) (fieldConfigs :: extendedFields)
 
+            let! disabledFieldsJson =
+              fields
+              |> state.TryFindField "disabledFields"
+              |> state.Catch
+              |> state.Map Sum.toOption
+              |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
+
+            let! disabledFields =
+              FormBody.ParseGroup primitivesExt exprParser "disabledFields" fieldConfigs disabledFieldsJson
+
             let! tabs =
               FormBody<'ExprExtension, 'ValueExtension>.ParseTabs primitivesExt exprParser fieldConfigs tabsJson
 
             return
               { FormFields.Fields = fieldConfigs
+                FormFields.Disabled = disabledFields
                 FormFields.Tabs = tabs }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)

@@ -14,7 +14,7 @@ module ExprJson =
   open Ballerina.StdLib.Object
 
   type Expr<'T> with
-    static member FromJson: JsonValue -> ExprParser<'T> =
+    static member FromJson: ExprParser<'T> =
       fun json ->
         reader.Any(
           Expr.FromJsonLambda Expr.FromJson json,
@@ -40,6 +40,7 @@ module ExprJson =
             |> reader.Throw ]
         )
         |> reader.MapError(Errors.HighestPriority)
+        |> reader.MapError(Errors.Map(fun e -> $"{e}\n..when parsing {json.ToString().ReasonablyClamped}"))
 
     static member ToJson: ExprEncoder<'T> =
       fun expr ->

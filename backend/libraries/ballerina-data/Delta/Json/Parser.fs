@@ -10,8 +10,12 @@ open Ballerina.DSL.Next.Types.Model
 
 open FSharp.Data
 
-type ValueParser<'valueExtension> = JsonValue -> Sum<Value<TypeValue, 'valueExtension>, Errors>
-type DeltaParser<'valueExtension> = JsonValue -> Reader<Delta<'valueExtension>, ValueParser<'valueExtension>, Errors>
+type DeltaParserReader<'valueExtension> =
+  Reader<Delta<'valueExtension>, JsonParser<Value<TypeValue, 'valueExtension>>, Errors>
 
-type DeltaEncoder<'valueExtension> =
-  Delta<'valueExtension> -> Reader<JsonValue, JsonEncoder<TypeValue> * JsonEncoder<'valueExtension>, Errors>
+type DeltaParser<'valueExtension> = JsonValue -> DeltaParserReader<'valueExtension>
+
+type DeltaEncoderReader<'valueExtension> =
+  Reader<JsonValue, JsonEncoderWithError<Value<TypeValue, 'valueExtension>>, Errors>
+
+type DeltaEncoder<'valueExtension> = Delta<'valueExtension> -> DeltaEncoderReader<'valueExtension>

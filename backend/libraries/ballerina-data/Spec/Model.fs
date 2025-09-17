@@ -1,7 +1,7 @@
 ﻿namespace Ballerina.Data.Spec
 
 open System
-open System.Text.Json.Nodes
+open FSharp.Data
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Schema.Model
