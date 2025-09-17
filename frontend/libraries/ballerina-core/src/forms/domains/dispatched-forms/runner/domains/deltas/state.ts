@@ -364,10 +364,7 @@ export type DispatchDeltaTransferPrimitive =
   | { Discriminator: "GuidReplace"; Replace: string }
   | { Discriminator: "Int32Replace"; Replace: bigint }
   | { Discriminator: "Float32Replace"; Replace: number };
-export type DispatchDeltaTransferUnit = {
-  Discriminator: "UnitReplace";
-  Replace: any;
-};
+export type DispatchDeltaTransferUnit = {};
 export type DispatchDeltaTransferOption<DispatchDeltaTransferCustom> =
   | { Discriminator: "OptionReplace"; Replace: any }
   | {
@@ -648,24 +645,18 @@ export const DispatchDeltaTransfer = {
             );
           }
           if (delta.kind == "UnitReplace") {
-            return toRawObject(delta.replace, delta.type, delta.state).Then(
-              (value) =>
-                ValueOrErrors.Default.return<
-                  [
-                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                    DispatchDeltaTransferComparand,
-                    AggregatedFlags<Flags>,
-                  ],
-                  string
-                >([
-                  {
-                    Discriminator: "UnitReplace",
-                    Replace: value,
-                  },
-                  "UnitReplace",
-                  delta.flags ? [[delta.flags, "UnitReplace"]] : [],
-                ]),
-            );
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {},
+              "UnitReplace",
+              delta.flags ? [[delta.flags, "UnitReplace"]] : [],
+            ]);
           }
           if (delta.kind == "OptionReplace") {
             return toRawObject(delta.replace, delta.type, delta.state).Then(
