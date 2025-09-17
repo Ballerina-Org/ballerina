@@ -45,6 +45,7 @@ module Traverser =
         let! ctx = state.GetContext()
 
         match typeValue with
+        | TypeValue.Imported _ -> return! state.Throw(Errors.Singleton "Imported seeds not implemented yet")
         | TypeValue.Arrow _
         | TypeValue.Apply _
         | TypeValue.Lambda _ -> return! state.Throw(Errors.Singleton "Arrow/Lambda seeds not implemented yet")
@@ -135,7 +136,6 @@ module Traverser =
             let value = FakeValue(Supervised(label, ctx.InfinitiveNamesIndex[label]))
             return ctx.Generator.PrimitiveValueCons p value
 
-        | TypeValue.List element
         | TypeValue.Set element ->
           let! element = !element
           return Value.Tuple [ element ]
