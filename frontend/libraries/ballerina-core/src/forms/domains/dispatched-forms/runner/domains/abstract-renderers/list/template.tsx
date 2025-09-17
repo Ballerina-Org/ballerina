@@ -183,10 +183,11 @@ export const ListAbstractRenderer = <
               ...props.foreignMutations,
               add: !methods.includes("add")
                 ? undefined
-                : (flags) => {
+                : (flags) => (customValue?: PredicateValue) => {
+                    const value = customValue || GetDefaultElementValue();
                     const delta: DispatchDelta<Flags> = {
                       kind: "ArrayAdd",
-                      value: GetDefaultElementValue(),
+                      value: value,
                       state: {
                         commonFormState: props.context.commonFormState,
                         elementFormStates: props.context.elementFormStates,
@@ -200,9 +201,9 @@ export const ListAbstractRenderer = <
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
-                            ListRepo.Updaters.push<PredicateValue>(
-                              GetDefaultElementValue(),
-                            )(list.values),
+                            ListRepo.Updaters.push<PredicateValue>(value)(
+                              list.values,
+                            ),
                           ),
                         ),
                       ),
