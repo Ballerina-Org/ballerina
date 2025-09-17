@@ -2,8 +2,8 @@
 import { DockItem } from "../../layout.tsx";
 
 import AccessibleTreeVfs, {getDirectFilesFromFolder} from "./tree-view";
-import {VirtualFolderNode, VirtualFolders, VirtualJsonFile} from "playground-core";
-import {BasicFun, Option, Unit} from "ballerina-core";
+import {VirtualFolders} from "playground-core";
+import {Option, Unit} from "ballerina-core";
 
 function filesToVfsFromFileList(specName: string, list: FileList): VirtualFolderNode {
     const root: VirtualFolderNode = {
@@ -72,109 +72,105 @@ function filesToVfsFromFileList(specName: string, list: FileList): VirtualFolder
 
     return root;
 }
-export const drawer = (dockItem: DockItem, selectNode: BasicFun<{ folder: VirtualFolderNode, files: VirtualJsonFile []}, void> ) => {
+type BasicFun<A, B> = (a: A) => B;
+type VirtualJsonFile = any;
+type VirtualFolderNode = any;
 
+type DrawerProps = {
+    selectNode: BasicFun<VirtualFolderNode, void>;
+    drawerId?: string;
+};
+
+export function Drawer({ selectNode, drawerId = 'ide-drawer' }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<VirtualFolderNode>>(Option.Default.none());
-    const [open, setOpen] = React.useState(false);
-
     const [stagedPath, setStagedPath] = React.useState<string | null>(null);
 
-    const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePick = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const list = e.currentTarget.files;
         if (!list || list.length === 0) return;
-        
-        const specName = "spec";
+
+        const specName = 'spec';
         const vfsRoot = filesToVfsFromFileList(specName, list);
-        
-        const maybeCore = ((): string | null => {
-            if (vfsRoot.kind !== "folder") return null;
-            const core = vfsRoot.children.get("core");
-            if (core && core.kind === "folder" && VirtualFolders.Operations.isLeafFolderNode(core)) {
+
+        const maybeCore: string | null = (() => {
+            if (vfsRoot.kind !== 'folder') return null;
+            const core = vfsRoot.children.get('core');
+            if (core && core.kind === 'folder' && VirtualFolders.Operations.isLeafFolderNode(core)) {
                 return core.path;
             }
             return null;
         })();
 
-        if (maybeCore) {
-   
-            setStagedPath(maybeCore);
-        } else {
-            setStagedPath(null);
-        }
-
+        setStagedPath(maybeCore ?? null);
         setRoot(Option.Default.some(vfsRoot));
-    };
+    }, []);
 
+    const filesToEdit = React.useMemo(() => {
+        if (root.kind === 'r' && root.value?.kind === 'folder' && stagedPath) {
+            return Option.Default.some(getDirectFilesFromFolder(root.value, stagedPath));
+        }
+        return Option.Default.none() as Option<{ folder: VirtualFolderNode; files: VirtualJsonFile[] }>;
+    }, [root, stagedPath]);
 
-    const filesToEdit: Option<{ folder: VirtualFolderNode, files: VirtualJsonFile []}> = 
-        root.kind == "l" ? Option.Default.none() : Option.Default.some(getDirectFilesFromFolder(root.value,  stagedPath!));
-    const canAccept = stagedPath !== null && filesToEdit.kind == "r"; 
-
+    const canAccept = stagedPath !== null && filesToEdit.kind === 'r';
 
     return (
         <div className="drawer pt-16">
-            <input id="my-drawer" type="checkbox" className="drawer-toggle" />
+            <input id={drawerId} type="checkbox" className="drawer-toggle" />
             <div className="drawer-content" />
 
             <div className="drawer-side top-16 h-[calc(100vh-4rem)] z-40">
-                <label htmlFor="my-drawer" aria-label="close sidebar" className="drawer-overlay !bg-transparent" />
+                <label htmlFor={drawerId} aria-label="close sidebar" className="drawer-overlay !bg-transparent" />
 
                 <ul className="menu bg-base-200 text-base-content min-h-full w-[40vw] p-4">
-                    
-                        <>
-                            <div className="flex w-full">
-                                <div className="card bg-primary text-neutral-content w-1/2">
-                                    <div className="card-body items-start gap-3">
-                                        <h2 className="card-title">Select file</h2>
-                                        <div className="flex flex-wrap gap-3">
-                                            <input
-                                                type="file"
-                                                multiple
-                                                onChange={handlePick}
-                                                className="file-input file-input-ghost"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="divider divider-horizontal">OR</div>
-                                <div className="card bg-primary text-neutral-content w-1/2">
-                                    <div className="card-body items-start gap-3">
-                                        <h2 className="card-title">Select folder</h2>
-                                        <div className="flex flex-wrap gap-3">
-                                            <input
-                                                type="file"
-                                                multiple
-                                                onChange={handlePick}
-                                                className="file-input file-input-ghost"
-                                                {...({ webkitdirectory: "", directory: "" } as any)}
-                                            />
-                                        </div>
-                                    </div>
+                    <div className="flex w-full">
+                        <div className="card bg-primary text-neutral-content w-1/2">
+                            <div className="card-body items-start gap-3">
+                                <h2 className="card-title">Select file</h2>
+                                <div className="flex flex-wrap gap-3">
+                                    <input type="file" multiple onChange={handlePick} className="file-input file-input-ghost" />
                                 </div>
                             </div>
+                        </div>
 
-                            <button 
-                                disabled={!canAccept && filesToEdit.kind == "l"} 
-                                className="btn btn-accent btn-block mt-7 accept-selected" 
-                                onClick={() =>{
-          
-                                    return filesToEdit.kind == "r" && selectNode(filesToEdit.value) } }>
-                                Accept selected
-                            </button>
-                           
+                        <div className="divider divider-horizontal">OR</div>
 
-                            {root.kind == "r" && root.value.kind === "folder" && 
-                                <div className="mt-4">
-                                    <AccessibleTreeVfs
-                                        root={root.value}
-                                        stagedPath={stagedPath}
-                                        onStageChange={setStagedPath}
-                                        expandFoldersByDefault
+                        <div className="card bg-primary text-neutral-content w-1/2">
+                            <div className="card-body items-start gap-3">
+                                <h2 className="card-title">Select folder</h2>
+                                <div className="flex flex-wrap gap-3">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handlePick}
+                                        className="file-input file-input-ghost"
+                                        {...({ webkitdirectory: '', directory: '' } as any)}
                                     />
-                                </div>}
-                        
-                        </>
-                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        disabled={!canAccept}
+                        className="btn btn-accent btn-block mt-7 accept-selected"
+                        onClick={() => {
+                            if (filesToEdit.kind === 'r') selectNode(filesToEdit.value.folder);
+                        }}
+                    >
+                        Accept selected
+                    </button>
+
+                    {root.kind === 'r' && root.value?.kind === 'folder' && (
+                        <div className="mt-4">
+                            <AccessibleTreeVfs
+                                root={root.value}
+                                stagedPath={stagedPath}
+                                onStageChange={setStagedPath}
+                                expandFoldersByDefault
+                            />
+                        </div>
+                    )}
                 </ul>
             </div>
         </div>

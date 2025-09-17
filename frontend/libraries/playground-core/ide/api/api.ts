@@ -1,6 +1,6 @@
 ﻿import axios, {AxiosHeaders, AxiosError, AxiosRequestConfig} from "axios";
 import { test } from "../domains/storage/local";
-import {ValueOrErrors} from "ballerina-core";
+import {SimpleCallback, ValueOrErrors, Fun, BasicFun,  parse} from "ballerina-core";
 import {List} from "immutable";
 export const api = axios.create({ baseURL: process.env.API_PREFIX ?? "/api/preview" });
 
@@ -15,8 +15,8 @@ api.interceptors.request.use((cfg) => {
 });
 
 
-export async function axiosVOE<T>(
-    config: AxiosRequestConfig
+export async function axiosVOE<T, R = any>(
+    config: AxiosRequestConfig, parser?: BasicFun<T, R>
 ): Promise<ValueOrErrors<T, string>> {
 
     try {
@@ -30,7 +30,7 @@ export async function axiosVOE<T>(
             return ValueOrErrors.Default.return(res.data as T )
         }
     
-        const data: any = res.data;
+        const data: any = parser ? parser(res.data) : res.data;
         const merged = Array.from(
             new Set(
                 [

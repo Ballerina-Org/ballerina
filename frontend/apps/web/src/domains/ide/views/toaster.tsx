@@ -2,31 +2,48 @@
 // source: https://sonner.emilkowal.ski/styling
 import React from 'react';
 import { toast as sonnerToast } from 'sonner';
+import {List} from "immutable";
 interface ToastProps {
     id: string | number;
     title: string;
-    description: string;
+    description: List<string> | string;
     position?: string,
-    button: {
+    duration?: number,
+    dismissible?: boolean,
+    button?: {
         label: string;
         onClick: () => void;
     };
 }
-export function ideToast(toast: Omit<ToastProps, 'id'>) {
-  return sonnerToast.custom((id) => (
-    <Toast
-      id={id}
-      title={toast.title}
-      description={toast.description}
-      position={toast.position || 'top-center'}
-      button={{
-        label: toast.button.label,
-        onClick: () => console.log('Button clicked'),
-      }}
-    />
-  ));
-}
+import type { ExternalToast } from "sonner"; 
 
+export function ideToast(toast: Omit<ToastProps, "id">) {
+    return sonnerToast.custom(
+        (id) => (
+            <Toast
+                id={id}
+                title={toast.title}
+                description={
+                    typeof toast.description === "string"
+                        ? toast.description
+                        : toast.description.join(", ")
+                }
+                button={
+                    toast.button && {
+                        label: toast.button.label,
+                        onClick: toast.button.onClick,
+                    }
+                }
+            />
+        ),
+        {
+            duration: toast.duration ?? Infinity,     
+            dismissible: toast.dismissible ?? false,   
+            position: (toast.position as ExternalToast["position"]) ?? "top-center",
+            closeButton: false, 
+        }
+    );
+}
 function Toast(props: ToastProps) {
   const { title, description, button, id } = props;
  
@@ -39,15 +56,15 @@ function Toast(props: ToastProps) {
         </div>
       </div>
       <div className="ml-5 shrink-0 rounded-md text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-hidden">
-        <button
+          {button && <button
           className="rounded bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-600 hover:bg-indigo-100"
           onClick={() => {
-            button.onClick();
+            button?.onClick();
             sonnerToast.dismiss(id);
           }}
         >
-          {button.label}
-        </button>
+          {button?.label}
+        </button> }
       </div>
     </div>
   );

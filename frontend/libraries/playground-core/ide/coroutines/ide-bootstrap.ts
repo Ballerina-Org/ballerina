@@ -12,8 +12,9 @@ export const bootstrap =
             Co.SetState(Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.init("Retrieving specifications from the server"))),
             Co.Wait(1000),
             Co.Await<ValueOrErrors<string[], any>, any>(() =>
-                listSpecs(), (_err: any) => {}).then(res =>
-                res.kind == "r" ?
+                listSpecs(), (_err: any) => {}).then(res =>{
+                    debugger
+                return res.kind == "r" ?
                     Co.SetState(Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.error(List([`Unknown error occured when loading specs: ${res}`]))))
                     :
                     Co.SetState(
@@ -22,6 +23,6 @@ export const bootstrap =
                                 Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.ready(res.value.value))
                             )
                             .then(Ide.Updaters.toChoose())
-                            : Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.error(res.value.errors)))),
+                            : Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.error(res.value.errors)))}),
         ]
     );

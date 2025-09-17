@@ -40,51 +40,23 @@ import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 //     </div>)}
 
 type FolderFilterProps = {
-    data: { folder: VirtualFolderNode; files: VirtualJsonFile[] };
-    selected: Option<string>;
-    mode: "spec" | "schema";
-    setMode: (m: "spec" | "schema") => void;
+    folder: VirtualFolderNode;
+    selected: Option<VirtualJsonFile>;
     update?: any
 };
 
 export const FolderFilter = ({
-                                 data,
+                                 folder,
                                  selected,
-                                 mode,
-                                 setMode,
                                  update,
                              }: FolderFilterProps) => {
-    if (data.folder.kind !== "folder") return null;
+    if (folder.kind !== "folder") return null;
 
     const files: VirtualJsonFile[] =
-        data.files && data.files.length > 0
-            ? data.files
-            : (() => {
-                const acc: VirtualJsonFile[] = [];
-                data.folder.children.forEach((child) => {
-                    if (child.kind === "file") acc.push(child.value);
-                });
-                return acc;
-            })();
+        Array.from(folder.children.filter(x => x.kind == 'file').map( x => x.value).values());
 
     return (
         <div className="w-full">
-            <div role="tablist" className="tabs tabs-lift">
-                <a
-                    role="tab"
-                    className={mode == "spec" ? "tab tab-active" : "tab"}
-                    onClick={() => setMode("spec")}
-                >
-                    Spec
-                </a>
-                <a
-                    role="tab"
-                    className={mode == "schema" ? "tab tab-active" : "tab"}
-                    onClick={() => setMode("schema")}
-                >
-                    Schema
-                </a>
-            </div>
             <div className="mt-3 flex w-full">
                 <div className="filter mb-7 join-item space-x-1">
                     {/* Reset ("All") */}
@@ -100,8 +72,6 @@ export const FolderFilter = ({
                         const fileName =
                             f.fileRef?.name ?? (f.path.split("/").pop() || f.path);
                         const label = fileName.replace(/\.json$/, "");
-                        const isChecked =
-                            selected.kind === "r" && selected.value === f.path;
 
                         return (
                             <div
@@ -119,7 +89,7 @@ export const FolderFilter = ({
                                     onChange={async () => {
                                         const content = await f.fileRef?.text()!;
                                         const s_u = VfsWorkspace.Updaters.Core.selectedFolder(
-                                            VfsWorkspace.Updaters.Core.selectedFile(f.name)
+                                            VfsWorkspace.Updaters.Core.selectedFile(f)
                                         );
                                         const b_u = LockedSpec.Updaters.Core.bridge.v1(content);
                                         update(s_u.then(b_u));

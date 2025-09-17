@@ -16,10 +16,10 @@ import {useEffect} from 'react'
 import {Themes} from "./theme-selector.tsx";
 import { ideToast } from "./toaster.tsx";
 import { toast as sonnerToast } from 'sonner';
-import {seedSpecErrorHandler, updateSpecErrorHandler} from "./ErrorHandlers/UpdateSpec.ts";
+import {seedSpecErrorHandler, updateSpecErrorHandler} from "./error-handlers/UpdateSpec.ts";
 import {DispatcherFormsApp} from "./forms.tsx";
 import {Panel, PanelGroup,PanelResizeHandle} from "react-resizable-panels";
-import {drawer} from "./domains/vfs/drawer.tsx";
+import {Drawer} from "./domains/vfs/drawer.tsx";
 import {VscDatabase, VscFolder, VscGithub} from "react-icons/vsc";
 import {NoSpescInfo} from "./domains/bootstrap/NoSpecsInfo.tsx";
 import * as repl from "node:repl";
@@ -33,9 +33,6 @@ console.table(__ENV__);
 export type DockItem = 'folders' | 'about'
 export const IdeLayout: IdeView = (props) =>{
     const [theme, setTheme] = useState("lofi");
-    const [dockItem, setDockItem] = useState('folders' as DockItem);
-    const [mode, setMode] = useState('spec' as 'spec' | 'schema');
-    //const [hideLeft, setHideLeft] = useState(false);
     const [hideRight, setHideRight] = useState(false);
     useEffect(() => {
         themeChange(false)
@@ -43,12 +40,14 @@ export const IdeLayout: IdeView = (props) =>{
     useEffect(() => {
         if(props.context.bootstrappingError.kind == "r"){
             ideToast({
-                title: 'Error',
-                description: `${props.context.bootstrappingError.value}`,
-                button: {
-                    label: 'Ok',
-                    onClick: () => sonnerToast.dismiss(),
-                },
+                title: 'IDE Bootstrap Error',
+                dismissible: false,
+                duration: Infinity,
+                description: props.context.bootstrappingError.value,
+                // button: {
+                //     label: 'Ok',
+                //     onClick: () => sonnerToast.dismiss(),
+                // },
             });
         }
     }, [props.context.bootstrappingError])
@@ -69,6 +68,7 @@ export const IdeLayout: IdeView = (props) =>{
             
 
                 </div> }
+            {props.context.phase !== "bootstrap" && <>
             <div className="navbar bg-base-100 shadow-sm sticky top-0 z-50 h-16  ">
                 <img
                     style={{height: 80}}
@@ -117,15 +117,7 @@ export const IdeLayout: IdeView = (props) =>{
                                                     const u = await Ide.Operations.toLockedSpec('create', props.context.create.name.value);
 
                                                     props.setState(u);
-                                                    ideToast({
-                                                        title: `${props.context.create.name.value} has been locked`,
-                                                        description: 'From now on your focus is on playing with that spec',
-                                                        position: 'top-center',
-                                                        button: {
-                                                            label: 'Undo',
-                                                            onClick: () => sonnerToast.dismiss(),
-                                                        },
-                                                    });
+   
                                                 }
                                                 }
                                             >GO</button>
@@ -133,7 +125,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         </div>
                                     </fieldset>}
                                     { props.context.phase == "choose" && props.context.specOrigin == "existing" && <HorizontalDropdown
-                                        label={"Select spec 2"}
+                                        label={"Select spec"}
                                         onChange={async (name: string) => {
                                             const u = await Ide.Operations.toLockedSpec('existing', name);
                                             ideToast({
@@ -218,16 +210,14 @@ export const IdeLayout: IdeView = (props) =>{
                                 </div>
                             </div>
                             
-                            {props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.folder.kind == "folder" &&
+                            {props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFolder.kind == "r" &&props.context.locked.virtualFolders.selectedFolder.value.kind == "folder" &&
                                 <fieldset className="fieldset ml-5">
-                                    {breadcrumbs(props.context.locked.virtualFolders.selectedFolder.value.folder)}
+                                    {breadcrumbs(props.context.locked.virtualFolders.selectedFolder.value)}
         
                                     <div className="join">
                                         <FolderFilter 
-                                            data={props.context.locked.virtualFolders.selectedFolder.value} 
-                                            selected={props.context.locked.virtualFolders.selectedFile} 
-                                            mode={mode} 
-                                            setMode={setMode}
+                                            folder={props.context.locked.virtualFolders.selectedFolder.value} 
+                                            selected={props.context.locked.virtualFolders.selectedFile}
                                             update={props.setState} />
                                         {/*<div className="ml-5  join-item">*/}
                                         {/*    <button */}
@@ -255,21 +245,36 @@ export const IdeLayout: IdeView = (props) =>{
                             {/*{props.context.phase == "locked" &&  <props.JsonEditor{...props} view={V2Editor}/>}*/}
                             {/*{props.context.phase == "locked" &&  <props.JsonEditor{...props} view={SeedEditor}/>}*/}
                             {/*<props.JsonEditor{...props} view={SeedEditor}/>*/}
-                            { drawer(dockItem, 
-                                node => {
+                            {/*{ drawer(*/}
+                            {/*    node => {*/}
+                            {/*        const next = */}
+                            {/*            Updater(VfsWorkspace.Updaters.Core.selectedNode(node)).then(vfs => */}
+                            {/*                vfs.files.length > 0*/}
+                            {/*                ? ({...vfs, selectedFile: Option.Default.some(vfs.files[0].name || vfs.files[0].fileRef?.name!)}): ({...vfs})*/}
+                            {/*            )*/}
+                            {/*        */}
+                            {/*        props.setState(*/}
+                            {/*            VfsWorkspace.Updaters.Core.selectedFolder(*/}
+                            {/*                next*/}
+                            {/*            )*/}
+                            {/*        )*/}
+                            {/*    }*/}
+                            {/*)}*/}
+                            <Drawer selectNode={
+                                    node => {
                                     const next = 
                                         Updater(VfsWorkspace.Updaters.Core.selectedNode(node)).then(vfs => 
                                             vfs.files.length > 0
-                                            ? ({...vfs, selectedFile: Option.Default.some(vfs.files[0].name || vfs.files[0].fileRef?.name!)}): ({...vfs})
+                                            ? ({...vfs, selectedFile: Option.Default.some(vfs.files[0])}): ({...vfs})
                                         )
-                                    
+
                                     props.setState(
                                         VfsWorkspace.Updaters.Core.selectedFolder(
                                             next
                                         )
                                     )
                                 }
-                            )}
+                            } drawerId="my-drawer" />
                             {/*<div className="dock  bg-neutral text-neutral-content absolute bottom-0 left-0 right-0">*/}
                             {/*    <label*/}
                             {/*        htmlFor="my-drawer" onClick={() => setDockItem('folders')} */}
@@ -315,7 +320,7 @@ export const IdeLayout: IdeView = (props) =>{
                             
                         <aside className="relative h-full">
 
-                            {props.context.phase == "bootstrap" && <p> {props.context.bootstrap.kind}</p> }
+                        
                             {props.context.bootstrappingError.kind == "r" && <p> {props.context.bootstrappingError.value}</p> }
                             {!(props.context.phase == 'locked' && props.context.step == 'outcome') && <div className="flex w-full  h-full flex-col gap-4 p-7  shadow-sm backdrop-blur-md ">
                                 <div className="skeleton h-32 w-full animate-none"></div>
@@ -393,7 +398,7 @@ export const IdeLayout: IdeView = (props) =>{
                         </Panel>}
 
                 </PanelGroup>
-
+            </>}
 
         </div>
     )

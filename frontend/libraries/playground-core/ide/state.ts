@@ -9,13 +9,14 @@ import { ForeignMutationsInput } from "ballerina-core";
 import { Bridge, BridgeState } from "./domains/bridge/state"
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
 import {List} from "immutable";
-import {getSpec} from "./api/specs";
+import {getSpec, initSpec} from "./api/specs";
 import {VfsWorkspace, VirtualFolders} from "./domains/vfs/state";
 import {getVirtualFolders} from "./api/vfs";
 import {Seeds} from "./domains/seeds/state";
 import {Bootstrap} from "./domains/bootstrap/state";
 import {LockedSpec, LockedStep} from "./domains/locked/state";
 import {Spec} from "./domains/spec/state";
+import {EncodedContent} from "./domains/spec/backend-model";
 
 export type CommonUI = {
     specOrigin: 'existing' | 'create';
@@ -82,36 +83,33 @@ export const Ide = {
                     : ({ ...ide })
     },
     Operations: {
-        loadWorkspace: async (origin: 'existing' | 'create', name: string): Promise<VfsWorkspace> => {
-            let workspace: VfsWorkspace;
-
-            switch (origin) {
-                case "create":
-                    workspace = VirtualFolders.Operations.createEmptySpec(name);
-                    break;
-
-                case "existing": {
-                    const vfs = await getVirtualFolders(name);
-                    workspace = VirtualFolders.Operations.buildWorkspaceFromRoot(vfs);
-                    break;
-                }
-
-                default:
-                    throw new Error(`Unknown origin: ${origin satisfies never}`);
-            }
-
-            return workspace;
-        },
+        // loadWorkspace: async (origin: 'existing' | 'create', name: string): Promise<VfsWorkspace> => {
+        //     let workspace: VfsWorkspace;
+        //
+        //     switch (origin) {
+        //         case "create":
+        //             workspace = await VirtualFolders.Operations.createEmptySpec(name);
+        //             break;
+        //
+        //         case "existing": {
+        //             const vfs = await getVirtualFolders(name);
+        //             workspace = VirtualFolders.Operations.buildWorkspaceFromRoot(vfs);
+        //             break;
+        //         }
+        //
+        //         default:
+        //             throw new Error(`Unknown origin: ${origin satisfies never}`);
+        //     }
+        //
+        //     return workspace;
+        // },
         toLockedSpec: async (origin:  'existing' | 'create', name: string): Promise<BasicUpdater<Ide>> => {
-            const spec: ValueOrErrors<Spec, string> = 
-                origin == 'existing' ? await getSpec(name) : ValueOrErrors.Default.return(Spec.Default());
-            
-            
-            const workspace = await Ide.Operations.loadWorkspace(origin, name) 
-          
+            const spec: ValueOrErrors<EncodedContent, string> = 
+                origin == 'existing' ? await getSpec(name) : await initSpec(name).then(() => getSpec(name));
+
 
             return spec.kind == "value" ?
-                Ide.Updaters.lock(origin, name, spec.value, workspace)
+                Ide.Updaters.lock(origin, name, spec.value as any, VirtualFolders.Operations.buildWorkspaceFromRoot(spec.value))
                 : (ide: Ide): Ide => ({...ide, lockingError: Option.Default.some(spec.errors)})
             
         }

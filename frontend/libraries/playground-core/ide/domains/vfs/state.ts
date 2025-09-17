@@ -1,6 +1,7 @@
 ﻿import {BasicUpdater, Option, simpleUpdater, Updater} from "ballerina-core";
 import {Ide} from "../../state";
-
+import { Map } from "immutable";
+import {EncodedContent} from "../spec/backend-model";
 export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
 export type JsonSection<K extends TopLevelKey = TopLevelKey> = Record<string, any>;
@@ -23,8 +24,8 @@ export type VfsWorkspace = {
     root: VirtualFolderNode;                                   
     files: VirtualJsonFile[];                                  
     merged: KnownSections;    
-    selectedFolder: Option<{ folder: VirtualFolderNode, files: VirtualJsonFile []}>;
-    selectedFile: Option<string>;
+    selectedFolder: Option<VirtualFolderNode>;
+    selectedFile: Option<VirtualJsonFile>;
 };
 
 
@@ -76,7 +77,7 @@ export const VirtualFolders = {
         writeBackToStagedFolder(root: VirtualFolderNode, updatedFiles: VirtualJsonFile[]): void {
             const visit = (node: VirtualFolderNode): boolean => {
                 if (node.kind === "folder" && node.staged) {
-                    const newChildren = new Map<string, VirtualFolderNode>();
+                    const newChildren = Map<string, VirtualFolderNode>();
                     for (const file of updatedFiles) {
                         const name = file.path.split("/").pop()!;
                         newChildren.set(name, { kind: "file", value: file });
@@ -122,81 +123,84 @@ export const VirtualFolders = {
             visit(root);
             return merged;
         },
-        buildWorkspaceFromRoot(root: VirtualFolderNode): VfsWorkspace {
-            const files: VirtualJsonFile[] = [];
-
-            const collectFiles = (node: VirtualFolderNode): void => {
-                if (node.kind === "file") {
-                    files.push(node.value);
-                } else {
-                    node.children.forEach(child => {
-                        collectFiles(child);
-                    });
-                }
-            };
-
-            collectFiles(root);
-
-            return {
-                root,
-                files,
-                selectedFile: Option.Default.none(),
-                selectedFolder: Option.Default.none(),
-                merged: VirtualFolders.Operations.mergeWorkspaceSections(root)
-            };
+        // buildWorkspaceFromRoot(root: VirtualFolderNode): VfsWorkspace {
+        //     const files: VirtualJsonFile[] = [];
+        //
+        //     const collectFiles = (node: VirtualFolderNode): void => {
+        //         if (node.kind === "file") {
+        //             files.push(node.value);
+        //         } else {
+        //             node.children.forEach(child => {
+        //                 collectFiles(child);
+        //             });
+        //         }
+        //     };
+        //
+        //     collectFiles(root);
+        //
+        //     return {
+        //         root,
+        //         files,
+        //         selectedFile: Option.Default.none(),
+        //         selectedFolder: Option.Default.none(),
+        //         merged: VirtualFolders.Operations.mergeWorkspaceSections(root)
+        //     };
+        // },
+        buildWorkspaceFromRoot(root: EncodedContent): VfsWorkspace {
+            return null!
         },
-        createEmptySpec(specName: string): VfsWorkspace {
-            const topLevelKeys: TopLevelKey[] = ["types", "forms", "apis", "launchers", "typesV2", "schema", "config"];
-
-            const files: VirtualJsonFile[] = topLevelKeys.map(key => {
-                const fileName = `${key}.json`;
-                const virtualPath = `${specName}/core/${fileName}`;
-
-                return {
-                    name: fileName,
-                    path: virtualPath,
-                    content: {
-                        [key]: {}
-                    },
-                    topLevels: [key]
-                };
-            });
-
-            const coreFolder: VirtualFolderNode = {
-                kind: "folder",
-                name: "core",
-                path: `${specName}/core`,
-                staged: true, 
-                children: new Map(
-                    files.map(file => {
-                        const fileName = file.path.split("/").pop()!;
-                        return [fileName, { kind: "file", value: file }];
-                    })
-                )
-            };
-
-            const root: VirtualFolderNode = {
-                kind: "folder",
-                name: specName,
-                path: specName,
-                children: new Map([
-                    ["core", coreFolder]
-                ])
-            };
-
-            return {
-                root,
-                files,
-                selectedFile: Option.Default.none(),
-                selectedFolder: Option.Default.some({ folder: coreFolder, files: files }),
-                merged: {
-                    types: {},
-                    forms: {},
-                    apis: {},
-                    launchers: {}
-                }
-            };
-        },
+        // createEmptySpec: async (specName: string): Promise<VfsWorkspace> => {
+        //     const topLevelKeys: TopLevelKey[] = ["types", "forms", "apis", "launchers", "typesV2", "schema", "config"];
+        //
+        //     const files: VirtualJsonFile[] = topLevelKeys.map(key => {
+        //         const fileName = `${key}.json`;
+        //         const virtualPath = `${specName}/core/${fileName}`;
+        //
+        //         return {
+        //             name: fileName,
+        //             path: virtualPath,
+        //             content: {
+        //                 [key]: {}
+        //             },
+        //             topLevels: [key]
+        //         };
+        //     });
+        //
+        //     const coreFolder: VirtualFolderNode = {
+        //         kind: "folder",
+        //         name: "core",
+        //         path: `${specName}/core`,
+        //         staged: true, 
+        //         children: Map(
+        //             files.map(file => {
+        //                 const fileName = file.path.split("/").pop()!;
+        //                 return [fileName, { kind: "file", value: file }];
+        //             })
+        //         )
+        //     };
+        //
+        //     const root: VirtualFolderNode = {
+        //         kind: "folder",
+        //         name: specName,
+        //         path: specName,
+        //         children: Map([
+        //             ["core", coreFolder]
+        //         ])
+        //     };
+        //
+        //     return {
+        //         root,
+        //         files,
+        //         selectedFile: Option.Default.none(),
+        //         selectedFolder: Option.Default.some(coreFolder),
+        //         merged: {
+        //             types: {},
+        //             forms: {},
+        //             apis: {},
+        //             launchers: {}
+        //         }
+        //     };
+        // },
         formatBytes: (bytes?: number) => {
             if (bytes == null || !Number.isFinite(bytes)) return "";
             const k = 1024;
@@ -212,10 +216,10 @@ export const VirtualFolders = {
 export const VfsWorkspace = {
     Updaters: {
         Core: {
-            selectedNode: (node: { folder: VirtualFolderNode, files: VirtualJsonFile []}): BasicUpdater<VfsWorkspace> =>
+            selectedNode: (node: VirtualFolderNode): BasicUpdater<VfsWorkspace> =>
                 (vfs: VfsWorkspace) => ({...vfs, selectedFolder: Option.Default.some(node)}),
-            selectedFile: (name: string): Updater<VfsWorkspace> =>
-                Updater((vfs: VfsWorkspace) => ({...vfs, selectedFile: Option.Default.some(name)})),
+            selectedFile: (file: VirtualJsonFile): Updater<VfsWorkspace> =>
+                Updater((vfs: VfsWorkspace) => ({...vfs, selectedFile: Option.Default.some(file)})),
             selectedFolder: (vfs: Updater<VfsWorkspace>): Updater<Ide> => Updater((ide: Ide): Ide =>
                   ide.phase == 'locked'
                       ? ({...ide, locked: {...ide.locked, virtualFolders: vfs(ide.locked.virtualFolders) }})

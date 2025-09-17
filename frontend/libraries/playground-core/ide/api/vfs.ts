@@ -20,6 +20,3 @@ import {axiosVOE} from "./api";
 import {Spec} from "../state";
 import {FormsSeedEntity} from "../domains/seeds/state";
 import {VirtualFolderNode} from "../domains/vfs/state";
-
-export const getVirtualFolders= async (specName: string) =>
-    Promise.resolve(null as VirtualFolderNode)

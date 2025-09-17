@@ -1,6 +1,7 @@
 ﻿
 import {axiosVOE} from "./api";
-import {Spec, V1, V2, SpecVx} from "../state";
+import {Spec, SpecVx} from "../domains/spec/state";
+import {Content, EncodedContent, toSlimJson} from "../domains/spec/backend-model";
 
 
 export const listSpecs = async () =>
@@ -10,8 +11,14 @@ export const listSpecs = async () =>
     });
 
 export const getSpec = async (name: string) =>
-    await axiosVOE<Spec>({
+    await axiosVOE<Content, EncodedContent>({
         method: "GET",
+        url: `/specs/${name}`,
+    }, toSlimJson);
+
+export const initSpec = async (name: string) =>
+    await axiosVOE<Spec>({
+        method: "Post",
         url: `/specs/${name}`,
     });
 

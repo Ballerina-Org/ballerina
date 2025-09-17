@@ -17,6 +17,13 @@ export type Spec = {
     config: any
 }
 
+export type SpecEditor = {
+    v1: V1,
+    v2: V2,
+    seeds: Seeds,
+    config: any
+}
+
 export type SpecVx = {
     v1: ParsedFormJSON<any>,
     v2: V2
