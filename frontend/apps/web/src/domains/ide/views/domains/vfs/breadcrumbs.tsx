@@ -3,17 +3,20 @@ import React from "react";
 import {VscFile, VscFolder} from "react-icons/vsc";
 
 
-export const breadcrumbs = (file: VirtualFolderNode) => {
-    if(file.kind == 'file') return <></>
+type BreadcrumbsProps = { file: VirtualFolderNode };
 
-    
-    return (<div className="breadcrumbs text-sm">
-        <ul>
-            {
-                file.path.split("/").map((part, i) => 
-                    <li><a><VscFolder size={15}/>{part}</a></li>)
-                
-            }
-    
-        </ul>
-    </div>)}
+export function Breadcrumbs({ file }: BreadcrumbsProps) {
+    if (file.kind === 'file') return <></>;
+
+    return (
+        <div className="breadcrumbs text-sm">
+            <ul>
+                {file.path.map((part, i) => (
+                    <li key={`${part}-${i}`}>
+                        <a><VscFolder size={15} />{part}</a>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}

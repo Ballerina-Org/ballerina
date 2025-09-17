@@ -1,5 +1,4 @@
-﻿/** @jsxImportSource @emotion/react */
-
+﻿
 import React from "react";
 import {
     VscCheck,
@@ -10,6 +9,8 @@ import {
     VscNewFile,
     VscRedo,
     VscPlay,
+    VscChecklist,
+    VscMerge,
     VscTriangleLeft, VscTriangleRight, VscFolderLibrary
 } from "react-icons/vsc";
 
@@ -20,8 +21,10 @@ import {Ide} from "playground-core";
 
 type ActionKey =
     | "new" | "folders" | "save" | "seed" | "reseed"
-    | "run" | "validateBridge" | "validateV1"
-    | "left" | "right" | "lock" | "download";
+    | "run" | "merge" 
+    | "left" | "right" | "lock" 
+
+const size = 20;
 
 type ActionsProps = {
     context: Ide;
@@ -34,10 +37,9 @@ type ActionsProps = {
     onReSeed?: () => void;
     onRun?: () => void;
     onRunCondition?: boolean;
-    onDownload?: () => void;
     onSave?: () => void;
     onValidateBridge?: () => void;
-    onValidateV1?: () => void;
+    onMerge?: () => void;
     onLeft?: () => void;
     onRight?: () => void;
     
@@ -48,24 +50,24 @@ export const Actions: React.FC<ActionsProps> = ({
             hideRight = false,
             onAction,
             canRun = true,
-            onSeed, onNew, onLock, onReSeed, onRun, onDownload, onSave, onLeft, onRight
+            onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onLeft, onRight
 
         }) => (
     <div className={"p-5 mt-7 flex space-x-1"}>
-        {context.phase === "choose" && context.specOrigin === "existing" && (
+        {context.phase === "choose" && context.origin === "existing" && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="New spec"
                 onClick={onNew}
             >
-                <VscNewFile size={20} />
+                <VscNewFile size={size} />
             </button>
         )}
 
         { context.phase == "locked" &&
             <label
                 htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Virtual Folders">
-                <VscFolderLibrary className="mt-2" size={20}/>
+                <VscFolderLibrary className="mt-2" size={size}/>
             </label>}
 
         {context.phase === "locked" && (
@@ -74,7 +76,7 @@ export const Actions: React.FC<ActionsProps> = ({
                 data-tip="Save changes"
                 onClick={onSave}
             >
-                <VscSave size={20} />
+                <VscSave size={size} />
             </button>
         )}
 
@@ -84,10 +86,19 @@ export const Actions: React.FC<ActionsProps> = ({
                 data-tip="Seed"
                 onClick={onSeed}
             >
-                <VscDatabase size={20} />
+                <VscDatabase size={size} />
             </button>
         )}
-
+        {context.phase === "locked" && context.step === "design" && (
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Merge and validate"
+                onClick={onRun}
+                disabled={!canRun}
+            >
+                <VscMerge size={size} onClick={onMerge} />
+            </button>
+        )}
         {context.phase === "locked" && context.step === "design" && (
             <button
                 className="btn tooltip tooltip-bottom"
@@ -95,17 +106,17 @@ export const Actions: React.FC<ActionsProps> = ({
                 onClick={onRun}
                 disabled={!canRun}
             >
-                <VscPlay size={20} />
+                <VscPlay size={size} />
             </button>
         )}
 
-        {context.phase === "locked" && !hideRight && 
+        {context.phase === "locked" && hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Forms"
                 onClick={onRight}
             >
-                <VscTriangleLeft size={20} />
+                <VscTriangleRight size={size} />
             </button>}
         {context.phase === "locked" && !hideRight && (
             <button
@@ -113,7 +124,7 @@ export const Actions: React.FC<ActionsProps> = ({
                 data-tip="Show Forms"
                 onClick={onLeft}
             >
-                <VscTriangleRight size={20} />
+                <VscTriangleLeft size={size} />
             </button>
         )}
     </div>

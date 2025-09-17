@@ -1,8 +1,7 @@
 ﻿import React from "react";
-import { DockItem } from "../../layout.tsx";
 
 import AccessibleTreeVfs, {getDirectFilesFromFolder} from "./tree-view";
-import {VirtualFolders} from "playground-core";
+import {VfsWorkspace, VirtualFolders} from "playground-core";
 import {Option, Unit} from "ballerina-core";
 
 function filesToVfsFromFileList(specName: string, list: FileList): VirtualFolderNode {
@@ -78,10 +77,11 @@ type VirtualFolderNode = any;
 
 type DrawerProps = {
     selectNode: BasicFun<VirtualFolderNode, void>;
+    vfs: VfsWorkspace;
     drawerId?: string;
 };
 
-export function Drawer({ selectNode, drawerId = 'ide-drawer' }: DrawerProps) {
+export function Drawer({ selectNode, vfs, drawerId = 'ide-drawer' }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<VirtualFolderNode>>(Option.Default.none());
     const [stagedPath, setStagedPath] = React.useState<string | null>(null);
 

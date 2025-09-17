@@ -1,7 +1,8 @@
 ﻿
 import {axiosVOE} from "./api";
 import {Spec, SpecVx} from "../domains/spec/state";
-import {Content, EncodedContent, toSlimJson} from "../domains/spec/backend-model";
+import {fromSlimJson, toSlimJson} from "../domains/spec/backend-model";
+import {VirtualFolderNode} from "../domains/vfs/state";
 
 
 export const listSpecs = async () =>
@@ -11,10 +12,10 @@ export const listSpecs = async () =>
     });
 
 export const getSpec = async (name: string) =>
-    await axiosVOE<Content, EncodedContent>({
+    await axiosVOE<VirtualFolderNode, any>({
         method: "GET",
         url: `/specs/${name}`,
-    }, toSlimJson);
+    }, fromSlimJson);
 
 export const initSpec = async (name: string) =>
     await axiosVOE<Spec>({

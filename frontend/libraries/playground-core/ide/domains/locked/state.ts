@@ -16,7 +16,7 @@ export const LockedSpec = {
     Updaters: {
         Core: {
             Default: (spec: Spec, workspace: VfsWorkspace): LockedSpec => ({
-                launchers: spec.v1.launchers ? Array.from(Object.keys(spec.v1.launchers)): [],
+                launchers: [], //spec.v1.launchers ? Array.from(Object.keys(spec.v1.launchers)): [],
                 selectedLauncher: Option.Default.none(),
                 bridge: Bridge.Default(spec),
                 virtualFolders: workspace,
@@ -46,7 +46,3 @@ export const LockedSpec = {
         }
     }
 }
-
-export type LockedStep =
-    | { step: "design" }
-    | { step: "outcome" };

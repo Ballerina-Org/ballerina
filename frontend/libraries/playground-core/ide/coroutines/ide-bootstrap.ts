@@ -9,20 +9,19 @@ import {Bootstrap} from "../domains/bootstrap/state";
 
 export const bootstrap =
     Co.Seq([
-            Co.SetState(Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.init("Retrieving specifications from the server"))),
+            Co.SetState(Bootstrap.Updaters.Core.init("Retrieving specifications from the server")),
             Co.Wait(1000),
             Co.Await<ValueOrErrors<string[], any>, any>(() =>
                 listSpecs(), (_err: any) => {}).then(res =>{
                     debugger
                 return res.kind == "r" ?
-                    Co.SetState(Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.error(List([`Unknown error occured when loading specs: ${res}`]))))
+                    Co.SetState(Bootstrap.Updaters.Core.error(List([`Unknown error occured when loading specs: ${res}`])))
                     :
                     Co.SetState(
                         res.value.kind == "value" ? 
-                            Updater(
-                                Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.ready(res.value.value))
+                            Updater(Bootstrap.Updaters.Core.ready(res.value.value)
                             )
                             .then(Ide.Updaters.toChoose())
-                            : Ide.Updaters.bootstrap(Bootstrap.Updaters.Core.error(res.value.errors)))}),
+                            : Bootstrap.Updaters.Core.error(res.value.errors))}),
         ]
     );

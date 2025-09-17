@@ -1,7 +1,7 @@
 ﻿import {BasicUpdater, Option, simpleUpdater, Updater} from "ballerina-core";
 import {Ide} from "../../state";
 import { Map } from "immutable";
-import {EncodedContent} from "../spec/backend-model";
+//import {EncodedContent} from "../spec/backend-model";
 export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
 export type JsonSection<K extends TopLevelKey = TopLevelKey> = Record<string, any>;
@@ -10,20 +10,27 @@ export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
 
 export type VirtualJsonFile = {
     name: string,
-    path: string;                     
+    path: string[];                   
     fileRef?: File;                    
     content: KnownSections;          
-    topLevels: TopLevelKey[];        
+    topLevels: TopLevelKey[];
+    sync?: { status: "local" | "synced"; etag?: string };
 };
 
 export type VirtualFolderNode =
-    | { kind: "folder"; name: string; path: string; children: Map<string, VirtualFolderNode>, staged?: boolean; }
-    | { kind: "file"; value: VirtualJsonFile };
+    | { kind: "folder"; name: string; path: string[]; children: Map<string, VirtualFolderNode>, staged?: boolean }
+    | { kind: "file" } & VirtualJsonFile;
+type FolderVariant = Extract<VirtualFolderNode, { kind: "folder" }>;
+type FileVariant   = Extract<VirtualFolderNode, { kind: "file" }>;
 
+export const isFolder = (n: VirtualFolderNode): n is FolderVariant =>
+    n.kind === "folder";
+export const isFile = (n: VirtualFolderNode): n is FileVariant =>
+    n.kind === "file";
 export type VfsWorkspace = {
     root: VirtualFolderNode;                                   
-    files: VirtualJsonFile[];                                  
-    merged: KnownSections;    
+    //files: VirtualJsonFile[];                                  
+    merged: Option<KnownSections>;    
     selectedFolder: Option<VirtualFolderNode>;
     selectedFile: Option<VirtualJsonFile>;
 };
@@ -46,83 +53,83 @@ export const VirtualFolders = {
             });
             return onlyFiles;
         },
-        markFolderAsStaged(root: VirtualFolderNode, targetPath: string): void {
-            const visit = (node: VirtualFolderNode) => {
-                if (node.kind === "folder") {
-                    node.staged = node.path === targetPath;
-                    node.children.forEach(visit);
-                }
-            };
-
-            visit(root);
-        },
-        getStagedFiles(root: VirtualFolderNode): VirtualJsonFile[] {
-            let stagedFiles: VirtualJsonFile[] = [];
-
-            const visit = (node: VirtualFolderNode) => {
-                if (node.kind === "folder" && node.staged) {
-                    node.children.forEach(child => {
-                        if (child.kind === "file") {
-                            stagedFiles.push(child.value);
-                        }
-                    });
-                } else if (node.kind === "folder") {
-                    node.children.forEach(visit);
-                }
-            };
-
-            visit(root);
-            return stagedFiles;
-        },
-        writeBackToStagedFolder(root: VirtualFolderNode, updatedFiles: VirtualJsonFile[]): void {
-            const visit = (node: VirtualFolderNode): boolean => {
-                if (node.kind === "folder" && node.staged) {
-                    const newChildren = Map<string, VirtualFolderNode>();
-                    for (const file of updatedFiles) {
-                        const name = file.path.split("/").pop()!;
-                        newChildren.set(name, { kind: "file", value: file });
-                    }
-                    node.children = newChildren;
-                    return true;
-                } else if (node.kind === "folder") {
-                    node.children.forEach(child => {
-                        if (visit(child)) return true;
-                    })
-                }
-                return false;
-            };
-
-            visit(root);
-        },
-        mergeWorkspaceSections(root: VirtualFolderNode): KnownSections {
-            const merged: KnownSections = {};
-
-            function visit(node: VirtualFolderNode): void {
-                if (node.kind === "file") {
-                    const file = node.value;
-
-                    for (const sectionKey of file.topLevels) {
-                        const section = file.content[sectionKey];
-                        if (!section) continue;
-
-                        if (!merged[sectionKey]) {
-                            merged[sectionKey] = {};
-                        }
-
-                        Object.assign(merged[sectionKey]!, section);
-                    }
-                }
-
-                if (node.kind === "folder") {
-                    Array.from(node.children.values()).forEach(child => {
-                        visit(child);
-                    });
-                }
-            }
-
-            visit(root);
-            return merged;
-        },
+        // markFolderAsStaged(root: VirtualFolderNode, targetPath: string): void {
+        //     const visit = (node: VirtualFolderNode) => {
+        //         if (node.kind === "folder") {
+        //             node.staged = node.path === targetPath;
+        //             node.children.forEach(visit);
+        //         }
+        //     };
+        //
+        //     visit(root);
+        // },
+        // getStagedFiles(root: VirtualFolderNode): VirtualJsonFile[] {
+        //     let stagedFiles: VirtualJsonFile[] = [];
+        //
+        //     const visit = (node: VirtualFolderNode) => {
+        //         if (node.kind === "folder" && node.staged) {
+        //             node.children.forEach(child => {
+        //                 if (child.kind === "file") {
+        //                     stagedFiles.push(child.value);
+        //                 }
+        //             });
+        //         } else if (node.kind === "folder") {
+        //             node.children.forEach(visit);
+        //         }
+        //     };
+        //
+        //     visit(root);
+        //     return stagedFiles;
+        // },
+        // writeBackToStagedFolder(root: VirtualFolderNode, updatedFiles: VirtualJsonFile[]): void {
+        //     const visit = (node: VirtualFolderNode): boolean => {
+        //         if (node.kind === "folder" && node.staged) {
+        //             const newChildren = Map<string, VirtualFolderNode>();
+        //             for (const file of updatedFiles) {
+        //                 const name = file.path.split("/").pop()!;
+        //                 newChildren.set(name, { kind: "file", value: file });
+        //             }
+        //             node.children = newChildren;
+        //             return true;
+        //         } else if (node.kind === "folder") {
+        //             node.children.forEach(child => {
+        //                 if (visit(child)) return true;
+        //             })
+        //         }
+        //         return false;
+        //     };
+        //
+        //     visit(root);
+        // },
+        // mergeWorkspaceSections(root: VirtualFolderNode): KnownSections {
+        //     const merged: KnownSections = {};
+        //
+        //     function visit(node: VirtualFolderNode): void {
+        //         if (node.kind === "file") {
+        //             const file = node.value;
+        //
+        //             for (const sectionKey of file.topLevels) {
+        //                 const section = file.content[sectionKey];
+        //                 if (!section) continue;
+        //
+        //                 if (!merged[sectionKey]) {
+        //                     merged[sectionKey] = {};
+        //                 }
+        //
+        //                 Object.assign(merged[sectionKey]!, section);
+        //             }
+        //         }
+        //
+        //         if (node.kind === "folder") {
+        //             Array.from(node.children.values()).forEach(child => {
+        //                 visit(child);
+        //             });
+        //         }
+        //     }
+        //
+        //     visit(root);
+        //     return merged;
+        // },
         // buildWorkspaceFromRoot(root: VirtualFolderNode): VfsWorkspace {
         //     const files: VirtualJsonFile[] = [];
         //
@@ -146,8 +153,21 @@ export const VirtualFolders = {
         //         merged: VirtualFolders.Operations.mergeWorkspaceSections(root)
         //     };
         // },
-        buildWorkspaceFromRoot(root: EncodedContent): VfsWorkspace {
-            return null!
+        buildWorkspaceFromRoot(origin: 'existing' | 'create', root: VirtualFolderNode): VfsWorkspace {
+            
+            const fs: Option<VirtualJsonFile> =
+                origin == 'create' 
+                && isFolder(root) 
+                && Array.from(root.children.values()).filter(x => isFile(x)).length > 0 
+                    ? Option.Default.some(Array.from(root.children.values()).filter(x => isFile(x))[0])
+                    : Option.Default.none();
+            debugger
+            return {
+                root, 
+                merged: Option.Default.none(),
+                selectedFile: fs,
+                selectedFolder: origin == 'create' ?  Option.Default.some(root)  : Option.Default.none()
+            }
         },
         // createEmptySpec: async (specName: string): Promise<VfsWorkspace> => {
         //     const topLevelKeys: TopLevelKey[] = ["types", "forms", "apis", "launchers", "typesV2", "schema", "config"];

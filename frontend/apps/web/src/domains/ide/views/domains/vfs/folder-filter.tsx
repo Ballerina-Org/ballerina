@@ -51,31 +51,29 @@ export const FolderFilter = ({
                                  update,
                              }: FolderFilterProps) => {
     if (folder.kind !== "folder") return null;
-
-    const files: VirtualJsonFile[] =
-        Array.from(folder.children.filter(x => x.kind == 'file').map( x => x.value).values());
-
+    const fs = Array.from(folder.children.values());
+    const ft = fs.filter(x => x.kind == 'file');
+    const files: VirtualJsonFile[] = ft.map(x=> x as VirtualJsonFile);
     return (
         <div className="w-full">
             <div className="mt-3 flex w-full">
                 <div className="filter mb-7 join-item space-x-1">
-                    {/* Reset ("All") */}
                     <input
                         className="btn filter-reset"
                         type="radio"
                         name="virtual-files"
                         aria-label="All"
-                        //checked={selected.kind == "r"}
                     />
 
                     {files.map((f) => {
+                        
                         const fileName =
-                            f.fileRef?.name ?? (f.path.split("/").pop() || f.path);
-                        const label = fileName.replace(/\.json$/, "");
+                            f.fileRef?.name || f.name
+                        const label = fileName?.replace(/\.json$/, "");
 
                         return (
                             <div
-                                key={f.path}
+                                key={f.path.join("-")}
                                 className="tooltip tooltip-bottom"
                                 data-tip={`Load ${f.name} into editor`}
                             >
@@ -83,8 +81,6 @@ export const FolderFilter = ({
                                     className="btn"
                                     type="radio"
                                     name="virtual-files"
-                                    value={f.path}
-                                    //checked={isChecked}
                                     aria-label={label}
                                     onChange={async () => {
                                         const content = await f.fileRef?.text()!;

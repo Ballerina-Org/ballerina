@@ -1,51 +1,50 @@
 ﻿import {
-    simpleUpdater,
     Option,
-    Value, replaceWith, Updater, CollectionReference, BasicUpdater, ParsedFormJSON, ValueOrErrors, TypeName, ParsedType,
-    Product
+    Value, Updater, BasicUpdater, ValueOrErrors
 } from "ballerina-core";
 import { Template, View } from "ballerina-core";
 import { ForeignMutationsInput } from "ballerina-core";
-import { Bridge, BridgeState } from "./domains/bridge/state"
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
 import {List} from "immutable";
 import {getSpec, initSpec} from "./api/specs";
-import {VfsWorkspace, VirtualFolders} from "./domains/vfs/state";
-import {getVirtualFolders} from "./api/vfs";
+import {VfsWorkspace, VirtualFolderNode, VirtualFolders} from "./domains/vfs/state";
 import {Seeds} from "./domains/seeds/state";
 import {Bootstrap} from "./domains/bootstrap/state";
-import {LockedSpec, LockedStep} from "./domains/locked/state";
+import {LockedSpec} from "./domains/locked/state";
 import {Spec} from "./domains/spec/state";
-import {EncodedContent} from "./domains/spec/backend-model";
 
 export type CommonUI = {
-    specOrigin: 'existing' | 'create';
+    origin: 'existing' | 'create';
     existing: { specs: string[]; selected: Option<string> };
     create: { name: Value<string> };
     
     // these errors will have different UI representations: toasts, dock, etc
-    bootstrappingError: Option<List<string>>,
-    choosingError: Option<List<string>>,
-    lockingError: Option<List<string>>,
+    bootstrappingError : Option<List<string>>,
+    choosingError      : Option<List<string>>,
+    lockingError       : Option<List<string>>,
 };
 
 const CommonUI = {
     Default: (): CommonUI => ({
-        specOrigin: 'create',
+        origin: 'create',
         existing: { specs: [], selected : Option.Default.none() },
         create:   { name: Value.Default("") },
         
-        bootstrappingError: Option.Default.none(),
-        choosingError: Option.Default.none(),
-        lockingError: Option.Default.none(),
+        bootstrappingError : Option.Default.none(),
+        choosingError      : Option.Default.none(),
+        lockingError       : Option.Default.none(),
     })
 }
 
+export type LockedStep =
+    | { step: "design" }
+    | { step: "outcome" };
+
 export type Ide =
     CommonUI & (
-    | { phase: 'bootstrap', bootstrap: Bootstrap }
-    | { phase: 'choose' }
-    | ({ phase: 'locked'; source: 'existing' | 'create'; locked: LockedSpec } & LockedStep)
+    |  { phase: 'bootstrap', bootstrap: Bootstrap }
+    |  { phase: 'choose' }
+    | ({ phase: 'locked'; locked: LockedSpec } & LockedStep)
     );
 
 export const Ide = {
@@ -55,15 +54,15 @@ export const Ide = {
             bootstrap: { kind: 'kickedOff' }
         }),
     Updaters: {
-        bootstrap: (b: Updater<Ide>): Updater<Ide> => Updater(ide => b(ide)),
-        lockedSpec: (b: Updater<Ide>): Updater<Ide> => Updater(ide => b(ide)),
+       // bootstrap: (b: Updater<Ide>): Updater<Ide> => Updater(ide => b(ide)),
+       // lockedSpec: (b: Updater<Ide>): Updater<Ide> => Updater(ide => b(ide)),
         
         toChoose: (): BasicUpdater<Ide>  => (ide: Ide): Ide => ({...ide, phase: 'choose'}),
-        chooseNew: (): BasicUpdater<Ide>  => (ide: Ide): Ide => ({...ide, phase: 'choose', specOrigin: 'create'}),
+        chooseNew: (): BasicUpdater<Ide>  => (ide: Ide): Ide => ({...ide, phase: 'choose', origin: 'create'}),
         lock: (origin:  'existing' | 'create', name: string, spec: Spec, workspace: VfsWorkspace): BasicUpdater<Ide> => {
                 return (ide: Ide): Ide =>
             ide.phase === 'choose'
-                ? { ...ide, phase: 'locked', step: 'design', create : { name: Value.Default(name)}, source: origin, locked: LockedSpec.Updaters.Core.Default( spec, workspace) }
+                ? { ...ide, phase: 'locked', step: 'design', create : { name: Value.Default(name)}, locked: LockedSpec.Updaters.Core.Default( spec, workspace) }
                 : { ...ide, lockingError: Option.Default.some(List([]))};
             },
         runForms: () : BasicUpdater<Ide> => {
@@ -78,7 +77,7 @@ export const Ide = {
         },
         specName: (name: string): BasicUpdater<Ide> =>
             (ide: Ide): Ide => 
-                ide.phase == "choose" && ide.specOrigin == "create" ? 
+                ide.phase == "choose" && ide.origin == "create" ? 
                     ({ ...ide, create: { name: Value.Default(name) } })
                     : ({ ...ide })
     },
@@ -104,12 +103,12 @@ export const Ide = {
         //     return workspace;
         // },
         toLockedSpec: async (origin:  'existing' | 'create', name: string): Promise<BasicUpdater<Ide>> => {
-            const spec: ValueOrErrors<EncodedContent, string> = 
+            const spec: ValueOrErrors<VirtualFolderNode, string> = 
                 origin == 'existing' ? await getSpec(name) : await initSpec(name).then(() => getSpec(name));
 
-
+            debugger
             return spec.kind == "value" ?
-                Ide.Updaters.lock(origin, name, spec.value as any, VirtualFolders.Operations.buildWorkspaceFromRoot(spec.value))
+                Ide.Updaters.lock(origin, name, spec.value as any, VirtualFolders.Operations.buildWorkspaceFromRoot(origin, spec.value))
                 : (ide: Ide): Ide => ({...ide, lockingError: Option.Default.some(spec.errors)})
             
         }
