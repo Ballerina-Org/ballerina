@@ -1,3 +1,6 @@
+import operator
+from collections.abc import Sequence
+
 import pytest
 
 from ballerina_core.sum import Sum
@@ -37,3 +40,25 @@ def test_fold_right() -> None:
 
     expected = 5
     assert result == expected
+
+
+Error = int
+error_merge = operator.add
+
+
+class TestSequenceAll:
+    @staticmethod
+    def test_on_error() -> None:
+        values: Sequence[Sum[Error, str]] = [Sum.left(1), Sum.right("a"), Sum.left(2)]
+        result = Sum[Error, str].sequence_all(error_merge)(values)
+
+        expected = Sum[Error, Sequence[str]].left(3)
+        assert result == expected
+
+    @staticmethod
+    def test_on_success() -> None:
+        values: Sequence[Sum[Error, str]] = [Sum.right("a"), Sum.right("b"), Sum.right("c")]
+        result = Sum[Error, str].sequence_all(error_merge)(values)
+
+        expected = Sum[Error, Sequence[str]].right(("a", "b", "c"))
+        assert result == expected
