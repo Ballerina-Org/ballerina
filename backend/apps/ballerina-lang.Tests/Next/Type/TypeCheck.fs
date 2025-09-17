@@ -286,7 +286,7 @@ let ``LangNext-TypeCheck union cons and des typecheck with new type and inferred
       ),
       Expr.Let(
         "v" |> Var.Create,
-        Expr.UnionCons(!"Choice1Of3", Expr.Primitive(PrimitiveValue.Decimal 1.0M)),
+        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0M)),
         Expr.Apply(
           Expr.UnionDes(
             [ (!"Choice1Of3",
@@ -1075,7 +1075,7 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
-        Expr.UnionCons(!"Choice1Of3", Expr.Primitive(PrimitiveValue.String "not a decimal eh")),
+        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.String "not a decimal eh")),
         Expr.Apply(
           Expr.UnionDes(
             [ (!"Choice1Of3",
@@ -1134,7 +1134,7 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
-        Expr.UnionCons(!"Choice1Of3", Expr.Primitive(PrimitiveValue.Decimal 1.0m)),
+        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0m)),
         Expr.Apply(
           Expr.UnionDes(
             [ (!"Choice1Of3",

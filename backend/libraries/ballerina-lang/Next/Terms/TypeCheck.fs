@@ -12,6 +12,7 @@ module TypeCheck =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Unification
   open Eval
   open Ballerina.Fun
@@ -79,7 +80,17 @@ module TypeCheck =
 
         return!
           ctx.Types.Bindings
-          |> Map.tryFindWithError id "symbols" id.ToFSharpString
+          |> Map.tryFindWithError id "type bindings" id.ToFSharpString
+          |> state.OfSum
+      }
+
+    static member TryFindUnionCaseConstructor(id: Identifier) : TypeCheckerResult<TypeValue> =
+      state {
+        let! ctx = state.GetState()
+
+        return!
+          ctx.Types.UnionCases
+          |> Map.tryFindWithError id "union cases" id.ToFSharpString
           |> state.OfSum
       }
 
@@ -199,6 +210,25 @@ module TypeCheck =
 
           | Expr.Apply(f, a) ->
             return!
+              // state.Any(
+              //   state {
+              //     let! f = Expr.AsLookup f |> state.OfSum
+
+              //     // if f.LocalName = "SAP" then
+              //     //   do Console.WriteLine($"lookup of {id.ToFSharpString}")
+              //     //   let! s = state.GetState()
+              //     //   do Console.WriteLine(s.ToFSharpString)
+              //     //   do Console.ReadLine() |> ignore
+
+              //     do! TypeCheckState.TryFindUnionCaseConstructor f |> state.Ignore
+              //     let transformedExpr = Expr<TypeExpr>.UnionCons(f, a)
+              //     // do Console.WriteLine(transformedExpr.ToFSharpString)
+              //     let! transformedExpr = !transformedExpr
+              //     // do Console.WriteLine(transformedExpr.ToFSharpString)
+              //     // do Console.ReadLine() |> ignore
+              //     return transformedExpr
+              //   },
+              // [
               state {
                 let! f, t_f, f_k = !f
                 let! a, t_a, a_k = !a
@@ -228,7 +258,8 @@ module TypeCheck =
                         return Expr.Apply(f, a), f_output, Kind.Star
                       } ]
                   )
-              }
+              } // ]
+              // )
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a} `"))
 
           | Expr.If(cond, thenBranch, elseBranch) ->
@@ -608,11 +639,19 @@ module TypeCheck =
                   |> Option.map (fun definition_cases ->
                     definition_cases
                     |> Map.toSeq
-                    |> Seq.map (fun (k, _) ->
+                    |> Seq.map (fun (k, argT) ->
                       state {
-                        do! TypeExprEvalState.bindType k.Name.LocalName typeDefinition |> Expr.liftTypeEval
+                        do!
+                          TypeExprEvalState.bindUnionCaseConstructor
+                            k.Name.LocalName
+                            (TypeValue.Arrow(argT, typeDefinition |> fst))
+                          |> Expr.liftTypeEval
 
-                        do! TypeExprEvalState.bindType typeIdentifier typeDefinition |> Expr.liftTypeEval
+                        do!
+                          TypeExprEvalState.bindType
+                            k.Name.LocalName
+                            (TypeValue.Arrow(argT, typeDefinition |> fst), Kind.Star)
+                          |> Expr.liftTypeEval
                       })
                     |> state.All
                     |> state.Map ignore)

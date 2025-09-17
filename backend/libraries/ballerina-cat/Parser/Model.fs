@@ -47,7 +47,7 @@ module Model =
         | Left(ParserResult(p1, s1)) ->
           match Parser.Run (s1 |> Option.defaultValue s0) p1 with
           | Right e -> Right e
-          | Left(ParserResult(v, s2)) -> Left(ParserResult(v, s2 |> Option.orElse s1)))
+          | Left(ParserResult(v, s2)) -> Left(ParserResult(v, Option.orElse s1 s2)))
 
   type ParserBuilder<'sym, 'loc, 'err when 'sym: equality>
     (
@@ -141,8 +141,8 @@ module Model =
           let! x = p |> parser.Try
 
           match x with
-          | Right _ -> return! parser.Any(ps)
           | Left x -> return x
+          | Right _ -> return! parser.Any(ps)
       }
 
     member parser.Stream: Parser<List<'sym>, 'sym, 'loc, 'err> =
