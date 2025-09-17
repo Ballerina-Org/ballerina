@@ -20,8 +20,6 @@ const (
 
 var allDeltaChunkEffectsEnumCases = [...]deltaChunkEffectsEnum{chunkValue, chunkAddAt, chunkRemoveAt, chunkMoveFromTo, chunkDuplicateAt, chunkAdd}
 
-func DefaultDeltaChunkEffectsEnum() deltaChunkEffectsEnum { return allDeltaChunkEffectsEnumCases[0] }
-
 type DeltaChunk[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaChunkEffectsEnum

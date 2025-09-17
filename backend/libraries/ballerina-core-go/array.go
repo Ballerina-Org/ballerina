@@ -9,10 +9,6 @@ func MapArray[T, U any](ts []T, f func(T) U) []U {
 	}
 	return us
 }
-func DefaultArray[T any]() Array[T] {
-	var res Array[T] = make([]T, 0)
-	return res
-}
 
 func FoldLeftArray[T any, U any](ts []T, initial U, f func(U, T) U) U {
 	result := initial

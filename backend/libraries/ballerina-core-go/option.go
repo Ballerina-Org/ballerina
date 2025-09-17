@@ -14,10 +14,6 @@ func None[a any]() Option[a] {
 	return Option[a]{Left[Unit, a](DefaultUnit)}
 }
 
-func DefaultOption[a any]() Option[a] {
-	return None[a]()
-}
-
 func MatchOption[a any, c any](self Option[a], onSome func(a) c, onNone func() c) c {
 	return Fold(self.Sum, func(_ Unit) c { return onNone() }, onSome)
 }
