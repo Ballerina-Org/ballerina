@@ -17,6 +17,7 @@ import {
   FilterTypeKind,
   ListRepo,
   BasicUpdater,
+  ValueTuple,
 } from "ballerina-core";
 import { OrderedMap, Map, Set, List } from "immutable";
 import { useEffect, useState } from "react";
@@ -2328,6 +2329,26 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   </div>
                 </li>
               );
+            })}
+            {props.embeddedPlaceholderElementTemplate()(undefined)({
+              ...props,
+              context: {
+                ...props.context,
+                customPresentationContext: {
+                  listElement: {
+                    isLastListElement: false,
+                  },
+                },
+              },
+              view: unit,
+              foreignMutations: {
+                ...props.foreignMutations,
+                onChange: (upd, delta) => {
+                  props.foreignMutations.add?.(undefined)(
+                    upd.kind == "l" ? undefined : upd.value,
+                  );
+                },
+              },
             })}
           </ul>
           {props.foreignMutations.add && (
