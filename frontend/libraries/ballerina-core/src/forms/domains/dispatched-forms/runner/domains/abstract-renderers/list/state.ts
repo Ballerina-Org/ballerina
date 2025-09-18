@@ -61,9 +61,7 @@ export type ListAbstractRendererForeignMutationsExpected<Flags> = {
 
 export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   onChange: DispatchOnChange<ValueTuple, Flags>;
-  add?: (
-    flags: Flags,
-  ) => (customUpdater?: BasicUpdater<ValueTuple>) => void;
+  add?: (flags: Flags) => (customUpdater?: BasicUpdater<ValueTuple>) => void;
   remove?: ValueCallbackWithOptionalFlags<number, Flags>;
   move?: (elementIndex: number, to: number, flags: Flags | undefined) => void;
   duplicate?: ValueCallbackWithOptionalFlags<number, Flags>;

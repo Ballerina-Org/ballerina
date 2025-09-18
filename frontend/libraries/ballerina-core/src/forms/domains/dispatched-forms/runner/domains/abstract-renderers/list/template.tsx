@@ -189,7 +189,7 @@ export const ListAbstractRenderer = <
                 : (flags) => (customUpdater?: BasicUpdater<ValueTuple>) => {
                     const updater = customUpdater ?? id;
                     const defaultElementValue = GetDefaultElementValue();
-                    
+
                     const updatedValue = PredicateValue.Operations.IsTuple(
                       defaultElementValue,
                     )
