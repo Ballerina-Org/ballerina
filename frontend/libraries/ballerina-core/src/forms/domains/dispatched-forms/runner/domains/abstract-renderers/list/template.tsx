@@ -13,6 +13,9 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  id,
+  BasicUpdater,
+  ValueTuple,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ListMethods } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
@@ -183,11 +186,19 @@ export const ListAbstractRenderer = <
               ...props.foreignMutations,
               add: !methods.includes("add")
                 ? undefined
-                : (flags) => (customValue?: PredicateValue) => {
-                    const value = customValue || GetDefaultElementValue();
+                : (flags) => (customUpdater?: BasicUpdater<ValueTuple>) => {
+                    const updater = customUpdater ?? id;
+                    const defaultElementValue = GetDefaultElementValue();
+                    
+                    const updatedValue = PredicateValue.Operations.IsTuple(
+                      defaultElementValue,
+                    )
+                      ? updater(defaultElementValue)
+                      : defaultElementValue;
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "ArrayAdd",
-                      value: value,
+                      value: updatedValue,
                       state: {
                         commonFormState: props.context.commonFormState,
                         elementFormStates: props.context.elementFormStates,
@@ -201,9 +212,9 @@ export const ListAbstractRenderer = <
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
-                            ListRepo.Updaters.push<PredicateValue>(value)(
-                              list.values,
-                            ),
+                            ListRepo.Updaters.push<PredicateValue>(
+                              updatedValue,
+                            )(list.values),
                           ),
                         ),
                       ),
