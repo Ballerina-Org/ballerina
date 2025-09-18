@@ -1,7 +1,7 @@
-﻿import {Bridge, Ide, VfsWorkspace, VirtualFolderNode, VirtualJsonFile} from "playground-core";
+﻿import {Ide, VfsWorkspace, VirtualFolderNode, VirtualJsonFile} from "playground-core";
 import React from "react";
 import {VscFile, VscFolder} from "react-icons/vsc";
-import {Option, SimpleCallback, Unit, Updater} from "ballerina-core";
+import {Option, replaceWith, SimpleCallback, Unit, Updater} from "ballerina-core";
 import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 
 
@@ -83,12 +83,15 @@ export const FolderFilter = ({
                                     name="virtual-files"
                                     aria-label={label}
                                     onChange={async () => {
-                                        const content = await f.fileRef?.text()!;
-                                        const s_u = VfsWorkspace.Updaters.Core.selectedFolder(
-                                            VfsWorkspace.Updaters.Core.selectedFile(f)
+                                        const content: any = f.content || await f.fileRef?.text()!;
+                                        debugger
+                                        const s_u = LockedSpec.Updaters.Core.vfs(
+                                            VfsWorkspace.Updaters.Core.selectedFile(
+                                                replaceWith(
+                                                    Option.Default.some({...f, content: content })))
                                         );
-                                        const b_u = LockedSpec.Updaters.Core.bridge.v1(content);
-                                        update(s_u.then(b_u));
+                                        //const b_u = LockedSpec.Updaters.Core.bridge.v1(content);
+                                        update(s_u);
                                     }}
                                 />
                             </div>

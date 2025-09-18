@@ -22,15 +22,15 @@ export const Bootstrap = {
             ready: (specNames: string []): Updater<Ide> =>
                 Updater(ide =>
                     ide.phase === 'bootstrap'
-                        ? { ...ide, origin: specNames.length > 0 ? 'existing' : 'create', bootstrap: { kind: 'ready' }, existing: { specs: specNames, selected: Option.Default.none() } }
+                        ? { ...ide, specOrigin: specNames.length > 0 ? 'existing' : 'create', bootstrap: { kind: 'ready' }, existing: { specs: specNames, selected: Option.Default.none() } }
                         : ide),
             
-            error: (txt: List<string>): Updater<Ide> =>
-                Updater(ide =>
-                    ide.phase === 'bootstrap'
-                        ? { ...ide, bootstrappingError: Option.Default.some(txt) } 
-                        : ide),
-            
+            // error: (txt: List<string>): Updater<Ide> =>
+            //     Updater(ide =>
+            //         ide.phase === 'bootstrap'
+            //             ? { ...ide, bootstrappingError: Option.Default.some(txt) } 
+            //             : ide),
+            //
         },
     }
 }

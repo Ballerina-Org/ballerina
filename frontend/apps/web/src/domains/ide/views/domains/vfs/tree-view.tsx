@@ -12,117 +12,106 @@ type Meta = {
     isLeafFolder?: boolean;
     staged?: boolean;
 };
+//
 
+const split = (path: string) : string[] => path.split("/");
 type FlatNode = INode<Meta>;
-export const flattenVfsToINodes = (root: VirtualFolderNode): INode<Meta>[] =>{
-    const out: FlatNode[] = [];
 
-    const visit = (node: VirtualFolderNode, parent: string | number | null) => {
-        if (node.kind === "folder") {
-            const childIds: (string | number)[] = [];
-            node.children.forEach(ch => {
-                childIds.push(ch.kind === "folder" ? ch.path : ch.value.path);
-            });
 
-            out.push({
-                id: node.path,
-                name: node.name,
-                parent,
-                children: childIds,
-                isBranch: true,
+
+export function joinPath(segs: string[] | string): string {
+    return Array.isArray(segs) ? segs.join("/") : segs;
+}
+const parentPath = (segs: string[]): string | null =>{
+    if(segs == undefined){
+        debugger
+    }
+    return segs.length <= 1 ? null : joinPath(segs.slice(0, segs.length - 1));}
+export const flattenVfsToINodes = (root: VirtualFolderNode): INode<Meta>[] => {
+    const go = (f: VirtualFolderNode): INode<Meta>[] => {
+        const id = joinPath(f.path);
+        if (f.kind === "file") {
+            
+            return [
+                {
+                    id,
+                    name: f.name,
+                    parent: parentPath(f.path),
+                    metadata: {
+                        kind: "file",
+                        path: id,
+                        size: f.fileRef?.size,
+                        staged: f.sync?.status === "local",
+                    },
+                    children: [], 
+                } as INode<Meta>,
+            ];
+        }
+        
+        const isLeafFolder = ![...f.children.values()].some(c => c.kind === "folder");
+        return [
+            {
+                id,
+                name: f.name,
+                parent: parentPath(f.path),
                 metadata: {
                     kind: "dir",
-                    path: node.path,
-                    isLeafFolder: VirtualFolders.Operations.isLeafFolderNode(node),
-                    staged: node.staged === true,
+                    path: id,
+                    isLeafFolder,
+                    staged: f.staged,
                 },
-            });
-
-            node.children.forEach(ch => {
-                if (ch.kind === "folder") {
-                    visit(ch, node.path);
-                } else {
-                    const f = ch.value;
-                    const filename = f.path.split("/").pop() || f.path;
-                    out.push({
-                        id: f.path,
-                        name: filename,
-                        parent: node.path,
-                        children: [], 
-                        metadata: {
-                            kind: "file",
-                            path: f.path,
-                            size: f.fileRef?.size,
-                        },
-                    });
-                }
-            });
-        } else {
-            const f = node.value;
-            const filename = f.path.split("/").pop() || f.path;
-            out.push({
-                id: f.path,
-                name: filename,
-                parent,
-                children: [],
-                metadata: {
-                    kind: "file",
-                    path: f.path,
-                    size: f.fileRef?.size,
-                },
-            });
-        }
+                children: [], // flat
+            } as INode<Meta>,
+            ...[...f.children.values()].flatMap(go),
+        ];
     };
 
-    visit(root, null);
-    return out;
-}
-
-
+    return go(root);
+};
 type AccessibleTreeVfsProps = {
     root: VirtualFolderNode;
     stagedPath?: string | null;
     onStageChange?: (nextPath: string | null) => void;
     expandFoldersByDefault?: boolean;
 };
-
-type FolderNode = Extract<VirtualFolderNode, { kind: "folder" }>;
-
-function isFolder(n: VirtualFolderNode): n is FolderNode {
-    return n.kind === "folder";
-}
-
-function findFolderByPath(root: VirtualFolderNode, path: string): FolderNode  {
-    let found: FolderNode | null = null;
-
-    const visit = (node: VirtualFolderNode): void => {
-        if (found) return;
-        if (isFolder(node)) {
-            if (node.path === path) {
-                found = node;
-                return;
-            }
-            node.children.forEach(child => visit(child));
-        }
-    };
-
-    visit(root);
-    return found! as FolderNode;
-}
-
-export function getDirectFilesFromFolder(root: VirtualFolderNode, folderPath: string ):  { folder: FolderNode; files: VirtualJsonFile[] }   {
-
-    const folder = findFolderByPath(root, folderPath);
-
-
-    const files: VirtualJsonFile[] = [];
-    folder?.children.forEach(child => {
-        if (child.kind === "file") files.push(child.value);
-    });
-    return { folder, files };
-}
-
-function folderHasDirectFiles(root: VirtualFolderNode, folderPath: string): boolean {
+//
+// type FolderNode = Extract<VirtualFolderNode, { kind: "folder" }>;
+//
+// function isFolder(n: VirtualFolderNode): n is FolderNode {
+//     return n.kind === "folder";
+// }
+//
+// function findFolderByPath(root: VirtualFolderNode, path: string): FolderNode  {
+//     let found: FolderNode | null = null;
+//
+//     const visit = (node: VirtualFolderNode): void => {
+//         if (found) return;
+//         if (isFolder(node)) {
+//             if (node.path === path) {
+//                 found = node;
+//                 return;
+//             }
+//             node.children.forEach(child => visit(child));
+//         }
+//     };
+//
+//     visit(root);
+//     return found! as FolderNode;
+// }
+//
+// export function getDirectFilesFromFolder(root: VirtualFolderNode, folderPath: string ):  { folder: FolderNode; files: VirtualJsonFile[] }   {
+//
+//     const folder = findFolderByPath(root, folderPath);
+//
+//
+//     const files: VirtualJsonFile[] = [];
+//     folder?.children.forEach(child => {
+//         if (child.kind === "file") files.push(child.value);
+//     });
+//     return { folder, files };
+// }
+//
+function folderHasDirectFiles(root: VirtualFolderNode, folderPath: string[]): boolean {
     let has = false;
     const visit = (node: VirtualFolderNode): void => {
         if (has) return;
@@ -141,11 +130,12 @@ function folderHasDirectFiles(root: VirtualFolderNode, folderPath: string): bool
 }
 
 export function AccessibleTreeVfs({
-                                      root,
-                                      stagedPath = null,
-                                      onStageChange,
-                                      expandFoldersByDefault = true
-                                  }: AccessibleTreeVfsProps) {
+          root,
+          stagedPath = null,
+          onStageChange,
+          expandFoldersByDefault = true
+      }: AccessibleTreeVfsProps) {
+    debugger
     const data = React.useMemo<INode<Meta>[]>(() => flattenVfsToINodes(root), [root]);
 
     const folderIds: NodeId[] = React.useMemo(
@@ -158,8 +148,8 @@ export function AccessibleTreeVfs({
             const isFolder = element.metadata?.kind === "dir";
             if (!isFolder) return null;
 
-            const path = String(element.metadata?.path ?? element.id);
-            const checked = stagedPath === path;
+            const path = String(element.metadata?.path ?? element.id).split('/');
+            const checked = stagedPath?.split('/') === path;
             
             const hasFiles = folderHasDirectFiles(root, path);
 
@@ -172,7 +162,7 @@ export function AccessibleTreeVfs({
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         e.stopPropagation();
                         const next = e.currentTarget.checked ? path : null;
-                        onStageChange?.(next);
+                        //onStageChange?.(next);
                         const el = document.querySelector(".accept-selected") as HTMLElement | null; 
                         el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}

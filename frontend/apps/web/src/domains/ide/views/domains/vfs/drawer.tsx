@@ -89,8 +89,8 @@ export function Drawer({ selectNode, vfs, drawerId = 'ide-drawer' }: DrawerProps
         const list = e.currentTarget.files;
         if (!list || list.length === 0) return;
 
-        const specName = 'spec';
-        const vfsRoot = filesToVfsFromFileList(specName, list);
+
+        const vfsRoot = filesToVfsFromFileList("root", list);
 
         const maybeCore: string | null = (() => {
             if (vfsRoot.kind !== 'folder') return null;
@@ -124,16 +124,16 @@ export function Drawer({ selectNode, vfs, drawerId = 'ide-drawer' }: DrawerProps
 
                 <ul className="menu bg-base-200 text-base-content min-h-full w-[40vw] p-4">
                     <div className="flex w-full">
-                        <div className="card bg-primary text-neutral-content w-1/2">
-                            <div className="card-body items-start gap-3">
-                                <h2 className="card-title">Select file</h2>
-                                <div className="flex flex-wrap gap-3">
-                                    <input type="file" multiple onChange={handlePick} className="file-input file-input-ghost" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="divider divider-horizontal">OR</div>
+                        {/*<div className="card bg-primary text-neutral-content w-1/2">*/}
+                        {/*    <div className="card-body items-start gap-3">*/}
+                        {/*        <h2 className="card-title">Select file</h2>*/}
+                        {/*        <div className="flex flex-wrap gap-3">*/}
+                        {/*            <input type="file" multiple onChange={handlePick} className="file-input file-input-ghost" />*/}
+                        {/*        </div>*/}
+                        {/*    </div>*/}
+                        {/*</div>*/}
+                        
+                        {/*<div className="divider divider-horizontal">OR</div>*/}
 
                         <div className="card bg-primary text-neutral-content w-1/2">
                             <div className="card-body items-start gap-3">

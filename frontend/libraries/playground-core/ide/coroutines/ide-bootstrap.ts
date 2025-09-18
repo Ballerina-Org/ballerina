@@ -15,13 +15,13 @@ export const bootstrap =
                 listSpecs(), (_err: any) => {}).then(res =>{
                     debugger
                 return res.kind == "r" ?
-                    Co.SetState(Bootstrap.Updaters.Core.error(List([`Unknown error occured when loading specs: ${res}`])))
+                    Co.SetState(Ide.Updaters.CommonUI.bootstrapErrors(List([`Unknown error occured when loading specs: ${res}`])))
                     :
                     Co.SetState(
                         res.value.kind == "value" ? 
                             Updater(Bootstrap.Updaters.Core.ready(res.value.value)
                             )
-                            .then(Ide.Updaters.toChoose())
-                            : Bootstrap.Updaters.Core.error(res.value.errors))}),
+                            .then(Ide.Updaters.Template.choosePhase())
+                            : Ide.Updaters.CommonUI.bootstrapErrors(res.value.errors))}),
         ]
     );

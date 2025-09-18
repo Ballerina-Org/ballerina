@@ -1,13 +1,12 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
-import {Ide} from "playground-core";
+import {getOrInitSpec, Ide} from "playground-core";
 import {Themes} from "../../theme-selector.tsx";
-import {BasicFun, BasicUpdater} from "ballerina-core";
+import {BasicFun, BasicUpdater, Updater, Value} from "ballerina-core";
 
-type AddSpecProps = Ide & { setState: BasicFun<BasicUpdater<Ide>, void> };
+type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
-export const AddSpec = (props: AddSpecProps): React.ReactElement => {
-    return props.phase == "choose" && props.origin == "create" ? 
-        <fieldset className="fieldset ml-4">
+export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
+    return <fieldset className="fieldset ml-4">
             <div className="join">
                 <input
                     type="text"
@@ -16,18 +15,33 @@ export const AddSpec = (props: AddSpecProps): React.ReactElement => {
                     value={props.create.name.value}
                     onChange={(e) =>
                         props.setState(
-                            Ide.Updaters.specName(e.target.value))
+                            Ide.Updaters.CommonUI.specName(Value.Default(e.target.value)))
                     }
                 />
-                <button
-                    className="btn join-item"
-                    onClick={ async () => {
-                        const u = await Ide.Operations.toLockedSpec('create', props.create.name.value);
-                        props.setState(u);
-                    }
-                    }
-                >GO</button>
-    
+
+
+                <form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
+                    <button
+                        type="submit"
+                        className="btn join-item"
+                        onClick={ async () => {
+                            const vfs = await getOrInitSpec(props.specOrigin, props.create.name.value);
+                            if(vfs.kind == "errors") {
+                                props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
+                                return;
+                            }
+                            const u: Updater<Ide> = Ide.Operations.toLockedSpec('create', props.create.name.value, vfs.value)// as Updater<Ide>
+                            props.setState(u);
+                        }
+                        }
+                    >GO</button></form>
+
             </div>
-        </fieldset> : <></>
+        </fieldset> 
 }
+
+export const AddSpec = (props: AddSpecProps): React.ReactElement => {
+    return props.phase == "choose" && props.specOrigin == 'create'  ? 
+        <AddSpecInner {...props} /> : <></>
+}
+

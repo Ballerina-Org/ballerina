@@ -1,7 +1,7 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
-import {Ide, isFile, VfsWorkspace, VirtualFolderNode} from "playground-core";
+import {Ide, isFile, LockedSpec, VfsWorkspace, VirtualFolderNode} from "playground-core";
 import {Themes} from "../../theme-selector.tsx";
-import {BasicFun, BasicUpdater, Option, Updater} from "ballerina-core";
+import {BasicFun, BasicUpdater, Option, replaceWith, Updater} from "ballerina-core";
 import {HorizontalDropdown} from "../../dropdown.tsx";
 import {Breadcrumbs} from "./breadcrumbs.tsx";
 import {FolderFilter} from "./folder-filter.tsx";
@@ -11,6 +11,7 @@ import {Drawer} from "./drawer.tsx";
 type VfsLayoutProps = Ide & { setState: BasicFun<BasicUpdater<Ide>, void> };
 
 export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
+    debugger
     const folder =
         props.phase == "locked" 
         && props.locked.virtualFolders.selectedFolder.kind == "r" 
@@ -31,8 +32,8 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         && props.locked.virtualFolders.selectedFile.kind == "r"
         ? <MonacoEditor
             onChange={()=>{}}
-            key={props.locked.bridge.spec.left.specBody.value}
-            content={props.locked.bridge.spec.left.specBody.value}/> : <></>
+            key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.content)}
+            content={JSON.stringify(props.locked.virtualFolders.selectedFile.value.content)}/> : <></>
     
     const drawer =
         props.phase == "locked" 
@@ -41,19 +42,20 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
             selectNode={
                 (node: VirtualFolderNode) => {
                     if (isFile(node)) return ;
-                    const files = Array.from(node.children.values()).filter(x => isFile(x));//.map( x=>x.value);
+                    const files = Array.from(node.children.values()).filter(x => isFile(x));
             
                     const next =
-                        Updater(VfsWorkspace.Updaters.Core.selectedNode(node)).then(vfs =>
-                            files.length > 0
-                                ? ({...vfs, selectedFile: Option.Default.some(files[0])}): ({...vfs})
+                        LockedSpec.Updaters.Core.vfs(
+                            Updater(
+          
+                                    
+                                    vfs => ({ ...vfs, 
+                                        selectedFolder: Option.Default.some(node),
+                                        selectedFile: files.length > 0 ? Option.Default.some(files[0]): vfs.selectedFile,
+                                    }),
+                                )
                         )
-            
-                    props.setState(
-                        VfsWorkspace.Updaters.Core.selectedFolder(
-                            next
-                        )
-                    )
+                    props.setState(next)
                 }
             } drawerId="my-drawer" /> : <></>
     

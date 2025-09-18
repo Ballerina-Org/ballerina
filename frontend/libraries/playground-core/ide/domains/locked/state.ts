@@ -1,11 +1,15 @@
-﻿import {Bridge, BridgeState} from "../bridge/state";
-import {BasicUpdater, Option, Updater, Value} from "ballerina-core";
-import {VfsWorkspace} from "../vfs/state";
+﻿import {Option, replaceWith, Updater, Value} from "ballerina-core";
 import {Ide} from "../../state";
-import {Spec} from "../spec/state";
+import {KnownSections, VfsWorkspace} from "./vfs/state";
+import {Seeds} from "../seeds/state";
+import {validate} from "../../api/specs";
+import {CommonUI} from "../ui/state";
+export type LockedStep =
+    | { step: 'design' }
+    | { step: 'outcome' };
 
 export type LockedSpec = {
-    bridge: BridgeState,
+    seeds: Option<Seeds>, //: BridgeState,
     launchers: string [],
     selectedLauncher: Option<Value<string>>,
     virtualFolders: VfsWorkspace,
@@ -15,34 +19,40 @@ export type LockedSpec = {
 export const LockedSpec = {
     Updaters: {
         Core: {
-            Default: (spec: Spec, workspace: VfsWorkspace): LockedSpec => ({
+            Default: (workspace: VfsWorkspace): LockedSpec => ({
                 launchers: [], //spec.v1.launchers ? Array.from(Object.keys(spec.v1.launchers)): [],
                 selectedLauncher: Option.Default.none(),
-                bridge: Bridge.Default(spec),
+                seeds: Option.Default.none(),
                 virtualFolders: workspace,
                 mode: 'spec',
             }),
-            toSchemaMode: (): Updater<Ide> =>
-                Updater(ide =>
-                    ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, mode: 'schema' }})),
-            toSpecMode: (): Updater<Ide> =>
-                Updater(ide =>
-                    ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, mode: 'spec' }})),
             seed: (seeds: any): Updater<Ide> =>
-                Updater(ide =>
-                    ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, bridge: {...ide.locked.bridge, seeds: seeds}}})),
+                Updater(ide => ide.phase !== "locked" ? ide : ({...ide, lockedPhase: {...ide.locked, seeds: seeds}})),
             selectLauncher: (name: string): Updater<Ide> =>
                 Updater(ide =>
-                        ide.phase == 'locked'
-                        ? ({...ide, locked: {...ide.locked, selectedLauncher: Option.Default.some(Value.Default(name))}})
+                    ide.phase == 'locked'
+                        ? ({
+                            ...ide,
+                            lockedPhase: {...ide.locked, selectedLauncher: Option.Default.some(Value.Default(name))}
+                        })
                         : ({...ide})),
-            bridge: {
-                v1: (value: string): Updater<Ide> =>
-                    Updater(ide =>
-                        ide.phase == 'locked'
-                            ? ({...ide, locked: {...ide.locked, bridge: Bridge.Updaters.Template.setV1Body(Value.Default(value))(ide.locked.bridge)}})
-                            : ({...ide})),
-            }
+            vfs: (vfs: Updater<VfsWorkspace>): Updater<Ide> =>
+                Updater(ide =>
+                    ide.phase == 'locked'
+                        ? ({...ide, locked: {...ide.locked, virtualFolders: vfs(ide.locked.virtualFolders)}})
+                        : ({...ide})),
+
         }
+    },
+    Operations: {
+        merge: (merged: KnownSections): Updater<Ide> =>
+            LockedSpec.Updaters.Core.vfs(
+                VfsWorkspace.Updaters.Core.merged(
+                    replaceWith(
+                        Option.Default.some(merged)
+                    )
+                )
+            )
     }
+    
 }

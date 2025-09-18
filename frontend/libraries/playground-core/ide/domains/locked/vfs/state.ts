@@ -1,11 +1,10 @@
-﻿import {BasicUpdater, Option, simpleUpdater, Updater} from "ballerina-core";
-import {Ide} from "../../state";
+﻿import {Option, simpleUpdater} from "ballerina-core";
 import { Map } from "immutable";
-//import {EncodedContent} from "../spec/backend-model";
 export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
-export type JsonSection<K extends TopLevelKey = TopLevelKey> = Record<string, any>;
-
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
+export type JsonSection = Record<string, JsonValue>;
 export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
 
 export type VirtualJsonFile = {
@@ -20,13 +19,21 @@ export type VirtualJsonFile = {
 export type VirtualFolderNode =
     | { kind: "folder"; name: string; path: string[]; children: Map<string, VirtualFolderNode>, staged?: boolean }
     | { kind: "file" } & VirtualJsonFile;
+export const VirtualFolderNode = {
+    fromFile(f: VirtualJsonFile): VirtualFolderNode {
+        return { kind: "file", ...f };
+    }
+};
+
 type FolderVariant = Extract<VirtualFolderNode, { kind: "folder" }>;
 type FileVariant   = Extract<VirtualFolderNode, { kind: "file" }>;
 
 export const isFolder = (n: VirtualFolderNode): n is FolderVariant =>
     n.kind === "folder";
+
 export const isFile = (n: VirtualFolderNode): n is FileVariant =>
     n.kind === "file";
+
 export type VfsWorkspace = {
     root: VirtualFolderNode;                                   
     //files: VirtualJsonFile[];                                  
@@ -36,14 +43,7 @@ export type VfsWorkspace = {
 };
 
 
-const CoreUpdaters = {
-    ...simpleUpdater<VfsWorkspace>()("selectedFile"),
-}
-
 export const VirtualFolders = {
-    Updaters: {
-        Core: CoreUpdaters,
-    },
     Operations: {
         isLeafFolderNode(node: VirtualFolderNode): boolean {
             if (node.kind !== "folder") return false;
@@ -156,8 +156,9 @@ export const VirtualFolders = {
         buildWorkspaceFromRoot(origin: 'existing' | 'create', root: VirtualFolderNode): VfsWorkspace {
             
             const fs: Option<VirtualJsonFile> =
-                origin == 'create' 
-                && isFolder(root) 
+                //origin == 'create' 
+               // && 
+                isFolder(root) 
                 && Array.from(root.children.values()).filter(x => isFile(x)).length > 0 
                     ? Option.Default.some(Array.from(root.children.values()).filter(x => isFile(x))[0])
                     : Option.Default.none();
@@ -166,7 +167,7 @@ export const VirtualFolders = {
                 root, 
                 merged: Option.Default.none(),
                 selectedFile: fs,
-                selectedFolder: origin == 'create' ?  Option.Default.some(root)  : Option.Default.none()
+                selectedFolder: Option.Default.some(root)
             }
         },
         // createEmptySpec: async (specName: string): Promise<VfsWorkspace> => {
@@ -236,14 +237,10 @@ export const VirtualFolders = {
 export const VfsWorkspace = {
     Updaters: {
         Core: {
-            selectedNode: (node: VirtualFolderNode): BasicUpdater<VfsWorkspace> =>
-                (vfs: VfsWorkspace) => ({...vfs, selectedFolder: Option.Default.some(node)}),
-            selectedFile: (file: VirtualJsonFile): Updater<VfsWorkspace> =>
-                Updater((vfs: VfsWorkspace) => ({...vfs, selectedFile: Option.Default.some(file)})),
-            selectedFolder: (vfs: Updater<VfsWorkspace>): Updater<Ide> => Updater((ide: Ide): Ide =>
-                  ide.phase == 'locked'
-                      ? ({...ide, locked: {...ide.locked, virtualFolders: vfs(ide.locked.virtualFolders) }})
-                      : ({...ide})),
+            ...simpleUpdater<VfsWorkspace>()("selectedFile"),
+            ...simpleUpdater<VfsWorkspace>()("merged"),
+            ...simpleUpdater<VfsWorkspace>()("selectedFolder"),
+                    
         }
     }
 }

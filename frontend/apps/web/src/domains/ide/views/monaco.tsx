@@ -59,9 +59,9 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
 
     return (
         <div className="h-[70vh] flex flex-col gap-2">
-            {/*<div className="flex gap-2">*/}
-            {/*    <button className="btn btn-sm btn-accent" onClick={format}>Format JSON</button>*/}
-            {/*</div>*/}
+            <div className="flex gap-2 ml-5">
+                <button className="btn btn-sm btn-info" onClick={format}>Format JSON</button>
+            </div>
 
             <Editor
                 height="100%"

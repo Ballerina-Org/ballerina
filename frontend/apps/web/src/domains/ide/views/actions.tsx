@@ -24,7 +24,7 @@ type ActionKey =
     | "run" | "merge" 
     | "left" | "right" | "lock" 
 
-const size = 20;
+const size = 22;
 
 type ActionsProps = {
     context: Ide;
@@ -38,7 +38,6 @@ type ActionsProps = {
     onRun?: () => void;
     onRunCondition?: boolean;
     onSave?: () => void;
-    onValidateBridge?: () => void;
     onMerge?: () => void;
     onLeft?: () => void;
     onRight?: () => void;
@@ -50,19 +49,20 @@ export const Actions: React.FC<ActionsProps> = ({
             hideRight = false,
             onAction,
             canRun = true,
+    
             onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onLeft, onRight
 
         }) => (
-    <div className={"p-5 mt-7 flex space-x-1"}>
-        {context.phase === "choose" && context.origin === "existing" && (
-            <button
-                className="btn tooltip tooltip-bottom"
-                data-tip="New spec"
-                onClick={onNew}
-            >
-                <VscNewFile size={size} />
-            </button>
-        )}
+    <div className={"p-5 mt-3.5 flex space-x-1"}>
+        {/*{context.phase === "choose" && context.specOrigin === "existing" && (*/}
+        {/*    <button*/}
+        {/*        className="btn tooltip tooltip-bottom"*/}
+        {/*        data-tip="New spec"*/}
+        {/*        onClick={onNew}*/}
+        {/*    >*/}
+        {/*        <VscNewFile size={size} />*/}
+        {/*    </button>*/}
+        {/*)}*/}
 
         { context.phase == "locked" &&
             <label

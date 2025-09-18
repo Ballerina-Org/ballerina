@@ -1,4 +1,4 @@
-﻿import {KnownSections, TopLevelKey, VirtualFolderNode, VirtualJsonFile} from "../vfs/state";
+﻿import {KnownSections, TopLevelKey, VirtualFolderNode, VirtualJsonFile} from "../locked/vfs/state";
 
 type Path = string[];
 
@@ -85,7 +85,7 @@ export function fromSlimJson(
                 content,
                 topLevels: opts?.mkTopLevels?.(name, (n as any).path, content) ?? [],
             };
-            return { kind: "file", value: vfile };
+            return VirtualFolderNode.fromFile(vfile);
         }
 
         if (n.kind === "folder") {
@@ -94,7 +94,7 @@ export function fromSlimJson(
             const children = Map<string, VirtualFolderNode>();
             for (const chRaw of childrenArr) {
                 const child = go(chRaw);
-                const key = child.kind === "folder" ? child.name : child.value.name;
+                const key = child.kind === "folder" ? child.name : child.name;
                 children.set(key, child);
             }
             return { kind: "folder", name: n.name as string, path: (n as any).path, children };
@@ -109,7 +109,7 @@ export function fromSlimJson(
 
 export function toSlimJson(node: VirtualFolderNode, includeContent = false): unknown {
     if (node.kind === "file") {
-        const { name, path, content } = node.value;
+        const { name, path, content } = node;
         return includeContent ? { kind: "file", name, path, content } : { kind: "file", name, path };
     } else {
         return {

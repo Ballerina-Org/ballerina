@@ -8,7 +8,7 @@ type SpecificationLabelProps = Ide;
 
 export const SpecificationLabel = (props: SpecificationLabelProps): React.ReactElement => {
     return props.phase == 'locked' ? <fieldset className="fieldset pl-5">
-        <legend className="fieldset-legend">Specification name</legend>
+        <legend className="fieldset-legend pl-2">Specification name</legend>
         <input disabled={true} type="text" className="input" value={props.create.name.value} placeholder="Spec name" />
     </fieldset> : <></>
 }

@@ -370,7 +370,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     tableApiSources: DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
                                     lookupSources: UnmockingApisLookups.lookupSources,
                                     
-                                    getFormsConfig: () => PromiseRepo.Default.mock(() => JSON.parse(props.spec)),
+                                    getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
                                     IdWrapper,
                                     ErrorRenderer,
                                     injectedPrimitives: [
