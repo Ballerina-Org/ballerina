@@ -730,8 +730,13 @@ module Validator =
             |> Sum.map ignore
 
           return ExprType.TableType localType
+        | _, FormBody.Annotated annotated ->
+          do!
+            NestedRenderer.Validate codegen ctx localType annotated.Renderer
+            |> Sum.map ignore
 
-        | _ -> return! sum.Throw(Errors.Singleton $"Error: mismatched form type and form body")
+          localType
+        | _ -> return! sum.Throw(Errors.Singleton $"Error: mismatched form type {localType} and form body {body.Type}")
       }
 
     static member ValidatePredicates
@@ -802,6 +807,16 @@ module Validator =
               [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
 
             return! validateGroupPredicates ctx typeCheck vars localType visibleExpr
+        | FormBody.Annotated annotated ->
+          do!
+            NestedRenderer.ValidatePredicates
+              FormConfig.ValidatePredicates
+              ctx
+              typeCheck
+              globalType
+              rootType
+              localType
+              annotated.Renderer
       }
 
   and FormConfig<'ExprExtension, 'ValueExtension> with
