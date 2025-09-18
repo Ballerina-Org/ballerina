@@ -220,13 +220,7 @@ export const ListAbstractRenderer = <
                 ? undefined
                 : (flags) => (customUpdater?: BasicUpdater<PredicateValue>) => {
                     const updater = customUpdater ?? id;
-                    const defaultElementValue = GetDefaultElementValue();
-
-                    const updatedValue = PredicateValue.Operations.IsTuple(
-                      defaultElementValue,
-                    )
-                      ? updater(defaultElementValue)
-                      : defaultElementValue;
+                    const updatedValue = updater(GetDefaultElementValue());
 
                     const delta: DispatchDelta<Flags> = {
                       kind: "ArrayAdd",
