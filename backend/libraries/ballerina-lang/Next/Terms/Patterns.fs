@@ -116,9 +116,9 @@ module Patterns =
       | other -> sum.Throw(Errors.Singleton $"Expected an Ext but got {other}")
 
   type Expr<'T> with
-    static member AsUnionDes(e: Expr<'T>) : Sum<Map<Identifier, CaseHandler<'T>>, Errors> =
+    static member AsUnionDes(e: Expr<'T>) : Sum<Map<Identifier, CaseHandler<'T>> * Option<Expr<'T>>, Errors> =
       match e with
-      | Expr.UnionDes m -> sum.Return m
+      | Expr.UnionDes(m, f) -> sum.Return(m, f)
       | other -> sum.Throw(Errors.Singleton $"Expected a union destruct but got {other}")
 
     static member AsUnionCons(e: Expr<'T>) : Sum<Identifier * Expr<'T>, Errors> =

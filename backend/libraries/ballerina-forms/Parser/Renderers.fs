@@ -947,42 +947,7 @@ module Renderers =
       state.Either3 parseAsUnionRenderer parseAsOneRenderer parseAsRecordRenderer
       |> state.MapError(Errors.HighestPriority)
 
-    static member ParseAnnotatedRenderer
-      (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
-      (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
-      (jsonFields: (string * JsonValue)[])
-      : State<
-          {| TypeId: ExprTypeId
-             Body: FormBody<'ExprExtension, 'ValueExtension> |},
-          CodeGenConfig,
-          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
-         >
-      =
-      state {
-        match jsonFields |> Array.sortBy fst with
-        | [| "renderer", rendererJson; "type", typeJson |] ->
-          return!
-            state {
-              let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
-              let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
-              let! typeBinding = s.TryFindType typeName |> state.OfSum
-              let! body = NestedRenderer.Parse primitivesExt exprParser rendererJson
 
-              {| TypeId = typeBinding.TypeId
-                 Body =
-                  FormBody.Annotated
-                    {| Type = typeBinding.Type
-                       Renderer = body |} |}
-            }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
-        | _ ->
-          return!
-            state.Throw(
-              Errors.Singleton
-                $"""Error: cannot parse renderer annotation from  keys {jsonFields |> Array.map fst |> String.concat ", "}"""
-            )
-      }
 
 
 
@@ -1132,12 +1097,6 @@ module Renderers =
                                         form |> FormConfig<'ExprExtension, 'ValueExtension>.Id,
                                         tableType.Type |> ExprType.TableType,
                                         tableApi |> fst |> TableApi.Id
-                                      )
-                                  | FormBody.Annotated annotated ->
-                                    return
-                                      FormRenderer(
-                                        form |> FormConfig<'ExprExtension, 'ValueExtension>.Id,
-                                        annotated.Type
                                       )
                                 }
                                 |> state.MapError(Errors.WithPriority ErrorPriority.High)

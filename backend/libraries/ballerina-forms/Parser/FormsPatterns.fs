@@ -73,7 +73,6 @@ module FormsPatterns =
       match fb with
       | FormBody.Record fs -> state { return fs }
       | FormBody.Union _
-      | FormBody.Annotated _
       | FormBody.Table _ -> state.Throw(Errors.Singleton $"Error: expected fields in form body, found cases.")
 
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
@@ -113,4 +112,3 @@ module FormsPatterns =
       | FormBody.Record f -> f.RecordType
       | FormBody.Union f -> f.UnionType
       | FormBody.Table f -> f.RowType |> ExprType.TableType
-      | FormBody.Annotated f -> f.Type

@@ -130,20 +130,15 @@ module Runner =
       state {
         let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
-        return!
-          state.Either
-            (state {
-              let! typeJson = (fields |> state.TryFindField "type")
-              let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
-              let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
-              let! typeBinding = s.TryFindType typeName |> state.OfSum
-              let! body = FormBody.Parse primitivesExt exprParser fields typeBinding.TypeId
+        let! typeJson = (fields |> state.TryFindField "type")
+        let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+        let! typeBinding = s.TryFindType typeName |> state.OfSum
+        let! body = FormBody.Parse primitivesExt exprParser fields typeBinding.TypeId
 
-              return
-                {| TypeId = typeBinding.TypeId
-                   Body = body |}
-            })
-            (FormBody.ParseAnnotatedRenderer primitivesExt exprParser fields)
+        return
+          {| TypeId = typeBinding.TypeId
+             Body = body |}
       }
       |> state.WithErrorContext $"...when parsing form {formName}"
 

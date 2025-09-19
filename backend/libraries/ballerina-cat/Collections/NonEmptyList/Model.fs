@@ -21,6 +21,10 @@ module NonEmptyList =
       match l with
       | NonEmptyList(_, t) -> t
 
+    static member rev(l: NonEmptyList<'e>) =
+      let l = l |> NonEmptyList.ToList |> List.rev
+      NonEmptyList.OfList(l.Head, l.Tail)
+
     static member map (f: 'e -> 'b) (l: NonEmptyList<'e>) =
       match l with
       | NonEmptyList(h, t) -> NonEmptyList(f h, t |> List.map f)

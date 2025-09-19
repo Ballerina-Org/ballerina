@@ -178,6 +178,18 @@ module Model =
         return res
       }
 
+
+    member parser.Not(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<Unit, 'sym, 'loc, 'err> =
+      parser {
+        let! s = parser.State
+        let! res = p |> parser.Try
+        do! parser.SetState s
+
+        match res with
+        | Left _res -> return! parser.Throw err.AnyFailed
+        | Right _err -> return ()
+      }
+
     member parser.AtLeastOne(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<NonEmptyList<'a>, 'sym, 'loc, 'err> =
       parser {
         let! x = p
