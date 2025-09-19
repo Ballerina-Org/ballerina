@@ -1,190 +1,151 @@
 ﻿import * as React from "react";
-import TreeView, {INode, NodeId} from "react-accessible-treeview";
+import TreeView, {NodeId,  flattenTree } from "react-accessible-treeview";
 import { VscFolder, VscFile } from "react-icons/vsc";
 
-import {VirtualFolderNode, VirtualFolders, VirtualJsonFile} from "playground-core";
+import {FlatNode, IFlatMetadata, INode, Meta, VirtualFolders} from "playground-core";
+import {BasicFun, Option, Unit} from "ballerina-core";
 
+/*
+* used for:
+* 1. preselect files/folders for upload 
+* 2. selecting current folder after upload (must be a leaf folder)
+* */
 
-type Meta = {
-    kind: "dir" | "file";
-    path: string;
-    size?: number;
-    isLeafFolder?: boolean;
-    staged?: boolean;
-};
-//
-
-const split = (path: string) : string[] => path.split("/");
-type FlatNode = INode<Meta>;
-
-
-
-export function joinPath(segs: string[] | string): string {
-    return Array.isArray(segs) ? segs.join("/") : segs;
-}
-const parentPath = (segs: string[]): string | null =>{
-    if(segs == undefined){
-        debugger
-    }
-    return segs.length <= 1 ? null : joinPath(segs.slice(0, segs.length - 1));}
-export const flattenVfsToINodes = (root: VirtualFolderNode): INode<Meta>[] => {
-    const go = (f: VirtualFolderNode): INode<Meta>[] => {
-        const id = joinPath(f.path);
-        if (f.kind === "file") {
-            
-            return [
-                {
-                    id,
-                    name: f.name,
-                    parent: parentPath(f.path),
-                    metadata: {
-                        kind: "file",
-                        path: id,
-                        size: f.fileRef?.size,
-                        staged: f.sync?.status === "local",
-                    },
-                    children: [], 
-                } as INode<Meta>,
-            ];
-        }
-        
-        const isLeafFolder = ![...f.children.values()].some(c => c.kind === "folder");
-        return [
-            {
-                id,
-                name: f.name,
-                parent: parentPath(f.path),
-                metadata: {
-                    kind: "dir",
-                    path: id,
-                    isLeafFolder,
-                    staged: f.staged,
-                },
-                children: [], // flat
-            } as INode<Meta>,
-            ...[...f.children.values()].flatMap(go),
-        ];
-    };
-
-    return go(root);
-};
 type AccessibleTreeVfsProps = {
-    root: VirtualFolderNode;
-    stagedPath?: string | null;
-    onStageChange?: (nextPath: string | null) => void;
+    mode: 'upload' | 'select-current-folder';
+    initNodes: FlatNode[];
+    onUpload: BasicFun<FlatNode[], void>;
+    onSelectedFolder: BasicFun<FlatNode, void>
     expandFoldersByDefault?: boolean;
 };
-//
-// type FolderNode = Extract<VirtualFolderNode, { kind: "folder" }>;
-//
-// function isFolder(n: VirtualFolderNode): n is FolderNode {
-//     return n.kind === "folder";
-// }
-//
-// function findFolderByPath(root: VirtualFolderNode, path: string): FolderNode  {
-//     let found: FolderNode | null = null;
-//
-//     const visit = (node: VirtualFolderNode): void => {
-//         if (found) return;
-//         if (isFolder(node)) {
-//             if (node.path === path) {
-//                 found = node;
-//                 return;
-//             }
-//             node.children.forEach(child => visit(child));
-//         }
-//     };
-//
-//     visit(root);
-//     return found! as FolderNode;
-// }
-//
-// export function getDirectFilesFromFolder(root: VirtualFolderNode, folderPath: string ):  { folder: FolderNode; files: VirtualJsonFile[] }   {
-//
-//     const folder = findFolderByPath(root, folderPath);
-//
-//
-//     const files: VirtualJsonFile[] = [];
-//     folder?.children.forEach(child => {
-//         if (child.kind === "file") files.push(child.value);
-//     });
-//     return { folder, files };
-// }
-//
-function folderHasDirectFiles(root: VirtualFolderNode, folderPath: string[]): boolean {
-    let has = false;
-    const visit = (node: VirtualFolderNode): void => {
-        if (has) return;
-        if (node.kind === "folder") {
-            if (node.path === folderPath) {
-                node.children.forEach(ch => {
-                    if (ch.kind === "file") has = true;
-                });
-                return;
-            }
-            node.children.forEach(visit);
-        }
-    };
-    visit(root);
-    return has;
-}
 
 export function AccessibleTreeVfs({
-          root,
-          stagedPath = null,
-          onStageChange,
-          expandFoldersByDefault = true
-      }: AccessibleTreeVfsProps) {
-    debugger
-    const data = React.useMemo<INode<Meta>[]>(() => flattenVfsToINodes(root), [root]);
+      mode,
+      initNodes,
+      onUpload,
+      onSelectedFolder,
+      expandFoldersByDefault = mode == 'select-current-folder'
+  }: AccessibleTreeVfsProps) {
 
-    const folderIds: NodeId[] = React.useMemo(
-        () => data.filter(d => d.isBranch || (d.children?.length ?? 0) > 0).map(d => d.id),
-        [data]
-    );
-    
+    //const data = React.useMemo<FlatNode[]>(() => nodes, [nodes]);
+    const [data, setData] = React.useState<FlatNode[]>(initNodes);
+    const [selectedFolder, setSelectedFolder] = React.useState<Option<FlatNode>>(Option.Default.none());
+    // const folderIds: NodeId[] = React.useMemo(
+    //     () => data.filter(d => d.isBranch || (d.children?.length ?? 0) > 0).map(d => d.id),
+    //     [data]
+    // );
+    const folderIds: NodeId[] = initNodes.filter(d => d.isBranch || (d.children?.length ?? 0) > 0).map(d => d.id);
+    const folder2 = {
+        name: "",
+        children: [
+            {
+                name: "src",
+                children: [{ name: "index.js" }, { name: "styles.css" }],
+            },
+            {
+                name: "node_modules",
+                children: [
+                    {
+                        name: "react-accessible-treeview",
+                        children: [{ name: "index.js" }],
+                    },
+                    { name: "react", children: [{ name: "index.js" }] },
+                ],
+            },
+            {
+                name: ".npmignore",
+            },
+            {
+                name: "package.json",
+            },
+            {
+                name: "webpack.config.js",
+            },
+        ],
+    };
+
+    const data2 = flattenTree(folder2);
     const renderFolderToggle = React.useCallback(
-        (element: INode<Meta>) => {
-            const isFolder = element.metadata?.kind === "dir";
-            if (!isFolder) return null;
+        (element: FlatNode) => {
+            //const isFolder = element.metadata?.kind === "dir";
+            //if (!isFolder) return null;
 
             const path = String(element.metadata?.path ?? element.id).split('/');
-            const checked = stagedPath?.split('/') === path;
+           // const checked = stagedPath?.split('/') === path;
             
-            const hasFiles = folderHasDirectFiles(root, path);
-
-            return (
-                <input
+           // const hasFiles = folderHasDirectFiles(nodes, path);
+            const md =
+                mode == "select-current-folder" ? <input
                     type="checkbox"
                     className="toggle toggle-xs ml-1"
-                    checked={checked}
-                    disabled={!hasFiles}
+                    checked={element.metadata.checked}
+                    disabled={!element.metadata.isLeafFolder}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         e.stopPropagation();
-                        const next = e.currentTarget.checked ? path : null;
-                        //onStageChange?.(next);
-                        const el = document.querySelector(".accept-selected") as HTMLElement | null; 
+   
+                        setSelectedFolder(Option.Default.some(element))
+                        const el = document.querySelector(".accept-selected") as HTMLElement | null;
                         el?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`Stage folder ${element.name}`}
-                    title={hasFiles ? "Stage this folder" : "No files directly in this folder"}
+                    //title={hasFiles ? "Stage this folder" : "No files directly in this folder"}
+                />:<input
+                    type="checkbox"
+                    className="toggle toggle-xs ml-1"
+                    checked={element.metadata.checked}
+                    disabled={false}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        e.stopPropagation();
+                        const next = data.map(x => x.id == element.id ? ({...x, metadata: {...x.metadata, checked: !x.metadata.checked} }): x)
+                        setData(next);
+                        onUpload(next);
+                        //const next = e.currentTarget.checked ? path : null;
+                        //onStageChange?.(next);
+                        const el = document.querySelector(".accept-selected") as HTMLElement | null;
+                        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Stage folder ${element.name}`}
+                    //title={hasFiles ? "Stage this folder" : "No files directly in this folder"}
                 />
-            );
+            return (md);
+        
         },
-        [stagedPath, onStageChange, root]
+        [mode, initNodes]
     );
-
+    debugger
     return (
+        <>{
+            mode == 'upload' ? 
+                <button
+                    //disabled={!canAccept}
+                    className="btn btn-accent btn-block mt-7 accept-selected"
+                    onClick={() => {
+                        onUpload(initNodes);
+                    }}
+                >
+                    `Upload selected items (${initNodes.length})` 
+                </button>
+               :<button
+                    disabled={selectedFolder.kind == "l"}
+                    className="btn btn-accent btn-block mt-7 accept-selected"
+                    onClick={() => {
+                        selectedFolder.kind == "r" && onSelectedFolder(selectedFolder.value);
+                    }}
+                >
+                    `Accept selected folder (${selectedFolder.kind == "r" ? selectedFolder.value.name : ""})`
+                </button>}
         <div className="card bg-base-100 shadow w-full">
             <div className="card-body p-3">
                 <TreeView
-                    data={data}
+                    data={data2 as any[]}
                     aria-label="Virtual Files"
                     className="text-sm"
                     defaultExpandedIds={expandFoldersByDefault ? folderIds : []}
                     nodeRenderer={(args: any) => {
-                        const element = args.element as INode<Meta>;
+                        debugger
+                        const element = args.element as FlatNode;
                         const {getNodeProps, level, isBranch, isExpanded, handleExpand} = args;
                         const isFolder = element.metadata?.kind === "dir";
                         return (
@@ -205,21 +166,21 @@ export function AccessibleTreeVfs({
                   {element.name}
                 </span>
                                 
-                                {renderFolderToggle(element)}
+                                {/*{renderFolderToggle(element)}*/}
                                 {!isFolder && typeof element.metadata?.size === "number" && (
                                     <span className="badge badge-ghost badge-xs ml-1">
                     {VirtualFolders.Operations.formatBytes(Number(element.metadata.size))}
                   </span>
                                 )}
-                                {isFolder && stagedPath === element.metadata?.path && (
-                                    <span className="badge badge-primary badge-xs ml-1">staged</span>
-                                )}
+                                {/*{isFolder && stagedPath === element.metadata?.path && (*/}
+                                {/*    <span className="badge badge-primary badge-xs ml-1">staged</span>*/}
+                                {/*)}*/}
                             </div>
                         );
                     }}
                 />
             </div>
-        </div>
+        </div></>
     );
 }
 

@@ -1,58 +1,60 @@
 ﻿import {Option, simpleUpdater} from "ballerina-core";
 import { Map } from "immutable";
+import {FlatNode, SimpleNode} from "./upload/model";
 export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
 export type JsonSection = Record<string, JsonValue>;
 export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
-
-export type VirtualJsonFile = {
-    name: string,
-    path: string[];                   
-    fileRef?: File;                    
-    content: KnownSections;          
-    topLevels: TopLevelKey[];
-    sync?: { status: "local" | "synced"; etag?: string };
-};
-
-export type VirtualFolderNode =
-    | { kind: "folder"; name: string; path: string[]; children: Map<string, VirtualFolderNode>, staged?: boolean }
-    | { kind: "file" } & VirtualJsonFile;
-export const VirtualFolderNode = {
-    fromFile(f: VirtualJsonFile): VirtualFolderNode {
-        return { kind: "file", ...f };
-    }
-};
-
-type FolderVariant = Extract<VirtualFolderNode, { kind: "folder" }>;
-type FileVariant   = Extract<VirtualFolderNode, { kind: "file" }>;
-
-export const isFolder = (n: VirtualFolderNode): n is FolderVariant =>
-    n.kind === "folder";
-
-export const isFile = (n: VirtualFolderNode): n is FileVariant =>
-    n.kind === "file";
+//
+// export type VirtualJsonFile = {
+//     name: string,
+//     path: string[];                   
+//     fileRef?: File;                    
+//     content: KnownSections;          
+//     topLevels: TopLevelKey[];
+//     sync?: { status: "local" | "synced"; etag?: string };
+// };
+//
+// export type VirtualFolderNode =
+//     | { kind: "folder"; name: string; path: string[]; children: Map<string, VirtualFolderNode>, staged?: boolean }
+//     | { kind: "file" } & VirtualJsonFile;
+// export const VirtualFolderNode = {
+//     fromFile(f: VirtualJsonFile): VirtualFolderNode {
+//         return { kind: "file", ...f };
+//     }
+// };
+//
+// type FolderVariant = Extract<VirtualFolderNode, { kind: "folder" }>;
+// type FileVariant   = Extract<VirtualFolderNode, { kind: "file" }>;
+//
+// export const isFolder = (n: VirtualFolderNode): n is FolderVariant =>
+//     n.kind === "folder";
+//
+// export const isFile = (n: VirtualFolderNode): n is FileVariant =>
+//     n.kind === "file";
 
 export type VfsWorkspace = {
-    root: VirtualFolderNode;                                   
-    //files: VirtualJsonFile[];                                  
+    //root: FlatNode;                                   
+    //files: VirtualJsonFile[];      
+    nodes: FlatNode;
     merged: Option<KnownSections>;    
-    selectedFolder: Option<VirtualFolderNode>;
-    selectedFile: Option<VirtualJsonFile>;
+    selectedFolder: Option<FlatNode>;
+    selectedFile: Option<FlatNode>;
 };
 
 
 export const VirtualFolders = {
     Operations: {
-        isLeafFolderNode(node: VirtualFolderNode): boolean {
-            if (node.kind !== "folder") return false;
-            let onlyFiles = true;
-            node.children.forEach(child => {
-                if (child.kind === "folder") onlyFiles = false;
-            });
-            return onlyFiles;
-        },
+        // isLeafFolderNode(node: VirtualFolderNode): boolean {
+        //     if (node.kind !== "folder") return false;
+        //     let onlyFiles = true;
+        //     node.children.forEach(child => {
+        //         if (child.kind === "folder") onlyFiles = false;
+        //     });
+        //     return onlyFiles;
+        // },
         // markFolderAsStaged(root: VirtualFolderNode, targetPath: string): void {
         //     const visit = (node: VirtualFolderNode) => {
         //         if (node.kind === "folder") {
@@ -153,21 +155,13 @@ export const VirtualFolders = {
         //         merged: VirtualFolders.Operations.mergeWorkspaceSections(root)
         //     };
         // },
-        buildWorkspaceFromRoot(origin: 'existing' | 'create', root: VirtualFolderNode): VfsWorkspace {
-            
-            const fs: Option<VirtualJsonFile> =
-                //origin == 'create' 
-               // && 
-                isFolder(root) 
-                && Array.from(root.children.values()).filter(x => isFile(x)).length > 0 
-                    ? Option.Default.some(Array.from(root.children.values()).filter(x => isFile(x))[0])
-                    : Option.Default.none();
+        buildWorkspaceFromRoot(origin: 'existing' | 'create', nodes: FlatNode): VfsWorkspace {
             debugger
             return {
-                root, 
+                nodes, 
                 merged: Option.Default.none(),
-                selectedFile: fs,
-                selectedFolder: Option.Default.some(root)
+                selectedFile: Option.Default.none(),
+                selectedFolder: Option.Default.none(),
             }
         },
         // createEmptySpec: async (specName: string): Promise<VfsWorkspace> => {

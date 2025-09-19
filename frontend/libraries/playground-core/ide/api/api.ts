@@ -25,12 +25,16 @@ export async function axiosVOE<T, R = any>(
             headers: { Accept: "application/json", ...(config.headers || {}) },
             ...config,
         });
-    
+        
         if (res.status >= 200 && res.status < 300) {
-            return ValueOrErrors.Default.return(res.data as T )
+           
+            const data: any = parser ? parser(res.data) : res.data;
+           
+            return ValueOrErrors.Default.return(data as T )
         }
     
         const data: any = parser ? parser(res.data) : res.data;
+        
         const merged = Array.from(
             new Set(
                 [

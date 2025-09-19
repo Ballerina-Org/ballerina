@@ -1,12 +1,24 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
-import {getOrInitSpec, Ide} from "playground-core";
+import {FlatNode, getOrInitSpec, Ide, postVfs, VirtualFolders} from "playground-core";
 import {Themes} from "../../theme-selector.tsx";
-import {BasicFun, BasicUpdater, Updater, Value} from "ballerina-core";
+import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
+import {VscFolderLibrary} from "react-icons/vsc";
+import MultiSelectCheckboxControlled from "../vfs/example.tsx";
+import {fileListToFlatTree, uploadAllFileNodes} from "./modal.tsx";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
-    return <fieldset className="fieldset ml-4">
+    const [node, setNode] = React.useState<Option<FlatNode>>(Option.Default.none());
+    const handlePick = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const list = e.currentTarget.files;
+        if (!list || list.length === 0) return;
+
+        const node = await fileListToFlatTree(list);
+        setNode(Option.Default.some(node));
+    }, []);
+    
+    return <fieldset className="fieldset ml-4 w-full">
             <div className="join">
                 <input
                     type="text"
@@ -19,8 +31,21 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                     }
                 />
 
+                <form className={"flex"} onSubmit={(e: React.FormEvent) => e.preventDefault()}>
+         
+                    <label
+                        htmlFor="my-drawer" 
+                        className="btn tooltip tooltip-bottom join-item"
+                        onClick={()=>{
+                            const u = Ide.Updaters.Template.startUpload()
+                            props.setState(u)
+                        }}
+                        data-tip="Virtual Folders">
+                        <VscFolderLibrary className="mt-2" size={20}/>
+                       
+                    </label>
 
-                <form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
+                  
                     <button
                         type="submit"
                         className="btn join-item"
@@ -30,13 +55,80 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                                 props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                 return;
                             }
-                            const u: Updater<Ide> = Ide.Operations.toLockedSpec('create', props.create.name.value, vfs.value)// as Updater<Ide>
+                            const u: Updater<Ide> =
+                                Ide.Updaters.Template.lockedPhase('create','manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
                             props.setState(u);
                         }
                         }
                     >GO</button></form>
 
-            </div>
+                    </div>
+        {props.phase == 'choose' && props.details == 'upload-in-progress' && <progress className="progress progress-success w-56" value="100" max="100"></progress>}
+        {
+            props.phase == 'choose' && props.details == 'upload-started'
+            &&
+            <div className="card bg-gray-200 text-black w-full">
+                <div className="card-body items-start gap-3">
+
+                    <div className="card-body items-start gap-3">
+                        <h2 className="card-title">Select folder</h2>
+                        <div className="flex flex-wrap gap-3">
+                            <input
+                                type="file"
+                                multiple
+                                onChange={handlePick}
+                                className="file-input file-input-ghost"
+                                {...({ webkitdirectory: '', directory: '' } as any)}
+                            />
+                        </div>
+                        <div className="mt-4">
+                            { node.kind == "r"
+                                && <MultiSelectCheckboxControlled
+                                    onAccepted={(node: FlatNode)=> setNode(Option.Default.some(node)) }
+                                    nodes={node.value} /> }
+                        </div>
+                    </div>
+                    <div className="card-actions justify-end">
+                        <button
+                            onClick={async ()=>{
+                                debugger
+                                const vfs = await getOrInitSpec(props.specOrigin, props.create.name.value);
+                                if(vfs.kind == "errors") {
+                                    props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
+                                    return;
+                                }
+                                debugger
+                                const n = node;
+                                if(node.kind == "r") {
+                                    
+                                    const u = Ide.Updaters.Template.progressUpload()
+                                    props.setState(u)
+                                    const d = await postVfs(props.create.name.value, node.value);
+                                    if(d.kind == "errors") {
+                                        props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors))
+                                        return;
+                                    }
+                                    // const t = await uploadAllFileNodes(props.create.name.value, node.value);
+                                    // debugger
+                                    const u2 = 
+                                        Ide.Updaters.Template.finishUpload()
+                                            .then(
+                                                Ide.Updaters.Template.lockedPhase(
+                                                    'create', 
+                                                    'upload', 
+                                                    props.create.name.value,
+                                                    VirtualFolders.Operations.buildWorkspaceFromRoot('create', node.value)
+                                                )   )
+                                    props.setState(u2)
+                                }
+        
+                            }}
+                            disabled={node.kind == "l"}
+                            className="btn btn-primary">Upload</button>
+                    </div>
+
+                </div>
+            </div>   }
         </fieldset> 
 }
 

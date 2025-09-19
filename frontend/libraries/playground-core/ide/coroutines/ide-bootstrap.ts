@@ -13,7 +13,7 @@ export const bootstrap =
             Co.Wait(1000),
             Co.Await<ValueOrErrors<string[], any>, any>(() =>
                 listSpecs(), (_err: any) => {}).then(res =>{
-                    debugger
+                   
                 return res.kind == "r" ?
                     Co.SetState(Ide.Updaters.CommonUI.bootstrapErrors(List([`Unknown error occured when loading specs: ${res}`])))
                     :

@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import {HorizontalDropdown} from "../../dropdown.tsx";
-import {getOrInitSpec, Ide} from "playground-core";
+import {getOrInitSpec, Ide, VirtualFolders} from "playground-core";
 import {AddSpec, AddSpecInner} from "./add-spec.tsx";
 import {BasicFun, Updater} from "ballerina-core";
 
@@ -14,11 +14,15 @@ export const AddOrSelectSpec = (props: AddOrSelectSpecProps): React.ReactElement
                     label={"Select spec"}
                     onChange={async (name: string) => {
                         const vfs = await getOrInitSpec('existing',name);
+                     
                         if (vfs.kind == "errors") {
                             props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                             return;
                         }
-                        const u = Ide.Operations.toLockedSpec('existing', name, vfs.value);
+                        debugger
+                        const u =
+                            Ide.Updaters.Template.lockedPhase('existing','manual', name, VirtualFolders.Operations.buildWorkspaceFromRoot('existing', vfs.value))
+
                         props.setState(u)
 
                     }}

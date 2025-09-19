@@ -1,7 +1,7 @@
 ﻿/** @jsxImportSource @emotion/react */
 
 import { style as editorStyle } from "./json-editor.styled.ts";
-import {Ide, IdeView, seed, VfsWorkspace, VirtualFolderNode, isFile, validate} from "playground-core";
+import {Ide, IdeView, seed, VfsWorkspace, validate} from "playground-core";
 import {V2Editor, V1Editor, SeedEditor} from "./json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -127,9 +127,6 @@ export const IdeLayout: IdeView = (props) =>{
                                 }
                             />
                         </div>
-
-                         
-    
                             <VfsLayout {...props.context} setState={props.setState} />
                     </aside>
                 </Panel>

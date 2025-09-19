@@ -12,6 +12,8 @@ export * from "./ide/domains/locked/vfs/state";
 export * from "./ide/domains/bootstrap/state";
 export * from "./ide/domains/editor/state";
 export * from "./ide/domains/spec/state";
+export * from "./ide/domains/locked/vfs/upload/model";
+export * from "./ide/domains/locked/vfs/upload/input-to-3rd-party";
 export * from "./uncle/state";
 export * from "./ide/domains/forms/state";
 export * from "./uncle/template";

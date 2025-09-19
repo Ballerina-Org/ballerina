@@ -1,5 +1,5 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
-import {Ide, isFile, LockedSpec, VfsWorkspace, VirtualFolderNode} from "playground-core";
+import {FlatNode, Ide, LockedSpec, VfsWorkspace} from "playground-core";
 import {Themes} from "../../theme-selector.tsx";
 import {BasicFun, BasicUpdater, Option, replaceWith, Updater} from "ballerina-core";
 import {HorizontalDropdown} from "../../dropdown.tsx";
@@ -14,13 +14,13 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
     debugger
     const folder =
         props.phase == "locked" 
-        && props.locked.virtualFolders.selectedFolder.kind == "r" 
-        && props.locked.virtualFolders.selectedFolder.value.kind == "folder" ?
+        && props.locked.virtualFolders.selectedFolder.kind == "r"  ?
         <fieldset className="fieldset ml-5">
             <Breadcrumbs file={props.locked.virtualFolders.selectedFolder.value} />
             
             <div className="join">
                 <FolderFilter
+                    nodes={props.locked.virtualFolders.nodes}
                     folder={props.locked.virtualFolders.selectedFolder.value}
                     selected={props.locked.virtualFolders.selectedFile}
                     update={props.setState} />
@@ -32,30 +32,34 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         && props.locked.virtualFolders.selectedFile.kind == "r"
         ? <MonacoEditor
             onChange={()=>{}}
-            key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.content)}
-            content={JSON.stringify(props.locked.virtualFolders.selectedFile.value.content)}/> : <></>
+            key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}
+            content={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}/> : <></>
     
     const drawer =
         props.phase == "locked" 
         ? <Drawer 
+            mode={props.specOrigin == 'existing' ? 'select-current-folder' : 'upload'}
             vfs={props.locked.virtualFolders} 
-            selectNode={
-                (node: VirtualFolderNode) => {
-                    if (isFile(node)) return ;
-                    const files = Array.from(node.children.values()).filter(x => isFile(x));
-            
-                    const next =
-                        LockedSpec.Updaters.Core.vfs(
-                            Updater(
-          
-                                    
-                                    vfs => ({ ...vfs, 
-                                        selectedFolder: Option.Default.some(node),
-                                        selectedFile: files.length > 0 ? Option.Default.some(files[0]): vfs.selectedFile,
-                                    }),
-                                )
-                        )
-                    props.setState(next)
+            selectFolder={(folder) =>
+                LockedSpec.Updaters.Core.vfs(
+                    Updater(
+                        vfs => ({ ...vfs,
+                            selectedFolder: Option.Default.some(folder),
+                        }),
+                    )
+                )
+            }
+            selectNodes={
+                (nodes: FlatNode[]) => {
+                    // const next =
+                    //     LockedSpec.Updaters.Core.vfs(
+                    //         Updater(
+                    //             vfs => ({ ...vfs, 
+                    //                 nodes: nodes
+                    //             }),
+                    //         )
+                    //     )
+                    // props.setState(next)
                 }
             } drawerId="my-drawer" /> : <></>
     

@@ -1,4 +1,4 @@
-﻿import {Ide, VfsWorkspace, VirtualFolderNode, VirtualJsonFile} from "playground-core";
+﻿import {FlatNode, Ide, VfsWorkspace} from "playground-core";
 import React from "react";
 import {VscFile, VscFolder} from "react-icons/vsc";
 import {Option, replaceWith, SimpleCallback, Unit, Updater} from "ballerina-core";
@@ -40,20 +40,26 @@ import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 //     </div>)}
 
 type FolderFilterProps = {
-    folder: VirtualFolderNode;
-    selected: Option<VirtualJsonFile>;
+    folder: FlatNode;
+    nodes: FlatNode;
+    selected: Option<FlatNode>;
     update?: any
 };
 
 export const FolderFilter = ({
-                                 folder,
-                                 selected,
-                                 update,
-                             }: FolderFilterProps) => {
-    if (folder.kind !== "folder") return null;
-    const fs = Array.from(folder.children.values());
-    const ft = fs.filter(x => x.kind == 'file');
-    const files: VirtualJsonFile[] = ft.map(x=> x as VirtualJsonFile);
+     folder,
+     selected,
+     nodes,
+     update,
+ }: FolderFilterProps) => {
+    
+    if (folder.metadata.kind !== "dir") return null;
+    
+    const allFiles = (nodes.children || [])?.filter(x => x?.metadata.kind == 'file');
+    
+    const ids = (folder.children || []).map(x => x.id);
+    const files = allFiles.filter(x => ids.includes(x.id));
+
     return (
         <div className="w-full">
             <div className="mt-3 flex w-full">
@@ -67,13 +73,10 @@ export const FolderFilter = ({
 
                     {files.map((f) => {
                         
-                        const fileName =
-                            f.fileRef?.name || f.name
-                        const label = fileName?.replace(/\.json$/, "");
 
                         return (
                             <div
-                                key={f.path.join("-")}
+                                key={f.metadata.path}
                                 className="tooltip tooltip-bottom"
                                 data-tip={`Load ${f.name} into editor`}
                             >
@@ -81,14 +84,12 @@ export const FolderFilter = ({
                                     className="btn"
                                     type="radio"
                                     name="virtual-files"
-                                    aria-label={label}
+                                    aria-label={f.name}
                                     onChange={async () => {
-                                        const content: any = f.content || await f.fileRef?.text()!;
-                                        debugger
                                         const s_u = LockedSpec.Updaters.Core.vfs(
                                             VfsWorkspace.Updaters.Core.selectedFile(
                                                 replaceWith(
-                                                    Option.Default.some({...f, content: content })))
+                                                    Option.Default.some(f)))
                                         );
                                         //const b_u = LockedSpec.Updaters.Core.bridge.v1(content);
                                         update(s_u);
