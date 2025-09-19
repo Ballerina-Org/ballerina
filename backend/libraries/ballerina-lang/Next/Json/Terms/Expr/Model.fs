@@ -56,7 +56,7 @@ module ExprJson =
         | Expr.TupleCons t -> Expr.ToJsonTupleCons Expr.ToJson t
         | Expr.SumCons(i, t) -> Expr.ToJsonSumCons Expr.ToJson i t
         | Expr.RecordDes(v, e) -> Expr.ToJsonRecordDes Expr.ToJson v e
-        | Expr.UnionDes t -> Expr.ToJsonUnionDes Expr.ToJson t
+        | Expr.UnionDes(t, fallback) -> Expr.ToJsonUnionDes Expr.ToJson t fallback
         | Expr.TupleDes(v, e) -> Expr.ToJsonTupleDes Expr.ToJson v e
         | Expr.SumDes m -> Expr.ToJsonSumDes Expr.ToJson m
         | Expr.If(cond, thenExpr, elseExpr) -> Expr.ToJsonIf Expr.ToJson cond thenExpr elseExpr

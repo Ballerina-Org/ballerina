@@ -65,6 +65,7 @@ module Model =
       | ExprType.ArrowType(l, r) -> !l + !r
       | ExprType.GenericApplicationType(l, r) -> !l + !r
       | ExprType.GenericType(_, _, e) -> !e
+      | ExprType.TranslationOverride _ -> Set.empty
 
     static member Substitute (tvars: TypeVarBindings) (t: ExprType) : ExprType =
       let (!) = ExprType.Substitute tvars
@@ -74,6 +75,7 @@ module Model =
       | ExprType.CustomType _
       | ExprType.LookupType _
       | ExprType.PrimitiveType _
+      | ExprType.TranslationOverride _
       | ExprType.UnitType -> t
       | ExprType.VarType v ->
         match tvars |> Map.tryFind v with
@@ -168,3 +170,7 @@ module Model =
         JsonValue.Record
           [| "fun", JsonValue.String "GenericApplication"
              "args", JsonValue.Array [| !f; !a |] |]
+      | ExprType.TranslationOverride label ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "TranslationOverride"
+             "args", JsonValue.Array [| JsonValue.String label |] |]

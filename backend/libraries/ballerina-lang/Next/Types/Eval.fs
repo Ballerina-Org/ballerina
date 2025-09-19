@@ -11,6 +11,7 @@ module Eval =
   open Ballerina.DSL.Next.Types.Patterns
 
   type TypeBindings = Map<Identifier, TypeValue * Kind>
+  type UnionCaseConstructorBindings = Map<Identifier, TypeValue>
 
   type TypeSymbols = Map<Identifier, TypeSymbol>
 
@@ -18,6 +19,7 @@ module Eval =
 
   type TypeExprEvalState =
     { Bindings: TypeBindings
+      UnionCases: UnionCaseConstructorBindings
       Symbols: TypeSymbols }
 
   type TypeExprEvalResult = State<TypeValue * Kind, TypeExprEvalContext, TypeExprEvalState, Errors>
@@ -34,6 +36,7 @@ module Eval =
   type TypeExprEvalState with
     static member Empty: TypeExprEvalState =
       { Bindings = Map.empty
+        UnionCases = Map.empty
         Symbols = Map.empty }
 
     static member Create(bindings: TypeBindings, symbols: TypeSymbols) : TypeExprEvalState =
@@ -51,6 +54,16 @@ module Eval =
         return! s.Bindings |> Map.tryFindWithError v "bindings" v.ToFSharpString |> reader.OfSum
       }
 
+    static member tryFindUnionCaseConstructor(v: Identifier) : Reader<TypeValue, TypeExprEvalState, Errors> =
+      reader {
+        let! s = reader.GetContext()
+
+        return!
+          s.UnionCases
+          |> Map.tryFindWithError v "union cases" v.ToFSharpString
+          |> reader.OfSum
+      }
+
     static member tryFindSymbol(v: Identifier) : Reader<TypeSymbol, TypeExprEvalState, Errors> =
       reader {
         let! s = reader.GetContext()
@@ -59,6 +72,10 @@ module Eval =
 
     static member Updaters =
       {| Bindings = fun u (c: TypeExprEvalState) -> { c with Bindings = c.Bindings |> u }
+         UnionCases =
+          fun u (c: TypeExprEvalState) ->
+            { c with
+                UnionCases = c.UnionCases |> u }
          Symbols = fun u (c: TypeExprEvalState) -> { c with Symbols = c.Symbols |> u } |}
 
     static member unbindType x =
@@ -74,6 +91,14 @@ module Eval =
         do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.add (Identifier.LocalScope x) t_x))
 
         do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
+      }
+
+    static member bindUnionCaseConstructor x t_x =
+      state {
+        let! ctx = state.GetContext()
+        do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.LocalScope x) t_x))
+
+        do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
       }
 
     static member bindSymbol x t_x =

@@ -36,12 +36,13 @@ module UnionDes =
             |> reader.All
             |> reader.Map Map.ofSeq
 
-          return Expr.UnionDes(caseHandlers)
+          return Expr.UnionDes(caseHandlers, None)
         })
 
     static member ToJsonUnionDes
       (rootToJson: ExprEncoder<'T>)
       (union: Map<Identifier, CaseHandler<'T>>)
+      (_fallback: Option<Expr<'T>>)
       : ExprEncoderReader<'T> =
       reader {
         let! cases =

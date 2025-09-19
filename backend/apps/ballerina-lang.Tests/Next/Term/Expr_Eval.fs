@@ -288,7 +288,8 @@ let ``LangNext-ExprEval construction of matching over custom (Option) succeeds w
         Map.ofList
           [ Identifier.FullyQualified([ "Option" ], "Some"), ("x" |> Var.Create, Expr.Lookup(Identifier.LocalScope "x"))
             Identifier.FullyQualified([ "Option" ], "None"),
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ]
+            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ],
+        None
       ),
       Expr.Apply(
         Expr.TypeApply(
@@ -327,7 +328,8 @@ let ``LangNext-ExprEval construction of matching over custom (Option) succeeds w
         Map.ofList
           [ Identifier.FullyQualified([ "Option" ], "Some"), ("x" |> Var.Create, Expr.Lookup(Identifier.LocalScope "x"))
             Identifier.FullyQualified([ "Option" ], "None"),
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ]
+            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ],
+        None
       ),
       Expr.Apply(
         Expr.TypeApply(

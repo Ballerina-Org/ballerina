@@ -12,6 +12,7 @@ module TypeCheck =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Unification
   open Eval
   open Ballerina.Fun
@@ -79,7 +80,17 @@ module TypeCheck =
 
         return!
           ctx.Types.Bindings
-          |> Map.tryFindWithError id "symbols" id.ToFSharpString
+          |> Map.tryFindWithError id "type bindings" id.ToFSharpString
+          |> state.OfSum
+      }
+
+    static member TryFindUnionCaseConstructor(id: Identifier) : TypeCheckerResult<TypeValue> =
+      state {
+        let! ctx = state.GetState()
+
+        return!
+          ctx.Types.UnionCases
+          |> Map.tryFindWithError id "union cases" id.ToFSharpString
           |> state.OfSum
       }
 
@@ -475,7 +486,7 @@ module TypeCheck =
                 )
               )
 
-          | Expr.UnionDes(handlers) ->
+          | Expr.UnionDes(handlers, fallback) ->
             return!
               state {
                 let result_t =
@@ -516,10 +527,24 @@ module TypeCheck =
 
                 let handlerExprs = handlers |> Map.map (fun _ -> fst)
                 let handlerTypes = handlers |> Map.map (fun _ -> snd) |> Map.values |> Map.ofSeq
+                let! fallback = fallback |> Option.map (!) |> state.RunOption
+
+                let! fallback =
+                  state {
+                    match fallback with
+                    | None -> return None
+                    | Some(fallback, fallbackT, fallbackK) ->
+                      do! fallbackK |> Kind.AsStar |> state.OfSum |> state.Ignore
+                      do! TypeValue.Unify(fallbackT, result_t) |> Expr.liftUnification
+                      return fallback |> Some
+                  }
 
                 let! result_t = TypeValue.Instantiate result_t |> Expr.liftInstantiation
 
-                return Expr.UnionDes handlerExprs, TypeValue.Arrow(TypeValue.Union(handlerTypes), result_t), Kind.Star
+                return
+                  Expr.UnionDes(handlerExprs, fallback),
+                  TypeValue.Arrow(TypeValue.Union(handlerTypes), result_t),
+                  Kind.Star
               }
               |> state.MapError(
                 Errors.Map(
@@ -608,11 +633,19 @@ module TypeCheck =
                   |> Option.map (fun definition_cases ->
                     definition_cases
                     |> Map.toSeq
-                    |> Seq.map (fun (k, _) ->
+                    |> Seq.map (fun (k, argT) ->
                       state {
-                        do! TypeExprEvalState.bindType k.Name.LocalName typeDefinition |> Expr.liftTypeEval
+                        do!
+                          TypeExprEvalState.bindUnionCaseConstructor
+                            k.Name.LocalName
+                            (TypeValue.Arrow(argT, typeDefinition |> fst))
+                          |> Expr.liftTypeEval
 
-                        do! TypeExprEvalState.bindType typeIdentifier typeDefinition |> Expr.liftTypeEval
+                        do!
+                          TypeExprEvalState.bindType
+                            k.Name.LocalName
+                            (TypeValue.Arrow(argT, typeDefinition |> fst), Kind.Star)
+                          |> Expr.liftTypeEval
                       })
                     |> state.All
                     |> state.Map ignore)

@@ -102,7 +102,11 @@ module Runner =
       state {
         let! fields = json |> JsonValue.AsRecord |> state.OfSum
 
-        let! typeJson = (fields |> state.TryFindField "type")
+        let! typeJson =
+          fields
+          |> state.TryFindField "type"
+          |> state.WithErrorContext "...when preparsing"
+
         let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
         let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! typeBinding = s.TryFindType typeName |> state.OfSum

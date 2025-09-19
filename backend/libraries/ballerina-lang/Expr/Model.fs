@@ -170,6 +170,7 @@ module Model =
     | ArrowType of ExprType * ExprType
     | GenericType of ExprTypeId * ExprTypeKind * ExprType
     | GenericApplicationType of ExprType * ExprType
+    | TranslationOverride of string
 
     override t.ToString() : string =
       let (!) (t: ExprType) = t.ToString()
@@ -210,6 +211,7 @@ module Model =
       | ExprType.ArrowType(l, r) -> $"({!l}) -> {!r}"
       | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} => {!exprType}"
       | GenericApplicationType(f, a) -> $"{!f} {!a}"
+      | TranslationOverride label -> $"TranslationOverride \"{label}\" "
 
   and UnionCase = { CaseName: string; Fields: ExprType }
   and CaseName = { CaseName: string }

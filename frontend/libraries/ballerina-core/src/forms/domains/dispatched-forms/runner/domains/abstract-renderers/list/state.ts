@@ -1,12 +1,15 @@
 import { Map } from "immutable";
 import {
+  BasicUpdater,
   Bindings,
+  CommonAbstractRendererForeignMutationsExpected,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchCommonFormState,
   DispatchOnChange,
   ListType,
+  PredicateValue,
   ValueCallbackWithOptionalFlags,
   ValueUnit,
   VoidCallbackWithOptionalFlags,
@@ -59,7 +62,9 @@ export type ListAbstractRendererForeignMutationsExpected<Flags> = {
 
 export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   onChange: DispatchOnChange<ValueTuple, Flags>;
-  add?: VoidCallbackWithOptionalFlags<Flags>;
+  add?: (
+    flags?: Flags,
+  ) => (customUpdater?: BasicUpdater<PredicateValue>) => void;
   remove?: ValueCallbackWithOptionalFlags<number, Flags>;
   move?: (elementIndex: number, to: number, flags: Flags | undefined) => void;
   duplicate?: ValueCallbackWithOptionalFlags<number, Flags>;
@@ -89,6 +94,17 @@ export type ListAbstractRendererView<
         ListAbstractRendererState,
       ListAbstractRendererState,
       ListAbstractRendererForeignMutationsExpected<Flags>
+    >;
+    embeddedPlaceholderElementTemplate: () => (
+      flags: Flags | undefined,
+    ) => Template<
+      ListAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        ListAbstractRendererState,
+      ListAbstractRendererState,
+      CommonAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;
