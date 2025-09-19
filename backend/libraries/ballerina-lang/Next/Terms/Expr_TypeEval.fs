@@ -56,7 +56,7 @@ module TypeEval =
           | Expr.RecordDes(record, field) ->
             let! recordType = !record
             return Expr.RecordDes(recordType, field)
-          | Expr.UnionDes cases ->
+          | Expr.UnionDes(cases, fallback) ->
             let! caseTypes =
               cases
               |> Map.map (fun _ (v, handler) ->
@@ -66,7 +66,9 @@ module TypeEval =
                 })
               |> state.AllMap
 
-            return Expr.UnionDes caseTypes
+            let! fallback = fallback |> Option.map (!) |> state.RunOption
+
+            return Expr.UnionDes(caseTypes, fallback)
           | Expr.TupleDes(tuple, selector) ->
             let! tupleType = !tuple
             return Expr.TupleDes(tupleType, selector)

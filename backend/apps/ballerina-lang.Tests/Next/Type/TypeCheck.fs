@@ -142,7 +142,8 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
          ("y" |> Var.Create,
           Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
         (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
-      |> Map.ofList
+      |> Map.ofList,
+      None
     )
 
   let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
@@ -296,7 +297,8 @@ let ``LangNext-TypeCheck union cons and des typecheck with new type and inferred
                ("y" |> Var.Create,
                 Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0m))))
               (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList
+            |> Map.ofList,
+            None
           ),
           Expr.Lookup !"v"
         )
@@ -689,7 +691,8 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
          ("y" |> Var.Create,
           Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
         (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
-      |> Map.ofList
+      |> Map.ofList,
+      None
     )
 
   let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
@@ -750,7 +753,8 @@ let ``LangNext-TypeCheck union des fails when branches differ in return type`` (
          ("y" |> Var.Create,
           Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
         (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.String "not an int eh"))) ]
-      |> Map.ofList
+      |> Map.ofList,
+      None
     )
 
   let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
@@ -1085,7 +1089,8 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
                ("y" |> Var.Create,
                 Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0m))))
               (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList
+            |> Map.ofList,
+            None
           ),
           Expr.Lookup !"v"
         )
@@ -1141,7 +1146,8 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
                ("x" |> Var.Create,
                 Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0m))))
               (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList
+            |> Map.ofList,
+            None
           ),
           Expr.Lookup !"v"
         )

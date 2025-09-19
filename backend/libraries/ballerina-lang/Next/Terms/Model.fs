@@ -26,7 +26,7 @@ module Model =
     | TupleCons of List<Expr<'T>>
     | SumCons of SumConsSelector * Expr<'T>
     | RecordDes of Expr<'T> * Identifier
-    | UnionDes of Map<Identifier, CaseHandler<'T>>
+    | UnionDes of Map<Identifier, CaseHandler<'T>> * Option<Expr<'T>>
     | TupleDes of Expr<'T> * TupleDesSelector
     | SumDes of List<CaseHandler<'T>>
     | Primitive of PrimitiveValue

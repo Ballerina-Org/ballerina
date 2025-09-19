@@ -158,7 +158,7 @@ module Eval =
             |> reader.OfSum
 
           return Value.UnionCase(tag, v)
-        | Expr.Apply(Expr.UnionDes cases, unionE) ->
+        | Expr.Apply(Expr.UnionDes(cases, fallback), unionE) ->
           let! unionV = !unionE
 
           return!
@@ -172,14 +172,25 @@ module Eval =
                       cases
                       |> Map.tryFindWithError (unionVCase.Name) "union case" (unionVCase.ToFSharpString)
                       |> reader.OfSum
+                      |> reader.Catch
 
-                    let caseVar, caseBody = caseHandler
+                    match caseHandler with
+                    | Left caseHandler ->
+                      let caseVar, caseBody = caseHandler
 
-                    return!
-                      !caseBody
-                      |> reader.MapContext(
-                        ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope caseVar.Name) unionV)
-                      )
+                      return!
+                        !caseBody
+                        |> reader.MapContext(
+                          ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope caseVar.Name) unionV)
+                        )
+                    | Right _ ->
+                      match fallback with
+                      | Some fallback -> return! !fallback
+                      | None ->
+                        return!
+                          $"Error: cannot find case handler for union case {unionVCase.Name}"
+                          |> Errors.Singleton
+                          |> reader.Throw
                   }
                   |> reader.MapError(Errors.WithPriority ErrorPriority.High)
               })

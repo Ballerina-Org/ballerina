@@ -171,7 +171,8 @@ let ``Dsl:Terms:Expr.UnionDes json round-trip`` () =
     Expr.UnionDes(
       Map.ofList
         [ !"Foo", (Var.Create "x", Expr.Primitive(PrimitiveValue.Int32 1))
-          !"Bar", (Var.Create "y", Expr.Primitive(PrimitiveValue.Int32 2)) ]
+          !"Bar", (Var.Create "y", Expr.Primitive(PrimitiveValue.Int32 2)) ],
+      None
     )
 
   (expected, JsonValue.Parse json)

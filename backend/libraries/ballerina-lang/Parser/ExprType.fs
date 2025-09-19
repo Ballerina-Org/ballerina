@@ -350,6 +350,22 @@ module ExprType =
                           sum {
                             do!
                               funJson
+                              |> JsonValue.AsEnum(Set.singleton "TranslationOverride")
+
+                              |> sum.Map(ignore)
+
+                            return!
+                              sum {
+                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! args = JsonValue.AsSingleton argsJson
+                                let! arg = JsonValue.AsString args
+                                return ExprType.TranslationOverride arg
+                              }
+                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+                          }
+                          sum {
+                            do!
+                              funJson
                               |> JsonValue.AsEnum(Set.singleton "Map")
 
                               |> sum.Map(ignore)

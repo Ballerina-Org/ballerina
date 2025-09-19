@@ -210,25 +210,6 @@ module TypeCheck =
 
           | Expr.Apply(f, a) ->
             return!
-              // state.Any(
-              //   state {
-              //     let! f = Expr.AsLookup f |> state.OfSum
-
-              //     // if f.LocalName = "SAP" then
-              //     //   do Console.WriteLine($"lookup of {id.ToFSharpString}")
-              //     //   let! s = state.GetState()
-              //     //   do Console.WriteLine(s.ToFSharpString)
-              //     //   do Console.ReadLine() |> ignore
-
-              //     do! TypeCheckState.TryFindUnionCaseConstructor f |> state.Ignore
-              //     let transformedExpr = Expr<TypeExpr>.UnionCons(f, a)
-              //     // do Console.WriteLine(transformedExpr.ToFSharpString)
-              //     let! transformedExpr = !transformedExpr
-              //     // do Console.WriteLine(transformedExpr.ToFSharpString)
-              //     // do Console.ReadLine() |> ignore
-              //     return transformedExpr
-              //   },
-              // [
               state {
                 let! f, t_f, f_k = !f
                 let! a, t_a, a_k = !a
@@ -258,8 +239,7 @@ module TypeCheck =
                         return Expr.Apply(f, a), f_output, Kind.Star
                       } ]
                   )
-              } // ]
-              // )
+              }
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a} `"))
 
           | Expr.If(cond, thenBranch, elseBranch) ->
@@ -506,7 +486,7 @@ module TypeCheck =
                 )
               )
 
-          | Expr.UnionDes(handlers) ->
+          | Expr.UnionDes(handlers, fallback) ->
             return!
               state {
                 let result_t =
@@ -547,10 +527,24 @@ module TypeCheck =
 
                 let handlerExprs = handlers |> Map.map (fun _ -> fst)
                 let handlerTypes = handlers |> Map.map (fun _ -> snd) |> Map.values |> Map.ofSeq
+                let! fallback = fallback |> Option.map (!) |> state.RunOption
+
+                let! fallback =
+                  state {
+                    match fallback with
+                    | None -> return None
+                    | Some(fallback, fallbackT, fallbackK) ->
+                      do! fallbackK |> Kind.AsStar |> state.OfSum |> state.Ignore
+                      do! TypeValue.Unify(fallbackT, result_t) |> Expr.liftUnification
+                      return fallback |> Some
+                  }
 
                 let! result_t = TypeValue.Instantiate result_t |> Expr.liftInstantiation
 
-                return Expr.UnionDes handlerExprs, TypeValue.Arrow(TypeValue.Union(handlerTypes), result_t), Kind.Star
+                return
+                  Expr.UnionDes(handlerExprs, fallback),
+                  TypeValue.Arrow(TypeValue.Union(handlerTypes), result_t),
+                  Kind.Star
               }
               |> state.MapError(
                 Errors.Map(

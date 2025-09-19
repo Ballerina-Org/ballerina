@@ -374,23 +374,18 @@ module Model =
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
          MethodLabels: Map<TableMethod, string>
          RowType: ExprType |}
-    | Annotated of
-      {| Type: ExprType
-         Renderer: NestedRenderer<'ExprExtension, 'ValueExtension> |}
 
     static member FormDeclarationType(self: FormBody<'ExprExtension, 'ValueExtension>) =
       match self with
       | Record f -> f.RecordType
       | Union c -> c.UnionType
       | Table t -> t.RowType
-      | Annotated t -> t.Type
 
     static member ProcessedType(self: FormBody<'ExprExtension, 'ValueExtension>) =
       match self with
       | Record f -> f.RecordType
       | Union c -> c.UnionType
       | Table t -> t.RowType |> ExprType.TableType
-      | Annotated t -> t.Type
 
   and Column<'ExprExtension, 'ValueExtension> =
     { FieldConfig: FieldConfig<'ExprExtension, 'ValueExtension> }
