@@ -4,7 +4,7 @@ import {Themes} from "../../theme-selector.tsx";
 import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
 import {VscFolderLibrary} from "react-icons/vsc";
 import MultiSelectCheckboxControlled from "../vfs/example.tsx";
-import {fileListToFlatTree, uploadAllFileNodes} from "./modal.tsx";
+import {fileListToFlatTree} from "./modal.tsx";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -17,52 +17,49 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
         const node = await fileListToFlatTree(list);
         setNode(Option.Default.some(node));
     }, []);
-    
+    const origin = 'create';
     return <fieldset className="fieldset ml-4 w-full">
-            <div className="join">
-                <input
-                    type="text"
-                    className="input join-item"
-                    placeholder="Spec name"
-                    value={props.create.name.value}
-                    onChange={(e) =>
-                        props.setState(
-                            Ide.Updaters.CommonUI.specName(Value.Default(e.target.value)))
+        <div className="join">
+            <input
+                type="text"
+                className="input join-item"
+                placeholder="Spec name"
+                value={props.create.name.value}
+                onChange={(e) =>
+                    props.setState(
+                        Ide.Updaters.CommonUI.specName(Value.Default(e.target.value)))
+                }
+            />
+
+            <form className={"flex"} onSubmit={(e: React.FormEvent) => e.preventDefault()}>
+                <button
+                    type="submit"
+                    className="btn join-item tooltip tooltip-bottom mr-2"
+                    data-tip="Create spec with a default files"
+                    onClick={ async () => {
+                        const vfs = await getOrInitSpec(origin, props.create.name.value);
+                        if(vfs.kind == "errors") {
+                            props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
+                            return;
+                        }
+                        const u: Updater<Ide> =
+                            Ide.Updaters.Template.lockedPhase(origin,'manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
+                        props.setState(u);
                     }
-                />
-
-                <form className={"flex"} onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-         
-                    <label
-                        htmlFor="my-drawer" 
-                        className="btn tooltip tooltip-bottom join-item"
-                        onClick={()=>{
-                            const u = Ide.Updaters.Template.startUpload()
-                            props.setState(u)
-                        }}
-                        data-tip="Virtual Folders">
-                        <VscFolderLibrary className="mt-2" size={20}/>
-                       
-                    </label>
-
-                  
-                    <button
-                        type="submit"
-                        className="btn join-item"
-                        onClick={ async () => {
-                            const vfs = await getOrInitSpec(props.specOrigin, props.create.name.value);
-                            if(vfs.kind == "errors") {
-                                props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
-                                return;
-                            }
-                            const u: Updater<Ide> =
-                                Ide.Updaters.Template.lockedPhase('create','manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
-                            props.setState(u);
-                        }
-                        }
-                    >GO</button></form>
-
-                    </div>
+                    }
+                >Create</button>
+                <label
+                    htmlFor="my-drawer" 
+                    className="btn tooltip tooltip-bottom join-item mr-2"
+                    onClick={()=>{
+                        const u = Ide.Updaters.Template.startUpload()
+                        props.setState(u)
+                    }}
+                    data-tip="Create with uploading files">
+                    <VscFolderLibrary className="mt-2" size={20}/>
+                </label>
+            </form>
+        </div>
         {props.phase == 'choose' && props.details == 'upload-in-progress' && <progress className="progress progress-success w-56" value="100" max="100"></progress>}
         {
             props.phase == 'choose' && props.details == 'upload-started'
@@ -91,14 +88,14 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                     <div className="card-actions justify-end">
                         <button
                             onClick={async ()=>{
-                                debugger
+                             
                                 const vfs = await getOrInitSpec(props.specOrigin, props.create.name.value);
                                 if(vfs.kind == "errors") {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
                                 }
-                                debugger
-                                const n = node;
+                                
+
                                 if(node.kind == "r") {
                                     
                                     const u = Ide.Updaters.Template.progressUpload()

@@ -17,8 +17,6 @@ import {
 
 import {Ide} from "playground-core";
 
-
-
 type ActionKey =
     | "new" | "folders" | "save" | "seed" | "reseed"
     | "run" | "merge" 

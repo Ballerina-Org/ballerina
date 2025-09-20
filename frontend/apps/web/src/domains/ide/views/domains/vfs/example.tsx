@@ -7,89 +7,20 @@ import {FlatNode, VirtualFolders} from "playground-core";
 import {BasicFun, Unit} from "ballerina-core";
 
 
-const folder = {
-    name: "",
-    children: [
-        {
-            name: "Fruits",
-            children: [
-                { name: "Avocados" },
-                { name: "Bananas" },
-                { name: "Berries" },
-                { name: "Oranges" },
-                { name: "Pears" },
-            ],
-        },
-        {
-            name: "Drinks",
-            children: [
-                { name: "Apple Juice" },
-                { name: "Chocolate" },
-                { name: "Coffee" },
-                {
-                    name: "Tea",
-                    children: [
-                        { name: "Black Tea" },
-                        { name: "Green Tea" },
-                        { name: "Red Tea" },
-                        { name: "Matcha" },
-                    ],
-                },
-            ],
-        },
-        {
-            name: "Vegetables",
-            children: [
-                { name: "Beets" },
-                { name: "Carrots" },
-                { name: "Celery" },
-                { name: "Lettuce" },
-                { name: "Onions" },
-            ],
-        },
-    ],
-};
-
-const data2 = flattenTree(folder);
-
-
 export type MultiSelectCheckboxControlledProps = { nodes: FlatNode, onAccepted: BasicFun<FlatNode, void> }
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
-    const [selectedIds, setSelectedIds] = useState([]);
+    
     const data = flattenTree(props.nodes as any)
+    const [selectedIds, setSelectedIds] = useState(data.map(x => x.id));
     // const onKeyDown = (e) => {
     //     if (e.key === "Enter") {
     //         getAndSetIds();
     //     }
     // };
-
-    // const getAndSetIds = () => {
-    //     setSelectedIds(
-    //         document
-    //             .querySelector("#txtIdsToSelect")
-    //             .value.split(",")
-    //             .filter(val => !!val.trim())
-    //             .map((x) => {
-    //                 if (isNaN(parseInt(x.trim()))) {
-    //                     return x;
-    //                 }
-    //                 return parseInt(x.trim());
-    //             })
-    //     );
-    // };
+    
 
     return (
         <div>
-            {/*<div>*/}
-            {/*    <label htmlFor="txtIdsToSelect">*/}
-            {/*        Comma-delimited list of IDs to set:*/}
-            {/*    </label>*/}
-            {/*    <input id="txtIdsToSelect" type="text" onKeyDown={onKeyDown} />*/}
-            {/*    <button onClick={() => getAndSetIds()}>Set</button>*/}
-            {/*</div>*/}
-            {/*<div>*/}
-            {/*    <button onClick={() => setSelectedIds([])}>Clear Selected Nodes</button>*/}
-            {/*</div>*/}
             <div className="">
                 <TreeView
                     data={data}
@@ -137,6 +68,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                         handleSelect(e);
                                         e.stopPropagation();
                                     }}
+                                    isChecked={element.metadata?.checked}
                                     variant={
                                         isHalfSelected ? "some" : isSelected ? "all" : "none"
                                     }
@@ -166,7 +98,8 @@ const CheckBoxIcon = (props:any) => {
             return <input
                     type="checkbox"
                     className="toggle toggle-xs ml-1 mt-1"
-                    checked={true}
+                    onChange={(e:any) => props.onClick(e)}
+                    defaultChecked={props.isChecked}
                     disabled={false}
 
                 />;
@@ -175,6 +108,7 @@ const CheckBoxIcon = (props:any) => {
                 type="checkbox"
                 className="toggle toggle-xs ml-1 mt-1"
                 checked={true}
+                defaultChecked={props.isChecked}
                 disabled={false}
 
             />;
@@ -183,6 +117,7 @@ const CheckBoxIcon = (props:any) => {
                 type="checkbox"
                 className="toggle toggle-xs ml-1 mt-1"
                 checked={true}
+                defaultChecked={props.isChecked}
                 disabled={false}
 
             />;

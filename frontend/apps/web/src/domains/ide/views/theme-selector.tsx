@@ -1,10 +1,9 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
 
 const themes = [
-    "wireframe","fantasy","winter","lofi","dark","dracula",
-    "bumblebee","emerald","halloween","retro","cyberpunk","abyss","sunset","dim","business","luxury","black","pastel","aqua","forest"
+    "lofi", "retro", "abyss", "wireframe","fantasy","winter","dark","dracula",
+    "bumblebee","emerald", "halloween", "cyberpunk", "sunset","dim","business","luxury","black","pastel","aqua","forest"
 ]
-
 export const Themes = {
     dropdown: (theme: string, setTheme: Dispatch<SetStateAction<string>>) =>  
         <details>

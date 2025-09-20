@@ -1,13 +1,13 @@
 ﻿import {Option, Value} from "ballerina-core";
 import {List} from "immutable";
 
-export type DataOrigin = 'manual' | 'upload';
+export type DataEntry = 'manual' | 'upload';
 export type ChooseStep = 'default' | 'upload-started' | 'upload-in-progress' | 'upload-finished' ;
 export type CommonUI = {
     specOrigin: 'existing' | 'create';
     
     existing: { specs: string[]; selected: Option<string> };
-    create: { name: Value<string>, doneAs: Option<DataOrigin> };
+    create: { name: Value<string>, doneAs: Option<DataEntry> };
 
     bootstrappingError: List<string>,
     choosingError: List<string>,

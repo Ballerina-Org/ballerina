@@ -17,7 +17,6 @@ import {
     DispatchPassthroughFormFlags
 } from "web/src/domains/dispatched-passthrough-form/views/concrete-renderers";
 import {axiosVOE} from "./api";
-import {Spec} from "../state";
 import {FormsSeedEntity} from "../domains/seeds/state";
 
 export const getSeed = async (specName: string, entityName: string): Promise<ValueOrErrors<FormsSeedEntity, any>> =>

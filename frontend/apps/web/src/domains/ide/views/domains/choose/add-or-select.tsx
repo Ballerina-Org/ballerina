@@ -19,7 +19,6 @@ export const AddOrSelectSpec = (props: AddOrSelectSpecProps): React.ReactElement
                             props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                             return;
                         }
-                        debugger
                         const u =
                             Ide.Updaters.Template.lockedPhase('existing','manual', name, VirtualFolders.Operations.buildWorkspaceFromRoot('existing', vfs.value))
 

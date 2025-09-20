@@ -14,7 +14,6 @@ api.interceptors.request.use((cfg) => {
     return cfg;
 });
 
-
 export async function axiosVOE<T, R = any>(
     config: AxiosRequestConfig, parser?: BasicFun<T, R>
 ): Promise<ValueOrErrors<T, string>> {
@@ -55,5 +54,4 @@ export async function axiosVOE<T, R = any>(
             (typeof err === "string" ? err : "Network error");
         return ValueOrErrors.Default.throwOne(msg);
     }
-
 }

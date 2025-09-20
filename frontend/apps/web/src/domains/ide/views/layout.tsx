@@ -1,19 +1,14 @@
 ﻿/** @jsxImportSource @emotion/react */
 
-import { style as editorStyle } from "./json-editor.styled.ts";
 import {Ide, IdeView, seed, VfsWorkspace, validate} from "playground-core";
-import {V2Editor, V1Editor, SeedEditor} from "./json-editor.tsx";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
 import {Actions} from "./actions"
 
 import { Toaster } from 'sonner';
-import {replaceWith, Value, Option, Updater} from "ballerina-core";
 import LauncherSelector from "./launcher-selector.tsx";
-import {HorizontalDropdown} from "./dropdown.tsx";
 import {themeChange} from 'theme-change'
 import {useEffect} from 'react'
-import {Themes} from "./theme-selector.tsx";
 import { ideToast } from "./toaster.tsx";
 import { toast as sonnerToast } from 'sonner';
 import {seedSpecErrorHandler, updateSpecErrorHandler} from "./error-handlers/UpdateSpec.ts";
@@ -30,7 +25,6 @@ import {AddOrSelectSpec} from "./domains/choose/add-or-select.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
-export type DockItem = 'folders' | 'about'
 export const IdeLayout: IdeView = (props) =>{
     const [theme, setTheme] = useState("lofi");
     const [hideRight, setHideRight] = useState(false);
@@ -63,7 +57,6 @@ export const IdeLayout: IdeView = (props) =>{
             <NoSpescInfo {...props.context} />
             <Loader {...props.context} />
             <Navbar {...props.context} theme={theme} setTheme={setTheme} />
-
             {props.context.phase !== "bootstrap" && 
                 <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
 
@@ -136,9 +129,7 @@ export const IdeLayout: IdeView = (props) =>{
                     <PanelGroup direction="vertical">
                         <Panel>
                             <div className="mockup-window border border-base-300 w-full h-full">
-                                      
-                            
-                        <aside className="relative h-full">
+                                <aside className="relative h-full">
                             
                             {!(props.context.phase == 'locked' && props.context.step == 'outcome') && <div className="flex w-full  h-full flex-col gap-4 p-7  shadow-sm backdrop-blur-md ">
                                 <div className="skeleton h-32 w-full animate-none"></div>
@@ -161,13 +152,11 @@ export const IdeLayout: IdeView = (props) =>{
                                 <div className="card-body w-full">
                                     {props.context.locked.launchers && <><LauncherSelector
                                         onChange={async (value: string) => {
-
                                             props.setState(
                                                 LockedSpec.Updaters.Core.selectLauncher(value)
                                             )
                                         }}
                                         options={props.context.locked.launchers}
-
                                     />
                                         { props.context.locked.virtualFolders.merged.kind == "r" && <DispatcherFormsApp
                                             key={props.context.locked.virtualFolders.merged.value as any}
@@ -181,45 +170,42 @@ export const IdeLayout: IdeView = (props) =>{
                                 </div>
                         
                             </div>}
-       
-       
-
-                        </aside>        </div>
-                                </Panel>
-                                <PanelResizeHandle  className="h-[1px] bg-neutral text-neutral-content" />
-                                <Panel minSize={10} defaultSize={40} maxSize={90}>
-                                    <div className="no-radius w-full mx-auto">
-                                        <div className="inset-0 top-0 z-20 m-0 p-0">
-                                            <div className="space-y-2  w-full">
-                                                {
-                                                    props.context.bootstrappingError.map(error => (<pre data-prefix="6"
-                                                                                                        className="m-0 pl-3 bg-rose-700 text-warning-content"><code>Error!</code>{error}</pre>))
-                                                }
-                                                {
-                                                    props.context.choosingError.map(error => (<pre data-prefix="6"
-                                                                                                   className="m-0 pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{error}</pre>))
-                                                }
-                                                {
-                                                    props.context.lockingError.map(error => (<pre data-prefix="6"
-                                                                                                  className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
-                                                }
-                                            </div>
-                                        </div>
-                                        <div className="relative w-120 mx-auto rounded-lg overflow-hidden">
-                                            <img style={{opacity: noErrors? 0.8 : 0.2}}
-                                                src="https://framerusercontent.com/images/umluhwUKaIcQzUGEWAe9SRafnc4.png?width=1024&height=1024"
-                                                alt="Descriptive alt"
-                                                className="w-full object-cover rounded-lg"/>
-                                            {noErrors && <div className="absolute inset-0 grid place-items-center">
-                                                <span className="px-3 py-1 rounded-full bg-black/60 text-white text-sm">No issues so far</span>
-                                            </div>}
-                                        </div>
+                        </aside>        
+                            </div>
+                        </Panel>
+                        <PanelResizeHandle  className="h-[1px] bg-neutral text-neutral-content" />
+                        <Panel minSize={10} defaultSize={40} maxSize={90}>
+                            <div className="no-radius w-full mx-auto">
+                                <div className="inset-0 top-0 z-20 m-0 p-0">
+                                    <div className="space-y-2  w-full">
+                                        {
+                                            props.context.bootstrappingError.map(error => (<pre data-prefix="6"
+                                                                                                className="m-0 pl-3 bg-rose-700 text-warning-content"><code>Error!</code>{error}</pre>))
+                                        }
+                                        {
+                                            props.context.choosingError.map(error => (<pre data-prefix="6"
+                                                                                           className="m-0 pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{error}</pre>))
+                                        }
+                                        {
+                                            props.context.lockingError.map(error => (<pre data-prefix="6"
+                                                                                          className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
+                                        }
                                     </div>
+                                </div>
+                                <div className="relative w-120 mx-auto rounded-lg overflow-hidden">
+                                    <img style={{opacity: noErrors? 0.8 : 0.2}}
+                                        src="https://framerusercontent.com/images/umluhwUKaIcQzUGEWAe9SRafnc4.png?width=1024&height=1024"
+                                        alt="Descriptive alt"
+                                        className="w-full object-cover rounded-lg"/>
+                                    {noErrors && <div className="absolute inset-0 grid place-items-center">
+                                        <span className="px-3 py-1 rounded-full bg-black/60 text-white text-sm">No issues so far</span>
+                                    </div>}
+                                </div>
+                            </div>
 
-                    </Panel>
+                        </Panel>
                      </PanelGroup>
                      </Panel>}
                 </PanelGroup>}
-</div>
-)
+</div>)
 };

@@ -7,7 +7,7 @@ import {BasicUpdater} from "ballerina-core";
 type VocabJsonEditorProps = {
     value?: string;
     onChange?: (code: string) => void;
-    vocab?: string[]; // keys you want highlighted as special
+    vocab?: string[];
 };
 const rxEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export default function MonacoEditor( props: {content: string, onChange: BasicUpdater<any>}) {
@@ -15,8 +15,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
 
     const handleMount: OnMount = (editor, monaco) => {
         editorRef.current = editor;
-
-        // Nice defaults
+        
         editor.updateOptions({
             tabSize: 2,
             insertSpaces: true,
@@ -33,7 +32,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
             schemas: [
                 {
                     uri: "inmemory://schema/known-sections.json",
-                    fileMatch: ["*"], // apply to this model
+                    fileMatch: ["*"], 
                     schema: {
                         type: "object",
                         additionalProperties: false,

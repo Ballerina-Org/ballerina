@@ -1,18 +1,15 @@
 ﻿import {
     Option,
-    Value, Updater, BasicUpdater, ValueOrErrors, simpleUpdater
+    Value, Updater
 } from "ballerina-core";
 import { Template, View } from "ballerina-core";
 import { ForeignMutationsInput } from "ballerina-core";
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
 import {List} from "immutable";
-import {getSpec, initSpec} from "./api/specs";
 import {VfsWorkspace,  VirtualFolders} from "./domains/locked/vfs/state";
 import {Bootstrap} from "./domains/bootstrap/state";
 import {LockedSpec, LockedStep} from "./domains/locked/state";
-import {ChooseStep, CommonUI, DataOrigin} from "./domains/ui/state";
-import {FlatNode} from "./domains/locked/vfs/upload/model";
-
+import {ChooseStep, CommonUI, DataEntry} from "./domains/ui/state";
 
 export type Ide =
     CommonUI & (
@@ -34,12 +31,9 @@ export const Ide = {
             lockingErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, lockingError: e})),
             bootstrapErrors: (e: List<string>): Updater<Ide> =>  Updater(ide => ({...ide, bootstrappingError: e})),
             chooseErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, choosingError: e})),
-            
-
         },
         Template: {
             choosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', details: 'default'})),
-            //chooseCreatePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', specOrigin: 'create'})),
             startUpload: (): Updater<Ide> => Updater(ide =>
                 ide.phase == 'choose' ?
                 ({...ide, details: 'upload-started'}): ({...ide})),
@@ -49,7 +43,7 @@ export const Ide = {
             progressUpload: (): Updater<Ide> => Updater(ide =>
                 ide.phase == 'choose' ?
                     ({...ide, details: 'upload-in-progress'}): ({...ide})),
-            lockedPhase: (origin: 'existing' | 'create', how: DataOrigin, name: string, workspace: VfsWorkspace): Updater<Ide> =>
+            lockedPhase: (origin: 'existing' | 'create', how: DataEntry, name: string, workspace: VfsWorkspace): Updater<Ide> =>
                 Updater(ide =>
                     ({
                         ...ide,

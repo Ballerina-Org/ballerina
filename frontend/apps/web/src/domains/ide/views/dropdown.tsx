@@ -17,7 +17,7 @@ export const HorizontalDropdown: React.FC<Props> = ({ label, options, onChange }
         if (onChange) onChange(opt);
     };
     return (
-        <details className="pl-12">
+        <details className="w-64 pl-3">
             <summary>{label}</summary>
             <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
                 {

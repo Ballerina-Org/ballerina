@@ -1,13 +1,4 @@
-﻿/*
-* 1. new spec - simple vfs ( with top nodes) made on the backend
-* 2. user works on a simple vfs or
-* 3. user upload folders which can be filtered (with toggles) and sync that structure to the backend
-* 4. from now on only updating the files works (no upload)
-* 
-* 
-* */
-
-
+﻿
 import {KnownSections} from "../state";
 
 export type Meta = {
@@ -38,20 +29,19 @@ export interface INode<M extends IFlatMetadata = IFlatMetadata> {
     parent?: NodeId | null;
     isBranch?: boolean;
     metadata: M;
-
 }
 
 export type FlatNode = INode<Meta>;
-export const takeRoot = (nodes: FlatNode[]): FlatNode => {
-    let root: FlatNode | undefined;
-
-    for (const n of nodes) {
-        if (n.parent === null) {
-            if (root) throw new Error("Multiple roots found");
-            root = n;
-        }
-    }
-
-    if (!root) throw new Error("Root not found");
-    return root;
-}
+// export const takeRoot = (nodes: FlatNode[]): FlatNode => {
+//     let root: FlatNode | undefined;
+//
+//     for (const n of nodes) {
+//         if (n.parent === null) {
+//             if (root) throw new Error("Multiple roots found");
+//             root = n;
+//         }
+//     }
+//
+//     if (!root) throw new Error("Root not found");
+//     return root;
+// }

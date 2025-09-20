@@ -1,7 +1,6 @@
 ﻿import React from "react";
 
-import AccessibleTreeVfs from "./tree-view";
-import {FlatNode, takeRoot, VfsWorkspace, VirtualFolders} from "playground-core";
+import {FlatNode, VfsWorkspace, VirtualFolders} from "playground-core";
 import {BasicFun, Option, Unit} from "ballerina-core";
 import {List} from "immutable";
 import MultiSelectCheckboxControlled from "./example.tsx";
@@ -40,11 +39,7 @@ export function Drawer({ selectNodes, selectFolder, mode, vfs, drawerId = 'ide-d
                         {/*</div>*/}
                         
                         {/*<div className="divider divider-horizontal">OR</div>*/}
-
- 
                     </div>
-
-                    
                     <div className="mt-4">
                             {/*<AccessibleTreeVfs*/}
                             {/*    mode={mode}*/}
@@ -55,7 +50,6 @@ export function Drawer({ selectNodes, selectFolder, mode, vfs, drawerId = 'ide-d
                             {/*/>*/}
                         <MultiSelectCheckboxControlled onAccepted={(node) => {}} nodes={nodes} />
                         </div>
-                    
                 </ul>
             </div>
         </div>
