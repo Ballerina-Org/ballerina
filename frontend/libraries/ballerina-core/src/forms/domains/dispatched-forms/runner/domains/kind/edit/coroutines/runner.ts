@@ -6,14 +6,14 @@ import {
   DispatchEditFormLauncherForeignMutationsExpected,
 } from "../state";
 
-export const DispatchEditFormRunner = <T, FS>() => {
+export const DispatchEditFormRunner = <T>() => {
   const CreateCo = CoTypedFactory<
-    DispatchEditFormLauncherContext<T, FS>,
-    DispatchEditFormLauncherState<T, FS>
+    DispatchEditFormLauncherContext<T>,
+    DispatchEditFormLauncherState<T>
   >();
 
   return CreateCo.Template<
-    DispatchEditFormLauncherForeignMutationsExpected<T, FS>
+    DispatchEditFormLauncherForeignMutationsExpected<T>
   >(CreateCo.Repeat(CreateCo.Seq([CreateCo.Wait(2500)])), {
     runFilter: (_) => false,
   });

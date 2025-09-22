@@ -30,25 +30,31 @@ export type ApiSources = {
   lookupSources?: DispatchLookupSources;
 };
 
+export type PassthroughLauncherRef<Flags = Unit> = {
+  kind: "passthrough";
+  entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+  config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+  onEntityChange: DispatchOnChange<PredicateValue, Flags>;
+};
+
+export type EditLauncherRef<Flags = Unit> = {
+  kind: "edit";
+  entityId: Guid;
+  apiHandlers?: FormRefEditApiHandlers<any>;
+};
+
+export type CreateLauncherRef<Flags = Unit> = {
+  kind: "create";
+  apiHandlers?: FormRefCreateApiHandlers<any>;
+};
+
 export type LauncherRef<Flags = Unit> = {
   name: string;
   apiSources: ApiSources;
 } & (
-  | {
-      kind: "passthrough";
-      entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-      config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-      onEntityChange: DispatchOnChange<PredicateValue, Flags>;
-    }
-  | {
-      kind: "edit";
-      entityId: Guid;
-      apiHandlers?: FormRefEditApiHandlers<any>;
-    }
-  | {
-      kind: "create";
-      apiHandlers?: FormRefCreateApiHandlers<any>;
-    }
+  | PassthroughLauncherRef<Flags>
+  | EditLauncherRef<Flags>
+  | CreateLauncherRef<Flags>
 );
 
 export type DispatchFormRunnerStatus<

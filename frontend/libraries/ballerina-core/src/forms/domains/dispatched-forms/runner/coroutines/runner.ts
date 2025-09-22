@@ -62,6 +62,13 @@ export const DispatchFormRunner = <
         !AsyncState.Operations.hasValue(current.deserializedSpecification.sync)
           ? Co.Wait(0)
           : Co.UpdateState((_) => {
+              // TODO: hack to make sure everything still works for passthrough launchers
+              // it's likely that most of the code will be moved
+              // to launcher kind specific coroutines
+              if (current.launcherRef.kind !== "passthrough") {
+                return id;
+              }
+
               if (
                 !AsyncState.Operations.hasValue(
                   current.deserializedSpecification.sync,
@@ -188,6 +195,7 @@ export const DispatchFormRunner = <
                   }),
                 );
               }
+              console.debug("loaded form", initialState.value);
               return DispatchFormRunnerState<T, Flags>()
                 .Updaters.formState(replaceWith(initialState.value))
                 .then(
@@ -209,6 +217,7 @@ export const DispatchFormRunner = <
           AsyncState.Operations.hasValue(
             props.context.deserializedSpecification.sync,
           ) &&
+          props.context.launcherRef.kind == "passthrough" &&
           props.context.launcherRef.entity.kind != "r" &&
           props.context.launcherRef.config.kind != "r" &&
           (props.context.status.kind == "not initialized" ||

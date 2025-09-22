@@ -1,3 +1,3 @@
-export type DispatchCreateFormLauncherContext<T, FS> = {};
-export type DispatchCreateFormLauncherState<T, FS> = {};
-export type DispatchCreateFormLauncherForeignMutationsExpected<T, FS> = {};
+export type DispatchCreateFormLauncherContext<T> = {};
+export type DispatchCreateFormLauncherState<T> = {};
+export type DispatchCreateFormLauncherForeignMutationsExpected<T> = {};
