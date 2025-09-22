@@ -17,6 +17,9 @@ import {
   DispatchEntityApis,
   DispatchTableApiSources,
   DispatchLookupSources,
+  FormRefEditApiHandlers,
+  FormRefCreateApiHandlers,
+  Guid,
 } from "../../../../../main";
 
 export type ApiSources = {
@@ -29,12 +32,24 @@ export type ApiSources = {
 
 export type LauncherRef<Flags = Unit> = {
   name: string;
-  kind: "passthrough";
-  entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-  config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-  onEntityChange: DispatchOnChange<PredicateValue, Flags>;
   apiSources: ApiSources;
-};
+} & (
+  | {
+      kind: "passthrough";
+      entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+      config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+      onEntityChange: DispatchOnChange<PredicateValue, Flags>;
+    }
+  | {
+      kind: "edit";
+      entityId: Guid;
+      apiHandlers?: FormRefEditApiHandlers<any>;
+    }
+  | {
+      kind: "create";
+      apiHandlers?: FormRefCreateApiHandlers<any>;
+    }
+);
 
 export type DispatchFormRunnerStatus<
   T extends DispatchInjectablesTypes<T>,
