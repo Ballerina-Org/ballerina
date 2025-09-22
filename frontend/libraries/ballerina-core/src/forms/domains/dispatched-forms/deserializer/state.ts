@@ -60,10 +60,45 @@ export type DispatchParsedPassthroughLauncher<T> = {
   type: DispatchParsedType<T>;
 };
 
-export type DispatchParsedLauncher<T> = DispatchParsedPassthroughLauncher<T>;
+export type DispatchParsedEditLauncher<T> = {
+  kind: "edit";
+  formName: string;
+  renderer: Renderer<T>;
+  fromApiParser: (_: any) => ValueOrErrors<PredicateValue, string>;
+  toApiParser: (
+    value: PredicateValue,
+    type: DispatchParsedType<T>,
+    formState: any,
+  ) => ValueOrErrors<any, string>;
+  parseGlobalConfigurationFromApi: (
+    _: any,
+  ) => ValueOrErrors<PredicateValue, string>;
+};
+
+export type DispatchParsedCreateLauncher<T> = {
+  kind: "create";
+  formName: string;
+  renderer: Renderer<T>;
+  fromApiParser: (_: any) => ValueOrErrors<PredicateValue, string>;
+  toApiParser: (
+    value: PredicateValue,
+    type: DispatchParsedType<T>,
+    formState: any,
+  ) => ValueOrErrors<any, string>;
+  parseGlobalConfigurationFromApi: (
+    _: any,
+  ) => ValueOrErrors<PredicateValue, string>;
+};
+
+export type DispatchParsedLauncher<T> =
+  | DispatchParsedPassthroughLauncher<T>
+  | DispatchParsedEditLauncher<T>
+  | DispatchParsedCreateLauncher<T>;
 
 export type DispatchParsedLaunchers<T> = {
   passthrough: Map<string, DispatchParsedPassthroughLauncher<T>>;
+  edit: Map<string, DispatchParsedEditLauncher<T>>;
+  create: Map<string, DispatchParsedCreateLauncher<T>>;
 };
 
 export type IdWrapperProps = {
@@ -363,102 +398,225 @@ export const parseDispatchFormsToLaunchers =
       ),
     )
       .Then((passthroughLaunchers) =>
-        ValueOrErrors.Default.return({
-          launchers: {
-            passthrough: Map(passthroughLaunchers),
-          },
-          dispatcherContext: {
-            specApis: specification.apis,
-            forms: specification.forms,
-            injectedPrimitives,
-            apiConverters,
-            concreteRenderers,
-            lookupTypeRenderer,
-            getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
-            getConcreteRenderer: tryGetConcreteRenderer(concreteRenderers),
-            getDefaultRecordRenderer: (isNested: boolean) =>
-              getDefaultRecordRenderer(
-                isNested,
-                defaultRecordRenderer,
-                defaultNestedRecordRenderer,
+        ValueOrErrors.Operations.All(
+          List<
+            ValueOrErrors<[string, DispatchParsedCreateLauncher<T>], string>
+          >(
+            specification.launchers.create
+              .entrySeq()
+              .toArray()
+              .map(([launcherName, launcher]) =>
+                MapRepo.Operations.tryFindWithError(
+                  launcher.form,
+                  specification.forms,
+                  () =>
+                    `cannot find form "${launcher.form}" when parsing launchers`,
+                ).Then((parsedForm) =>
+                  MapRepo.Operations.tryFindWithError(
+                    launcher.configApi,
+                    specification.types,
+                    () =>
+                      `cannot find global config api "${launcher.configApi}" when parsing launchers`,
+                  ).Then((globalConfigApi) =>
+                    ValueOrErrors.Default.return([
+                      launcherName,
+                      {
+                        kind: "create",
+                        renderer: parsedForm,
+                        type: parsedForm.type,
+                        fromApiParser: (raw: any) =>
+                          dispatchFromAPIRawValue(
+                            parsedForm.type,
+                            specification.types,
+                            apiConverters,
+                            injectedPrimitives,
+                          )(raw),
+                        parseGlobalConfigurationFromApi: (raw: any) =>
+                          dispatchFromAPIRawValue(
+                            globalConfigApi,
+                            specification.types,
+                            apiConverters,
+                            injectedPrimitives,
+                          )(raw),
+                        toApiParser: (
+                          value: PredicateValue,
+                          type: DispatchParsedType<T>,
+                          formState: any,
+                        ) =>
+                          dispatchToAPIRawValue(
+                            type,
+                            specification.types,
+                            apiConverters,
+                            injectedPrimitives,
+                          )(value, formState),
+                        formName: launcher.form,
+                      },
+                    ]),
+                  ),
+                ),
               ),
-            defaultValue: dispatchDefaultValue(
-              injectedPrimitives,
-              specification.types,
-              specification.forms,
+          ),
+        ).Then((createLaunchers) =>
+          ValueOrErrors.Operations.All(
+            List<
+              ValueOrErrors<[string, DispatchParsedEditLauncher<T>], string>
+            >(
+              specification.launchers.edit
+                .entrySeq()
+                .toArray()
+                .map(([launcherName, launcher]) =>
+                  MapRepo.Operations.tryFindWithError(
+                    launcher.form,
+                    specification.forms,
+                    () =>
+                      `cannot find form "${launcher.form}" when parsing launchers`,
+                  ).Then((parsedForm) =>
+                    MapRepo.Operations.tryFindWithError(
+                      launcher.configApi,
+                      specification.types,
+                      () =>
+                        `cannot find global config api "${launcher.configApi}" when parsing launchers`,
+                    ).Then((globalConfigApi) =>
+                      ValueOrErrors.Default.return([
+                        launcherName,
+                        {
+                          kind: "edit",
+                          renderer: parsedForm,
+                          type: parsedForm.type,
+                          fromApiParser: (raw: any) =>
+                            dispatchFromAPIRawValue(
+                              parsedForm.type,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(raw),
+                          parseGlobalConfigurationFromApi: (raw: any) =>
+                            dispatchFromAPIRawValue(
+                              globalConfigApi,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(raw),
+                          toApiParser: (
+                            value: PredicateValue,
+                            type: DispatchParsedType<T>,
+                            formState: any,
+                          ) =>
+                            dispatchToAPIRawValue(
+                              type,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(value, formState),
+                          formName: launcher.form,
+                        },
+                      ]),
+                    ),
+                  ),
+                ),
             ),
-            defaultState: (
-              infiniteStreamSources: DispatchInfiniteStreamSources,
-              lookupSources: DispatchLookupSources | undefined,
-              tableApiSources: DispatchTableApiSources | undefined,
-            ) =>
-              dispatchDefaultState(
-                infiniteStreamSources,
+          ).Then((editLaunchers) =>
+            ValueOrErrors.Default.return({
+              launchers: {
+                passthrough: Map(passthroughLaunchers),
+                edit: Map(editLaunchers),
+                create: Map(createLaunchers),
+              },
+              dispatcherContext: {
+                specApis: specification.apis,
+                forms: specification.forms,
                 injectedPrimitives,
-                specification.types,
-                specification.forms,
                 apiConverters,
-                lookupSources,
-                tableApiSources,
-                specification.apis,
-              ),
-            types: specification.types,
-            parseFromApiByType: (type: DispatchParsedType<T>) =>
-              dispatchFromAPIRawValue(
-                type,
-                specification.types,
-                apiConverters,
-                injectedPrimitives,
-              ),
-            IdProvider,
-            ErrorRenderer,
-            parseToApiByType: (
-              type: DispatchParsedType<T>,
-              value: PredicateValue,
-              state: any,
-            ) =>
-              dispatchToAPIRawValue(
-                type,
-                specification.types,
-                apiConverters,
-                injectedPrimitives,
-              )(value, state),
-          },
-          parseEntityFromApiByTypeLookupName: (
-            typeLookupName: string,
-            raw: any,
-          ) =>
-            MapRepo.Operations.tryFindWithError(
-              typeLookupName,
-              specification.types,
-              () =>
-                `cannot find type "${typeLookupName}" when parsing launchers`,
-            ).Then((type) =>
-              dispatchFromAPIRawValue(
-                type,
-                specification.types,
-                apiConverters,
-                injectedPrimitives,
-              )(raw),
-            ),
-          parseValueToApi: (
-            value: PredicateValue,
-            type: DispatchParsedType<T>,
-            state: any,
-          ) =>
-            dispatchToAPIRawValue(
-              type,
-              specification.types,
-              apiConverters,
-              injectedPrimitives,
-            )(value, state),
-          getTypeByLookupName: (typeLookupName: string) =>
-            MapRepo.Operations.tryFindWithError(
-              typeLookupName,
-              specification.types,
-              () => `cannot find type "${typeLookupName}" in types`,
-            ),
-        }),
+                concreteRenderers,
+                lookupTypeRenderer,
+                getConcreteRendererKind:
+                  concreteRendererToKind(concreteRenderers),
+                getConcreteRenderer: tryGetConcreteRenderer(concreteRenderers),
+                getDefaultRecordRenderer: (isNested: boolean) =>
+                  getDefaultRecordRenderer(
+                    isNested,
+                    defaultRecordRenderer,
+                    defaultNestedRecordRenderer,
+                  ),
+                defaultValue: dispatchDefaultValue(
+                  injectedPrimitives,
+                  specification.types,
+                  specification.forms,
+                ),
+                defaultState: (
+                  infiniteStreamSources: DispatchInfiniteStreamSources,
+                  lookupSources: DispatchLookupSources | undefined,
+                  tableApiSources: DispatchTableApiSources | undefined,
+                ) =>
+                  dispatchDefaultState(
+                    infiniteStreamSources,
+                    injectedPrimitives,
+                    specification.types,
+                    specification.forms,
+                    apiConverters,
+                    lookupSources,
+                    tableApiSources,
+                    specification.apis,
+                  ),
+                    types: specification.types,
+                parseFromApiByType: (type: DispatchParsedType<T>) =>
+                  dispatchFromAPIRawValue(
+                    type,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  ),
+                IdProvider,
+                ErrorRenderer,
+                parseToApiByType: (
+                  type: DispatchParsedType<T>,
+                  value: PredicateValue,
+                  state: any,
+                ) =>
+                  dispatchToAPIRawValue(
+                    type,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  )(value, state),
+              },
+              parseEntityFromApiByTypeLookupName: (
+                typeLookupName: string,
+                raw: any,
+              ) =>
+                MapRepo.Operations.tryFindWithError(
+                  typeLookupName,
+                  specification.types,
+                  () =>
+                    `cannot find type "${typeLookupName}" when parsing launchers`,
+                ).Then((type) =>
+                  dispatchFromAPIRawValue(
+                    type,
+                    specification.types,
+                    apiConverters,
+                    injectedPrimitives,
+                  )(raw),
+                ),
+              parseValueToApi: (
+                value: PredicateValue,
+                type: DispatchParsedType<T>,
+                state: any,
+              ) =>
+                dispatchToAPIRawValue(
+                  type,
+                  specification.types,
+                  apiConverters,
+                  injectedPrimitives,
+                )(value, state),
+              getTypeByLookupName: (typeLookupName: string) =>
+                MapRepo.Operations.tryFindWithError(
+                  typeLookupName,
+                  specification.types,
+                  () => `cannot find type "${typeLookupName}" in types`,
+                ),
+            }),
+          ),
+        ),
       )
       .MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing launchers`),

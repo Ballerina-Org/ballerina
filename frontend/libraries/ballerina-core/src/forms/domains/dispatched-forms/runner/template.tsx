@@ -16,6 +16,10 @@ import {
   Unit,
 } from "../../../../../main";
 
+import { DispatchPassthroughFormLauncherTemplate } from "./domains/kind/passthrough/template";
+import { DispatchEditFormLauncherTemplate } from "./domains/kind/edit/template";
+import { DispatchCreateFormLauncherTemplate } from "./domains/kind/create/template";
+
 export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
@@ -33,66 +37,116 @@ export const DispatchFormRunnerTemplate = <
     DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
-    const entity = props.context.launcherRef.entity;
-    const config = props.context.launcherRef.config;
+    // const entity = props.context.launcherRef.entity;
+    // const config = props.context.launcherRef.config;
 
-    if (entity.kind == "r" || config.kind == "r") {
-      return <></>;
-    }
+    // if (entity.kind == "r" || config.kind == "r") {
+    //   return <></>;
+    // }
 
-    if (entity.value.kind == "errors") {
-      console.error(entity.value.errors.map((error) => error).join("\n"));
+    // if (entity.value.kind == "errors") {
+    //   console.error(entity.value.errors.map((error) => error).join("\n"));
+    //   return (
+    //     props.context.errorComponent ?? <>Error: Check console for details</>
+    //   );
+    // }
+
+    // if (config.value.kind == "errors") {
+    //   console.error(config.value.errors.map((error) => error).join("\n"));
+    //   return (
+    //     props.context.errorComponent ?? <>Error: Check console for details</>
+    //   );
+    // }
+
+    // const bindings: Bindings = Map([
+    //   ["global", config.value.value],
+    //   ["root", entity.value.value],
+    //   ["local", entity.value.value],
+    // ]);
+
+    if (props.context.status.kind !== "loaded") {
+      if (
+        props.context.status.kind === "loading" ||
+        props.context.status.kind == "not initialized"
+      ) {
+        return props.context.loadingComponent ?? <>Loading...</>;
+      }
+
       return (
         props.context.errorComponent ?? <>Error: Check console for details</>
       );
     }
 
-    if (config.value.kind == "errors") {
-      console.error(config.value.errors.map((error) => error).join("\n"));
+    if (props.context.launcherRef.kind == "passthrough") {
+      const InstantiatedDispatchPassthroughFormLauncherTemplate =
+        DispatchPassthroughFormLauncherTemplate<T>();
       return (
-        props.context.errorComponent ?? <>Error: Check console for details</>
+        <InstantiatedDispatchPassthroughFormLauncherTemplate
+          context={{
+            ...props.context.formState,
+            value: entity.value.value,
+            locked: false,
+            disabled: false,
+            bindings,
+            extraContext: props.context.extraContext,
+            remoteEntityVersionIdentifier:
+              props.context.remoteEntityVersionIdentifier,
+            domNodeAncestorPath: "",
+            lookupTypeAncestorNames: [],
+            // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
+          }}
+          setState={(_: BasicUpdater<any>) =>
+            props.setState(
+              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+            )
+          }
+          view={unit}
+          foreignMutations={{
+            onChange: (updater, delta) => {
+              if (props.context.launcherRef.entity.kind == "r") return;
+              props.context.launcherRef.onEntityChange(updater, delta);
+            },
+          }}
+        />
       );
     }
 
-    const bindings: Bindings = Map([
-      ["global", config.value.value],
-      ["root", entity.value.value],
-      ["local", entity.value.value],
-    ]);
+    if (props.context.launcherRef.kind == "edit") {
+      const InstantiatedDispatchEditFormLauncherTemplate =
+        DispatchEditFormLauncherTemplate<T>();
+      return (
+        <InstantiatedDispatchEditFormLauncherTemplate
+          context={props.context}
+          setState={(_: BasicUpdater<any>) =>
+            props.setState(
+              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+            )
+          }
+          foreignMutations={props.foreignMutations}
+          view={props.view}
+        />
+      );
+    }
 
-    return props.context.status.kind == "loaded" ? (
-      <props.context.status.Form
-        context={{
-          ...props.context.formState,
-          value: entity.value.value,
-          locked: false,
-          disabled: false,
-          bindings,
-          extraContext: props.context.extraContext,
-          remoteEntityVersionIdentifier:
-            props.context.remoteEntityVersionIdentifier,
-          domNodeAncestorPath: "",
-          lookupTypeAncestorNames: [],
-          apiSources: props.context.launcherRef.apiSources,
-          // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
-        }}
-        setState={(_: BasicUpdater<any>) =>
-          props.setState(
-            DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
-          )
-        }
-        view={unit}
-        foreignMutations={{
-          onChange: (updater, delta) => {
-            if (props.context.launcherRef.entity.kind == "r") return;
-            props.context.launcherRef.onEntityChange(updater, delta);
-          },
-        }}
-      />
-    ) : props.context.status.kind == "loading" ||
-      props.context.status.kind == "not initialized" ? (
-      (props.context.loadingComponent ?? <>Loading...</>)
-    ) : (
-      (props.context.errorComponent ?? <>Error: Check console for details</>)
+    if (props.context.launcherRef.kind == "create") {
+      const InstantiatedDispatchCreateFormLauncherTemplate =
+        DispatchCreateFormLauncherTemplate<T>();
+      return (
+        <InstantiatedDispatchCreateFormLauncherTemplate
+          context={props.context}
+          setState={(_: BasicUpdater<any>) =>
+            props.setState(
+              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+            )
+          }
+          foreignMutations={props.foreignMutations}
+          view={props.view}
+        />
+      );
+    }
+
+    console.error("Unknown launcher kind", props.context.launcherRef.kind);
+    return (
+      props.context.errorComponent ?? <>Error: Check console for details</>
     );
   }).any([DispatchFormRunner()]);
