@@ -18,7 +18,6 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
                     res.value.map((_:any) => ({Value: _.value[0].Discriminator}))})
     )
 }
-
 export const UnmockingApisEnums = {
     enumApis,
 };
