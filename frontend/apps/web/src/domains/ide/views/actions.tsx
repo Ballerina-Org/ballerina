@@ -37,8 +37,7 @@ type ActionsProps = {
     onRunCondition?: boolean;
     onSave?: () => void;
     onMerge?: () => void;
-    onLeft?: () => void;
-    onRight?: () => void;
+    onHide?: () => void;
     
 };
 
@@ -48,10 +47,10 @@ export const Actions: React.FC<ActionsProps> = ({
             onAction,
             canRun = true,
     
-            onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onLeft, onRight
+            onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
 
         }) => (
-    <div className={"p-5 mt-3.5 flex space-x-1"}>
+    <div className={"p-5 mt-3.5 flex space-x-1 w-full"}>
         {/*{context.phase === "choose" && context.specOrigin === "existing" && (*/}
         {/*    <button*/}
         {/*        className="btn tooltip tooltip-bottom"*/}
@@ -77,7 +76,20 @@ export const Actions: React.FC<ActionsProps> = ({
                 <VscSave size={size} />
             </button>
         )}
+        {context.phase === "locked"  && (
+            <div className="indicator">
+                {context.locked.virtualFolders.merged.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
+                <button
+                    className="btn tooltip tooltip-bottom"
+                    data-tip="Merge and validate"
+                    onClick={onRun}
+                    disabled={!canRun}
+                >
+                    <VscMerge size={size} onClick={onMerge} />
+                </button>
+            </div>
 
+        )}
         {context.phase === "locked" && (
             <button
                 className="btn tooltip tooltip-bottom"
@@ -87,17 +99,12 @@ export const Actions: React.FC<ActionsProps> = ({
                 <VscDatabase size={size} />
             </button>
         )}
-        {context.phase === "locked" && context.step === "design" && (
-            <button
-                className="btn tooltip tooltip-bottom"
-                data-tip="Merge and validate"
-                onClick={onRun}
-                disabled={!canRun}
-            >
-                <VscMerge size={size} onClick={onMerge} />
-            </button>
-        )}
-        {context.phase === "locked" && context.step === "design" && (
+
+        {context.phase === "locked" 
+            //&& context.step === "design"
+            //&& context.locked.seeds.kind == "r" 
+            //&& context.locked.virtualFolders.merged.kind == "r" 
+            && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Run Forms Engine"
@@ -112,17 +119,17 @@ export const Actions: React.FC<ActionsProps> = ({
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Forms"
-                onClick={onRight}
+                onClick={onHide}
             >
-                <VscTriangleRight size={size} />
+                <VscTriangleLeft size={size} />
             </button>}
         {context.phase === "locked" && !hideRight && (
             <button
-                className="btn tooltip tooltip-bottom"
+                className="btn tooltip tooltip-bottom ml-auto"
                 data-tip="Show Forms"
-                onClick={onLeft}
+                onClick={onHide}
             >
-                <VscTriangleLeft size={size} />
+                <VscTriangleRight size={size} />
             </button>
         )}
     </div>

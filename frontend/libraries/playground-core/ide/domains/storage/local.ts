@@ -1,4 +1,4 @@
-﻿type Storage = {
+﻿export type IdeStorage = {
     ide: {
         specName?: string;
         
@@ -7,7 +7,7 @@
 };
 const STORAGE_KEY = "ballerina" as const;
 
-function read(): Storage {
+function read(): IdeStorage {
     if (typeof window === "undefined") return { ide: {} };
 
     try {
@@ -21,7 +21,7 @@ function read(): Storage {
     }
 }
 
-function write(next: Storage) {
+function write(next: IdeStorage) {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
@@ -33,7 +33,7 @@ export const test = {
         write({ ...s, test: v } ); },
 };
 
-export const specName = {
+export const LocalStorage_SpecName = {
     get(): string | undefined { return read().ide.specName; },
     set(specName: string){
         const s = read();

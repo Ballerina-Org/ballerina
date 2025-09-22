@@ -5,6 +5,7 @@ import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
 import {VscFolderLibrary} from "react-icons/vsc";
 import MultiSelectCheckboxControlled from "../vfs/example.tsx";
 import {fileListToFlatTree} from "./modal.tsx";
+import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -18,11 +19,11 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
         setNode(Option.Default.some(node));
     }, []);
     const origin = 'create';
-    return <fieldset className="fieldset ml-4 w-full">
+    return <fieldset className="fieldset w-full">
         <div className="join">
             <input
                 type="text"
-                className="input join-item"
+                className="input join-item w-1/2 ml-5"
                 placeholder="Spec name"
                 value={props.create.name.value}
                 onChange={(e) =>
@@ -42,8 +43,9 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                             props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                             return;
                         }
+                        LocalStorage_SpecName.set(props.create.name.value);
                         const u: Updater<Ide> =
-                            Ide.Updaters.Template.lockedPhase(origin,'manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
+                            Ide.Updaters.Phases.lockedPhase(origin,'manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
                         props.setState(u);
                     }
                     }
@@ -52,7 +54,7 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                     htmlFor="my-drawer" 
                     className="btn tooltip tooltip-bottom join-item mr-2"
                     onClick={()=>{
-                        const u = Ide.Updaters.Template.startUpload()
+                        const u = Ide.Updaters.Phases.startUpload()
                         props.setState(u)
                     }}
                     data-tip="Create with uploading files">
@@ -61,10 +63,9 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
             </form>
         </div>
         {props.phase == 'choose' && props.details == 'upload-in-progress' && <progress className="progress progress-success w-56" value="100" max="100"></progress>}
-        {
-            props.phase == 'choose' && props.details == 'upload-started'
+        {props.phase == 'choose' && props.details == 'upload-started'
             &&
-            <div className="card bg-gray-200 text-black w-full">
+            <div className="card bg-gray-200 text-black w-full  mt-12">
                 <div className="card-body items-start gap-3">
 
                     <div className="card-body items-start gap-3">
@@ -81,7 +82,8 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                         <div className="mt-4">
                             { node.kind == "r"
                                 && <MultiSelectCheckboxControlled
-                                    onAccepted={(node: FlatNode)=> setNode(Option.Default.some(node)) }
+                                    mode={'uploader'}
+                                    onAcceptedNodes={(node: FlatNode)=> setNode(Option.Default.some(node)) }
                                     nodes={node.value} /> }
                         </div>
                     </div>
@@ -89,28 +91,29 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                         <button
                             onClick={async ()=>{
                              
-                                const vfs = await getOrInitSpec(props.specOrigin, props.create.name.value);
+                                const vfs = await getOrInitSpec(origin, props.create.name.value);
                                 if(vfs.kind == "errors") {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
                                 }
-                                
+                       
 
                                 if(node.kind == "r") {
                                     
-                                    const u = Ide.Updaters.Template.progressUpload()
+                                    const u = Ide.Updaters.Phases.progressUpload()
                                     props.setState(u)
                                     const d = await postVfs(props.create.name.value, node.value);
+                              
                                     if(d.kind == "errors") {
-                                        props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors))
+                                        props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors).then(Ide.Updaters.Phases.finishUpload()))
                                         return;
                                     }
                                     // const t = await uploadAllFileNodes(props.create.name.value, node.value);
                                     // debugger
                                     const u2 = 
-                                        Ide.Updaters.Template.finishUpload()
+                                        Ide.Updaters.Phases.finishUpload()
                                             .then(
-                                                Ide.Updaters.Template.lockedPhase(
+                                                Ide.Updaters.Phases.lockedPhase(
                                                     'create', 
                                                     'upload', 
                                                     props.create.name.value,

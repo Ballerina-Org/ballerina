@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
     /******* overrides *******/
+.monaco-editor,
+.monaco-editor .monaco-editor-background,
+.monaco-editor .margin {
+    background: transparent !important;
+}
 #root { margin: 0; padding: 0; }
 .jer-editor-container {
     max-width: 100% !important;

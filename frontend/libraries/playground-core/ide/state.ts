@@ -1,12 +1,9 @@
-﻿import {
-    Option,
-    Value, Updater
-} from "ballerina-core";
+﻿import {Option, Value, Updater} from "ballerina-core";
 import { Template, View } from "ballerina-core";
 import { ForeignMutationsInput } from "ballerina-core";
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
 import {List} from "immutable";
-import {VfsWorkspace,  VirtualFolders} from "./domains/locked/vfs/state";
+import {VfsWorkspace} from "./domains/locked/vfs/state";
 import {Bootstrap} from "./domains/bootstrap/state";
 import {LockedSpec, LockedStep} from "./domains/locked/state";
 import {ChooseStep, CommonUI, DataEntry} from "./domains/ui/state";
@@ -16,7 +13,8 @@ export type Ide =
     |  { phase: 'bootstrap', bootstrap: Bootstrap }
     |  { phase: 'choose', details: ChooseStep }
     | ({ phase: 'locked', locked: LockedSpec } & LockedStep)
-    );
+    // more for form-engine tbc
+    )
 
 export const Ide = {
     Default: (): Ide => 
@@ -31,18 +29,22 @@ export const Ide = {
             lockingErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, lockingError: e})),
             bootstrapErrors: (e: List<string>): Updater<Ide> =>  Updater(ide => ({...ide, bootstrappingError: e})),
             chooseErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, choosingError: e})),
+            formsError: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, formsError: e})),
         },
-        Template: {
-            choosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', details: 'default'})),
+        Phases: {
+            choosing: {},
+            locking: {},
+            bootstrapping: {},
+            toChoosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', details: 'default'})),
             startUpload: (): Updater<Ide> => Updater(ide =>
-                ide.phase == 'choose' ?
-                ({...ide, details: 'upload-started'}): ({...ide})),
+                ide.phase === 'choose' ?
+                ({...ide, details: 'upload-started'}): ide),
             finishUpload: (): Updater<Ide> => Updater(ide =>
-                ide.phase == 'choose' ?
-                ({...ide, details: 'upload-finished'}): ({...ide})),
+                ide.phase === 'choose' ?
+                ({...ide, details: 'upload-finished'}): ide),
             progressUpload: (): Updater<Ide> => Updater(ide =>
-                ide.phase == 'choose' ?
-                    ({...ide, details: 'upload-in-progress'}): ({...ide})),
+                ide.phase === 'choose' ?
+                    ({...ide, details: 'upload-in-progress'}): ide),
             lockedPhase: (origin: 'existing' | 'create', how: DataEntry, name: string, workspace: VfsWorkspace): Updater<Ide> =>
                 Updater(ide =>
                     ({

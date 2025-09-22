@@ -7,17 +7,18 @@ import MultiSelectCheckboxControlled from "./example.tsx";
 
 
 type DrawerProps = {
-    selectNodes: BasicFun<FlatNode[], void>;
-    selectFolder: BasicFun<FlatNode, void>;
+    //selectNodes: BasicFun<FlatNode[], void>;
+    //selectFolder: BasicFun<FlatNode, void>;
     mode: 'upload' | 'select-current-folder';
     vfs: VfsWorkspace;
     drawerId?: string;
+    onSelectedFolder: (folder: FlatNode) => void;
 };
 
-export function Drawer({ selectNodes, selectFolder, mode, vfs, drawerId = 'ide-drawer' }: DrawerProps) {
+export function Drawer({ mode, vfs, drawerId = 'ide-drawer', onSelectedFolder }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<FlatNode>>(Option.Default.none());
     const [nodes, setNodes] = React.useState<FlatNode>(vfs.nodes);
-    debugger
+
 
     return (
         <div className="drawer pt-16">
@@ -48,7 +49,10 @@ export function Drawer({ selectNodes, selectFolder, mode, vfs, drawerId = 'ide-d
                             {/*    onSelectedFolder={selectFolder}*/}
                             {/*    expandFoldersByDefault*/}
                             {/*/>*/}
-                        <MultiSelectCheckboxControlled onAccepted={(node) => {}} nodes={nodes} />
+                        <MultiSelectCheckboxControlled
+                            mode={'reader'} 
+                            onSelectedFolder={onSelectedFolder}
+                            nodes={nodes} />
                         </div>
                 </ul>
             </div>

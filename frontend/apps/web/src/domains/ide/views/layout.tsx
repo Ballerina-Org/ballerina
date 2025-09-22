@@ -1,6 +1,6 @@
 ﻿/** @jsxImportSource @emotion/react */
 
-import {Ide, IdeView, seed, VfsWorkspace, validate} from "playground-core";
+import {Ide, IdeView, seed, VfsWorkspace, validate, update} from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
 import {Actions} from "./actions"
@@ -9,7 +9,7 @@ import { Toaster } from 'sonner';
 import LauncherSelector from "./launcher-selector.tsx";
 import {themeChange} from 'theme-change'
 import {useEffect} from 'react'
-import { ideToast } from "./toaster.tsx";
+import {AppToaster, ideToast, notify} from "./toaster.tsx";
 import { toast as sonnerToast } from 'sonner';
 import {seedSpecErrorHandler, updateSpecErrorHandler} from "./error-handlers/UpdateSpec.ts";
 import {DispatcherFormsApp} from "./forms.tsx";
@@ -30,7 +30,7 @@ export const IdeLayout: IdeView = (props) =>{
     const [hideRight, setHideRight] = useState(false);
     useEffect(() => {
         themeChange(false)
-    }, [])
+    }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError])
     useEffect(() => {
         if(props.context.bootstrappingError.size > 0){
             
@@ -45,7 +45,7 @@ export const IdeLayout: IdeView = (props) =>{
                 // },
             });
         }
-    }, [props.context.bootstrappingError]);
+    }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError]);
     
     const noErrors = 
         props.context.bootstrappingError.size == 0 
@@ -53,7 +53,7 @@ export const IdeLayout: IdeView = (props) =>{
         && props.context.choosingError.size == 0;
     return (
         <div data-theme={theme} className="flex flex-col min-h-screen">
-            <Toaster />
+            <AppToaster />
             <NoSpescInfo {...props.context} />
             <Loader {...props.context} />
             <Navbar {...props.context} theme={theme} setTheme={setTheme} />
@@ -69,12 +69,11 @@ export const IdeLayout: IdeView = (props) =>{
                             <Actions
                                 hideRight={hideRight}
                                 context={props.context}
-                                onLeft={() => setHideRight(!hideRight)}
-                                onRight={() => setHideRight(hideRight)}
+                                onHide={() => setHideRight(!hideRight)}
                                 //onNew={() => props.setState(Ide.Updaters.Template.choosePhase('create'))}
                                 onSave={
                                     async () => {
-                                        if(props.context.phase != "locked") {
+                                        if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFile.kind == "r")) {
                                             ideToast({
                                                 title: 'UX bad state',
                                                 description: 'Saving should be possible only in a locked phase',
@@ -85,8 +84,10 @@ export const IdeLayout: IdeView = (props) =>{
                                             });
                                             return
                                         }
-                                        //const call = await update(props.context.create.name.value, Bridge.Operations.toVSpec(props.context.locked.bridge.spec))
-                                        //updateSpecErrorHandler(call);
+                                        const currentFile = props.context.locked.virtualFolders.selectedFile.value;
+                                    
+                                        const call = await update(props.context.create.name.value, currentFile.metadata.path, currentFile.metadata.content);
+                                        updateSpecErrorHandler(call);
                                     }
                                 }
                                 onMerge={ async ()=>{
@@ -96,26 +97,39 @@ export const IdeLayout: IdeView = (props) =>{
                                         json.kind == "errors"
                                             ? Ide.Updaters.CommonUI.lockingErrors(json.errors)
                                             : LockedSpec.Operations.merge(json.value);
+                                    
                                     props.setState(u);
+                                    if(json.kind != "errors") {
+                                        notify.success("Merging succeeds")
+                                        return
+                                    }
                                 }}
-                                onRun={() => props.setState(Ide.Updaters.Template.lockedOutcomePhase())}
+                                onRun={() => props.setState(Ide.Updaters.Phases.lockedOutcomePhase())}
                                 onSeed={
                                     async () => {
                                         if(props.context.phase != "locked") {
-                                            ideToast({
-                                                title: 'UX bad state',
-                                                description: 'Seeding should be possible only in a locked phase',
-                                                button: {
-                                                    label: 'Ok',
-                                                    onClick: () => sonnerToast.dismiss(),
-                                                },
-                                            });
+                                            notify.error('UX bad state','Seeding should be possible only in a locked phase');
                                             return
                                         }
                                         const call = await seed(props.context.create.name.value)
-                                        seedSpecErrorHandler(call);
+                                        if(call.kind == "errors") notify.error("Merging failed")
+                                        if(call.kind != "errors") notify.success("Merging succeed")
+                                        //     ideToast({
+                                        //         title: 'UX bad state',
+                                        //         description: 'Seeding should be possible only in a locked phase',
+                                        //         button: {
+                                        //             label: 'Ok',
+                                        //             onClick: () => sonnerToast.dismiss(),
+                                        //         },
+                                        //     });
+                                        //     return
+                                        // }
                                         if(call.kind == "value")
                                             props.setState(LockedSpec.Updaters.Core.seed(call.value));
+                                        else {
+                                        
+                                            props.setState(Ide.Updaters.CommonUI.lockingErrors(call.errors));
+                                        }
                                     }
                                 }
                             />
@@ -127,10 +141,10 @@ export const IdeLayout: IdeView = (props) =>{
                  {!hideRight && 
                     <Panel>
                     <PanelGroup direction="vertical">
-                        <Panel>
+                        <Panel minSize={20} defaultSize={50}>
                             <div className="mockup-window border border-base-300 w-full h-full">
                                 <aside className="relative h-full">
-                            
+                     
                             {!(props.context.phase == 'locked' && props.context.step == 'outcome') && <div className="flex w-full  h-full flex-col gap-4 p-7  shadow-sm backdrop-blur-md ">
                                 <div className="skeleton h-32 w-full animate-none"></div>
                                 <div className="skeleton h-4 w-28"></div>
@@ -148,7 +162,7 @@ export const IdeLayout: IdeView = (props) =>{
                                 </div>
                             </div>}
 
-                            { props.context.phase == "locked" && props.context.step == "outcome" && <div className="card bg-base-100 w-full mt-5">
+                            { props.context.phase == "locked" &&  <div className="card bg-base-100 w-full mt-5">
                                 <div className="card-body w-full">
                                     {props.context.locked.launchers && <><LauncherSelector
                                         onChange={async (value: string) => {
@@ -158,10 +172,11 @@ export const IdeLayout: IdeView = (props) =>{
                                         }}
                                         options={props.context.locked.launchers}
                                     />
-                                        { props.context.locked.virtualFolders.merged.kind == "r" && <DispatcherFormsApp
+                                        { props.context.locked.virtualFolders.merged.kind == "r" && props.context.step == 'outcome' && <DispatcherFormsApp
                                             key={props.context.locked.virtualFolders.merged.value as any}
                                             specName={props.context.create.name.value}
                                             entityName={"People"}
+                                            setState={props.setState}
                                             typeName={"Person"}
                                             spec={props.context.locked.virtualFolders.merged.value}/>
                                         }
@@ -189,6 +204,10 @@ export const IdeLayout: IdeView = (props) =>{
                                         {
                                             props.context.lockingError.map(error => (<pre data-prefix="6"
                                                                                           className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
+                                        }
+                                        {
+                                            props.context.formsError.map(error => (<pre data-prefix="6"
+                                                                                          className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Forms!</code>{error}</pre>))
                                         }
                                     </div>
                                 </div>

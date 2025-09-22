@@ -55,11 +55,11 @@ export const FolderFilter = ({
     
     if (folder.metadata.kind !== "dir") return null;
     
-    const allFiles = (nodes.children || [])?.filter(x => x?.metadata.kind == 'file');
+    // const allFiles = (nodes.children || [])?.filter(x => x?.metadata.kind == 'file');
+    //
+    // const ids = (folder.children || []).map(x => x.id);
+    const files = (folder.children || [])?.filter(x => x.metadata.kind === "file");
     
-    const ids = (folder.children || []).map(x => x.id);
-    const files = allFiles.filter(x => ids.includes(x.id));
-
     return (
         <div className="w-full">
             <div className="mt-3 flex w-full">

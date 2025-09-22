@@ -147,7 +147,7 @@ export const OneAbstractRendererState = {
       }
         
       if (!local.fields.has("Id")) {
-          debugger
+
         return ValueOrErrors.Default.throwOne(
           `local binding is missing Id (check casing) when intialising one\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[one]"}`,
         );

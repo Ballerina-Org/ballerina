@@ -20,7 +20,7 @@ export const AddOrSelectSpec = (props: AddOrSelectSpecProps): React.ReactElement
                             return;
                         }
                         const u =
-                            Ide.Updaters.Template.lockedPhase('existing','manual', name, VirtualFolders.Operations.buildWorkspaceFromRoot('existing', vfs.value))
+                            Ide.Updaters.Phases.lockedPhase('existing','manual', name, VirtualFolders.Operations.buildWorkspaceFromRoot('existing', vfs.value))
 
                         props.setState(u)
 

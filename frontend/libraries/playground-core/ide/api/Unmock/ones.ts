@@ -9,6 +9,7 @@
 } from "ballerina-core";
 import {Map} from "immutable";
 import {getLookups} from "../seeds";
+import {LocalStorage_SpecName} from "../../domains/storage/local";
 
 const lookupSources: DispatchLookupSources = (typeName: string) =>{
 
@@ -20,8 +21,8 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                             const fieldName = apiName.replace(/Api$/, "");
                             
                             const check =
-                                await getLookups("sample",fieldName, id, 0, 1).then(valueOrErrors => {
-                                    debugger
+                                await getLookups(LocalStorage_SpecName.get()!,fieldName, id, 0, 1).then(valueOrErrors => {
+                              
                                     if (valueOrErrors.kind == "value" && valueOrErrors.value.values.length == 0) {
                                     return ValueOrErrors.Default.throwOne("Lookup sources has no matched entity");
                                 }
@@ -38,7 +39,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                
                                             const fieldName = apiName.replace(/Api$/, "");
                                             const call = 
-                                                getLookups("sample",fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
+                                                getLookups(LocalStorage_SpecName.get()!,fieldName, id, streamPosition.chunkIndex || 0, streamPosition.chunkSize || 2)
                                                     .then( valueOrErrors => ({
                                                         Values: valueOrErrors.kind == "value" ? valueOrErrors.value : [],
                                                         HasMore: false,//TODO

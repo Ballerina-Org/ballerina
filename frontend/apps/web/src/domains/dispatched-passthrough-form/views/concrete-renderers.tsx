@@ -3562,7 +3562,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   },
   unit: {
     defaultUnit: () => (props) => {
-        debugger
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}

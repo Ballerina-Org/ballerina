@@ -42,7 +42,7 @@ import {
 } from "../../dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
-import {DispatchFromConfigApis, IdeFormProps, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
+import {DispatchFromConfigApis, Ide, IdeFormProps, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
 // import {getSeedEntity, getLookup,  updateEntity, UnmockingApisLookups} from "playground-core";
 const ShowFormsParsingErrors = (
@@ -272,10 +272,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value" 
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-
+            debugger
             getSeed(props.specName, props.entityName)
                 .then(async (raw) => {
-                   
+                    debugger
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
      
@@ -301,6 +301,9 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
                             setEntityId(res.id as any);
                         }
+                    }
+                    else {
+                        props.setState(Ide.Updaters.CommonUI.formsError(raw.errors));
                     }
                 });
         }

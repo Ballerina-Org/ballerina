@@ -69,7 +69,7 @@ module.exports = {
     ],
   },
   devServer: {
-    port: 5001,
+    port: 5002,
       ...(isIDE && {
           proxy: {
               [process.env.API_PREFIX]: {

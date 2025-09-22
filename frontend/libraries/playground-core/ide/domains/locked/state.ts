@@ -52,6 +52,15 @@ export const LockedSpec = {
                         Option.Default.some(merged)
                     )
                 )
+            ).then(ide => 
+           
+                ide.phase == 'locked' 
+                && ide.locked.virtualFolders.merged.kind == "r" ? 
+                    ({...ide, 
+                        locked: { 
+                        ...ide.locked, 
+                            launchers: Object.keys(ide.locked.virtualFolders.merged.value.launchers as any)
+                        }}) : ide
             )
     }
     

@@ -9,7 +9,7 @@ import {Bootstrap} from "../domains/bootstrap/state";
 
 export const bootstrap =
     Co.Seq([
-            Co.SetState(Bootstrap.Updaters.Core.init("Retrieving specifications from the server")),
+            Co.SetState(Bootstrap.Updaters.Core.init("Retrieving specifications")),
             Co.Wait(1000),
             Co.Await<ValueOrErrors<string[], any>, any>(() =>
                 listSpecs(), (_err: any) => {}).then(res =>{
@@ -21,7 +21,7 @@ export const bootstrap =
                         res.value.kind == "value" ? 
                             Updater(Bootstrap.Updaters.Core.ready(res.value.value)
                             )
-                            .then(Ide.Updaters.Template.choosePhase())
+                            .then(Ide.Updaters.Phases.toChoosePhase())
                             : Ide.Updaters.CommonUI.bootstrapErrors(res.value.errors))}),
         ]
     );

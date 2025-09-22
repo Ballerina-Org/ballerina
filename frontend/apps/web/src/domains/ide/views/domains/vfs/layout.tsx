@@ -11,13 +11,12 @@ import {Drawer} from "./drawer.tsx";
 type VfsLayoutProps = Ide & { setState: BasicFun<BasicUpdater<Ide>, void> };
 
 export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
-    debugger
+    
     const folder =
         props.phase == "locked" 
-        && props.locked.virtualFolders.selectedFolder.kind == "r"  ?
+        && props.locked.virtualFolders.selectedFolder.kind == "r" ?
         <fieldset className="fieldset ml-5">
-            <Breadcrumbs file={props.locked.virtualFolders.selectedFolder.value} />
-            
+            <Breadcrumbs selected={props.locked.virtualFolders.selectedFolder.value} />
             <div className="join">
                 <FolderFilter
                     nodes={props.locked.virtualFolders.nodes}
@@ -31,37 +30,29 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         && props.locked.virtualFolders.selectedFolder.kind == "r" 
         && props.locked.virtualFolders.selectedFile.kind == "r"
         ? <MonacoEditor
-            onChange={()=>{}}
+            onChange={(next)=> props.setState(next)}
             key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}
             content={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}/> : <></>
     
     const drawer =
-        props.phase == "locked" 
+        props.phase == "locked" && !props.locked.virtualFolders.nodes.metadata?.isLeaf
         ? <Drawer 
             mode={props.specOrigin == 'existing' ? 'select-current-folder' : 'upload'}
             vfs={props.locked.virtualFolders} 
-            selectFolder={(folder) =>
-                LockedSpec.Updaters.Core.vfs(
+            onSelectedFolder={(folder) => {
+                props.setState(LockedSpec.Updaters.Core.vfs(
                     Updater(
-                        vfs => ({ ...vfs,
+                        vfs => ({
+                            ...vfs,
                             selectedFolder: Option.Default.some(folder),
+                            selectedFile: folder.children?.length || 0 > 0 ? Option.Default.some(folder.children![0]) : vfs.selectedFolder,
                         }),
                     )
-                )
+                ))
             }
-            selectNodes={
-                (nodes: FlatNode[]) => {
-                    // const next =
-                    //     LockedSpec.Updaters.Core.vfs(
-                    //         Updater(
-                    //             vfs => ({ ...vfs, 
-                    //                 nodes: nodes
-                    //             }),
-                    //         )
-                    //     )
-                    // props.setState(next)
-                }
-            } drawerId="my-drawer" /> : <></>
+            }
+
+            drawerId="my-drawer" /> : <></>
     
     return <>
         {folder}

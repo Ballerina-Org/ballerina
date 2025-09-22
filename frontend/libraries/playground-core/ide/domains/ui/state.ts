@@ -12,6 +12,7 @@ export type CommonUI = {
     bootstrappingError: List<string>,
     choosingError: List<string>,
     lockingError: List<string>,
+    formsError: List<string>,
 };
 
 export const CommonUI = {
@@ -23,5 +24,6 @@ export const CommonUI = {
         bootstrappingError: List(),
         choosingError: List(),
         lockingError: List(),
+        formsError: List(),
     })
 }

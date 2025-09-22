@@ -4,13 +4,14 @@
 } from "ballerina-core";
 import {getSeeds} from "../seeds";
 import {OrderedMap} from "immutable";
+import {LocalStorage_SpecName} from "../../domains/storage/local";
 
 const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
     const call  = 
         (searchText: string, index: number, size: number)
         : Promise<{data: OrderedMap<any, any>, hasMoreValues: boolean}> =>
         
-        getSeeds("sample", streamName, index, size)
+        getSeeds(LocalStorage_SpecName.get()!, streamName, index, size)
             .then((res) =>
         
                 res.kind == "errors" ? ({data: OrderedMapRepo.Default.fromIdentifiables([]), hasMoreValues: false}) : ({

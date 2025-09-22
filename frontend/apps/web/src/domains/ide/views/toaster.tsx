@@ -1,7 +1,7 @@
 ﻿'use client';
 // source: https://sonner.emilkowal.ski/styling
 import React from 'react';
-import { toast as sonnerToast } from 'sonner';
+import {toast, toast as sonnerToast, Toaster} from 'sonner';
 import {List} from "immutable";
 interface ToastProps {
     id: string | number;
@@ -69,3 +69,28 @@ function Toast(props: ToastProps) {
     </div>
   );
 }
+
+// 1) Mount this once near your app root (e.g., in layout or App)
+export function AppToaster() {
+    return (
+        <Toaster
+            richColors
+            position="top-center"
+            closeButton
+            // optional defaults:
+            toastOptions={{ duration: 4000 }}
+        />
+    );
+}
+
+// 2) Use Sonner's built-ins anywhere:
+export const notify = {
+    success: (title: string, description?: string, duration?: number) =>
+        toast.success(title, { description, duration }),
+    warning: (title: string, description?: string, duration?: number) =>
+        toast.warning(title, { description, duration }),
+    error: (title: string, description?: string, duration?: number) =>
+        toast.error(title, { description, duration }),
+    info: (title: string, description?: string, duration?: number) =>
+        toast.info(title, { description, duration }),
+};

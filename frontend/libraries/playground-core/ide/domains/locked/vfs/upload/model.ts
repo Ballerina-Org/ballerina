@@ -1,12 +1,13 @@
 ﻿
 import {KnownSections} from "../state";
 
-export type Meta = {
+//TODO: distinguish with proper DU payloads for dir and file
+export type Meta =  {
     kind: "dir" | "file";
     path: string;
     size?: number;
-    isLeafFolder?: boolean;
-    fileRef? :any;
+    isLeaf?: boolean;
+    //fileRef? :any;
     content?: any;
     checked: boolean;
 };
@@ -16,22 +17,33 @@ const split = (path: string) : string[] => path.split("/");
 
 
 export type NodeId = number | string;
-export type IFlatMetadata = Record<
-    string,
-    string | number | boolean | undefined | null
->;
+// export type IFlatMetadata = Record<
+//     string,
+//     string | number | boolean | undefined | null
+// >;
 
 //same as INode from "react-accessible-treeview" in web 
-export interface INode<M extends IFlatMetadata = IFlatMetadata> {
+export interface INode<Meta> {
     id?: NodeId;
     name: string;
     children?: INode<Meta>[]; 
     parent?: NodeId | null;
     isBranch?: boolean;
-    metadata: M;
+    metadata: Meta;
 }
 
 export type FlatNode = INode<Meta>;
+
+export const FlatNode = {
+    Operations: {
+        filterLeafFolders:(node: FlatNode): FlatNode =>
+            node.metadata.kind == "file" 
+                ? node 
+                : node.metadata.isLeaf 
+                ? ({...node, children: node.children?.map(n => FlatNode.Operations.filterLeafFolders(n))}) 
+                : node
+    }
+}
 // export const takeRoot = (nodes: FlatNode[]): FlatNode => {
 //     let root: FlatNode | undefined;
 //

@@ -4,9 +4,12 @@
 } from "ballerina-core";
 
 import {getSeeds} from "../seeds";
+import {LocalStorage_SpecName} from "../../domains/storage/local";
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
-    const call = getSeeds("sample", enumName, 0, 11);
+    const specName = LocalStorage_SpecName.get()!
+    debugger
+    const call = getSeeds(specName, enumName, 0, 11);
     return ValueOrErrors.Default.return(
         () => 
             call.then(

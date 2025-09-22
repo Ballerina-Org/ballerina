@@ -51,9 +51,9 @@ export const seed = async (name: string) =>
         url: `/specs/${name}/seed`,
     });
 
-// export const update = async (name: string, vspec: SpecVx) =>
-//     await axiosVOE<any>({
-//         method: "PUT",
-//         data: vspec,
-//         url: `/specs/${name}`,
-//     });
+export const update = async (name: string, path: string, content: any) =>
+    await axiosVOE<any>({
+        method: "PUT",
+        data: { path: path, content: content },
+        url: `/specs/${name}/vfs`,
+    });
