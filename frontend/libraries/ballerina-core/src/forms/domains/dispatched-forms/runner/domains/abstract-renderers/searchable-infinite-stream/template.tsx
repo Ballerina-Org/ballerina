@@ -118,6 +118,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
+ 
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option value expected but got ${JSON.stringify(

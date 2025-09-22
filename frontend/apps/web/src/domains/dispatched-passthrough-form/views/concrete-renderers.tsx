@@ -20,8 +20,9 @@ import {
   ValueTuple,
 } from "ballerina-core";
 import { OrderedMap, Map, Set, List } from "immutable";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
+import {VscDiffAdded, VscDiffRemoved, VscNewFile, VscRefresh, VscSurroundWith} from "react-icons/vsc";
 
 export type DispatchPassthroughFormFlags = {
   test: boolean;
@@ -45,6 +46,8 @@ export type ColumnFilter = {
 };
 
 export type ColumnFilters = Map<string, List<ColumnFilter>>;
+
+const layoutMode: "grid" | "flex" = "grid";
 
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
@@ -592,21 +595,329 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       );
     },
-    eagerEditableOne: () => (props) => {
-      const maybeOption = props.context.value;
-      if (PredicateValue.Operations.IsUnit(maybeOption)) {
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: value option expected but got unit</>
-          </>
-        );
-      }
+    bestFriendDaisy: () => (props) => {
+          const maybeOption = props.context.value;
+          if (PredicateValue.Operations.IsUnit(maybeOption)) {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got unit</>
+                  </>
+              );
+          }
 
-      if (!PredicateValue.Operations.IsOption(maybeOption)) {
-        console.error("value option expected but got", maybeOption);
-        return (
-          <>
+          if (!PredicateValue.Operations.IsOption(maybeOption)) {
+              console.error("value option expected but got", maybeOption);
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got</>
+                  </>
+              );
+          }
+
+          if (!maybeOption.isSome) {
+              console.debug("loading");
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Loading...</>
+                  </>
+              );
+          }
+
+          const optionValue = maybeOption.value;
+
+          if (!PredicateValue.Operations.IsRecord(optionValue)) {
+              console.error("one option inner value is not a record", optionValue);
+              
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: one option inner value is not a record</>
+                  </>
+              );
+          }
+
+          if (props.context.customFormState.stream.kind === "r") {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: stream missing</>
+                  </>
+              );
+          }
+
+          return (
+              <>
+
+                      <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                          <legend className="fieldset-legend">details</legend>
+                          <div className="tooltip">
+                              <div className="tooltip-content">
+                                  <div className="animate-bounce text-orange-400 -rotate-10 text-2xl font-black">{props.context.tooltip}
+                                  </div>
+                              </div>
+                              {props.DetailsRenderer?.(undefined)({
+                                  ...props,
+                                  context: {
+                                      ...props.context,
+                                  },
+                                  foreignMutations: {
+                                      ...props.foreignMutations,
+                                  },
+                                  view: unit,
+                              })}
+                          </div>
+   
+                      </fieldset>
+
+                      <div className="card-body">
+                          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                          <legend className="fieldset-legend">{props.context.label}</legend>
+
+                              {props?.PreviewRenderer &&
+                                  props?.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
+                                      ...props,
+                                      context: {
+                                          ...props.context,
+                                      },
+                                      foreignMutations: {
+                                          ...props.foreignMutations,
+                                      },
+                                      view: unit,
+                                  })}</fieldset>
+                              <div className="card-actions justify-end">
+                                  <button className="btn btn-primary" disabled={props.context.disabled}
+                                          onClick={() => props.foreignMutations.toggleOpen()}>Change
+                                  </button>
+                              </div>
+                          </div>
+
+                  <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
+                      <li>
+                          <div className="timeline-middle">
+                              <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-5 w-5"
+                              >
+                                  <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                      clipRule="evenodd"
+                                  />
+                              </svg>
+                          </div>
+                          <div className="timeline-start mb-10 md:text-end">
+                              <time className="font-mono italic">1984</time>
+                              <div className="text-lg font-black">First Macintosh computer</div>
+                              The Apple Macintosh—later rebranded as the Macintosh 128K—is the original Apple Macintosh
+                              personal computer. It played a pivotal role in establishing desktop publishing as a general
+                              office function. The motherboard, a 9 in (23 cm) CRT monitor, and a floppy drive were housed
+                              in a beige case with integrated carrying handle; it came with a keyboard and single-button
+                              mouse.
+                          </div>
+                          <hr />
+                      </li>
+                      <li>
+                          <hr />
+                          <div className="timeline-middle">
+                              <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-5 w-5"
+                              >
+                                  <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                      clipRule="evenodd"
+                                  />
+                              </svg>
+                          </div>
+                          <div className="timeline-end md:mb-10">
+                              <time className="font-mono italic">1998</time>
+                              <div className="text-lg font-black">iMac</div>
+                              iMac is a family of all-in-one Mac desktop computers designed and built by Apple Inc. It has
+                              been the primary part of Apple's consumer desktop offerings since its debut in August 1998,
+                              and has evolved through seven distinct forms
+                          </div>
+                          <hr />
+                      </li>
+                      <li>
+                          <hr />
+                          <div className="timeline-middle">
+                              <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-5 w-5"
+                              >
+                                  <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                      clipRule="evenodd"
+                                  />
+                              </svg>
+                          </div>
+                          <div className="timeline-start mb-10 md:text-end">
+                              <time className="font-mono italic">2001</time>
+                              <div className="text-lg font-black">iPod</div>
+                              The iPod is a discontinued series of portable media players and multi-purpose mobile devices
+                              designed and marketed by Apple Inc. The first version was released on October 23, 2001, about
+                              8+1⁄2 months after the Macintosh version of iTunes was released. Apple sold an estimated 450
+                              million iPod products as of 2022. Apple discontinued the iPod product line on May 10, 2022. At
+                              over 20 years, the iPod brand is the oldest to be discontinued by Apple
+                          </div>
+                          <hr />
+                      </li>
+                      <li>
+                          <hr />
+                          <div className="timeline-middle">
+                              <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-5 w-5"
+                              >
+                                  <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                      clipRule="evenodd"
+                                  />
+                              </svg>
+                          </div>
+                          <div className="timeline-end md:mb-10">
+                              <time className="font-mono italic">2007</time>
+                              <div className="text-lg font-black">iPhone</div>
+                              iPhone is a line of smartphones produced by Apple Inc. that use Apple's own iOS mobile
+                              operating system. The first-generation iPhone was announced by then-Apple CEO Steve Jobs on
+                              January 9, 2007. Since then, Apple has annually released new iPhone models and iOS updates. As
+                              of November 1, 2018, more than 2.2 billion iPhones had been sold. As of 2022, the iPhone
+                              accounts for 15.6% of global smartphone market share
+                          </div>
+                          <hr />
+                      </li>
+                      <li>
+                          <hr />
+                          <div className="timeline-middle">
+                              <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-5 w-5"
+                              >
+                                  <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                      clipRule="evenodd"
+                                  />
+                              </svg>
+                          </div>
+                          <div className="timeline-start mb-10 md:text-end">
+                              <time className="font-mono italic">2015</time>
+                              <div className="text-lg font-black">Apple Watch</div>
+                              The Apple Watch is a line of smartwatches produced by Apple Inc. It incorporates fitness
+                              tracking, health-oriented capabilities, and wireless telecommunication, and integrates with
+                              iOS and other Apple products and services
+                          </div>
+                      </li>
+                  </ul>
+
+                  {props.context.customFormState.status == "closed" ? (
+                      <></>
+                  ) : (
+                      <>
+                          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                              <legend className="fieldset-legend">Page title</legend>
+                              <input type="text" className="input" placeholder="search" disabled={props.context.disabled}
+                                     value={
+                                         props.context.customFormState.streamParams.value.get(
+                                             "search",
+                                         ) ?? ""
+                                     }
+                                     onChange={(e) =>
+                                         props.foreignMutations.setStreamParam(
+                                             "search",
+                                             e.currentTarget.value,
+                                         )
+                                     }/>
+                              <p className="label">You can edit page title later on from settings</p>
+                          </fieldset>
+
+                          <ul>
+                              {props.context.customFormState.stream.value.loadedElements
+                                  .entrySeq()
+                                  .map(([key, chunk]) =>
+                                      chunk.data.valueSeq().map((element: any) => {
+                                          return (
+                                              <li>
+                                                  <button
+                                                      disabled={props.context.disabled}
+                                                      onClick={() =>
+                                                          props.foreignMutations.select(element, undefined)
+                                                      }
+                                                  >
+                                                      <div
+                                                          onClick={() =>
+                                                              props.foreignMutations.select(
+                                                                  element,
+                                                                  undefined,
+                                                              )
+                                                          }
+                                                          style={{
+                                                              display: "flex",
+                                                              flexDirection: "row",
+                                                              gap: "10px",
+                                                          }}
+                                                      />
+                                                      {props?.PreviewRenderer &&
+                                                          props.PreviewRenderer(element)(key.toString())(
+                                                              undefined,
+                                                          )?.({
+                                                              ...props,
+                                                              context: {
+                                                                  ...props.context,
+                                                              },
+                                                              foreignMutations: {
+                                                                  ...props.foreignMutations,
+                                                              },
+                                                              view: unit,
+                                                          })}
+                                                  </button>
+                                              </li>
+                                          );
+                                      }),
+                                  )}
+                          </ul>
+                      </>
+                  )}
+                  <button
+                      disabled={props.context.hasMoreValues == false}
+                      onClick={() => props.foreignMutations.loadMore()}
+                  >
+                      ⋯
+                  </button>
+              </>
+          );
+    },
+      eagerEditableOne: () => (props) => {
+          const maybeOption = props.context.value;
+          if (PredicateValue.Operations.IsUnit(maybeOption)) {
+              return (
+                  <>
+                      <h2>{props.context.label}</h2>
+                      <>Error: value option expected but got unit</>
+                  </>
+              );
+          }
+
+          if (!PredicateValue.Operations.IsOption(maybeOption)) {
+              console.error("value option expected but got", maybeOption);
+              return (
+                  <>
             <h2>{props.context.label}</h2>
             <>Error: value option expected but got</>
           </>
@@ -991,6 +1302,103 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   record: {
+      timelineEntry: () => (props) =>{
+          
+          return (           <li>
+              <div className="timeline-middle">
+                  <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      className="h-5 w-5"
+                  >
+                      <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                          clipRule="evenodd"
+                      />
+                  </svg>
+              </div>
+              <div className="timeline-start mb-10 md:text-end">
+                  <time className="font-mono italic">1984</time>
+                  <div className="text-lg font-black">First Macintosh computer</div>
+                  The Apple Macintosh—later rebranded as the Macintosh 128K—is the original Apple Macintosh
+                  personal computer. It played a pivotal role in establishing desktop publishing as a general
+                  office function. The motherboard, a 9 in (23 cm) CRT monitor, and a floppy drive were housed
+                  in a beige case with integrated carrying handle; it came with a keyboard and single-button
+                  mouse.
+              </div>
+              <hr />
+          </li>)
+      },
+      tailwind: () => (props) => {
+          return (
+              <div className="w-full">
+         
+                  <div className="tabs tabs-box">
+                      <input type="radio" name="my_tabs_1" className="tab" aria-label="Tab 1" />
+                      <input type="radio" name="my_tabs_1" className="tab" aria-label="Tab 2" defaultChecked />
+                      <input type="radio" name="my_tabs_1" className="tab" aria-label="Tab 3" />
+                  </div>
+
+                  {props.context.layout.valueSeq().map((tab, ti) => {
+                      const colCount = tab.columns?.size || 1;
+                      const tabContainerClass =
+                          layoutMode === "grid"
+                              ? "grid gap-4"
+                              : "flex gap-4 flex-wrap";
+
+                      const tabContainerStyle =
+                          layoutMode === "grid"
+                              ? { gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }
+                              : undefined;
+
+                      const columnClass =
+                          layoutMode === "grid"
+                              ? "flex flex-col gap-4"
+                              : "flex-1 basis-0 min-w-[16rem] flex flex-col gap-4"; 
+
+                      return (
+                          <div key={`tab-${ti}`} className="mb-6">
+                              <div className={tabContainerClass} style={tabContainerStyle}>
+                                  {tab.columns.valueSeq().map((column, ci) => (
+                                      <div key={`col-${ti}-${ci}`} className={columnClass}>
+                                          {column.groups.valueSeq().map((group, gi) => {
+                                              return (
+                                                  <div key={`grp-${ti}-${ci}-${gi}`} className="space-y-3">
+                                                      {group
+                                                          .filter((fieldName) => props.VisibleFieldKeys.has(fieldName))
+                                                          .map((fieldName) => (
+                                                              <div
+                                                                  key={`f-${ti}-${ci}-${gi}-${fieldName}`}
+                                                                  className="card card-bordered bg-base-100 shadow-sm"
+                                                              >
+                                                                  <div className="card-body p-4">
+                                                                      <div className="form-control">
+                                                                          {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                                              ...props,
+                                                                              context: {
+                                                                                  ...props.context,
+                                                                                  disabled: props.DisabledFieldKeys.has(fieldName),
+                                                                              },
+                                                                              view: unit,
+                                                                          })}
+                                                                      </div>
+                                                                  </div>
+                                                              </div>
+                                                          ))}
+                                                  </div>
+                                              );
+                                          })}
+                                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+          );
+      },  
     personDetails: () => (props) => {
       return (
         <>
@@ -1828,7 +2236,30 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           }
         />
       </>
-    ),
+    ), 
+    daisyToggle: () => (props) => (
+        <fieldset className="fieldset bg-base-100 border-base-300 rounded-box border p-4">
+            {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
+
+            <label className="label">
+                <input type="checkbox" className="toggle"
+                       checked={
+                           PredicateValue.Operations.IsBoolean(props.context.value)
+                               ? props.context.value
+                               : false
+                       }
+                       onChange={(e) =>
+                           props.foreignMutations.setNewValue(
+                               e.currentTarget.checked,
+                               undefined,
+                           )
+                       }
+                />
+                {props.context.details}
+            </label>
+        </fieldset>
+
+      ),
   },
   number: {
     defaultNumber: () => (props) => (
@@ -1854,13 +2285,40 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   string: {
-    defaultString: () => (props) => {
-      return (
-        <>
-          {props.context.customPresentationContext?.listElement
-            ?.isLastListElement && <p>Last</p>}
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.tooltip && <p>{props.context.tooltip}</p>}
+      daisyString: () => (props) => {
+          return (
+              <div className="tooltip" data-tip={props.context.tooltip}>
+              
+              
+              <fieldset className="fieldset">
+
+                  {props.context.customPresentationContext?.listElement
+                      ?.isLastListElement && <p>Last</p>}
+                  {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
+                  <input 
+                      type="text" 
+                      className="input" 
+                      placeholder="text placeholder"
+                      disabled={props.context.disabled}
+                      onChange={(e) =>
+                          props.foreignMutations.setNewValue(e.currentTarget.value, {
+                              test: true,
+                          })
+                      }
+                      value={props.context.value}
+                  />
+                  {props.context.details && <p className="label">{props.context.details}</p>}
+              </fieldset></div>
+     )
+      },
+
+      defaultString: () => (props) => {
+          return (
+              <>
+                  {props.context.customPresentationContext?.listElement
+                      ?.isLastListElement && <p>Last</p>}
+                  {props.context.label && <h3>{props.context.label}</h3>}
+                  {props.context.tooltip && <p>{props.context.tooltip}</p>}
           {props.context.details && (
             <p>
               <em>{props.context.details}</em>
@@ -1985,74 +2443,169 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+    daisyEnum: () => (props) => {
+
+          if (PredicateValue.Operations.IsUnit(props.context.value)) {
+              return <></>;
+          }
+
+
+        const isSome = props.context.value.isSome;
+        const value =
+            isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
+                ? props.context.value.value.fields.get("Value")!
+                : undefined;
+ 
+          return (
+       
+                <fieldset className="fieldset bg-base-100 border-base-300 rounded-box border p-4">
+                    {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
+
+                    <label className="label">
+                        {(props.context.activeOptions == "unloaded" ||
+                  
+                        props.context.activeOptions == "loading") && <input type="checkbox" className="toggle"
+                               checked={
+                                   (props.context.activeOptions != "unloaded" &&
+                                       props.context.activeOptions != "loading")
+                               }
+                               onChange={() => props.foreignMutations.loadOptions()}
+                        />}
+                        {props.context.details}
+                        {(props.context.activeOptions != "unloaded" &&
+                            props.context.activeOptions != "loading") && <form className="filter">
+                            <input className="btn btn-square" type="reset" value="×"/>
+                            {
+
+                                props.context.activeOptions.map((o) =>
+                                    (<input
+                                        className="btn"
+                                        type="radio"
+                                        name="frameworks"
+                                        onChange={(e) =>
+                                            props.foreignMutations.setNewValue(
+                                                e.currentTarget.value,
+                                                undefined,
+                                            )
+                                        }
+                                        aria-label={o.fields.get("Value")! as string}
+                                    />)
+                                )}
+
+                        </form>}
+                    </label>
+                </fieldset>
+
+          );
+      },
   },
   enumMultiSelection: {
-    defaultEnumMultiselect: () => (props) => {
-      return (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.details && (
-            <p>
-              <em>{props.context.details}</em>
-            </p>
-          )}
-          {props.context.activeOptions == "unloaded" ||
-          props.context.activeOptions == "loading" ? (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              onClick={() => props.foreignMutations.loadOptions()}
-            >
+      defaultEnumMultiselect: () => (props) => {
+          return (
               <>
-                {props.context.value.fields.map((o) => (
-                  <option
-                    value={(o as ValueRecord).fields.get("Value")! as string}
-                  >
-                    {(o as ValueRecord).fields.get("Value") as string}
-                  </option>
-                ))}
+                  {props.context.label && <h3>{props.context.label}</h3>}
+                  {props.context.details && (
+                      <p>
+                          <em>{props.context.details}</em>
+                      </p>
+                  )}
+
+                  {props.context.activeOptions == "unloaded" ||
+                  props.context.activeOptions == "loading" ? (
+                      <select
+                          multiple
+                          value={props.context.selectedIds}
+                          onClick={() => props.foreignMutations.loadOptions()}
+                      >
+                          <>
+                              {props.context.value.fields.map((o) => (
+                                  <option
+                                      value={(o as ValueRecord).fields.get("Value")! as string}
+                                  >
+                                      {(o as ValueRecord).fields.get("Value") as string}
+                                  </option>
+                              ))}
+                          </>
+                      </select>
+                  ) : (
+                      <select
+                          multiple
+                          value={props.context.selectedIds}
+                          disabled={props.context.disabled}
+                          onChange={(e) =>
+                              props.foreignMutations.setNewValue(
+                                  Array.from(e.currentTarget.options)
+                                      .filter((_) => _.selected)
+                                      .map((_) => _.value),
+                                  undefined,
+                              )
+                          }
+                      >
+                          <>
+                              {props.context.activeOptions.map((o) => (
+                                  <option value={o.fields.get("Value")! as string}>
+                                      {o.fields.get("Value") as string}
+                                  </option>
+                              ))}
+                          </>
+                      </select>
+                  )}
               </>
-            </select>
-          ) : (
-            <select
-              multiple
-              value={props.context.selectedIds}
-              disabled={props.context.disabled}
-              onChange={(e) =>
-                props.foreignMutations.setNewValue(
-                  Array.from(e.currentTarget.options)
-                    .filter((_) => _.selected)
-                    .map((_) => _.value),
-                  undefined,
-                )
-              }
-            >
-              <>
-                {props.context.activeOptions.map((o) => (
-                  <option value={o.fields.get("Value")! as string}>
-                    {o.fields.get("Value") as string}
-                  </option>
-                ))}
-              </>
-            </select>
-          )}
-        </>
-      );
-    },
+          );
+      },
+      daisyEnumMultiselect: () => (props) =>
+          <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+              {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend> }
+
+              <label className="label">
+                  <input type="checkbox" className="toggle"
+                         checked={
+                             (props.context.activeOptions != "unloaded" &&
+                                 props.context.activeOptions != "loading")
+                         }
+                         onChange={() => props.foreignMutations.loadOptions()}
+                  />
+                  {props.context.details}
+                  {(props.context.activeOptions != "unloaded" &&
+                      props.context.activeOptions != "loading") && <form>
+                      <input className="btn btn-square" type="reset" value="×"/>
+                      {
+
+                          props.context.activeOptions.map((o) =>
+                              (<input
+                                  className="btn"
+                                  type="checkbox"
+                                  name="frameworks2"
+                                  // onClick={(e) =>
+                                  //     props.foreignMutations.setNewValue(
+                                  //    []
+                                  //     )
+                                  // }
+                                  aria-label={o.fields.get("Value")! as string}
+                              />)
+                          )}
+
+                  </form>}
+              </label>
+              { props.context.details && <p className="label">{props.context.details}</p>}
+          </fieldset>
+
+
+      ,
   },
-  streamSingleSelection: {
-    defaultInfiniteStream: () => (props) => (
-      <>
-        {props.context.label && <h3>{props.context.label}</h3>}
-        {props.context.tooltip && <p>{props.context.tooltip}</p>}
-        {props.context.details && (
-          <p>
-            <em>{props.context.details}</em>
-          </p>
-        )}
-        <button
-          disabled={props.context.disabled}
-          onClick={() => props.foreignMutations.toggleOpen()}
+    streamSingleSelection: {
+        defaultInfiniteStream: () => (props) => (
+            <>
+                {props.context.label && <h3>{props.context.label}</h3>}
+                {props.context.tooltip && <p>{props.context.tooltip}</p>}
+                {props.context.details && (
+                    <p>
+                        <em>{props.context.details}</em>
+                    </p>
+                )}
+                <button
+                    disabled={props.context.disabled}
+                    onClick={() => props.foreignMutations.toggleOpen()}
         >
           {props.context.value.isSome &&
             ((props.context.value.value as ValueRecord).fields.get(
@@ -2118,21 +2671,113 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <button onClick={() => props.foreignMutations.reload()}>🔄</button>
       </>
     ),
-  },
+        daisyInfiniteStream: () => (props) => (
+            <>
+                <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                    {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
+                    {props.context.details && <p className="label">{props.context.details}</p>}
+                    <label className="label">      {props.context.value.isSome &&
+                        ((props.context.value.value as ValueRecord).fields.get(
+                            "DisplayValue",
+                        ) as string)}{" "}</label>
+                    <div className="join">
+                        <div>
+                            <div>
+                                <input className="input join-item" placeholder="Search"
+                                       disabled={props.context.disabled}
+                                       value={props.context.customFormState.searchText.value}
+                                       onChange={(e) =>
+                                           props.foreignMutations.setSearchText(e.currentTarget.value)
+                                       }/>
+                            </div>
+                        </div>
+    
+                        {props.context.customFormState.status == "open" && <div className="indicator">
+    
+                            <button className="btn join-item"
+                                    disabled={props.context.disabled}
+                                    onClick={() => props.foreignMutations.clearSelection(undefined)}>
+                                <VscDiffRemoved size={20}/></button>
+    
+                        </div>}
+                        {props.context.customFormState.status != "open" && <div className="indicator">
+    
+                            <button className="btn join-item"
+                                    disabled={props.context.disabled}
+                                    onClick={() => props.foreignMutations.toggleOpen()}><VscDiffAdded size={20}/></button>
+                        </div>}
+                        <div className="indicator">
+                            <span className="indicator-item badge badge-secondary">new</span>
+                            <button className="btn join-item"
+                                    onClick={() => props.foreignMutations.reload()}>
+                                <VscRefresh size={20}/></button>
+                        </div>
+                        <div className="indicator">
+    
+                            <button className="btn join-item"
+                                    disabled={props.context.hasMoreValues == false}
+                                    onClick={() => props.foreignMutations.loadMore()}><VscSurroundWith size={20}/>
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+    
+    
+                {props.context.customFormState.status == "closed" ? (
+                    <></>
+                ) : (
+                    <>
+                      
+                        <div className="tooltip tooltip-open tooltip-top" data-tip={props.context.tooltip}>
+                            <select className="select select-error">
+                                <option disabled selected>Pick sth</option>
+                                {props.context.customFormState.stream.loadedElements
+                                    .valueSeq()
+                                    .map((chunk) =>
+                                        chunk.data.valueSeq().map((element) => (
+                                            <option disabled={props.context.disabled}
+                                                    onClick={() =>
+                                                        props.foreignMutations.select(
+                                                            PredicateValue.Default.option(
+                                                                true,
+                                                                ValueRecord.Default.fromJSON(element),
+                                                            ),
+                                                            undefined,
+                                                        )
+                                                    }>{element.DisplayValue}{" "}
+                                                {props.context.value.isSome &&
+                                                (props.context.value.value as ValueRecord).fields.get(
+                                                    "Id",
+                                                ) == element.Id
+                                                    ? "✅"
+                                                    : ""}</option>
+    
+                                        )),
+                                    )}
+                            </select>
+                        </div>
+                       
+    
+                    </>
+                )}
+    
+            </>
+        ),
+    }, 
   streamMultiSelection: {
-    defaultInfiniteStreamMultiselect: () => (props) => {
-      return (
-        <>
-          {props.context.label && <h3>{props.context.label}</h3>}
-          {props.context.details && (
-            <p>
-              <em>{props.context.details}</em>
-            </p>
-          )}
-          <button
-            disabled={props.context.disabled}
-            onClick={() => props.foreignMutations.toggleOpen()}
-          >
+        defaultInfiniteStreamMultiselect: () => (props) => {
+            return (
+                <>
+                    {props.context.label && <h3>{props.context.label}</h3>}
+                    {props.context.details && (
+                        <p>
+                            <em>{props.context.details}</em>
+                        </p>
+                    )}
+                    <button
+                        disabled={props.context.disabled}
+                        onClick={() => props.foreignMutations.toggleOpen()}
+                    >
             {props.context.value.fields
               .map(
                 (_) => (_ as ValueRecord).fields.get("DisplayValue") as string,
@@ -2216,7 +2861,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-  },
+    },
   list: {
     defaultList: () => (props) => {
       const value = props.context.value;
@@ -2364,6 +3009,40 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       );
     },
+      timeline: () => (props) => {
+          const value = props.context.value;
+          if (PredicateValue.Operations.IsUnit(value)) {
+              console.error(`Non partial list renderer called with unit value`);
+              return <></>;
+          }
+          return(<>{props.context.label && <h3>{props.context.label}</h3>}
+                  {props.context.tooltip && <p>{props.context.tooltip}</p>}
+                  {props.context.details && (
+                      <p>
+                          <em>{props.context.details}</em>
+                      </p>
+                  )}
+                  <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
+                      {value.values.map((_, elementIndex) => 
+                          props.embeddedElementTemplate(elementIndex)(undefined)({
+                              ...props,
+                              context: {
+                                  ...props.context,
+                                  customPresentationContext: {
+                                      listElement: {
+                                          isLastListElement:
+                                              elementIndex == value.values.size - 1,
+                                      },
+                                  },
+                              },
+                              view: unit,
+                          })
+     
+                      )}
+        
+                  </ul></>)
+              ;
+      },
     partialList: () => (props) => {
       const value = props.context.value;
 
@@ -2769,6 +3448,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+      
     alwaysRight: () => (props) => {
       return (
         <>
