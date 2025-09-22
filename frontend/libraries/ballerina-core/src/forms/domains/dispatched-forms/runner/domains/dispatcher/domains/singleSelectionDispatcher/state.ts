@@ -1,6 +1,5 @@
 import {
   EnumAbstractRenderer,
-  DispatcherContext,
   SearchableInfiniteStreamAbstractRenderer,
   ValueOrErrors,
   Guid,
@@ -9,13 +8,12 @@ import {
   EnumReference,
   PredicateValue,
   DispatchInjectablesTypes,
-  SingleSelectionType,
-  LookupType,
 } from "../../../../../../../../../main";
 import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
 import { EnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/enum/state";
 import { StreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/stream/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const SingleSelectionDispatcher = {
   Operations: {
@@ -26,7 +24,7 @@ export const SingleSelectionDispatcher = {
       ExtraContext,
     >(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

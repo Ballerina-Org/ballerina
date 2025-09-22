@@ -244,13 +244,7 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources:
-                      DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
-                    enumOptionsSources: UsersSetupFromConfigApis.enumApis,
-                    lookupSources: UsersSetupFromConfigApis.lookupSources,
-                    entityApis: DispatchPersonFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
-                    tableApiSources: UsersSetupFromConfigApis.tableApiSources,
                     IdWrapper,
                     ErrorRenderer,
                     injectedPrimitives: [
@@ -301,6 +295,15 @@ export const DispatcherFormsAppTables = (props: {}) => {
                         ),
                       ),
                       onEntityChange,
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
+                        enumOptionsSources: UsersSetupFromConfigApis.enumApis,
+                        lookupSources: UsersSetupFromConfigApis.lookupSources,
+                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                        tableApiSources:
+                          UsersSetupFromConfigApis.tableApiSources,
+                      },
                     },
                     remoteEntityVersionIdentifier: "",
                     showFormParsingErrors: ShowFormsParsingErrors,

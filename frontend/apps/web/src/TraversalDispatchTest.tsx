@@ -365,11 +365,6 @@ export const TraversalDispatchTest = (props: {}) => {
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources: TraversalPersonApis.streamApis,
-                    enumOptionsSources: TraversalPersonApis.enumApis,
-                    entityApis: TraversalPersonApis.entityApis,
-                    tableApiSources: TraversalPersonApis.tableApiSources,
-                    lookupSources: TraversalPersonApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,
@@ -420,6 +415,14 @@ export const TraversalDispatchTest = (props: {}) => {
                       entity: personEntity,
                       config,
                       onEntityChange: onPersonEntityChange,
+                      apiSources: {
+                        infiniteStreamSources:
+                          TraversalPersonApis.streamApis,
+                        enumOptionsSources: TraversalPersonApis.enumApis,
+                        entityApis: TraversalPersonApis.entityApis,
+                        tableApiSources: TraversalPersonApis.tableApiSources,
+                        lookupSources: TraversalPersonApis.lookupSources,
+                      },
                     },
                     showFormParsingErrors: ShowFormsParsingErrors,
                     remoteEntityVersionIdentifier: "",

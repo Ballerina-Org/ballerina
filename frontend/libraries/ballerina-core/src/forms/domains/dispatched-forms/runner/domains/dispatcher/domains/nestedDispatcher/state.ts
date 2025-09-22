@@ -4,8 +4,8 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { NestedRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const NestedDispatcher = {
   Operations: {
@@ -16,7 +16,7 @@ export const NestedDispatcher = {
       ExtraContext,
     >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -41,7 +41,7 @@ export const NestedDispatcher = {
       ExtraContext,
     >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

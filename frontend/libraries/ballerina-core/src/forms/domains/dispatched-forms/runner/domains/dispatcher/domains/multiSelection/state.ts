@@ -1,6 +1,5 @@
 import {
   EnumMultiselectAbstractRenderer,
-  DispatcherContext,
   InfiniteMultiselectDropdownFormAbstractRenderer,
   ValueOrErrors,
   PredicateValue,
@@ -14,6 +13,7 @@ import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
 import { StreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/stream/state";
 import { EnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/enum/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const MultiSelectionDispatcher = {
   Operations: {
@@ -24,7 +24,7 @@ export const MultiSelectionDispatcher = {
       ExtraContext,
     >(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

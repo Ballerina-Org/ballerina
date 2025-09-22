@@ -12,7 +12,20 @@ import {
   unit,
   DispatchOnChange,
   DispatchInjectablesTypes,
+  DispatchInfiniteStreamSources,
+  DispatchEnumOptionsSources,
+  DispatchEntityApis,
+  DispatchTableApiSources,
+  DispatchLookupSources,
 } from "../../../../../main";
+
+export type ApiSources = {
+  infiniteStreamSources: DispatchInfiniteStreamSources;
+  enumOptionsSources: DispatchEnumOptionsSources;
+  entityApis: DispatchEntityApis;
+  tableApiSources?: DispatchTableApiSources;
+  lookupSources?: DispatchLookupSources;
+};
 
 export type LauncherRef<Flags = Unit> = {
   name: string;
@@ -20,6 +33,7 @@ export type LauncherRef<Flags = Unit> = {
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   onEntityChange: DispatchOnChange<PredicateValue, Flags>;
+  apiSources: ApiSources;
 };
 
 export type DispatchFormRunnerStatus<

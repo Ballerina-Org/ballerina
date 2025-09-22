@@ -5,7 +5,7 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {
@@ -17,7 +17,7 @@ export const MapDispatcher = {
       ExtraContext,
     >(
       renderer: MapRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

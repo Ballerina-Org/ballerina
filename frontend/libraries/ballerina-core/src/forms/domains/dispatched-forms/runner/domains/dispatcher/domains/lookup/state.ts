@@ -5,11 +5,11 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import {
-  DispatcherContext,
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { LookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const LookupDispatcher = {
   Operations: {
@@ -20,7 +20,7 @@ export const LookupDispatcher = {
       ExtraContext,
     >(
       renderer: LookupRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

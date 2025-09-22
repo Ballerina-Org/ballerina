@@ -126,7 +126,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -134,6 +134,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -228,7 +229,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 <input
                   disabled={props.context.disabled}
                   value={
-                    props.context.customFormState.streamParams.value.get(
+                    props.context.customFormState.streamParams.value[0].get(
                       "search",
                     ) ?? ""
                   }
@@ -236,6 +237,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     props.foreignMutations.setStreamParam(
                       "search",
                       e.currentTarget.value,
+                      true,
                     )
                   }
                 />
@@ -354,7 +356,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -362,6 +364,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -525,7 +528,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -533,6 +536,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -697,7 +701,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -705,6 +709,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -1254,7 +1259,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             PredicateValue.Operations.KindAndValueToFilter(kind, value),
           ),
         );
-        props.foreignMutations.updateFilters(filters);
+        props.foreignMutations.updateFilters(filters, true);
       }, [colFilters]);
 
       const handleFilterValueChange = (

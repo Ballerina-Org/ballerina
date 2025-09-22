@@ -12,6 +12,7 @@ import {
 
 import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const UnionDispatcher = {
   Operations: {
@@ -22,7 +23,7 @@ export const UnionDispatcher = {
       ExtraContext,
     >(
       renderer: UnionRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

@@ -1,5 +1,4 @@
 import {
-  DispatcherContext,
   DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
@@ -9,6 +8,7 @@ import { SumAbstractRenderer } from "../../../abstract-renderers/sum/template";
 import { SumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/sum/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/sumUnitDate/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const SumDispatcher = {
   Operations: {
@@ -19,7 +19,7 @@ export const SumDispatcher = {
       ExtraContext,
     >(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

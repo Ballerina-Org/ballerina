@@ -1,10 +1,10 @@
 import {
   DispatchInjectablesTypes,
-  DispatcherContext,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../../main";
 import { RecordFieldRenderer } from "../../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
+import { DispatcherContextWithApiSources } from "../../../../../coroutines/runner";
 import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {
@@ -17,7 +17,7 @@ export const RecordFieldDispatcher = {
     >(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

@@ -14,6 +14,7 @@ import { BoolAbstractRenderer } from "../../../abstract-renderers/boolean/templa
 import { SecretAbstractRenderer } from "../../../abstract-renderers/secret/template";
 import { Base64FileAbstractRenderer } from "../../../abstract-renderers/base-64-file/template";
 import { PrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/primitive/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const PrimitiveDispatcher = {
   Operations: {
@@ -24,7 +25,7 @@ export const PrimitiveDispatcher = {
       ExtraContext,
     >(
       renderer: PrimitiveRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

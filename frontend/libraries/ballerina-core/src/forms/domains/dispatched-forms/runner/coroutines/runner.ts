@@ -1,6 +1,7 @@
 import { AsyncState } from "../../../../../async/state";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import {
+  ApiSources,
   DispatchFormRunnerContext,
   DispatchFormRunnerForeignMutationsExpected,
   DispatchFormRunnerStatus,
@@ -9,7 +10,30 @@ import { id } from "../../../../../fun/domains/id/state";
 import { DispatchFormRunnerState } from "../state";
 import { replaceWith } from "../../../../../fun/domains/updater/domains/replaceWith/state";
 import { List } from "immutable";
-import { DispatchInjectablesTypes, Dispatcher } from "../../../../../../main";
+import {
+  DispatchInjectablesTypes,
+  Dispatcher,
+  DispatcherContext,
+  DispatchParsedType,
+  Renderer,
+  ValueOrErrors,
+} from "../../../../../../main";
+
+export type DispatcherContextWithApiSources<
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+> = Omit<
+  DispatcherContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  "defaultState"
+> &
+  ApiSources & {
+    defaultState: (
+      t: DispatchParsedType<T>,
+      renderer: Renderer<T>,
+    ) => ValueOrErrors<any, string>;
+  };
 
 export const DispatchFormRunner = <
   T extends DispatchInjectablesTypes<T>,
@@ -114,9 +138,24 @@ export const DispatchFormRunner = <
                 );
               }
 
+              const dispatcherContextWithApiSources: DispatcherContextWithApiSources<
+                T,
+                Flags,
+                CustomPresentationContexts,
+                ExtraContext
+              > = {
+                ...dispatcherContext,
+                ...launcherRef.apiSources,
+                defaultState: dispatcherContext.defaultState(
+                  launcherRef.apiSources.infiniteStreamSources,
+                  launcherRef.apiSources.lookupSources,
+                  launcherRef.apiSources.tableApiSources,
+                ),
+              };
+
               const Form = Dispatcher.Operations.Dispatch(
                 passthroughFormLauncher.renderer,
-                dispatcherContext,
+                dispatcherContextWithApiSources,
                 false,
                 false,
                 undefined,
@@ -133,9 +172,10 @@ export const DispatchFormRunner = <
               }
 
               const initialState = dispatcherContext.defaultState(
-                passthroughFormLauncher.type,
-                passthroughFormLauncher.renderer,
-              );
+                launcherRef.apiSources.infiniteStreamSources,
+                launcherRef.apiSources.lookupSources,
+                launcherRef.apiSources.tableApiSources,
+              )(passthroughFormLauncher.type, passthroughFormLauncher.renderer);
 
               if (initialState.kind == "errors") {
                 console.error(

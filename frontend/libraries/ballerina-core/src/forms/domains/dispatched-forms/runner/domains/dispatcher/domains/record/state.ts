@@ -1,9 +1,7 @@
-import { List, Map, OrderedMap } from "immutable";
+import { List, Map } from "immutable";
 import {
   Expr,
-  RecordType,
   ValueOrErrors,
-  DispatcherContext,
   Template,
   MapRepo,
   RecordAbstractRenderer,
@@ -12,6 +10,7 @@ import {
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const RecordDispatcher = {
   Operations: {
@@ -22,7 +21,7 @@ export const RecordDispatcher = {
       ExtraContext,
     >(
       concreteRenderer: string | undefined,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -49,7 +48,7 @@ export const RecordDispatcher = {
       ExtraContext,
     >(
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

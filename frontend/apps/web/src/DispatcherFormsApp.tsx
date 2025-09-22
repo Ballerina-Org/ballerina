@@ -380,13 +380,6 @@ export const DispatcherFormsApp = (props: {}) => {
                     defaultNestedRecordConcreteRenderer:
                       DispatchPersonNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources:
-                      DispatchPersonFromConfigApis.streamApis,
-                    enumOptionsSources: DispatchPersonFromConfigApis.enumApis,
-                    entityApis: DispatchPersonFromConfigApis.entityApis,
-                    tableApiSources:
-                      DispatchPersonFromConfigApis.tableApiSources,
-                    lookupSources: DispatchPersonFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,
@@ -427,6 +420,17 @@ export const DispatcherFormsApp = (props: {}) => {
                           ),
                         ),
                         onEntityChange: onPersonConfigChange,
+                        apiSources: {
+                          infiniteStreamSources:
+                            DispatchPersonFromConfigApis.streamApis,
+                          enumOptionsSources:
+                            DispatchPersonFromConfigApis.enumApis,
+                          entityApis: DispatchPersonFromConfigApis.entityApis,
+                          tableApiSources:
+                            DispatchPersonFromConfigApis.tableApiSources,
+                          lookupSources:
+                            DispatchPersonFromConfigApis.lookupSources,
+                        },
                       },
                       remoteEntityVersionIdentifier:
                         remoteConfigEntityVersionIdentifier,
@@ -467,6 +471,17 @@ export const DispatcherFormsApp = (props: {}) => {
                       entity: personEntity,
                       config,
                       onEntityChange: onPersonEntityChange,
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis,
+                        enumOptionsSources:
+                          DispatchPersonFromConfigApis.enumApis,
+                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                        tableApiSources:
+                          DispatchPersonFromConfigApis.tableApiSources,
+                        lookupSources:
+                          DispatchPersonFromConfigApis.lookupSources,
+                      },
                     },
                     remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,

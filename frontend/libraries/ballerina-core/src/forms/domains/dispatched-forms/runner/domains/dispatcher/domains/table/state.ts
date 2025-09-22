@@ -2,25 +2,22 @@ import {
   Expr,
   DispatchParsedType,
   MapRepo,
-  TableType,
   Template,
   ValueOrErrors,
   TableAbstractRenderer,
   DispatchInjectablesTypes,
   PredicateValue,
-  LookupType,
   LookupTypeAbstractRenderer,
   Dispatcher,
   Value,
-  FilterType,
   SumNType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
 import { NestedDispatcher } from "../nestedDispatcher/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
-import { List, Map } from "immutable";
 import { TableRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { List, Map } from "immutable";
 
 export const TableDispatcher = {
   Operations: {
@@ -31,7 +28,7 @@ export const TableDispatcher = {
       ExtraContext,
     >(
       api: string | undefined,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -54,7 +51,7 @@ export const TableDispatcher = {
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -79,7 +76,7 @@ export const TableDispatcher = {
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -201,7 +198,7 @@ export const TableDispatcher = {
                     }
                   > = (() => {
                     if (filtering == undefined) {
-                      return Map();
+                      return Map([]);
                     }
                     return filtering
                       .map((columnFilters) => ({

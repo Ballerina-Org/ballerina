@@ -96,13 +96,8 @@ export const LoadAndDeserializeSpecification = <
             current.defaultRecordConcreteRenderer,
             current.defaultNestedRecordConcreteRenderer,
             current.concreteRenderers,
-            current.infiniteStreamSources,
-            current.enumOptionsSources,
-            current.entityApis,
             current.IdWrapper,
             current.ErrorRenderer,
-            current.tableApiSources,
-            current.lookupSources,
           )(deserializationResult.value);
 
           if (result.kind == "errors") {

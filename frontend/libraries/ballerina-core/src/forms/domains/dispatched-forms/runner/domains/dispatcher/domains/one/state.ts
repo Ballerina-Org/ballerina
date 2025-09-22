@@ -1,6 +1,5 @@
 import {
   BasicFun,
-  DispatcherContext,
   Guid,
   OneAbstractRenderer,
   DispatchInjectablesTypes,
@@ -11,6 +10,7 @@ import {
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const OneDispatcher = {
   Operations: {
@@ -21,7 +21,7 @@ export const OneDispatcher = {
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -46,7 +46,7 @@ export const OneDispatcher = {
       ExtraContext,
     >(
       api: string[],
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         any,
         Flags,
         CustomPresentationContexts,
@@ -92,7 +92,7 @@ export const OneDispatcher = {
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

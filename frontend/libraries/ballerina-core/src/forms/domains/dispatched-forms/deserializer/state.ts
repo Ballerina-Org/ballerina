@@ -84,9 +84,6 @@ export type DispatcherContext<
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
   apiConverters: DispatchApiConverters<T>;
   specApis: SpecificationApis<T>;
-  infiniteStreamSources: DispatchInfiniteStreamSources;
-  enumOptionsSources: DispatchEnumOptionsSources;
-  entityApis: DispatchEntityApis;
   getConcreteRendererKind: (viewName: string) => ValueOrErrors<string, string>;
   getConcreteRenderer: ReturnType<
     typeof tryGetConcreteRenderer<
@@ -119,6 +116,10 @@ export type DispatcherContext<
     renderer: Renderer<T>,
   ) => ValueOrErrors<PredicateValue, string>;
   defaultState: (
+    infiniteStreamSources: DispatchInfiniteStreamSources,
+    lookupSources: DispatchLookupSources | undefined,
+    tableApiSources: DispatchTableApiSources | undefined,
+  ) => (
     t: DispatchParsedType<T>,
     renderer: Renderer<T>,
   ) => ValueOrErrors<any, string>;
@@ -126,8 +127,6 @@ export type DispatcherContext<
   types: Map<DispatchTypeName, DispatchParsedType<T>>;
   IdProvider: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
-  tableApiSources?: DispatchTableApiSources;
-  lookupSources?: DispatchLookupSources;
   parseFromApiByType: (
     type: DispatchParsedType<T>,
   ) => (raw: any) => ValueOrErrors<PredicateValue, string>;
@@ -293,13 +292,8 @@ export const parseDispatchFormsToLaunchers =
       CustomPresentationContexts,
       ExtraContext
     >,
-    infiniteStreamSources: DispatchInfiniteStreamSources,
-    enumOptionsSources: DispatchEnumOptionsSources,
-    entityApis: DispatchEntityApis,
     IdProvider: (props: IdWrapperProps) => React.ReactNode,
     ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-    tableApiSources?: DispatchTableApiSources,
-    lookupSources?: DispatchLookupSources,
   ) =>
   (
     specification: Specification<T>,
@@ -378,11 +372,6 @@ export const parseDispatchFormsToLaunchers =
             forms: specification.forms,
             injectedPrimitives,
             apiConverters,
-            infiniteStreamSources,
-            lookupSources,
-            enumOptionsSources,
-            tableApiSources,
-            entityApis,
             concreteRenderers,
             lookupTypeRenderer,
             getConcreteRendererKind: concreteRendererToKind(concreteRenderers),
@@ -398,16 +387,21 @@ export const parseDispatchFormsToLaunchers =
               specification.types,
               specification.forms,
             ),
-            defaultState: dispatchDefaultState(
-              infiniteStreamSources,
-              injectedPrimitives,
-              specification.types,
-              specification.forms,
-              apiConverters,
-              lookupSources,
-              tableApiSources,
-              specification.apis,
-            ),
+            defaultState: (
+              infiniteStreamSources: DispatchInfiniteStreamSources,
+              lookupSources: DispatchLookupSources | undefined,
+              tableApiSources: DispatchTableApiSources | undefined,
+            ) =>
+              dispatchDefaultState(
+                infiniteStreamSources,
+                injectedPrimitives,
+                specification.types,
+                specification.forms,
+                apiConverters,
+                lookupSources,
+                tableApiSources,
+                specification.apis,
+              ),
             types: specification.types,
             parseFromApiByType: (type: DispatchParsedType<T>) =>
               dispatchFromAPIRawValue(
@@ -500,13 +494,8 @@ export type DispatchFormsParserContext<
   IdWrapper: (props: IdWrapperProps) => React.ReactNode;
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode;
   fieldTypeConverters: DispatchApiConverters<T>;
-  infiniteStreamSources: DispatchInfiniteStreamSources;
-  lookupSources?: DispatchLookupSources;
-  enumOptionsSources: DispatchEnumOptionsSources;
-  entityApis: DispatchEntityApis;
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
-  tableApiSources?: DispatchTableApiSources;
 };
 
 export type DispatchFormsParserState<

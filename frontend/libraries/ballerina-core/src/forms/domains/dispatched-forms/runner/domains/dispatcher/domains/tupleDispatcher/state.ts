@@ -11,6 +11,7 @@ import {
 import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { TupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/tuple/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const TupleDispatcher = {
   Operations: {
@@ -21,7 +22,7 @@ export const TupleDispatcher = {
       ExtraContext,
     >(
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

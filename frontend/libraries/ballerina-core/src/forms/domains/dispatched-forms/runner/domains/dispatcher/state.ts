@@ -1,8 +1,5 @@
 import {
-  DispatcherContext,
   DispatchInjectablesTypes,
-  DispatchParsedType,
-  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../main";
@@ -21,6 +18,7 @@ import { TupleDispatcher } from "./domains/tupleDispatcher/state";
 import { UnionDispatcher } from "./domains/unionDispatcher/state";
 import { PrimitiveDispatcher } from "./domains/primitive/state";
 import { LookupRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
+import { DispatcherContextWithApiSources } from "../../coroutines/runner";
 
 export const Dispatcher = {
   Operations: {
@@ -31,7 +29,7 @@ export const Dispatcher = {
       ExtraContext,
     >(
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
@@ -58,7 +56,7 @@ export const Dispatcher = {
       ExtraContext,
     >(
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

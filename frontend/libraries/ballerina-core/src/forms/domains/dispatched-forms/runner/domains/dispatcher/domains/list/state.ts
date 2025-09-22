@@ -1,4 +1,3 @@
-import { DispatcherContext } from "../../../../../deserializer/state";
 import {
   DispatchInjectablesTypes,
   ListAbstractRenderer,
@@ -7,6 +6,7 @@ import {
 } from "../../../../../../../../../main";
 import { ListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 //TODO check type
 export const ListDispatcher = {
@@ -18,7 +18,7 @@ export const ListDispatcher = {
       ExtraContext,
     >(
       renderer: ListRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,

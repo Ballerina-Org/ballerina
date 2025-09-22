@@ -1,6 +1,4 @@
-import { DispatcherContext } from "../../../../../deserializer/state";
 import {
-  CommonAbstractRendererState,
   DispatchInjectablesTypes,
   ReadOnlyAbstractRenderer,
   Template,
@@ -8,6 +6,7 @@ import {
 } from "../../../../../../../../../main";
 import { ReadOnlyRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/readOnly/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const ReadOnlyDispatcher = {
   Operations: {
@@ -18,7 +17,7 @@ export const ReadOnlyDispatcher = {
       ExtraContext,
     >(
       renderer: ReadOnlyRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
         CustomPresentationContexts,
