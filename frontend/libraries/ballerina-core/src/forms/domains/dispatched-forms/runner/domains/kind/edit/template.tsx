@@ -7,11 +7,11 @@ import { Template } from "../../../../../../../../main";
 import React from "react";
 import { DispatchEditFormRunner } from "./coroutines/runner";
 
-export const DispatchEditFormLauncherTemplate = <T, FS>() =>
+export const DispatchEditFormLauncherTemplate = <T,>() =>
   Template.Default<
-    DispatchEditFormLauncherContext<T, FS>,
-    DispatchEditFormLauncherState<T, FS>,
-    DispatchEditFormLauncherForeignMutationsExpected<T, FS>
+    DispatchEditFormLauncherContext<T>,
+    DispatchEditFormLauncherState<T>,
+    DispatchEditFormLauncherForeignMutationsExpected<T>
   >((props) => {
     return <>edit</>;
-  }).any([DispatchEditFormRunner<T, FS>()]);
+  }).any([DispatchEditFormRunner<T>()]);

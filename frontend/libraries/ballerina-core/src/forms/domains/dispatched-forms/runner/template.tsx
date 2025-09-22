@@ -8,7 +8,6 @@ import {
 
 import { DispatchFormRunner } from "./coroutines/runner";
 import {
-  Bindings,
   Template,
   unit,
   BasicUpdater,
@@ -37,33 +36,6 @@ export const DispatchFormRunnerTemplate = <
     DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
-    // const entity = props.context.launcherRef.entity;
-    // const config = props.context.launcherRef.config;
-
-    // if (entity.kind == "r" || config.kind == "r") {
-    //   return <></>;
-    // }
-
-    // if (entity.value.kind == "errors") {
-    //   console.error(entity.value.errors.map((error) => error).join("\n"));
-    //   return (
-    //     props.context.errorComponent ?? <>Error: Check console for details</>
-    //   );
-    // }
-
-    // if (config.value.kind == "errors") {
-    //   console.error(config.value.errors.map((error) => error).join("\n"));
-    //   return (
-    //     props.context.errorComponent ?? <>Error: Check console for details</>
-    //   );
-    // }
-
-    // const bindings: Bindings = Map([
-    //   ["global", config.value.value],
-    //   ["root", entity.value.value],
-    //   ["local", entity.value.value],
-    // ]);
-
     if (props.context.status.kind !== "loaded") {
       if (
         props.context.status.kind === "loading" ||
@@ -77,76 +49,40 @@ export const DispatchFormRunnerTemplate = <
       );
     }
 
-    if (props.context.launcherRef.kind == "passthrough") {
-      const InstantiatedDispatchPassthroughFormLauncherTemplate =
-        DispatchPassthroughFormLauncherTemplate<T>();
+    const InstantiatedTemplate =
+      props.context.launcherRef.kind == "passthrough"
+        ? DispatchPassthroughFormLauncherTemplate<
+            T,
+            Flags,
+            CustomPresentationContexts,
+            ExtraContext
+          >()
+        : props.context.launcherRef.kind == "edit"
+          ? DispatchEditFormLauncherTemplate<T>()
+          : props.context.launcherRef.kind == "create"
+            ? DispatchCreateFormLauncherTemplate<T>()
+            : "Unknown launcher kind";
+
+    if (InstantiatedTemplate == "Unknown launcher kind") {
+      console.error("Unknown launcher kind", props.context.launcherRef);
       return (
-        <InstantiatedDispatchPassthroughFormLauncherTemplate
-          context={{
-            ...props.context.formState,
-            value: entity.value.value,
-            locked: false,
-            disabled: false,
-            bindings,
-            extraContext: props.context.extraContext,
-            remoteEntityVersionIdentifier:
-              props.context.remoteEntityVersionIdentifier,
-            domNodeAncestorPath: "",
-            lookupTypeAncestorNames: [],
-            // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
-          }}
-          setState={(_: BasicUpdater<any>) =>
-            props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
-            )
-          }
-          view={unit}
-          foreignMutations={{
-            onChange: (updater, delta) => {
-              if (props.context.launcherRef.entity.kind == "r") return;
-              props.context.launcherRef.onEntityChange(updater, delta);
-            },
-          }}
-        />
+        props.context.errorComponent ?? <>Error: Check console for details</>
       );
     }
 
-    if (props.context.launcherRef.kind == "edit") {
-      const InstantiatedDispatchEditFormLauncherTemplate =
-        DispatchEditFormLauncherTemplate<T>();
-      return (
-        <InstantiatedDispatchEditFormLauncherTemplate
-          context={props.context}
-          setState={(_: BasicUpdater<any>) =>
-            props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
-            )
-          }
-          foreignMutations={props.foreignMutations}
-          view={props.view}
-        />
-      );
-    }
-
-    if (props.context.launcherRef.kind == "create") {
-      const InstantiatedDispatchCreateFormLauncherTemplate =
-        DispatchCreateFormLauncherTemplate<T>();
-      return (
-        <InstantiatedDispatchCreateFormLauncherTemplate
-          context={props.context}
-          setState={(_: BasicUpdater<any>) =>
-            props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
-            )
-          }
-          foreignMutations={props.foreignMutations}
-          view={props.view}
-        />
-      );
-    }
-
-    console.error("Unknown launcher kind", props.context.launcherRef.kind);
     return (
-      props.context.errorComponent ?? <>Error: Check console for details</>
+      <InstantiatedTemplate
+        context={{
+          ...props.context,
+          launcherRef: props.context.launcherRef as any,
+        }}
+        setState={(_: BasicUpdater<any>) =>
+          props.setState(
+            DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
+          )
+        }
+        view={unit}
+        foreignMutations={props.foreignMutations}
+      />
     );
   }).any([DispatchFormRunner()]);

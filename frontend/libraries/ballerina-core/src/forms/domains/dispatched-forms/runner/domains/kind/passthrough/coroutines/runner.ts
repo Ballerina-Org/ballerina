@@ -1,13 +1,27 @@
-import { CoTypedFactory } from "../../../../../../../../../main";
+import {
+  CoTypedFactory,
+  DispatchInjectablesTypes,
+  Unit,
+} from "../../../../../../../../../main";
 import {
   DispatchPassthroughFormLauncherContext,
   DispatchPassthroughFormLauncherState,
   DispatchPassthroughFormLauncherForeignMutationsExpected,
 } from "../state";
 
-export const DispatchPassthroughFormRunner = <T>() => {
+export const DispatchPassthroughFormRunner = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+  CustomPresentationContexts = Unit,
+  ExtraContext = Unit,
+>() => {
   const CreateCo = CoTypedFactory<
-    DispatchPassthroughFormLauncherContext<T>,
+    DispatchPassthroughFormLauncherContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
     DispatchPassthroughFormLauncherState<T>
   >();
 

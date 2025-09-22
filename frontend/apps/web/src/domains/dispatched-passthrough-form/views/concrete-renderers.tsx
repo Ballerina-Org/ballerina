@@ -201,6 +201,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        const [streamParams, shouldReload] =
+          props.context.customFormState.streamParams.value;
+
         return (
           <>
             <p>one admin renderer</p>
