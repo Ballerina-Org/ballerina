@@ -4,9 +4,7 @@ import {
   LookupTypeAbstractRenderer,
   Template,
 } from "../../../../../../../../../main";
-import {
-  ValueOrErrors,
-} from "../../../../../../../../../main";
+import { ValueOrErrors } from "../../../../../../../../../main";
 import { LookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
 import { Dispatcher } from "../../state";
 import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";

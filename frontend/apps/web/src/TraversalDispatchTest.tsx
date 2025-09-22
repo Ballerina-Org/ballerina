@@ -416,8 +416,7 @@ export const TraversalDispatchTest = (props: {}) => {
                       config,
                       onEntityChange: onPersonEntityChange,
                       apiSources: {
-                        infiniteStreamSources:
-                          TraversalPersonApis.streamApis,
+                        infiniteStreamSources: TraversalPersonApis.streamApis,
                         enumOptionsSources: TraversalPersonApis.enumApis,
                         entityApis: TraversalPersonApis.entityApis,
                         tableApiSources: TraversalPersonApis.tableApiSources,
