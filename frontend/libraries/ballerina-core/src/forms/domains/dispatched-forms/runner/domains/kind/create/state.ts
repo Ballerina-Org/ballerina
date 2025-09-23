@@ -4,7 +4,14 @@ import {
   DispatchInjectablesTypes,
   CreateLauncherRef,
   Unit,
+  ApiErrors,
 } from "../../../../../../../../main";
+
+export type DispatchCreateFormLauncherApi = {
+  default: () => Promise<any>;
+  create: (raw: any) => Promise<ApiErrors>;
+  getGlobalConfiguration: () => Promise<any>;
+};
 
 export type DispatchCreateFormLauncherContext<
   T extends DispatchInjectablesTypes<T>,
@@ -16,6 +23,7 @@ export type DispatchCreateFormLauncherContext<
   "launcherRef"
 > & {
   launcherRef: CreateLauncherRef<Flags>;
+  api?: DispatchCreateFormLauncherApi;
 };
 
 export type DispatchCreateFormLauncherState<

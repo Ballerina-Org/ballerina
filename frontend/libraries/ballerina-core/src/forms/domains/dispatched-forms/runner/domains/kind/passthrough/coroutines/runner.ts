@@ -46,6 +46,7 @@ export const DispatchPassthroughFormRunner = <
         !AsyncState.Operations.hasValue(current.deserializedSpecification.sync)
           ? Co.Wait(0)
           : Co.UpdateState((_) => {
+              console.log("DispatchPassthroughFormRunner", current);
               if (
                 !AsyncState.Operations.hasValue(
                   current.deserializedSpecification.sync,
@@ -173,6 +174,7 @@ export const DispatchPassthroughFormRunner = <
                 );
               }
 
+              console.debug("updating form state", Form);
               return DispatchFormRunnerState<T, Flags>()
                 .Updaters.formState(replaceWith(initialState.value))
                 .then(

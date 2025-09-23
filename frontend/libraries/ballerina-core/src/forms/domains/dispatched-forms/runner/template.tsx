@@ -61,35 +61,12 @@ export const DispatchFormRunnerTemplate = <
     DispatchFormRunnerState<T, Flags>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
-    if (props.context.status.kind !== "loaded") {
-      if (
-        props.context.status.kind === "loading" ||
-        props.context.status.kind == "not initialized"
-      ) {
-        return props.context.loadingComponent ?? <>Loading...</>;
-      }
-
-      return (
-        props.context.errorComponent ?? <>Error: Check console for details</>
-      );
-    }
-
-    const embeddedProps = {
-      context: props.context,
-      view: unit,
-      foreignMutations: props.foreignMutations,
-      setState: (stateUpdater: BasicUpdater<any>) =>
-        props.setState(
-          DispatchFormRunnerState<T, Flags>().Updaters.formState(stateUpdater),
-        ),
-    };
-
     if (props.context.launcherRef.kind === "passthrough") {
       return (
         <InstantiatedPassthroughFormLauncherTemplate
-          {...embeddedProps}
+          {...props}
           context={{
-            ...embeddedProps.context,
+            ...props.context,
             launcherRef: props.context
               .launcherRef as PassthroughLauncherRef<Flags>,
           }}
@@ -100,9 +77,9 @@ export const DispatchFormRunnerTemplate = <
     if (props.context.launcherRef.kind === "edit") {
       return (
         <InstantiatedEditFormLauncherTemplate
-          {...embeddedProps}
+          {...props}
           context={{
-            ...embeddedProps.context,
+            ...props.context,
             launcherRef: props.context.launcherRef as EditLauncherRef<Flags>,
           }}
         />
@@ -112,9 +89,10 @@ export const DispatchFormRunnerTemplate = <
     if (props.context.launcherRef.kind === "create") {
       return (
         <InstantiatedCreateFormLauncherTemplate
-          {...embeddedProps}
+          {...props}
           context={{
-            ...embeddedProps.context,
+            ...props.context,
+            api: undefined,
             launcherRef: props.context.launcherRef as CreateLauncherRef<Flags>,
           }}
         />

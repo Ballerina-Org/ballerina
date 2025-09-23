@@ -14,7 +14,7 @@ export const DispatchCreateFormRunner = <
   CustomPresentationContexts,
   ExtraContext,
 >() => {
-  const CreateCo = CoTypedFactory<
+  const Co = CoTypedFactory<
     DispatchCreateFormLauncherContext<
       T,
       Flags,
@@ -24,9 +24,14 @@ export const DispatchCreateFormRunner = <
     DispatchCreateFormLauncherState<T, Flags>
   >();
 
-  return CreateCo.Template<
-    DispatchCreateFormLauncherForeignMutationsExpected<T>
-  >(CreateCo.Repeat(CreateCo.Seq([CreateCo.Wait(2500)])), {
-    runFilter: (_) => false,
-  });
+  return Co.Template<DispatchCreateFormLauncherForeignMutationsExpected<T>>(
+    Co.GetState().then((current) =>
+      Co.Do(() => {
+        console.log("DispatchCreateFormRunner", current);
+      }),
+    ),
+    {
+      runFilter: (_) => false,
+    },
+  );
 };
