@@ -22,6 +22,7 @@ import {
 import { DispatchPassthroughFormLauncherTemplate } from "./domains/kind/passthrough/template";
 import { DispatchEditFormLauncherTemplate } from "./domains/kind/edit/template";
 import { DispatchCreateFormLauncherTemplate } from "./domains/kind/create/template";
+import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
 
 export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
@@ -92,7 +93,7 @@ export const DispatchFormRunnerTemplate = <
           {...props}
           context={{
             ...props.context,
-            api: undefined,
+            ...DispatchCreateFormLauncherState<T, Flags>().Default(),
             launcherRef: props.context.launcherRef as CreateLauncherRef<Flags>,
           }}
         />
