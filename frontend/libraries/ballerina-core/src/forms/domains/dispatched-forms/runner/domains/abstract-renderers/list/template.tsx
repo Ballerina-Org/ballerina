@@ -143,7 +143,7 @@ export const ListAbstractRenderer = <
           },
         }));
 
-  const embeddedPlaceholderElementTemplate  =
+  const embeddedPlaceholderElementTemplate =
     (elementIndex: number) => (flags: Flags | undefined) =>
       elementTemplate
         .mapContext(
