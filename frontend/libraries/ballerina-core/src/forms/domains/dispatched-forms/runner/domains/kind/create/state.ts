@@ -5,6 +5,11 @@ import {
   CreateLauncherRef,
   Unit,
   ApiErrors,
+  Synchronized,
+  PredicateValue,
+  unit,
+  simpleUpdater,
+  ApiResponseChecker,
 } from "../../../../../../../../main";
 
 export type DispatchCreateFormLauncherApi = {
@@ -23,12 +28,37 @@ export type DispatchCreateFormLauncherContext<
   "launcherRef"
 > & {
   launcherRef: CreateLauncherRef<Flags>;
-  api?: DispatchCreateFormLauncherApi;
 };
 
 export type DispatchCreateFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-> = DispatchFormRunnerState<T, Flags>;
+> = DispatchFormRunnerState<T, Flags> & {
+  entity: Synchronized<Unit, PredicateValue>;
+  initApiChecker: ApiResponseChecker;
+};
+
+export const DispatchCreateFormLauncherState = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+>() => ({
+  Default: (): DispatchCreateFormLauncherState<T, Flags> => ({
+    ...DispatchFormRunnerState<T, Flags>().Default(),
+    entity: Synchronized.Default(unit),
+    initApiChecker: ApiResponseChecker.Default(false),
+  }),
+  Updaters: {
+    Core: {
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("status"),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
+        "formState",
+      ),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
+        "initApiChecker",
+      ),
+    },
+  },
+});
 
 export type DispatchCreateFormLauncherForeignMutationsExpected<T> = {};

@@ -21,6 +21,8 @@ import {
   FormRefCreateApiHandlers,
   Guid,
 } from "../../../../../main";
+import { DispatchCreateFormLauncherApi } from "./domains/kind/create/state";
+import { DispatchEditFormLauncherApi } from "./domains/kind/edit/state";
 
 export type ApiSources = {
   infiniteStreamSources: DispatchInfiniteStreamSources;
@@ -46,11 +48,13 @@ export type EditLauncherRef<Flags = Unit> = {
   kind: "edit";
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
+  // api: DispatchEditFormLauncherApi;
 } & BaseLauncherRef;
 
 export type CreateLauncherRef<Flags = Unit> = {
   kind: "create";
   apiHandlers?: FormRefCreateApiHandlers<any>;
+  // api: DispatchCreateFormLauncherApi;
 } & BaseLauncherRef;
 
 export type LauncherRef<Flags = Unit> =

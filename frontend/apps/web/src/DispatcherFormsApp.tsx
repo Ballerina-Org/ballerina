@@ -493,6 +493,35 @@ export const DispatcherFormsApp = (props: {}) => {
                   view={unit}
                   foreignMutations={unit}
                 />
+                <InstantiedPersonDispatchFormRunnerTemplate
+                  context={{
+                    ...specificationDeserializer,
+                    ...personPassthroughFormState,
+                    launcherRef: {
+                      name: "create-person",
+                      kind: "create",
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis,
+                        enumOptionsSources:
+                          DispatchPersonFromConfigApis.enumApis,
+                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                        tableApiSources:
+                          DispatchPersonFromConfigApis.tableApiSources,
+                        lookupSources:
+                          DispatchPersonFromConfigApis.lookupSources,
+                      },
+                    },
+                    remoteEntityVersionIdentifier,
+                    showFormParsingErrors: ShowFormsParsingErrors,
+                    extraContext: {
+                      flags: Set(["BC", "X"]),
+                    },
+                  }}
+                  setState={setPersonPassthroughFormState}
+                  view={unit}
+                  foreignMutations={unit}
+                />
               </td>
             </tr>
           </tbody>

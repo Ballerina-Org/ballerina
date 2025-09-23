@@ -24,7 +24,6 @@ export type DispatchEditFormLauncherContext<
   "launcherRef"
 > & {
   launcherRef: EditLauncherRef<Flags>;
-  api?: DispatchEditFormLauncherApi;
 };
 
 export type DispatchEditFormLauncherState<
