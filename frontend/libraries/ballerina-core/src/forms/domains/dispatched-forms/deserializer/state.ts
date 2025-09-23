@@ -576,7 +576,7 @@ export const parseDispatchFormsToLaunchers =
                         tableApiSources,
                         specification.apis,
                       ),
-                        types: specification.types,
+                    types: specification.types,
                     parseFromApiByType: (type: DispatchParsedType<T>) =>
                       dispatchFromAPIRawValue(
                         type,
