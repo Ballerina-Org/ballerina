@@ -1,9 +1,13 @@
 import { Map } from "immutable";
 
 import {
+  CreateLauncherRef,
   DispatchFormRunnerContext,
   DispatchFormRunnerForeignMutationsExpected,
   DispatchFormRunnerState,
+  EditLauncherRef,
+  LauncherRef,
+  PassthroughLauncherRef,
 } from "./state";
 
 import { DispatchFormRunner } from "./coroutines/runner";
@@ -21,11 +25,32 @@ import { DispatchCreateFormLauncherTemplate } from "./domains/kind/create/templa
 
 export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
->() =>
-  Template.Default<
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+>() => {
+  const InstantiatedPassthroughFormLauncherTemplate =
+    DispatchPassthroughFormLauncherTemplate<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >();
+  const InstantiatedEditFormLauncherTemplate = DispatchEditFormLauncherTemplate<
+    T,
+    Flags,
+    CustomPresentationContexts,
+    ExtraContext
+  >();
+  const InstantiatedCreateFormLauncherTemplate =
+    DispatchCreateFormLauncherTemplate<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >();
+
+  return Template.Default<
     DispatchFormRunnerContext<
       T,
       Flags,
@@ -49,40 +74,56 @@ export const DispatchFormRunnerTemplate = <
       );
     }
 
-    const InstantiatedTemplate =
-      props.context.launcherRef.kind == "passthrough"
-        ? DispatchPassthroughFormLauncherTemplate<
-            T,
-            Flags,
-            CustomPresentationContexts,
-            ExtraContext
-          >()
-        : props.context.launcherRef.kind == "edit"
-          ? DispatchEditFormLauncherTemplate<T>()
-          : props.context.launcherRef.kind == "create"
-            ? DispatchCreateFormLauncherTemplate<T>()
-            : "Unknown launcher kind";
+    const embeddedProps = {
+      context: props.context,
+      view: unit,
+      foreignMutations: props.foreignMutations,
+      setState: (stateUpdater: BasicUpdater<any>) =>
+        props.setState(
+          DispatchFormRunnerState<T, Flags>().Updaters.formState(stateUpdater),
+        ),
+    };
 
-    if (InstantiatedTemplate == "Unknown launcher kind") {
-      console.error("Unknown launcher kind", props.context.launcherRef);
+    if (props.context.launcherRef.kind === "passthrough") {
       return (
-        props.context.errorComponent ?? <>Error: Check console for details</>
+        <InstantiatedPassthroughFormLauncherTemplate
+          {...embeddedProps}
+          context={{
+            ...embeddedProps.context,
+            launcherRef: props.context
+              .launcherRef as PassthroughLauncherRef<Flags>,
+          }}
+        />
       );
     }
 
+    if (props.context.launcherRef.kind === "edit") {
+      return (
+        <InstantiatedEditFormLauncherTemplate
+          {...embeddedProps}
+          context={{
+            ...embeddedProps.context,
+            launcherRef: props.context.launcherRef as EditLauncherRef<Flags>,
+          }}
+        />
+      );
+    }
+
+    if (props.context.launcherRef.kind === "create") {
+      return (
+        <InstantiatedCreateFormLauncherTemplate
+          {...embeddedProps}
+          context={{
+            ...embeddedProps.context,
+            launcherRef: props.context.launcherRef as CreateLauncherRef<Flags>,
+          }}
+        />
+      );
+    }
+
+    console.error("Unknown launcher kind", props.context.launcherRef);
     return (
-      <InstantiatedTemplate
-        context={{
-          ...props.context,
-          launcherRef: props.context.launcherRef as any,
-        }}
-        setState={(_: BasicUpdater<any>) =>
-          props.setState(
-            DispatchFormRunnerState<T, Flags>().Updaters.formState(_),
-          )
-        }
-        view={unit}
-        foreignMutations={props.foreignMutations}
-      />
+      props.context.errorComponent ?? <>Error: Check console for details</>
     );
   }).any([DispatchFormRunner()]);
+};
