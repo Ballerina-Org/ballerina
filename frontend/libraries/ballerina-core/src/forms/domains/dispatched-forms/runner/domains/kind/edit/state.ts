@@ -3,8 +3,16 @@ import {
   DispatchFormRunnerState,
   DispatchInjectablesTypes,
   EditLauncherRef,
+  Guid,
+  ApiErrors,
   Unit,
 } from "../../../../../../../../main";
+
+export type DispatchEditFormLauncherApi = {
+  get: (id: Guid) => Promise<any>;
+  update: (id: Guid, raw: any) => Promise<ApiErrors>;
+  getGlobalConfiguration: () => Promise<any>;
+};
 
 export type DispatchEditFormLauncherContext<
   T extends DispatchInjectablesTypes<T>,
@@ -16,6 +24,7 @@ export type DispatchEditFormLauncherContext<
   "launcherRef"
 > & {
   launcherRef: EditLauncherRef<Flags>;
+  api?: DispatchEditFormLauncherApi;
 };
 
 export type DispatchEditFormLauncherState<

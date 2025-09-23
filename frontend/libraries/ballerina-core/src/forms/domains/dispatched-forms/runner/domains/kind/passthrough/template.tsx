@@ -4,6 +4,7 @@ import {
   DispatchPassthroughFormLauncherForeignMutationsExpected,
 } from "./state";
 import {
+  BasicUpdater,
   Bindings,
   DispatchFormRunnerState,
   DispatchInjectablesTypes,
@@ -73,7 +74,13 @@ export const DispatchPassthroughFormLauncherTemplate = <
           lookupTypeAncestorNames: [],
           // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
         }}
-        setState={props.setState}
+        setState={(stateUpdater: BasicUpdater<any>) =>
+          props.setState(
+            DispatchFormRunnerState<T, Flags>().Updaters.formState(
+              stateUpdater,
+            ),
+          )
+        }
         view={unit}
         foreignMutations={{
           ...props.foreignMutations,
@@ -84,7 +91,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
         }}
       />
     ) : (
-      <></>
+      <>not initialized</>
     );
   }).any([
     DispatchPassthroughFormRunner<
