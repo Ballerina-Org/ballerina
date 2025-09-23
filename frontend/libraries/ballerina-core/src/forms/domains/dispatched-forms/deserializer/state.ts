@@ -73,9 +73,6 @@ export type DispatchParsedEditLauncher<T> = {
   parseGlobalConfigurationFromApi: (
     _: any,
   ) => ValueOrErrors<PredicateValue, string>;
-  api: {
-    getGlobalConfiguration: () => Promise<any>;
-  };
 };
 
 export type DispatchParsedCreateLauncher<T> = {
@@ -91,9 +88,6 @@ export type DispatchParsedCreateLauncher<T> = {
   parseGlobalConfigurationFromApi: (
     _: any,
   ) => ValueOrErrors<PredicateValue, string>;
-  api: {
-    getGlobalConfiguration: () => Promise<any>;
-  };
 };
 
 export type DispatchParsedLauncher<T> =
@@ -462,10 +456,6 @@ export const parseDispatchFormsToLaunchers =
                             injectedPrimitives,
                           )(value, formState),
                         formName: launcher.form,
-                        api: {
-                          getGlobalConfiguration: () =>
-                            entityApis.get(launcher.configApi)(""),
-                        },
                       },
                     ]),
                   ),
@@ -530,10 +520,6 @@ export const parseDispatchFormsToLaunchers =
                                 injectedPrimitives,
                               )(value, formState),
                             formName: launcher.form,
-                            api: {
-                              getGlobalConfiguration: () =>
-                                entityApis.get(launcher.configApi)(""),
-                            },
                           },
                         ]),
                       ),
