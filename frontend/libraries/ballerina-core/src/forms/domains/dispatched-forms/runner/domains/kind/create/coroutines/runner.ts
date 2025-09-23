@@ -1,15 +1,27 @@
-import { CoTypedFactory } from "../../../../../../../../../main";
-import { Co } from "../../../abstract-renderers/table/coroutines/builder";
+import {
+  CoTypedFactory,
+  DispatchInjectablesTypes,
+} from "../../../../../../../../../main";
 import {
   DispatchCreateFormLauncherContext,
   DispatchCreateFormLauncherForeignMutationsExpected,
   DispatchCreateFormLauncherState,
 } from "../state";
 
-export const DispatchCreateFormRunner = <T>() => {
+export const DispatchCreateFormRunner = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+>() => {
   const CreateCo = CoTypedFactory<
-    DispatchCreateFormLauncherContext<T>,
-    DispatchCreateFormLauncherState<T>
+    DispatchCreateFormLauncherContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
+    DispatchCreateFormLauncherState<T, Flags>
   >();
 
   return CreateCo.Template<

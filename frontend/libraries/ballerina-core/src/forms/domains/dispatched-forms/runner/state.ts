@@ -30,32 +30,33 @@ export type ApiSources = {
   lookupSources?: DispatchLookupSources;
 };
 
+export type BaseLauncherRef = {
+  name: string;
+  apiSources: ApiSources;
+};
+
 export type PassthroughLauncherRef<Flags = Unit> = {
   kind: "passthrough";
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   onEntityChange: DispatchOnChange<PredicateValue, Flags>;
-};
+} & BaseLauncherRef;
 
 export type EditLauncherRef<Flags = Unit> = {
   kind: "edit";
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
-};
+} & BaseLauncherRef;
 
 export type CreateLauncherRef<Flags = Unit> = {
   kind: "create";
   apiHandlers?: FormRefCreateApiHandlers<any>;
-};
+} & BaseLauncherRef;
 
-export type LauncherRef<Flags = Unit> = {
-  name: string;
-  apiSources: ApiSources;
-} & (
+export type LauncherRef<Flags = Unit> =
   | PassthroughLauncherRef<Flags>
   | EditLauncherRef<Flags>
-  | CreateLauncherRef<Flags>
-);
+  | CreateLauncherRef<Flags>;
 
 export type DispatchFormRunnerStatus<
   T extends DispatchInjectablesTypes<T>,

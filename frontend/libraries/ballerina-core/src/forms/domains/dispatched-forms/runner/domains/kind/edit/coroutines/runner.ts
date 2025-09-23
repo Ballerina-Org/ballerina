@@ -1,20 +1,33 @@
-import { CoTypedFactory } from "../../../../../../../../../main";
-import { Co } from "../../../abstract-renderers/table/coroutines/builder";
+import {
+  CoTypedFactory,
+  DispatchInjectablesTypes,
+} from "../../../../../../../../../main";
 import {
   DispatchEditFormLauncherContext,
   DispatchEditFormLauncherState,
   DispatchEditFormLauncherForeignMutationsExpected,
 } from "../state";
 
-export const DispatchEditFormRunner = <T>() => {
+export const DispatchEditFormRunner = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+>() => {
   const CreateCo = CoTypedFactory<
-    DispatchEditFormLauncherContext<T>,
-    DispatchEditFormLauncherState<T>
+    DispatchEditFormLauncherContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
+    DispatchEditFormLauncherState<T, Flags>
   >();
 
-  return CreateCo.Template<
-    DispatchEditFormLauncherForeignMutationsExpected<T>
-  >(CreateCo.Repeat(CreateCo.Seq([CreateCo.Wait(2500)])), {
-    runFilter: (_) => false,
-  });
+  return CreateCo.Template<DispatchEditFormLauncherForeignMutationsExpected<T>>(
+    CreateCo.Repeat(CreateCo.Seq([CreateCo.Wait(2500)])),
+    {
+      runFilter: (_) => false,
+    },
+  );
 };

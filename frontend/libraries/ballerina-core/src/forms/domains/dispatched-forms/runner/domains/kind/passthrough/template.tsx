@@ -16,9 +16,9 @@ import { Map } from "immutable";
 
 export const DispatchPassthroughFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
 >() =>
   Template.Default<
     DispatchPassthroughFormLauncherContext<
@@ -28,7 +28,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
       ExtraContext
     > &
       DispatchFormRunnerState<T, Flags>,
-    DispatchPassthroughFormLauncherState<T>,
+    DispatchPassthroughFormLauncherState<T, Flags>,
     DispatchPassthroughFormLauncherForeignMutationsExpected<T>
   >((props) => {
     const entity = props.context.launcherRef.entity;
@@ -61,7 +61,6 @@ export const DispatchPassthroughFormLauncherTemplate = <
     return props.context.status.kind == "loaded" ? (
       <props.context.status.Form
         context={{
-          ...props.context,
           ...props.context.formState,
           value: entity.value.value,
           locked: false,

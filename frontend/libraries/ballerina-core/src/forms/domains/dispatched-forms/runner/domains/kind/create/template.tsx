@@ -3,15 +3,35 @@ import {
   DispatchCreateFormLauncherState,
   DispatchCreateFormLauncherForeignMutationsExpected,
 } from "./state";
-import { Template } from "../../../../../../../../main";
-import React from "react";
+import {
+  DispatchInjectablesTypes,
+  Template,
+  Unit,
+} from "../../../../../../../../main";
 import { DispatchCreateFormRunner } from "./coroutines/runner";
 
-export const DispatchCreateFormLauncherTemplate = <T,>() =>
+export const DispatchCreateFormLauncherTemplate = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+>() =>
   Template.Default<
-    DispatchCreateFormLauncherContext<T>,
-    DispatchCreateFormLauncherState<T>,
+    DispatchCreateFormLauncherContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
+    DispatchCreateFormLauncherState<T, Flags>,
     DispatchCreateFormLauncherForeignMutationsExpected<T>
   >((props) => {
     return <>create</>;
-  }).any([DispatchCreateFormRunner<T>()]);
+  }).any([
+    DispatchCreateFormRunner<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >(),
+  ]);
