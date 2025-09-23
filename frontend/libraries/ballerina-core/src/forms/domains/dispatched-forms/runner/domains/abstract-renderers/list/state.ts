@@ -95,7 +95,9 @@ export type ListAbstractRendererView<
       ListAbstractRendererState,
       ListAbstractRendererForeignMutationsExpected<Flags>
     >;
-    embeddedPlaceholderElementTemplate: () => (
+    embeddedPlaceholderElementTemplate: (
+      elementIndex: number,
+    ) => (
       flags: Flags | undefined,
     ) => Template<
       ListAbstractRendererReadonlyContext<
@@ -104,7 +106,7 @@ export type ListAbstractRendererView<
       > &
         ListAbstractRendererState,
       ListAbstractRendererState,
-      CommonAbstractRendererForeignMutationsExpected<Flags>
+      ListAbstractRendererForeignMutationsExpected<Flags>
     >;
   }
 >;
