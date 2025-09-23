@@ -27,15 +27,16 @@ export const LockedSpec = {
                 mode: 'spec',
             }),
             seed: (seeds: any): Updater<Ide> =>
-                Updater(ide => ide.phase !== "locked" ? ide : ({...ide, lockedPhase: {...ide.locked, seeds: seeds}})),
+                Updater(ide => ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, seeds: seeds}})),
             selectLauncher: (name: string): Updater<Ide> =>
                 Updater(ide =>
                     ide.phase == 'locked'
-                        ? ({
-                            ...ide,
-                            lockedPhase: {...ide.locked, selectedLauncher: Option.Default.some(Value.Default(name))}
-                        })
-                        : ({...ide})),
+                            ? ({
+                                ...ide,
+                                locked: {...ide.locked, selectedLauncher: Option.Default.some(Value.Default(name))}
+                            })
+                            : ide
+                ),
             vfs: (vfs: Updater<VfsWorkspace>): Updater<Ide> =>
                 Updater(ide =>
                     ide.phase == 'locked'

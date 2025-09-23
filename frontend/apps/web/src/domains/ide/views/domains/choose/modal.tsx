@@ -1,9 +1,7 @@
 ﻿import {FlatNode, getOrInitSpec, Ide, NodeId,  VirtualFolders} from "playground-core";
-import {BasicFun, BasicUpdater, Option} from "ballerina-core";
-import React from "react";
-import {HorizontalDropdown} from "../../dropdown.tsx";
-import MultiSelectCheckboxControlled from "../vfs/example.tsx"
+
 import {Map} from "immutable";
+import {ValueOrErrors} from "ballerina-core";
 
 async function buildTree(
     files: FileList,
@@ -17,6 +15,7 @@ async function buildTree(
                 const parts = rel.split(/[\\/]/).filter(Boolean);
                 return insert(acc, parts, file);
             }),
+        
         Promise.resolve(root)
     );
 }
@@ -42,64 +41,78 @@ export const markLeaves = (n: FlatNode): FlatNode => {
         metadata: { ...n.metadata, isLeaf: !hasDirChild },
     };
 };
-export const fileListToFlatTree = async (files: FileList): Promise<FlatNode> => {
-    const root: FlatNode = {
-        id: "root",
-        name: "root",
-        parent: null,
-        isBranch: true,
-        metadata: { kind: "dir", path: "root", checked: true },
-        children: [],
-    };
+export const fileListToFlatTree = async (files: FileList): Promise<ValueOrErrors<FlatNode, any>> => {
+    try {
+        const root: FlatNode = {
+            id: "root",
+            name: "root",
+            parent: null,
+            isBranch: true,
+            metadata: {kind: "dir", path: "root", checked: true},
+            children: [],
+        };
 
-    const insert = async (node: FlatNode, pathParts: string[], file: File): Promise<FlatNode> => {
-        if (pathParts.length === 0) return node;
+        const insert = async (node: FlatNode, pathParts: string[], file: File): Promise<FlatNode> => {
+            if (pathParts.length === 0) return node;
 
-        const [head, ...rest] = pathParts;
-        const existing = node.children?.find(c => c.name === head);
-
-        if (rest.length === 0) {
-            const fileNode: FlatNode = {
-                id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-                name: head,
-                parent: node.id ?? null,
-                isBranch: false,
-                metadata: {
-                    kind: "file",
-                    path: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-                    size: file.size,
-                    checked: true,
-                    // if any non-JSON appears, this will throw and stop everything
-                    // wrap in try/catch if you want to keep going
-                    content: JSON.parse(await file.text())
-                }
-            };
-            node.children = [...(node.children ?? []), fileNode];
-            return node;
-        } else {
-            let dirNode = existing && existing.metadata.kind === "dir" ? existing : undefined;
-
-            if (!dirNode) {
-                dirNode = {
+            const [head, ...rest] = pathParts;
+            const existing = node.children?.find(c => c.name === head);
+            
+            if (rest.length === 0) {
+                //TODO: make it a properly validated in the state
+                const content = await (async () => {
+                    try {
+                        return JSON.parse(await file.text());
+                    } catch {
+                        return {};
+                    }
+                })();
+                const fileNode: FlatNode = {
                     id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
                     name: head,
                     parent: node.id ?? null,
-                    isBranch: true,
+                    isBranch: false,
                     metadata: {
-                        kind: "dir",
+                        kind: "file",
                         path: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-                        checked: true
-                    },
-                    children: [],
+                        size: file.size,
+                        checked: true,
+                        // if any non-JSON appears, this will throw and stop everything
+                        // wrap in try/catch if you want to keep going
+                        content: content
+                    }
                 };
-                node.children = [...(node.children ?? []), dirNode];
+                node.children = [...(node.children ?? []), fileNode];
+                return node;
+            } else {
+                let dirNode = existing && existing.metadata.kind === "dir" ? existing : undefined;
+
+                if (!dirNode) {
+                    dirNode = {
+                        id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
+                        name: head,
+                        parent: node.id ?? null,
+                        isBranch: true,
+                        metadata: {
+                            kind: "dir",
+                            path: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
+                            checked: true
+                        },
+                        children: [],
+                    };
+                    node.children = [...(node.children ?? []), dirNode];
+                }
+
+                await insert(dirNode, rest, file); // <-- important: await recursion
+                return node;
             }
+        };
 
-            await insert(dirNode, rest, file); // <-- important: await recursion
-            return node;
-        }
-    };
-
-    const tree = await buildTree(files, insert, root);
-    return markLeaves(tree);
+        const tree = await buildTree(files, insert, root);
+        const result = markLeaves(tree);
+        return ValueOrErrors.Default.return(result);
+    }
+    catch(e:any) {
+        return ValueOrErrors.Default.throwOne(e);
+    }
 };

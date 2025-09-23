@@ -14,7 +14,28 @@ type VocabJsonEditorProps = {
 
 export default function MonacoEditor( props: {content: string, onChange: BasicUpdater<any>}) {
     const editorRef = React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+    const initialFormatted = React.useMemo(() => {
+        try {
+            const parsed = typeof props.content === "string"
+                ? JSON.parse(props.content)
+                : props.content;
+            return JSON.stringify(parsed, null, 2);
+        } catch {
+            return "{}";
+        }
+    }, []); // ⚠️ no dependency on props.content
 
+    const handleEditorChange = React.useCallback((value: string | undefined) => {
+        if (!value) return;
+
+        try {
+            const parsed = JSON.parse(value);
+            // ✅ Do NOT store `value` itself in state
+            props.onChange(VirtualFolders.Updaters.Template.selectedFileContent(parsed));
+        } catch {
+            // silently ignore invalid JSON
+        }
+    }, [props.onChange]);
     const handleMount: OnMount = (editor, monaco) => {
         editorRef.current = editor;
         
@@ -70,20 +91,9 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
                 defaultLanguage="json"
                 theme="vs-light"
 
-                onChange={(val) => {
-                    try {
-                        const p = JSON.parse(val!)
-                        props.onChange(VirtualFolders.Updaters.Template.selectedFileContent(p)) 
-                        //format()
-                    }
-                    catch(e: any)
-                    {
-                        
-                    }
-                   
+                onChange={handleEditorChange
                 }
-                }
-                defaultValue={props.content}
+                defaultValue={initialFormatted}
                 onMount={handleMount}
             />
         </div>

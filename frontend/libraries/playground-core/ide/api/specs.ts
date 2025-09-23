@@ -42,6 +42,7 @@ export const getOrInitSpec = async (origin: 'create' | 'existing', name: string)
 export const validate = async (name: string) =>
     await axiosVOE<KnownSections>({
         method: "Post",
+        timeout:10 * 60 * 1000,
         url: `/specs/${name}/validate`,
     });
 

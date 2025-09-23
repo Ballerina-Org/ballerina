@@ -9,9 +9,9 @@ import { Toaster } from 'sonner';
 import LauncherSelector from "./launcher-selector.tsx";
 import {themeChange} from 'theme-change'
 import {useEffect} from 'react'
-import {AppToaster, ideToast, notify} from "./toaster.tsx";
+import {AppToaster, fromVoe, errorFromList, notify} from "./toaster.tsx";
 import { toast as sonnerToast } from 'sonner';
-import {seedSpecErrorHandler, updateSpecErrorHandler} from "./error-handlers/UpdateSpec.ts";
+
 import {DispatcherFormsApp} from "./forms.tsx";
 import {Panel, PanelGroup,PanelResizeHandle} from "react-resizable-panels";
 import {NoSpescInfo} from "./domains/bootstrap/no-specs-info.tsx";
@@ -28,22 +28,16 @@ console.table(__ENV__);
 export const IdeLayout: IdeView = (props) =>{
     const [theme, setTheme] = useState("lofi");
     const [hideRight, setHideRight] = useState(false);
+    //tmp hack to always rerender in ide, until having the full knowledge of forms engine
+    const [version, setVersion] = useState(0);
+    const forceRerender = () => setVersion(v => v + 1);
     useEffect(() => {
         themeChange(false)
-    }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError])
+    }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError,props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.value])
     useEffect(() => {
         if(props.context.bootstrappingError.size > 0){
             
-            ideToast({
-                title: 'IDE Bootstrap Error',
-                dismissible: false,
-                duration: Infinity,
-                description: props.context.bootstrappingError,
-                // button: {
-                //     label: 'Ok',
-                //     onClick: () => sonnerToast.dismiss(),
-                // },
-            });
+            notify.error('IDE Bootstrap Error', errorFromList(props.context.bootstrappingError))
         }
     }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError]);
     
@@ -74,20 +68,13 @@ export const IdeLayout: IdeView = (props) =>{
                                 onSave={
                                     async () => {
                                         if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFile.kind == "r")) {
-                                            ideToast({
-                                                title: 'UX bad state',
-                                                description: 'Saving should be possible only in a locked phase',
-                                                button: {
-                                                    label: 'Ok',
-                                                    onClick: () => sonnerToast.dismiss(),
-                                                },
-                                            });
+                                            notify.error('UX bad state','Saving should be possible only in a locked phase');
                                             return
                                         }
                                         const currentFile = props.context.locked.virtualFolders.selectedFile.value;
                                     
                                         const call = await update(props.context.create.name.value, currentFile.metadata.path, currentFile.metadata.content);
-                                        updateSpecErrorHandler(call);
+                                        fromVoe( call,'Specification save')
                                     }
                                 }
                                 onMerge={ async ()=>{
@@ -104,7 +91,10 @@ export const IdeLayout: IdeView = (props) =>{
                                         return
                                     }
                                 }}
-                                onRun={() => props.setState(Ide.Updaters.Phases.lockedOutcomePhase())}
+                                onRun={() =>{
+                                    props.setState(Ide.Updaters.Phases.lockedOutcomePhase());
+                                    forceRerender();
+                                }}
                                 onSeed={
                                     async () => {
                                         if(props.context.phase != "locked") {
@@ -112,8 +102,8 @@ export const IdeLayout: IdeView = (props) =>{
                                             return
                                         }
                                         const call = await seed(props.context.create.name.value)
-                                        if(call.kind == "errors") notify.error("Merging failed")
-                                        if(call.kind != "errors") notify.success("Merging succeed")
+                                        if(call.kind == "errors") notify.error("Seeding failed")
+                                        if(call.kind != "errors") notify.success("Seeding succeed")
                                         //     ideToast({
                                         //         title: 'UX bad state',
                                         //         description: 'Seeding should be possible only in a locked phase',
@@ -134,7 +124,13 @@ export const IdeLayout: IdeView = (props) =>{
                                 }
                             />
                         </div>
-                            <VfsLayout {...props.context} setState={props.setState} />
+                        <p>debug</p>
+                        <p>phase: {props.context.phase}</p>
+                        <p>step: {props.context.phase == 'locked' && props.context.step}</p>
+                        <p>is merged: {props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.kind }</p>
+                        <p>selected launcher: {props.context.phase == 'locked' && props.context.locked.selectedLauncher.kind }</p>
+                       <VfsLayout {...props.context} setState={props.setState} />
+                      
                     </aside>
                 </Panel>
                 <PanelResizeHandle  className="w-[1px] bg-neutral text-neutral-content" />
@@ -162,18 +158,22 @@ export const IdeLayout: IdeView = (props) =>{
                                 </div>
                             </div>}
 
-                            { props.context.phase == "locked" &&  <div className="card bg-base-100 w-full mt-5">
+                            { props.context.phase == "locked" &&  props.context.step == 'outcome' && <div className="card bg-base-100 w-full mt-5">
                                 <div className="card-body w-full">
                                     {props.context.locked.launchers && <><LauncherSelector
                                         onChange={async (value: string) => {
+                                          
                                             props.setState(
                                                 LockedSpec.Updaters.Core.selectLauncher(value)
                                             )
                                         }}
                                         options={props.context.locked.launchers}
                                     />
-                                        { props.context.locked.virtualFolders.merged.kind == "r" && props.context.step == 'outcome' && <DispatcherFormsApp
-                                            key={props.context.locked.virtualFolders.merged.value as any}
+                                        { props.context.locked.virtualFolders.merged.kind == "r" &&
+                                            props.context.locked.virtualFolders.selectedFolder.kind == "r" &&
+                                            props.context.locked.selectedLauncher.kind == "r" 
+                                            && <DispatcherFormsApp
+                                            key={version}
                                             specName={props.context.create.name.value}
                                             entityName={"People"}
                                             setState={props.setState}

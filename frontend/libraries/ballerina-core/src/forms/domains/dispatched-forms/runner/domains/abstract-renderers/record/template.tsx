@@ -94,7 +94,7 @@ export const RecordAbstractRenderer = <
               RecordAbstractRendererState,
           ) => {
               if(!PredicateValue.Operations.IsUnit(_.value) && typeof _.value.fields.get !== "function"){
-                  debugger
+         
                   const test = "breakpoint"
               }
               return ({

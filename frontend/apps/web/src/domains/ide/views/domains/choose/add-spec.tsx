@@ -16,7 +16,9 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
         if (!list || list.length === 0) return;
 
         const node = await fileListToFlatTree(list);
-        setNode(Option.Default.some(node));
+        debugger
+        if(node.kind == "errors") props.setState(Ide.Updaters.CommonUI.chooseErrors(node.errors))
+        else setNode(Option.Default.some(node.value));
     }, []);
     const origin = 'create';
     return <fieldset className="fieldset w-full">
@@ -43,9 +45,12 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                             props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                             return;
                         }
+                        debugger
                         LocalStorage_SpecName.set(props.create.name.value);
+                 
                         const u: Updater<Ide> =
                             Ide.Updaters.Phases.lockedPhase(origin,'manual', props.create.name.value, VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value))
+                        
                         props.setState(u);
                     }
                     }
@@ -83,7 +88,9 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                             { node.kind == "r"
                                 && <MultiSelectCheckboxControlled
                                     mode={'uploader'}
-                                    onAcceptedNodes={(node: FlatNode)=> setNode(Option.Default.some(node)) }
+                                    onAcceptedNodes={(node: FlatNode)=> {
+                                    }
+                                    }
                                     nodes={node.value} /> }
                         </div>
                     </div>
@@ -96,10 +103,13 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
                                 }
-                       
+     
 
                                 if(node.kind == "r") {
-                                    
+                                 
+                                    const ch = node.value.children!
+                                    const first = ch[0]
+                 
                                     const u = Ide.Updaters.Phases.progressUpload()
                                     props.setState(u)
                                     const d = await postVfs(props.create.name.value, node.value);
@@ -120,6 +130,8 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
                                                     VirtualFolders.Operations.buildWorkspaceFromRoot('create', node.value)
                                                 )   )
                                     props.setState(u2)
+                                    LocalStorage_SpecName.set(props.create.name.value);
+
                                 }
         
                             }}

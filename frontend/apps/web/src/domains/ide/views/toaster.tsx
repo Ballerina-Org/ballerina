@@ -3,6 +3,13 @@
 import React from 'react';
 import {toast, toast as sonnerToast, Toaster} from 'sonner';
 import {List} from "immutable";
+type ToastPosition =
+    | "top-left"
+    | "top-center"
+    | "top-right"
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right";
 interface ToastProps {
     id: string | number;
     title: string;
@@ -15,60 +22,21 @@ interface ToastProps {
         onClick: () => void;
     };
 }
-import type { ExternalToast } from "sonner"; 
+import type { ExternalToast } from "sonner";
+import {ValueOrErrors} from "ballerina-core";
 
-export function ideToast(toast: Omit<ToastProps, "id">) {
-    return sonnerToast.custom(
-        (id) => (
-            <Toast
-                id={id}
-                title={toast.title}
-                description={
-                    typeof toast.description === "string"
-                        ? toast.description
-                        : toast.description.join(", ")
-                }
-                button={
-                    toast.button && {
-                        label: toast.button.label,
-                        onClick: toast.button.onClick,
-                    }
-                }
-            />
-        ),
-        {
-            duration: toast.duration ?? Infinity,     
-            dismissible: toast.dismissible ?? false,   
-            position: (toast.position as ExternalToast["position"]) ?? "top-center",
-            closeButton: false, 
-        }
-    );
-}
-function Toast(props: ToastProps) {
-  const { title, description, button, id } = props;
- 
-  return (
-    <div className="flex rounded-lg bg-white shadow-lg ring-1 ring-black/5 w-full md:max-w-[364px] items-center p-4">
-      <div className="flex flex-1 items-center">
-        <div className="w-full">
-          <p className="text-sm font-medium text-gray-900">{title}</p>
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
-        </div>
-      </div>
-      <div className="ml-5 shrink-0 rounded-md text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-hidden">
-          {button && <button
-          className="rounded bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-600 hover:bg-indigo-100"
-          onClick={() => {
-            button?.onClick();
-            sonnerToast.dismiss(id);
-          }}
-        >
-          {button?.label}
-        </button> }
-      </div>
-    </div>
-  );
-}
+const getPosition = (type: "success" | "warning" | "error" | "info"): ToastPosition => {
+    switch (type) {
+        case "success":
+            return "bottom-right";
+        case "warning":
+            return "top-center";
+        case "error":
+            return "top-center";
+        case "info":
+            return "bottom-right";
+    }
+};
 
 // 1) Mount this once near your app root (e.g., in layout or App)
 export function AppToaster() {
@@ -86,11 +54,22 @@ export function AppToaster() {
 // 2) Use Sonner's built-ins anywhere:
 export const notify = {
     success: (title: string, description?: string, duration?: number) =>
-        toast.success(title, { description, duration }),
+        toast.success(title, { description, duration, position: getPosition("success") }),
     warning: (title: string, description?: string, duration?: number) =>
-        toast.warning(title, { description, duration }),
+        toast.warning(title, { description, duration, position: getPosition("warning") }),
     error: (title: string, description?: string, duration?: number) =>
-        toast.error(title, { description, duration }),
+        toast.error(title, { description, duration, position: getPosition("error") }),
     info: (title: string, description?: string, duration?: number) =>
-        toast.info(title, { description, duration }),
+        toast.info(title, { description, duration, position: getPosition("info") }),
 };
+
+export const fromVoe = (voe: ValueOrErrors<any, string>, title: string ) =>
+    voe.kind == 'errors' ? 
+        notify.error(title,JSON.stringify(
+            (voe as Extract<ValueOrErrors<any, string>, { kind: "errors" }>).errors
+        )) : notify.success(title)
+
+export const errorFromList = (voe: List<string> ): string =>
+    JSON.stringify(
+        voe
+    )

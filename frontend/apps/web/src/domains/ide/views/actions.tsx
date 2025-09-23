@@ -82,8 +82,6 @@ export const Actions: React.FC<ActionsProps> = ({
                 <button
                     className="btn tooltip tooltip-bottom"
                     data-tip="Merge and validate"
-                    onClick={onRun}
-                    disabled={!canRun}
                 >
                     <VscMerge size={size} onClick={onMerge} />
                 </button>

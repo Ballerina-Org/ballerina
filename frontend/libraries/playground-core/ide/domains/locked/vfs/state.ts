@@ -37,6 +37,7 @@ export const VirtualFolders = {
     },
     Operations: {
         buildWorkspaceFromRoot(origin: 'existing' | 'create', nodes: FlatNode): VfsWorkspace {
+         
             return {
                 nodes, 
                 merged: Option.Default.none(),

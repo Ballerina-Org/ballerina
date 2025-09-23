@@ -106,6 +106,7 @@ const InstantiatedDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
 >();
 
 export const DispatcherFormsApp = (props: IdeFormProps) => {
+
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
         DispatchFormsParserState<
             DispatchPassthroughFormInjectedTypes,
@@ -265,6 +266,8 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
 
     useEffect(() => {
         console.log("re-rendering");
+        console.log(props.spec)
+       
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
@@ -272,10 +275,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value" 
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-            debugger
+    
             getSeed(props.specName, props.entityName)
                 .then(async (raw) => {
-                    debugger
+             
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
      
@@ -297,7 +300,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
                             };
                             //setEntity(Sum.Default.left(parsed));
-                            debugger
+                            //debugger
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
                             setEntityId(res.id as any);
                         }

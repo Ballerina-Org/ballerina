@@ -56,12 +56,14 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
 
     const [selectedIds, setSelectedIds] = useState(data.map(x => x.id));
     const [chosenIds, setChosenIds] = useState<Set<NodeId>>(Set(data.map(x => x.id)));
-   
+
     return (
         <div>
             <div className="indicator">
-                <span className="indicator-item badge badge-secondary">all items: {chosenIds.size}</span>
-                <button className="btn">Selected folders: {5}</button>
+                <span className="indicator-item badge badge-secondary">all items: {chosenIds.size - 1 }</span>
+                <button className="btn">Folders: {
+                    data.filter(x => chosenIds.has(x.id)).filter( x => x.metadata?.kind == "dir")?.length - 1 || 0
+                }</button>
             </div>
             <div className="">
                 <TreeView
@@ -117,7 +119,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                 <label className="label">
                                   {element.name}
                                 </label>
-                                {props.mode == 'reader' && element.metadata?.isLeaf
+                                {props.mode == 'reader' && element.metadata?.isLeaf && element.metadata?.kind == "dir"
                                     &&  <button 
                                         className="ml-3 btn btn-neutral btn-dash"
                                         onClick={() => { 
@@ -161,7 +163,7 @@ const ArrowIcon = ({ isOpen, className }: { isOpen: any; [key: string]: any }) =
 
 const CheckBoxIcon = ({ variant,mode, ...rest }: { variant: any; mode: 'reader' | 'uploader', [key: string]: any }) => {
     
-    if(mode == 'reader') return <VscCheck size={20}/>;
+ 
     switch (variant) {
     case "all":
         return <VscDiffAdded size={20} {...rest} />;

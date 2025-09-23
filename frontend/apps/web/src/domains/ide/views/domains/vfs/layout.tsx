@@ -31,7 +31,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         && props.locked.virtualFolders.selectedFile.kind == "r"
         ? <MonacoEditor
             onChange={(next)=> props.setState(next)}
-            key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}
+            key={JSON.stringify(props.locked.virtualFolders.selectedFile.value.name)}
             content={JSON.stringify(props.locked.virtualFolders.selectedFile.value.metadata.content)}/> : <></>
     
     const drawer =
