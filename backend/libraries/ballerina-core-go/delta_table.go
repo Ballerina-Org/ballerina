@@ -19,8 +19,6 @@ const (
 	tableAddEmpty    deltaTableEffectsEnum = "TableAddEmpty"
 )
 
-var allDeltaTableEffectsEnumCases = [...]deltaTableEffectsEnum{tableValue, tableAddAt, tableRemoveAt, tableMoveFromTo, tableDuplicateAt, tableAdd, tableAddEmpty}
-
 type DeltaTable[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaTableEffectsEnum

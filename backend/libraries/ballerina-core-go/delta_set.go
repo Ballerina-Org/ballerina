@@ -13,8 +13,6 @@ const (
 	setRemove deltaSetEffectsEnum = "SetRemove"
 )
 
-var allDeltaSetEffectsEnumCases = [...]deltaSetEffectsEnum{setValue, setAdd, setRemove}
-
 type DeltaSet[a comparable, deltaA any] struct {
 	DeltaBase
 	discriminator deltaSetEffectsEnum

@@ -14,8 +14,6 @@ const (
 	intReplace deltaIntEffectsEnum = "IntReplace"
 )
 
-var allDeltaIntEffectsEnumCases = [...]deltaIntEffectsEnum{intReplace}
-
 type DeltaInt struct {
 	DeltaBase
 	discriminator deltaIntEffectsEnum
@@ -80,8 +78,6 @@ type deltaInt64EffectsEnum string
 const (
 	int64Replace deltaInt64EffectsEnum = "Int64Replace"
 )
-
-var allDeltaInt64EffectsEnumCases = [...]deltaInt64EffectsEnum{int64Replace}
 
 type DeltaInt64 struct {
 	DeltaBase
@@ -148,8 +144,6 @@ const (
 	stringReplace deltaStringEffectsEnum = "StringReplace"
 )
 
-var allDeltaStringEffectsEnumCases = [...]deltaStringEffectsEnum{stringReplace}
-
 type DeltaString struct {
 	DeltaBase
 	discriminator deltaStringEffectsEnum
@@ -215,8 +209,6 @@ const (
 	boolReplace deltaBoolEffectsEnum = "BoolReplace"
 )
 
-var allDeltaBoolEffectsEnumCases = [...]deltaBoolEffectsEnum{boolReplace}
-
 type DeltaBool struct {
 	DeltaBase
 	discriminator deltaBoolEffectsEnum
@@ -281,8 +273,6 @@ type deltaGuidEffectsEnum string
 const (
 	guidReplace deltaGuidEffectsEnum = "GuidReplace"
 )
-
-var allDeltaGuidEffectsEnumCases = [...]deltaGuidEffectsEnum{guidReplace}
 
 type DeltaGuid struct {
 	DeltaBase
@@ -353,8 +343,6 @@ const (
 	timeReplace deltaTimeEffectsEnum = "TimeReplace"
 )
 
-var allDeltaTimeEffectsEnumCases = [...]deltaTimeEffectsEnum{timeReplace}
-
 type DeltaTime struct {
 	DeltaBase
 	discriminator deltaTimeEffectsEnum
@@ -419,8 +407,6 @@ type deltaInt32EffectsEnum string
 const (
 	int32Replace deltaInt32EffectsEnum = "Int32Replace"
 )
-
-var allDeltaInt32EffectsEnumCases = [...]deltaInt32EffectsEnum{int32Replace}
 
 type DeltaInt32 struct {
 	DeltaBase
@@ -487,8 +473,6 @@ const (
 	float32Replace deltaFloat32EffectsEnum = "Float32Replace"
 )
 
-var allDeltaFloat32EffectsEnumCases = [...]deltaFloat32EffectsEnum{float32Replace}
-
 type DeltaFloat32 struct {
 	DeltaBase
 	discriminator deltaFloat32EffectsEnum
@@ -553,8 +537,6 @@ type deltaFloat64EffectsEnum string
 const (
 	float64Replace deltaFloat64EffectsEnum = "Float64Replace"
 )
-
-var allDeltaFloat64EffectsEnumCases = [...]deltaFloat64EffectsEnum{float64Replace}
 
 type DeltaFloat64 struct {
 	DeltaBase

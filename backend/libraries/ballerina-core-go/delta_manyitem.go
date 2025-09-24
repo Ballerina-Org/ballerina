@@ -12,8 +12,6 @@ const (
 	manyItemCanChangeLink deltaManyItemEffectsEnum = "ManyItemCanChangeLink"
 )
 
-var allDeltaManyItemEffectsEnumCases = [...]deltaManyItemEffectsEnum{manyItemValue, manyItemIsLinked, manyItemCanChangeLink}
-
 type DeltaManyItem[T any, deltaT any] struct {
 	DeltaBase
 	discriminator deltaManyItemEffectsEnum
