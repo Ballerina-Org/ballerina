@@ -11,6 +11,11 @@ import {
   simpleUpdater,
   ApiResponseChecker,
   DispatchCommonFormRunnerState,
+  AsyncState,
+  BasicUpdater,
+  Updater,
+  Debounced,
+  simpleUpdaterWithChildren,
 } from "../../../../../../../../main";
 
 export type DispatchCreateFormLauncherApi = {
@@ -36,7 +41,11 @@ export type DispatchCreateFormLauncherState<
   Flags = Unit,
 > = DispatchCommonFormRunnerState<T, Flags> & {
   entity: Synchronized<Unit, PredicateValue>;
-  initApiChecker: ApiResponseChecker;
+  apiChecker: {
+    init: ApiResponseChecker;
+    create: ApiResponseChecker;
+  };
+  apiRunner: Debounced<Synchronized<Unit, ApiErrors>>;
 };
 
 export const DispatchCreateFormLauncherState = <
@@ -46,15 +55,38 @@ export const DispatchCreateFormLauncherState = <
   Default: (): DispatchCreateFormLauncherState<T, Flags> => ({
     ...DispatchCommonFormRunnerState<T, Flags>().Default(),
     entity: Synchronized.Default(unit),
-    initApiChecker: ApiResponseChecker.Default(false),
+    apiChecker: {
+      init: ApiResponseChecker.Default(false),
+      create: ApiResponseChecker.Default(false),
+    },
+    apiRunner: Debounced.Default(Synchronized.Default(unit)),
   }),
   Updaters: {
-    ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("status"),
-    ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("formState"),
-    ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
-    ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
-      "initApiChecker",
-    ),
+    Core: {
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("status"),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
+        "formState",
+      ),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
+      ...simpleUpdaterWithChildren<DispatchCreateFormLauncherState<T, Flags>>()(
+        {
+          ...simpleUpdater<
+            DispatchCreateFormLauncherState<T, Flags>["apiChecker"]
+          >()("init"),
+          ...simpleUpdater<
+            DispatchCreateFormLauncherState<T, Flags>["apiChecker"]
+          >()("create"),
+        },
+      )("apiChecker"),
+    },
+    Template: {
+      entity: (
+        _: BasicUpdater<PredicateValue>,
+      ): Updater<DispatchCreateFormLauncherState<T, Flags>> =>
+        DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity(
+          Synchronized.Updaters.sync(AsyncState.Operations.map(_)),
+        ),
+    },
   },
 });
 
