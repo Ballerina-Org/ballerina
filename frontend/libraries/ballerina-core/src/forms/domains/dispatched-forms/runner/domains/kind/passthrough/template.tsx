@@ -35,7 +35,11 @@ export const DispatchPassthroughFormLauncherTemplate = <
     const entity = props.context.launcherRef.entity;
     const config = props.context.launcherRef.config;
 
-    if (entity.kind == "r" || config.kind == "r") {
+    if (
+      entity.kind == "r" ||
+      config.kind == "r" ||
+      props.context.status.kind == "not initialized"
+    ) {
       return <></>;
     }
 
@@ -59,7 +63,20 @@ export const DispatchPassthroughFormLauncherTemplate = <
       ["local", entity.value.value],
     ]);
 
-    return props.context.status.kind == "loaded" ? (
+    if (props.context.status.kind == "error") {
+      console.error(
+        props.context.status.errors.map((error) => error).join("\n"),
+      );
+      return (
+        props.context.errorComponent ?? <>Error: Check console for details</>
+      );
+    }
+
+    if (props.context.status.kind == "loading") {
+      return props.context.loadingComponent ?? <>Loading...</>;
+    }
+
+    return (
       <props.context.status.Form
         context={{
           ...props.context.formState,
@@ -74,9 +91,9 @@ export const DispatchPassthroughFormLauncherTemplate = <
           lookupTypeAncestorNames: [],
           // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
         }}
-        setState={(stateUpdater: BasicUpdater<any>) =>
+        setState={(stateUpdater) =>
           props.setState(
-            DispatchFormRunnerState<T, Flags>().Updaters.formState(
+            DispatchPassthroughFormLauncherState<T, Flags>().Updaters.formState(
               stateUpdater,
             ),
           )
@@ -90,8 +107,6 @@ export const DispatchPassthroughFormLauncherTemplate = <
           },
         }}
       />
-    ) : (
-      <>not initialized</>
     );
   }).any([
     DispatchPassthroughFormRunner<

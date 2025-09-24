@@ -1,8 +1,10 @@
 import {
+  DispatchCommonFormRunnerState,
   DispatchFormRunnerContext,
   DispatchFormRunnerState,
   DispatchInjectablesTypes,
   PassthroughLauncherRef,
+  simpleUpdater,
   Unit,
 } from "../../../../../../../../main";
 
@@ -21,6 +23,23 @@ export type DispatchPassthroughFormLauncherContext<
 export type DispatchPassthroughFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-> = DispatchFormRunnerState<T, Flags>;
+> = DispatchCommonFormRunnerState<T, Flags>;
 
 export type DispatchPassthroughFormLauncherForeignMutationsExpected<T> = {};
+
+export const DispatchPassthroughFormLauncherState = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+>() => ({
+  Default: (): DispatchPassthroughFormLauncherState<T, Flags> => ({
+    ...DispatchCommonFormRunnerState<T, Flags>().Default(),
+  }),
+  Updaters: {
+    ...simpleUpdater<DispatchPassthroughFormLauncherState<T, Flags>>()(
+      "status",
+    ),
+    ...simpleUpdater<DispatchPassthroughFormLauncherState<T, Flags>>()(
+      "formState",
+    ),
+  },
+});
