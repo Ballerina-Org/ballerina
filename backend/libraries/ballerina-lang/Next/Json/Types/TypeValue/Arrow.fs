@@ -11,6 +11,7 @@ module Arrow =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Collections.Sum.Operators
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "arrow"
   let private fieldKey = "arrow"
@@ -29,7 +30,7 @@ module Arrow =
             arrowFields
             |> (Map.tryFindWithError "returnType" "arrow" "returnType" >>= fromRootJson)
 
-          return TypeValue.Arrow(param, returnType)
+          return TypeValue.CreateArrow(param, returnType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonArrow(rootToJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =

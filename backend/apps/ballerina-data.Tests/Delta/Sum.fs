@@ -6,13 +6,12 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Types.Patterns
 
 [<Test>]
 let ``Delta.Sum: Updates correct case index in sum value`` () =
   let sumType =
-    [ TypeValue.Primitive PrimitiveType.Int32
-      TypeValue.Primitive PrimitiveType.String ]
-    |> TypeValue.Sum
+    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
   let sumValue = Value<Unit>.Sum(0, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 
@@ -31,9 +30,7 @@ let ``Delta.Sum: Updates correct case index in sum value`` () =
 [<Test>]
 let ``Delta.Sum: Returns original value when index does not match`` () =
   let sumType =
-    [ TypeValue.Primitive PrimitiveType.Int32
-      TypeValue.Primitive PrimitiveType.String ]
-    |> TypeValue.Sum
+    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
   let sumValue =
     Value<Unit>.Sum(1, PrimitiveValue.String "untouched" |> Value<Unit>.Primitive)
@@ -50,7 +47,7 @@ let ``Delta.Sum: Returns original value when index does not match`` () =
 
 [<Test>]
 let ``Delta.Sum: Fails when index is out of bounds in type`` () =
-  let sumType = [ TypeValue.Primitive PrimitiveType.Int32 ] |> TypeValue.Sum
+  let sumType = [ TypeValue.CreateInt32() ] |> TypeValue.CreateSum
 
   let delta =
     Delta.Sum(3, Delta.Replace(PrimitiveValue.Int32 999 |> Value<Unit>.Primitive))
@@ -62,9 +59,7 @@ let ``Delta.Sum: Fails when index is out of bounds in type`` () =
 [<Test>]
 let ``Delta.Sum: Fails when delta type does not match case type TODO:decide`` () =
   let sumType =
-    [ TypeValue.Primitive PrimitiveType.Int32
-      TypeValue.Primitive PrimitiveType.String ]
-    |> TypeValue.Sum
+    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
   let sumValue = Value<Unit>.Sum(0, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 

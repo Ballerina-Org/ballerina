@@ -5,7 +5,6 @@ open NUnit.Framework
 open Ballerina.Errors
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.KitchenSink
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
@@ -16,9 +15,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let a = TypeVar.Create("a")
 
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
-    { Classes =
-        Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int32 |> TypeValue.Primitive |> Some) ]
+    { Classes = Map.ofList [ "a", EquivalenceClass.Create(a |> Set.singleton, TypeValue.CreateInt32() |> Some) ]
       Variables = Map.ofList [ a, a.Name ] }
 
   let program = TypeValue.Var a
@@ -26,7 +23,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
-  let expected = TypeValue.Primitive PrimitiveType.Int32
+  let expected = TypeValue.CreateInt32()
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -38,17 +35,15 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let a = TypeVar.Create("a")
 
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
-    { Classes =
-        Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, PrimitiveType.Int32 |> TypeValue.Primitive |> Some) ]
+    { Classes = Map.ofList [ "a", EquivalenceClass.Create(a |> Set.singleton, TypeValue.CreateInt32() |> Some) ]
       Variables = Map.ofList [ a, a.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set
+  let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
-  let expected = PrimitiveType.Int32 |> TypeValue.Primitive |> TypeValue.Set
+  let expected = TypeValue.CreateInt32() |> TypeValue.CreateSet
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -62,17 +57,17 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.Set |> Some)
-            "b", EquivalenceClass.Create(b |> Set.singleton, PrimitiveType.String |> TypeValue.Primitive |> Some) ]
+          [ "a", EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.CreateSet |> Some)
+            "b", EquivalenceClass.Create(b |> Set.singleton, TypeValue.CreateString() |> Some) ]
       Variables = Map.ofList [ a, a.Name; b, b.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set
+  let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
-    PrimitiveType.String |> TypeValue.Primitive |> TypeValue.Set |> TypeValue.Set
+    TypeValue.CreateString() |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)
@@ -87,21 +82,20 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let classes: EquivalenceClasses<TypeVar, TypeValue> =
     { Classes =
         Map.ofList
-          [ a.Name, EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.Set |> Some)
-            c.Name, EquivalenceClass.Create(c |> Set.singleton, PrimitiveType.String |> TypeValue.Primitive |> Some) ]
+          [ a.Name, EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.CreateSet |> Some)
+            c.Name, EquivalenceClass.Create(c |> Set.singleton, TypeValue.CreateString() |> Some) ]
       Variables = Map.ofList [ a, a.Name; b, c.Name; c, c.Name ] }
 
-  let program = TypeValue.Var a |> TypeValue.Set |> TypeValue.Set
+  let program = TypeValue.Var a |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   let actual =
     (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
-    PrimitiveType.String
-    |> TypeValue.Primitive
-    |> TypeValue.Set
-    |> TypeValue.Set
-    |> TypeValue.Set
+    TypeValue.CreateString()
+    |> TypeValue.CreateSet
+    |> TypeValue.CreateSet
+    |> TypeValue.CreateSet
 
   match actual with
   | Sum.Left(actual, _) -> Assert.That(actual, Is.EqualTo expected)

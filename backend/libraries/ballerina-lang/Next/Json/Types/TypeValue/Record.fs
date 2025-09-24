@@ -10,6 +10,7 @@ module Record =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "record"
   let private fieldKey = "record"
@@ -34,7 +35,7 @@ module Record =
             |> sum.All
             |> sum.Map Map.ofSeq
 
-          return TypeValue.Record(fieldTypes)
+          return TypeValue.CreateRecord(fieldTypes) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : Map<TypeSymbol, TypeValue> -> JsonValue =

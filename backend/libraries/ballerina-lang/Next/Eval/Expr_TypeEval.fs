@@ -15,7 +15,7 @@ module TypeEval =
 
         let (!!) t =
           state {
-            let! t, _ = t |> TypeExpr.Eval
+            let! t, _ = t |> TypeExpr.Eval None
             return t
           }
 
@@ -95,10 +95,10 @@ module TypeEval =
             return Expr.TypeLambda(typeParam, bodyType)
           | Expr.TypeApply(typeExpr, typeArg) ->
             let! typeExprType = !typeExpr
-            let! typeArg, _ = typeArg |> TypeExpr.Eval
+            let! typeArg, _ = typeArg |> TypeExpr.Eval None
             return Expr.TypeApply(typeExprType, typeArg)
           | Expr.TypeLet(var, value, body) ->
-            let! valueType = value |> TypeExpr.Eval
+            let! valueType = value |> TypeExpr.Eval None
             do! TypeExprEvalState.bindType var valueType
 
             let! bodyType = !body

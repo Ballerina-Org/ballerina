@@ -28,7 +28,7 @@ module ToUpdater =
           let! fields = TypeValue.AsRecord valueType
 
           let! _, fieldType =
-            fields
+            fields.value
             |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "fields" fieldName
 
           let! fieldUpdater = Delta.ToUpdater fieldType fieldDelta
@@ -51,7 +51,7 @@ module ToUpdater =
           let! cases = valueType |> TypeValue.AsUnion
 
           let! _, caseType =
-            cases
+            cases.value
             |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = caseName) "cases" caseName
 
           let! caseUpdater = caseDelta |> Delta.ToUpdater caseType
@@ -71,7 +71,7 @@ module ToUpdater =
           let! fields = valueType |> TypeValue.AsTuple
 
           let! fieldType =
-            fields
+            fields.value
             |> List.tryItem fieldIndex
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: tuple does not have field at index {fieldIndex}")
 
@@ -96,7 +96,7 @@ module ToUpdater =
           let! cases = valueType |> TypeValue.AsSum
 
           let! caseType =
-            cases
+            cases.value
             |> List.tryItem caseIndex
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: sum does not have case at index {caseIndex}")
 

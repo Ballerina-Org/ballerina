@@ -25,7 +25,7 @@ module Runner =
 
   type FormLauncher with
     static member Parse<'ExprExtension, 'ValueExtension>
-      (launcherName: string)
+      (launcherName: LauncherName)
       (json: JsonValue)
       : State<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
@@ -35,8 +35,10 @@ module Runner =
           state.All2 (launcherFields |> state.TryFindField "kind") (launcherFields |> state.TryFindField "form")
         // (launcherFields |> state.TryFindField "api")
         // (launcherFields |> state.TryFindField "configApi")
-        let! (kind, formName) =
-          state.All2 (JsonValue.AsString kindJson |> state.OfSum) (JsonValue.AsString formNameJson |> state.OfSum)
+        let! kind, formName =
+          state.All2
+            (JsonValue.AsString kindJson |> state.OfSum)
+            (JsonValue.AsString formNameJson |> state.OfSum |> state.Map FormName)
 
         let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
         let! form = s.TryFindForm formName |> state.OfSum
@@ -95,8 +97,7 @@ module Runner =
 
 
   type FormConfig<'ExprExtension, 'ValueExtension> with
-    static member PreParse
-      (_: string)
+    static member ParseFromType
       (json: JsonValue)
       : State<TypeBinding, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
@@ -105,7 +106,7 @@ module Runner =
         let! typeJson =
           fields
           |> state.TryFindField "type"
-          |> state.WithErrorContext "...when preparsing"
+          |> state.WithErrorContext "...when parsing form type"
 
         let! typeName = typeJson |> JsonValue.AsString |> state.OfSum
         let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
@@ -117,7 +118,7 @@ module Runner =
     static member Parse
       (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
       (exprParser: ExprParser<'ExprExtension, 'ValueExtension>)
-      (formName: string)
+      (formName: FormName)
       (json: JsonValue)
       : State<
           {| TypeId: ExprTypeId
@@ -140,7 +141,7 @@ module Runner =
           {| TypeId = typeBinding.TypeId
              Body = body |}
       }
-      |> state.WithErrorContext $"...when parsing form {formName}"
+      |> state.WithErrorContext(sprintf "...when parsing form %s" (formName |> fun (FormName name) -> name))
 
   type EnumApi with
     static member Parse<'ExprExtension, 'ValueExtension>
@@ -631,19 +632,8 @@ module Runner =
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         for formName, formJson in formsJson do
-          let! formType = FormConfig.PreParse formName formJson
-          let! formFields = formJson |> JsonValue.AsRecord |> state.OfSum
-
-          let! containerRendererJson =
-            formFields
-            |> state.TryFindField "containerRenderer"
-            |> state.Catch
-            |> state.Map(Sum.toOption)
-
-          let! (containerRenderer: Option<string>) =
-            containerRendererJson
-            |> Option.map (JsonValue.AsString >> state.OfSum)
-            |> state.RunOption
+          let formName = FormName formName
+          let! formType = FormConfig.ParseFromType formJson
 
           do!
             state.SetState(
@@ -651,22 +641,20 @@ module Runner =
                 Map.add
                   formName
                   { Body =
-                      FormBody.Union
-                        {| Renderer =
-                            Renderer.PrimitiveRenderer
-                              { PrimitiveRendererName = ""
-                                PrimitiveRendererId = Guid.CreateVersion7()
-                                Label = None
-                                Type = ExprType.UnitType }
-                           Cases = Map.empty
-                           UnionType = formType.Type |}
+                      FormBody.Annotated
+                        {| TypeId = formType.TypeId
+                           Renderer =
+                            Renderer.UnionRenderer
+                              {| Cases = Map.empty
+                                 Renderer = RendererName "" |} |}
+
                     FormId = Guid.CreateVersion7()
-                    FormName = formName
-                    ContainerRenderer = containerRenderer }
+                    FormName = formName }
               )
             )
 
         for formName, formJson in formsJson do
+          let formName = FormName formName
           let! formBody = FormConfig.Parse primitivesExt exprParser formName formJson
           let! form = state.TryFindForm formName
 
@@ -679,6 +667,7 @@ module Runner =
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         for launcherName, launcherJson in launchersJson do
+          let launcherName = LauncherName launcherName
           let! (mode, formId) = FormLauncher.Parse launcherName launcherJson
 
           do!

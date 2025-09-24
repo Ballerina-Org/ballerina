@@ -12,7 +12,6 @@ open Ballerina.DSL.Next.Json
 open Ballerina.DSL.Next.Types.Json.TypeExpr
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Types.Json
-open Ballerina.DSL.Next.KitchenSink
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError

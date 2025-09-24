@@ -25,7 +25,7 @@ module TypeValueApply =
           let! varType = var |> fromRootJson
           let! varType = varType |> TypeValue.AsVar
           let! argType = arg |> fromRootJson
-          return TypeValue.Apply(varType, argType)
+          return TypeValue.CreateApply(varType, argType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonApply(toRootJson: TypeValue -> JsonValue) : TypeVar * TypeValue -> JsonValue =

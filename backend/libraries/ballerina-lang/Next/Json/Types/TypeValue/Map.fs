@@ -10,6 +10,7 @@ module Map =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "map"
   let private fieldKey = "map"
@@ -21,7 +22,7 @@ module Map =
           let! (key, value) = mapFields |> JsonValue.AsPair
           let! keyType = key |> fromRootJson
           let! valueType = value |> fromRootJson
-          return TypeValue.Map(keyType, valueType)
+          return TypeValue.CreateMap(keyType, valueType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonMap(toRootJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =

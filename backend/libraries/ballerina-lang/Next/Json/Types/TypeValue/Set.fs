@@ -11,6 +11,7 @@ module Set =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
 
+
   let private kindKey = "set"
   let private fieldKey = "set"
 
@@ -19,7 +20,7 @@ module Set =
       sum.AssertKindAndContinueWithField kindKey fieldKey (fun elementType ->
         sum {
           let! elementType = elementType |> fromRootJson
-          return TypeValue.Set elementType
+          return TypeValue.CreateSet(elementType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonSet(toRootJson: TypeValue -> JsonValue) : TypeValue -> JsonValue =

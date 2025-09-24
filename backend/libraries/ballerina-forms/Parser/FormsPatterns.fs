@@ -46,10 +46,12 @@ module FormsPatterns =
     member ctx.TryFindType name = TypeContext.TryFindType ctx.Types name
 
     member ctx.TryFindForm name =
-      ctx.Forms |> Map.tryFindWithError name "form" name
+      ctx.Forms
+      |> Map.tryFindWithError name "form" (name |> fun (FormName name) -> name)
 
     member ctx.TryFindLauncher name =
-      ctx.Launchers |> Map.tryFindWithError name "launcher" name
+      ctx.Launchers
+      |> Map.tryFindWithError name "launcher" (name |> fun (LauncherName name) -> name)
 
   type StateBuilder with
     member state.TryFindType<'c, 'ExprExtension, 'ValueExtension>
@@ -61,7 +63,7 @@ module FormsPatterns =
       }
 
     member state.TryFindForm<'c, 'ExprExtension, 'ValueExtension>
-      name
+      (name: FormName)
       : State<_, 'c, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
       state {
         let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
@@ -69,46 +71,25 @@ module FormsPatterns =
       }
 
   type FormBody<'ExprExtension, 'ValueExtension> with
-    static member TryGetFields fb =
+    static member TryGetFields
+      (fb: FormBody<'ExprExtension, 'ValueExtension>)
+      : State<Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>, _, _, Errors> =
       match fb with
-      | FormBody.Record fs -> state { return fs }
-      | FormBody.Union _
+      | FormBody.Annotated fs ->
+        match fs.Renderer with
+        | Renderer.RecordRenderer fs -> state.Return fs.Fields.Fields
+        | _ -> state.Throw(Errors.Singleton(sprintf "Error: not a record renderer: %s" (fs.Renderer.ToString())))
       | FormBody.Table _ -> state.Throw(Errors.Singleton $"Error: expected fields in form body, found cases.")
 
-  type NestedRenderer<'ExprExtension, 'ValueExtension> with
-    member self.Type = self.Renderer.Type
-
-  and Renderer<'ExprExtension, 'ValueExtension> with
-    member self.Type =
-      match self with
-      | Multiple r -> r.First.NestedRenderer.Type
-      | PrimitiveRenderer p -> p.Type
-      | MapRenderer r -> ExprType.MapType(r.Key.Type, r.Value.Type)
-      | SumRenderer r -> ExprType.SumType(r.Left.Type, r.Right.Type)
-      | ListRenderer r -> ExprType.ListType r.Element.Type
-      | OptionRenderer r -> ExprType.OptionType r.Some.Type
-      | OneRenderer r -> ExprType.OneType r.Details.Type
-      | ManyRenderer(ManyAllRenderer r) -> ManyType r.Element.Type
-      | ManyRenderer(ManyLinkedUnlinkedRenderer r) -> ManyType r.Linked.Type
-      | ReadOnlyRenderer r -> ExprType.ReadOnlyType r.Value.Type
-      // | TableRenderer r -> ExprType.TableType r.Row.Type
-      | EnumRenderer(_, r)
-      | StreamRenderer(_, r) -> r.Type
-      | TupleRenderer i -> ExprType.TupleType(i.Elements |> Seq.map (fun e -> e.Type) |> List.ofSeq)
-      | FormRenderer(_, t)
-      | TableFormRenderer(_, t, _) -> t
-      | InlineFormRenderer i -> i.Body.Type
-  // | UnionRenderer r ->
-  //   ExprType.UnionType(
-  //     r.Cases
-  //     |> Map.map (fun cn c ->
-  //       { CaseName = cn.CaseName
-  //         Fields = c.Type })
-  //   )
-
   and FormBody<'ExprExtension, 'ValueExtension> with
-    member self.Type =
+    static member Type (types: TypeContext) (self: FormBody<'ExprExtension, 'ValueExtension>) : Sum<ExprType, Errors> =
+      let lookupType (id: ExprTypeId) =
+        let name = id.VarName
+
+        types
+        |> Map.tryFindWithError<string, TypeBinding> name "type" name
+        |> Sum.map (fun tb -> tb.Type)
+
       match self with
-      | FormBody.Record f -> f.RecordType
-      | FormBody.Union f -> f.UnionType
-      | FormBody.Table f -> f.RowType |> ExprType.TableType
+      | FormBody.Annotated f -> lookupType f.TypeId
+      | FormBody.Table f -> lookupType f.RowTypeId |> Sum.map ExprType.TableType

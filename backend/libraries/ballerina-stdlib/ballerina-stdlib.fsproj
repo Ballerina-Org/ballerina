@@ -2,17 +2,6 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <!-- NuGet package metadata -->
-        <PackageId>Ballerina.StdLib</PackageId>
-        <Version>1.0.0</Version>
-        <Authors>Dr. Giuseppe Maggiore</Authors>
-        <Company>Ballerina-Org</Company>
-        <Description>Standard library for Ballerina</Description>
-
-        <!-- Repository info -->
-        <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <RootNamespace>Ballerinca.StdLib</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +11,7 @@
         <Compile Include="Core\Map\Model.fs" />
         <Compile Include="Core\Guid\Model.fs" />
         <Compile Include="Errors\Model.fs" />
+        <Compile Include="Errors\Localized\Model.fs" />
         <Compile Include="Core\Json\Patterns.fs" />
         <Compile Include="Core\Json\Reader.fs" />
         <Compile Include="Core\Json\Sum.fs" />

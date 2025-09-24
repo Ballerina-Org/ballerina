@@ -13,6 +13,11 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
+  let private int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
+  let private float64TypeValue = TypeValue.CreatePrimitive PrimitiveType.Float64
+
+
   let Float64Extension<'ext>
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
     : OperationsExtension<'ext, Float64Operations<'ext>> =
@@ -20,11 +25,7 @@ module Extension =
 
     let plusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PlusId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Float64)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Plus {| v1 = None |}
         OperationsLens =
@@ -51,7 +52,7 @@ module Extension =
 
     let minusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64MinusId,
-      { Type = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Float64)
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Minus {| v1 = () |}
         OperationsLens =
@@ -72,11 +73,7 @@ module Extension =
 
     let divideOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64DivideId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Float64)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Divide {| v1 = None |}
         OperationsLens =
@@ -103,11 +100,7 @@ module Extension =
 
     let powerOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PowerId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Float64)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, int32TypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Power {| v1 = None |}
         OperationsLens =
@@ -135,11 +128,7 @@ module Extension =
 
     let modOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64ModId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Float64)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Mod {| v1 = None |}
         OperationsLens =
@@ -166,11 +155,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64EqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.Equal {| v1 = None |}
         OperationsLens =
@@ -197,11 +182,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64NotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -228,11 +209,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -259,11 +236,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -293,11 +266,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.LessThan {| v1 = None |}
         OperationsLens =
@@ -324,11 +293,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Float64,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Float64, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Float64Operations.LessThanOrEqual {| v1 = None |}
         OperationsLens =

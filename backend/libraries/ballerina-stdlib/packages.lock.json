@@ -179,7 +179,7 @@
         "resolved": "9.0.7",
         "contentHash": "ti/zD9BuuO50IqlvhWQs9GHxkCmoph5BHjGiWKdg2t6Or8XoyAfRJiKag+uvd/fpASnNklfsB01WpZ4fhAe0VQ=="
       },
-      "Ballerina.Cat": {
+      "ballerina-cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"

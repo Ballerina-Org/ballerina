@@ -13,7 +13,7 @@ module Builder =
     |> List.map (fun (name, expr) ->
       state {
 
-        let! tv = TypeExpr.Eval expr
+        let! tv = TypeExpr.Eval None expr
         let! sb = TypeExpr.EvalAsSymbol expr
         do! TypeExprEvalState.bindType name tv
         do! TypeExprEvalState.bindSymbol name sb

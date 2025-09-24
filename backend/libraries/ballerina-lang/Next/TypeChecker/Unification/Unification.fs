@@ -10,7 +10,6 @@ module Unification =
   open System
   open Ballerina.Fun
   open Ballerina.StdLib.Object
-  open Ballerina.DSL.Next.KitchenSink
   open Ballerina.DSL.Next.EquivalenceClasses
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
@@ -30,7 +29,9 @@ module Unification =
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit, Kind.Star))
+              TypeExprEvalState.Updaters.Bindings(
+                Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+              )
             )
         | TypeExpr.Exclude(l, r)
         | TypeExpr.Flatten(l, r)
@@ -75,28 +76,30 @@ module Unification =
             return Set.empty
           else
             return Set.singleton v
-        | TypeValue.Lambda(p, t) ->
+        | TypeValue.Lambda { value = p, t } ->
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
-              TypeExprEvalState.Updaters.Bindings(Map.add !p.Name (TypeValue.Primitive PrimitiveType.Unit, Kind.Star))
+              TypeExprEvalState.Updaters.Bindings(
+                Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+              )
             )
-        | TypeValue.Arrow(l, r) ->
+        | TypeValue.Arrow { value = l, r } ->
           let! lVars = TypeValue.FreeVariables l
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
-        | TypeValue.Map(l, r) ->
+        | TypeValue.Map { value = l, r } ->
           let! lVars = TypeValue.FreeVariables l
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
-        | TypeValue.Apply(_, e)
-        | TypeValue.Set e -> return! TypeValue.FreeVariables e
-        | TypeValue.Tuple es
-        | TypeValue.Sum es ->
+        | TypeValue.Apply { value = _, e }
+        | TypeValue.Set { value = e } -> return! TypeValue.FreeVariables e
+        | TypeValue.Tuple { value = es }
+        | TypeValue.Sum { value = es } ->
           let! vars = es |> Seq.map TypeValue.FreeVariables |> reader.All
           return vars |> Set.unionMany
-        | TypeValue.Record es
-        | TypeValue.Union es ->
+        | TypeValue.Record { value = es }
+        | TypeValue.Union { value = es } ->
           let! vars =
             es
             |> Map.toSeq
@@ -126,51 +129,53 @@ module Unification =
         | _, Lookup _ -> return t1
         | TypeValue.Var _, t
         | t, TypeValue.Var _ -> return t
-        | TypeValue.Arrow(l1, r1), TypeValue.Arrow(l2, r2) ->
+        | Arrow { value = l1, l2 }, Arrow { value = r1, r2 } ->
           let! l = TypeValue.MostSpecific(l1, l2)
           let! r = TypeValue.MostSpecific(r1, r2)
-          return TypeValue.Arrow(l, r)
-        | TypeValue.Map(l1, r1), TypeValue.Map(l2, r2) ->
+          return TypeValue.CreateArrow(l, r)
+        | TypeValue.Map { value = (l1, r1) }, TypeValue.Map { value = (l2, r2) } ->
           let! l = TypeValue.MostSpecific(l1, l2)
           let! r = TypeValue.MostSpecific(r1, r2)
-          return TypeValue.Map(l, r)
-        | TypeValue.Set e1, TypeValue.Set e2 -> return! TypeValue.MostSpecific(e1, e2) |> reader.Map(TypeValue.Set)
-        | TypeValue.Tuple e1, TypeValue.Tuple e2 when e1.Length = e2.Length ->
+          return TypeValue.CreateMap(l, r)
+        | TypeValue.Set e1, TypeValue.Set e2 ->
+          let! e = TypeValue.MostSpecific(e1.value, e2.value)
+          return TypeValue.CreateSet e
+        | TypeValue.Tuple e1, TypeValue.Tuple e2 when e1.value.Length = e2.value.Length ->
           let! items =
-            List.zip e1 e2
+            List.zip e1.value e2.value
             |> Seq.map (fun (v1, v2) -> TypeValue.MostSpecific(v1, v2))
             |> reader.All
 
-          return TypeValue.Tuple items
-        | TypeValue.Sum e1, TypeValue.Sum e2 when e1.Length = e2.Length ->
+          return TypeValue.CreateTuple items
+        | TypeValue.Sum e1, TypeValue.Sum e2 when e1.value.Length = e2.value.Length ->
           let! items =
-            List.zip e1 e2
+            List.zip e1.value e2.value
             |> Seq.map (fun (v1, v2) -> TypeValue.MostSpecific(v1, v2))
             |> reader.All
 
-          return TypeValue.Sum items
-        | TypeValue.Record e1, TypeValue.Record e2 when e1.Count = e2.Count ->
+          return TypeValue.CreateSum items
+        | TypeValue.Record e1, TypeValue.Record e2 when e1.value.Count = e2.value.Count ->
           let! items =
-            e1
+            e1.value
             |> Map.map (fun k v1 ->
               reader {
-                let! v2 = e2 |> Map.tryFindWithError k "record" k.Name.LocalName |> reader.OfSum
+                let! v2 = e2.value |> Map.tryFindWithError k "record" k.Name.LocalName |> reader.OfSum
                 return! TypeValue.MostSpecific(v1, v2)
               })
             |> reader.AllMap
 
-          return TypeValue.Record items
-        | TypeValue.Union e1, TypeValue.Union e2 when e1.Count = e2.Count ->
+          return TypeValue.CreateRecord items
+        | TypeValue.Union e1, TypeValue.Union e2 when e1.value.Count = e2.value.Count ->
           let! items =
-            e1
+            e1.value
             |> Map.map (fun k v1 ->
               reader {
-                let! v2 = e2 |> Map.tryFindWithError k "union" k.Name.LocalName |> reader.OfSum
+                let! v2 = e2.value |> Map.tryFindWithError k "union" k.Name.LocalName |> reader.OfSum
                 return! TypeValue.MostSpecific(v1, v2)
               })
             |> reader.AllMap
 
-          return TypeValue.Union items
+          return TypeValue.CreateUnion items
         | _ ->
           return!
             $"Cannot determine most specific type between {t1} and {t2}"
@@ -214,6 +219,9 @@ module Unification =
       // do Console.WriteLine($"Unifying {left} and {right}")
       // do Console.ReadLine() |> ignore
 
+      let left = TypeValue.DropSourceMapping left
+      let right = TypeValue.DropSourceMapping right
+
       state {
         match left, right with
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1 = p2 -> return ()
@@ -232,7 +240,7 @@ module Unification =
           return ()
         | TypeValue.Var v, t
         | t, TypeValue.Var v -> return! TypeValue.bind (v, t)
-        | TypeValue.Lambda(p1, t1), TypeValue.Lambda(p2, t2) ->
+        | TypeValue.Lambda { value = p1, t1 }, TypeValue.Lambda { value = p2, t2 } ->
           if p1.Kind <> p2.Kind then
             return!
               $"Cannot unify type parameters: {p1} and {p2}"
@@ -285,20 +293,20 @@ module Unification =
 
             do! TypeValue.Unify(v1, v2) |> state.MapContext(replaceWith ctx)
             do! state.SetState(replaceWith s)
-        | Arrow(l1, r1), Arrow(l2, r2)
-        | Map(l1, r1), Map(l2, r2) ->
+        | Arrow { value = l1, r1 }, Arrow { value = l2, r2 }
+        | Map { value = l1, r1 }, Map { value = l2, r2 } ->
           do! TypeValue.Unify(l1, l2)
           do! TypeValue.Unify(r1, r2)
-        | TypeValue.Apply(v1, a1), TypeValue.Apply(v2, a2) ->
+        | TypeValue.Apply { value = v1, a1 }, TypeValue.Apply { value = v2, a2 } ->
           do! TypeValue.Unify(v1 |> TypeValue.Var, v2 |> TypeValue.Var)
           do! TypeValue.Unify(a1, a2)
-        | Set(e1), Set(e2) -> do! TypeValue.Unify(e1, e2)
-        | TypeValue.Tuple(e1), TypeValue.Tuple(e2)
-        | TypeValue.Sum(e1), TypeValue.Sum(e2) when List.length e1 = List.length e2 ->
+        | Set { value = e1 }, Set { value = e2 } -> do! TypeValue.Unify(e1, e2)
+        | TypeValue.Tuple { value = e1 }, TypeValue.Tuple { value = e2 }
+        | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when List.length e1 = List.length e2 ->
           for (v1, v2) in List.zip e1 e2 do
             do! TypeValue.Unify(v1, v2)
-        | TypeValue.Record(e1), TypeValue.Record(e2)
-        | TypeValue.Union(e1), TypeValue.Union(e2) when Map.count e1 = Map.count e2 ->
+        | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 }
+        | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when Map.count e1 = Map.count e2 ->
           for (k1, v1) in e1 |> Map.toSeq do
             let! v2 = e2 |> Map.tryFindWithError k1 "union" k1.Name.LocalName |> state.OfSum
             do! TypeValue.Unify(v1, v2)
@@ -369,32 +377,32 @@ module Unification =
               |> state.OfSum
 
             return! TypeValue.Instantiate t
-          | TypeValue.Lambda(p, t) -> return TypeValue.Lambda(p, t)
-          | TypeValue.Arrow(l, r) ->
+          | TypeValue.Lambda v -> return TypeValue.Lambda v
+          | TypeValue.Arrow { value = l, r; source = n } ->
             let! l' = TypeValue.Instantiate l
             let! r' = TypeValue.Instantiate r
-            return TypeValue.Arrow(l', r')
-          | TypeValue.Apply(v, e) ->
-            let! e' = TypeValue.Instantiate e
-            return TypeValue.Apply(v, e')
-          | TypeValue.Map(l, r) ->
+            return TypeValue.Arrow { value = l', r'; source = n }
+          | TypeValue.Apply { value = var, arg; source = n } ->
+            let! arg' = TypeValue.Instantiate arg
+            return TypeValue.Apply { value = var, arg'; source = n }
+          | TypeValue.Map { value = l, r; source = n } ->
             let! l' = TypeValue.Instantiate l
             let! r' = TypeValue.Instantiate r
-            return TypeValue.Map(l', r')
-          | TypeValue.Set e ->
-            let! e' = TypeValue.Instantiate e
-            return TypeValue.Set e'
-          | TypeValue.Tuple es ->
+            return TypeValue.Map { value = l', r'; source = n }
+          | TypeValue.Set { value = v; source = n } ->
+            let! v' = TypeValue.Instantiate v
+            return TypeValue.Set { value = v'; source = n }
+          | TypeValue.Tuple { value = es; source = n } ->
             let! es' = es |> Seq.map TypeValue.Instantiate |> state.All
-            return TypeValue.Tuple es'
-          | TypeValue.Sum es ->
+            return TypeValue.Tuple { value = es'; source = n }
+          | TypeValue.Sum { value = es; source = n } ->
             let! es' = es |> Seq.map TypeValue.Instantiate |> state.All
-            return TypeValue.Sum es'
-          | TypeValue.Record es ->
+            return TypeValue.Sum { value = es'; source = n }
+          | TypeValue.Record { value = es; source = n } ->
             let! es' = es |> Map.map (fun _ -> TypeValue.Instantiate) |> state.AllMap
-            return TypeValue.Record es'
-          | TypeValue.Union es ->
+            return TypeValue.Record { value = es'; source = n }
+          | TypeValue.Union { value = es; source = n } ->
             let! es' = es |> Map.map (fun _ -> TypeValue.Instantiate) |> state.AllMap
-            return TypeValue.Union es'
+            return TypeValue.Union { value = es'; source = n }
           | TypeValue.Primitive _ -> return t
         }

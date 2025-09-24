@@ -13,6 +13,9 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private boolTypeValue = TypeValue.CreateBool()
+  let private stringTypeValue = TypeValue.CreateString()
+
   let StringExtension<'ext>
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'ext, StringOperations<'ext>> =
@@ -21,11 +24,7 @@ module Extension =
 
     let plusOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringPlusId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.String)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.Concat {| v1 = None |}
         OperationsLens =
@@ -54,11 +53,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.Equal {| v1 = None |}
         OperationsLens =
@@ -85,11 +80,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringNotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -116,11 +107,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -147,11 +134,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -181,11 +164,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.LessThan {| v1 = None |}
         OperationsLens =
@@ -212,11 +191,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.String,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.String, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = StringOperations.LessThanOrEqual {| v1 = None |}
         OperationsLens =

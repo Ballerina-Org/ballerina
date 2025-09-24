@@ -14,6 +14,11 @@ module Extension =
   open Ballerina.DSL.Next.StdLib.Option
   open System
 
+  let private dateTimeTypeValue = TypeValue.CreateDateTime()
+
+  let private boolTypeValue = TypeValue.CreateBool()
+
+
   let DateTimeExtension<'ext>
     (operationLens: PartialLens<'ext, DateTimeOperations<'ext>>)
     : OperationsExtension<'ext, DateTimeOperations<'ext>> =
@@ -21,11 +26,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.Equal {| v1 = None |}
         OperationsLens =
@@ -52,11 +53,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeNotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -83,11 +80,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -114,11 +107,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -148,11 +137,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.LessThan {| v1 = None |}
         OperationsLens =
@@ -179,11 +164,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateTime,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateTime, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(dateTimeTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateTimeOperations.LessThanOrEqual {| v1 = None |}
         OperationsLens =

@@ -18,7 +18,9 @@ module Lookup =
       sum.AssertKindAndContinueWithField kindKey fieldKey (fun lookupFields ->
         sum {
           let! name = lookupFields |> JsonValue.AsString
+
           return TypeValue.Lookup(Identifier.LocalScope name)
+
         })
 
     static member ToJsonLookup(id: Identifier) : JsonValue =

@@ -58,19 +58,30 @@ module Model =
       Type: TypeExpr }
 
   and TypeValue =
-    | Primitive of PrimitiveType
+    | Primitive of WithTypeExprSourceMapping<PrimitiveType>
     | Var of TypeVar
-    | Lookup of Identifier
-    | Lambda of TypeParameter * TypeExpr
-    | Apply of TypeVar * TypeValue
-    | Arrow of TypeValue * TypeValue
-    | Record of Map<TypeSymbol, TypeValue>
-    | Tuple of List<TypeValue>
-    | Union of Map<TypeSymbol, TypeValue>
-    | Sum of List<TypeValue>
-    | Set of TypeValue
-    | Map of TypeValue * TypeValue
-    | Imported of ImportedTypeValue
+    | Lookup of Identifier // TODO: Figure out what to do with this (orig name wise) after recursion in type checking is implement correctly
+    | Lambda of WithTypeExprSourceMapping<TypeParameter * TypeExpr>
+    | Apply of WithTypeExprSourceMapping<TypeVar * TypeValue>
+    | Arrow of WithTypeExprSourceMapping<TypeValue * TypeValue>
+    | Record of WithTypeExprSourceMapping<Map<TypeSymbol, TypeValue>>
+    | Tuple of WithTypeExprSourceMapping<List<TypeValue>>
+    | Union of WithTypeExprSourceMapping<Map<TypeSymbol, TypeValue>>
+    | Sum of WithTypeExprSourceMapping<List<TypeValue>>
+    | Set of WithTypeExprSourceMapping<TypeValue>
+    | Map of WithTypeExprSourceMapping<TypeValue * TypeValue>
+    | Imported of ImportedTypeValue // FIXME: This should also have an orig name, implement once the extension is implemented completely
+
+  and ExprTypeLetBindingName = ExprTypeLetBindingName of string
+
+  and TypeExprSourceMapping =
+    | OriginExprTypeLet of ExprTypeLetBindingName * TypeExpr
+    | OriginTypeExpr of TypeExpr
+    | NoSourceMapping of string
+
+  and WithTypeExprSourceMapping<'v> =
+    { value: 'v
+      source: TypeExprSourceMapping }
 
   and ImportedTypeValue =
     { Id: Identifier

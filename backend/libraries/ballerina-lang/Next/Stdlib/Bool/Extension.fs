@@ -12,6 +12,8 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
+  let private boolTypeValue = TypeValue.CreateBool()
+
   let BoolExtension<'ext>
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
     : OperationsExtension<'ext, BoolOperations<'ext>> =
@@ -20,11 +22,7 @@ module Extension =
 
     let andOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolAndId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Bool,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = BoolOperations.And {| v1 = None |}
         OperationsLens =
@@ -52,11 +50,7 @@ module Extension =
 
     let orOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolOrId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Bool,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = BoolOperations.Or {| v1 = None |}
         OperationsLens =
@@ -84,7 +78,7 @@ module Extension =
 
     let notOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolNotId,
-      { Type = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Bool)
+      { Type = TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
         Kind = Kind.Star
         Operation = BoolOperations.Not {| v1 = () |}
         OperationsLens =

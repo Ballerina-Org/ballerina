@@ -4,9 +4,37 @@ module Model =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
-  open Ballerina.State.WithError
+  open Ballerina.Collections.Sum
+  open Ballerina.Errors
 
-  open Models.Many
+  type RendererName = RendererName of string
+  type FormName = FormName of string
+  type LauncherName = LauncherName of string
+  type Label = Label of string
+
+  type EnumRendererType =
+    | Option
+    | Set
+
+  type StreamRendererType =
+    | Option
+    | Set
+
+  type CodegenConfigManyDef =
+    { GeneratedTypeName: string
+      ChunkTypeName: string
+      ItemTypeName: string
+      RequiredImport: Option<string>
+      DeltaTypeName: string
+      SupportedRenderers: ManySupportedRenderers
+      DefaultConstructor: string
+      MappingFunction: string }
+
+  and ManySupportedRenderers =
+    { LinkedUnlinkedRenderers: Set<RendererName>
+      AllRenderers: Set<RendererName> }
+
+
 
   type CodeGenConfig =
     { Int: CodegenConfigTypeDef
@@ -40,7 +68,7 @@ module Model =
       EnumNotFoundError: CodegenConfigErrorDef
       InvalidEnumValueCombinationError: CodegenConfigErrorDef
       StreamNotFoundError: CodegenConfigErrorDef
-      ContainerRenderers: Set<string>
+      ContainerRenderers: Set<RendererName>
       GenerateReplace: Set<string> }
 
   and GenericType =
@@ -51,7 +79,7 @@ module Model =
 
   and GenericTypeDef =
     {| Type: string
-       SupportedRenderers: Set<string> |}
+       SupportedRenderers: Set<RendererName> |}
 
   and CodegenConfigInterfaceDef =
     { GeneratedTypeName: string
@@ -66,24 +94,25 @@ module Model =
     { Ariety: int
       GeneratedTypeName: string
       DeltaTypeName: string
-      SupportedRenderers: Set<string>
+      SupportedRenderers: Set<RendererName>
       Constructor: string
       RequiredImport: Option<string> }
 
-  and CodegenConfigUnionDef = { SupportedRenderers: Set<string> }
+  and CodegenConfigUnionDef =
+    { SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigUnitDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
       RequiredImport: Option<string>
       DefaultConstructor: string
-      SupportedRenderers: Set<string> }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigListDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      SupportedRenderers: Set<string>
+      SupportedRenderers: Set<RendererName>
       DefaultConstructor: string
       MappingFunction: string }
 
@@ -91,7 +120,7 @@ module Model =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      SupportedRenderers: Set<string>
+      SupportedRenderers: Set<RendererName>
       DefaultConstructor: string
       MappingFunction: string }
 
@@ -100,14 +129,14 @@ module Model =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      SupportedRenderers: Set<string>
+      SupportedRenderers: Set<RendererName>
       DefaultConstructor: string }
 
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      SupportedRenderers: Set<string>
+      SupportedRenderers: Set<RendererName>
       DefaultConstructor: string
       MappingFunction: string
       FilteringConfig: CodegenConfigTableFilteringTypesDef }
@@ -133,7 +162,7 @@ module Model =
       RequiredImport: Option<string>
       DeltaTypeName: string
       DefaultConstructor: string
-      SupportedRenderers: Set<string> }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigSumDef =
     { GeneratedTypeName: string
@@ -141,21 +170,21 @@ module Model =
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
-      SupportedRenderers: Set<string> }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
       DefaultValue: string
       RequiredImport: Option<string>
-      SupportedRenderers: Set<string> }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
       DefaultConstructor: string
       DeltaTypeName: string
       RequiredImport: Option<string>
-      SupportedRenderers: Set<string> }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigOptionDef =
     { GeneratedTypeName: string
@@ -163,9 +192,9 @@ module Model =
       DefaultConstructor: string
       DeltaTypeName: string
       SupportedRenderers:
-        {| Enum: Set<string>
-           Stream: Set<string>
-           Plain: Set<string> |} }
+        {| Enum: Set<RendererName>
+           Stream: Set<RendererName>
+           Plain: Set<RendererName> |} }
 
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
@@ -173,11 +202,11 @@ module Model =
       DefaultConstructor: string
       DeltaTypeName: string
       SupportedRenderers:
-        {| Enum: Set<string>
-           Stream: Set<string> |} }
+        {| Enum: Set<RendererName>
+           Stream: Set<RendererName> |} }
 
   and CodegenConfigRecordDef =
-    { SupportedRenderers: Map<string, Set<string>> }
+    { SupportedRenderers: Map<RendererName, Set<string>> }
 
   type TableMethod =
     | Add
@@ -197,16 +226,16 @@ module Model =
     | Default
 
   type FormLauncherId =
-    { LauncherName: string
+    { LauncherName: LauncherName
       LauncherId: Guid }
 
   and FormLauncher =
-    { LauncherName: string
+    { LauncherName: LauncherName
       LauncherId: Guid
       Form: FormConfigId
       Mode: FormLauncherMode }
 
-    static member Name(l: FormLauncher) : string = l.LauncherName
+    static member Name(l: FormLauncher) : LauncherName = l.LauncherName
 
     static member Id(l: FormLauncher) : FormLauncherId =
       { LauncherName = l.LauncherName
@@ -342,13 +371,12 @@ module Model =
             { s with
                 FormApis.Lookups = u (s.Lookups) } |}
 
-  and FormConfigId = { FormName: string; FormId: Guid }
+  and FormConfigId = { FormName: FormName; FormId: Guid }
 
   and FormConfig<'ExprExtension, 'ValueExtension> =
-    { FormName: string
+    { FormName: FormName
       FormId: Guid
-      Body: FormBody<'ExprExtension, 'ValueExtension>
-      ContainerRenderer: Option<string> }
+      Body: FormBody<'ExprExtension, 'ValueExtension> }
 
     static member Name(f: FormConfig<'ExprExtension, 'ValueExtension>) = f.FormName
 
@@ -357,35 +385,34 @@ module Model =
         FormId = f.FormId }
 
   and FormBody<'ExprExtension, 'ValueExtension> =
-    | Record of
-      {| Renderer: Option<string>
-         Fields: FormFields<'ExprExtension, 'ValueExtension>
-         RecordType: ExprType |}
-    | Union of
+    | Annotated of
       {| Renderer: Renderer<'ExprExtension, 'ValueExtension>
-         Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>>
-         UnionType: ExprType |}
+         TypeId: ExprTypeId |}
     | Table of
-      {| Renderer: string
+      {| Renderer: RendererName
          Details: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          HighlightedFilters: List<FieldName>
          //  Preview: Option<FormBody>
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
-         MethodLabels: Map<TableMethod, string>
-         RowType: ExprType |}
+         MethodLabels: Map<TableMethod, Label>
+         RowTypeId: ExprTypeId |}
 
-    static member FormDeclarationType(self: FormBody<'ExprExtension, 'ValueExtension>) =
-      match self with
-      | Record f -> f.RecordType
-      | Union c -> c.UnionType
-      | Table t -> t.RowType
+  and FormBody<'ExprExtension, 'ValueExtension> with
+    static member FormDeclarationType
+      (types: TypeContext)
+      (self: FormBody<'ExprExtension, 'ValueExtension>)
+      : Sum<ExprType, Errors> =
+      let lookupType (id: ExprTypeId) =
+        let name = id.VarName
 
-    static member ProcessedType(self: FormBody<'ExprExtension, 'ValueExtension>) =
+        types
+        |> Map.tryFindWithError<string, TypeBinding> name "type" name
+        |> Sum.map (fun tb -> tb.Type)
+
       match self with
-      | Record f -> f.RecordType
-      | Union c -> c.UnionType
-      | Table t -> t.RowType |> ExprType.TableType
+      | Annotated f -> lookupType f.TypeId
+      | Table t -> lookupType t.RowTypeId
 
   and Column<'ExprExtension, 'ValueExtension> =
     { FieldConfig: FieldConfig<'ExprExtension, 'ValueExtension> }
@@ -413,7 +440,7 @@ module Model =
   and FieldConfig<'ExprExtension, 'ValueExtension> =
     { FieldName: string
       FieldId: Guid
-      Label: Option<string>
+      Label: Option<Label>
       Tooltip: Option<string>
       Details: Option<string>
       Renderer: Renderer<'ExprExtension, 'ValueExtension>
@@ -427,35 +454,29 @@ module Model =
     static member Name(f: FieldConfig<'ExprExtension, 'ValueExtension>) = f.FieldName
 
   and Renderer<'ExprExtension, 'ValueExtension> =
-    | Multiple of
-      {| First:
-           {| Name: string
-              NestedRenderer: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-         Rest: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>>
-         Label: string option |}
     | PrimitiveRenderer of PrimitiveRenderer
     | MapRenderer of
-      {| Label: string option
-         Map: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Map: RendererName
          Key: NestedRenderer<'ExprExtension, 'ValueExtension>
          Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | TupleRenderer of
-      {| Label: string option
-         Tuple: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Tuple: RendererName
          Elements: List<NestedRenderer<'ExprExtension, 'ValueExtension>> |}
     | OptionRenderer of
-      {| Label: string option
-         Option: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Option: RendererName
          Some: NestedRenderer<'ExprExtension, 'ValueExtension>
          None: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     | ListRenderer of
-      {| Label: string option
-         List: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         List: RendererName
          Element: NestedRenderer<'ExprExtension, 'ValueExtension>
-         MethodLabels: Map<TableMethod, string> |}
+         MethodLabels: Map<TableMethod, Label> |}
     | OneRenderer of
-      {| Label: string option
-         One: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         One: RendererName
          Details: NestedRenderer<'ExprExtension, 'ValueExtension>
          Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          OneApiId: ExprTypeId * string |}
@@ -463,42 +484,41 @@ module Model =
     | ManyRenderer of ManyRenderer<'ExprExtension, 'ValueExtension>
 
     | ReadOnlyRenderer of
-      {| Label: string option
-         ReadOnly: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         ReadOnly: RendererName
          Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
     // | TableRenderer of
     //   {| Table: Renderer
     //      Row: NestedRenderer
     //      Children: RendererChildren |}
     | SumRenderer of
-      {| Label: string option
-         Sum: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Sum: RendererName
          Left: NestedRenderer<'ExprExtension, 'ValueExtension>
          Right: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-    | EnumRenderer of EnumApiId * Renderer<'ExprExtension, 'ValueExtension>
-    | StreamRenderer of StreamRendererApi * Renderer<'ExprExtension, 'ValueExtension>
-    | FormRenderer of FormConfigId * ExprType //* RendererChildren
+    | EnumRenderer of EnumApiId * Label option * EnumRendererType * ExprTypeId * RendererName
+    | StreamRenderer of StreamRendererApi * Label option * StreamRendererType * ExprTypeId * RendererName
+    | FormRenderer of FormConfigId * ExprTypeId //* RendererChildren
     | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
     // | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
-    | InlineFormRenderer of
-      {| Body: FormBody<'ExprExtension, 'ValueExtension>
-         ContainerRenderer: Option<string> |}
-  // | UnionRenderer of
-  //   {| Union: Renderer
-  //      Cases: Map<CaseName, Renderer>
-  //   //Children: RendererChildren
-  //   |}
+    | InlineFormRenderer of FormBody<'ExprExtension, 'ValueExtension>
+    | RecordRenderer of
+      {| Renderer: Option<RendererName>
+         Fields: FormFields<'ExprExtension, 'ValueExtension> |}
+    | UnionRenderer of
+      {| Renderer: RendererName
+         Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> |}
 
   and ManyRenderer<'ExprExtension, 'ValueExtension> =
     | ManyLinkedUnlinkedRenderer of
-      {| Label: string option
-         Many: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Many: RendererName
          Linked: NestedRenderer<'ExprExtension, 'ValueExtension>
          Unlinked: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
          ManyApiId: Option<ExprTypeId * string> |}
     | ManyAllRenderer of
-      {| Label: string option
-         Many: Renderer<'ExprExtension, 'ValueExtension>
+      {| Label: Label option
+         Many: RendererName
          Element: NestedRenderer<'ExprExtension, 'ValueExtension>
          ManyApiId: Option<ExprTypeId * string> |}
 
@@ -510,20 +530,20 @@ module Model =
          Stream: StreamApiId |}
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> =
-    { Label: Option<string>
+    { Label: Option<Label>
       Tooltip: Option<string>
       Details: Option<string>
       Renderer: Renderer<'ExprExtension, 'ValueExtension> }
 
   and PrimitiveRendererId =
-    { PrimitiveRendererName: string
+    { PrimitiveRendererName: RendererName
       PrimitiveRendererId: Guid }
 
   and PrimitiveRenderer =
-    { PrimitiveRendererName: string
+    { PrimitiveRendererName: RendererName
       PrimitiveRendererId: Guid
       Type: ExprType
-      Label: string option
+      Label: Label option
     // Children: RendererChildren
     }
 
@@ -558,13 +578,13 @@ module Model =
   type ParsedFormsContext<'ExprExtension, 'ValueExtension> =
     { Types: TypeContext
       Apis: FormApis<'ExprExtension, 'ValueExtension>
-      Forms: Map<string, FormConfig<'ExprExtension, 'ValueExtension>>
+      Forms: Map<FormName, FormConfig<'ExprExtension, 'ValueExtension>>
       GenericRenderers:
         List<
           {| Type: ExprType
-             SupportedRenderers: Set<string> |}
+             SupportedRenderers: Set<RendererName> |}
          >
-      Launchers: Map<string, FormLauncher> }
+      Launchers: Map<LauncherName, FormLauncher> }
 
     static member Empty: ParsedFormsContext<'ExprExtension, 'ValueExtension> =
       { Types = Map.empty

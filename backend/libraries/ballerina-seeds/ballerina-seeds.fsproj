@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ballerina_seeds</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
     <ProjectReference Include="..\ballerina-data\ballerina-data.fsproj" />
-    <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
     <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
   </ItemGroup>
 

@@ -141,7 +141,7 @@
           "System.Collections.Immutable": "8.0.0"
         }
       },
-      "Ballerina.Cat": {
+      "ballerina-cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"

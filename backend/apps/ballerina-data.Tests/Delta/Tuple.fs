@@ -7,6 +7,7 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Types.Patterns
 
 let symbol name : TypeSymbol =
   { Name = name
@@ -15,9 +16,7 @@ let symbol name : TypeSymbol =
 [<Test>]
 let ``Delta.Tuple: Updates correct index in a tuple`` () =
   let tupleType =
-    [ TypeValue.Primitive PrimitiveType.Int32
-      TypeValue.Primitive PrimitiveType.String ]
-    |> TypeValue.Tuple
+    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateTuple
 
   let tupleValue =
     [ PrimitiveValue.Int32 42 |> Value<Unit>.Primitive
@@ -38,7 +37,7 @@ let ``Delta.Tuple: Updates correct index in a tuple`` () =
 
 [<Test>]
 let ``Delta.Tuple: Fails if index out of bounds in type`` () =
-  let tupleType = [ TypeValue.Primitive PrimitiveType.Int32 ] |> TypeValue.Tuple
+  let tupleType = [ TypeValue.CreateInt32() ] |> TypeValue.CreateTuple
 
   let delta =
     Delta.Tuple(5, Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
@@ -50,9 +49,7 @@ let ``Delta.Tuple: Fails if index out of bounds in type`` () =
 [<Test>]
 let ``Delta.Tuple: Fails if index out of bounds in value`` () =
   let tupleType =
-    [ TypeValue.Primitive PrimitiveType.Int32
-      TypeValue.Primitive PrimitiveType.String ]
-    |> TypeValue.Tuple
+    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateTuple
 
   let tupleValue =
     [ PrimitiveValue.Int32 1 |> Value<Unit>.Primitive ] |> Value<Unit>.Tuple

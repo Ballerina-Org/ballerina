@@ -23,7 +23,7 @@ module Eval =
       Symbols: TypeSymbols }
 
   type TypeExprEvalResult = State<TypeValue * Kind, TypeExprEvalContext, TypeExprEvalState, Errors>
-  type TypeExprEval = TypeExpr -> TypeExprEvalResult
+  type TypeExprEval = Option<ExprTypeLetBindingName> -> TypeExpr -> TypeExprEvalResult
   type TypeExprSymbolEvalResult = State<TypeSymbol, TypeExprEvalContext, TypeExprEvalState, Errors>
   type TypeExprSymbolEval = TypeExpr -> TypeExprSymbolEvalResult
 
@@ -109,14 +109,12 @@ module Eval =
         do! state.SetState(TypeExprEvalState.Updaters.Symbols(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
       }
 
-
-
   type TypeExpr with
     static member EvalAsSymbol: TypeExprSymbolEval =
       fun t ->
         state {
           let (!) = TypeExpr.EvalAsSymbol
-          let (!!) = TypeExpr.Eval
+          let (!!) = TypeExpr.Eval None
 
           match t with
           | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
@@ -125,7 +123,13 @@ module Eval =
             let! f, f_k = !!f
             do! Kind.AsArrow f_k |> state.OfSum |> state.Ignore
             let! a, a_k = !!a
-            let! param, body = f |> TypeValue.AsLambda |> state.OfSum
+
+            let! param, body =
+              f
+              |> TypeValue.AsLambda
+              |> state.OfSum
+              |> state.Map WithTypeExprSourceMapping.Getters.Value
+
             do! TypeExprEvalState.bindType param.Name (a, a_k)
 
             return! !body
@@ -137,10 +141,15 @@ module Eval =
         }
 
     static member Eval: TypeExprEval =
-      fun t ->
+      fun n t ->
         state {
-          let (!) = TypeExpr.Eval
+          let (!) = TypeExpr.Eval None
           let (!!) = TypeExpr.EvalAsSymbol
+
+          let source =
+            match n with
+            | Some name -> TypeExprSourceMapping.OriginExprTypeLet(name, t)
+            | None -> TypeExprSourceMapping.OriginTypeExpr t
 
           match t with
           | TypeExpr.Imported i ->
@@ -158,7 +167,7 @@ module Eval =
                     Arguments = parameters @ args },
               Kind.Star
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> Errors.Singleton |> state.Throw
-          | TypeExpr.Primitive p -> return TypeValue.Primitive p, Kind.Star
+          | TypeExpr.Primitive p -> return TypeValue.Primitive { value = p; source = source }, Kind.Star
           | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindType v |> state.OfStateReader
           | TypeExpr.Let(x, t_x, rest) ->
             return!
@@ -181,7 +190,11 @@ module Eval =
             return!
               state.Either
                 (state {
-                  let! param, body = f |> TypeValue.AsLambda |> state.OfSum
+                  let! param, body =
+                    f
+                    |> TypeValue.AsLambda
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                   match param.Kind with
                   | Kind.Symbol ->
@@ -207,9 +220,9 @@ module Eval =
                       |> Errors.Singleton
                       |> state.Throw
                   else
-                    return TypeValue.Apply(f_var, a), f_k_o
+                    return TypeValue.Apply { value = (f_var, a); source = source }, f_k_o
                 })
-          | TypeExpr.Lambda(param, body) ->
+          | TypeExpr.Lambda(param, bodyExpr) ->
             let fresh_var_t =
               TypeValue.Var(
                 { TypeVar.Name = param.Name
@@ -217,15 +230,25 @@ module Eval =
               )
 
             do! TypeExprEvalState.bindType param.Name (fresh_var_t, param.Kind)
-            let! body, body_k = !body
+            let! _body, body_k = !bodyExpr
             do! TypeExprEvalState.unbindType param.Name
-            return TypeValue.Lambda(param, body.AsExpr), Kind.Arrow(param.Kind, body_k)
+
+            return
+              TypeValue.Lambda
+                { value = (param, bodyExpr)
+                  source = source },
+              Kind.Arrow(param.Kind, body_k)
           | TypeExpr.Arrow(input, output) ->
             let! input, input_k = !input
             let! output, output_k = !output
             do! input_k |> Kind.AsStar |> state.OfSum |> state.Ignore
             do! output_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-            return TypeValue.Arrow(input, output), Kind.Star
+
+            return
+              TypeValue.Arrow
+                { value = (input, output)
+                  source = source },
+              Kind.Star
           | TypeExpr.Record(fields) ->
             let! fields =
               fields
@@ -239,7 +262,7 @@ module Eval =
               |> state.All
               |> state.Map(Map.ofSeq)
 
-            return TypeValue.Record(fields), Kind.Star
+            return TypeValue.Record { value = fields; source = source }, Kind.Star
           | TypeExpr.Tuple(items) ->
             let! items =
               items
@@ -251,7 +274,7 @@ module Eval =
                 })
               |> state.All
 
-            return TypeValue.Tuple(items), Kind.Star
+            return TypeValue.Tuple { value = items; source = source }, Kind.Star
           | TypeExpr.Union(cases) ->
             let! cases =
               cases
@@ -265,27 +288,40 @@ module Eval =
               |> state.All
               |> state.Map(Map.ofSeq)
 
-            return TypeValue.Union(cases), Kind.Star
+            return TypeValue.Union { value = cases; source = source }, Kind.Star
           | TypeExpr.Set(element) ->
             let! element, element_k = !element
             do! element_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-            return TypeValue.Set(element), Kind.Star
+            return TypeValue.Set { value = element; source = source }, Kind.Star
           | TypeExpr.Map(key, value) ->
             let! key, key_k = !key
             let! value, value_k = !value
             do! key_k |> Kind.AsStar |> state.OfSum |> state.Ignore
             do! value_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-            return TypeValue.Map(key, value), Kind.Star
+
+            return
+              TypeValue.Map
+                { value = (key, value)
+                  source = source },
+              Kind.Star
           | TypeExpr.KeyOf(arg) ->
             let! arg, arg_k = !arg
             do! arg_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-            let! cases = arg |> TypeValue.AsRecord |> state.OfSum
+
+            let! cases =
+              arg
+              |> TypeValue.AsRecord
+              |> state.OfSum
+              |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+            let mappedCasesFixThis =
+              cases |> Map.map (fun _ _ -> TypeValue.CreatePrimitive PrimitiveType.Unit)
 
             return
-              (cases
-               |> Map.map (fun _ _ -> TypeValue.Primitive(PrimitiveType.Unit))
-               |> TypeValue.Union,
-               Kind.Star)
+              TypeValue.Union
+                { value = mappedCasesFixThis
+                  source = source },
+              Kind.Star
           | TypeExpr.Sum(variants) ->
             let! variants =
               variants
@@ -297,7 +333,7 @@ module Eval =
                 })
               |> state.All
 
-            return TypeValue.Sum(variants), Kind.Star
+            return TypeValue.Sum { value = variants; source = source }, Kind.Star
           | TypeExpr.Flatten(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2
@@ -307,8 +343,17 @@ module Eval =
             return!
               state.Either
                 (state {
-                  let! cases1 = type1 |> TypeValue.AsUnion |> state.OfSum
-                  let! cases2 = type2 |> TypeValue.AsUnion |> state.OfSum
+                  let! cases1 =
+                    type1
+                    |> TypeValue.AsUnion
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                  let! cases2 =
+                    type2
+                    |> TypeValue.AsUnion
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                   let cases1 = cases1 |> Map.toSeq
                   let keys1 = cases1 |> Seq.map fst |> Set.ofSeq
@@ -317,7 +362,8 @@ module Eval =
                   let keys2 = cases2 |> Seq.map fst |> Set.ofSeq
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
-                    return cases1 |> Seq.append cases2 |> Map.ofSeq |> TypeValue.Union, Kind.Star
+                    let cases = cases1 |> Seq.append cases2 |> Map.ofSeq
+                    return TypeValue.Union { value = cases; source = source }, Kind.Star
                   else
                     return!
                       $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
@@ -325,8 +371,17 @@ module Eval =
                       |> state.Throw
                 })
                 (state {
-                  let! fields1 = type1 |> TypeValue.AsRecord |> state.OfSum
-                  let! fields2 = type2 |> TypeValue.AsRecord |> state.OfSum
+                  let! fields1 =
+                    type1
+                    |> TypeValue.AsRecord
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                  let! fields2 =
+                    type2
+                    |> TypeValue.AsRecord
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                   let fields1 = fields1 |> Map.toSeq
                   let keys1 = fields1 |> Seq.map fst |> Set.ofSeq
@@ -335,7 +390,8 @@ module Eval =
                   let keys2 = fields2 |> Seq.map fst |> Set.ofSeq
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
-                    return fields1 |> Seq.append fields2 |> Map.ofSeq |> TypeValue.Record, Kind.Star
+                    let fields = fields1 |> Seq.append fields2 |> Map.ofSeq
+                    return TypeValue.Record { value = fields; source = source }, Kind.Star
                   else
                     return!
                       $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
@@ -351,26 +407,39 @@ module Eval =
             return!
               state.Either
                 (state {
-                  let! cases1 = type1 |> TypeValue.AsUnion |> state.OfSum
-                  let! cases2 = type2 |> TypeValue.AsUnion |> state.OfSum
-                  let keys2 = cases2 |> Map.keys |> Set.ofSeq
+                  let! cases1 =
+                    type1
+                    |> TypeValue.AsUnion
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  return
-                    cases1
-                    |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
-                    |> TypeValue.Union,
-                    Kind.Star
+                  let! cases2 =
+                    type2
+                    |> TypeValue.AsUnion
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                  let keys2 = cases2 |> Map.keys |> Set.ofSeq
+                  let cases = cases1 |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
+                  return TypeValue.Union { value = cases; source = source }, Kind.Star
                 })
                 (state {
-                  let! fields1 = type1 |> TypeValue.AsRecord |> state.OfSum
-                  let! fields2 = type2 |> TypeValue.AsRecord |> state.OfSum
+                  let! fields1 =
+                    type1
+                    |> TypeValue.AsRecord
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                  let! fields2 =
+                    type2
+                    |> TypeValue.AsRecord
+                    |> state.OfSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
                   let keys2 = fields2 |> Map.keys |> Set.ofSeq
 
-                  return
-                    fields1
-                    |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
-                    |> TypeValue.Record,
-                    Kind.Star
+                  let fields = fields1 |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
+                  return TypeValue.Record { value = fields; source = source }, Kind.Star
                 })
           | TypeExpr.Rotate(t) ->
             let! t, t_k = !t
@@ -381,11 +450,15 @@ module Eval =
                 (state {
                   let! cases = t |> TypeValue.AsUnion |> state.OfSum
 
-                  return cases |> TypeValue.Record, Kind.Star
+                  return TypeValue.Record { value = cases.value; source = source }, Kind.Star
                 })
                 (state {
                   let! fields = t |> TypeValue.AsRecord |> state.OfSum
 
-                  return fields |> TypeValue.Union, Kind.Star
+                  return
+                    TypeValue.Union
+                      { value = fields.value
+                        source = source },
+                    Kind.Star
                 })
         }
