@@ -17,8 +17,6 @@ const (
 	arrayReplace     deltaArrayEffectsEnum = "ArrayReplace"
 )
 
-var allDeltaArrayEffectsEnumCases = [...]deltaArrayEffectsEnum{arrayValue, arrayAddAt, arrayRemoveAt, arrayMoveFromTo, arrayDuplicateAt, arrayAdd, arrayReplace}
-
 type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaArrayEffectsEnum

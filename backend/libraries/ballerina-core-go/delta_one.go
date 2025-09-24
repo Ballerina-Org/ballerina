@@ -12,8 +12,6 @@ const (
 	oneValue   deltaOneEffectsEnum = "OneValue"
 )
 
-var allDeltaOneEffectsEnumCases = [...]deltaOneEffectsEnum{oneReplace, oneValue}
-
 type DeltaOne[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaOneEffectsEnum

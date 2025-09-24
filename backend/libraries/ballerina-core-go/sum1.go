@@ -11,8 +11,6 @@ const (
 	case1Of1 sum1CasesEnum = "case1Of1"
 )
 
-var allSum1CasesEnum = [...]sum1CasesEnum{case1Of1}
-
 type Sum1[case1 any] struct {
 	discriminator sum1CasesEnum
 

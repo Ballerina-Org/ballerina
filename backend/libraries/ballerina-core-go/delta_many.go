@@ -13,8 +13,6 @@ const (
 	manyAllItems      deltaManyEffectsEnum = "ManyAllItems"
 )
 
-var allDeltaManyEffectsEnumCases = [...]deltaManyEffectsEnum{manyLinkedItems, manyUnlinkedItems, manyAllItems}
-
 type DeltaMany[T any, deltaT any] struct {
 	DeltaBase
 	discriminator deltaManyEffectsEnum

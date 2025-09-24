@@ -13,8 +13,6 @@ const (
 	mapRemove deltaMapEffectsEnum = "MapRemove"
 )
 
-var allDeltaMapEffectsEnumCases = [...]deltaMapEffectsEnum{mapKey, mapValue, mapAdd, mapRemove}
-
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 	DeltaBase
 	discriminator deltaMapEffectsEnum
