@@ -17,6 +17,7 @@ module Extension =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.StdLib.Json.Patterns
 
+
   let ListExtension<'ext>
     (valueLens: PartialLens<'ext, ListValues<'ext>>)
     // (consLens: PartialLens<'ext, ListConstructors<'ext>>)
@@ -44,7 +45,7 @@ module Extension =
     let filterOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFilterId,
       { Type =
-          TypeValue.Lambda(
+          TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
               TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Primitive PrimitiveType.Bool),
@@ -103,7 +104,7 @@ module Extension =
     let mapOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listMapId,
       { Type =
-          TypeValue.Lambda(
+          TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Lambda(
               TypeParameter.Create("b", Kind.Star),
@@ -149,7 +150,7 @@ module Extension =
     let consOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listConsId,
       { Type =
-          TypeValue.Lambda(
+          TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
               TypeExpr.Tuple(
@@ -196,7 +197,7 @@ module Extension =
     let nilOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listNilId,
       { Type =
-          TypeValue.Lambda(
+          TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
               TypeExpr.Primitive(PrimitiveType.Unit),
@@ -242,7 +243,7 @@ module Extension =
 
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
-      WrapTypeVars = fun t -> TypeValue.Lambda(TypeParameter.Create(aVar.Name, aKind), t)
+      WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = Map.empty
       Operations = [ filterOperation; mapOperation; consOperation; nilOperation ] |> Map.ofList
       Deconstruct =

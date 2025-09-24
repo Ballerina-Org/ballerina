@@ -13,6 +13,12 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private int32TypeValue = TypeValue.CreateInt32()
+  let private decimalTypeValue = TypeValue.CreateDecimal()
+
+
+  let private boolTypeValue = TypeValue.CreateBool()
+
   let DecimalExtension<'ext>
     (operationLens: PartialLens<'ext, DecimalOperations<'ext>>)
     : OperationsExtension<'ext, DecimalOperations<'ext>> =
@@ -21,11 +27,7 @@ module Extension =
 
     let plusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPlusId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Decimal)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.Plus {| v1 = None |}
         OperationsLens =
@@ -54,7 +56,7 @@ module Extension =
 
     let minusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalMinusId,
-      { Type = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Decimal)
+      { Type = TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)
         Kind = Kind.Star
         Operation = DecimalOperations.Minus {| v1 = () |}
         OperationsLens =
@@ -75,11 +77,7 @@ module Extension =
 
     let divideOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalDivideId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Decimal)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.Divide {| v1 = None |}
         OperationsLens =
@@ -106,11 +104,7 @@ module Extension =
 
     let powerOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPowerId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Decimal)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(int32TypeValue, decimalTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.Power {| v1 = None |}
         OperationsLens =
@@ -138,11 +132,7 @@ module Extension =
 
     let modOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalModId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Decimal)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.Mod {| v1 = None |}
         OperationsLens =
@@ -169,11 +159,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.Equal {| v1 = None |}
         OperationsLens =
@@ -200,11 +186,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -231,11 +213,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -262,11 +240,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -296,11 +270,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.LessThan {| v1 = None |}
         OperationsLens =
@@ -327,11 +297,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Decimal,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Decimal, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DecimalOperations.LessThanOrEqual {| v1 = None |}
         OperationsLens =

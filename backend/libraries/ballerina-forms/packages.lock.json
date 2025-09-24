@@ -211,28 +211,28 @@
           "System.Text.Encodings.Web": "6.0.0"
         }
       },
-      "Ballerina.Cat": {
+      "ballerina-cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"
         }
       },
-      "Ballerina.Lang": {
+      "ballerina-lang-v1": {
         "type": "Project",
         "dependencies": {
-          "Ballerina.Cat": "[1.0.0, )",
-          "Ballerina.StdLib": "[1.0.0, )",
-          "FSharp.Core": "[9.0.303, )",
-          "FSharp.Data": "[6.6.0, )"
-        }
-      },
-      "Ballerina.StdLib": {
-        "type": "Project",
-        "dependencies": {
-          "Ballerina.Cat": "[1.0.0, )",
           "FSharp.Core": "[9.0.303, )",
           "FSharp.Data": "[6.6.0, )",
-          "Microsoft.EntityFrameworkCore": "[9.0.7, )"
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-stdlib": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "Microsoft.EntityFrameworkCore": "[9.0.7, )",
+          "ballerina-cat": "[1.0.0, )"
         }
       }
     },

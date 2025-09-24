@@ -310,19 +310,19 @@
           "System.Collections.Immutable": "8.0.0"
         }
       },
-      "Ballerina.Cat": {
+      "ballerina-cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"
         }
       },
-      "Ballerina.StdLib": {
+      "ballerina-stdlib": {
         "type": "Project",
         "dependencies": {
-          "Ballerina.Cat": "[1.0.0, )",
           "FSharp.Core": "[9.0.303, )",
           "FSharp.Data": "[6.6.0, )",
-          "Microsoft.EntityFrameworkCore": "[9.0.7, )"
+          "Microsoft.EntityFrameworkCore": "[9.0.7, )",
+          "ballerina-cat": "[1.0.0, )"
         }
       }
     },

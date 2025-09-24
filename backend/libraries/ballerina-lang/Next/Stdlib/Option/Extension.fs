@@ -75,7 +75,7 @@ module Extension =
       : Identifier * TypeOperationExtension<'ext, OptionConstructors, OptionValues<'ext>, OptionOperations<'ext>> =
       optionMapId,
       { Type =
-          TypeValue.Lambda(
+          TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Lambda(
               TypeParameter.Create("b", Kind.Star),
@@ -138,7 +138,7 @@ module Extension =
 
     { TypeName = optionId, optionSymbolId
       TypeVars = [ (aVar, aKind) ]
-      WrapTypeVars = fun t -> TypeValue.Lambda(TypeParameter.Create(aVar.Name, aKind), t)
+      WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = [ someCase; noneCase ] |> Map.ofList
       Operations = [ mapOperation ] |> Map.ofList
       Deconstruct =

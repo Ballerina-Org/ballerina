@@ -66,14 +66,14 @@ module Traverser =
             |> Value.Record
 
         | TypeValue.Sum elements ->
-          let! values = elements |> Seq.map (!) |> state.All
+          let! values = elements.value |> Seq.map (!) |> state.All
           return Value.Sum(0, values.Head)
 
         | TypeValue.Tuple elements ->
-          let! values = elements |> Seq.map (!) |> state.All
+          let! values = elements.value |> Seq.map (!) |> state.All
           return Value.Tuple values
 
-        | TypeValue.Map(key, value) ->
+        | TypeValue.Map({ value = key, value }) ->
           let! k = !key
           let! v = !value
 
@@ -85,7 +85,7 @@ module Traverser =
             )
 
         | TypeValue.Union cases ->
-          let sampled = cases |> Map.toList |> List.randomSample 1
+          let sampled = cases.value |> Map.toList |> List.randomSample 1
 
           let! cases =
             sampled
@@ -105,7 +105,7 @@ module Traverser =
 
         | TypeValue.Record fields ->
           let! fields =
-            fields
+            fields.value
             |> Map.toList
             |> List.map (fun (ts, tv) ->
               state {
@@ -120,7 +120,7 @@ module Traverser =
           match ctx.Label with
           | Absent ->
             let value = FakeValue Unsupervised
-            return ctx.Generator.PrimitiveValueCons p value
+            return ctx.Generator.PrimitiveValueCons p.value value
 
           | FromContext label ->
             do!
@@ -134,10 +134,10 @@ module Traverser =
 
             let! ctx = state.GetState()
             let value = FakeValue(Supervised(label, ctx.InfinitiveNamesIndex[label]))
-            return ctx.Generator.PrimitiveValueCons p value
+            return ctx.Generator.PrimitiveValueCons p.value value
 
         | TypeValue.Set element ->
-          let! element = !element
+          let! element = !element.value
           return Value.Tuple [ element ]
       }
 

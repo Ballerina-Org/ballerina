@@ -6,10 +6,11 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Types.Patterns
 
 [<Test>]
 let ``Delta.Replace: replaces primitive int value`` () =
-  let t = TypeValue.Primitive PrimitiveType.Int32
+  let t = TypeValue.CreateInt32()
   let original = Value<Unit>.Primitive(PrimitiveValue.Int32 10)
   let replacement = Value<Unit>.Primitive(PrimitiveValue.Int32 99)
   let delta = Delta.Replace(replacement)
@@ -23,7 +24,7 @@ let ``Delta.Replace: replaces primitive int value`` () =
 
 [<Test>]
 let ``Delta.Replace: replaces string with anything (no validation)`` () =
-  let t = TypeValue.Primitive PrimitiveType.String
+  let t = TypeValue.CreateString()
   let original = Value<Unit>.Primitive(PrimitiveValue.String "abc")
   let replacement = Value<Unit>.Primitive(PrimitiveValue.Bool true)
   let delta = Delta.Replace(replacement)

@@ -2,12 +2,13 @@ module Ballerina.Data.Tests.Delta.Record
 
 open NUnit.Framework
 open System
-
+open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
+
 
 let symbol name : TypeSymbol =
   { Name = name |> Identifier.LocalScope
@@ -17,9 +18,9 @@ let symbol name : TypeSymbol =
 let ``Delta.Record: Updates field in a record correctly`` () =
   let fieldName = "age"
   let typeSymbol = symbol fieldName
-  let typeValue = TypeValue.Primitive PrimitiveType.Int32
+  let typeValue = TypeValue.CreateInt32()
 
-  let recordType = TypeValue.Record(Map.ofList [ typeSymbol, typeValue ])
+  let recordType = TypeValue.CreateRecord(Map.ofList [ typeSymbol, typeValue ])
 
   let recordValue =
     Value<Unit>.Record(Map.ofList [ typeSymbol, Value<Unit>.Primitive(PrimitiveValue.Int32 99) ])
@@ -39,7 +40,7 @@ let ``Delta.Record: Updates field in a record correctly`` () =
 
 [<Test>]
 let ``Delta.Record: Fails when field not found in type`` () =
-  let recordType = TypeValue.Record(Map.empty)
+  let recordType = TypeValue.CreateRecord Map.empty
 
   let delta =
     Delta.Record("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
@@ -52,8 +53,10 @@ let ``Delta.Record: Fails when field not found in type`` () =
 let ``Delta.Record: Fails when field not found in value`` () =
   let fieldName = "age"
   let typeSymbol = symbol fieldName
-  let typeValue = TypeValue.Primitive PrimitiveType.Int32
-  let recordType = TypeValue.Record(Map.ofList [ typeSymbol, typeValue ])
+  let typeValue = TypeValue.CreateInt32()
+
+  let recordType = TypeValue.CreateRecord(Map.ofList [ typeSymbol, typeValue ])
+
   let recordValue = Value<Unit>.Record(Map.empty)
 
   let delta =

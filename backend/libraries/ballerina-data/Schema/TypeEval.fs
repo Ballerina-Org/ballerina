@@ -28,7 +28,7 @@ module TypeEval =
             schema.Entities
             |> Map.map (fun _ v ->
               state {
-                let! typeVal, typeValK = v.Type |> TypeExpr.Eval
+                let! typeVal, typeValK = v.Type |> TypeExpr.Eval None
                 do! typeValK |> Kind.AsStar |> state.OfSum |> state.Ignore
 
                 let! updaters =

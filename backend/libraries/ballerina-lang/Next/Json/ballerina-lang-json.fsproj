@@ -1,0 +1,92 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Json.fs" />
+
+        <Compile Include="Type\Var.fs" />
+        <Compile Include="Type\Symbol.fs" />
+        <Compile Include="Type\Primitive.fs" />
+        <Compile Include="Type\Kind.fs" />
+        <Compile Include="Type\Parameter.fs" />
+        <Compile Include="Type\Identifier.fs" />
+
+        <Compile Include="Types\TypeExpr\AutomaticSymbolCreation.fs" />
+        <Compile Include="Types\TypeExpr\Union.fs" />
+        <Compile Include="Types\TypeExpr\Tuple.fs" />
+        <Compile Include="Types\TypeExpr\Sum.fs" />
+        <Compile Include="Types\TypeExpr\Set.fs" />
+        <Compile Include="Types\TypeExpr\Rotate.fs" />
+        <Compile Include="Types\TypeExpr\Record.fs" />
+        <Compile Include="Types\TypeExpr\Primitive.fs" />
+
+        <Compile Include="Types\TypeExpr\Map.fs" />
+        <Compile Include="Types\TypeExpr\Lookup.fs" />
+        <Compile Include="Types\TypeExpr\Lambda.fs" />
+        <Compile Include="Types\TypeExpr\KeyOf.fs" />
+        <Compile Include="Types\TypeExpr\Flatten.fs" />
+        <Compile Include="Types\TypeExpr\Exclude.fs" />
+        <Compile Include="Types\TypeExpr\Arrow.fs" />
+        <Compile Include="Types\TypeExpr\Apply.fs" />
+        <Compile Include="Types\TypeExpr\Model.fs" />
+        <Compile Include="Types\TypeValue\Var.fs" />
+        <Compile Include="Types\TypeValue\Union.fs" />
+        <Compile Include="Types\TypeValue\Tuple.fs" />
+        <Compile Include="Types\TypeValue\Sum.fs" />
+        <Compile Include="Types\TypeValue\Set.fs" />
+        <Compile Include="Types\TypeValue\Record.fs" />
+        <Compile Include="Types\TypeValue\Primitive.fs" />
+        <Compile Include="Types\TypeValue\Map.fs" />
+        <Compile Include="Types\TypeValue\Lookup.fs" />
+        <Compile Include="Types\TypeValue\Lambda.fs" />
+        <Compile Include="Types\TypeValue\Arrow.fs" />
+        <Compile Include="Types\TypeValue\Apply.fs" />
+        <Compile Include="Types\TypeValue\Model.fs" />
+
+        <Compile Include="Terms\Primitive.fs" />
+        <Compile Include="Terms\Expr\UnionDes.fs" />
+        <Compile Include="Terms\Expr\UnionCons.fs" />
+        <Compile Include="Terms\Expr\TypeLet.fs" />
+        <Compile Include="Terms\Expr\TypeLambda.fs" />
+        <Compile Include="Terms\Expr\TypeApply.fs" />
+        <Compile Include="Terms\Expr\TupleDes.fs" />
+        <Compile Include="Terms\Expr\TupleCons.fs" />
+        <Compile Include="Terms\Expr\SumDes.fs" />
+        <Compile Include="Terms\Expr\SumCons.fs" />
+        <Compile Include="Terms\Expr\RecordDes.fs" />
+        <Compile Include="Terms\Expr\RecordCons.fs" />
+        <Compile Include="Terms\Expr\Primitive.fs" />
+        <Compile Include="Terms\Expr\Lookup.fs" />
+        <Compile Include="Terms\Expr\Let.fs" />
+        <Compile Include="Terms\Expr\Lambda.fs" />
+        <Compile Include="Terms\Expr\If.fs" />
+        <Compile Include="Terms\Expr\Apply.fs" />
+        <Compile Include="Terms\Expr\Model.fs" />
+        <Compile Include="Terms\Value\Var.fs" />
+        <Compile Include="Terms\Value\Union.fs" />
+        <Compile Include="Terms\Value\TypeLambda.fs" />
+        <Compile Include="Terms\Value\Tuple.fs" />
+        <Compile Include="Terms\Value\Sum.fs" />
+        <Compile Include="Terms\Value\Record.fs" />
+        <Compile Include="Terms\Value\Primitive.fs" />
+        <Compile Include="Terms\Value\Lambda.fs" />
+        <Compile Include="Terms\Value\Model.fs" />
+        <Compile Include="Terms\Value\Extension.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
+    </ItemGroup>
+
+
+</Project>

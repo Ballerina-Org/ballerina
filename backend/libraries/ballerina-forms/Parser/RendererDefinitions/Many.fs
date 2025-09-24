@@ -57,10 +57,10 @@ module Many =
       }
 
     static member ParseManyAllRenderer
-      (label: string option)
+      (label: Label option)
       parseNestedRenderer
       (parentJsonFields: (string * JsonValue)[])
-      (name: string)
+      (name: RendererName)
       : State<
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
@@ -85,12 +85,7 @@ module Many =
               return
                 ManyAllRenderer
                   {| Label = label
-                     Many =
-                      PrimitiveRenderer
-                        { PrimitiveRendererName = name
-                          PrimitiveRendererId = Guid.CreateVersion7()
-                          Label = label
-                          Type = ManyType itemRenderer.Type }
+                     Many = name
                      Element = itemRenderer
                      ManyApiId = manyApi |}
                 |> ManyRenderer
@@ -102,10 +97,10 @@ module Many =
       }
 
     static member ParseManyItemRenderer
-      (label: string option)
+      (label: Label option)
       parseNestedRenderer
       (parentJsonFields: (string * JsonValue)[])
-      (name: string)
+      (name: RendererName)
       : State<
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
@@ -135,12 +130,7 @@ module Many =
               return
                 ManyLinkedUnlinkedRenderer
                   {| Label = label
-                     Many =
-                      PrimitiveRenderer
-                        { PrimitiveRendererName = name
-                          PrimitiveRendererId = Guid.CreateVersion7()
-                          Label = label
-                          Type = ManyType linkedRenderer.Type }
+                     Many = name
                      Linked = linkedRenderer
                      Unlinked = unlinkedRenderer
                      ManyApiId = manyApi |}

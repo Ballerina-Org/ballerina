@@ -13,6 +13,9 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
+  let private int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
+
   let Int32Extension<'ext>
     (operationLens: PartialLens<'ext, Int32Operations<'ext>>)
     : OperationsExtension<'ext, Int32Operations<'ext>> =
@@ -20,11 +23,7 @@ module Extension =
 
     let plusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PlusId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.Plus {| v1 = None |}
         OperationsLens =
@@ -51,7 +50,7 @@ module Extension =
 
     let minusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32MinusId,
-      { Type = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
+      { Type = TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
         Kind = Kind.Star
         Operation = Int32Operations.Minus {| v1 = () |}
         OperationsLens =
@@ -72,11 +71,7 @@ module Extension =
 
     let divideOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32DivideId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.Divide {| v1 = None |}
         OperationsLens =
@@ -103,11 +98,7 @@ module Extension =
 
     let powerOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PowerId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.Power {| v1 = None |}
         OperationsLens =
@@ -135,11 +126,7 @@ module Extension =
 
     let modOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32ModId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Int32)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.Mod {| v1 = None |}
         OperationsLens =
@@ -166,11 +153,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32EqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.Equal {| v1 = None |}
         OperationsLens =
@@ -197,11 +180,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32NotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -228,11 +207,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -260,11 +235,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -294,11 +265,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.LessThan {| v1 = None |}
         OperationsLens =
@@ -325,11 +292,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Int32,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = Int32Operations.LessThanOrEqual {| v1 = None |}
         OperationsLens =

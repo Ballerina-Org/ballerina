@@ -10,6 +10,7 @@ module Tuple =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "tuple"
   let private fieldKey = "tuple"
@@ -22,7 +23,7 @@ module Tuple =
         sum {
           let! elements = tupleFields |> JsonValue.AsArray
           let! elementTypes = elements |> Array.map (fun element -> element |> fromRootJson) |> sum.All
-          return TypeValue.Tuple(elementTypes)
+          return TypeValue.CreateTuple(elementTypes) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonTuple(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =

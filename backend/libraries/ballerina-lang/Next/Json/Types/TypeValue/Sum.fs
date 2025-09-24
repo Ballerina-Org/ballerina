@@ -9,6 +9,7 @@ module Sum =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "sum"
   let private fieldKey = "sum"
@@ -19,7 +20,7 @@ module Sum =
         sum {
           let! cases = sumFields |> JsonValue.AsArray
           let! caseTypes = cases |> Array.map (fun case -> case |> fromRootJson) |> sum.All
-          return TypeValue.Sum(caseTypes)
+          return TypeValue.CreateSum(caseTypes) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonSum(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =

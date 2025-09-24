@@ -12,6 +12,10 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
+  let private dateOnlyTypeValue = TypeValue.CreateDateOnly()
+
+  let private boolTypeValue = TypeValue.CreateBool()
+
   let DateOnlyExtension<'ext>
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
     : OperationsExtension<'ext, DateOnlyOperations<'ext>> =
@@ -20,11 +24,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.Equal {| v1 = None |}
         OperationsLens =
@@ -51,11 +51,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyNotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.NotEqual {| v1 = None |}
         OperationsLens =
@@ -82,11 +78,7 @@ module Extension =
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.GreaterThan {| v1 = None |}
         OperationsLens =
@@ -113,11 +105,7 @@ module Extension =
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.GreaterThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -147,11 +135,7 @@ module Extension =
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.LessThan {| v1 = None |}
         OperationsLens =
@@ -178,11 +162,7 @@ module Extension =
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanOrEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.DateOnly,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.DateOnly, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = DateOnlyOperations.LessThanOrEqual {| v1 = None |}
         OperationsLens =
@@ -214,13 +194,13 @@ module Extension =
     // let toDateTimeOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
     //   dateOnlyToDateTimeId,
     //   { Type =
-    //       TypeValue.Arrow(
-    //         TypeValue.Primitive PrimitiveType.DateOnly,
-    //         TypeValue.Arrow(
-    //           TypeValue.Primitive PrimitiveType.Int32,
-    //           TypeValue.Arrow(
-    //             TypeValue.Primitive PrimitiveType.Int32,
-    //             TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.DateTime)
+    //       TypeValCons.Arrow(
+    //         TypeValCons.Primitive PrimitiveType.DateOnly,
+    //         TypeValCons.Arrow(
+    //           TypeValCons.Primitive PrimitiveType.Int32,
+    //           TypeValCons.Arrow(
+    //             TypeValCons.Primitive PrimitiveType.Int32,
+    //             TypeValCons.Arrow(TypeValCons.Primitive PrimitiveType.Int32, TypeValCons.Primitive PrimitiveType.DateTime)
     //           )
     //         )
     //       )

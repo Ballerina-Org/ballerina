@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ballerina_data</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
-    <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\ballerina-lang.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

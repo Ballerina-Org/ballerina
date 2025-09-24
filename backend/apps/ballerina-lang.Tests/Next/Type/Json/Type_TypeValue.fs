@@ -6,6 +6,7 @@ open FSharp.Data
 open Ballerina.DSL.Next.Types.Model
 open System
 open Ballerina.DSL.Next.Types.Json.TypeValue
+open Ballerina.DSL.Next.Types.Patterns
 
 type TypeValueTestCase =
   { Name: string
@@ -43,7 +44,7 @@ let testCases guid : TypeValueTestCase list =
             "body":{"kind":"int32"}
               }
           }"""
-      Expected = TypeValue.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
+      Expected = TypeValue.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
     { Name = "Arrow"
       Json =
         """{
@@ -53,7 +54,7 @@ let testCases guid : TypeValueTestCase list =
             "returnType":{"kind":"string"}
               }
           }"""
-      Expected = TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Int32, TypeValue.Primitive PrimitiveType.String) }
+      Expected = TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString()) }
     { Name = "Union"
       Json =
         """{
@@ -67,15 +68,15 @@ let testCases guid : TypeValueTestCase list =
       Expected =
         [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-          TypeValue.Primitive PrimitiveType.String
+          TypeValue.CreateString()
           { TypeSymbol.Name = "baz" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000003") },
-          TypeValue.Primitive PrimitiveType.Bool
+          TypeValue.CreateBool()
           { TypeSymbol.Name = "foo" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-          TypeValue.Primitive PrimitiveType.Int32 ]
+          TypeValue.CreateInt32() ]
         |> Map.ofList
-        |> TypeValue.Union }
+        |> TypeValue.CreateUnion }
     { Name = "Tuple"
       Json =
         """{
@@ -85,10 +86,7 @@ let testCases guid : TypeValueTestCase list =
                 {"kind":"string"}
             ]
           }"""
-      Expected =
-        TypeValue.Tuple
-          [ TypeValue.Primitive PrimitiveType.Int32
-            TypeValue.Primitive PrimitiveType.String ] }
+      Expected = TypeValue.CreateTuple [ TypeValue.CreateInt32(); TypeValue.CreateString() ] }
     { Name = "Sum"
       Json =
         """{
@@ -99,17 +97,13 @@ let testCases guid : TypeValueTestCase list =
             {"kind":"bool"}
             ]
           }"""
-      Expected =
-        TypeValue.Sum
-          [ TypeValue.Primitive PrimitiveType.Int32
-            TypeValue.Primitive PrimitiveType.String
-            TypeValue.Primitive PrimitiveType.Bool ] }
+      Expected = TypeValue.CreateSum [ TypeValue.CreateInt32(); TypeValue.CreateString(); TypeValue.CreateBool() ] }
     { Name = "Set"
       Json = """{"kind":"set","set":{"kind":"string"}}"""
-      Expected = TypeValue.Set(TypeValue.Primitive PrimitiveType.String) }
+      Expected = TypeValue.CreateSet(TypeValue.CreateString()) }
     { Name = "Map"
       Json = """{"kind":"map","map":[{"kind":"bool"}, {"kind":"int32"}]}"""
-      Expected = TypeValue.Map(TypeValue.Primitive PrimitiveType.Bool, TypeValue.Primitive PrimitiveType.Int32) }
+      Expected = TypeValue.CreateMap(TypeValue.CreateBool(), TypeValue.CreateInt32()) }
     { Name = "Record"
       Json =
         """{
@@ -120,14 +114,14 @@ let testCases guid : TypeValueTestCase list =
               ]
           }"""
       Expected =
-        TypeValue.Record(
+        TypeValue.CreateRecord(
           Map.ofList
             [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-              TypeValue.Primitive PrimitiveType.String
+              TypeValue.CreateString()
               { TypeSymbol.Name = "foo" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-              TypeValue.Primitive PrimitiveType.Int32 ]
+              TypeValue.CreateInt32() ]
         ) } ]
 
 [<Test>]

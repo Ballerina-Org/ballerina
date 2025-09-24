@@ -13,6 +13,9 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
+  let private guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
+
   let GuidExtension<'ext>
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     : OperationsExtension<'ext, GuidOperations<'ext>> =
@@ -21,11 +24,7 @@ module Extension =
 
     let equalOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Guid,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Guid, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = GuidOperations.Equal {| v1 = None |}
         OperationsLens =
@@ -53,11 +52,7 @@ module Extension =
 
     let notEqualOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidNotEqualId,
-      { Type =
-          TypeValue.Arrow(
-            TypeValue.Primitive PrimitiveType.Guid,
-            TypeValue.Arrow(TypeValue.Primitive PrimitiveType.Guid, TypeValue.Primitive PrimitiveType.Bool)
-          )
+      { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
         Operation = GuidOperations.NotEqual {| v1 = None |}
         OperationsLens =

@@ -11,6 +11,7 @@ module Union =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Types.Patterns
 
   let private kindKey = "union"
   let private fieldKey = "union"
@@ -35,7 +36,7 @@ module Union =
             |> sum.All
             |> sum.Map Map.ofSeq
 
-          return TypeValue.Union(caseTypes)
+          return TypeValue.CreateUnion(caseTypes) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonUnion(rootToJson: TypeValue -> JsonValue) : Map<TypeSymbol, TypeValue> -> JsonValue =

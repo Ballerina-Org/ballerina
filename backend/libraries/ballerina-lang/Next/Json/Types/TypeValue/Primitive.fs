@@ -7,9 +7,10 @@ module PrimitiveTypeValue =
   open Ballerina.Collections.Sum.Operators
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Types.Patterns
 
   type TypeValue with
     static member FromJsonPrimitive =
-      PrimitiveType.FromJson >>= (TypeValue.Primitive >> sum.Return)
+      PrimitiveType.FromJson >>= (TypeValue.CreatePrimitive >> sum.Return)
 
     static member ToJsonPrimitive: PrimitiveType -> JsonValue = PrimitiveType.ToJson
