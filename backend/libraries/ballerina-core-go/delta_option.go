@@ -14,8 +14,6 @@ const (
 
 var allDeltaOptionEffectsEnumCases = [...]deltaOptionEffectsEnum{optionReplace, optionValue}
 
-func DefaultDeltaOptionEffectsEnum() deltaOptionEffectsEnum { return allDeltaOptionEffectsEnumCases[0] }
-
 type DeltaOption[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaOptionEffectsEnum
