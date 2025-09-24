@@ -34,11 +34,11 @@ export const DispatchCreateFormLauncherTemplate = <
     DispatchCreateFormLauncherForeignMutationsExpected<T>
   >((props) => {
     const entity = props.context.entity.sync;
-
-    // TODO: add global configuration
+    const config = props.context.config.sync;
 
     if (
       !AsyncState.Operations.hasValue(entity) ||
+      !AsyncState.Operations.hasValue(config) ||
       props.context.status.kind == "not initialized"
     ) {
       return <></>;
@@ -53,44 +53,22 @@ export const DispatchCreateFormLauncherTemplate = <
       );
     }
 
-    if (props.context.status.kind == "loading") {
+    if (config.kind == "failed-reload") {
+      console.error(config.error);
+      return (
+        props.context.errorComponent ?? <>Error: Check console for details</>
+      );
+    }
+
+    if (props.context.status.kind == "loading" || config.kind == "reloading") {
       return props.context.loadingComponent ?? <>Loading...</>;
     }
 
     const bindings: Bindings = Map([
-      [
-        "global",
-        PredicateValue.Default.record(
-          Map([
-            [
-              "ERP",
-              PredicateValue.Default.unionCase(
-                "ERPSAP",
-                PredicateValue.Default.record(
-                  Map([
-                    [
-                      "Value",
-                      PredicateValue.Default.unionCase(
-                        "SAPS2",
-                        PredicateValue.Default.record(
-                          Map([
-                            ["S2OnlyField", PredicateValue.Default.boolean()],
-                          ]),
-                        ),
-                      ),
-                    ],
-                  ]),
-                ),
-              ),
-            ],
-          ]),
-        ),
-      ],
+      ["global", config.value],
       ["root", entity.value],
       ["local", entity.value],
     ]);
-
-    // TODO: add submit button support
 
     return (
       <props.context.status.Form
