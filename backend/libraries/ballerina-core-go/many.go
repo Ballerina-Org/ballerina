@@ -23,11 +23,3 @@ func MapMany[T, U any](m Many[T], f func(T) U) Many[U] {
 		}),
 	}
 }
-
-func DefaultMany[T any]() Many[T] {
-	return Many[T]{
-		LinkedItems:   DefaultChunk[T](),
-		UnlinkedItems: DefaultChunk[T](),
-		AllItems:      DefaultChunk[ManyItem[T]](),
-	}
-}

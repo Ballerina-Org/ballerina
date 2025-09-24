@@ -8,5 +8,3 @@ const (
 )
 
 var AllSortingCases = [...]Sorting{Ascending, Descending}
-
-func DefaultSorting() Sorting { return AllSortingCases[0] }

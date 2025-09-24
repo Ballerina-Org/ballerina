@@ -11,8 +11,6 @@ const (
 
 var allDeltaTuple2EffectsEnumCases = [...]deltaTuple2EffectsEnum{tuple2Item1, tuple2Item2}
 
-func DefaultDeltaTuple2EffectsEnum() deltaTuple2EffectsEnum { return allDeltaTuple2EffectsEnumCases[0] }
-
 type DeltaTuple2[deltaA any, deltaB any] struct {
 	DeltaBase
 	discriminator deltaTuple2EffectsEnum
@@ -94,8 +92,6 @@ const (
 )
 
 var allDeltaTuple3EffectsEnumCases = [...]deltaTuple3EffectsEnum{tuple3Item1, tuple3Item2, tuple3Item3}
-
-func DefaultDeltaTuple3EffectsEnum() deltaTuple3EffectsEnum { return allDeltaTuple3EffectsEnumCases[0] }
 
 type DeltaTuple3[deltaA any, deltaB any, deltaC any] struct {
 	DeltaBase
@@ -192,8 +188,6 @@ const (
 )
 
 var allDeltaTuple4EffectsEnumCases = [...]deltaTuple4EffectsEnum{tuple4Item1, tuple4Item2, tuple4Item3, tuple4Item4}
-
-func DefaultDeltaTuple4EffectsEnum() deltaTuple4EffectsEnum { return allDeltaTuple4EffectsEnumCases[0] }
 
 type DeltaTuple4[deltaA any, deltaB any, deltaC any, deltaD any] struct {
 	DeltaBase
@@ -305,8 +299,6 @@ const (
 )
 
 var allDeltaTuple5EffectsEnumCases = [...]deltaTuple5EffectsEnum{tuple5Item1, tuple5Item2, tuple5Item3, tuple5Item4, tuple5Item5}
-
-func DefaultDeltaTuple5EffectsEnum() deltaTuple5EffectsEnum { return allDeltaTuple5EffectsEnumCases[0] }
 
 type DeltaTuple5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any] struct {
 	DeltaBase
@@ -433,8 +425,6 @@ const (
 )
 
 var allDeltaTuple6EffectsEnumCases = [...]deltaTuple6EffectsEnum{tuple6Item1, tuple6Item2, tuple6Item3, tuple6Item4, tuple6Item5, tuple6Item6}
-
-func DefaultDeltaTuple6EffectsEnum() deltaTuple6EffectsEnum { return allDeltaTuple6EffectsEnumCases[0] }
 
 type DeltaTuple6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any] struct {
 	DeltaBase
@@ -576,8 +566,6 @@ const (
 )
 
 var allDeltaTuple7EffectsEnumCases = [...]deltaTuple7EffectsEnum{tuple7Item1, tuple7Item2, tuple7Item3, tuple7Item4, tuple7Item5, tuple7Item6, tuple7Item7}
-
-func DefaultDeltaTuple7EffectsEnum() deltaTuple7EffectsEnum { return allDeltaTuple7EffectsEnumCases[0] }
 
 type DeltaTuple7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any] struct {
 	DeltaBase
@@ -734,8 +722,6 @@ const (
 )
 
 var allDeltaTuple8EffectsEnumCases = [...]deltaTuple8EffectsEnum{tuple8Item1, tuple8Item2, tuple8Item3, tuple8Item4, tuple8Item5, tuple8Item6, tuple8Item7, tuple8Item8}
-
-func DefaultDeltaTuple8EffectsEnum() deltaTuple8EffectsEnum { return allDeltaTuple8EffectsEnumCases[0] }
 
 type DeltaTuple8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any] struct {
 	DeltaBase
@@ -909,8 +895,6 @@ const (
 var allDeltaTuple9EffectsEnumCases = [...]deltaTuple9EffectsEnum{
 	tuple9Item1, tuple9Item2, tuple9Item3, tuple9Item4, tuple9Item5, tuple9Item6, tuple9Item7, tuple9Item8, tuple9Item9,
 }
-
-func DefaultDeltaTuple9EffectsEnum() deltaTuple9EffectsEnum { return allDeltaTuple9EffectsEnumCases[0] }
 
 type DeltaTuple9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any] struct {
 	DeltaBase

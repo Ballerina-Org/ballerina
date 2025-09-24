@@ -21,8 +21,6 @@ const (
 
 var allDeltaTableEffectsEnumCases = [...]deltaTableEffectsEnum{tableValue, tableAddAt, tableRemoveAt, tableMoveFromTo, tableDuplicateAt, tableAdd, tableAddEmpty}
 
-func DefaultDeltaTableEffectsEnum() deltaTableEffectsEnum { return allDeltaTableEffectsEnumCases[0] }
-
 type DeltaTable[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaTableEffectsEnum

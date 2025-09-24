@@ -64,6 +64,3 @@ func MapTable[T, U any](ts Table[T], f func(T) U) Table[U] {
 	}
 	return Table[U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore}
 }
-func DefaultTable[T any]() Table[T] {
-	return Table[T]{Values: make([]T, 0), IdToIndex: make(map[uuid.UUID]int), From: 0, To: 0, HasMore: false}
-}

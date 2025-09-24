@@ -15,8 +15,6 @@ const (
 
 var allSum3CasesEnum = [...]sum3CasesEnum{case1Of3, case2Of3, case3Of3}
 
-func DefaultSum3CasesEnum() sum3CasesEnum { return allSum3CasesEnum[0] }
-
 type Sum3[case1 any, case2 any, case3 any] struct {
 	discriminator sum3CasesEnum
 

@@ -16,8 +16,6 @@ const (
 
 var allDeltaIntEffectsEnumCases = [...]deltaIntEffectsEnum{intReplace}
 
-func DefaultDeltaIntEffectsEnum() deltaIntEffectsEnum { return allDeltaIntEffectsEnumCases[0] }
-
 type DeltaInt struct {
 	DeltaBase
 	discriminator deltaIntEffectsEnum
@@ -84,8 +82,6 @@ const (
 )
 
 var allDeltaInt64EffectsEnumCases = [...]deltaInt64EffectsEnum{int64Replace}
-
-func DefaultDeltaInt64EffectsEnum() deltaInt64EffectsEnum { return allDeltaInt64EffectsEnumCases[0] }
 
 type DeltaInt64 struct {
 	DeltaBase
@@ -154,8 +150,6 @@ const (
 
 var allDeltaStringEffectsEnumCases = [...]deltaStringEffectsEnum{stringReplace}
 
-func DefaultDeltaStringEffectsEnum() deltaStringEffectsEnum { return allDeltaStringEffectsEnumCases[0] }
-
 type DeltaString struct {
 	DeltaBase
 	discriminator deltaStringEffectsEnum
@@ -223,8 +217,6 @@ const (
 
 var allDeltaBoolEffectsEnumCases = [...]deltaBoolEffectsEnum{boolReplace}
 
-func DefaultDeltaBoolEffectsEnum() deltaBoolEffectsEnum { return allDeltaBoolEffectsEnumCases[0] }
-
 type DeltaBool struct {
 	DeltaBase
 	discriminator deltaBoolEffectsEnum
@@ -291,8 +283,6 @@ const (
 )
 
 var allDeltaGuidEffectsEnumCases = [...]deltaGuidEffectsEnum{guidReplace}
-
-func DefaultDeltaGuidEffectsEnum() deltaGuidEffectsEnum { return allDeltaGuidEffectsEnumCases[0] }
 
 type DeltaGuid struct {
 	DeltaBase
@@ -365,8 +355,6 @@ const (
 
 var allDeltaTimeEffectsEnumCases = [...]deltaTimeEffectsEnum{timeReplace}
 
-func DefaultDeltaTimeEffectsEnum() deltaTimeEffectsEnum { return allDeltaTimeEffectsEnumCases[0] }
-
 type DeltaTime struct {
 	DeltaBase
 	discriminator deltaTimeEffectsEnum
@@ -433,8 +421,6 @@ const (
 )
 
 var allDeltaInt32EffectsEnumCases = [...]deltaInt32EffectsEnum{int32Replace}
-
-func DefaultDeltaInt32EffectsEnum() deltaInt32EffectsEnum { return allDeltaInt32EffectsEnumCases[0] }
 
 type DeltaInt32 struct {
 	DeltaBase
@@ -503,10 +489,6 @@ const (
 
 var allDeltaFloat32EffectsEnumCases = [...]deltaFloat32EffectsEnum{float32Replace}
 
-func DefaultDeltaFloat32EffectsEnum() deltaFloat32EffectsEnum {
-	return allDeltaFloat32EffectsEnumCases[0]
-}
-
 type DeltaFloat32 struct {
 	DeltaBase
 	discriminator deltaFloat32EffectsEnum
@@ -573,10 +555,6 @@ const (
 )
 
 var allDeltaFloat64EffectsEnumCases = [...]deltaFloat64EffectsEnum{float64Replace}
-
-func DefaultDeltaFloat64EffectsEnum() deltaFloat64EffectsEnum {
-	return allDeltaFloat64EffectsEnumCases[0]
-}
 
 type DeltaFloat64 struct {
 	DeltaBase

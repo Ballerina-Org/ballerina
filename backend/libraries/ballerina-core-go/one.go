@@ -16,10 +16,6 @@ func Lazy[a any]() One[a] {
 	return One[a]{Left[LazyOneValue, a](LazyOneValue(NewUnit()))}
 }
 
-func DefaultOne[a any]() One[a] {
-	return Lazy[a]()
-}
-
 // func MatchOne[a any, c any](self One[a], onSome func(a) c, onNone func() c) c {
 // 	return Fold(self.Sum, func(_ Unit) c { return onNone() }, onSome)
 // }

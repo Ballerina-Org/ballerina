@@ -56,6 +56,3 @@ func MapChunk[T, U any](ts Chunk[T], f func(T) U) Chunk[U] {
 	}
 	return Chunk[U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore}
 }
-func DefaultChunk[T any]() Chunk[T] {
-	return Chunk[T]{Values: make([]T, 0), IdToIndex: make(map[uuid.UUID]int), HasMore: false}
-}
