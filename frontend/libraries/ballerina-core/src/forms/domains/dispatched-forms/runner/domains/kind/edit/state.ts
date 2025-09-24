@@ -12,7 +12,6 @@ import {
 export type DispatchEditFormLauncherApi = {
   get: (id: Guid) => Promise<any>;
   update: (id: Guid, raw: any) => Promise<ApiErrors>;
-  getGlobalConfiguration: () => Promise<any>;
 };
 
 export type DispatchEditFormLauncherContext<

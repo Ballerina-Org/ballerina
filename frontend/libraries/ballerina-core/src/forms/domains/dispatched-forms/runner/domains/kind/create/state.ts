@@ -1,6 +1,5 @@
 import {
   DispatchFormRunnerContext,
-  DispatchFormRunnerState,
   DispatchInjectablesTypes,
   CreateLauncherRef,
   Unit,
@@ -14,14 +13,12 @@ import {
   AsyncState,
   BasicUpdater,
   Updater,
-  Debounced,
   simpleUpdaterWithChildren,
 } from "../../../../../../../../main";
 
 export type DispatchCreateFormLauncherApi = {
   default: () => Promise<any>;
   create: (raw: any) => Promise<ApiErrors>;
-  getGlobalConfiguration: () => Promise<any>;
 };
 
 export type DispatchCreateFormLauncherContext<
@@ -46,7 +43,7 @@ export type DispatchCreateFormLauncherState<
     init: ApiResponseChecker;
     create: ApiResponseChecker;
   };
-  apiRunner: Debounced<Synchronized<Unit, ApiErrors>>;
+  apiRunner: Synchronized<Unit, ApiErrors>;
 };
 
 export const DispatchCreateFormLauncherState = <
@@ -61,7 +58,7 @@ export const DispatchCreateFormLauncherState = <
       init: ApiResponseChecker.Default(false),
       create: ApiResponseChecker.Default(false),
     },
-    apiRunner: Debounced.Default(Synchronized.Default(unit)),
+    apiRunner: Synchronized.Default(unit),
   }),
   Updaters: {
     Core: {
@@ -71,6 +68,9 @@ export const DispatchCreateFormLauncherState = <
       ),
       ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
       ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("config"),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
+        "apiRunner",
+      ),
       ...simpleUpdaterWithChildren<DispatchCreateFormLauncherState<T, Flags>>()(
         {
           ...simpleUpdater<
@@ -88,6 +88,10 @@ export const DispatchCreateFormLauncherState = <
       ): Updater<DispatchCreateFormLauncherState<T, Flags>> =>
         DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity(
           Synchronized.Updaters.sync(AsyncState.Operations.map(_)),
+        ),
+      submit: (): Updater<DispatchCreateFormLauncherState<T, Flags>> =>
+        DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.apiRunner(
+          Synchronized.Updaters.sync(AsyncState.Updaters.toLoading()),
         ),
     },
   },

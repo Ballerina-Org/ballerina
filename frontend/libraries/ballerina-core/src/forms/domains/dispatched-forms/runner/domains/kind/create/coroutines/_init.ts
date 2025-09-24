@@ -7,6 +7,7 @@ import {
   HandleApiResponse,
   Synchronized,
   unit,
+  DispatchParsedCreateLauncher,
 } from "../../../../../../../../../main";
 import { ApiResponseChecker } from "../../../../../../../../api-response-handler/state";
 import { AsyncState } from "../../../../../../../../async/state";
@@ -44,6 +45,73 @@ export const initCo = <
       ),
     );
 
+  const defaultValueCo = (
+    defaultApi: () => Promise<PredicateValue>,
+    createFormLauncher: DispatchParsedCreateLauncher<T>,
+  ) =>
+    Synchronize<Unit, PredicateValue>(
+      () =>
+        defaultApi().then((raw) => {
+          const result = createFormLauncher.fromApiParser(raw);
+          return result.kind == "errors"
+            ? Promise.reject(result.errors)
+            : Promise.resolve(result.value);
+        }),
+      (_) => "transient failure",
+      5,
+      50,
+    ).embed(
+      (_: DispatchCreateFormLauncherState<T, Flags>) => _.entity,
+      DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity,
+    );
+
+  const configValueCo = (
+    getGlobalConfig: () => Promise<PredicateValue>,
+    createFormLauncher: DispatchParsedCreateLauncher<T>,
+    current: DispatchCreateFormLauncherContext<
+      T,
+      Flags,
+      CustomPresentationContexts,
+      ExtraContext
+    >,
+  ) =>
+    current.launcherRef.config.source == "api"
+      ? Synchronize<Unit, PredicateValue>(() =>
+          getGlobalConfig().then((raw) => {
+            const result =
+              createFormLauncher.parseGlobalConfigurationFromApi(raw);
+            return result.kind == "errors"
+              ? Promise.reject(result.errors)
+              : Promise.resolve(result.value);
+          }),
+        ).embed(
+          (_: DispatchCreateFormLauncherState<T, Flags>) => _.config,
+          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.config,
+        )
+      : Co.SetState(
+          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.config(
+            replaceWith(
+              current.launcherRef.config.value.kind == "l" &&
+                current.launcherRef.config.value.value.kind == "value"
+                ? Synchronized.Default(
+                    unit,
+                    AsyncState.Default.loaded(
+                      current.launcherRef.config.value.value.value,
+                    ),
+                  )
+                : Synchronized.Default(unit),
+            ),
+          ),
+        );
+
+  const errorUpd = (errors: List<string>) =>
+    DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
+      replaceWith<DispatchFormRunnerStatus<T, Flags>>({
+        kind: "error",
+        errors,
+      }),
+    );
+
   return Co.Seq([
     Co.SetState(
       DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
@@ -59,14 +127,8 @@ export const initCo = <
       }
 
       if (current.deserializedSpecification.sync.value.kind == "errors") {
-        const errors = current.deserializedSpecification.sync.value.errors;
         return Co.SetState(
-          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
-            replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-              kind: "error",
-              errors,
-            }),
-          ),
+          errorUpd(current.deserializedSpecification.sync.value.errors),
         );
       }
 
@@ -84,13 +146,10 @@ export const initCo = <
         );
 
         return Co.SetState(
-          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
-            replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-              kind: "error",
-              errors: List([
-                `Cannot find form '${current.launcherRef.name}' in the create launchers`,
-              ]),
-            }),
+          errorUpd(
+            List([
+              `Cannot find form '${current.launcherRef.name}' in the create launchers`,
+            ]),
           ),
         );
       }
@@ -111,77 +170,16 @@ export const initCo = <
       return Co.Seq([
         Co.Seq([
           Co.All([
-            Synchronize<Unit, PredicateValue>(
-              () =>
-                defaultApi().then((raw) => {
-                  const result = createFormLauncher.fromApiParser(raw);
-                  return result.kind == "errors"
-                    ? Promise.reject(result.errors)
-                    : Promise.resolve(result.value);
-                }),
-              (_) => "transient failure",
-              5,
-              50,
-            ).embed(
-              (_) => _.entity,
-              DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity,
-            ),
-            current.launcherRef.config.source == "api"
-              ? Synchronize<Unit, PredicateValue>(() =>
-                  getGlobalConfig().then((raw) => {
-                    const result =
-                      createFormLauncher.parseGlobalConfigurationFromApi(raw);
-                    return result.kind == "errors"
-                      ? Promise.reject(result.errors)
-                      : Promise.resolve(result.value);
-                  }),
-                ).embed(
-                  (_) => _.config,
-                  DispatchCreateFormLauncherState<T, Flags>().Updaters.Core
-                    .config,
-                )
-              : Co.SetState(
-                  DispatchCreateFormLauncherState<
-                    T,
-                    Flags
-                  >().Updaters.Core.config(
-                    replaceWith(
-                      current.launcherRef.config.value.kind == "l" &&
-                        current.launcherRef.config.value.value.kind == "value"
-                        ? Synchronized.Default(
-                            unit,
-                            AsyncState.Default.loaded(
-                              current.launcherRef.config.value.value.value,
-                            ),
-                          )
-                        : Synchronized.Default(unit),
-                    ),
-                  ),
-                ),
+            defaultValueCo(defaultApi, createFormLauncher),
+            configValueCo(getGlobalConfig, createFormLauncher, current),
           ]),
           Co.UpdateState((_) => {
             if (_.entity.sync.kind == "error") {
-              return DispatchCreateFormLauncherState<
-                T,
-                Flags
-              >().Updaters.Core.status(
-                replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-                  kind: "error",
-                  errors: _.entity.sync.error,
-                }),
-              );
+              return errorUpd(List([_.entity.sync.error]));
             }
 
             if (_.config.sync.kind == "error") {
-              return DispatchCreateFormLauncherState<
-                T,
-                Flags
-              >().Updaters.Core.status(
-                replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-                  kind: "error",
-                  errors: _.config.sync.error,
-                }),
-              );
+              return errorUpd(List([_.config.sync.error]));
             }
 
             if (
@@ -224,15 +222,7 @@ export const initCo = <
 
             if (Form.kind == "errors") {
               console.error(Form.errors.valueSeq().toArray().join("\n"));
-              return DispatchCreateFormLauncherState<
-                T,
-                Flags
-              >().Updaters.Core.status(
-                replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-                  kind: "error",
-                  errors: Form.errors,
-                }),
-              );
+              return errorUpd(Form.errors);
             }
 
             const initialState = dispatcherContext.defaultState(
@@ -245,15 +235,7 @@ export const initCo = <
               console.error(
                 initialState.errors.valueSeq().toArray().join("\n"),
               );
-              return DispatchCreateFormLauncherState<
-                T,
-                Flags
-              >().Updaters.Core.status(
-                replaceWith<DispatchFormRunnerStatus<T, Flags>>({
-                  kind: "error",
-                  errors: initialState.errors,
-                }),
-              );
+              return errorUpd(initialState.errors);
             }
 
             return DispatchCreateFormLauncherState<T, Flags>()
