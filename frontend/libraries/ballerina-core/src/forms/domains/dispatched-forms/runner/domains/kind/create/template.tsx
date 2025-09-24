@@ -90,6 +90,8 @@ export const DispatchCreateFormLauncherTemplate = <
       ["local", entity.value],
     ]);
 
+    // TODO: add submit button support
+
     return (
       <props.context.status.Form
         context={{
@@ -106,7 +108,7 @@ export const DispatchCreateFormLauncherTemplate = <
         }}
         setState={(stateUpdater) =>
           props.setState(
-            DispatchCreateFormLauncherState<T, Flags>().Updaters.formState(
+            DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.formState(
               stateUpdater,
             ),
           )
@@ -115,14 +117,13 @@ export const DispatchCreateFormLauncherTemplate = <
         foreignMutations={{
           ...props.foreignMutations,
           onChange: (pvUpdater, delta) => {
+            if (pvUpdater.kind == "l") return;
+
             props.setState(
-              DispatchCreateFormLauncherState<T, Flags>().Updaters.entity(
-                Synchronized.Updaters.sync(
-                  AsyncState.Operations.map(
-                    pvUpdater.kind == "r" ? pvUpdater.value : id,
-                  ),
-                ),
-              ),
+              DispatchCreateFormLauncherState<
+                T,
+                Flags
+              >().Updaters.Template.entity(pvUpdater.value),
             );
           },
         }}
