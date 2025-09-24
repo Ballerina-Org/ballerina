@@ -16,7 +16,7 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
         if (!list || list.length === 0) return;
 
         const node = await fileListToFlatTree(list);
-        debugger
+
         if(node.kind == "errors") props.setState(Ide.Updaters.CommonUI.chooseErrors(node.errors))
         else setNode(Option.Default.some(node.value));
     }, []);

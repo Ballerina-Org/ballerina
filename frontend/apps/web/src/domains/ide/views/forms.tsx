@@ -42,7 +42,14 @@ import {
 } from "../../dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
-import {DispatchFromConfigApis, Ide, IdeFormProps, UnmockingApisEnums, UnmockingApisLookups} from "playground-core";
+import {
+    DispatchFromConfigApis,
+    Ide,
+    IdeEntityApis,
+    IdeFormProps,
+    UnmockingApisEnums,
+    UnmockingApisLookups
+} from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
 // import {getSeedEntity, getLookup,  updateEntity, UnmockingApisLookups} from "playground-core";
 const ShowFormsParsingErrors = (
@@ -106,7 +113,7 @@ const InstantiatedDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
 >();
 
 export const DispatcherFormsApp = (props: IdeFormProps) => {
-
+ 
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
         DispatchFormsParserState<
             DispatchPassthroughFormInjectedTypes,
@@ -252,7 +259,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             
             const toApiRawParser =
                 specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                    "person-transparent",
+                    props.launcherName,
                 )!.parseValueToApi;
             const path = DispatchDeltaTransfer.Default.FromDelta(
                 toApiRawParser as any, //TODO - fix type issue if worth it
@@ -267,7 +274,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     useEffect(() => {
         console.log("re-rendering");
         console.log(props.spec)
-       
+
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
@@ -275,7 +282,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value" 
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-    
+
             getSeed(props.specName, props.entityName)
                 .then(async (raw) => {
              
@@ -285,7 +292,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
      
                         const parsed =
                             spec.launchers.passthrough
-                                .get("person-transparent")!
+                                .get(props.launcherName)!
                                 .parseEntityFromApi(raw.value.value);
 
                         if (parsed.kind == "errors") {
@@ -300,7 +307,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
                             };
                             //setEntity(Sum.Default.left(parsed));
-                            //debugger
+                            debugger
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
                             setEntityId(res.id as any);
                         }
@@ -311,8 +318,9 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 });
         }
         //UnmockingApisEntities.entityApis
-        DispatchFromConfigApis.entityApis
-            .get("person-config")("")
+        //DispatchFromConfigApis.entityApis
+        IdeEntityApis
+            .get(props.launcherConfigName)!("")
             .then((raw) => {
                 if (
                     specificationDeserializer.deserializedSpecification.sync.kind ==
@@ -320,11 +328,13 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     specificationDeserializer.deserializedSpecification.sync.value.kind ==
                     "value"
                 ) {
+                    debugger
                     const parsed =
                         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get("person-config")!
-                            .parseEntityFromApi(raw);
+                            .get(props.launcherName)!
+                            .parseEntityFromApi(raw.value.value);
                     if (parsed.kind == "errors") {
+                        debugger
                         console.error("parsed person config errors", parsed.errors);
                     } else {
                         setConfig(Sum.Default.left(parsed));

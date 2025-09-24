@@ -23,7 +23,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
         } catch {
             return "{}";
         }
-    }, []); // ⚠️ no dependency on props.content
+    }, []);
 
     const handleEditorChange = React.useCallback((value: string | undefined) => {
         if (!value) return;
@@ -33,7 +33,6 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
             // ✅ Do NOT store `value` itself in state
             props.onChange(VirtualFolders.Updaters.Template.selectedFileContent(parsed));
         } catch {
-            // silently ignore invalid JSON
         }
     }, [props.onChange]);
     const handleMount: OnMount = (editor, monaco) => {
@@ -81,7 +80,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
     };
 
     return (
-        <div className="h-[70vh] flex flex-col gap-2 ">
+        <div className="h-[90vh] flex flex-col gap-2 ">
             <div className="flex gap-2 ml-5">
                 <button className="btn btn-sm btn-info" onClick={format}>Format JSON</button>
             </div>

@@ -18,7 +18,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                 ValueOrErrors.Default.return(
                     {
                         get:async (id: Guid) => {
-                            debugger
+                  
                             const fieldName = apiName.replace(/Api$/, "");
                             
                             const check =

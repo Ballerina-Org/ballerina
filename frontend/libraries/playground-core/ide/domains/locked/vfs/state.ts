@@ -12,11 +12,9 @@ export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
 
 
 export type VfsWorkspace = {
-    //root: FlatNode;                                   
-    
-    //files: VirtualJsonFile[];      
     nodes: FlatNode;
     merged: Option<KnownSections>;    
+    schema: Option<any>;
     selectedFolder: Option<FlatNode>;
     selectedFile: Option<FlatNode>;
 };
@@ -24,11 +22,22 @@ export type VfsWorkspace = {
 export const VirtualFolders = {
     Updaters: {
         Template: {
-            selectedFileContent: (value: string) => Updater<Ide>(ide => {
-                if(ide.phase == 'locked' && ide.locked.virtualFolders.selectedFile.kind == "r"){
-                    const vfs = ide.locked.virtualFolders
-                    const node = ide.locked.virtualFolders.selectedFile.value
-                    const next: VfsWorkspace = {...vfs, selectedFile: Option.Default.some({...node, metadata: {...node.metadata, content: value}})};
+            selectedFileContent: (value: any) => Updater<Ide>(ide => {
+                if(ide.phase == 'locked' 
+                    && ide.locked.virtualFolders.selectedFile.kind == "r"
+                    && ide.locked.virtualFolders.selectedFolder.kind == "r"){
+                    const vfs = ide.locked.virtualFolders;
+                    const node = ide.locked.virtualFolders.selectedFile.value;
+                    const root=  FlatNode.Operations.replaceFileAtPath(vfs.nodes, node.metadata.path, node);
+                    const folder = FlatNode.Operations.findFolderByPath(root, ide.locked.virtualFolders.selectedFolder.value.metadata.path);
+                    
+                    const next: VfsWorkspace = 
+                        {...vfs, 
+                            selectedFile: Option.Default.some({...node, metadata: {...node.metadata, content: value}}),
+                            selectedFolder: Option.Default.some(folder!),
+                            nodes: root
+                        };
+           
                     return LockedSpec.Updaters.Core.vfs(replaceWith(next))(ide)
                 }
                 return ide
@@ -40,6 +49,7 @@ export const VirtualFolders = {
          
             return {
                 nodes, 
+                schema: Option.Default.none(),
                 merged: Option.Default.none(),
                 selectedFile: nodes.metadata?.isLeaf && nodes.children?.length || 0 > 0 ? Option.Default.some(nodes.children![0]) : Option.Default.none(),
                 selectedFolder: nodes.metadata?.isLeaf ? Option.Default.some(nodes) : Option.Default.none(),
@@ -62,7 +72,7 @@ export const VfsWorkspace = {
             ...simpleUpdater<VfsWorkspace>()("selectedFile"),
             ...simpleUpdater<VfsWorkspace>()("merged"),
             ...simpleUpdater<VfsWorkspace>()("selectedFolder"),
-                    
+            ...simpleUpdater<VfsWorkspace>()("schema"),
         }
     }
 }

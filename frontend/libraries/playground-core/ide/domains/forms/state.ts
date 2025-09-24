@@ -4,4 +4,7 @@
     entityName: string, 
     typeName: string,
     setState: (state: any) => void,
+    launcherName: string,
+    launcherConfigName: string,
+    
 }

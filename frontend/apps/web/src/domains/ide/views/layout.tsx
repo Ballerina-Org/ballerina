@@ -1,6 +1,6 @@
 ﻿/** @jsxImportSource @emotion/react */
 
-import {Ide, IdeView, seed, VfsWorkspace, validate, update} from "playground-core";
+import {Ide, IdeView, seed, VfsWorkspace, validate, update, VirtualFolders} from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
 import {Actions} from "./actions"
@@ -22,6 +22,7 @@ import {AddSpec} from "./domains/choose/add-spec.tsx";
 import {SpecificationLabel} from "./domains/locked/specification-label.tsx";
 import {VfsLayout} from "./domains/vfs/layout.tsx";
 import {AddOrSelectSpec} from "./domains/choose/add-or-select.tsx";
+import {EntitiesSelector} from "./entities-selector.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -64,17 +65,21 @@ export const IdeLayout: IdeView = (props) =>{
                                 hideRight={hideRight}
                                 context={props.context}
                                 onHide={() => setHideRight(!hideRight)}
-                                //onNew={() => props.setState(Ide.Updaters.Template.choosePhase('create'))}
                                 onSave={
                                     async () => {
                                         if(!(props.context.phase == "locked" && props.context.locked.virtualFolders.selectedFile.kind == "r")) {
                                             notify.error('UX bad state','Saving should be possible only in a locked phase');
                                             return
                                         }
-                                        const currentFile = props.context.locked.virtualFolders.selectedFile.value;
-                                    
-                                        const call = await update(props.context.create.name.value, currentFile.metadata.path, currentFile.metadata.content);
-                                        fromVoe( call,'Specification save')
+                                        if(props.context.phase == "locked"){
+                                            const currentFile = props.context.locked.virtualFolders.selectedFile.value;
+                                            const u = VirtualFolders.Updaters.Template.selectedFileContent(currentFile)
+                                      
+                                            props.setState(u)
+                                        
+                                            const call = await update(props.context.create.name.value, currentFile.metadata.path, currentFile.metadata.content);
+                                            fromVoe( call,'Specification save')
+                                        }
                                     }
                                 }
                                 onMerge={ async ()=>{
@@ -104,16 +109,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         const call = await seed(props.context.create.name.value)
                                         if(call.kind == "errors") notify.error("Seeding failed")
                                         if(call.kind != "errors") notify.success("Seeding succeed")
-                                        //     ideToast({
-                                        //         title: 'UX bad state',
-                                        //         description: 'Seeding should be possible only in a locked phase',
-                                        //         button: {
-                                        //             label: 'Ok',
-                                        //             onClick: () => sonnerToast.dismiss(),
-                                        //         },
-                                        //     });
-                                        //     return
-                                        // }
+          
                                         if(call.kind == "value")
                                             props.setState(LockedSpec.Updaters.Core.seed(call.value));
                                         else {
@@ -124,11 +120,12 @@ export const IdeLayout: IdeView = (props) =>{
                                 }
                             />
                         </div>
-                        <p>debug</p>
-                        <p>phase: {props.context.phase}</p>
-                        <p>step: {props.context.phase == 'locked' && props.context.step}</p>
-                        <p>is merged: {props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.kind }</p>
-                        <p>selected launcher: {props.context.phase == 'locked' && props.context.locked.selectedLauncher.kind }</p>
+                        {/*<p>debug</p>*/}
+                        {/*<p>phase: {props.context.phase}</p>*/}
+                        {/*<p>step: {props.context.phase == 'locked' && props.context.step}</p>*/}
+                        {/*<p>is merged: {props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.kind }</p>*/}
+                        {/*<p>selected launcher: {props.context.phase == 'locked' && props.context.locked.selectedLauncher.kind }</p>*/}
+                        {/*<p>selected entity: {props.context.phase == 'locked' && props.context.locked.selectedEntity.kind }</p>*/}
                        <VfsLayout {...props.context} setState={props.setState} />
                       
                     </aside>
@@ -161,7 +158,7 @@ export const IdeLayout: IdeView = (props) =>{
                             { props.context.phase == "locked" &&  props.context.step == 'outcome' && <div className="card bg-base-100 w-full mt-5">
                                 <div className="card-body w-full">
                                     {props.context.locked.launchers && <><LauncherSelector
-                                        onChange={async (value: string) => {
+                                        onChange={async (value: any) => {
                                           
                                             props.setState(
                                                 LockedSpec.Updaters.Core.selectLauncher(value)
@@ -169,16 +166,28 @@ export const IdeLayout: IdeView = (props) =>{
                                         }}
                                         options={props.context.locked.launchers}
                                     />
+                                    {props.context.locked.entities && <EntitiesSelector
+                                        onChange={async (value: string) => {
+
+                                            props.setState(
+                                                LockedSpec.Updaters.Core.selectEntity(value)
+                                            )
+                                        }}
+                                        options={props.context.locked.entities}
+                                    />}
                                         { props.context.locked.virtualFolders.merged.kind == "r" &&
                                             props.context.locked.virtualFolders.selectedFolder.kind == "r" &&
+                                            props.context.locked.selectedEntity.kind == "r" &&
                                             props.context.locked.selectedLauncher.kind == "r" 
-                                            && <DispatcherFormsApp
+                                            && <><DispatcherFormsApp
                                             key={version}
+                                            launcherName={props.context.locked.selectedLauncher.value.key}
+                                            launcherConfigName={props.context.locked.selectedLauncher.value.configType}
                                             specName={props.context.create.name.value}
-                                            entityName={"People"}
+                                            entityName={props.context.locked.selectedEntity.value}
                                             setState={props.setState}
                                             typeName={"Person"}
-                                            spec={props.context.locked.virtualFolders.merged.value}/>
+                                            spec={props.context.locked.virtualFolders.merged.value}/></>
                                         }
                                     </>
                                     }
