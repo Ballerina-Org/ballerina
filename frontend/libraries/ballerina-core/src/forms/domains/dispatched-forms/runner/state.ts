@@ -20,9 +20,18 @@ import {
   FormRefEditApiHandlers,
   FormRefCreateApiHandlers,
   Guid,
+  BasicUpdater,
+  Updater,
 } from "../../../../../main";
-import { DispatchCreateFormLauncherApi } from "./domains/kind/create/state";
-import { DispatchEditFormLauncherApi } from "./domains/kind/edit/state";
+import {
+  DispatchCreateFormLauncherApi,
+  DispatchCreateFormLauncherState,
+} from "./domains/kind/create/state";
+import {
+  DispatchEditFormLauncherApi,
+  DispatchEditFormLauncherState,
+} from "./domains/kind/edit/state";
+import { DispatchPassthroughFormLauncherState } from "./domains/kind/passthrough/state";
 
 export type ApiSources = {
   infiniteStreamSources: DispatchInfiniteStreamSources;
@@ -112,22 +121,91 @@ export type DispatchFormRunnerState<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
 > = {
+  innerFormState:
+    | { kind: "create"; state: DispatchCreateFormLauncherState<T, Flags> }
+    | { kind: "edit"; state: DispatchEditFormLauncherState<T, Flags> }
+    | {
+        kind: "passthrough";
+        state: DispatchPassthroughFormLauncherState<T, Flags>;
+      };
+};
+
+export const DispatchFormRunnerState = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+>() => ({
+  Default: {
+    create: (): DispatchFormRunnerState<T, Flags> => ({
+      innerFormState: {
+        kind: "create",
+        state: DispatchCreateFormLauncherState<T, Flags>().Default(),
+      },
+    }),
+    edit: (): DispatchFormRunnerState<T, Flags> => ({
+      innerFormState: {
+        kind: "edit",
+        state: DispatchEditFormLauncherState<T, Flags>().Default(),
+      },
+    }),
+    passthrough: (): DispatchFormRunnerState<T, Flags> => ({
+      innerFormState: {
+        kind: "passthrough",
+        state: DispatchPassthroughFormLauncherState<T, Flags>().Default(),
+      },
+    }),
+  },
+  Updaters: {
+    Core: {
+      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("innerFormState"),
+    },
+    Template: {
+      create: (
+        upd: BasicUpdater<DispatchCreateFormLauncherState<T, Flags>>,
+      ): Updater<DispatchFormRunnerState<T, Flags>> =>
+        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+          v.kind === "create" ? { ...v, state: upd(v.state) } : v,
+        ),
+      edit: (
+        upd: BasicUpdater<DispatchEditFormLauncherState<T, Flags>>,
+      ): Updater<DispatchFormRunnerState<T, Flags>> =>
+        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+          v.kind === "edit" ? { ...v, state: upd(v.state) } : v,
+        ),
+      passthrough: (
+        upd: BasicUpdater<DispatchPassthroughFormLauncherState<T, Flags>>,
+      ): Updater<DispatchFormRunnerState<T, Flags>> =>
+        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+          v.kind === "passthrough"
+            ? (console.debug("updating passthrough"),
+              { ...v, state: upd(v.state) })
+            : (console.debug("not updating passthrough"), v),
+        ),
+    },
+  },
+});
+
+export type DispatchFormRunnerForeignMutationsExpected = Unit;
+
+export type DispatchCommonFormRunnerState<
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+> = {
   status: DispatchFormRunnerStatus<T, Flags>;
   formState: any;
 };
-export type DispatchFormRunnerForeignMutationsExpected = Unit;
-export const DispatchFormRunnerState = <
+
+export const DispatchCommonFormRunnerState = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
 >() => {
   return {
-    Default: (): DispatchFormRunnerState<T, Flags> => ({
+    Default: (): DispatchCommonFormRunnerState<T, Flags> => ({
       status: { kind: "not initialized" },
       formState: unit,
     }),
     Updaters: {
-      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("status"),
-      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("formState"),
+      ...simpleUpdater<DispatchCommonFormRunnerState<T, Flags>>()("status"),
+      ...simpleUpdater<DispatchCommonFormRunnerState<T, Flags>>()("formState"),
     },
   };
 };

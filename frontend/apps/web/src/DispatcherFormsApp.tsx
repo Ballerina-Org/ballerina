@@ -113,13 +113,20 @@ export const DispatcherFormsApp = (props: {}) => {
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags
-    >().Default(),
+    >().Default.passthrough(),
   );
   const [personConfigState, setPersonConfigState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags
-    >().Default(),
+    >().Default.passthrough(),
+  );
+
+  const [personCreateState, setPersonCreateState] = useState(
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default.create(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -493,10 +500,12 @@ export const DispatcherFormsApp = (props: {}) => {
                   view={unit}
                   foreignMutations={unit}
                 />
+
+                <h3>Create Person</h3>
                 <InstantiedPersonDispatchFormRunnerTemplate
                   context={{
                     ...specificationDeserializer,
-                    ...personPassthroughFormState,
+                    ...personCreateState,
                     launcherRef: {
                       name: "create-person",
                       kind: "create",
@@ -518,7 +527,7 @@ export const DispatcherFormsApp = (props: {}) => {
                       flags: Set(["BC", "X"]),
                     },
                   }}
-                  setState={setPersonPassthroughFormState}
+                  setState={setPersonCreateState}
                   view={unit}
                   foreignMutations={unit}
                 />

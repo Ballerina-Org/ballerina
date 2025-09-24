@@ -6,6 +6,7 @@ import {
   Guid,
   ApiErrors,
   Unit,
+  DispatchCommonFormRunnerState,
 } from "../../../../../../../../main";
 
 export type DispatchEditFormLauncherApi = {
@@ -29,6 +30,15 @@ export type DispatchEditFormLauncherContext<
 export type DispatchEditFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-> = DispatchFormRunnerState<T, Flags>;
+> = DispatchCommonFormRunnerState<T, Flags>;
 
 export type DispatchEditFormLauncherForeignMutationsExpected<T> = {};
+
+export const DispatchEditFormLauncherState = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags = Unit,
+>() => ({
+  Default: (): DispatchEditFormLauncherState<T, Flags> => ({
+    ...DispatchCommonFormRunnerState<T, Flags>().Default(),
+  }),
+});
