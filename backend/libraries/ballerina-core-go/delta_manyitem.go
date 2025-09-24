@@ -14,10 +14,6 @@ const (
 
 var allDeltaManyItemEffectsEnumCases = [...]deltaManyItemEffectsEnum{manyItemValue, manyItemIsLinked, manyItemCanChangeLink}
 
-func DefaultDeltaManyItemEffectsEnum() deltaManyItemEffectsEnum {
-	return allDeltaManyItemEffectsEnumCases[0]
-}
-
 type DeltaManyItem[T any, deltaT any] struct {
 	DeltaBase
 	discriminator deltaManyItemEffectsEnum

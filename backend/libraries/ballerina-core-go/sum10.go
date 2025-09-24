@@ -25,8 +25,6 @@ var allSum10CasesEnum = [...]sum10CasesEnum{
 	case6Of10, case7Of10, case8Of10, case9Of10, case10Of10,
 }
 
-func DefaultSum10CasesEnum() sum10CasesEnum { return allSum10CasesEnum[0] }
-
 type Sum10[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any, case7 any, case8 any, case9 any, case10 any] struct {
 	discriminator sum10CasesEnum
 

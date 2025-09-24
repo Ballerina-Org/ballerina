@@ -19,8 +19,6 @@ const (
 
 var allDeltaArrayEffectsEnumCases = [...]deltaArrayEffectsEnum{arrayValue, arrayAddAt, arrayRemoveAt, arrayMoveFromTo, arrayDuplicateAt, arrayAdd, arrayReplace}
 
-func DefaultDeltaArrayEffectsEnum() deltaArrayEffectsEnum { return allDeltaArrayEffectsEnumCases[0] }
-
 type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaArrayEffectsEnum
