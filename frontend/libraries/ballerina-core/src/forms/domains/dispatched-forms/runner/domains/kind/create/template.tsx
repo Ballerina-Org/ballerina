@@ -12,7 +12,6 @@ import {
   Bindings,
   PredicateValue,
   Synchronized,
-  id,
 } from "../../../../../../../../main";
 import { DispatchCreateFormRunner } from "./coroutines/runner";
 import { Map } from "immutable";

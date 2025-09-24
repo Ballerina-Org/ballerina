@@ -22,6 +22,9 @@ import {
   DispatchInjectedPrimitive,
   DispatchOnChange,
   AggregatedFlags,
+  Synchronized,
+  AsyncState,
+  Debounced,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
@@ -45,6 +48,7 @@ import {
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
+import { DispatchCreateFormLauncherState } from "ballerina-core/src/forms/domains/dispatched-forms/runner/domains/kind/create/state";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -545,6 +549,28 @@ export const DispatcherFormsApp = (props: {}) => {
                   view={unit}
                   foreignMutations={unit}
                 />
+                <button
+                  onClick={() => {
+                    setPersonCreateState((_) =>
+                      _.innerFormState.kind == "create"
+                        ? {
+                            ..._,
+                            ...DispatchFormRunnerState<
+                              DispatchPassthroughFormInjectedTypes,
+                              DispatchPassthroughFormFlags
+                            >().Updaters.Template.create(
+                              DispatchCreateFormLauncherState<
+                                DispatchPassthroughFormInjectedTypes,
+                                DispatchPassthroughFormFlags
+                              >().Updaters.Template.submit(),
+                            )(_),
+                          }
+                        : _,
+                    );
+                  }}
+                >
+                  Create Person
+                </button>
               </td>
             </tr>
           </tbody>
