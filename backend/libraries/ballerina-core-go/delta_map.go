@@ -2,6 +2,7 @@ package ballerina
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type deltaMapEffectsEnum string
@@ -18,10 +19,10 @@ var allDeltaMapEffectsEnumCases = [...]deltaMapEffectsEnum{mapKey, mapValue, map
 type DeltaMap[k comparable, v any, deltaK any, deltaV any] struct {
 	DeltaBase
 	discriminator deltaMapEffectsEnum
-	key           *Tuple2[int, deltaK]
-	value         *Tuple2[int, deltaV]
+	key           *Tuple2[k, deltaK]
+	value         *Tuple2[k, deltaV]
 	add           *Tuple2[k, v]
-	remove        *int
+	remove        *k
 }
 
 var _ json.Unmarshaler = &DeltaMap[Unit, Unit, Unit, Unit]{}
@@ -31,10 +32,10 @@ func (d DeltaMap[k, v, deltaK, deltaV]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
 		Discriminator deltaMapEffectsEnum
-		Key           *Tuple2[int, deltaK]
-		Value         *Tuple2[int, deltaV]
+		Key           *Tuple2[k, deltaK]
+		Value         *Tuple2[k, deltaV]
 		Add           *Tuple2[k, v]
-		Remove        *int
+		Remove        *k
 	}{
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
@@ -49,10 +50,10 @@ func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 	var a struct {
 		DeltaBase
 		Discriminator deltaMapEffectsEnum
-		Key           *Tuple2[int, deltaK]
-		Value         *Tuple2[int, deltaV]
+		Key           *Tuple2[k, deltaK]
+		Value         *Tuple2[k, deltaV]
 		Add           *Tuple2[k, v]
-		Remove        *int
+		Remove        *k
 	}
 	if err := json.Unmarshal(data, &a); err != nil {
 		return err
@@ -66,15 +67,15 @@ func (d *DeltaMap[k, v, deltaK, deltaV]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaMapKey[k comparable, v any, deltaK any, deltaV any](index int, delta deltaK) DeltaMap[k, v, deltaK, deltaV] {
-	t := NewTuple2(index, delta)
+func NewDeltaMapKey[k comparable, v any, deltaK any, deltaV any](key k, delta deltaK) DeltaMap[k, v, deltaK, deltaV] {
+	t := NewTuple2(key, delta)
 	return DeltaMap[k, v, deltaK, deltaV]{
 		discriminator: mapKey,
 		key:           &t,
 	}
 }
-func NewDeltaMapValue[k comparable, v any, deltaK any, deltaV any](index int, delta deltaV) DeltaMap[k, v, deltaK, deltaV] {
-	t := NewTuple2(index, delta)
+func NewDeltaMapValue[k comparable, v any, deltaK any, deltaV any](key k, delta deltaV) DeltaMap[k, v, deltaK, deltaV] {
+	t := NewTuple2(key, delta)
 	return DeltaMap[k, v, deltaK, deltaV]{
 		discriminator: mapValue,
 		value:         &t,
@@ -86,34 +87,53 @@ func NewDeltaMapAdd[k comparable, v any, deltaK any, deltaV any](newElement Tupl
 		add:           &newElement,
 	}
 }
-func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](index int) DeltaMap[k, v, deltaK, deltaV] {
+func NewDeltaMapRemove[k comparable, v any, deltaK any, deltaV any](key k) DeltaMap[k, v, deltaK, deltaV] {
 	return DeltaMap[k, v, deltaK, deltaV]{
 		discriminator: mapRemove,
-		remove:        &index,
+		remove:        &key,
 	}
 }
 
 func MatchDeltaMap[k comparable, v any, deltaK any, deltaV any, Result any](
-	onKey func(Tuple2[int, deltaK]) func(ReaderWithError[Unit, k]) (Result, error),
-	onValue func(Tuple2[int, deltaV]) func(ReaderWithError[Unit, v]) (Result, error),
+	onKey func(Tuple2[k, deltaK]) func(ReaderWithError[Unit, k]) (Result, error),
+	onValue func(Tuple2[k, deltaV]) func(ReaderWithError[Unit, v]) (Result, error),
 	onAdd func(Tuple2[k, v]) (Result, error),
-	onRemove func(int) (Result, error),
+	onRemove func(k) (Result, error),
 ) func(DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[Unit, Map[k, v]]) (Result, error) {
 	return func(delta DeltaMap[k, v, deltaK, deltaV]) func(ReaderWithError[Unit, Map[k, v]]) (Result, error) {
 		return func(mapReader ReaderWithError[Unit, Map[k, v]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case mapKey:
-				key := MapReaderWithError[Unit, Map[k, v], k](
-					func(m Map[k, v]) k {
-						return m[delta.key.Item1].Key
+				key := BindReaderWithError(
+					func(m Map[k, v]) ReaderWithError[Unit, k] {
+						expectedKey := delta.key.Item1
+						return PureReader[Unit, Sum[error, k]](
+							MatchOption(
+								m.Get(expectedKey),
+								func(_ v) Sum[error, k] {
+									return Right[error, k](expectedKey)
+								},
+								func() Sum[error, k] {
+									return Left[error, k](fmt.Errorf("key %v not found in current map value", expectedKey))
+								},
+							),
+						)
 					},
 				)(mapReader)
 				return onKey(*delta.key)(key)
 			case mapValue:
-				value := MapReaderWithError[Unit, Map[k, v], v](
-					func(m Map[k, v]) v {
-						return m[delta.value.Item1].Value
+				value := BindReaderWithError(
+					func(m Map[k, v]) ReaderWithError[Unit, v] {
+						return PureReader[Unit, Sum[error, v]](
+							MatchOption(
+								m.Get(delta.value.Item1),
+								Right[error, v],
+								func() Sum[error, v] {
+									return Left[error, v](fmt.Errorf("key %v not found in current map value", delta.value.Item1))
+								},
+							),
+						)
 					},
 				)(mapReader)
 				return onValue(*delta.value)(value)

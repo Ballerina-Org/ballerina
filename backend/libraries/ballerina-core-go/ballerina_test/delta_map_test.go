@@ -12,13 +12,13 @@ type DeltaMapSerializationTestSuite struct {
 }
 
 func (s *DeltaMapSerializationTestSuite) TestKey() {
-	delta := ballerina.NewDeltaMapKey[string, int, ballerina.DeltaString, ballerina.DeltaInt32](0, ballerina.NewDeltaStringReplace("new key"))
+	delta := ballerina.NewDeltaMapKey[string, int, ballerina.DeltaString, ballerina.DeltaInt32]("0", ballerina.NewDeltaStringReplace("new key"))
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
 func (s *DeltaMapSerializationTestSuite) TestValue() {
-	delta := ballerina.NewDeltaMapValue[string, int, ballerina.DeltaString, ballerina.DeltaInt32](1, ballerina.NewDeltaInt32Replace(42))
+	delta := ballerina.NewDeltaMapValue[string, int, ballerina.DeltaString, ballerina.DeltaInt32]("1", ballerina.NewDeltaInt32Replace(42))
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
@@ -31,7 +31,7 @@ func (s *DeltaMapSerializationTestSuite) TestAdd() {
 }
 
 func (s *DeltaMapSerializationTestSuite) TestRemove() {
-	delta := ballerina.NewDeltaMapRemove[string, int, ballerina.DeltaString, ballerina.DeltaInt32](2)
+	delta := ballerina.NewDeltaMapRemove[string, int, ballerina.DeltaString, ballerina.DeltaInt32]("2")
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
