@@ -135,6 +135,9 @@ export const DispatcherFormsApp = (props: {}) => {
   const [config, setConfig] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
+  const [createConfig, setCreateConfig] = useState<
+    Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
+  >(Sum.Default.right("not initialized"));
 
   // TODO replace with delta transfer
   const [entityPath, setEntityPath] = useState<any>(null);
@@ -519,6 +522,17 @@ export const DispatcherFormsApp = (props: {}) => {
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:
                           DispatchPersonFromConfigApis.lookupSources,
+                      },
+                      // config: {
+                      //   source: "api",
+                      //   getGlobalConfig: () =>
+                      //     DispatchPersonFromConfigApis.entityApis.get(
+                      //       "person-config",
+                      //     )(""),
+                      // },
+                      config: {
+                        source: "entity",
+                        value: config,
                       },
                     },
                     remoteEntityVersionIdentifier,

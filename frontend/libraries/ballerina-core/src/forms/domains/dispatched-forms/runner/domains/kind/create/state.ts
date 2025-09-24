@@ -41,6 +41,7 @@ export type DispatchCreateFormLauncherState<
   Flags = Unit,
 > = DispatchCommonFormRunnerState<T, Flags> & {
   entity: Synchronized<Unit, PredicateValue>;
+  config: Synchronized<Unit, PredicateValue>;
   apiChecker: {
     init: ApiResponseChecker;
     create: ApiResponseChecker;
@@ -55,6 +56,7 @@ export const DispatchCreateFormLauncherState = <
   Default: (): DispatchCreateFormLauncherState<T, Flags> => ({
     ...DispatchCommonFormRunnerState<T, Flags>().Default(),
     entity: Synchronized.Default(unit),
+    config: Synchronized.Default(unit),
     apiChecker: {
       init: ApiResponseChecker.Default(false),
       create: ApiResponseChecker.Default(false),
@@ -68,6 +70,7 @@ export const DispatchCreateFormLauncherState = <
         "formState",
       ),
       ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
+      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("config"),
       ...simpleUpdaterWithChildren<DispatchCreateFormLauncherState<T, Flags>>()(
         {
           ...simpleUpdater<

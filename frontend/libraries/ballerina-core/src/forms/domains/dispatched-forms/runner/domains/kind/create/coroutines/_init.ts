@@ -5,6 +5,8 @@ import {
   Synchronize,
   Unit,
   HandleApiResponse,
+  Synchronized,
+  unit,
 } from "../../../../../../../../../main";
 import { ApiResponseChecker } from "../../../../../../../../api-response-handler/state";
 import { AsyncState } from "../../../../../../../../async/state";
@@ -29,26 +31,27 @@ export const initCo = <
   Co: ReturnType<
     typeof CreateCoBuilder<T, Flags, CustomPresentationContexts, ExtraContext>
   >,
-) =>
-  Co.Seq([
-    Co.Do(() => {
-      console.debug("CreateFormRunner", "init");
-    }),
-    Co.SetState(
-      DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
-        replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
-      ),
-    ),
+) => {
+  const setChecked = (checked: boolean) =>
     Co.SetState(
       DispatchCreateFormLauncherState<
         T,
         Flags
       >().Updaters.Core.apiChecker.children.init(
-        ApiResponseChecker.Updaters().toUnchecked(),
+        checked
+          ? ApiResponseChecker.Updaters().toChecked()
+          : ApiResponseChecker.Updaters().toUnchecked(),
+      ),
+    );
+
+  return Co.Seq([
+    Co.SetState(
+      DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
+        replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
       ),
     ),
+    setChecked(false),
     Co.GetState().then((current) => {
-      console.debug("CreateFormRunner", current);
       if (
         !AsyncState.Operations.hasValue(current.deserializedSpecification.sync)
       ) {
@@ -96,6 +99,14 @@ export const initCo = <
         current.launcherRef.apiSources.entityApis.get(createFormLauncher.api)(
           "",
         );
+      const getGlobalConfig =
+        current.launcherRef.config.source == "api" &&
+        current.launcherRef.config.getGlobalConfig
+          ? current.launcherRef.config.getGlobalConfig
+          : () =>
+              current.launcherRef.apiSources.entityApis.get(
+                createFormLauncher.configApi,
+              )("");
 
       return Co.Seq([
         Co.Seq([
@@ -115,7 +126,38 @@ export const initCo = <
               (_) => _.entity,
               DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity,
             ),
-            // TODO: add global configuration api call?
+            current.launcherRef.config.source == "api"
+              ? Synchronize<Unit, PredicateValue>(() =>
+                  getGlobalConfig().then((raw) => {
+                    const result =
+                      createFormLauncher.parseGlobalConfigurationFromApi(raw);
+                    return result.kind == "errors"
+                      ? Promise.reject(result.errors)
+                      : Promise.resolve(result.value);
+                  }),
+                ).embed(
+                  (_) => _.config,
+                  DispatchCreateFormLauncherState<T, Flags>().Updaters.Core
+                    .config,
+                )
+              : Co.SetState(
+                  DispatchCreateFormLauncherState<
+                    T,
+                    Flags
+                  >().Updaters.Core.config(
+                    replaceWith(
+                      current.launcherRef.config.value.kind == "l" &&
+                        current.launcherRef.config.value.value.kind == "value"
+                        ? Synchronized.Default(
+                            unit,
+                            AsyncState.Default.loaded(
+                              current.launcherRef.config.value.value.value,
+                            ),
+                          )
+                        : Synchronized.Default(unit),
+                    ),
+                  ),
+                ),
           ]),
           Co.UpdateState((_) => {
             if (_.entity.sync.kind == "error") {
@@ -128,6 +170,25 @@ export const initCo = <
                   errors: _.entity.sync.error,
                 }),
               );
+            }
+
+            if (_.config.sync.kind == "error") {
+              return DispatchCreateFormLauncherState<
+                T,
+                Flags
+              >().Updaters.Core.status(
+                replaceWith<DispatchFormRunnerStatus<T, Flags>>({
+                  kind: "error",
+                  errors: _.config.sync.error,
+                }),
+              );
+            }
+
+            if (
+              _.config.sync.kind == "loading" ||
+              _.config.sync.kind == "reloading"
+            ) {
+              return id;
             }
 
             if (
@@ -197,7 +258,7 @@ export const initCo = <
 
             return DispatchCreateFormLauncherState<T, Flags>()
               .Updaters.Core.formState(replaceWith(initialState.value))
-              .then(
+              .thenMany([
                 DispatchCreateFormLauncherState<
                   T,
                   Flags
@@ -207,7 +268,11 @@ export const initCo = <
                     Form: Form.value,
                   }),
                 ),
-              );
+                DispatchCreateFormLauncherState<
+                  T,
+                  Flags
+                >().Updaters.Core.config(replaceWith(_.config)),
+              ]);
           }),
         ]),
         HandleApiResponse<
@@ -223,14 +288,8 @@ export const initCo = <
           handleSuccess: current.launcherRef.apiHandlers?.onDefaultSuccess,
           handleError: current.launcherRef.apiHandlers?.onDefaultError,
         }),
-        Co.SetState(
-          DispatchCreateFormLauncherState<
-            T,
-            Flags
-          >().Updaters.Core.apiChecker.children.init(
-            ApiResponseChecker.Updaters().toChecked(),
-          ),
-        ),
+        setChecked(true),
       ]);
     }),
   ]);
+};

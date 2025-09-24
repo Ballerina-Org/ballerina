@@ -57,13 +57,20 @@ export type EditLauncherRef<Flags = Unit> = {
   kind: "edit";
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
-  // api: DispatchEditFormLauncherApi;
 } & BaseLauncherRef;
 
 export type CreateLauncherRef<Flags = Unit> = {
   kind: "create";
   apiHandlers?: FormRefCreateApiHandlers<any>;
-  // api: DispatchCreateFormLauncherApi;
+  config:
+    | {
+        source: "entity";
+        value: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+      }
+    | {
+        source: "api";
+        getGlobalConfig?: () => Promise<any>;
+      };
 } & BaseLauncherRef;
 
 export type LauncherRef<Flags = Unit> =
@@ -175,10 +182,7 @@ export const DispatchFormRunnerState = <
         upd: BasicUpdater<DispatchPassthroughFormLauncherState<T, Flags>>,
       ): Updater<DispatchFormRunnerState<T, Flags>> =>
         DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
-          v.kind === "passthrough"
-            ? (console.debug("updating passthrough"),
-              { ...v, state: upd(v.state) })
-            : (console.debug("not updating passthrough"), v),
+          v.kind === "passthrough" ? { ...v, state: upd(v.state) } : v,
         ),
     },
   },
