@@ -2149,7 +2149,12 @@
             },
             "addresses": {
               "groups": {
-                "main": ["AddressesByCity", "AddressesWithColorLabel", "AddressesBy", "AddressesAndAddressesWithLabel"]
+                "main": [
+                  "AddressesByCity",
+                  "AddressesWithColorLabel",
+                  "AddressesBy",
+                  "AddressesAndAddressesWithLabel"
+                ]
               }
             }
           }
