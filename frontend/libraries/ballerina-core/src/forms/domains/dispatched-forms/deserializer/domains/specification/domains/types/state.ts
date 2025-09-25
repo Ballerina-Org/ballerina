@@ -47,6 +47,11 @@ export type SerializedKeyOfType<T> = {
   args?: Array<string>;
 };
 
+export type SerializedTranslationOverrideType = {
+  fun?: "TranslationOverride";
+  args?: Array<string>;
+};
+
 export type ValidatedSerializedKeyOfType<T> = {
   fun: "KeyOf";
   args: [string, Array<string>?];
@@ -62,7 +67,8 @@ export type SerializedType<T> =
   | SerializedUnionType
   | SerializedRecordType
   | SerializedOptionType
-  | SerializedKeyOfType<T>;
+  | SerializedKeyOfType<T>
+  | SerializedTranslationOverrideType;
 
 export const DispatchPrimitiveTypeNames = [
   "unit",
@@ -197,6 +203,11 @@ export const SerializedType = {
     _.args.length == 1,
   isRecordFields: (_: unknown) =>
     typeof _ == "object" && _ != null && !("fun" in _) && !("args" in _),
+  isTranslationOverride: (_: unknown) =>
+    typeof _ == "object" &&
+    _ != null &&
+    "fun" in _ &&
+    _.fun == "TranslationOverride",
 };
 
 export type StringSerializedType = string;
@@ -1489,6 +1500,16 @@ export const DispatchParsedType = {
             serializedTypes,
             alreadyParsedTypes,
           );
+        if (SerializedType.isTranslationOverride(rawType))
+          return ValueOrErrors.Default.return([
+            DispatchParsedType.Default.map([
+              DispatchParsedType.Default.readOnly(
+                DispatchParsedType.Default.primitive("string"),
+              ),
+              DispatchParsedType.Default.primitive("string"),
+            ]),
+            alreadyParsedTypes,
+          ]);
         return ValueOrErrors.Default.throwOne(
           `Unrecognised type "${typeName}" : ${JSON.stringify(rawType)}`,
         );
