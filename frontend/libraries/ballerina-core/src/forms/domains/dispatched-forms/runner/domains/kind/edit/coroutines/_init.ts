@@ -1,27 +1,26 @@
 import { List } from "immutable";
 import {
-  replaceWith,
-  id,
-  Synchronize,
+  DispatchInjectablesTypes,
   Unit,
-  HandleApiResponse,
+  PredicateValue,
+  Synchronize,
+  DispatchParsedEditLauncher,
   Synchronized,
   unit,
-  DispatchParsedCreateLauncher,
+  AsyncState,
+  replaceWith,
+  DispatchFormRunnerStatus,
+  id,
+  Dispatcher,
+  HandleApiResponse,
 } from "../../../../../../../../../main";
 import { ApiResponseChecker } from "../../../../../../../../api-response-handler/state";
-import { AsyncState } from "../../../../../../../../async/state";
-import { PredicateValue } from "../../../../../../parser/domains/predicates/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
-import { DispatchFormRunnerStatus } from "../../../../state";
-import { DispatchInjectablesTypes } from "../../../abstract-renderers/injectables/state";
-import { Co } from "../../../abstract-renderers/table/coroutines/builder";
-import { Dispatcher } from "../../../dispatcher/state";
 import {
-  DispatchCreateFormLauncherState,
-  DispatchCreateFormLauncherContext,
+  DispatchEditFormLauncherContext,
+  DispatchEditFormLauncherState,
 } from "../state";
-import { CreateCoBuilder } from "./builder";
+import { EditCoBuilder } from "./builder";
+import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
 
 export const initCo = <
   T extends DispatchInjectablesTypes<T>,
@@ -30,12 +29,12 @@ export const initCo = <
   ExtraContext,
 >(
   Co: ReturnType<
-    typeof CreateCoBuilder<T, Flags, CustomPresentationContexts, ExtraContext>
+    typeof EditCoBuilder<T, Flags, CustomPresentationContexts, ExtraContext>
   >,
 ) => {
   const setChecked = (checked: boolean) =>
     Co.SetState(
-      DispatchCreateFormLauncherState<
+      DispatchEditFormLauncherState<
         T,
         Flags
       >().Updaters.Core.apiChecker.children.init(
@@ -45,14 +44,14 @@ export const initCo = <
       ),
     );
 
-  const defaultValueCo = (
-    defaultApi: () => Promise<PredicateValue>,
-    createFormLauncher: DispatchParsedCreateLauncher<T>,
+  const getValueCo = (
+    getValueApi: () => Promise<PredicateValue>,
+    editFormLauncher: DispatchParsedEditLauncher<T>,
   ) =>
     Synchronize<Unit, PredicateValue>(
       () =>
-        defaultApi().then((raw) => {
-          const result = createFormLauncher.fromApiParser(raw);
+        getValueApi().then((raw) => {
+          const result = editFormLauncher.fromApiParser(raw);
           return result.kind == "errors"
             ? Promise.reject(result.errors)
             : Promise.resolve(result.value);
@@ -61,14 +60,14 @@ export const initCo = <
       5,
       50,
     ).embed(
-      (_: DispatchCreateFormLauncherState<T, Flags>) => _.entity,
-      DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity,
+      (_: DispatchEditFormLauncherState<T, Flags>) => _.entity,
+      DispatchEditFormLauncherState<T, Flags>().Updaters.Core.entity,
     );
 
   const configValueCo = (
     getGlobalConfig: () => Promise<PredicateValue>,
-    createFormLauncher: DispatchParsedCreateLauncher<T>,
-    current: DispatchCreateFormLauncherContext<
+    createFormLauncher: DispatchParsedEditLauncher<T>,
+    current: DispatchEditFormLauncherContext<
       T,
       Flags,
       CustomPresentationContexts,
@@ -85,11 +84,11 @@ export const initCo = <
               : Promise.resolve(result.value);
           }),
         ).embed(
-          (_: DispatchCreateFormLauncherState<T, Flags>) => _.config,
-          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.config,
+          (_: DispatchEditFormLauncherState<T, Flags>) => _.config,
+          DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config,
         )
       : Co.SetState(
-          DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.config(
+          DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config(
             replaceWith(
               current.launcherRef.config.value.kind == "l" &&
                 current.launcherRef.config.value.value.kind == "value"
@@ -105,7 +104,7 @@ export const initCo = <
         );
 
   const errorUpd = (errors: List<string>) =>
-    DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
+    DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
       replaceWith<DispatchFormRunnerStatus<T, Flags>>({
         kind: "error",
         errors,
@@ -114,7 +113,7 @@ export const initCo = <
 
   return Co.Seq([
     Co.SetState(
-      DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.status(
+      DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
         replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
       ),
     ),
@@ -135,43 +134,41 @@ export const initCo = <
       const dispatcherContext =
         current.deserializedSpecification.sync.value.value.dispatcherContext;
 
-      const createFormLauncher =
-        current.deserializedSpecification.sync.value.value.launchers.create.get(
+      const editFormLauncher =
+        current.deserializedSpecification.sync.value.value.launchers.edit.get(
           current.launcherRef.name,
         );
 
-      if (createFormLauncher == undefined) {
+      if (editFormLauncher == undefined) {
         console.error(
-          `Cannot find form '${current.launcherRef.name}' in the create launchers`,
+          `Cannot find form '${current.launcherRef.name}' in the edit launchers`,
         );
 
         return Co.SetState(
           errorUpd(
             List([
-              `Cannot find form '${current.launcherRef.name}' in the create launchers`,
+              `Cannot find form '${current.launcherRef.name}' in the edit launchers`,
             ]),
           ),
         );
       }
 
-      const defaultApi = () =>
-        current.launcherRef.apiSources.entityApis.default(createFormLauncher.api)(
-          "",
-        );
+      const getApi = () =>
+        current.launcherRef.apiSources.entityApis.get(editFormLauncher.api)("");
       const getGlobalConfig =
         current.launcherRef.config.source == "api" &&
         current.launcherRef.config.getGlobalConfig
           ? current.launcherRef.config.getGlobalConfig
           : () =>
               current.launcherRef.apiSources.entityApis.get(
-                createFormLauncher.configApi,
+                editFormLauncher.configApi,
               )("");
 
       return Co.Seq([
         Co.Seq([
           Co.All([
-            defaultValueCo(defaultApi, createFormLauncher),
-            configValueCo(getGlobalConfig, createFormLauncher, current),
+            getValueCo(getApi, editFormLauncher),
+            configValueCo(getGlobalConfig, editFormLauncher, current),
           ]),
           Co.UpdateState((_) => {
             if (_.entity.sync.kind == "error") {
@@ -213,7 +210,7 @@ export const initCo = <
             };
 
             const Form = Dispatcher.Operations.Dispatch(
-              createFormLauncher.renderer,
+              editFormLauncher.renderer,
               dispatcherContextWithApiSources,
               false,
               false,
@@ -229,7 +226,7 @@ export const initCo = <
               current.launcherRef.apiSources.infiniteStreamSources,
               current.launcherRef.apiSources.lookupSources,
               current.launcherRef.apiSources.tableApiSources,
-            )(createFormLauncher.type, createFormLauncher.renderer);
+            )(editFormLauncher.type, editFormLauncher.renderer);
 
             if (initialState.kind == "errors") {
               console.error(
@@ -238,28 +235,24 @@ export const initCo = <
               return errorUpd(initialState.errors);
             }
 
-            return DispatchCreateFormLauncherState<T, Flags>()
+            return DispatchEditFormLauncherState<T, Flags>()
               .Updaters.Core.formState(replaceWith(initialState.value))
               .thenMany([
-                DispatchCreateFormLauncherState<
-                  T,
-                  Flags
-                >().Updaters.Core.status(
+                DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
                   replaceWith<DispatchFormRunnerStatus<T, Flags>>({
                     kind: "loaded",
                     Form: Form.value,
                   }),
                 ),
-                DispatchCreateFormLauncherState<
-                  T,
-                  Flags
-                >().Updaters.Core.config(replaceWith(_.config)),
+                DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config(
+                  replaceWith(_.config),
+                ),
               ]);
           }),
         ]),
         HandleApiResponse<
-          DispatchCreateFormLauncherState<T, Flags>,
-          DispatchCreateFormLauncherContext<
+          DispatchEditFormLauncherState<T, Flags>,
+          DispatchEditFormLauncherContext<
             T,
             Flags,
             CustomPresentationContexts,
@@ -267,8 +260,8 @@ export const initCo = <
           >,
           any
         >((_) => _.entity.sync, {
-          handleSuccess: current.launcherRef.apiHandlers?.onDefaultSuccess,
-          handleError: current.launcherRef.apiHandlers?.onDefaultError,
+          handleSuccess: current.launcherRef.apiHandlers?.onGetSuccess,
+          handleError: current.launcherRef.apiHandlers?.onGetError,
         }),
         setChecked(true),
       ]);
