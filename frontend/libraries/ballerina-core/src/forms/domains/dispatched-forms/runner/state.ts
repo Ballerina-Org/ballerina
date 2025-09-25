@@ -57,6 +57,15 @@ export type EditLauncherRef<Flags = Unit> = {
   kind: "edit";
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
+  config:
+    | {
+        source: "entity";
+        value: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+      }
+    | {
+        source: "api";
+        getGlobalConfig?: () => Promise<any>;
+      };
 } & BaseLauncherRef;
 
 export type CreateLauncherRef<Flags = Unit> = {
