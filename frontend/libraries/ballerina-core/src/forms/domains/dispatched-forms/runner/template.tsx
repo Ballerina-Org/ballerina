@@ -11,7 +11,6 @@ import {
   PassthroughLauncherRef,
 } from "./state";
 
-import { DispatchFormRunner } from "./coroutines/runner";
 import {
   Template,
   unit,
@@ -138,5 +137,5 @@ export const DispatchFormRunnerTemplate = <
     return (
       props.context.errorComponent ?? <>Error: Check console for details</>
     );
-  }).any([DispatchFormRunner()]);
+  });
 };

@@ -22,9 +22,6 @@ import {
   DispatchInjectedPrimitive,
   DispatchOnChange,
   AggregatedFlags,
-  Synchronized,
-  AsyncState,
-  Debounced,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
