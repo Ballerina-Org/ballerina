@@ -59,22 +59,20 @@ export type ApiSources = {
   lookupSources?: DispatchLookupSources;
 };
 
-export type BaseLauncherRef = {
-  name: string;
-  apiSources: ApiSources;
-};
-
 export type PassthroughLauncherRef<Flags = Unit> = {
   kind: "passthrough";
+  name: string;
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   onEntityChange: DispatchOnChange<PredicateValue, Flags>;
-} & BaseLauncherRef;
+};
 
 export type EditLauncherRef<Flags = Unit> = {
   kind: "edit";
+  name: string;
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
+  apiSources: ApiSources;
   config:
     | {
         source: "entity";
@@ -84,11 +82,13 @@ export type EditLauncherRef<Flags = Unit> = {
         source: "api";
         getGlobalConfig?: () => Promise<any>;
       };
-} & BaseLauncherRef;
+};
 
 export type CreateLauncherRef<Flags = Unit> = {
   kind: "create";
+  name: string;
   apiHandlers?: FormRefCreateApiHandlers<any>;
+  apiSources: ApiSources;
   config:
     | {
         source: "entity";
@@ -98,7 +98,7 @@ export type CreateLauncherRef<Flags = Unit> = {
         source: "api";
         getGlobalConfig?: () => Promise<any>;
       };
-} & BaseLauncherRef;
+};
 
 export type LauncherRef<Flags = Unit> =
   | PassthroughLauncherRef<Flags>
