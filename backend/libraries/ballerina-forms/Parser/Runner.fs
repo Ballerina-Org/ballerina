@@ -210,15 +210,7 @@ module Runner =
         }
 
       state.Any(
-        NonEmptyList.OfList(
-          crudCase "create" CrudMethod.Create,
-          [ crudCase "delete" CrudMethod.Delete
-            crudCase "get" CrudMethod.Get
-            crudCase "getAll" CrudMethod.GetAll
-            crudCase "getManyLinked" CrudMethod.GetManyLinked
-            crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked
-            crudCase "default" CrudMethod.Default ]
-        )
+        NonEmptyList.OfList(crudCase "get" CrudMethod.Get, [ crudCase "getManyUnlinked" CrudMethod.GetManyUnlinked ])
       )
 
   type TableMethod with
