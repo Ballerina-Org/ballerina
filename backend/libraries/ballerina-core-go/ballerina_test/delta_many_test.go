@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	ballerina "ballerina.com/core"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -13,7 +14,7 @@ type DeltaManySerializationTestSuite struct {
 
 func (s *DeltaManySerializationTestSuite) TestLinkedItems() {
 	delta := ballerina.NewDeltaManyLinkedItems(
-		ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString]("linked item"),
+		ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString, uuid.UUID]("linked item"),
 	)
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
@@ -21,7 +22,7 @@ func (s *DeltaManySerializationTestSuite) TestLinkedItems() {
 
 func (s *DeltaManySerializationTestSuite) TestUnlinkedItems() {
 	delta := ballerina.NewDeltaManyUnlinkedItems(
-		ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString]("unlinked item"),
+		ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString, uuid.UUID]("unlinked item"),
 	)
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
@@ -29,7 +30,7 @@ func (s *DeltaManySerializationTestSuite) TestUnlinkedItems() {
 
 func (s *DeltaManySerializationTestSuite) TestAllItems() {
 	delta := ballerina.NewDeltaManyAllItems(
-		ballerina.NewDeltaChunkAdd[ballerina.ManyItem[string], ballerina.DeltaManyItem[string, ballerina.DeltaString]](
+		ballerina.NewDeltaChunkAdd[ballerina.ManyItem[string], ballerina.DeltaManyItem[string, ballerina.DeltaString], uuid.UUID](
 			ballerina.NewManyItem("all item", true, true),
 		),
 	)

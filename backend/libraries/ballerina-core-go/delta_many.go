@@ -13,24 +13,24 @@ const (
 	manyAllItems      deltaManyEffectsEnum = "ManyAllItems"
 )
 
-type DeltaMany[T any, deltaT any] struct {
+type DeltaMany[T any, deltaT any, ID comparable] struct {
 	DeltaBase
 	discriminator deltaManyEffectsEnum
-	linkedItems   *DeltaChunk[T, deltaT]
-	unlinkedItems *DeltaChunk[T, deltaT]
-	allItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
+	linkedItems   *DeltaChunk[T, deltaT, ID]
+	unlinkedItems *DeltaChunk[T, deltaT, ID]
+	allItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT], ID]
 }
 
-var _ json.Unmarshaler = &DeltaMany[Unit, Unit]{}
-var _ json.Marshaler = DeltaMany[Unit, Unit]{}
+var _ json.Unmarshaler = &DeltaMany[Unit, Unit, Unit]{}
+var _ json.Marshaler = DeltaMany[Unit, Unit, Unit]{}
 
-func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
+func (d DeltaMany[T, deltaT, ID]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		DeltaBase
 		Discriminator deltaManyEffectsEnum
-		LinkedItems   *DeltaChunk[T, deltaT]
-		UnlinkedItems *DeltaChunk[T, deltaT]
-		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
+		LinkedItems   *DeltaChunk[T, deltaT, ID]
+		UnlinkedItems *DeltaChunk[T, deltaT, ID]
+		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT], ID]
 	}{
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
@@ -41,13 +41,13 @@ func (d DeltaMany[T, deltaT]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
+func (d *DeltaMany[T, deltaT, ID]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		DeltaBase
 		Discriminator deltaManyEffectsEnum
-		LinkedItems   *DeltaChunk[T, deltaT]
-		UnlinkedItems *DeltaChunk[T, deltaT]
-		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]
+		LinkedItems   *DeltaChunk[T, deltaT, ID]
+		UnlinkedItems *DeltaChunk[T, deltaT, ID]
+		AllItems      *DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT], ID]
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
@@ -62,53 +62,53 @@ func (d *DeltaMany[T, deltaT]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaManyLinkedItems[T any, deltaT any](delta DeltaChunk[T, deltaT]) DeltaMany[T, deltaT] {
-	return DeltaMany[T, deltaT]{
+func NewDeltaManyLinkedItems[T any, deltaT any, ID comparable](delta DeltaChunk[T, deltaT, ID]) DeltaMany[T, deltaT, ID] {
+	return DeltaMany[T, deltaT, ID]{
 		discriminator: manyLinkedItems,
 		linkedItems:   &delta,
 	}
 }
 
-func NewDeltaManyUnlinkedItems[T any, deltaT any](delta DeltaChunk[T, deltaT]) DeltaMany[T, deltaT] {
-	return DeltaMany[T, deltaT]{
+func NewDeltaManyUnlinkedItems[T any, deltaT any, ID comparable](delta DeltaChunk[T, deltaT, ID]) DeltaMany[T, deltaT, ID] {
+	return DeltaMany[T, deltaT, ID]{
 		discriminator: manyUnlinkedItems,
 		unlinkedItems: &delta,
 	}
 }
 
-func NewDeltaManyAllItems[T any, deltaT any](delta DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) DeltaMany[T, deltaT] {
-	return DeltaMany[T, deltaT]{
+func NewDeltaManyAllItems[T any, deltaT any, ID comparable](delta DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT], ID]) DeltaMany[T, deltaT, ID] {
+	return DeltaMany[T, deltaT, ID]{
 		discriminator: manyAllItems,
 		allItems:      &delta,
 	}
 }
 
-func MatchDeltaMany[T any, deltaT any, Result any](
-	onLinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
-	onUnlinkedItems func(DeltaChunk[T, deltaT]) func(ReaderWithError[Unit, Chunk[T]]) (Result, error),
-	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT]]) func(ReaderWithError[Unit, Chunk[ManyItem[T]]]) (Result, error),
-) func(DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
-	return func(delta DeltaMany[T, deltaT]) func(ReaderWithError[Unit, Many[T]]) (Result, error) {
-		return func(many ReaderWithError[Unit, Many[T]]) (Result, error) {
+func MatchDeltaMany[T any, deltaT any, Result any, ID comparable](
+	onLinkedItems func(DeltaChunk[T, deltaT, ID]) func(ReaderWithError[Unit, Chunk[T, ID]]) (Result, error),
+	onUnlinkedItems func(DeltaChunk[T, deltaT, ID]) func(ReaderWithError[Unit, Chunk[T, ID]]) (Result, error),
+	onAllItems func(DeltaChunk[ManyItem[T], DeltaManyItem[T, deltaT], ID]) func(ReaderWithError[Unit, Chunk[ManyItem[T], ID]]) (Result, error),
+) func(DeltaMany[T, deltaT, ID]) func(ReaderWithError[Unit, Many[T, ID]]) (Result, error) {
+	return func(delta DeltaMany[T, deltaT, ID]) func(ReaderWithError[Unit, Many[T, ID]]) (Result, error) {
+		return func(many ReaderWithError[Unit, Many[T, ID]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case manyLinkedItems:
-				linkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
-					func(many Many[T]) Chunk[T] {
+				linkedItems := MapReaderWithError[Unit, Many[T, ID], Chunk[T, ID]](
+					func(many Many[T, ID]) Chunk[T, ID] {
 						return many.LinkedItems
 					},
 				)(many)
 				return onLinkedItems(*delta.linkedItems)(linkedItems)
 			case manyUnlinkedItems:
-				unlinkedItems := MapReaderWithError[Unit, Many[T], Chunk[T]](
-					func(many Many[T]) Chunk[T] {
+				unlinkedItems := MapReaderWithError[Unit, Many[T, ID], Chunk[T, ID]](
+					func(many Many[T, ID]) Chunk[T, ID] {
 						return many.UnlinkedItems
 					},
 				)(many)
 				return onUnlinkedItems(*delta.unlinkedItems)(unlinkedItems)
 			case manyAllItems:
-				allItems := MapReaderWithError[Unit, Many[T], Chunk[ManyItem[T]]](
-					func(many Many[T]) Chunk[ManyItem[T]] {
+				allItems := MapReaderWithError[Unit, Many[T, ID], Chunk[ManyItem[T], ID]](
+					func(many Many[T, ID]) Chunk[ManyItem[T], ID] {
 						return many.AllItems
 					},
 				)(many)

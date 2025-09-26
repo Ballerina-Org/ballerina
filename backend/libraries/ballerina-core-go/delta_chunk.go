@@ -3,8 +3,6 @@ package ballerina
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/google/uuid"
 )
 
 type deltaChunkEffectsEnum string
@@ -18,29 +16,29 @@ const (
 	chunkAdd         deltaChunkEffectsEnum = "ChunkAdd"
 )
 
-type DeltaChunk[a any, deltaA any] struct {
+type DeltaChunk[a any, deltaA any, ID comparable] struct {
 	DeltaBase
 	discriminator deltaChunkEffectsEnum
-	value         *Tuple2[uuid.UUID, deltaA]
-	addAt         *Tuple2[uuid.UUID, a]
-	removeAt      *uuid.UUID
-	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-	duplicateAt   *uuid.UUID
+	value         *Tuple2[ID, deltaA]
+	addAt         *Tuple2[ID, a]
+	removeAt      *ID
+	moveFromTo    *Tuple2[ID, ID]
+	duplicateAt   *ID
 	add           *a
 }
 
-var _ json.Unmarshaler = &DeltaChunk[Unit, Unit]{}
-var _ json.Marshaler = DeltaChunk[Unit, Unit]{}
+var _ json.Unmarshaler = &DeltaChunk[Unit, Unit, Unit]{}
+var _ json.Marshaler = DeltaChunk[Unit, Unit, Unit]{}
 
-func (d DeltaChunk[a, deltaA]) MarshalJSON() ([]byte, error) {
+func (d DeltaChunk[a, deltaA, ID]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		DeltaBase
 		Discriminator deltaChunkEffectsEnum
-		Value         *Tuple2[uuid.UUID, deltaA]
-		AddAt         *Tuple2[uuid.UUID, a]
-		RemoveAt      *uuid.UUID
-		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-		DuplicateAt   *uuid.UUID
+		Value         *Tuple2[ID, deltaA]
+		AddAt         *Tuple2[ID, a]
+		RemoveAt      *ID
+		MoveFromTo    *Tuple2[ID, ID]
+		DuplicateAt   *ID
 		Add           *a
 	}{
 		DeltaBase:     d.DeltaBase,
@@ -54,15 +52,15 @@ func (d DeltaChunk[a, deltaA]) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
+func (d *DeltaChunk[a, deltaA, ID]) UnmarshalJSON(data []byte) error {
 	type chunkAlias struct {
 		DeltaBase
 		Discriminator deltaChunkEffectsEnum
-		Value         *Tuple2[uuid.UUID, deltaA]
-		AddAt         *Tuple2[uuid.UUID, a]
-		RemoveAt      *uuid.UUID
-		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-		DuplicateAt   *uuid.UUID
+		Value         *Tuple2[ID, deltaA]
+		AddAt         *Tuple2[ID, a]
+		RemoveAt      *ID
+		MoveFromTo    *Tuple2[ID, ID]
+		DuplicateAt   *ID
 		Add           *a
 	}
 	var aux chunkAlias
@@ -82,61 +80,61 @@ func (d *DeltaChunk[a, deltaA]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaChunkValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaChunk[a, deltaA] {
-	tmp := NewTuple2[uuid.UUID, deltaA](index, delta)
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkValue[a any, deltaA any, ID comparable](index ID, delta deltaA) DeltaChunk[a, deltaA, ID] {
+	tmp := NewTuple2[ID, deltaA](index, delta)
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkValue,
 		value:         &tmp,
 	}
 }
-func NewDeltaChunkAddAt[a any, deltaA any](index uuid.UUID, newElement a) DeltaChunk[a, deltaA] {
-	tmp := NewTuple2[uuid.UUID, a](index, newElement)
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkAddAt[a any, deltaA any, ID comparable](index ID, newElement a) DeltaChunk[a, deltaA, ID] {
+	tmp := NewTuple2[ID, a](index, newElement)
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkAddAt,
 		addAt:         &tmp,
 	}
 }
-func NewDeltaChunkRemoveAt[a any, deltaA any](index uuid.UUID) DeltaChunk[a, deltaA] {
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkRemoveAt[a any, deltaA any, ID comparable](index ID) DeltaChunk[a, deltaA, ID] {
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkRemoveAt,
 		removeAt:      &index,
 	}
 }
-func NewDeltaChunkMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaChunk[a, deltaA] {
-	tmp := NewTuple2[uuid.UUID, uuid.UUID](from, to)
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkMoveFromTo[a any, deltaA any, ID comparable](from ID, to ID) DeltaChunk[a, deltaA, ID] {
+	tmp := NewTuple2[ID, ID](from, to)
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkMoveFromTo,
 		moveFromTo:    &tmp,
 	}
 }
-func NewDeltaChunkDuplicateAt[a any, deltaA any](index uuid.UUID) DeltaChunk[a, deltaA] {
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkDuplicateAt[a any, deltaA any, ID comparable](index ID) DeltaChunk[a, deltaA, ID] {
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkDuplicateAt,
 		duplicateAt:   &index,
 	}
 }
-func NewDeltaChunkAdd[a any, deltaA any](newElement a) DeltaChunk[a, deltaA] {
-	return DeltaChunk[a, deltaA]{
+func NewDeltaChunkAdd[a any, deltaA any, ID comparable](newElement a) DeltaChunk[a, deltaA, ID] {
+	return DeltaChunk[a, deltaA, ID]{
 		discriminator: chunkAdd,
 		add:           &newElement,
 	}
 }
 
-func MatchDeltaChunk[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
-	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
-	onRemoveAt func(uuid.UUID) (Result, error),
-	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
-	onDuplicateAt func(uuid.UUID) (Result, error),
+func MatchDeltaChunk[a any, deltaA any, Result any, ID comparable](
+	onValue func(Tuple2[ID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
+	onAddAt func(Tuple2[ID, a]) (Result, error),
+	onRemoveAt func(ID) (Result, error),
+	onMoveFromTo func(Tuple2[ID, ID]) (Result, error),
+	onDuplicateAt func(ID) (Result, error),
 	onAdd func(a) (Result, error),
-) func(DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
-	return func(delta DeltaChunk[a, deltaA]) func(ReaderWithError[Unit, Chunk[a]]) (Result, error) {
-		return func(chunk ReaderWithError[Unit, Chunk[a]]) (Result, error) {
+) func(DeltaChunk[a, deltaA, ID]) func(ReaderWithError[Unit, Chunk[a, ID]]) (Result, error) {
+	return func(delta DeltaChunk[a, deltaA, ID]) func(ReaderWithError[Unit, Chunk[a, ID]]) (Result, error) {
+		return func(chunk ReaderWithError[Unit, Chunk[a, ID]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case chunkValue:
-				value := MapReaderWithError[Unit, Chunk[a], a](
-					func(chunk Chunk[a]) a {
+				value := MapReaderWithError[Unit, Chunk[a, ID], a](
+					func(chunk Chunk[a, ID]) a {
 						return chunk.Values[chunk.IdToIndex[delta.value.Item1]]
 					},
 				)(chunk)
