@@ -1877,10 +1877,37 @@ export const dispatchToAPIRawValue =
           );
         }
 
+        const filteredRawValues = raw.fields.filter((value) => {
+          if (!PredicateValue.Operations.IsRecord(value)) {
+            console.warn(
+              "Received a non-record value in a multi selection, ignoring: ",
+              JSON.stringify(value),
+            );
+            return false;
+          }
+
+          const fieldsObject = value.fields.toJS();
+
+          if (
+            !CollectionReference.Operations.IsCollectionReference(
+              fieldsObject,
+            ) &&
+            !EnumReference.Operations.IsEnumReference(fieldsObject)
+          ) {
+            console.warn(
+              "Received a non-collection or enum reference value in a multi selection, ignoring: ",
+              JSON.stringify(value),
+            );
+            return false;
+          }
+          return true;
+        });
+
         const rawValue: Map<
           string,
           ValueOrErrors<CollectionReference | EnumReference, string>
-        > = raw.fields.map((value) => {
+        > = filteredRawValues.map((value) => {
+          // should never happen due to the filter above but is a type check
           if (!PredicateValue.Operations.IsRecord(value)) {
             return ValueOrErrors.Default.throwOne(
               `Record expected but got ${JSON.stringify(value)}`,
@@ -1900,6 +1927,7 @@ export const dispatchToAPIRawValue =
               )}`,
             );
           }
+
           return ValueOrErrors.Default.return(fieldsObject);
         });
 
