@@ -216,14 +216,8 @@ module Model =
 
 
   type CrudMethod =
-    | Create
-    | Delete
     | Get
-    | GetAll
-    | GetManyLinked
     | GetManyUnlinked
-    | Update
-    | Default
 
   type FormLauncherId =
     { LauncherName: LauncherName
