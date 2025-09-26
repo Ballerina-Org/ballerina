@@ -429,43 +429,49 @@ export const parseDispatchFormsToLaunchers =
                     () =>
                       `cannot find global config api "${launcher.configApi}" when parsing launchers`,
                   ).Then((globalConfigApi) =>
-                    ValueOrErrors.Default.return([
-                      launcherName,
-                      {
-                        kind: "create",
-                        renderer: parsedForm,
-                        type: parsedForm.type,
-                        fromApiParser: (raw: any) =>
-                          dispatchFromAPIRawValue(
-                            parsedForm.type,
-                            specification.types,
-                            apiConverters,
-                            injectedPrimitives,
-                          )(raw),
-                        parseGlobalConfigurationFromApi: (raw: any) =>
-                          dispatchFromAPIRawValue(
-                            // TODO: use tryFindWithError
-                            specification.types.get(globalConfigApi.type)!,
-                            specification.types,
-                            apiConverters,
-                            injectedPrimitives,
-                          )(raw),
-                        toApiParser: (
-                          value: PredicateValue,
-                          type: DispatchParsedType<T>,
-                          formState: any,
-                        ) =>
-                          dispatchToAPIRawValue(
-                            type,
-                            specification.types,
-                            apiConverters,
-                            injectedPrimitives,
-                          )(value, formState),
-                        formName: launcher.form,
-                        api: launcher.api,
-                        configApi: launcher.configApi,
-                      },
-                    ]),
+                    MapRepo.Operations.tryFindWithError(
+                      globalConfigApi.type,
+                      specification.types,
+                      () =>
+                        `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
+                    ).Then((globalConfigType) =>
+                      ValueOrErrors.Default.return([
+                        launcherName,
+                        {
+                          kind: "create",
+                          renderer: parsedForm,
+                          type: parsedForm.type,
+                          fromApiParser: (raw: any) =>
+                            dispatchFromAPIRawValue(
+                              parsedForm.type,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(raw),
+                          parseGlobalConfigurationFromApi: (raw: any) =>
+                            dispatchFromAPIRawValue(
+                              globalConfigType,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(raw),
+                          toApiParser: (
+                            value: PredicateValue,
+                            type: DispatchParsedType<T>,
+                            formState: any,
+                          ) =>
+                            dispatchToAPIRawValue(
+                              type,
+                              specification.types,
+                              apiConverters,
+                              injectedPrimitives,
+                            )(value, formState),
+                          formName: launcher.form,
+                          api: launcher.api,
+                          configApi: launcher.configApi,
+                        },
+                      ]),
+                    ),
                   ),
                 ),
               ),
@@ -495,43 +501,49 @@ export const parseDispatchFormsToLaunchers =
                         () =>
                           `cannot find global config api "${launcher.configApi}" when parsing launchers`,
                       ).Then((globalConfigApi) =>
-                        ValueOrErrors.Default.return([
-                          launcherName,
-                          {
-                            kind: "edit",
-                            renderer: parsedForm,
-                            type: parsedForm.type,
-                            fromApiParser: (raw: any) =>
-                              dispatchFromAPIRawValue(
-                                parsedForm.type,
-                                specification.types,
-                                apiConverters,
-                                injectedPrimitives,
-                              )(raw),
-                            parseGlobalConfigurationFromApi: (raw: any) =>
-                              dispatchFromAPIRawValue(
-                                // TODO: use tryFindWithError
-                                specification.types.get(globalConfigApi.type)!,
-                                specification.types,
-                                apiConverters,
-                                injectedPrimitives,
-                              )(raw),
-                            toApiParser: (
-                              value: PredicateValue,
-                              type: DispatchParsedType<T>,
-                              formState: any,
-                            ) =>
-                              dispatchToAPIRawValue(
-                                type,
-                                specification.types,
-                                apiConverters,
-                                injectedPrimitives,
-                              )(value, formState),
-                            formName: launcher.form,
-                            api: launcher.api,
-                            configApi: launcher.configApi,
-                          },
-                        ]),
+                        MapRepo.Operations.tryFindWithError(
+                          globalConfigApi.type,
+                          specification.types,
+                          () =>
+                            `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
+                        ).Then((globalConfigType) =>
+                          ValueOrErrors.Default.return([
+                            launcherName,
+                            {
+                              kind: "edit",
+                              renderer: parsedForm,
+                              type: parsedForm.type,
+                              fromApiParser: (raw: any) =>
+                                dispatchFromAPIRawValue(
+                                  parsedForm.type,
+                                  specification.types,
+                                  apiConverters,
+                                  injectedPrimitives,
+                                )(raw),
+                              parseGlobalConfigurationFromApi: (raw: any) =>
+                                dispatchFromAPIRawValue(
+                                  globalConfigType,
+                                  specification.types,
+                                  apiConverters,
+                                  injectedPrimitives,
+                                )(raw),
+                              toApiParser: (
+                                value: PredicateValue,
+                                type: DispatchParsedType<T>,
+                                formState: any,
+                              ) =>
+                                dispatchToAPIRawValue(
+                                  type,
+                                  specification.types,
+                                  apiConverters,
+                                  injectedPrimitives,
+                                )(value, formState),
+                              formName: launcher.form,
+                              api: launcher.api,
+                              configApi: launcher.configApi,
+                            },
+                          ]),
+                        ),
                       ),
                     ),
                   ),

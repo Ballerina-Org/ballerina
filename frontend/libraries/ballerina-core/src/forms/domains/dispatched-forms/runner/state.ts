@@ -1,6 +1,7 @@
 import { List } from "immutable";
 import {
   BasicFun,
+  DispatchParsedType,
   DispatchSpecificationDeserializationResult,
   DispatchFormsParserState,
   PredicateValue,
@@ -22,9 +23,10 @@ import {
   Guid,
   BasicUpdater,
   Updater,
+  Renderer,
+  DispatcherContext,
 } from "../../../../../main";
 import {
-  DispatchCreateFormLauncherApi,
   DispatchCreateFormLauncherState,
 } from "./domains/kind/create/state";
 import {
@@ -32,6 +34,22 @@ import {
   DispatchEditFormLauncherState,
 } from "./domains/kind/edit/state";
 import { DispatchPassthroughFormLauncherState } from "./domains/kind/passthrough/state";
+
+export type DispatcherContextWithApiSources<
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContexts,
+  ExtraContext,
+> = Omit<
+  DispatcherContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  "defaultState"
+> &
+  ApiSources & {
+    defaultState: (
+      t: DispatchParsedType<T>,
+      renderer: Renderer<T>,
+    ) => ValueOrErrors<any, string>;
+  };
 
 export type ApiSources = {
   infiniteStreamSources: DispatchInfiniteStreamSources;
