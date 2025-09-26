@@ -155,9 +155,9 @@ export const initCo = <
       }
 
       const defaultApi = () =>
-        current.launcherRef.apiSources.entityApis.default(createFormLauncher.api)(
-          "",
-        );
+        current.launcherRef.apiSources.entityApis.default(
+          createFormLauncher.api,
+        )("");
       const getGlobalConfig =
         current.launcherRef.config.source == "api" &&
         current.launcherRef.config.getGlobalConfig
