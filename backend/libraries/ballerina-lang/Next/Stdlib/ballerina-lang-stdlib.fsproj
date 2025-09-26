@@ -9,6 +9,7 @@
         <Compile Include="Extensions/Patterns.fs" />
         <Compile Include="Extensions/Types.fs" />
         <Compile Include="Extensions/Operations.fs" />
+        <Compile Include="Extensions/TypeLambdas.fs" />
 
         <Compile Include="Option/Model.fs" />
         <Compile Include="Option/Patterns.fs" />
@@ -48,6 +49,9 @@
         <Compile Include="DateOnly/Model.fs" />
         <Compile Include="DateOnly/Patterns.fs" />
         <Compile Include="DateOnly/Extension.fs" />
+        <Compile Include="TimeSpan/Model.fs" />
+        <Compile Include="TimeSpan/Patterns.fs" />
+        <Compile Include="TimeSpan/Extension.fs" />
     </ItemGroup>
     <ItemGroup>
         <!--

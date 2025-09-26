@@ -12,13 +12,44 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
+  let private dateTimeTypeValue = TypeValue.CreateDateTime()
   let private dateOnlyTypeValue = TypeValue.CreateDateOnly()
-
+  let private timeSpanTypeValue = TypeValue.CreateTimeSpan()
   let private boolTypeValue = TypeValue.CreateBool()
+  let private int32TypeValue = TypeValue.CreateInt32()
 
   let DateOnlyExtension<'ext>
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
     : OperationsExtension<'ext, DateOnlyOperations<'ext>> =
+
+    let dateOnlyDiffId = Identifier.FullyQualified([ "DateOnly" ], "-")
+
+    let diffOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyDiffId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, timeSpanTypeValue))
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.Diff {| v1 = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.Diff v -> Some(DateOnlyOperations.Diff v)
+            | _ -> None)
+        Apply =
+          fun (op, v) ->
+            reader {
+              let! op = op |> DateOnlyOperations.AsDiff |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return DateOnlyOperations.Diff({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+                let dateTime1 = System.DateTime(vClosure.Year, vClosure.Month, vClosure.Day)
+                let dateTime2 = System.DateTime(v.Year, v.Month, v.Day)
+                let difference = dateTime1 - dateTime2
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(difference))
+            } }
 
     let dateOnlyEqualId = Identifier.FullyQualified([ "DateOnly" ], "==")
 
@@ -189,49 +220,169 @@ module Extension =
             } }
 
 
-    // let dateOnlyToDateTimeId = Identifier.FullyQualified([ "DateOnly" ], "toDateTime")
+    let dateOnlyToDateTimeId = Identifier.FullyQualified([ "DateOnly" ], "toDateTime")
 
-    // let toDateTimeOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
-    //   dateOnlyToDateTimeId,
-    //   { Type =
-    //       TypeValCons.Arrow(
-    //         TypeValCons.Primitive PrimitiveType.DateOnly,
-    //         TypeValCons.Arrow(
-    //           TypeValCons.Primitive PrimitiveType.Int32,
-    //           TypeValCons.Arrow(
-    //             TypeValCons.Primitive PrimitiveType.Int32,
-    //             TypeValCons.Arrow(TypeValCons.Primitive PrimitiveType.Int32, TypeValCons.Primitive PrimitiveType.DateTime)
-    //           )
-    //         )
-    //       )
-    //     Kind = Kind.Star
-    //     Operation = DateOnlyOperations.ToDateTime {| v1 = None |}
-    //     OperationsLens =
-    //       operationLens
-    //       |> PartialLens.BindGet (function
-    //         | DateOnlyOperations.ToDateTime v -> Some(DateOnlyOperations.ToDateTime v)
-    //         | _ -> None)
-    //     Apply =
-    //       fun (op, v) ->
-    //         reader {
-    //           let! op = op |> DateOnlyOperations.AsToDateTime |> reader.OfSum
-    //           let! v = v |> Value.AsPrimitive |> reader.OfSum
-    //           let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+    let toDateTimeOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyToDateTimeId,
+      { Type =
+          TypeValue.CreateArrow(
+            dateOnlyTypeValue,
+            TypeValue.CreateArrow(
+              TypeValue.CreateTuple [ int32TypeValue; int32TypeValue; int32TypeValue ],
+              dateTimeTypeValue
+            )
+          )
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.ToDateTime {| v1 = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.ToDateTime v -> Some(DateOnlyOperations.ToDateTime v)
+            | _ -> None)
+        Apply =
+          fun (op, v) ->
+            reader {
+              let! op = op |> DateOnlyOperations.AsToDateTime |> reader.OfSum
 
-    //           match op with
-    //           | None -> // the closure is empty - first step in the application
-    //             return DateOnlyOperations.ToDateTime({| v1 = Some v |}) |> operationLens.Set |> Ext
-    //           | Some vClosure -> // the closure has the first operand - second step in the application
+              match op, v with
+              | None, Value.Primitive(PrimitiveValue.Date v) -> // the closure is empty - first step in the application
+                return DateOnlyOperations.ToDateTime {| v1 = Some(v) |} |> operationLens.Set |> Ext
+              | Some(vClosure), Value.Tuple v -> // the closure has the first operand - second step in the application
+                let! v = v |> List.map (fun v -> v |> Value.AsPrimitive |> reader.OfSum) |> reader.All
 
-    //             return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
-    //         } }
+                let! v =
+                  v
+                  |> List.map (fun v -> v |> PrimitiveValue.AsInt32 |> reader.OfSum)
+                  |> reader.All
+
+                match v with
+                | [ v1; v2; v3 ] ->
+                  let dateTime =
+                    System.DateTime(vClosure.Year, vClosure.Month, vClosure.Day, v1, v2, v3)
+
+                  return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.DateTime(dateTime))
+                | _ -> return! sum.Throw(Errors.Singleton "Expected a tuple of 3 int32s") |> reader.OfSum
+              | _ -> return! sum.Throw(Errors.Singleton "Expected a tuple or date") |> reader.OfSum
+            } }
+
+    let dateOnlyYearId = Identifier.FullyQualified([ "DateOnly" ], "getYear")
+
+    let yearOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyYearId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.Year
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.Year -> Some(DateOnlyOperations.Year)
+            | _ -> None)
+        Apply =
+          fun (_, v) ->
+            reader {
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
+            } }
+
+    let dateOnlyMonthId = Identifier.FullyQualified([ "DateOnly" ], "getMonth")
+
+    let monthOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyMonthId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.Month
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.Month -> Some(DateOnlyOperations.Month)
+            | _ -> None)
+        Apply =
+          fun (_, v) ->
+            reader {
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
+            } }
+
+    let dateOnlyDayId = Identifier.FullyQualified([ "DateOnly" ], "getDay")
+
+    let dayOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyDayId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.Day
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.Day -> Some(DateOnlyOperations.Day)
+            | _ -> None)
+        Apply =
+          fun (_, v) ->
+            reader {
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
+            } }
+
+    let dateOnlyDayOfWeekId = Identifier.FullyQualified([ "DateOnly" ], "getDayOfWeek")
+
+    let dayOfWeekOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyDayOfWeekId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.DayOfWeek
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DayOfWeek -> Some(DateOnlyOperations.DayOfWeek)
+            | _ -> None)
+        Apply =
+          fun (_, v) ->
+            reader {
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
+            } }
+
+    let dateOnlyDayOfYearId = Identifier.FullyQualified([ "DateOnly" ], "getDayOfYear")
+
+    let dayOfYearOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyDayOfYearId,
+      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = DateOnlyOperations.DayOfYear
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DayOfYear -> Some(DateOnlyOperations.DayOfYear)
+            | _ -> None)
+        Apply =
+          fun (_, v) ->
+            reader {
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
+            } }
 
     { TypeVars = []
       Operations =
-        [ equalOperation
+        [ diffOperation
+          equalOperation
           notEqualOperation
           greaterThanOperation
           greaterThanOrEqualOperation
           lessThanOperation
-          lessThanOrEqualOperation ]
+          lessThanOrEqualOperation
+          toDateTimeOperation
+          yearOperation
+          monthOperation
+          dayOperation
+          dayOfWeekOperation
+          dayOfYearOperation ]
         |> Map.ofList }

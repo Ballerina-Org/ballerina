@@ -103,3 +103,4 @@ module Model =
     | String
     | DateTime
     | DateOnly
+    | TimeSpan

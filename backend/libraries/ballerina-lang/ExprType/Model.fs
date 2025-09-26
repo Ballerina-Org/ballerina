@@ -170,7 +170,7 @@ module Model =
         JsonValue.Record
           [| "fun", JsonValue.String "GenericApplication"
              "args", JsonValue.Array [| !f; !a |] |]
-      | ExprType.TranslationOverride label ->
+      | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
         JsonValue.Record
           [| "fun", JsonValue.String "TranslationOverride"
-             "args", JsonValue.Array [| JsonValue.String label |] |]
+             "args", JsonValue.Array [| !keyType; JsonValue.String label |] |]

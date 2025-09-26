@@ -357,11 +357,21 @@ module ExprType =
                             return!
                               sum {
                                 let! argsJson = (fields |> sum.TryFindField "args")
-                                let! args = JsonValue.AsSingleton argsJson
-                                let! arg = JsonValue.AsString args
-                                return ExprType.TranslationOverride arg
+                                let! args = JsonValue.AsArray argsJson
+
+                                match args with
+                                | [| keyType; label |] ->
+                                  let! keyType = !keyType
+                                  let! label = JsonValue.AsString label
+                                  return ExprType.TranslationOverride { Label = label; KeyType = keyType }
+                                | _ ->
+                                  return!
+                                    sum.Throw(
+                                      Errors.Singleton(sprintf "Error: expected 2 arguments, got %d" args.Length)
+                                    )
                               }
                               |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+                              |> sum.WithErrorContext "...when parsing as TranslationOverride"
                           }
                           sum {
                             do!

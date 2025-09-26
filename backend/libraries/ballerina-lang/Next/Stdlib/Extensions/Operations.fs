@@ -12,7 +12,9 @@ module Operations =
   open Ballerina.DSL.Next.Terms
 
   type OperationsExtension<'ext, 'extOperations> with
-    static member ToTypeCheckContext(opsExt: OperationsExtension<'ext, 'extOperations>) : Updater<TypeCheckContext> =
+    static member RegisterTypeCheckContext
+      (opsExt: OperationsExtension<'ext, 'extOperations>)
+      : Updater<TypeCheckContext> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
 
@@ -24,9 +26,10 @@ module Operations =
         { typeCheckContext with
             Values = values }
 
-    static member ToTypeCheckState(_opsExt: OperationsExtension<'ext, 'extOperations>) : Updater<TypeCheckState> = id // leave it here, it will be needed later
+    static member RegisterTypeCheckState(_opsExt: OperationsExtension<'ext, 'extOperations>) : Updater<TypeCheckState> =
+      id // leave it here, it will be needed later
 
-    static member ToExprEvalContext
+    static member RegisterExprEvalContext
       (opsExt: OperationsExtension<'ext, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
@@ -65,10 +68,14 @@ module Operations =
             Values = values
             ExtensionOps = { Eval = ops } }
 
-    static member ToLanguageContext
+    static member RegisterLanguageContext
       (opsExt: OperationsExtension<'ext, 'extOperations>)
       : Updater<LanguageContext<'ext>> =
       fun langCtx ->
-        { TypeCheckContext = langCtx.TypeCheckContext |> (opsExt |> OperationsExtension.ToTypeCheckContext)
-          TypeCheckState = langCtx.TypeCheckState |> (opsExt |> OperationsExtension.ToTypeCheckState)
-          ExprEvalContext = langCtx.ExprEvalContext |> (opsExt |> OperationsExtension.ToExprEvalContext) }
+        { TypeCheckContext =
+            langCtx.TypeCheckContext
+            |> (opsExt |> OperationsExtension.RegisterTypeCheckContext)
+          TypeCheckState = langCtx.TypeCheckState |> (opsExt |> OperationsExtension.RegisterTypeCheckState)
+          ExprEvalContext =
+            langCtx.ExprEvalContext
+            |> (opsExt |> OperationsExtension.RegisterExprEvalContext) }

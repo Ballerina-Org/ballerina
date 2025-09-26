@@ -64,6 +64,11 @@ module Patterns =
       | PrimitiveValue.DateTime i -> sum.Return i
       | other -> sum.Throw(Errors.Singleton $"Expected a datetime but got {other}")
 
+    static member AsTimeSpan(v: PrimitiveValue) : Sum<TimeSpan, Errors> =
+      match v with
+      | PrimitiveValue.TimeSpan i -> sum.Return i
+      | other -> sum.Throw(Errors.Singleton $"Expected a timespan but got {other}")
+
     static member AsUnit(v: PrimitiveValue) : Sum<unit, Errors> =
       match v with
       | PrimitiveValue.Unit -> sum.Return()

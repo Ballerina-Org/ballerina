@@ -193,6 +193,10 @@ module TypeCheck =
             return
               Expr.Primitive(PrimitiveValue.DateTime v), TypeValue.CreatePrimitive PrimitiveType.DateTime, Kind.Star
 
+          | Expr.Primitive(PrimitiveValue.TimeSpan v) ->
+            return
+              Expr.Primitive(PrimitiveValue.TimeSpan v), TypeValue.CreatePrimitive PrimitiveType.TimeSpan, Kind.Star
+
           | Expr.Primitive(PrimitiveValue.Decimal v) ->
             return Expr.Primitive(PrimitiveValue.Decimal v), TypeValue.CreatePrimitive PrimitiveType.Decimal, Kind.Star
 

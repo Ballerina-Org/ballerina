@@ -130,6 +130,19 @@ module Primitive =
           [| "kind", JsonValue.String "datetime"
              "datetime", JsonValue.String(d.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)) |]
 
+  type TimeSpan with
+    static member FromString: string -> Sum<TimeSpan, Errors> =
+      TimeSpan.TryParse
+      >> function
+        | true, value -> sum.Return value
+        | false, _ -> sum.Throw(Errors.Singleton "Error: expected TimeSpan, found non-TimeSpan string")
+
+    static member ToJsonString: TimeSpan -> JsonValue =
+      fun t ->
+        JsonValue.Record
+          [| "kind", JsonValue.String "timespan"
+             "timespan", JsonValue.String(t.ToString()) |]
+
   type PrimitiveValue with
     static member private FromJsonInt32 =
       sum.AssertKindAndContinueWithField
@@ -232,6 +245,14 @@ module Primitive =
         "string"
         (JsonValue.AsString >>= (PrimitiveValue.String >> sum.Return))
 
+    static member private FromJsonTimeSpan =
+      sum.AssertKindAndContinueWithField
+        "timespan"
+        "timespan"
+        (JsonValue.AsString
+         >>= TimeSpan.FromString
+         >>= (PrimitiveValue.TimeSpan >> sum.Return))
+
     static member private FromJsonUnit =
       sum.AssertKindAndContinue "unit" (fun _ -> PrimitiveValue.Unit |> sum.Return)
 
@@ -253,6 +274,7 @@ module Primitive =
           PrimitiveValue.FromJsonDate json
           PrimitiveValue.FromJsonDateTime json
           PrimitiveValue.FromJsonString json
+          PrimitiveValue.FromJsonTimeSpan json
           PrimitiveValue.FromJsonUnit json ]
       )
 
@@ -268,5 +290,6 @@ module Primitive =
         | PrimitiveValue.Guid p -> System.Guid.ToJsonString p
         | PrimitiveValue.Date p -> DateOnly.ToJsonString p
         | PrimitiveValue.DateTime p -> DateTime.ToJsonString p
+        | PrimitiveValue.TimeSpan p -> TimeSpan.ToJsonString p
         | PrimitiveValue.String p -> PrimitiveValue.ToJsonString p
         | PrimitiveValue.Unit -> PrimitiveValue.ToJsonUnit

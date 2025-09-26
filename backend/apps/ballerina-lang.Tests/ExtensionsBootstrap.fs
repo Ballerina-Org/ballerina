@@ -73,6 +73,7 @@ module TestExt =
             | _ -> None)
           Set = ListOperations >> Choice1Of3 >> ValueExt.ValueExt }
 
+
     let boolExtension =
       BoolExtension<ValueExt>
         { Get =

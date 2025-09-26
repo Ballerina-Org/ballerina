@@ -60,3 +60,12 @@ module Model =
       ValueLens: PartialLens<'ext, 'extValues> // lens to access the value inside the extension value
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value
       Apply: 'extConstructors * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+
+  and TypeLambdaExtension<'ext, 'extTypeLambda> =
+    { Id: Identifier // example: "predict"
+      Type: TypeValue // Example: "a => str -> a"
+      Kind: Kind // Example: * => *
+      Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
+      ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
+      EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)
+      EvalToApplicable: ExtensionEvaluator<'ext> } // implementation of what happens at runtime when the extension is applied

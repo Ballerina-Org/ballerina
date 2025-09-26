@@ -30,6 +30,7 @@ open Ballerina.DSL.Next.StdLib.DateTime
 open Ballerina.DSL.Next.StdLib.Bool
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.StdLib.Guid
+open Ballerina.DSL.Next.StdLib.TimeSpan
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -51,6 +52,7 @@ type private PrimitiveExt =
   | StringOperations of StringOperations<ValueExt>
   | GuidOperations of GuidOperations<ValueExt>
   | BoolOperations of BoolOperations<ValueExt>
+  | TimeSpanOperations of TimeSpanOperations<ValueExt>
 
 and private OptionExt =
   | OptionOperations of OptionOperations<ValueExt>
@@ -147,6 +149,15 @@ let private dateTimeExtension =
         | _ -> None)
       Set = DateTimeOperations >> Choice2Of2 >> ValueExt.ValueExt }
 
+let private timeSpanExtension =
+  TimeSpanExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice2Of2(TimeSpanOperations x) -> Some x
+        | _ -> None)
+      Set = TimeSpanOperations >> Choice2Of2 >> ValueExt.ValueExt }
+
 let private stringExtension =
   StringExtension<ValueExt>
     { Get =
@@ -176,17 +187,18 @@ let private boolExtension =
 
 let private context =
   LanguageContext<ValueExt>.Empty
-  |> (optionExtension |> TypeExtension.ToLanguageContext)
-  |> (int32Extension |> OperationsExtension.ToLanguageContext)
-  |> (int64Extension |> OperationsExtension.ToLanguageContext)
-  |> (float32Extension |> OperationsExtension.ToLanguageContext)
-  |> (float64Extension |> OperationsExtension.ToLanguageContext)
-  |> (dateOnlyExtension |> OperationsExtension.ToLanguageContext)
-  |> (dateTimeExtension |> OperationsExtension.ToLanguageContext)
-  |> (stringExtension |> OperationsExtension.ToLanguageContext)
-  |> (guidExtension |> OperationsExtension.ToLanguageContext)
-  |> (boolExtension |> OperationsExtension.ToLanguageContext)
-  |> (decimalExtension |> OperationsExtension.ToLanguageContext)
+  |> (optionExtension |> TypeExtension.RegisterLanguageContext)
+  |> (int32Extension |> OperationsExtension.RegisterLanguageContext)
+  |> (int64Extension |> OperationsExtension.RegisterLanguageContext)
+  |> (float32Extension |> OperationsExtension.RegisterLanguageContext)
+  |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
+  |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (timeSpanExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (guidExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (boolExtension |> OperationsExtension.RegisterLanguageContext)
+  |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
 
 [<Test>]
 let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
@@ -1241,5 +1253,310 @@ let ``Guid not equal operation works`` () =
       match result with
       | Value.Primitive(PrimitiveValue.Bool false) -> Assert.Pass()
       | _ -> Assert.Fail $"Expected Bool false but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly diff operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(
+        Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "-")),
+        Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 2)))
+      ),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 1)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateTimeSpan()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.TimeSpan(ts)) when ts = System.TimeSpan(1, 0, 0, 0) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected TimeSpan but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly toDateTime operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(
+        Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "toDateTime")),
+        Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+      ),
+      Expr.TupleCons
+        [ Expr.Primitive(PrimitiveValue.Int32(2))
+          Expr.Primitive(PrimitiveValue.Int32(10))
+          Expr.Primitive(PrimitiveValue.Int32(40)) ]
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateDateTime()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.DateTime(dt)) when dt = System.DateTime(2025, 10, 10, 2, 10, 40) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected DateTime (2025, 10, 10, 2, 10, 40) but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly getYear operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getYear")),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32(2025)) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 2025 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly getMonth operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getMonth")),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32(10)) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 10 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly getDay operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDay")),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32(10)) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 10 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly getDayOfWeek operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDayOfWeek")),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32(5)) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 5 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateOnly getDayOfYear operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDayOfYear")),
+      Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32(283)) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 283 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``DateTime toDateOnly operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "DateTime" ], "toDateOnly")),
+      Expr.Primitive(PrimitiveValue.DateTime(System.DateTime(2025, 10, 10, 10, 10, 10)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateDateOnly()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Date(d)) when d = System.DateOnly(2025, 10, 10) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected DateOnly (2025, 10, 10) but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``TimeSpan equal operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(
+        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], "==")),
+        Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
+      ),
+      Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateBool()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Bool true) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Bool true but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+
+[<Test>]
+let ``TimeSpan not equal operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(
+        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], "!=")),
+        Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
+      ),
+      Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateBool()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Bool false) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Bool false but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
+let ``TimeSpan greater than operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(
+        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], ">")),
+        Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 12, 0)))
+      ),
+      Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 44)))
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateBool()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Bool true) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Bool true but got {result}"
     | Right err -> Assert.Fail $"Evaluation failed: {err}"
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"

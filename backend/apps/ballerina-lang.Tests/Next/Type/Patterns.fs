@@ -50,3 +50,7 @@ type TypeValue with
       TypeValue.Primitive
         { value = v
           source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.DateOnly) }
+    | PrimitiveType.TimeSpan ->
+      TypeValue.Primitive
+        { value = v
+          source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.TimeSpan) }

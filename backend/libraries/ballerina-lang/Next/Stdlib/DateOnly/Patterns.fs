@@ -10,6 +10,11 @@ module Patterns =
 
   type DateOnlyOperations<'ext> with
 
+    static member AsDiff(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors> =
+      match op with
+      | DateOnlyOperations.Diff v -> v.v1 |> sum.Return
+      | _ -> failwith "Expected Diff operation"
+
     static member AsEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors> =
       match op with
       | DateOnlyOperations.Equal v -> v.v1 |> sum.Return
@@ -40,7 +45,7 @@ module Patterns =
       | DateOnlyOperations.LessThanOrEqual v -> v.v1 |> sum.Return
       | _ -> failwith "Expected LessThanOrEqual operation"
 
-    static member AsToDateTime(op: DateOnlyOperations<'ext>) : Sum<Option<int * int * int>, Errors> =
+    static member AsToDateTime(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors> =
       match op with
       | DateOnlyOperations.ToDateTime v -> v.v1 |> sum.Return
       | _ -> failwith "Expected ToDateTime operation"
