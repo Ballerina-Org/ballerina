@@ -203,11 +203,17 @@ export const SerializedType = {
     _.args.length == 1,
   isRecordFields: (_: unknown) =>
     typeof _ == "object" && _ != null && !("fun" in _) && !("args" in _),
-  isTranslationOverride: (_: unknown) =>
+  isTranslationOverride: (
+    _: unknown,
+  ): _ is { fun: "TranslationOverride"; args: Array<string> } =>
     typeof _ == "object" &&
     _ != null &&
     "fun" in _ &&
-    _.fun == "TranslationOverride",
+    _.fun == "TranslationOverride" &&
+    "args" in _ &&
+    Array.isArray(_.args) &&
+    _.args.length == 2 &&
+    _.args.every(DispatchisString),
 };
 
 export type StringSerializedType = string;
@@ -1501,15 +1507,22 @@ export const DispatchParsedType = {
             alreadyParsedTypes,
           );
         if (SerializedType.isTranslationOverride(rawType))
-          return ValueOrErrors.Default.return([
-            DispatchParsedType.Default.map([
-              DispatchParsedType.Default.readOnly(
-                DispatchParsedType.Default.primitive("string"),
-              ),
-              DispatchParsedType.Default.primitive("string"),
-            ]),
+          return DispatchParsedType.Operations.ParseRawType(
+            "TranslationOverride:Language",
+            rawType.args[0],
+            typeNames,
+            serializedTypes,
             alreadyParsedTypes,
-          ]);
+            injectedPrimitives,
+          ).Then(([parsedArg0, ..._]) =>
+            ValueOrErrors.Default.return([
+              DispatchParsedType.Default.map([
+                DispatchParsedType.Default.singleSelection([parsedArg0]),
+                DispatchParsedType.Default.primitive("string"),
+              ]),
+              alreadyParsedTypes,
+            ]),
+          );
         return ValueOrErrors.Default.throwOne(
           `Unrecognised type "${typeName}" : ${JSON.stringify(rawType)}`,
         );
