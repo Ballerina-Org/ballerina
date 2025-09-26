@@ -213,7 +213,7 @@ export const SerializedType = {
     "args" in _ &&
     Array.isArray(_.args) &&
     _.args.length == 2 &&
-    _.args.every(DispatchisString),
+    DispatchisString(_.args[0]),
 };
 
 export type StringSerializedType = string;
