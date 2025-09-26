@@ -49,6 +49,7 @@ module Model =
     | String of string
     | Date of DateOnly
     | DateTime of DateTime
+    | TimeSpan of TimeSpan
     | Unit
 
   and Value<'T, 'valueExt> =

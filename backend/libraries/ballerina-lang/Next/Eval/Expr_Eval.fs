@@ -15,7 +15,7 @@ module Eval =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeCheck
-  open Ballerina.DSL.Next.Types.Eval
+  open Ballerina.DSL.Next.Types.Model
 
   type ExprEvalContext<'valueExtension> =
     { Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
@@ -27,11 +27,15 @@ module Eval =
     | Async of Coroutine<ExtEvalResult<'valueExtension>, Unit, Unit, Unit, Errors>
     | Applicable of
       (Value<TypeValue, 'valueExtension> -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
+    | TypeApplicable of (TypeValue -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
     | Matchable of
       (Map<Identifier, CaseHandler<TypeValue>> -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
 
+  and ExtensionEvaluator<'valueExtension> =
+    'valueExtension -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
+
   and ValueExtensionOps<'valueExtension> =
-    { Eval: 'valueExtension -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>> }
+    { Eval: ExtensionEvaluator<'valueExtension> }
 
   and ExprEvaluator<'valueExtension, 'res> = Reader<'res, ExprEvalContext<'valueExtension>, Errors>
 
@@ -246,9 +250,9 @@ module Eval =
               [ (reader {
                   let! fExt = fV |> Value.AsExt |> reader.OfSum
                   let! ctx = reader.GetContext()
-                  let fExt = ctx.ExtensionOps.Eval fExt
+                  let! fExt = ctx.ExtensionOps.Eval fExt
 
-                  match! fExt with
+                  match fExt with
                   | Applicable f -> return! f argV
                   | _ ->
                     return!
@@ -260,7 +264,27 @@ module Eval =
 
         | Expr.Lambda(var, _, body) -> return Value.Lambda(var, body)
         | Expr.TypeLambda(_, body)
-        | Expr.TypeApply(body, _)
         | Expr.TypeLet(_, _, body) -> return! !body
+        | Expr.TypeApply(typeLambda, typeArg) ->
+          return!
+            reader.Any(
+              // Note: ordering matters here, the most specific branch needs to be evaluated first
+              reader {
+                let! typeLambda = !typeLambda
+                let! ext = typeLambda |> Value.AsExt |> reader.OfSum
+                let! ctx = reader.GetContext()
+                let! ext = ctx.ExtensionOps.Eval ext
+
+                match ext with
+                | TypeApplicable f -> return! f typeArg
+                | _ ->
+                  return!
+                    $"Expected extension to be type applicable, got {ext}"
+                    |> Errors.Singleton
+                    |> reader.Throw
+              },
+              // this says we do not care about the type info
+              [ !typeLambda ]
+            )
         | _ -> return! $"Cannot eval expression {e}" |> Errors.Singleton |> reader.Throw
       }

@@ -11,6 +11,7 @@ module Model =
 
   type Vars<'ExprExtension, 'ValueExtension> = Map<VarName, Value<'ExprExtension, 'ValueExtension>>
 
+  and TranslationOverride = { Label: string; KeyType: ExprType }
 
   and VarName =
     { VarName: string }
@@ -170,7 +171,7 @@ module Model =
     | ArrowType of ExprType * ExprType
     | GenericType of ExprTypeId * ExprTypeKind * ExprType
     | GenericApplicationType of ExprType * ExprType
-    | TranslationOverride of string
+    | TranslationOverride of TranslationOverride
 
     override t.ToString() : string =
       let (!) (t: ExprType) = t.ToString()

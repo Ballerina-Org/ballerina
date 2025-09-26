@@ -87,6 +87,9 @@ module PrimitiveType =
     static member private ToJsonDateOnly() : JsonValue =
       JsonValue.Parse """{"kind": "dateonly"}"""
 
+    static member private ToJsonTimeSpan() : JsonValue =
+      JsonValue.Parse """{"kind": "timespan"}"""
+
     static member ToJson: PrimitiveType -> JsonValue =
       function
       | PrimitiveType.Unit -> PrimitiveType.ToJsonUnit()
@@ -100,3 +103,4 @@ module PrimitiveType =
       | PrimitiveType.Bool -> PrimitiveType.ToJsonBool()
       | PrimitiveType.DateTime -> PrimitiveType.ToJsonDateTime()
       | PrimitiveType.DateOnly -> PrimitiveType.ToJsonDateOnly()
+      | PrimitiveType.TimeSpan -> PrimitiveType.ToJsonTimeSpan()

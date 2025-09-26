@@ -102,6 +102,11 @@ module Patterns =
         { value = PrimitiveType.DateOnly
           source = NoSourceMapping "DateOnly" }
 
+    static member CreateTimeSpan() : TypeValue =
+      TypeValue.Primitive
+        { value = PrimitiveType.TimeSpan
+          source = NoSourceMapping "TimeSpan" }
+
     static member CreatePrimitive(v: PrimitiveType) : TypeValue =
       match v with
       | PrimitiveType.Unit -> TypeValue.CreateUnit()
@@ -115,6 +120,7 @@ module Patterns =
       | PrimitiveType.String -> TypeValue.CreateString()
       | PrimitiveType.DateTime -> TypeValue.CreateDateTime()
       | PrimitiveType.DateOnly -> TypeValue.CreateDateOnly()
+      | PrimitiveType.TimeSpan -> TypeValue.CreateTimeSpan()
 
     static member CreateLambda(v: TypeParameter * TypeExpr) : TypeValue =
       TypeValue.Lambda

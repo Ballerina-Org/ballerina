@@ -15,7 +15,7 @@ module Types =
   open Ballerina.DSL.Next.Terms
 
   type TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> with
-    static member ToTypeCheckContext
+    static member RegisterTypeCheckContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<TypeCheckContext> =
       fun typeCheckContext ->
@@ -40,7 +40,7 @@ module Types =
         { typeCheckContext with
             Values = values }
 
-    static member ToTypeCheckState
+    static member RegisterTypeCheckState
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<TypeCheckState> =
       fun typeCheckState ->
@@ -83,7 +83,7 @@ module Types =
                     |> Map.keys
                     |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Types.Symbols } }
 
-    static member ToExprEvalContext
+    static member RegisterExprEvalContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
@@ -178,10 +178,10 @@ module Types =
             Values = values
             ExtensionOps = { Eval = ops } }
 
-    static member ToLanguageContext
+    static member RegisterLanguageContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<LanguageContext<'ext>> =
       fun langCtx ->
-        { TypeCheckContext = langCtx.TypeCheckContext |> (typeExt |> TypeExtension.ToTypeCheckContext)
-          TypeCheckState = langCtx.TypeCheckState |> (typeExt |> TypeExtension.ToTypeCheckState)
-          ExprEvalContext = langCtx.ExprEvalContext |> (typeExt |> TypeExtension.ToExprEvalContext) }
+        { TypeCheckContext = langCtx.TypeCheckContext |> (typeExt |> TypeExtension.RegisterTypeCheckContext)
+          TypeCheckState = langCtx.TypeCheckState |> (typeExt |> TypeExtension.RegisterTypeCheckState)
+          ExprEvalContext = langCtx.ExprEvalContext |> (typeExt |> TypeExtension.RegisterExprEvalContext) }

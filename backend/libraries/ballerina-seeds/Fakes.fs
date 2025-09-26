@@ -180,6 +180,13 @@ type BogusDataGenerator<'Value>(cultureCode: string) =
         | AsDateTime d -> fd d |> PrimitiveValue.String
         | _ -> failwith "Expected DateTime"
 
+      | PrimitiveType.TimeSpan, FakeValue _ -> TimeSpan.FromDays(float (t.Int32(-365, 0))) |> PrimitiveValue.TimeSpan
+      | PrimitiveType.TimeSpan, RealValue v ->
+        match v with
+        // TODO: check this
+        | Other ts -> PrimitiveValue.TimeSpan(ts :?> TimeSpan)
+        | _ -> failwith "Expected TimeSpan"
+
       | PrimitiveType.Unit, RealValue _
       | PrimitiveType.Unit, FakeValue _ -> PrimitiveValue.Unit
 
