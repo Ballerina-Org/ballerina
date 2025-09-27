@@ -472,7 +472,7 @@ module Validator =
                 return!
                   sum.Throw(
                     Errors.Singleton
-                      $"Error: api {renderer.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyLinked.ToFSharpString} method."
+                      $"Error: api {renderer.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyUnlinked.ToFSharpString} method."
                   )
               else
                 return ()
@@ -1086,10 +1086,7 @@ module Validator =
 
             match formLauncher.Mode with
             | FormLauncherMode.Create _ ->
-              if
-                Set.ofList [ CrudMethod.Create; CrudMethod.Default ]
-                |> Set.isSuperset (entityApi |> snd)
-              then
+              if Set.singleton CrudMethod.Get |> Set.isSuperset (entityApi |> snd) then
                 return ()
               else
                 return!
@@ -1103,10 +1100,7 @@ module Validator =
                   )
                   |> state.OfSum
             | _ ->
-              if
-                Set.ofList [ CrudMethod.Get; CrudMethod.Update ]
-                |> Set.isSuperset (entityApi |> snd)
-              then
+              if Set.singleton CrudMethod.Get |> Set.isSuperset (entityApi |> snd) then
                 return ()
               else
                 return!
