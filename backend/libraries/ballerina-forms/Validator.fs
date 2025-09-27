@@ -1281,15 +1281,9 @@ module Validator =
       |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
 
   type LookupApi<'ExprExtension, 'ValueExtension> with
-    static member Validate<'ExprExtension, 'ValueExtension>
-      (_: GeneratedLanguageSpecificConfig)
-      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (lookupApi: LookupApi<'ExprExtension, 'ValueExtension>)
-      : Sum<Unit, Errors> =
+    static member GetIdType(lookupType: TypeBinding) : Sum<ExprType, Errors> =
       sum {
-        let! lookupType = ctx.TryFindType lookupApi.EntityName
-
-        let! (idField: ExprType) =
+        let! (idType: ExprType) =
           sum.Any2
             (sum {
               let! fields =
@@ -1317,17 +1311,28 @@ module Validator =
             })
           |> sum.MapError Errors.HighestPriority
 
-        match idField with
-        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
-        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
+        match idType with
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType) -> idType
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> idType
         | _ ->
           return!
             sum.Throw(
               Errors.Singleton
-                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idField}'."
+                $"Error: type {lookupType.TypeId.VarName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idType}'."
             )
-            |> Sum.map ignore
+      }
+      |> sum.WithErrorContext(sprintf "...when getting ID for %s" lookupType.TypeId.VarName)
 
+  type LookupApi<'ExprExtension, 'ValueExtension> with
+    static member Validate<'ExprExtension, 'ValueExtension>
+      (_: GeneratedLanguageSpecificConfig)
+      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+      (lookupApi: LookupApi<'ExprExtension, 'ValueExtension>)
+      : Sum<Unit, Errors> =
+      sum {
+        let! lookupType = ctx.TryFindType lookupApi.EntityName
+
+        do! LookupApi.GetIdType lookupType |> Sum.map ignore
         return ()
       }
 
