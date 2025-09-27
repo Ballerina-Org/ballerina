@@ -2149,22 +2149,12 @@
             },
             "addresses": {
               "groups": {
-                "main": {
-                  "kind": "prepend",
-                  "operands": [
-                    ["Departments"],
-                    {
-                      "kind": "fieldLookup",
-                      "operands": [
-                        {
-                          "kind": "varLookup",
-                          "varName": "global"
-                        },
-                        "ActiveAddressFields"
-                      ]
-                    }
-                  ]
-                }
+                "main": [
+                  "AddressesByCity",
+                  "AddressesWithColorLabel",
+                  "AddressesBy",
+                  "AddressesAndAddressesWithLabel"
+                ]
               }
             }
           }
