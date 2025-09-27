@@ -49,7 +49,7 @@ func (s *DeltaChunkSerializationTestSuite) TestDuplicateAt() {
 }
 
 func (s *DeltaChunkSerializationTestSuite) TestAdd() {
-	delta := ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString]("new item")
+	delta := ballerina.NewDeltaChunkAdd[string, ballerina.DeltaString, uuid.UUID]("new item")
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
