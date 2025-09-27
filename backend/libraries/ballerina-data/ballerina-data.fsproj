@@ -36,6 +36,9 @@
     <Compile Include="Store\Model.fs" />
     <Compile Include="Store\Updaters.fs" />
     <Compile Include="Store\Json.fs" />
+    <Compile Include="VirtualFolders\Model.fs" />
+    <Compile Include="VirtualFolders\Runner.fs" />
+    <Compile Include="VirtualFolders\Updaters.fs" />
 
   </ItemGroup>
 
