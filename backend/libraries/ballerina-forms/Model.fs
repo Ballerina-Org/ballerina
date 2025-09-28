@@ -283,9 +283,6 @@ module Model =
       TypeId: ExprTypeId }
 
     static member Id(e: EntityApi) = { EntityName = e.EntityName }
-
-    static member Create(n, t) : EntityApi = { EntityName = n; TypeId = t }
-
     static member Type(a: EntityApi) : ExprTypeId = a.TypeId
 
   and TableApiId = { TableName: string }
