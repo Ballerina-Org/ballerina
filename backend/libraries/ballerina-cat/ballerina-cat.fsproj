@@ -10,6 +10,7 @@
         <Compile Include="Collections/Tuple/Model.fs" />
         <Compile Include="Collections/NonEmptyList/Model.fs" />
         <Compile Include="Collections/Sum/Model.fs" />
+        <Compile Include="Collections/Sum/Patterns.fs" />
         <Compile Include="Collections/Option/Model.fs" />
         <Compile Include="Collections/Map/Model.fs" />
         <Compile Include="Lenses/Model.fs" />

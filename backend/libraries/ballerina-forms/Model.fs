@@ -27,7 +27,6 @@ module Model =
       RequiredImport: Option<string>
       DeltaTypeName: string
       SupportedRenderers: ManySupportedRenderers
-      DefaultConstructor: string
       MappingFunction: string }
 
   and ManySupportedRenderers =
@@ -105,7 +104,6 @@ module Model =
     { GeneratedTypeName: string
       DeltaTypeName: string
       RequiredImport: Option<string>
-      DefaultConstructor: string
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigListDef =
@@ -113,7 +111,6 @@ module Model =
       RequiredImport: Option<string>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
-      DefaultConstructor: string
       MappingFunction: string }
 
   and CodegenConfigOneDef =
@@ -121,7 +118,6 @@ module Model =
       RequiredImport: Option<string>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
-      DefaultConstructor: string
       MappingFunction: string }
 
 
@@ -129,15 +125,13 @@ module Model =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      SupportedRenderers: Set<RendererName>
-      DefaultConstructor: string }
+      SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
-      DefaultConstructor: string
       MappingFunction: string
       FilteringConfig: CodegenConfigTableFilteringTypesDef }
 
@@ -161,7 +155,6 @@ module Model =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
       DeltaTypeName: string
-      DefaultConstructor: string
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigSumDef =
@@ -175,13 +168,11 @@ module Model =
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
-      DefaultValue: string
       RequiredImport: Option<string>
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
-      DefaultConstructor: string
       DeltaTypeName: string
       RequiredImport: Option<string>
       SupportedRenderers: Set<RendererName> }
@@ -189,7 +180,6 @@ module Model =
   and CodegenConfigOptionDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
-      DefaultConstructor: string
       DeltaTypeName: string
       SupportedRenderers:
         {| Enum: Set<RendererName>
@@ -199,7 +189,6 @@ module Model =
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
       RequiredImport: Option<string>
-      DefaultConstructor: string
       DeltaTypeName: string
       SupportedRenderers:
         {| Enum: Set<RendererName>
