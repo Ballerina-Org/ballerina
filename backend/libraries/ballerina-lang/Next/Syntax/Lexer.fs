@@ -6,6 +6,8 @@ module Lexer =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
   open System
+  open Ballerina.Collections.NonEmptyList
+  open Ballerina.Collections.Sum
 
   type Symbol = char
 
@@ -54,12 +56,19 @@ module Lexer =
     | SingleArrow
     | DoubleArrow
     | Minus
+    | Equal
+    | NotEqual
+    | GreaterEqual
     | GreaterThan
+    | LessThanOrEqual
     | LessThan
     | Dot
     | Comma
     | At
     | Times
+    | Plus
+    | Div
+    | Bang
 
     override this.ToString() =
       match this with
@@ -85,6 +94,13 @@ module Lexer =
       | Comma -> ","
       | At -> "@"
       | Times -> "*"
+      | Plus -> "+"
+      | Div -> "/"
+      | Bang -> "!"
+      | Equal -> "=="
+      | NotEqual -> "!="
+      | GreaterEqual -> ">="
+      | LessThanOrEqual -> "<="
 
   type Token =
     | Keyword of Keyword
@@ -92,6 +108,8 @@ module Lexer =
     | Identifier of string
     | StringLiteral of string
     | BoolLiteral of bool
+    | IntLiteral of int
+    | DecimalLiteral of System.Decimal
 
     override this.ToString() =
       match this with
@@ -100,6 +118,8 @@ module Lexer =
       | Identifier id -> id
       | StringLiteral s -> $"\"{s}\""
       | BoolLiteral b -> if b then "true" else "false"
+      | IntLiteral i -> i.ToString()
+      | DecimalLiteral d -> d.ToString()
 
   type LocalizedToken =
     { Token: Token
@@ -125,6 +145,14 @@ module Lexer =
       { Token = literal |> Token.BoolLiteral
         Location = location }
 
+    static member FromIntLiteral literal location =
+      { Token = literal |> Token.IntLiteral
+        Location = location }
+
+    static member FromDecimalLiteral literal location =
+      { Token = literal |> Token.DecimalLiteral
+        Location = location }
+
   let tokenizer =
     ParserBuilder<Symbol, Location, Errors>(
       {| Step = Location.Step |},
@@ -147,6 +175,8 @@ module Lexer =
     |> tokenizer.Ignore
 
   let eos = tokenizer.EndOfStream()
+
+  let dot = tokenizer.Exactly '.'
 
   let word (s: string) =
     tokenizer {
@@ -201,6 +231,10 @@ module Lexer =
         word "." |> tokenizer.Map(LocalizedToken.FromOperator Operator.Dot)
         word "," |> tokenizer.Map(LocalizedToken.FromOperator Operator.Comma)
         word "@" |> tokenizer.Map(LocalizedToken.FromOperator Operator.At)
+        word "==" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equal)
+        word "!=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.NotEqual)
+        word ">=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterEqual)
+        word "<=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThanOrEqual)
         word ">" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterThan)
         word "<" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThan)
         word "-" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Minus)
@@ -222,7 +256,10 @@ module Lexer =
         word "||" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoublePipe)
         word "&&" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleAmpersand)
         word "|" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Pipe)
-        word "*" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Times) ]
+        word "*" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Times)
+        word "+" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Plus)
+        word "/" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Div)
+        word "!" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Bang) ]
 
   let letter = tokenizer.Exactly Char.IsLetter
   let digit = tokenizer.Exactly Char.IsDigit
@@ -240,7 +277,7 @@ module Lexer =
       return LocalizedToken.FromIdentifier id loc
     }
 
-  let literal =
+  let stringLiteral =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
       let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"'))
@@ -250,10 +287,50 @@ module Lexer =
       return LocalizedToken.FromStringLiteral (String.Concat(literal)) loc
     }
 
+  let numberLiteral =
+    tokenizer {
+      let! int_part = digit |> tokenizer.AtLeastOne |> tokenizer.Map NonEmptyList.ToList
+
+      let! frac_part =
+        tokenizer {
+          do! dot |> tokenizer.Ignore
+          return! digit |> tokenizer.Many
+
+        }
+        |> tokenizer.Try
+        |> tokenizer.Map Sum.toOption
+
+      let! loc = tokenizer.Location
+
+      match frac_part with
+      | Some frac ->
+        let literal = String.Concat(int_part) + "." + String.Concat(frac)
+        let mutable value = 0m
+
+        if not (System.Decimal.TryParse(literal, &value)) then
+          return!
+            (loc, $"Cannot parse decimal literal {literal} at {loc}")
+            |> Errors.Singleton
+            |> tokenizer.Throw
+        else
+          return LocalizedToken.FromDecimalLiteral value loc
+      | None ->
+        let literal = String.Concat(int_part)
+        let mutable value = 0
+
+        if not (System.Int32.TryParse(literal, &value)) then
+          return!
+            (loc, $"Cannot parse int literal {literal} at {loc}")
+            |> Errors.Singleton
+            |> tokenizer.Throw
+        else
+          return LocalizedToken.FromIntLiteral value loc
+    }
+
   let rec token =
     tokenizer {
       do! whitespace |> tokenizer.Try |> tokenizer.Ignore
-      let! t = tokenizer.Any [ keyword; operator; identifier; literal ]
+      let! t = tokenizer.Any [ keyword; operator; identifier; stringLiteral; numberLiteral ]
       do! tokenizer.Any [ whitespace; eos ] |> tokenizer.Try |> tokenizer.Ignore
       return t
     }

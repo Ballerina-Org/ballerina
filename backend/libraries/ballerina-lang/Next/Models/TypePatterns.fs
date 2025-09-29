@@ -527,3 +527,60 @@ module Patterns =
 
   type WithTypeExprSourceMapping<'v> with
     static member Getters = {| Value = fun (v: WithTypeExprSourceMapping<'v>) -> v.value |}
+
+
+  type PrimitiveType with
+    static member AsUnit(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Unit -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Unit primitive type, got {p}")
+
+    static member AsGuid(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Guid -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Guid primitive type, got {p}")
+
+    static member AsInt32(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Int32 -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Int32 primitive type, got {p}")
+
+    static member AsInt64(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Int64 -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Int64 primitive type, got {p}")
+
+    static member AsFloat32(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Float32 -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Float32 primitive type, got {p}")
+
+    static member AsFloat64(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Float64 -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Float64 primitive type, got {p}")
+
+    static member AsDecimal(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Decimal -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Decimal primitive type, got {p}")
+
+    static member AsBool(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.Bool -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected Bool primitive type, got {p}")
+
+    static member AsString(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.String -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected String primitive type, got {p}")
+
+    static member AsDateTime(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.DateTime -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected DateTime primitive type, got {p}")
+
+    static member AsDateOnly(p: PrimitiveType) =
+      match p with
+      | PrimitiveType.DateOnly -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Expected DateOnly primitive type, got {p}")
