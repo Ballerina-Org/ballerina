@@ -30,7 +30,7 @@ export type DispatchCreateFormLauncherContext<
   DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
   "launcherRef"
 > & {
-  launcherRef: CreateLauncherRef<Flags>;
+  launcherRef: CreateLauncherRef;
 };
 
 export type DispatchCreateFormLauncherState<

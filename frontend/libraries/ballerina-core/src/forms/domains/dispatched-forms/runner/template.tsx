@@ -98,7 +98,7 @@ export const DispatchFormRunnerTemplate = <
           context={{
             ...props.context,
             ...props.context.innerFormState.state,
-            launcherRef: props.context.launcherRef as EditLauncherRef<Flags>,
+            launcherRef: props.context.launcherRef as EditLauncherRef,
           }}
           setState={(_) =>
             props.setState(
@@ -119,7 +119,7 @@ export const DispatchFormRunnerTemplate = <
           context={{
             ...props.context,
             ...props.context.innerFormState.state,
-            launcherRef: props.context.launcherRef as CreateLauncherRef<Flags>,
+            launcherRef: props.context.launcherRef as CreateLauncherRef,
           }}
           setState={(_) =>
             props.setState(

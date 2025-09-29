@@ -32,7 +32,7 @@ export type DispatchEditFormLauncherContext<
   DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
   "launcherRef"
 > & {
-  launcherRef: EditLauncherRef<Flags>;
+  launcherRef: EditLauncherRef;
 };
 
 export type DispatchEditFormLauncherState<

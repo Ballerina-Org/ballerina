@@ -4,7 +4,7 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../../main";
 import { RecordFieldRenderer } from "../../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
-import { DispatcherContextWithApiSources } from "../../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../../state";
 import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {

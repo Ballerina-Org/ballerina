@@ -6,7 +6,7 @@ import {
 } from "../../../../../../../../../main";
 import { ListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 //TODO check type
 export const ListDispatcher = {

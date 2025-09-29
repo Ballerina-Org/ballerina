@@ -26,9 +26,7 @@ import {
   Renderer,
   DispatcherContext,
 } from "../../../../../main";
-import {
-  DispatchCreateFormLauncherState,
-} from "./domains/kind/create/state";
+import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
 import {
   DispatchEditFormLauncherApi,
   DispatchEditFormLauncherState,
@@ -44,66 +42,63 @@ export type DispatcherContextWithApiSources<
   DispatcherContext<T, Flags, CustomPresentationContexts, ExtraContext>,
   "defaultState"
 > &
-  ApiSources & {
+  BaseApiSources & {
     defaultState: (
       t: DispatchParsedType<T>,
       renderer: Renderer<T>,
     ) => ValueOrErrors<any, string>;
   };
 
-export type ApiSources = {
+export type BaseLauncherRef<T extends BaseApiSources> = {
+  name: string;
+  apiSources: T;
+};
+
+export type LauncherRefWithEntityApis<T extends BaseApiSources> = T & {
+  entityApis: DispatchEntityApis;
+};
+
+export type BaseApiSources = {
   infiniteStreamSources: DispatchInfiniteStreamSources;
   enumOptionsSources: DispatchEnumOptionsSources;
-  entityApis: DispatchEntityApis;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
 };
 
+export type EntityLauncherRefConfig =
+  | {
+      source: "entity";
+      value: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+    }
+  | {
+      source: "api";
+      getGlobalConfig?: () => Promise<any>;
+    };
+
 export type PassthroughLauncherRef<Flags = Unit> = {
   kind: "passthrough";
-  name: string;
   entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   onEntityChange: DispatchOnChange<PredicateValue, Flags>;
-};
+} & BaseLauncherRef<BaseApiSources>;
 
-export type EditLauncherRef<Flags = Unit> = {
+export type EditLauncherRef = {
   kind: "edit";
-  name: string;
   entityId: Guid;
   apiHandlers?: FormRefEditApiHandlers<any>;
-  apiSources: ApiSources;
-  config:
-    | {
-        source: "entity";
-        value: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-      }
-    | {
-        source: "api";
-        getGlobalConfig?: () => Promise<any>;
-      };
-};
+  config: EntityLauncherRefConfig;
+} & BaseLauncherRef<LauncherRefWithEntityApis<BaseApiSources>>;
 
-export type CreateLauncherRef<Flags = Unit> = {
+export type CreateLauncherRef = {
   kind: "create";
-  name: string;
   apiHandlers?: FormRefCreateApiHandlers<any>;
-  apiSources: ApiSources;
-  config:
-    | {
-        source: "entity";
-        value: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
-      }
-    | {
-        source: "api";
-        getGlobalConfig?: () => Promise<any>;
-      };
-};
+  config: EntityLauncherRefConfig;
+} & BaseLauncherRef<LauncherRefWithEntityApis<BaseApiSources>>;
 
 export type LauncherRef<Flags = Unit> =
   | PassthroughLauncherRef<Flags>
-  | EditLauncherRef<Flags>
-  | CreateLauncherRef<Flags>;
+  | EditLauncherRef
+  | CreateLauncherRef;
 
 export type DispatchFormRunnerStatus<
   T extends DispatchInjectablesTypes<T>,

@@ -436,7 +436,6 @@ export const DispatcherFormsApp = (props: {}) => {
                             DispatchPersonFromConfigApis.streamApis,
                           enumOptionsSources:
                             DispatchPersonFromConfigApis.enumApis,
-                          entityApis: DispatchPersonFromConfigApis.entityApis,
                           tableApiSources:
                             DispatchPersonFromConfigApis.tableApiSources,
                           lookupSources:
@@ -487,7 +486,6 @@ export const DispatcherFormsApp = (props: {}) => {
                           DispatchPersonFromConfigApis.streamApis,
                         enumOptionsSources:
                           DispatchPersonFromConfigApis.enumApis,
-                        entityApis: DispatchPersonFromConfigApis.entityApis,
                         tableApiSources:
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:

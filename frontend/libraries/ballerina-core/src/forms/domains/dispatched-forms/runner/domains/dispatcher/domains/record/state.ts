@@ -10,7 +10,7 @@ import {
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const RecordDispatcher = {
   Operations: {

@@ -5,7 +5,7 @@ import {
 } from "../../../../../../../../../main";
 import { NestedRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
 import { Dispatcher } from "../../state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const NestedDispatcher = {
   Operations: {
