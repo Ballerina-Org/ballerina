@@ -71,7 +71,12 @@ export const SumDispatcher = {
                         dispatcherContext.ErrorRenderer,
                         leftForm,
                         rightForm,
-                      ).withView(concreteRenderer),
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type: renderer.type,
+                        }))
+                        .withView(concreteRenderer),
                     ),
                   );
           }),

@@ -93,7 +93,12 @@ export const SingleSelectionDispatcher = {
                       SearchableInfiniteStreamAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
-                      ).withView(concreteRenderer),
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type: renderer.type,
+                        }))
+                        .withView(concreteRenderer),
                     ),
                   )
                   .MapErrors((errors) =>
