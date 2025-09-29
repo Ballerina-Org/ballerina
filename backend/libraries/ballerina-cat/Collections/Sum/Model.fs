@@ -1,6 +1,7 @@
-﻿namespace Ballerina.Collections
+﻿namespace Ballerina.Collections.Sum
 
-module Sum =
+[<AutoOpen>]
+module Model =
   open Ballerina.Fun
   open System
   open System.Threading.Tasks
@@ -177,8 +178,9 @@ module Sum =
 
   let sum = SumBuilder()
 
-  module Operators =
-    let (>>=) f g = fun x -> sum.Bind(f x, g)
+// [<AutoOpen>]
+module Operators =
+  let (>>=) f g = fun x -> sum.Bind(f x, g)
 
   type Sum<'a, 'b> with
     static member Then(f, g) = fun x -> sum.Bind(f x, g)

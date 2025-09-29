@@ -8,18 +8,34 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Types.TypeCheck
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
+  open Ballerina.Collections.NonEmptyList
 
   type TypeLambdaExtension<'ext, 'extTypeLambda> with
     static member RegisterTypeCheckContext(ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckContext> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
 
-        let values = Map.add ext.Id (ext.Type, ext.Kind) values
+        let id, typeValue, kind = ext.ExtensionType
+        let values = Map.add id (typeValue, kind) values
 
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState(_ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckState> = id
+    static member RegisterTypeCheckState(ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckState> =
+      fun typeCheckState ->
+
+        let bindings = typeCheckState.Types.Bindings
+
+        let bindings =
+          ext.ReferencedTypes
+          |> NonEmptyList.ToSeq
+          |> Seq.fold (fun acc (id, typeValue, kind) -> acc |> Map.add id (typeValue, kind)) bindings
+
+        { typeCheckState with
+            Types =
+              { typeCheckState.Types with
+                  Bindings = bindings
+                  Symbols = typeCheckState.Types.Symbols } }
 
     static member RegisterExprEvalContext
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
@@ -31,8 +47,10 @@ module TypeLambdas =
 
         let ops = fun v -> reader.Any(ops v, newOps |> List.map (fun newOp -> newOp v))
 
+        let id, _, _ = ext.ExtensionType
+
         { evalContext with
-            Values = Map.add ext.Id (ext.Value |> ext.ValueLens.Set |> Ext) evalContext.Values
+            Values = Map.add id (ext.Value |> ext.ValueLens.Set |> Ext) evalContext.Values
             ExtensionOps = { Eval = ops } }
 
     static member RegisterLanguageContext

@@ -216,41 +216,115 @@ module TypeCheck =
           | Expr.Apply(f, a) ->
             return!
               state {
-                let! f, t_f, f_k = !f
                 let! a, t_a, a_k = !a
-                do! f_k |> Kind.AsStar |> state.OfSum |> state.Ignore
                 do! a_k |> Kind.AsStar |> state.OfSum |> state.Ignore
 
-                let! (f_input, f_output) =
-                  TypeValue.AsArrow t_f
-                  |> state.OfSum
-                  |> state.Map WithTypeExprSourceMapping.Getters.Value
-
                 return!
-                  state.Any(
-                    state {
-                      do! TypeValue.Unify(f_input, t_a) |> Expr<'T>.liftUnification
-                      let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
-                      return Expr.Apply(f, a), f_output, Kind.Star
-                    },
-                    [ state {
-                        let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> state.OfSum
+                  state.Either
+                    (state {
+                      let! f_lookup = f |> Expr.AsLookup |> state.OfSum
+                      let! resolved = TypeCheckContext.TryFindVar f_lookup |> state.Catch
+                      // ensure we do not apply ad-hoc polymorphism to bound variables
+                      do!
+                        resolved
+                        |> Sum.AsRight
+                        |> Sum.fromOption (fun () -> $"Error: variable found, skipping branch" |> Errors.Singleton)
+                        |> state.OfSum
+                        |> state.Ignore
 
-                        let! (aCasesT: Map<TypeSymbol, (TypeValue * Kind)>) =
-                          aCasesT
-                          |> Map.map (fun _ -> TypeExpr.Eval None >> Expr<'T>.liftTypeEval)
-                          |> state.AllMap
-
-                        let aCasesT = aCasesT |> Map.map (fun _ -> fst)
-
+                      match f_lookup with
+                      | Identifier.LocalScope name when (name = "&&" || name = "||") ->
                         do!
-                          TypeValue.Unify(f_input, TypeValue.CreateUnion aCasesT)
+                          TypeValue.Unify(TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
                           |> Expr<'T>.liftUnification
 
-                        let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
-                        return Expr.Apply(f, a), f_output, Kind.Star
-                      } ]
-                  )
+                        let! bool_op, bool_op_t, bool_op_k = !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name))
+                        do! bool_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+
+                        do!
+                          TypeValue.Unify(
+                            TypeValue.CreateArrow(
+                              TypeValue.CreatePrimitive PrimitiveType.Bool,
+                              TypeValue.CreateArrow(
+                                TypeValue.CreatePrimitive PrimitiveType.Bool,
+                                TypeValue.CreatePrimitive PrimitiveType.Bool
+                              )
+                            ),
+                            bool_op_t
+                          )
+                          |> Expr<'T>.liftUnification
+
+                        let t_res =
+                          TypeValue.CreateArrow(
+                            TypeValue.CreatePrimitive PrimitiveType.Bool,
+                            TypeValue.CreatePrimitive PrimitiveType.Bool
+                          )
+
+                        let k_res = Kind.Star
+                        return Expr.Apply(bool_op, a), t_res, k_res
+                      | Identifier.LocalScope name when (name = "!") ->
+                        do!
+                          TypeValue.Unify(TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
+                          |> Expr<'T>.liftUnification
+
+                        let! bool_op, bool_op_t, bool_op_k = !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name))
+                        do! bool_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+
+                        do!
+                          TypeValue.Unify(
+                            TypeValue.CreateArrow(
+                              TypeValue.CreatePrimitive PrimitiveType.Bool,
+                              TypeValue.CreatePrimitive PrimitiveType.Bool
+                            ),
+                            bool_op_t
+                          )
+                          |> Expr<'T>.liftUnification
+
+                        let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
+                        let k_res = Kind.Star
+                        return Expr.Apply(bool_op, a), t_res, k_res
+                      | _ ->
+                        return!
+                          $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
+                          |> Errors.Singleton
+                          |> state.Throw
+                    })
+                    (state {
+                      let! f, t_f, f_k = !f
+                      do! f_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+
+                      let! (f_input, f_output) =
+                        TypeValue.AsArrow t_f
+                        |> state.OfSum
+                        |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                      return!
+                        state.Any(
+                          state {
+                            do! TypeValue.Unify(f_input, t_a) |> Expr<'T>.liftUnification
+                            let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                            return Expr.Apply(f, a), f_output, Kind.Star
+                          },
+                          [ state {
+                              let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> state.OfSum
+
+                              let! (aCasesT: Map<TypeSymbol, (TypeValue * Kind)>) =
+                                aCasesT
+                                |> Map.map (fun _ -> TypeExpr.Eval None >> Expr<'T>.liftTypeEval)
+                                |> state.AllMap
+
+                              let aCasesT = aCasesT |> Map.map (fun _ -> fst)
+
+                              do!
+                                TypeValue.Unify(f_input, TypeValue.CreateUnion aCasesT)
+                                |> Expr<'T>.liftUnification
+
+                              let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                              return Expr.Apply(f, a), f_output, Kind.Star
+                            } ]
+                        )
+                    })
+
               }
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a} `"))
 

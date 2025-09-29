@@ -46,7 +46,12 @@ export const ReadOnlyDispatcher = {
                       childTemplate,
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
-                    ).withView(concreteRenderer),
+                    )
+                      .mapContext((_: any) => ({
+                        ..._,
+                        type: renderer.type,
+                      }))
+                      .withView(concreteRenderer),
                   ),
                 ),
             ),
