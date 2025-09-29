@@ -2,7 +2,6 @@ package ballerina
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type deltaOneEffectsEnum string
@@ -96,13 +95,7 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 				value := BindReaderWithError[Unit, One[a], a](
 					func(one One[a]) ReaderWithError[Unit, a] {
 						return PureReader[Unit, Sum[error, a]](
-							Fold(
-								one.Sum,
-								func(LazyOneValue) Sum[error, a] {
-									return Left[error, a](fmt.Errorf("one is not set"))
-								},
-								Right[error, a],
-							),
+							Right[error, a](one.Value),
 						)
 					},
 				)(one)
