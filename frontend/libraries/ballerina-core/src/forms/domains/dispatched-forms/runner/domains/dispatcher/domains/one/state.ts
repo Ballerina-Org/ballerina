@@ -163,6 +163,7 @@ export const OneDispatcher = {
                             fromApiParser: dispatcherContext.parseFromApiByType(
                               renderer.type.arg,
                             ),
+                            type: renderer.type,
                           }))
                           .withView(concreteRenderer),
                       ),

@@ -54,7 +54,12 @@ export const LookupDispatcher = {
                   renderer.type,
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                ).withView(dispatcherContext.lookupTypeRenderer()),
+                )
+                  .mapContext((_: any) => ({
+                    ..._,
+                    type: renderer.type,
+                  }))
+                  .withView(dispatcherContext.lookupTypeRenderer()),
               ),
             )
             .MapErrors((errors) =>
