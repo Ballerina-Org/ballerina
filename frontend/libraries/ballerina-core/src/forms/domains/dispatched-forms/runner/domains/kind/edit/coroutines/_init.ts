@@ -154,7 +154,9 @@ export const initCo = <
       }
 
       const getApi = () =>
-        current.launcherRef.apiSources.entityApis.get(editFormLauncher.api)("");
+        current.launcherRef.apiSources.entityApis.get(editFormLauncher.api)(
+          current.launcherRef.entityId,
+        );
       const getGlobalConfig =
         current.launcherRef.config.source == "api" &&
         current.launcherRef.config.getGlobalConfig
