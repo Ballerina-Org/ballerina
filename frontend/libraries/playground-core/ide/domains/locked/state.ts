@@ -6,31 +6,38 @@ import {validate} from "../../api/specs";
 import {CommonUI} from "../ui/state";
 import {FlatNode} from "./vfs/upload/model";
 import {List} from "immutable";
+
+
+export type FormsMode = 
+    | { kind: 'compose'}
+    | { kind: 'select'}
+
+
 export type LockedStep =
     | { step: 'design' }
     | { step: 'outcome' };
 
 export type LockedSpec = {
-    seeds: Option<Seeds>, //: BridgeState,
+    seeds: Option<Seeds>, 
     launchers: any [],
     entities: string [], 
     selectedEntity: Option<string>,
     selectedLauncher: Option<any>,
     virtualFolders: VfsWorkspace,
-    mode: 'spec' | 'schema',
+    formsMode: FormsMode,
 };
 
 export const LockedSpec = {
     Updaters: {
         Core: {
-            Default: (workspace: VfsWorkspace): LockedSpec => ({
+            Default: (workspace: VfsWorkspace, formsMode: FormsMode): LockedSpec => ({
                 launchers: [],
                 entities: [],
                 selectedEntity: Option.Default.none(),
                 selectedLauncher: Option.Default.none(),
                 seeds: Option.Default.none(),
                 virtualFolders: workspace,
-                mode: 'spec',
+                formsMode
             }),
             seed: (seeds: any): Updater<Ide> =>
                 Updater(ide => ide.phase !== "locked" ? ide : ({...ide, locked: {...ide.locked, seeds: seeds}})),
@@ -104,7 +111,6 @@ export const LockedSpec = {
                 const entitiesObj = Object.keys(schema.value.metadata.content.schema.entities || {})
                
                 if(entitiesObj.length == 0) return ({...ide, lockingError: ide.lockingError.push("schema does not have entities")});
-                const entities = entitiesObj
              
                 return ({...ide, 
                     locked: { 
@@ -112,7 +118,7 @@ export const LockedSpec = {
                         virtualFolders: {
                         ...ide.locked.virtualFolders, 
                             schema :schema
-                    }, entities: entities
+                    }, entities: entitiesObj
                 }
                 })
             })

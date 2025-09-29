@@ -1,24 +1,23 @@
 ﻿import React from "react";
 
-import {FlatNode, VfsWorkspace, VirtualFolders} from "playground-core";
-import {BasicFun, Option, Unit} from "ballerina-core";
+import {FlatNode, FormsMode, VfsWorkspace, VirtualFolders} from "playground-core";
+import {BasicFun, FormsConfigMerger, Option, Unit} from "ballerina-core";
 import {List} from "immutable";
 import MultiSelectCheckboxControlled from "./example.tsx";
 
 
 type DrawerProps = {
-    //selectNodes: BasicFun<FlatNode[], void>;
-    //selectFolder: BasicFun<FlatNode, void>;
     mode: 'upload' | 'select-current-folder';
     vfs: VfsWorkspace;
     drawerId?: string;
+    formsMode: FormsMode;
     onSelectedFolder: (folder: FlatNode) => void;
+    onSelectedFile: (file: FlatNode) => void;
 };
 
-export function Drawer({ mode, vfs, drawerId = 'ide-drawer', onSelectedFolder }: DrawerProps) {
+export function Drawer({ mode, formsMode, vfs, drawerId = 'ide-drawer', onSelectedFolder, onSelectedFile }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<FlatNode>>(Option.Default.none());
     const [nodes, setNodes] = React.useState<FlatNode>(vfs.nodes);
-
 
     return (
         <div className="drawer pt-16">
@@ -30,28 +29,13 @@ export function Drawer({ mode, vfs, drawerId = 'ide-drawer', onSelectedFolder }:
 
                 <ul className="menu bg-base-200 text-base-content min-h-full w-[40vw] p-4">
                     <div className="flex w-full">
-                        {/*<div className="card bg-primary text-neutral-content w-1/2">*/}
-                        {/*    <div className="card-body items-start gap-3">*/}
-                        {/*        <h2 className="card-title">Select file</h2>*/}
-                        {/*        <div className="flex flex-wrap gap-3">*/}
-                        {/*            <input type="file" multiple onChange={handlePick} className="file-input file-input-ghost" />*/}
-                        {/*        </div>*/}
-                        {/*    </div>*/}
-                        {/*</div>*/}
-                        
-                        {/*<div className="divider divider-horizontal">OR</div>*/}
                     </div>
                     <div className="mt-4">
-                            {/*<AccessibleTreeVfs*/}
-                            {/*    mode={mode}*/}
-                            {/*    initNodes={nodes}*/}
-                            {/*    onUpload={selectNodes}*/}
-                            {/*    onSelectedFolder={selectFolder}*/}
-                            {/*    expandFoldersByDefault*/}
-                            {/*/>*/}
                         <MultiSelectCheckboxControlled
                             mode={'reader'} 
+                            formsMode={formsMode}
                             onSelectedFolder={onSelectedFolder}
+                            onSelectedFile={onSelectedFile}
                             nodes={nodes} />
                         </div>
                 </ul>

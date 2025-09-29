@@ -2,7 +2,7 @@
 import {List} from "immutable";
 
 export type DataEntry = 'manual' | 'upload';
-export type ChooseStep = 'default' | 'upload-started' | 'upload-in-progress' | 'upload-finished' ;
+
 export type CommonUI = {
     specOrigin: 'existing' | 'create';
     

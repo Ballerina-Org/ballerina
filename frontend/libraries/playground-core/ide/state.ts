@@ -5,13 +5,15 @@ import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/ed
 import {List} from "immutable";
 import {VfsWorkspace} from "./domains/locked/vfs/state";
 import {Bootstrap} from "./domains/bootstrap/state";
-import {LockedSpec, LockedStep} from "./domains/locked/state";
-import {ChooseStep, CommonUI, DataEntry} from "./domains/ui/state";
+import {FormsMode, LockedSpec, LockedStep} from "./domains/locked/state";
+import {CommonUI, DataEntry} from "./domains/ui/state";
+import {ChooseSource, ChooseStep} from "./domains/choose/state";
+
 
 export type Ide =
     CommonUI & (
     |  { phase: 'bootstrap', bootstrap: Bootstrap }
-    |  { phase: 'choose', details: ChooseStep }
+    |  { phase: 'choose', progressIndicator: ChooseStep, source: ChooseSource }
     | ({ phase: 'locked', locked: LockedSpec } & LockedStep)
     // more for form-engine tbc
     )
@@ -35,17 +37,22 @@ export const Ide = {
             choosing: {},
             locking: {},
             bootstrapping: {},
-            toChoosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', details: 'default'})),
-            startUpload: (): Updater<Ide> => Updater(ide =>
+            toChoosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', progressIndicator: 'default', source: 'manual'})),
+            startUpload: (source: ChooseSource): Updater<Ide> => Updater(ide =>
                 ide.phase === 'choose' ?
-                ({...ide, details: 'upload-started'}): ide),
+                ({...ide, progressIndicator: 'upload-started', source: source}): ide),
             finishUpload: (): Updater<Ide> => Updater(ide =>
                 ide.phase === 'choose' ?
-                ({...ide, details: 'upload-finished'}): ide),
+                ({...ide, progressIndicator: 'upload-finished'}): ide),
             progressUpload: (): Updater<Ide> => Updater(ide =>
                 ide.phase === 'choose' ?
-                    ({...ide, details: 'upload-in-progress'}): ide),
-            lockedPhase: (origin: 'existing' | 'create', how: DataEntry, name: string, workspace: VfsWorkspace): Updater<Ide> =>
+                    ({...ide, progressIndicator: 'upload-in-progress'}): ide),
+            lockedPhase: (origin: 'existing' | 'create', 
+                          how: DataEntry, 
+                          name: string, 
+                          workspace: VfsWorkspace,
+                          formsMode: FormsMode,
+            ): Updater<Ide> =>
                 Updater(ide =>
                     ({
                         ...ide,
@@ -53,7 +60,7 @@ export const Ide = {
                         step: 'design',
                         origin: origin,
                         create: {name: Value.Default(name), doneAs: Option.Default.some(how) },
-                        locked: LockedSpec.Updaters.Core.Default(workspace)
+                        locked: LockedSpec.Updaters.Core.Default(workspace, formsMode)
                     })),
             lockedOutcomePhase: (): Updater<Ide> =>
                 Updater(ide => ({

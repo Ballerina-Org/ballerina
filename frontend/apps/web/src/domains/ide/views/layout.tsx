@@ -73,7 +73,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         }
                                         if(props.context.phase == "locked"){
                                             const currentFile = props.context.locked.virtualFolders.selectedFile.value;
-                                            const u = VirtualFolders.Updaters.Template.selectedFileContent(currentFile)
+                                            const u = VirtualFolders.Updaters.Template.selectedFileContent(currentFile.metadata.content)
                                       
                                             props.setState(u)
                                         
@@ -204,19 +204,19 @@ export const IdeLayout: IdeView = (props) =>{
                                     <div className="space-y-2  w-full">
                                         {
                                             props.context.bootstrappingError.map(error => (<pre data-prefix="6"
-                                                                                                className="m-0 pl-3 bg-rose-700 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                 className="m-0 pl-3 bg-rose-700 text-warning-content"><code>Error!</code>{error}</pre>))
                                         }
                                         {
                                             props.context.choosingError.map(error => (<pre data-prefix="6"
-                                                                                           className="m-0 pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                 className="m-0 pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{error}</pre>))
                                         }
                                         {
                                             props.context.lockingError.map(error => (<pre data-prefix="6"
-                                                                                          className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                 className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
                                         }
                                         {
                                             props.context.formsError.map(error => (<pre data-prefix="6"
-                                                                                          className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Forms!</code>{error}</pre>))
+                                                 className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Forms!</code>{error}</pre>))
                                         }
                                     </div>
                                 </div>

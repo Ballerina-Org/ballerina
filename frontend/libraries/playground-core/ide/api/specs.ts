@@ -3,6 +3,7 @@ import {axiosVOE} from "./api";
 import {KnownSections} from "../domains/locked/vfs/state";
 import {ValueOrErrors} from "ballerina-core";
 import {FlatNode} from "../domains/locked/vfs/upload/model";
+import {FormsMode} from "../domains/locked/state";
 
 
 export const listSpecs = async () =>
@@ -13,15 +14,18 @@ export const listSpecs = async () =>
 
 export const getSpec = async (name: string) =>
 
-    await axiosVOE<FlatNode, any>({
+    await axiosVOE<{ folders: FlatNode, settings: {workspaceMode: string}}, any>({
         method: "GET",
         url: `/specs/${name}`,
     });
 
-export const initSpec = async (name: string) =>
+export const initSpec = async (name: string, formsMode: FormsMode) =>
     await axiosVOE<any>({
         method: "Post",
         url: `/specs/${name}`,
+        data: {
+            workspaceMode: formsMode.kind == 'compose' ? "compose" : "select",
+        }
     });
 
 export const postVfs = async (name: string, node: FlatNode) =>
@@ -36,8 +40,8 @@ export const postVfs = async (name: string, node: FlatNode) =>
 //         url: `/specs/${name}/vfs/node`,
 //         data: node
 //     });
-export const getOrInitSpec = async (origin: 'create' | 'existing', name: string) =>
-    origin == 'existing' ? await getSpec(name) : await initSpec(name).then(() => getSpec(name));
+export const getOrInitSpec = async (origin: 'create' | 'existing',formsMode: FormsMode, name: string) =>
+    origin == 'existing' ? await getSpec(name) : await initSpec(name, formsMode).then(() => getSpec(name));
 
 export const validate = async (name: string) =>
     await axiosVOE<KnownSections>({

@@ -30,7 +30,6 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
 
         try {
             const parsed = JSON.parse(value);
-            // ✅ Do NOT store `value` itself in state
             props.onChange(VirtualFolders.Updaters.Template.selectedFileContent(parsed));
         } catch {
         }

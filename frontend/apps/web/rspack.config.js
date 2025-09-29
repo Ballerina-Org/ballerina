@@ -76,8 +76,8 @@ module.exports = {
                   target: process.env.API_ORIGIN,
                   changeOrigin: true,
                   secure: false,
-                  proxyTimeout: 10 * 60 * 1000, 
-                  timeout: 10 * 60 * 1000,
+                  proxyTimeout: 600_000, // 10 minutes (used by http-proxy)
+                  timeout: 600_000,
                   onProxyReq(proxyReq /*, req, res */) {
                       proxyReq.setHeader("Tenant-Id", process.env.TENANT_ID);
                   },

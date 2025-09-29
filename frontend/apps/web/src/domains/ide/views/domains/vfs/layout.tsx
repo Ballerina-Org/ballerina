@@ -7,6 +7,7 @@ import {Breadcrumbs} from "./breadcrumbs.tsx";
 import {FolderFilter} from "./folder-filter.tsx";
 import MonacoEditor from "../../monaco.tsx";
 import {Drawer} from "./drawer.tsx";
+import {MissingFiles} from "./add-missing-files.tsx";
 
 type VfsLayoutProps = Ide & { setState: BasicFun<BasicUpdater<Ide>, void> };
 
@@ -16,7 +17,11 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         props.phase == "locked" 
         && props.locked.virtualFolders.selectedFolder.kind == "r" ?
         <fieldset className="fieldset ml-5">
-            <Breadcrumbs selected={props.locked.virtualFolders.selectedFolder.value} />
+            <Breadcrumbs selected={props.locked.virtualFolders.selectedFolder} />
+            <MissingFiles
+                formsMode={props.locked.formsMode}
+                folder={props.locked.virtualFolders.selectedFolder.value}
+                update={props.setState} />
             <div className="join">
                 <FolderFilter
                     nodes={props.locked.virtualFolders.nodes}
@@ -37,6 +42,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
     const drawer =
         props.phase == "locked" && !props.locked.virtualFolders.nodes.metadata?.isLeaf
         ? <Drawer 
+            formsMode={props.locked.formsMode}
             mode={props.specOrigin == 'existing' ? 'select-current-folder' : 'upload'}
             vfs={props.locked.virtualFolders} 
             onSelectedFolder={(folder) => {
@@ -46,6 +52,18 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                             ...vfs,
                             selectedFolder: Option.Default.some(folder),
                             selectedFile: folder.children?.length || 0 > 0 ? Option.Default.some(folder.children![0]) : vfs.selectedFolder,
+                        }),
+                    )
+                ))
+            }
+            }
+
+            onSelectedFile={(file) => {
+                props.setState(LockedSpec.Updaters.Core.vfs(
+                    Updater(
+                        vfs => ({
+                            ...vfs,
+                            selectedFile: Option.Default.some(file),
                         }),
                     )
                 ))

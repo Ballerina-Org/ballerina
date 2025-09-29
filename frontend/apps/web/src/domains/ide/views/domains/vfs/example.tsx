@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 import TreeView, { flattenTree, INode} from "react-accessible-treeview";
 import {VscArrowSmallDown, VscCheck} from "react-icons/vsc";
-import {FlatNode, Meta, NodeId, VirtualFolders} from "playground-core";
+import {FlatNode, FormsMode, Meta, NodeId, VirtualFolders} from "playground-core";
 import {BasicFun, Unit} from "ballerina-core";
 import {Set} from "immutable";
 
@@ -28,25 +28,24 @@ const SizeBadge: React.FC<{ bytes?: number }> = ({ bytes = 0 }) => {
 
     switch (true) {
         case size <= 10 * 1024: tone = "badge-success"; break;
-        case size < 102400:    tone = "badge-warning"; break;
-        default:               tone = "badge-error";   break;
+        case size < 102400: tone = "badge-warning"; break;
+        default: tone = "badge-error";   break;
     }
 
     return (
-        <div className={`ml-3 badge badge-sm ${tone} ml-auto`}>
+        <div className={`ml-5 badge badge-sm ${tone} ml-auto`}>
             {VirtualFolders.Operations.formatBytes(size)}
         </div>
     );
 };
 
-
 export type MultiSelectCheckboxControlledProps = { 
     mode: 'reader' | 'uploader',
+    formsMode: FormsMode,
     nodes: FlatNode, 
-    onSelectedFolder?: BasicFun<FlatNode, void>
+    onSelectedFolder?: BasicFun<FlatNode, void>,
+    onSelectedFile?: BasicFun<FlatNode, void>
     onAcceptedNodes?: BasicFun<FlatNode, void> }
-
-
 
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
 
@@ -119,9 +118,9 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                 <label className="label">
                                   {element.name}
                                 </label>
-                                {props.mode == 'reader' && element.metadata?.isLeaf && element.metadata?.kind == "dir"
+                                {props.mode == 'reader' &&  element.metadata?.kind == "dir" 
                                     &&  <button 
-                                        className="ml-3 btn btn-neutral btn-dash"
+                                        className="ml-3 btn btn-neutral btn-xs"
                                         onClick={() => { 
                                             const selected = element as unknown as FlatNode
                                             if (props.onSelectedFolder) {
@@ -130,10 +129,21 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                                         data.find(x => x.id === child)
                                                     )})
                                        
-                                                props.onSelectedFolder(item as any);
+                                                props.onSelectedFolder(item as FlatNode);
                                             }
                                         }}
-                                    >select</button>}
+                                    >select folder</button>}
+                                    {props.mode == 'reader' && props.formsMode.kind == 'select' && element.metadata?.kind == "file"
+                                        &&  <button
+                                            className="ml-3 mr-3 btn btn-neutral btn-dash btn-xs"
+                                            onClick={() => {
+                                                const selected = element as unknown as FlatNode
+                                                if (props.onSelectedFile) {
+
+                                                    props.onSelectedFile(selected);
+                                                }
+                                            }}
+                                        >select file</button>}
                                 {element.metadata?.kind == "file" 
                                     &&
                                     <SizeBadge bytes={(element.metadata as Meta)?.size} />

@@ -21,8 +21,9 @@ export const FolderFilter = ({
     if (folder.metadata.kind !== "dir") return null;
     
     const files = (folder.children || [])?.filter(x => x.metadata.kind === "file");
-    
+
     return (
+        <>
         <div className="w-full">
             <div className="mt-3 flex w-full">
                 <div className="filter mb-7 join-item space-x-1">
@@ -60,6 +61,6 @@ export const FolderFilter = ({
                     })}
                 </div>
             </div>
-        </div>
+        </div></>
     );
 };

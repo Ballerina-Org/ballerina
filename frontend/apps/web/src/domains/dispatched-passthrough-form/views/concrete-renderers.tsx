@@ -2730,6 +2730,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
     },
   list: {
+      listAsTableWithHeaders: () => (props) => {
+          return (
+              <div style={{ border: "1px solid darkblue" }}>listAsTableWithHeaders dummy renderer</div>)
+      },
     defaultList: () => (props) => {
       const value = props.context.value;
       if (PredicateValue.Operations.IsUnit(value)) {
@@ -3234,6 +3238,16 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   tuple: {
+      valueWithFailingChecksContainer4: () => (props) => {
+          const valueIndex = 0;
+          const failingChecksStatusIndex = 1;
+          const failingChecksIndex = 2;
+          const failingFilterGroupChecksIndex = 3;
+
+          return (
+              <p>valueWithFailingChecksContainer4</p>
+          );
+      },
     defaultTuple2: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
