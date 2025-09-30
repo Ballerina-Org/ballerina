@@ -11,6 +11,7 @@ type deltaTableEffectsEnum string
 
 const (
 	tableValue       deltaTableEffectsEnum = "TableValue"
+	tableValueAll    deltaTableEffectsEnum = "TableValueAll"
 	tableAddAt       deltaTableEffectsEnum = "TableAddAt"
 	tableRemoveAt    deltaTableEffectsEnum = "TableRemoveAt"
 	tableMoveFromTo  deltaTableEffectsEnum = "TableMoveFromTo"
@@ -23,6 +24,7 @@ type DeltaTable[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaTableEffectsEnum
 	value         *Tuple2[uuid.UUID, deltaA]
+	valueAll      *deltaA
 	addAt         *Tuple2[uuid.UUID, a]
 	removeAt      *uuid.UUID
 	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
@@ -38,6 +40,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase
 		Discriminator deltaTableEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
@@ -47,6 +50,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
+		ValueAll:      d.valueAll,
 		AddAt:         d.addAt,
 		RemoveAt:      d.removeAt,
 		MoveFromTo:    d.moveFromTo,
@@ -60,6 +64,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 		DeltaBase
 		Discriminator deltaTableEffectsEnum
 		Value         *Tuple2[uuid.UUID, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
@@ -74,6 +79,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
+	d.valueAll = aux.ValueAll
 	d.addAt = aux.AddAt
 	d.removeAt = aux.RemoveAt
 	d.moveFromTo = aux.MoveFromTo
@@ -87,6 +93,12 @@ func NewDeltaTableValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaT
 	return DeltaTable[a, deltaA]{
 		discriminator: tableValue,
 		value:         &val,
+	}
+}
+func NewDeltaTableValueAll[a any, deltaA any](delta deltaA) DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		discriminator: tableValueAll,
+		valueAll:      &delta,
 	}
 }
 func NewDeltaTableAddAt[a any, deltaA any](index uuid.UUID, newElement a) DeltaTable[a, deltaA] {
@@ -129,6 +141,7 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 
 func MatchDeltaTable[a any, deltaA any, Result any](
 	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
+	onValueAll func(deltaA) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
@@ -147,6 +160,8 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 					},
 				)(table)
 				return onValue(*delta.value)(value)
+			case tableValueAll:
+				return onValueAll(*delta.valueAll)
 			case tableAddAt:
 				return onAddAt(*delta.addAt)
 			case tableRemoveAt:
