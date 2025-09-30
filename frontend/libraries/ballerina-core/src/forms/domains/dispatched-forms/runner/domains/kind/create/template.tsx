@@ -60,7 +60,7 @@ export const DispatchCreateFormLauncherTemplate = <
     }
 
     if (props.context.status.kind == "loading" || config.kind == "reloading") {
-      return props.context.loadingComponent ?? <>Loading...</>;
+      return props.context.loadingComponent ?? <></>;
     }
 
     const bindings: Bindings = Map([

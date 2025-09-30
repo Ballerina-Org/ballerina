@@ -73,7 +73,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
     }
 
     if (props.context.status.kind == "loading") {
-      return props.context.loadingComponent ?? <>Loading...</>;
+      return props.context.loadingComponent ?? <></>;
     }
 
     return (
