@@ -28,19 +28,19 @@ import {
     DispatchEntityContainerFormView,
     DispatchLookupTypeRenderer,
     DispatchEntityNestedContainerFormView,
-} from "../../dispatched-passthrough-form/views/wrappers";
+} from "../../../../dispatched-passthrough-form/views/wrappers";
 import {
     CategoryAbstractRenderer,
     DispatchCategoryState,
     DispatchPassthroughFormInjectedTypes,
-} from "../../dispatched-passthrough-form/injected-forms/category";
+} from "../../../../dispatched-passthrough-form/injected-forms/category";
 import {
     DispatchPassthroughFormConcreteRenderers,
     DispatchPassthroughFormCustomPresentationContext,
     DispatchPassthroughFormFlags,
     DispatchPassthroughFormExtraContext,
-} from "../../dispatched-passthrough-form/views/concrete-renderers";
-import { DispatchFieldTypeConverters } from "../../dispatched-passthrough-form/apis/field-converters";
+} from "../../../../dispatched-passthrough-form/views/concrete-renderers";
+import { DispatchFieldTypeConverters } from "../../../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 import {
     DispatchFromConfigApis,

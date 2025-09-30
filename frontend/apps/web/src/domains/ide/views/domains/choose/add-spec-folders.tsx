@@ -1,8 +1,9 @@
 ﻿import React from "react";
-import {FlatNode, FormsMode, getOrInitSpec, Ide, postVfs, VirtualFolders} from "playground-core";
+import {FlatNode, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
-import MultiSelectCheckboxControlled from "../vfs/example.tsx";
+import {MultiSelectCheckboxControlled} from "../vfs/workspace-picker.tsx"
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
+import {SpecMode, SpecOrigin} from "playground-core/ide/domains/spec/state.ts";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -17,8 +18,9 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
         if(node.kind == "errors") props.setState(Ide.Updaters.CommonUI.chooseErrors(node.errors))
         else setNode(Option.Default.some(node.value));
     }, []);
-    const origin = 'create';
-    return  (props.phase == 'choose' && props.source == 'upload-folder' && props.progressIndicator == 'upload-started')
+    const formsMode: SpecMode = { mode: 'compose', entry: 'upload-folder' };
+    const specOrigin: SpecOrigin = { origin: 'creating'}
+    return  (props.phase == 'choose' && props.entry == 'upload-folder' && props.progressIndicator == 'upload-started')
         ?
             <div className="card bg-gray-200 text-black w-full  mt-12">
                 <div className="card-body items-start gap-3">
@@ -37,18 +39,23 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                         <div className="mt-4">
                             { node.kind == "r"
                                 && <MultiSelectCheckboxControlled
+                                    workspace={{
+                                        kind: "stale",
+                                        nodes: node.value,
+                                        ...formsMode,
+                                        ...specOrigin,
+                                    }}
                                     mode={'uploader'}
                                     onAcceptedNodes={(node: FlatNode)=> {
                                     }
-                                    }
-                                    nodes={node.value} /> }
+                                    } /> }
                         </div>
                     </div>
                     <div className="card-actions justify-end">
                         <button
                             onClick={async ()=>{
-                                const formsMode: FormsMode = { kind: 'compose' };
-                                const vfs = await getOrInitSpec(origin, formsMode, props.create.name.value);
+                                
+                                const vfs = await initSpec(props.name.value, formsMode);
                                 if(vfs.kind == "errors") {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
@@ -57,28 +64,29 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
 
                                 if(node.kind == "r") {
                                     
-                                    const u = Ide.Updaters.Phases.progressUpload()
+                                    const u = Ide.Updaters.Phases.choosing.progressUpload()
                                     props.setState(u)
                                     
-                                    const d = await postVfs(props.create.name.value, node.value);
+                                    const d = await postVfs(props.name.value, node.value);
                               
                                     if(d.kind == "errors") {
-                                        props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors).then(Ide.Updaters.Phases.finishUpload()))
+                                        props.setState(
+                                            Ide.Updaters.CommonUI.chooseErrors(d.errors)
+                                                .then(Ide.Updaters.Phases.choosing.finishUpload()))
                                         return;
                                     }
       
                                     const u2 = 
-                                        Ide.Updaters.Phases.finishUpload()
+                                        Ide.Updaters.Phases.choosing.finishUpload()
                                             .then(
-                                                Ide.Updaters.Phases.lockedPhase(
-                                                    'create', 
-                                                    'upload', 
-                                                    props.create.name.value,
-                                                    VirtualFolders.Operations.buildWorkspaceFromRoot('create', node.value),
+                                                Ide.Updaters.Phases.choosing.toLocked(
+                                                    props.name.value,
+                                                    node.value,
+                                                    {origin: 'creating'},
                                                     formsMode
                                                 )   )
                                     props.setState(u2)
-                                    LocalStorage_SpecName.set(props.create.name.value);
+                                    LocalStorage_SpecName.set(props.name.value);
 
                                 }
         

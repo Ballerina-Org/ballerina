@@ -1,26 +1,20 @@
-﻿import {FlatNode, Ide, VfsWorkspace} from "playground-core";
+﻿import {ProgressiveWorkspace} from "playground-core";
 import React from "react";
-import {VscFile, VscFolder} from "react-icons/vsc";
-import {Option, replaceWith, SimpleCallback, Unit, Updater} from "ballerina-core";
 import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 
 type FolderFilterProps = {
-    folder: FlatNode;
-    nodes: FlatNode;
-    selected: Option<FlatNode>;
+    workspace: ProgressiveWorkspace
     update?: any
 };
 
 export const FolderFilter = ({
-     folder,
-     selected,
-     nodes,
+     workspace,
      update,
  }: FolderFilterProps) => {
     
-    if (folder.metadata.kind !== "dir") return null;
+    if (workspace.kind !== "unstale") return null;
     
-    const files = (folder.children || [])?.filter(x => x.metadata.kind === "file");
+    const files = (workspace.current.folder.children || [])?.filter(x => x.metadata.kind === "file");
 
     return (
         <>
@@ -48,11 +42,8 @@ export const FolderFilter = ({
                                     name="virtual-files"
                                     aria-label={f.name}
                                     onChange={async () => {
-                                        const s_u = LockedSpec.Updaters.Core.vfs(
-                                            VfsWorkspace.Updaters.Core.selectedFile(
-                                                replaceWith(
-                                                    Option.Default.some(f)))
-                                        );
+                                        const s_u = 
+                                            LockedSpec.Updaters.Core.workspace(ProgressiveWorkspace.Updater.selectFile(f))
                                         update(s_u);
                                     }}
                                 />

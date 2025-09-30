@@ -1,10 +1,9 @@
 ﻿import {VscArrowSmallRight, VscDiffAdded, VscDiffRemoved, VscPrimitiveSquare} from "react-icons/vsc";
 import React, { useState } from "react";
-
 import TreeView, { flattenTree, INode} from "react-accessible-treeview";
-import {VscArrowSmallDown, VscCheck} from "react-icons/vsc";
-import {FlatNode, FormsMode, Meta, NodeId, VirtualFolders} from "playground-core";
-import {BasicFun, Unit} from "ballerina-core";
+import {VscArrowSmallDown} from "react-icons/vsc";
+import {FlatNode, Meta, NodeId, ProgressiveWorkspace, VirtualFolders} from "playground-core";
+import {BasicFun} from "ballerina-core";
 import {Set} from "immutable";
 
 function cx(...args: Array<string | Record<string, boolean> | undefined | null | false>): string {
@@ -41,8 +40,7 @@ const SizeBadge: React.FC<{ bytes?: number }> = ({ bytes = 0 }) => {
 
 export type MultiSelectCheckboxControlledProps = { 
     mode: 'reader' | 'uploader',
-    formsMode: FormsMode,
-    nodes: FlatNode, 
+    workspace: ProgressiveWorkspace, 
     onSelectedFolder?: BasicFun<FlatNode, void>,
     onSelectedFile?: BasicFun<FlatNode, void>
     onAcceptedNodes?: BasicFun<FlatNode, void> }
@@ -50,7 +48,7 @@ export type MultiSelectCheckboxControlledProps = {
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
 
     const data: INode<Meta>[] = 
-        flattenTree(props.nodes);
+        flattenTree(props.workspace.nodes);
 
 
     const [selectedIds, setSelectedIds] = useState(data.map(x => x.id));
@@ -118,7 +116,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                 <label className="label">
                                   {element.name}
                                 </label>
-                                {props.mode == 'reader' &&  element.metadata?.kind == "dir" 
+                                {props.mode == 'reader' &&  element.metadata?.kind == "dir" && props.workspace.mode == 'compose'
                                     &&  <button 
                                         className="ml-3 btn btn-neutral btn-xs"
                                         onClick={() => { 
@@ -133,7 +131,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                             }
                                         }}
                                     >select folder</button>}
-                                    {props.mode == 'reader' && props.formsMode.kind == 'select' && element.metadata?.kind == "file"
+                                    {props.mode == 'reader' && props.workspace.mode != 'compose' && element.metadata?.kind == "file"
                                         &&  <button
                                             className="ml-3 mr-3 btn btn-neutral btn-dash btn-xs"
                                             onClick={() => {
@@ -145,10 +143,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                             }}
                                         >select file</button>}
                                 {element.metadata?.kind == "file" 
-                                    &&
-                                    <SizeBadge bytes={(element.metadata as Meta)?.size} />
-                                        
-                                 }
+                                    && <SizeBadge bytes={(element.metadata as Meta)?.size} />}
                             </div>
                             </div>
                         );
@@ -172,8 +167,6 @@ const ArrowIcon = ({ isOpen, className }: { isOpen: any; [key: string]: any }) =
 };
 
 const CheckBoxIcon = ({ variant,mode, ...rest }: { variant: any; mode: 'reader' | 'uploader', [key: string]: any }) => {
-    
- 
     switch (variant) {
     case "all":
         return <VscDiffAdded size={20} {...rest} />;
@@ -185,5 +178,3 @@ const CheckBoxIcon = ({ variant,mode, ...rest }: { variant: any; mode: 'reader' 
         return null;
     }
 };
-
-export default MultiSelectCheckboxControlled;

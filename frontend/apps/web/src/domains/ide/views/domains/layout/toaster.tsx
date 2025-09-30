@@ -1,8 +1,8 @@
-﻿'use client';
-// source: https://sonner.emilkowal.ski/styling
+﻿// source: https://sonner.emilkowal.ski/styling
 import React from 'react';
-import {toast, toast as sonnerToast, Toaster} from 'sonner';
+import {toast, Toaster} from 'sonner';
 import {List} from "immutable";
+
 type ToastPosition =
     | "top-left"
     | "top-center"
@@ -10,6 +10,7 @@ type ToastPosition =
     | "bottom-left"
     | "bottom-center"
     | "bottom-right";
+
 interface ToastProps {
     id: string | number;
     title: string;
@@ -38,7 +39,6 @@ const getPosition = (type: "success" | "warning" | "error" | "info"): ToastPosit
     }
 };
 
-// 1) Mount this once near your app root (e.g., in layout or App)
 export function AppToaster() {
     return (
         <Toaster
@@ -51,7 +51,6 @@ export function AppToaster() {
     );
 }
 
-// 2) Use Sonner's built-ins anywhere:
 export const notify = {
     success: (title: string, description?: string, duration?: number) =>
         toast.success(title, { description, duration, position: getPosition("success") }),

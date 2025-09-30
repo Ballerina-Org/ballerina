@@ -1,23 +1,21 @@
 ﻿import React from "react";
 
-import {FlatNode, FormsMode, VfsWorkspace, VirtualFolders} from "playground-core";
+import {FlatNode, ProgressiveWorkspace} from "playground-core";
 import {BasicFun, FormsConfigMerger, Option, Unit} from "ballerina-core";
 import {List} from "immutable";
-import MultiSelectCheckboxControlled from "./example.tsx";
-
+import { MultiSelectCheckboxControlled } from "./workspace-picker.tsx";
 
 type DrawerProps = {
     mode: 'upload' | 'select-current-folder';
-    vfs: VfsWorkspace;
+    workspace: ProgressiveWorkspace;
     drawerId?: string;
-    formsMode: FormsMode;
     onSelectedFolder: (folder: FlatNode) => void;
     onSelectedFile: (file: FlatNode) => void;
 };
 
-export function Drawer({ mode, formsMode, vfs, drawerId = 'ide-drawer', onSelectedFolder, onSelectedFile }: DrawerProps) {
+export function Drawer({ mode, workspace, drawerId = 'ide-drawer', onSelectedFolder, onSelectedFile }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<FlatNode>>(Option.Default.none());
-    const [nodes, setNodes] = React.useState<FlatNode>(vfs.nodes);
+    const [nodes, setNodes] = React.useState<FlatNode>(workspace.nodes);
 
     return (
         <div className="drawer pt-16">
@@ -33,10 +31,9 @@ export function Drawer({ mode, formsMode, vfs, drawerId = 'ide-drawer', onSelect
                     <div className="mt-4">
                         <MultiSelectCheckboxControlled
                             mode={'reader'} 
-                            formsMode={formsMode}
+                            workspace={workspace}
                             onSelectedFolder={onSelectedFolder}
-                            onSelectedFile={onSelectedFile}
-                            nodes={nodes} />
+                            onSelectedFile={onSelectedFile} />
                         </div>
                 </ul>
             </div>

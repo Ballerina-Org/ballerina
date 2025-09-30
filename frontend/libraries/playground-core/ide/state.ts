@@ -3,19 +3,19 @@ import { Template, View } from "ballerina-core";
 import { ForeignMutationsInput } from "ballerina-core";
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
 import {List} from "immutable";
-import {VfsWorkspace} from "./domains/locked/vfs/state";
+import {ProgressiveWorkspace} from "./domains/locked/vfs/state";
 import {Bootstrap} from "./domains/bootstrap/state";
-import {FormsMode, LockedSpec, LockedStep} from "./domains/locked/state";
-import {CommonUI, DataEntry} from "./domains/ui/state";
-import {ChooseSource, ChooseStep} from "./domains/choose/state";
-
+import { LockedSpec, LockedStep} from "./domains/locked/state";
+import {CommonUI} from "./domains/ui/state";
+import {ChooseStep} from "./domains/choose/state";
+import {DataEntry, SpecMode, SpecOrigin} from "./domains/spec/state";
+import {FlatNode} from "./domains/locked/vfs/upload/model";
 
 export type Ide =
     CommonUI & (
     |  { phase: 'bootstrap', bootstrap: Bootstrap }
-    |  { phase: 'choose', progressIndicator: ChooseStep, source: ChooseSource }
+    |  { phase: 'choose', specOrigin: SpecOrigin, entry: DataEntry, progressIndicator: ChooseStep }
     | ({ phase: 'locked', locked: LockedSpec } & LockedStep)
-    // more for form-engine tbc
     )
 
 export const Ide = {
@@ -27,47 +27,46 @@ export const Ide = {
     
     Updaters: {
         CommonUI: {
-            specName: (name: Value<string>): Updater<Ide> => Updater(ide => ({...ide, create: { ...ide.create, name: name } })),
+            specName: (name: Value<string>): Updater<Ide> => Updater(ide => ({...ide, name: name })),
             lockingErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, lockingError: e})),
             bootstrapErrors: (e: List<string>): Updater<Ide> =>  Updater(ide => ({...ide, bootstrappingError: e})),
             chooseErrors: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, choosingError: e})),
             formsError: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, formsError: e})),
         },
         Phases: {
-            choosing: {},
-            locking: {},
-            bootstrapping: {},
-            toChoosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide => ({...ide, phase: 'choose', progressIndicator: 'default', source: 'manual'})),
-            startUpload: (source: ChooseSource): Updater<Ide> => Updater(ide =>
-                ide.phase === 'choose' ?
-                ({...ide, progressIndicator: 'upload-started', source: source}): ide),
-            finishUpload: (): Updater<Ide> => Updater(ide =>
-                ide.phase === 'choose' ?
-                ({...ide, progressIndicator: 'upload-finished'}): ide),
-            progressUpload: (): Updater<Ide> => Updater(ide =>
-                ide.phase === 'choose' ?
-                    ({...ide, progressIndicator: 'upload-in-progress'}): ide),
-            lockedPhase: (origin: 'existing' | 'create', 
-                          how: DataEntry, 
-                          name: string, 
-                          workspace: VfsWorkspace,
-                          formsMode: FormsMode,
-            ): Updater<Ide> =>
-                Updater(ide =>
-                    ({
+            bootstrapping: {
+                toChoosePhase: (): Updater<Ide> => Updater((ide: Ide): Ide =>
+                    ({...ide, phase: 'choose', entry:'upload-manual', progressIndicator: 'default',  specOrigin: {origin: 'creating' }})),
+            },
+            choosing: {
+                startUpload: (entry: DataEntry): Updater<Ide> => Updater(ide =>
+                    ide.phase === 'choose' ?
+                        ({...ide, entry: entry, progressIndicator: 'upload-started'}): ide),
+                progressUpload: (): Updater<Ide> => Updater(ide =>
+                    ide.phase === 'choose' ?
+                        ({...ide, progressIndicator: 'upload-in-progress'}): ide),
+                finishUpload: (): Updater<Ide> => Updater(ide =>
+                    ide.phase === 'choose' ?
+                        ({...ide, progressIndicator: 'upload-finished'}): ide),
+                toLocked: (name: string, node: FlatNode, specOrigin: SpecOrigin, formsMode: SpecMode): Updater<Ide> =>
+                    Updater(ide =>
+                        ({
+                            ...ide, phase: 'locked', step: 'design',
+                            name: Value.Default(name),
+                            locked: { workspace: ProgressiveWorkspace.Default(node, formsMode, specOrigin), validatedSpec: Option.Default.none() },
+                        })),
+            },
+            locking: {
+                toOutcome: (): Updater<Ide> =>
+                    Updater(ide => ide.phase != 'locked' ? ide : ({
                         ...ide,
-                        phase: 'locked',
-                        step: 'design',
-                        origin: origin,
-                        create: {name: Value.Default(name), doneAs: Option.Default.some(how) },
-                        locked: LockedSpec.Updaters.Core.Default(workspace, formsMode)
-                    })),
-            lockedOutcomePhase: (): Updater<Ide> =>
-                Updater(ide => ({
-                    ...ide,
-                    step: 'outcome'
-                }))
+                        locked: {...ide.locked, step: 'preDisplay'}
+                    }))
+            },
         }
+    },
+    Operations: {
+
     },
     ForeignMutations: (
         _: ForeignMutationsInput<IdeReadonlyContext, IdeWritableState>,
@@ -93,3 +92,26 @@ export type IdeView = View<
         >;
     }
 >;
+type ExtractPhase<TUnion, TPhase extends string> =
+    Extract<TUnion, { phase: TPhase }>;
+export function PhaseUpdater<
+    TUnion extends { phase: string },
+    TPhase extends TUnion["phase"],
+    TKey extends keyof ExtractPhase<TUnion, TPhase>
+>(
+    phase: TPhase,
+    key: TKey,
+    updater: (
+        value: ExtractPhase<TUnion, TPhase>[TKey]
+    ) => ExtractPhase<TUnion, TPhase>[TKey]
+) {
+    return (ide: TUnion): TUnion => {
+        if (ide.phase === phase) {
+            return {
+                ...ide,
+                [key]: updater((ide as ExtractPhase<TUnion, TPhase>)[key]),
+            } as TUnion;
+        }
+        return ide;
+    };
+}

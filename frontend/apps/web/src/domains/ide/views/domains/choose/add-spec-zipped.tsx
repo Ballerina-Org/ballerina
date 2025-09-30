@@ -1,9 +1,10 @@
 ﻿import React, {Dispatch, SetStateAction, useState} from "react";
-import {FlatNode, FormsMode, getOrInitSpec, Ide, postVfs, VirtualFolders} from "playground-core";
+import {FlatNode, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value, ValueOrErrors} from "ballerina-core";
 
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
 import {ChooseState} from "playground-core/ide/domains/choose/state.ts";
+import {SpecMode} from "playground-core/ide/domains/spec/state.ts";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -15,8 +16,8 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
         const content = await ChooseState.Operations.handleZip(f);
         setResult(content);
     };
-    const origin = 'create';
-    return (props.phase == 'choose' && props.source == 'upload-zip' && props.progressIndicator == 'upload-started')
+    const formsMode: SpecMode = { mode: 'explore', entry: 'upload-zip'};
+    return (props.phase == 'choose' && props.entry == 'upload-zip' && props.progressIndicator == 'upload-started')
         ? <div className="card bg-gray-200 text-black w-full  mt-12">
                 <div className="card-body items-start gap-3">
 
@@ -41,9 +42,8 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
                     {result.kind == "value" && <div className="card-actions justify-end">
                         <button
                             onClick={async ()=> {
-                                const formsMode: FormsMode = { kind: 'select'};
-                                debugger
-                                const vfs = await getOrInitSpec(origin, formsMode, props.create.name.value);
+                               
+                                const vfs = await initSpec(props.name.value, formsMode);
                                 if(vfs.kind == "errors") {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
@@ -51,28 +51,26 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
                                 if(result.kind == "value") {
                                     const vfs = await VirtualFolders.Operations.fileArrayToTree(result.value);
                                     if(vfs.kind == "value") {
-                                        const u = Ide.Updaters.Phases.progressUpload()
+                                        const u = Ide.Updaters.Phases.choosing.progressUpload()
                                         props.setState(u)
 
-                                        const d = await postVfs(props.create.name.value, vfs.value);
+                                        const d = await postVfs(props.name.value, vfs.value);
 
                                         if (d.kind == "errors") {
-                                            props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors).then(Ide.Updaters.Phases.finishUpload()))
+                                            props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors).then(Ide.Updaters.Phases.choosing.finishUpload()))
                                             return;
                                         }
 
                                         const u2 =
-                                            Ide.Updaters.Phases.finishUpload()
+                                            Ide.Updaters.Phases.choosing.finishUpload()
                                                 .then(
-                                                    Ide.Updaters.Phases.lockedPhase(
-                                                        'create',
-                                                        'upload',
-                                                        props.create.name.value,
-                                                        VirtualFolders.Operations.buildWorkspaceFromRoot('create', vfs.value),
+                                                    Ide.Updaters.Phases.choosing.toLocked(props.name.value,
+                                                       vfs.value,
+                                                        {origin: 'creating'},
                                                         formsMode
                                                     ))
                                         props.setState(u2)
-                                        LocalStorage_SpecName.set(props.create.name.value);
+                                        LocalStorage_SpecName.set(props.name.value);
 
                                     }
                                 }

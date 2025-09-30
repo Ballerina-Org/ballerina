@@ -3,7 +3,7 @@ import Editor, { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import type * as monacoT from "monaco-editor";
 import {BasicUpdater} from "ballerina-core";
-import {VirtualFolders} from "playground-core";
+import {Ide, LockedSpec, ProgressiveWorkspace, VirtualFolders} from "playground-core";
 
 type VocabJsonEditorProps = {
     value?: string;
@@ -30,7 +30,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
 
         try {
             const parsed = JSON.parse(value);
-            props.onChange(VirtualFolders.Updaters.Template.selectedFileContent(parsed));
+            props.onChange(LockedSpec.Updaters.Core.workspace(ProgressiveWorkspace.Updater.changeFileContent(parsed)));
         } catch {
         }
     }, [props.onChange]);

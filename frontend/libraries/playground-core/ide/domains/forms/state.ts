@@ -6,5 +6,4 @@
     setState: (state: any) => void,
     launcherName: string,
     launcherConfigName: string,
-    
 }

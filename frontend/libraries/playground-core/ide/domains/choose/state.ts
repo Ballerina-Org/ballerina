@@ -1,30 +1,13 @@
 ﻿import {simpleUpdater, ValueOrErrors} from "ballerina-core";
 import {List} from "immutable";
 import JSZip, { JSZipObject } from "jszip";
+import {getSpec} from "../../api/specs";
 import {VirtualFolders} from "../locked/vfs/state";
+import {Ide} from "../../state";
 
 export type ChooseStep = 'default' | 'upload-started' | 'upload-in-progress' | 'upload-finished';
-export type ChooseSource = 'manual' | 'upload-zip' | 'upload-folder';
-
-export type ChooseState = {
-    source: ChooseSource;
-    progress: ChooseStep;
-    errors: List<string>;
-}
 
 export const ChooseState = {
-    Default: (): ChooseState => ({
-        source: 'manual',
-        progress: 'default',
-        errors: List<string>(),
-    }),
-    Updaters: {
-        Core: {
-            ...simpleUpdater<ChooseState>()("source"),
-            ...simpleUpdater<ChooseState>()("progress"),
-            ...simpleUpdater<ChooseState>()("errors"),
-        }
-    },
     Operations: {
         tryParseJsonObject: (str: string): Record<string, unknown> | null => {
             try {

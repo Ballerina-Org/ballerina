@@ -18,7 +18,7 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
 }
 
 export const AddSpec = (props: AddSpecProps): React.ReactElement => {
-    return props.phase == "choose" && props.specOrigin == 'create'  ? 
+    return props.phase == "choose" && props.specOrigin.origin == 'creating' && props.existing.specs.length == 0  ? 
         <AddSpecInner {...props} /> : <></>
 }
 

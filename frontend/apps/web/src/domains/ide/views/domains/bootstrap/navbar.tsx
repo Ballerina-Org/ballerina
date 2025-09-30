@@ -1,6 +1,6 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
 import {Ide} from "playground-core";
-import {Themes} from "../../theme-selector.tsx";
+import {Themes} from "../layout/theme-selector.tsx"
 
 type NavbarProps = Ide & { theme: string, setTheme: Dispatch<SetStateAction<string>> };
 

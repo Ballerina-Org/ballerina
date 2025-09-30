@@ -29,6 +29,7 @@ type ActionsProps = {
     hideRight?: boolean;
     onAction?: (action: ActionKey) => void;
     canRun?: boolean;
+    canValidate: boolean;
     onNew?: () => void;
     onLock?: () => void;
     onSeed?: () => void;
@@ -45,6 +46,7 @@ export const Actions: React.FC<ActionsProps> = ({
             context,
             hideRight = false,
             onAction,
+    canValidate = false,
             canRun = true,
     
             onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
@@ -78,10 +80,11 @@ export const Actions: React.FC<ActionsProps> = ({
         )}
         {context.phase === "locked"  && (
             <div className="indicator">
-                {context.locked.virtualFolders.merged.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
+                {context.locked.validatedSpec.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
                 <button
                     className="btn tooltip tooltip-bottom"
-                    data-tip="Merge and validate"
+                    data-tip="Validate"
+                    disabled={!canValidate}
                 >
                     <VscMerge size={size} onClick={onMerge} />
                 </button>

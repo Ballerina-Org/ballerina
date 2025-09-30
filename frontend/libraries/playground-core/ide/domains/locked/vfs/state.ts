@@ -11,7 +11,8 @@
 import { Map } from "immutable";
 import {FlatNode} from "./upload/model";
 import {Ide} from "../../../state";
-import {FormsMode, LockedSpec} from "../state";
+import {LockedSpec} from "../state";
+import {SpecOrigin, SpecMode} from "../../spec/state";
 export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
 export type JsonPrimitive = string | number | boolean | null;
@@ -19,56 +20,81 @@ export type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue }
 export type JsonSection = Record<string, JsonValue>;
 export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
 
-export type VfsWorkspaceMeta= {
-    formsMode: FormsMode;
+export type SelectedWorkspace =
+    | { kind: 'folder', folder: FlatNode }
+    | { kind: 'file', folder: FlatNode, file: FlatNode }
+
+export type ProgressiveWorkspace =
+    (
+    | { kind: 'stale', nodes: FlatNode }
+    | { kind: 'unstale', nodes: FlatNode, current: SelectedWorkspace }
+    ) 
+    & Readonly<SpecMode>
+    & Readonly<SpecOrigin>
+
+export const ProgressiveWorkspace = {
+    Default: (nodes: FlatNode, mode: SpecMode, origin: SpecOrigin): ProgressiveWorkspace => ({
+        kind: 'stale',
+        nodes: nodes,
+        ...mode,
+        ...origin
+    }),
+    Updater: {
+        changeFileContent: (newContent: any): Updater<ProgressiveWorkspace> =>
+            Updater(workspace => {
+                if (!(workspace.kind === "unstale" && workspace.current.kind === "file")) {
+                    window.alert("design issue: vfs from file content");
+                    return workspace;
+                }
+
+                return ({
+                    ...workspace,
+                    current: {
+                        ...workspace.current,
+                        file: FlatNode.Updaters.Template.fileContent(newContent)(workspace.current.file)
+                    }
+                })
+            }),
+        selectFile: (file: FlatNode): Updater<ProgressiveWorkspace> =>
+            Updater(workspace => {
+                const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, file.metadata.path);
+                debugger
+                if(folder == null) {
+                    window.alert("design issue: vfs from file content select file");
+                    return workspace;
+                }
+                return ({
+                    ...workspace,
+                    kind: 'unstale',
+                    current: {
+                        kind: 'file',
+                        file: file,
+                        folder: folder
+                    }
+                })
+            }),
+        selectFolder: (folder: FlatNode): Updater<ProgressiveWorkspace> =>
+            Updater(workspace => {
+                if (!(workspace.kind === "unstale")) {
+                    window.alert("design issue: vfs from file content");
+                    return workspace;
+                }
+
+                return ({
+                    ...workspace,
+                    current: {
+                        ...workspace.current,
+                        kind: 'folder',
+                        folder: folder
+                    }
+                })
+            })
+    }
+
 }
 
-export type VfsWorkspace = {
-    nodes: FlatNode;
-    merged: Option<KnownSections>;    
-    schema: Option<any>;
-    selectedFolder: Option<FlatNode>;
-    selectedFile: Option<FlatNode>;
-    metaFile: Option<VfsWorkspaceMeta>;
-};
-
 export const VirtualFolders = {
-    Updaters: {
-        Template: {
-            selectedFileContent: (value: any) => Updater<Ide>(ide => {
-                if(ide.phase == 'locked' 
-                    && ide.locked.virtualFolders.selectedFile.kind == "r"
-                    && ide.locked.virtualFolders.selectedFolder.kind == "r"){
-                    const vfs = ide.locked.virtualFolders;
-                    const node = ide.locked.virtualFolders.selectedFile.value;
-                    const root=  FlatNode.Operations.replaceFileAtPath(vfs.nodes, node.metadata.path, node);
-                    const folder = FlatNode.Operations.findFolderByPath(root, ide.locked.virtualFolders.selectedFolder.value.metadata.path);
-                    
-                    const next: VfsWorkspace = 
-                        {...vfs, 
-                            selectedFile: Option.Default.some({...node, metadata: {...node.metadata, content: value}}),
-                            selectedFolder: Option.Default.some(folder!),
-                            nodes: root
-                        };
-           
-                    return LockedSpec.Updaters.Core.vfs(replaceWith(next))(ide)
-                }
-                return ide
-            })
-        }
-    },
     Operations: {
-        buildWorkspaceFromRoot(origin: 'existing' | 'create', nodes: FlatNode): VfsWorkspace {
-         
-            return {
-                nodes, 
-                schema: Option.Default.none(),
-                merged: Option.Default.none(),
-                metaFile: Option.Default.none(),
-                selectedFile: nodes.metadata?.isLeaf && nodes.children?.length || 0 > 0 ? Option.Default.some(nodes.children![0]) : Option.Default.none(),
-                selectedFolder: nodes.metadata?.kind == 'dir' &&  nodes.metadata?.isLeaf ? Option.Default.some(nodes) : Option.Default.none(),
-            }
-        },
         formatBytes: (bytes?: number) => {
             if (bytes == null || !Number.isFinite(bytes)) return "";
             const k = 1024;
@@ -102,7 +128,6 @@ export const VirtualFolders = {
             const existing = node.children?.find(c => c.name === head);
 
             if (rest.length === 0) {
-                // Case 1: already JSON
                 const content: Record<string, unknown> =
                     fileOrJson instanceof File
                         ? await (async () => {
@@ -134,7 +159,6 @@ export const VirtualFolders = {
                 node.children = [...(node.children ?? []), fileNode];
                 return node;
             } else {
-                // create/find dir node
                 let dirNode = existing && existing.metadata.kind === "dir" ? existing : undefined;
 
                 if (!dirNode) {
@@ -280,15 +304,15 @@ export const VirtualFolders = {
     }
 }
 
-export const VfsWorkspace = {
-    Updaters: {
-        Core: {
-            ...simpleUpdater<VfsWorkspace>()("selectedFile"),
-            ...simpleUpdater<VfsWorkspace>()("merged"),
-            ...simpleUpdater<VfsWorkspace>()("selectedFolder"),
-            ...simpleUpdater<VfsWorkspace>()("schema"),
-        }
-    }
-}
+// export const VfsWorkspace = {
+//     Updaters: {
+//         Core: {
+//             ...simpleUpdater<VfsWorkspace>()("selectedFile"),
+//             ...simpleUpdater<VfsWorkspace>()("merged"),
+//             ...simpleUpdater<VfsWorkspace>()("selectedFolder"),
+//             ...simpleUpdater<VfsWorkspace>()("schema"),
+//         }
+//     }
+// }
 
 

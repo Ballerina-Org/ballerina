@@ -1,6 +1,6 @@
 ﻿
 import {KnownSections} from "../state";
-import {Option} from "ballerina-core";
+import {Option, Updater} from "ballerina-core";
 
 export type Meta =  {
     kind: "dir" | "file";
@@ -26,6 +26,13 @@ export interface INode<Meta> {
 export type FlatNode = INode<Meta>;
 
 export const FlatNode = {
+    Updaters: {
+        Template: {
+            fileContent: (content: any): Updater<FlatNode> =>
+                Updater(node =>
+                    ({...node, metadata: {...node.metadata, content: content}}))
+        }
+    },
     Operations: {
         filterLeafFolders:(node: FlatNode): FlatNode =>
             node.metadata.kind == "file" 
@@ -93,11 +100,31 @@ export const FlatNode = {
 
             return recurse(root);
         },
+        // findFolderByPath: (root: FlatNode, path: string): FlatNode | null => {
+        //     const parts = path.split("/").filter(Boolean);
+        //
+        //     const recurse = (node: FlatNode, pathParts: string[]): FlatNode | null => {
+        //         if (pathParts.length === 0) return node.metadata.kind === "dir" ? node : null;
+        //
+        //         if (node.metadata.kind !== "dir" || !node.children) return null;
+        //
+        //         const [current, ...rest] = pathParts;
+        //
+        //         const child = node.children.find(c => c.name === current);
+        //         if (!child) return null;
+        //
+        //         return recurse(child, rest);
+        //     };
+        //
+        //     return recurse(root, parts);
+        // },
         findFolderByPath: (root: FlatNode, path: string): FlatNode | null => {
             const parts = path.split("/").filter(Boolean);
 
             const recurse = (node: FlatNode, pathParts: string[]): FlatNode | null => {
-                if (pathParts.length === 0) return node.metadata.kind === "dir" ? node : null;
+                if (pathParts.length === 0) {
+                    return node.metadata.kind === "dir" ? node : null;
+                }
 
                 if (node.metadata.kind !== "dir" || !node.children) return null;
 
@@ -105,6 +132,9 @@ export const FlatNode = {
 
                 const child = node.children.find(c => c.name === current);
                 if (!child) return null;
+                if (rest.length === 0 && child.metadata.kind === "file") {
+                    return node;
+                }
 
                 return recurse(child, rest);
             };

@@ -21,7 +21,7 @@ export const bootstrap =
                         res.value.kind == "value" ? 
                             Updater(Bootstrap.Updaters.Core.ready(res.value.value)
                             )
-                            .then(Ide.Updaters.Phases.toChoosePhase())
+                            .then(Ide.Updaters.Phases.bootstrapping.toChoosePhase())
                             : Ide.Updaters.CommonUI.bootstrapErrors(res.value.errors))}),
         ]
     );
