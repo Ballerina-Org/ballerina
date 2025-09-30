@@ -35,12 +35,12 @@ class TestPrimitivesSerializer:
     @staticmethod
     def test_string_to_json() -> None:
         value = "hello"
-        assert string_to_json(value) == value
+        assert string_to_json(value) == {"discriminator": "string", "value": value}
 
     @staticmethod
     def test_string_from_json() -> None:
-        serialized: Json = "hello"
-        assert string_from_json(serialized) == Sum.right(serialized)
+        serialized: Json = {"discriminator": "string", "value": "hello"}
+        assert string_from_json(serialized) == Sum.right("hello")
 
     @staticmethod
     def test_unit_to_json() -> None:

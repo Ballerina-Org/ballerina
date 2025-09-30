@@ -10,13 +10,17 @@ from ballerina_core.unit import Unit, unit
 
 
 def string_to_json(value: str) -> Json:
-    return value
+    return {DISCRIMINATOR_KEY: "string", VALUE_KEY: value}
 
 
 def string_from_json(value: Json) -> Sum[ParsingError, str]:
     match value:
-        case str():
-            return Sum.right(value)
+        case {"discriminator": "string", "value": string_value}:
+            match string_value:
+                case str():
+                    return Sum.right(string_value)
+                case _:
+                    return Sum.left(ParsingError.single(f"Not a string: {string_value}"))
         case _:
             return Sum.left(ParsingError.single(f"Not a string: {value}"))
 
