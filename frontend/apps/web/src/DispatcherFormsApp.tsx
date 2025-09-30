@@ -253,12 +253,14 @@ export const DispatcherFormsApp = (props: {}) => {
         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
           "person-transparent",
         )!.parseValueToApi;
-      setEntityPath(
-        DispatchDeltaTransfer.Default.FromDelta(
-          toApiRawParser as any, //TODO - fix type issue if worth it
-          parseCustomDelta,
-        )(delta),
-      );
+      const dispatchDeltaTransfer = DispatchDeltaTransfer.Default.FromDelta(
+        toApiRawParser as any, //TODO - fix type issue if worth it
+        parseCustomDelta,
+      )(delta);
+
+      console.debug("dispatchDeltaTransfer", dispatchDeltaTransfer);
+
+      setEntityPath(dispatchDeltaTransfer);
       setRemoteEntityVersionIdentifier(v4());
     }
   };

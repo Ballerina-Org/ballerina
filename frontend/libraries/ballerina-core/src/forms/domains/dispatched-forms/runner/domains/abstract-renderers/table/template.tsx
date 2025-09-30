@@ -264,8 +264,14 @@ export const TableAbstractRenderer = <
             };
 
             const delta: DispatchDelta<Flags> = {
-              kind: "TableValue",
-              id: rowId,
+              ...(props.context.customFormState.applyToAll
+                ? {
+                    kind: "TableValueAll",
+                  }
+                : {
+                    kind: "TableValue",
+                    id: rowId,
+                  }),
               nestedDelta: nestedRecordDelta,
               flags,
               sourceAncestorLookupTypeNames:
@@ -668,6 +674,29 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
+              setApplyToAll: (applyToAll: boolean) =>
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.applyToAll(
+                    replaceWith(applyToAll),
+                  ),
+                ),
+              applyToAll: (nestedDelta, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "TableValueAll",
+                  nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
+                props.foreignMutations.onChange(Option.Default.none(), delta);
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {
