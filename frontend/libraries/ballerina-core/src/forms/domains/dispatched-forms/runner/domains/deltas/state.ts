@@ -295,6 +295,12 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "TableValueAll";
+      nestedDelta: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "TableAddEmpty";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
@@ -449,6 +455,10 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
         Item1: string;
         Item2: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
       };
+    }
+  | {
+      Discriminator: "TableValueAll";
+      Delta: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
@@ -1327,6 +1337,33 @@ export const DispatchDeltaTransfer = {
                 delta.flags
                   ? [
                       [delta.flags, `[TableValue][${delta.id}]${value[1]}`],
+                      ...value[2],
+                    ]
+                  : value[2],
+              ]),
+            );
+          }
+          if (delta.kind == "TableValueAll") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "TableValueAll",
+                  ValueAll: value[0],
+                },
+                `[TableValueAll]${value[1]}`,
+                delta.flags
+                  ? [
+                      [delta.flags, `[TableValueAll]${value[1]}`],
                       ...value[2],
                     ]
                   : value[2],
