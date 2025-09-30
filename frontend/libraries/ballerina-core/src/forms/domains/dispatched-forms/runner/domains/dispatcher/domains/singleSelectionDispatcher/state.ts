@@ -13,7 +13,7 @@ import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
 import { EnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/enum/state";
 import { StreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/stream/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const SingleSelectionDispatcher = {
   Operations: {
