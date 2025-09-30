@@ -1362,10 +1362,7 @@ export const DispatchDeltaTransfer = {
                 },
                 `[TableValueAll]${value[1]}`,
                 delta.flags
-                  ? [
-                      [delta.flags, `[TableValueAll]${value[1]}`],
-                      ...value[2],
-                    ]
+                  ? [[delta.flags, `[TableValueAll]${value[1]}`], ...value[2]]
                   : value[2],
               ]),
             );
