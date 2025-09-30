@@ -86,7 +86,7 @@ let ``Dsl:Terms:Expr.Let json round-trip`` () =
     """{"kind":"let","let":["y", {"kind":"int32","int32":"5"}, {"kind":"int32","int32":"6"}]}"""
 
   let expected: Expr<TypeExpr> =
-    Expr.Let(Var.Create "y", Expr.Primitive(PrimitiveValue.Int32 5), Expr.Primitive(PrimitiveValue.Int32 6))
+    Expr.Let(Var.Create "y", None, Expr.Primitive(PrimitiveValue.Int32 5), Expr.Primitive(PrimitiveValue.Int32 6))
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``

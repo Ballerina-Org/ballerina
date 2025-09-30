@@ -41,7 +41,7 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-type private PrimitiveExt =
+type PrimitiveExt =
   | Int32Operations of Int32Operations<ValueExt>
   | Int64Operations of Int64Operations<ValueExt>
   | Float32Operations of Float32Operations<ValueExt>
@@ -54,12 +54,12 @@ type private PrimitiveExt =
   | BoolOperations of BoolOperations<ValueExt>
   | TimeSpanOperations of TimeSpanOperations<ValueExt>
 
-and private OptionExt =
+and OptionExt =
   | OptionOperations of OptionOperations<ValueExt>
   | OptionValues of OptionValues<ValueExt>
   | OptionConstructors of OptionConstructors
 
-and private ValueExt =
+and ValueExt =
   | ValueExt of Choice<OptionExt, PrimitiveExt>
 
   static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
@@ -185,7 +185,7 @@ let private boolExtension =
         | _ -> None)
       Set = BoolOperations >> Choice2Of2 >> ValueExt.ValueExt }
 
-let private context =
+let context =
   LanguageContext<ValueExt>.Empty
   |> (optionExtension |> TypeExtension.RegisterLanguageContext)
   |> (int32Extension |> OperationsExtension.RegisterLanguageContext)
@@ -398,11 +398,37 @@ let ``Int32 addition operation works`` () =
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
 
 [<Test>]
+let ``Int32 multiplication operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "*")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Primitive(PrimitiveValue.Int32 3)
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32 15) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 15 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
 let ``Int32 subtraction operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "+")), Expr.Primitive(PrimitiveValue.Int32 10)),
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "-")), Expr.Primitive(PrimitiveValue.Int32 3))
+      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "-")), Expr.Primitive(PrimitiveValue.Int32 10)),
+      Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =

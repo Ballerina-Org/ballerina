@@ -85,7 +85,7 @@ module Eval =
           | Value.Primitive(PrimitiveValue.Bool true) -> return! thenBody |> Expr.Eval
           | Value.Primitive(PrimitiveValue.Bool false) -> return! elseBody |> Expr.Eval
           | v -> return! $"expected boolean in if condition, got {v}" |> Errors.Singleton |> reader.Throw
-        | Expr.Let(var, valueExpr, body) ->
+        | Expr.Let(var, _varType, valueExpr, body) ->
           let! value = valueExpr |> Expr.Eval
 
           return!

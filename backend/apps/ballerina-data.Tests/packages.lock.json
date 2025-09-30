@@ -336,7 +336,6 @@
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )",
-          "FSharp.Data": "[6.6.0, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-lang-eval": "[1.0.0, )",
           "ballerina-lang-json": "[1.0.0, )",

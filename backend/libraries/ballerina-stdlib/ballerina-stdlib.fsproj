@@ -18,6 +18,7 @@
         <Compile Include="Range\Model.fs" />
         <Compile Include="Queries\QuotationToLinq.fs" />
         <Compile Include="Crud\Model.fs" />
+        <Compile Include="Algorithms\TopologicalSort.fs" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="9.0.303" />

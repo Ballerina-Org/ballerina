@@ -29,10 +29,11 @@ module TypeEval =
             let! funcType = !func
             let! argType = !arg
             return Expr.Apply(funcType, argType)
-          | Expr.Let(var, value, body) ->
+          | Expr.Let(var, var_type, value, body) ->
             let! valueType = !value
             let! bodyType = !body
-            return Expr.Let(var, valueType, bodyType)
+            let! var_type = var_type |> Option.map (!!) |> state.RunOption
+            return Expr.Let(var, var_type, valueType, bodyType)
           | Expr.RecordCons fields ->
             let! fieldTypes =
               fields

@@ -24,7 +24,7 @@ module Let =
           let var = Var.Create var
           let! value = value |> fromRootJson
           let! body = body |> fromRootJson
-          return Expr.Let(var, value, body)
+          return Expr.Let(var, None, value, body)
         })
 
     static member ToJsonLet

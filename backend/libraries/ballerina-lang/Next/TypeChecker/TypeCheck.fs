@@ -14,8 +14,10 @@ module TypeCheck =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Unification
+  open Ballerina.DSL.Next.Types.AdHocPolymorphicOperators
   open Eval
   open Ballerina.Fun
+
 
   type TypeCheckContext =
     { Types: TypeExprEvalContext
@@ -233,35 +235,44 @@ module TypeCheck =
                         |> state.Ignore
 
                       match f_lookup with
-                      | Identifier.LocalScope name when (name = "&&" || name = "||") ->
-                        do!
-                          TypeValue.Unify(TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
-                          |> Expr<'T>.liftUnification
+                      | Identifier.LocalScope f_lookup when adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup ->
+                        let! a_primitive = t_a |> TypeValue.AsPrimitive |> state.OfSum
+                        let a_primitive = a_primitive.value
 
-                        let! bool_op, bool_op_t, bool_op_k = !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name))
-                        do! bool_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                        let! adHocResolution =
+                          adHocPolymorphismBinary
+                          |> Map.tryFindWithError
+                            (f_lookup, a_primitive)
+                            "ad-hoc polymorphism resolutions"
+                            f_lookup.ToFSharpString
+                          |> state.OfSum
+
+                        let! adhoc_op, adhoc_op_t, adhoc_op_k =
+                          !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup))
+
+                        do! adhoc_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
 
                         do!
                           TypeValue.Unify(
                             TypeValue.CreateArrow(
-                              TypeValue.CreatePrimitive PrimitiveType.Bool,
+                              TypeValue.CreatePrimitive adHocResolution.MatchedInput,
                               TypeValue.CreateArrow(
-                                TypeValue.CreatePrimitive PrimitiveType.Bool,
-                                TypeValue.CreatePrimitive PrimitiveType.Bool
+                                TypeValue.CreatePrimitive adHocResolution.OtherInput,
+                                TypeValue.CreatePrimitive adHocResolution.Output
                               )
                             ),
-                            bool_op_t
+                            adhoc_op_t
                           )
                           |> Expr<'T>.liftUnification
 
                         let t_res =
                           TypeValue.CreateArrow(
-                            TypeValue.CreatePrimitive PrimitiveType.Bool,
-                            TypeValue.CreatePrimitive PrimitiveType.Bool
+                            TypeValue.CreatePrimitive adHocResolution.OtherInput,
+                            TypeValue.CreatePrimitive adHocResolution.Output
                           )
 
                         let k_res = Kind.Star
-                        return Expr.Apply(bool_op, a), t_res, k_res
+                        return Expr.Apply(adhoc_op, a), t_res, k_res
                       | Identifier.LocalScope name when (name = "!") ->
                         do!
                           TypeValue.Unify(TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
@@ -350,16 +361,23 @@ module TypeCheck =
               }
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `if {cond} ...`"))
 
-          | Expr.Let(x, e1, e2) ->
+          | Expr.Let(x, x_type, e1, e2) ->
             return!
               state {
                 let! e1, t1, k1 = !e1
+
+                match x_type with
+                | Some x_type ->
+                  let! x_type, x_type_kind = x_type |> TypeExpr.Eval None |> Expr<'T>.liftTypeEval
+                  do! x_type_kind |> Kind.AsStar |> state.OfSum |> state.Ignore
+                  do! TypeValue.Unify(t1, x_type) |> Expr<'T>.liftUnification
+                | _ -> ()
 
                 let! e2, t2, k2 =
                   !e2
                   |> state.MapContext(TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope x.Name) (t1, k1)))
 
-                return Expr.Let(x, e1, e2), t2, k2
+                return Expr.Let(x, None, e1, e2), t2, k2
               }
               |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `let {x.Name} = ...`"))
 
@@ -392,6 +410,11 @@ module TypeCheck =
                 do! body_k |> Kind.AsStar |> state.OfSum |> state.Ignore
 
                 let! t_x = freshVarType |> fst |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+
+                // do!
+                //     UnificationState.DeleteVariable freshVar
+                //       |> TypeValue.EquivalenceClassesOp
+                //       |> Expr<'T>.liftUnification
 
                 return Expr.Lambda(x, Some t_x, body), TypeValue.CreateArrow(t_x, t_body), Kind.Star
               }
@@ -590,23 +613,23 @@ module TypeCheck =
           | Expr.UnionDes(handlers, fallback) ->
             return!
               state {
-                let result_t =
+                let result_var =
                   { TypeVar.Name = $"res"
                     Guid = Guid.CreateVersion7() }
 
-                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists result_t))
-                let result_t = result_t |> TypeValue.Var
+                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists result_var))
+                let result_t = result_var |> TypeValue.Var
 
                 let! handlers =
                   handlers
                   |> Map.map (fun k (var, body) ->
                     state {
-                      let var_t =
+                      let fresh_var =
                         { TypeVar.Name = var.Name
                           Guid = Guid.CreateVersion7() }
 
-                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists var_t))
-                      let var_t = var_t |> TypeValue.Var
+                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
+                      let var_t = fresh_var |> TypeValue.Var
 
                       let! body, body_t, body_k =
                         !body
@@ -622,9 +645,12 @@ module TypeCheck =
 
                       let! k_s = TypeCheckState.TryFindSymbol k
 
-                      return (var, body), (k_s, var_t)
+                      return (var, body), ((k_s, var_t), fresh_var)
                     })
                   |> state.AllMap
+
+                let handler_vars = handlers |> Map.map (fun _ -> snd >> snd)
+                let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
 
                 let handlerExprs = handlers |> Map.map (fun _ -> fst)
                 let handlerTypes = handlers |> Map.map (fun _ -> snd) |> Map.values |> Map.ofSeq
@@ -641,6 +667,18 @@ module TypeCheck =
                   }
 
                 let! result_t = TypeValue.Instantiate result_t |> Expr.liftInstantiation
+
+                do ignore handler_vars
+                // for kv in handler_vars |> Map.values do
+                //   do!
+                //       UnificationState.DeleteVariable kv
+                //         |> TypeValue.EquivalenceClassesOp
+                //         |> Expr<'T>.liftUnification
+
+                // do!
+                //     UnificationState.DeleteVariable result_var
+                //       |> TypeValue.EquivalenceClassesOp
+                //       |> Expr<'T>.liftUnification
 
                 let unionValue = TypeValue.CreateUnion handlerTypes
                 let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
@@ -659,22 +697,22 @@ module TypeCheck =
           | Expr.SumDes(handlers) ->
             return!
               state {
-                let result_t =
-                  TypeValue.Var(
-                    { TypeVar.Name = $"res"
-                      Guid = Guid.CreateVersion7() }
-                  )
+                let result_var =
+                  { TypeVar.Name = $"res"
+                    Guid = Guid.CreateVersion7() }
+
+                let result_var_t = result_var |> TypeValue.Var
 
                 let! handlers =
                   handlers
                   |> Seq.map (fun (var, body) ->
                     state {
-                      let var_t =
+                      let fresh_var =
                         { TypeVar.Name = var.Name
                           Guid = Guid.CreateVersion7() }
 
-                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists var_t))
-                      let var_t = TypeValue.Var var_t
+                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
+                      let var_t = TypeValue.Var fresh_var
 
                       let! body, body_t, body_k =
                         !body
@@ -684,21 +722,36 @@ module TypeCheck =
 
                       do! body_k |> Kind.AsStar |> state.OfSum |> state.Ignore
 
-                      do! TypeValue.Unify(body_t, result_t) |> Expr.liftUnification
+                      do! TypeValue.Unify(body_t, result_var_t) |> Expr.liftUnification
 
                       let! var_t = TypeValue.Instantiate var_t |> Expr.liftInstantiation
 
-                      return (var, body), var_t
+                      return ((var, body), var_t), fresh_var
                     })
                   |> state.All
+
+                let handler_vars = handlers |> List.map snd
+                let handlers = handlers |> List.map fst
 
                 let handlerExprs = handlers |> List.map fst
                 let handlerTypes = handlers |> List.map snd
 
-                let! result_t = TypeValue.Instantiate result_t |> Expr.liftInstantiation
+                let! result_t = TypeValue.Instantiate result_var_t |> Expr.liftInstantiation
 
                 let sumValue = TypeValue.CreateSum handlerTypes
                 let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
+
+                do ignore handler_vars
+                // for kv in handler_vars do
+                //   do!
+                //       UnificationState.DeleteVariable kv
+                //         |> TypeValue.EquivalenceClassesOp
+                //         |> Expr<'T>.liftUnification
+
+                // do!
+                //     UnificationState.DeleteVariable result_var
+                //       |> TypeValue.EquivalenceClassesOp
+                //       |> Expr<'T>.liftUnification
 
                 return Expr.SumDes handlerExprs, arrowValue, Kind.Star
               }
@@ -801,7 +854,8 @@ module TypeCheck =
 
                 // cleanup unification state, slightly more radical than pop
                 do!
-                  TypeValue.EquivalenceClassesOp(UnificationState.TryDeleteFreeVariable fresh_t_par_var)
+                  UnificationState.TryDeleteFreeVariable fresh_t_par_var
+                  |> TypeValue.EquivalenceClassesOp
                   |> Expr.liftUnification
 
                 return

@@ -14,7 +14,7 @@ open Ballerina.State.WithError
 module Runner =
   let seed
     (schema: Schema<TypeValue>)
-    : Reader<SpecData<TypeValue, 'valueExtension>, SeedingContext<TypeValue>, Errors> =
+    : Reader<SpecData<TypeValue, 'valueExtension>, SeedingContext<'valueExtension>, Errors> =
     reader {
       let! ctx = reader.GetContext()
 
@@ -22,7 +22,7 @@ module Runner =
         schema.Entities
         |> Map.map (fun _k -> EntityDescriptor.seed)
         |> state.AllMap
-        |> State.Run(ctx, ctx)
+        |> State.Run(ctx, SeedingState.Default())
         |> reader.OfSum
         |> reader.MapError fst
 

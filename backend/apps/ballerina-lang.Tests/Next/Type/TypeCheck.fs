@@ -38,6 +38,7 @@ let ``LangNext-TypeCheck let typechecks`` () =
   let program =
     Expr.Let(
       "x" |> Var.Create,
+      None,
       Expr.Primitive(PrimitiveValue.Int32 10),
       Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 5))
     )
@@ -222,6 +223,7 @@ let ``LangNext-TypeCheck record cons and record des typecheck with a new type de
       ),
       Expr.Let(
         "v3" |> Var.Create,
+        None,
         Expr.RecordCons(
           [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
             ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
@@ -291,6 +293,7 @@ let ``LangNext-TypeCheck union cons and des typecheck with new type and inferred
       ),
       Expr.Let(
         "v" |> Var.Create,
+        None,
         Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0M)),
         Expr.Apply(
           Expr.UnionDes(
@@ -342,6 +345,7 @@ let ``LangNext-TypeCheck tuple cons and des typecheck`` () =
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -424,6 +428,7 @@ let ``LangNext-TypeCheck sum cons and des typecheck`` () =
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -489,6 +494,7 @@ let ``LangNext-TypeCheck HKTs over option typechecks`` () =
       ),
       Expr.Let(
         "func" |> Var.Create,
+        None,
         Expr.TypeLambda(
           ("f", Kind.Arrow(Kind.Star, Kind.Star)) |> TypeParameter.Create,
           Expr.TypeLambda(
@@ -638,7 +644,13 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
   let expected =
     TypeValue.Arrow
       { value = predictionValue, predictionValue
-        source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Arrow(!!"A", !!"A")) }
+        source =
+          TypeExprSourceMapping.OriginTypeExpr(
+            TypeExpr.Apply(
+              TypeExpr.Lambda(TypeParameter.Create("A", Kind.Star), TypeExpr.Arrow(!!"A", !!"A")),
+              TypeExpr.Lookup !"Prediction"
+            )
+          ) }
 
   match actual with
   | Sum.Left((_, actual, Kind.Star), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -704,6 +716,7 @@ let ``LangNext-TypeCheck record des fail when symbol does not exist`` () =
       ),
       Expr.Let(
         "v3" |> Var.Create,
+        None,
         Expr.RecordCons(
           [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
             ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
@@ -952,6 +965,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (negative) index`` (
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -986,6 +1000,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (too large) index`` 
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -1075,6 +1090,7 @@ let ``LangNext-TypeCheck sum des fails on mismatched types with the same arity``
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -1115,6 +1131,7 @@ let ``LangNext-TypeCheck sum des fails on missing cases`` () =
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -1174,6 +1191,7 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
+        None,
         Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.String "not a decimal eh")),
         Expr.Apply(
           Expr.UnionDes(
@@ -1234,6 +1252,7 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
+        None,
         Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0m)),
         Expr.Apply(
           Expr.UnionDes(
@@ -1334,7 +1353,16 @@ let ``LangNext-TypeCheck type lambda succeeds when concrete type is passed to *-
   let initialState = TypeCheckState.Empty
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected = TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal
+  let expected =
+    TypeValue.Primitive
+      { value = PrimitiveType.Decimal
+        source =
+          TypeExprSourceMapping.OriginTypeExpr(
+            TypeExpr.Apply(
+              TypeExpr.Lambda(TypeParameter.Create("x", Kind.Star), TypeExpr.Lookup !"x"),
+              TypeExpr.Primitive PrimitiveType.Decimal
+            )
+          ) }
 
   match actual with
   | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
@@ -1361,7 +1389,16 @@ let ``LangNext-TypeCheck type lambda succeeds when *->* type is passed to (*->*)
   let initialState = TypeCheckState.Empty
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected = TypeValue.PrimitiveWithTrivialSource PrimitiveType.Unit
+  let expected =
+    TypeValue.Primitive
+      { value = PrimitiveType.Unit
+        source =
+          TypeExprSourceMapping.OriginTypeExpr(
+            TypeExpr.Apply(
+              TypeExpr.Lambda(TypeParameter.Create("x", Kind.Star), !!"x"),
+              TypeExpr.Primitive PrimitiveType.Unit
+            )
+          ) }
 
   match actual with
   | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()

@@ -541,11 +541,16 @@ let ``LangNext-TypeEval (generic) Apply`` () =
             TypeValue.PrimitiveWithTrivialSource PrimitiveType.String ]
         source =
           TypeExprSourceMapping.OriginTypeExpr(
-            TypeExpr.Tuple
-              [ TypeExpr.Primitive PrimitiveType.Int32
-                TypeExpr.Lookup(Identifier.LocalScope "a") ]
+            TypeExpr.Apply(
+              TypeExpr.Lambda(
+                TypeParameter.Create("a", Kind.Star),
+                TypeExpr.Tuple
+                  [ TypeExpr.Primitive PrimitiveType.Int32
+                    TypeExpr.Lookup(Identifier.LocalScope "a") ]
+              ),
+              TypeExpr.Primitive PrimitiveType.String
+            )
           ) }
-
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
