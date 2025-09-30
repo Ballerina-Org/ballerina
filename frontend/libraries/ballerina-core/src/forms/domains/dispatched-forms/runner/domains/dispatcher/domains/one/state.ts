@@ -10,7 +10,7 @@ import {
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const OneDispatcher = {
   Operations: {

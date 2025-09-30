@@ -201,6 +201,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        const [streamParams, shouldReload] =
+          props.context.customFormState.streamParams.value;
+
         return (
           <>
             <p>one admin renderer</p>
@@ -2335,7 +2338,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 </li>
               );
             })}
-            {props.embeddedPlaceholderElementTemplate()(undefined)({
+            {props.embeddedPlaceholderElementTemplate(0)(undefined)({
               ...props,
               context: {
                 ...props.context,
@@ -2350,7 +2353,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 ...props.foreignMutations,
                 onChange: (upd, delta) => {
                   props.foreignMutations.add?.(undefined)(
-                    upd.kind == "l" ? undefined : upd.value,
+                    upd.kind == "l"
+                      ? undefined
+                      : (upd.value as BasicUpdater<PredicateValue>),
                   );
                 },
               },
