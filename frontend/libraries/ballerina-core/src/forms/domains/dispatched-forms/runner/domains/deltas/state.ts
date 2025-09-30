@@ -458,7 +458,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
     }
   | {
       Discriminator: "TableValueAll";
-      Delta: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
+      ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
