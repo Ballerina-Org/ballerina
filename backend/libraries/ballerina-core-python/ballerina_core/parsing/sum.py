@@ -2,44 +2,73 @@ from __future__ import annotations
 
 from typing import TypeVar
 
+from ballerina_core.parsing.keys import DISCRIMINATOR_KEY, VALUE_KEY
 from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
 from ballerina_core.sum import Sum
 
 _SumL = TypeVar("_SumL")
 _SumR = TypeVar("_SumR")
 
-_CASE_KEY = "case"
-_VALUE_KEY = "value"
-_LEFT_VALUE = "Sum.Left"
-_RIGHT_VALUE = "Sum.Right"
+
+def _case_to_json(discriminator: int, payload: Json) -> Json:
+    return [discriminator, payload]
 
 
-def sum_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
+def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
+    match case_payload:
+        case list():
+            if len(case_payload) == 2:  # noqa: PLR2004
+                discriminator, payload = case_payload
+                match discriminator:
+                    case int():
+                        return Sum.right((discriminator, payload))
+                    case _:
+                        return Sum.left(ParsingError.single(f"Invalid discriminator: {discriminator}"))
+            else:
+                return Sum.left(
+                    ParsingError.single(f"Invalid case payload, list should have 2 elements: {case_payload}")
+                )
+        case _:
+            return Sum.left(
+                ParsingError.single(f"Invalid case payload, should be a list: {case_payload}, got {type(case_payload)}")
+            )
+
+
+def sum2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
     def to_json(value: Sum[_SumL, _SumR]) -> Json:
         return value.fold(
-            lambda a: {_CASE_KEY: _LEFT_VALUE, _VALUE_KEY: left_to_json(a)},
-            lambda b: {_CASE_KEY: _RIGHT_VALUE, _VALUE_KEY: right_to_json(b)},
+            lambda a: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(0, left_to_json(a))},
+            lambda b: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(1, right_to_json(b))},
         )
 
     return to_json
 
 
-def sum_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
+def _handle_case_tuple(
+    case_tuple: tuple[int, Json], left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR]
+) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
+    discriminator, payload = case_tuple
+    if discriminator == 0:
+        return left_from_json(payload).map_right(Sum.left)
+    if discriminator == 1:
+        return right_from_json(payload).map_right(Sum.right)
+    return Sum.left(ParsingError.single(f"Invalid discriminator: {discriminator}"))
+
+
+def sum2_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
     def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
         match value:
             case dict():
-                if _CASE_KEY not in value:
-                    return Sum.left(ParsingError.single(f"Missing {_CASE_KEY}: {value}"))
-                if _VALUE_KEY not in value:
-                    return Sum.left(ParsingError.single(f"Missing {_VALUE_KEY}: {value}"))
-                match value[_CASE_KEY]:
-                    case discriminator if discriminator == _LEFT_VALUE:
-                        return left_from_json(value[_VALUE_KEY]).map_right(Sum.left)
-                    case discriminator if discriminator == _RIGHT_VALUE:
-                        return right_from_json(value[_VALUE_KEY]).map_right(Sum.right)
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid {_CASE_KEY}: {value}"))
+                if DISCRIMINATOR_KEY not in value:
+                    return Sum.left(ParsingError.single(f"Missing {DISCRIMINATOR_KEY}: {value}"))
+                if value[DISCRIMINATOR_KEY] != "sum":
+                    return Sum.left(ParsingError.single(f"Invalid {DISCRIMINATOR_KEY}: {value}"))
+                if VALUE_KEY not in value:
+                    return Sum.left(ParsingError.single(f"Missing {VALUE_KEY}: {value}"))
+                return _case_from_json(value[VALUE_KEY]).flat_map(
+                    lambda case_tuple: _handle_case_tuple(case_tuple, left_from_json, right_from_json)
+                )
             case _:
                 return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
 
-    return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing sum:"))
+    return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing sum2:"))
