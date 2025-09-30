@@ -392,38 +392,43 @@ export const TableAbstractRendererState = {
       fromApiRaw: (value: any) => ValueOrErrors<PredicateValue, string>,
     ): OrderedMap<string, ValueRecord> =>
       OrderedMap(
-        Object.entries(values).map(([key, _]) => {
-          const parsedRow = fromApiRaw(_);
-          if (parsedRow.kind == "errors") {
-            console.error(parsedRow.errors.toJS());
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (!PredicateValue.Operations.IsRecord(parsedRow.value)) {
-            console.error("Expected a record");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (!parsedRow.value.fields.has("Id")) {
-            console.error("Expected a record with 'Id' field");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (typeof parsedRow.value.fields.get("Id")! !== "string") {
-            console.error("Id must be a string");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          return [parsedRow.value.fields.get("Id")! as string, parsedRow.value];
-        }),
+        values === null || values === undefined
+          ? OrderedMap()
+          : Object.entries(values).map(([key, _]) => {
+              const parsedRow = fromApiRaw(_);
+              if (parsedRow.kind == "errors") {
+                console.error(parsedRow.errors.toJS());
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (!PredicateValue.Operations.IsRecord(parsedRow.value)) {
+                console.error("Expected a record");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (!parsedRow.value.fields.has("Id")) {
+                console.error("Expected a record with 'Id' field");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (typeof parsedRow.value.fields.get("Id")! !== "string") {
+                console.error("Id must be a string");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              return [
+                parsedRow.value.fields.get("Id")! as string,
+                parsedRow.value,
+              ];
+            }),
       ),
   },
 };
