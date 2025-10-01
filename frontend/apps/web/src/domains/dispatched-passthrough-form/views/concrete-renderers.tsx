@@ -1448,6 +1448,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 gap: "10px",
               }}
             >
+              <div>
+                <input
+                  type="checkbox"
+                  checked={props.context.customFormState.applyToAll}
+                  onClick={() =>
+                    props.foreignMutations.setApplyToAll(
+                      !props.context.customFormState.applyToAll,
+                    )
+                  }
+                />
+                Apply to all
+              </div>
               <table>
                 <thead style={{ border: "1px solid black" }}>
                   <tr style={{ border: "1px solid black" }}>

@@ -31,6 +31,7 @@ import {
   ValueSumN,
   ValueUnit,
   id,
+  DispatchDelta,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -91,6 +92,7 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: string;
     filterStates: Map<string, List<any>>;
+    applyToAll: boolean;
   };
 };
 export const TableAbstractRendererState = {
@@ -109,6 +111,7 @@ export const TableAbstractRendererState = {
       filters: Map(),
       sorting: Map(),
       filterStates: Map(),
+      applyToAll: false,
     },
   }),
   Updaters: {
@@ -143,6 +146,9 @@ export const TableAbstractRendererState = {
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "loadingState",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "applyToAll",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -445,6 +451,8 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   selectAllRows: SimpleCallback<void>;
   clearRows: SimpleCallback<void>;
   onChange: DispatchOnChange<ValueTable, Flags>;
+  setApplyToAll: SimpleCallback<boolean>;
+  applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
   add: VoidCallbackWithOptionalFlags<Flags> | undefined;
   remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   moveTo:
