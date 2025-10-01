@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Include="State\WithError\Model.fs" />
+        <Compile Include="Algorithms\TopologicalSort.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

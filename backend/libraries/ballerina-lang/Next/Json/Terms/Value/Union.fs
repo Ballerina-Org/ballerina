@@ -12,16 +12,16 @@ module Union =
   open Ballerina.DSL.Next.Types.Json.TypeSymbolJson
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "union-case"
-  let private fieldKey = "union-case"
+  let private discriminator = "union-case"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonUnion
       (fromJsonRoot: ValueParser<'T, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, 'valueExtension> =
-      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun caseJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun caseJson ->
         reader {
           let! k, v = caseJson |> JsonValue.AsPair |> reader.OfSum
           let! k = TypeSymbol.FromJson k |> reader.OfSum
@@ -37,5 +37,5 @@ module Union =
       reader {
         let k = TypeSymbol.ToJson k
         let! v = rootToJson v
-        return [| k; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| k; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }

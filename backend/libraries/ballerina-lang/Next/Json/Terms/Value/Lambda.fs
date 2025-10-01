@@ -9,13 +9,13 @@ module Lambda =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "lambda"
-  let private fieldKey = "lambda"
+  let private discriminator = "lambda"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonLambda(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
-      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun lambdaJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun lambdaJson ->
         reader {
           let! exprFromJsonRoot, _ = reader.GetContext()
           let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
@@ -30,5 +30,5 @@ module Lambda =
         let! rootExprEncoder, _ = reader.GetContext()
         let var = var.Name |> JsonValue.String
         let! body = body |> rootExprEncoder |> reader.OfSum
-        return [| var; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| var; body |] |> JsonValue.Array |> Json.discriminator discriminator
       }

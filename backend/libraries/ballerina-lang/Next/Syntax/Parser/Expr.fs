@@ -1,7 +1,7 @@
-namespace Ballerina.DSL.Next.Syntax
+namespace Ballerina.DSL.Next.Syntax.Parser
 
 [<AutoOpen>]
-module Parser =
+module Expr =
 
   open System
   open Ballerina.Collections.Option
@@ -12,365 +12,11 @@ module Parser =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
-
-  type BinaryOperatorsElement<'operand, 'operator> =
-    | Operand of 'operand
-    | Operator of 'operator
-
-  type BinaryOperatorsOperations<'operand, 'operator, 'expr> =
-    { Compose: 'operand * 'operator * 'operand -> 'operand
-      ToExpr: 'operand -> 'expr }
-
-  type OperatorAssociativity =
-    | AssociateLeft
-    | AssociateRight
-
-  type OperatorsPrecedence<'operator when 'operator: comparison> =
-    { Operators: Set<'operator>
-      Associativity: OperatorAssociativity }
-
-  let rec collapseBinaryOperatorsChain<'operand, 'operator, 'expr when 'operator: comparison>
-    (binOp: BinaryOperatorsOperations<'operand, 'operator, 'expr>)
-    (loc: Location)
-    (precedence: List<OperatorsPrecedence<'operator>>)
-    (l0: List<BinaryOperatorsElement<'operand, 'operator>>)
-    =
-    let rec collapse (p: OperatorsPrecedence<'operator>) (l: List<BinaryOperatorsElement<'operand, 'operator>>) =
-      sum {
-        match l with
-        | [ _ ] -> return l
-        | Operand e1 :: Operator op :: Operand e2 :: rest when p.Operators |> Set.contains op ->
-          return! (binOp.Compose(e1, op, e2) |> Operand) :: rest |> collapse p
-        | Operand e1 :: Operator op :: rest ->
-          let! rest1 = collapse p rest
-          return Operand e1 :: Operator op :: rest1
-        | _ ->
-          return!
-            (loc, $"Error: cannot collapse operators sequence {l.ToFSharpString}")
-            |> Errors.Singleton
-            |> sum.Throw
-      }
-
-    sum {
-      match precedence with
-      | [] ->
-        match l0 with
-        | [ Operand x ] -> return binOp.ToExpr x
-        | l ->
-          return!
-            (loc, $"Error: invalid operator sequence, residual elements {l} cannot be further processes")
-            |> Errors.Singleton
-            |> sum.Throw
-      | p :: ps ->
-        let! l1 =
-          sum {
-            match p.Associativity with
-            | OperatorAssociativity.AssociateLeft ->
-              // do Console.WriteLine $"Collapsing left-associative operators chain with precedence {p.Operators.ToFSharpString} on {l0.ToFSharpString}"
-              // do Console.ReadLine() |> ignore
-              let! res = l0 |> collapse p
-              // do Console.WriteLine $"Collapsed left-associative operators chain: {res.ToFSharpString}"
-              // do Console.ReadLine() |> ignore
-              return res
-            | OperatorAssociativity.AssociateRight ->
-              let l0 = l0 |> List.rev
-              let! res = l0 |> collapse p
-              return res |> List.rev
-          }
-
-        return! collapseBinaryOperatorsChain binOp loc ps l1
-    }
-
-
-  let parser =
-    ParserBuilder<LocalizedToken, Location, Errors>(
-      {| Step = fun lt _ -> lt.Location |},
-      {| UnexpectedEndOfFile = fun loc -> (loc, $"Unexpected end of file at {loc}") |> Errors.Singleton
-         AnyFailed = fun loc -> (loc, "No matching token") |> Errors.Singleton
-         NotFailed = fun loc -> (loc, $"Expected token not found at {loc}") |> Errors.Singleton
-         UnexpectedSymbol = fun loc c -> (loc, $"Unexpected symbol: {c}") |> Errors.Singleton
-         FilterHighestPriorityOnly = Errors.HighestPriority
-         Concat = Errors.Concat |}
-    )
-
-  let parseOperator op =
-    parser.Exactly(fun t ->
-      match t.Token with
-      | Token.Operator actualOp when op = actualOp -> true
-      | _ -> false)
-    |> parser.Ignore
-
-  let timesOperator = parseOperator Operator.Times
-  let pipeOperator = parseOperator Operator.Pipe
-  let colonOperator = parseOperator Operator.Colon
-  let semicolonOperator = parseOperator Operator.SemiColon
-  let commaOperator = parseOperator Operator.Comma
-  let dotOperator = parseOperator Operator.Dot
-  let doubleColonOperator = parseOperator Operator.DoubleColon
-  let openRoundBracketOperator = parseOperator (Operator.RoundBracket Bracket.Open)
-  let closeRoundBracketOperator = parseOperator (Operator.RoundBracket Bracket.Close)
-  let openSquareBracketOperator = parseOperator (Operator.SquareBracket Bracket.Open)
-
-  type BinaryOperator =
-    | Times
-    | Div
-    | Plus
-    | Minus
-    | And
-    | Or
-    | Equal
-    | NotEqual
-    | GreaterThan
-    | LessThan
-    | GreaterEqual
-    | LessThanOrEqual
-
-    override this.ToString() =
-      match this with
-      | Times -> "*"
-      | Div -> "/"
-      | Plus -> "+"
-      | Minus -> "-"
-      | And -> "&&"
-      | Or -> "||"
-      | Equal -> "=="
-      | NotEqual -> "!="
-      | GreaterThan -> ">"
-      | LessThan -> "<"
-      | GreaterEqual -> ">="
-      | LessThanOrEqual -> "<="
-
-  let binaryOperator =
-    parser.Any
-      [ parseOperator Operator.Times |> parser.Map(fun () -> BinaryOperator.Times)
-        parseOperator Operator.Div |> parser.Map(fun () -> BinaryOperator.Div)
-        parseOperator Operator.Plus |> parser.Map(fun () -> BinaryOperator.Plus)
-        parseOperator Operator.Minus |> parser.Map(fun () -> BinaryOperator.Minus)
-        parseOperator Operator.DoubleAmpersand
-        |> parser.Map(fun () -> BinaryOperator.And)
-        parseOperator Operator.DoublePipe |> parser.Map(fun () -> BinaryOperator.Or)
-        parseOperator Operator.Equal |> parser.Map(fun () -> BinaryOperator.Equal)
-        parseOperator Operator.NotEqual |> parser.Map(fun () -> BinaryOperator.NotEqual)
-        parseOperator Operator.GreaterThan
-        |> parser.Map(fun () -> BinaryOperator.GreaterThan)
-        parseOperator Operator.LessThan |> parser.Map(fun () -> BinaryOperator.LessThan)
-        parseOperator Operator.GreaterEqual
-        |> parser.Map(fun () -> BinaryOperator.GreaterEqual)
-        parseOperator Operator.LessThanOrEqual
-        |> parser.Map(fun () -> BinaryOperator.LessThanOrEqual) ]
-
-
-  let closeSquareBracketOperator =
-    parseOperator (Operator.SquareBracket Bracket.Close)
-
-  let openCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Open)
-  let closeCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Close)
-  let equalsOperator = parseOperator (Operator.Equals)
-
-  let parseKeyword kw =
-    parser.Exactly(fun t ->
-      match t.Token with
-      | Token.Keyword actualKw when kw = actualKw -> true
-      | _ -> false)
-    |> parser.Ignore
-
-  let typeKeyword = parseKeyword Keyword.Type
-  let ofKeyword = parseKeyword Keyword.Of
-  let letKeyword = parseKeyword Keyword.Let
-  let inKeyword = parseKeyword Keyword.In
-
-  let identifierMatch =
-    parser.Exactly(fun t ->
-      match t.Token with
-      | Token.Identifier id -> Some id
-      | _ -> None)
-
-  let rec identifiersMatch () =
-    parser {
-      let! id = identifierMatch
-
-      return!
-        parser.Any
-          [ parser {
-              do! doubleColonOperator
-
-              return!
-                parser {
-                  let! ids = identifiersMatch () |> parser.Map(NonEmptyList.ToList)
-                  return NonEmptyList.OfList(id, ids)
-                }
-                |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-            }
-            parser { return NonEmptyList.OfList(id, []) } ]
-    }
-
-  let identifierLocalOrFullyQualified () =
-    parser.Any
-      [ parser {
-          let! ids = identifiersMatch ()
-          let ids = ids |> NonEmptyList.rev
-
-          match ids.Tail with
-          | [] -> return Identifier.LocalScope ids.Head
-          | _ -> return Identifier.FullyQualified(ids.Tail, ids.Head)
-        }
-        parser {
-          let! id = identifierMatch
-          return Identifier.LocalScope id
-        } ]
-
-  let betweenBrackets p =
-    parser {
-      do! openRoundBracketOperator
-
-      return!
-        parser {
-          let! res = p ()
-          do! closeRoundBracketOperator
-          return res
-        }
-        |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-    }
-
-  let betweenSquareBrackets p =
-    parser {
-      do! openSquareBracketOperator
-
-      return!
-        parser {
-          let! res = p ()
-          do! closeSquareBracketOperator
-          return res
-        }
-        |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-    }
-
-  let rec typeDecl () =
-    let lookupTypeDecl () =
-      parser {
-        let! id = identifierMatch
-        return [], TypeExpr.Lookup(Identifier.LocalScope id)
-      }
-
-    let boolTypeDecl () =
-      parser {
-        let! id = identifierMatch
-
-        match id with
-        | "bool" -> return [], TypeExpr.Primitive PrimitiveType.Bool
-        | _ ->
-          let! loc = parser.Location
-          return! (loc, $"Error: expected bool, got {id}") |> Errors.Singleton |> parser.Throw
-      }
-
-    let stringTypeDecl () =
-      parser {
-        let! id = identifierMatch
-
-        match id with
-        | "string" -> return [], TypeExpr.Primitive PrimitiveType.String
-        | _ ->
-          let! loc = parser.Location
-          return! (loc, $"Error: expected string, got {id}") |> Errors.Singleton |> parser.Throw
-      }
-
-    let guidTypeDecl () =
-      parser {
-        let! id = identifierMatch
-
-        match id with
-        | "guid" -> return [], TypeExpr.Primitive PrimitiveType.Guid
-        | _ ->
-          let! loc = parser.Location
-          return! (loc, $"Error: expected guid, got {id}") |> Errors.Singleton |> parser.Throw
-      }
-
-    let unitTypeDecl () =
-      parser {
-        do! openRoundBracketOperator
-        do! closeRoundBracketOperator
-        return [], TypeExpr.Primitive PrimitiveType.Unit
-      }
-
-    let record () =
-      parser {
-        do! openCurlyBracketOperator
-
-        return!
-          parser {
-            let! fields =
-              parser.Many(
-                parser {
-                  let! id = identifierMatch
-                  do! colonOperator
-
-                  return!
-                    parser {
-                      let! _, typeDecl = typeDecl ()
-                      do! semicolonOperator
-                      return (id, typeDecl)
-                    }
-                    |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-                }
-              )
-
-            do! closeCurlyBracketOperator
-
-            return
-              fields |> List.map fst,
-              TypeExpr.Record(
-                fields
-                |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
-              )
-          }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.Medium)
-
-      }
-
-    let unionTypeDecl () =
-      parser {
-        do! pipeOperator |> parser.Lookahead |> parser.Ignore
-
-        return!
-          parser {
-            let! cases =
-
-              parser.AtLeastOne(
-                parser {
-                  do! pipeOperator
-
-                  return!
-                    parser {
-                      let! id = identifierMatch
-                      do! ofKeyword
-                      let! _, typeDecl = typeDecl ()
-                      return (id, typeDecl)
-                    }
-                    |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-                }
-              )
-              |> parser.Map(NonEmptyList.ToList)
-
-            return
-              cases |> List.map fst,
-              TypeExpr.Union(
-                cases
-                |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
-              )
-          }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-      }
-
-    parser.Any
-      [ betweenBrackets typeDecl
-        record ()
-        unionTypeDecl ()
-        unitTypeDecl ()
-        boolTypeDecl ()
-        stringTypeDecl ()
-        guidTypeDecl ()
-        lookupTypeDecl () ]
-
+  open Model
+  open Common
+  open Precedence
+  open Type
+  open Ballerina.DSL.Next.Syntax
 
   type ComplexExpressionKind =
     | ScopedIdentifier
@@ -445,7 +91,7 @@ module Parser =
               parser.AtLeastOne(
                 parser {
                   do! pipeOperator
-                  let! id = identifierMatch
+                  let! id = identifierLocalOrFullyQualified ()
 
                   do! openRoundBracketOperator
                   let! paramName = identifierMatch
@@ -453,7 +99,7 @@ module Parser =
                   do! parseOperator Operator.SingleArrow
                   let! body = expr parseAllComplexShapes
                   do! closeRoundBracketOperator
-                  return (id |> Identifier.LocalScope, (Var.Create paramName, body))
+                  return id, (Var.Create paramName, body)
                 }
               )
               |> parser.Map(NonEmptyList.ToList >> Map.ofList)
@@ -490,7 +136,7 @@ module Parser =
                     do! openRoundBracketOperator
                     let! paramName = identifierMatch
                     do! colonOperator
-                    let! _, typeDecl = typeDecl ()
+                    let! typeDecl = typeDecl parseAllComplexTypeShapes
                     do! closeRoundBracketOperator
                     return paramName, typeDecl |> Some
                   }
@@ -513,12 +159,62 @@ module Parser =
 
         return!
           parser {
-            let! varName = identifierMatch
+            let! paramName, paramType =
+              parser.Any
+                [ parser {
+                    do! openRoundBracketOperator
+                    let! paramName = identifierMatch
+                    do! colonOperator
+
+                    return!
+                      parser {
+                        let! typeDecl = typeDecl parseAllComplexTypeShapes
+                        do! closeRoundBracketOperator
+                        return paramName, typeDecl |> Some
+                      }
+                      |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                  }
+                  parser {
+                    let! paramName = identifierMatch
+
+                    let! paramType =
+                      parser.Any
+                        [ parser {
+                            do! colonOperator
+
+                            return!
+                              parser {
+                                let! typeDecl = typeDecl parseAllComplexTypeShapes
+                                return typeDecl |> Some
+                              }
+                              |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                          }
+                          parser { return None } ]
+
+                    return paramName, paramType
+                  } ]
+
             do! equalsOperator
             let! value = expr parseAllComplexShapes
             do! inKeyword
             let! body = expr parseAllComplexShapes
-            return Expr.Let(varName |> Var.Create, value, body)
+            return Expr.Let(paramName |> Var.Create, paramType, value, body)
+          }
+          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+      }
+
+    let exprConditional () =
+      parser {
+        do! ifKeyword
+
+        return!
+          parser {
+            let! cond = expr parseAllComplexShapes
+            do! thenKeyword
+            let! thenBranch = expr parseAllComplexShapes
+            do! elseKeyword
+            let! elseBranch = expr parseAllComplexShapes
+            return Expr.If(cond, thenBranch, elseBranch)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -546,27 +242,6 @@ module Parser =
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
-
-    let binaryExpressionChainTail () =
-      parser {
-        do! binaryOperator |> parser.Lookahead |> parser.Ignore
-
-        return!
-          parser {
-            let! fields =
-              parser.AtLeastOne(
-                parser {
-                  let! op = binaryOperator
-                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.BinaryExpressionChain)
-                  return op, value
-                }
-              )
-
-            return fields |> ComplexExpression.BinaryExpressionChain
-          }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-      }
-
 
     let tupleConsTail () =
       parser {
@@ -615,9 +290,25 @@ module Parser =
           parser {
             let! id = identifierMatch
             do! equalsOperator
-            let! symbols, typeDecl = typeDecl ()
+            let! typeDecl = typeDecl parseAllComplexTypeShapes
             do! inKeyword
             let! body = expr parseAllComplexShapes
+
+            let symbols =
+              match typeDecl with
+              | TypeExpr.Record fields ->
+                fields
+                |> List.map fst
+                |> List.collect (function
+                  | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
+                  | _ -> [])
+              | TypeExpr.Union cases ->
+                cases
+                |> List.map fst
+                |> List.collect (function
+                  | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
+                  | _ -> [])
+              | _ -> []
 
             let typeDecl =
               symbols
@@ -665,15 +356,37 @@ module Parser =
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
 
+    let binaryExpressionChainTail () =
+      parser {
+        do! binaryOperator |> parser.Lookahead |> parser.Ignore
+
+        return!
+          parser {
+            let! fields =
+              parser.AtLeastOne(
+                parser {
+                  let! op = binaryOperator
+                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.BinaryExpressionChain)
+                  return op, value
+                }
+              )
+
+            return fields |> ComplexExpression.BinaryExpressionChain
+          }
+          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+      }
+
     let argExpr () =
       parser {
         return!
           parser {
             let! res =
               parser.Any
-                [ expr (parseComplexShapes |> Set.remove ComplexExpressionKind.ApplicationArguments)
+                [ expr parseNoComplexShapes // (parseComplexShapes |> Set.remove ComplexExpressionKind.ApplicationArguments)
                   |> parser.Map Sum.Left
-                  typeDecl |> betweenSquareBrackets |> parser.Map(snd >> Sum.Right) ]
+                  (fun () -> typeDecl parseAllComplexTypeShapes)
+                  |> betweenSquareBrackets
+                  |> parser.Map(Sum.Right) ]
 
             return res
           }
@@ -694,6 +407,7 @@ module Parser =
         unitLiteral ()
         exprLet ()
         exprLambda ()
+        exprConditional ()
         recordCons ()
         betweenBrackets (fun () -> expr parseAllComplexShapes)
         typeLet ()
@@ -784,17 +498,15 @@ module Parser =
                   let fields: List<BinaryOperatorsElement<Expr<_>, BinaryOperator>> =
                     fields
                     |> NonEmptyList.ToList
-                    |> Seq.collect (fun (op, e) -> [ op |> Operator; e |> Operand ])
+                    |> Seq.collect (fun (op, e) -> [ op |> Precedence.Operator; e |> Precedence.Operand ])
                     |> List.ofSeq
 
                   let chain = Operand acc :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryOperator>> =
-                    [ { Operators = [ BinaryOperator.Div; BinaryOperator.Times ] |> Set.ofList
+                    [ { Operators = [ BinaryOperator.Div; BinaryOperator.Times; BinaryOperator.Mod ] |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators = [ BinaryOperator.Plus; BinaryOperator.Minus ] |> Set.ofList
-                        Associativity = AssociateLeft }
-                      { Operators = [ BinaryOperator.And; BinaryOperator.Or ] |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators =
                           [ BinaryOperator.GreaterEqual
@@ -804,6 +516,8 @@ module Parser =
                             BinaryOperator.Equal
                             BinaryOperator.NotEqual ]
                           |> Set.ofList
+                        Associativity = AssociateLeft }
+                      { Operators = [ BinaryOperator.And; BinaryOperator.Or ] |> Set.ofList
                         Associativity = AssociateLeft } ]
 
                   return!

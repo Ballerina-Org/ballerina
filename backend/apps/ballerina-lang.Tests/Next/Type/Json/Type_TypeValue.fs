@@ -30,39 +30,39 @@ let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeVal
 
 let testCases guid : TypeValueTestCase list =
   [ { Name = "Var"
-      Json = $"""{{"kind":"var","var":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
+      Json = $"""{{"discriminator":"var","value":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
       Expected = TypeValue.Var { Name = "MyTypeVar"; Guid = guid } }
     { Name = "Lookup"
-      Json = """{"kind":"lookup","lookup":"SomeType"}"""
+      Json = """{"discriminator":"lookup","value":"SomeType"}"""
       Expected = TypeValue.Lookup !"SomeType" }
     { Name = "Lambda"
       Json =
         """{
-              "kind":"lambda",
-              "lambda":{
-            "param":{"name":"T","kind":{"kind":"star"}},
-            "body":{"kind":"int32"}
+              "discriminator":"lambda",
+              "value":{
+            "param":{"name":"T","kind":{"discriminator":"star"}},
+            "body":{"discriminator":"int32"}
               }
           }"""
       Expected = TypeValue.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
     { Name = "Arrow"
       Json =
         """{
-              "kind":"arrow",
-              "arrow":{
-            "param":{"kind":"int32"},
-            "returnType":{"kind":"string"}
+              "discriminator":"arrow",
+              "value":{
+            "param":{"discriminator":"int32"},
+            "returnType":{"discriminator":"string"}
               }
           }"""
       Expected = TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString()) }
     { Name = "Union"
       Json =
         """{
-          "kind":"union",
-          "union":[
-            [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}],
-            [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"kind":"bool"}],
-            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}]
+          "discriminator":"union",
+          "value":[
+            [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string"}],
+            [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"discriminator":"bool"}],
+            [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32"}]
           ]
           }"""
       Expected =
@@ -80,37 +80,37 @@ let testCases guid : TypeValueTestCase list =
     { Name = "Tuple"
       Json =
         """{
-          "kind":"tuple",
-          "tuple":[
-                {"kind":"int32"},
-                {"kind":"string"}
+          "discriminator":"tuple",
+          "value":[
+                {"discriminator":"int32"},
+                {"discriminator":"string"}
             ]
           }"""
       Expected = TypeValue.CreateTuple [ TypeValue.CreateInt32(); TypeValue.CreateString() ] }
     { Name = "Sum"
       Json =
         """{
-          "kind":"sum",
-          "sum":[
-            {"kind":"int32"},
-            {"kind":"string"},
-            {"kind":"bool"}
+          "discriminator":"sum",
+          "value":[
+            {"discriminator":"int32"},
+            {"discriminator":"string"},
+            {"discriminator":"bool"}
             ]
           }"""
       Expected = TypeValue.CreateSum [ TypeValue.CreateInt32(); TypeValue.CreateString(); TypeValue.CreateBool() ] }
     { Name = "Set"
-      Json = """{"kind":"set","set":{"kind":"string"}}"""
+      Json = """{"discriminator":"set","value":{"discriminator":"string"}}"""
       Expected = TypeValue.CreateSet(TypeValue.CreateString()) }
     { Name = "Map"
-      Json = """{"kind":"map","map":[{"kind":"bool"}, {"kind":"int32"}]}"""
+      Json = """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
       Expected = TypeValue.CreateMap(TypeValue.CreateBool(), TypeValue.CreateInt32()) }
     { Name = "Record"
       Json =
         """{
-              "kind":"record",
-              "record":[
-                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string"}],
-                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32"}]
+              "discriminator":"record",
+              "value":[
+                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string"}],
+                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32"}]
               ]
           }"""
       Expected =

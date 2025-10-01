@@ -27,16 +27,16 @@ let ``Assert PrimitiveValue -> ToJson -> FromJson -> PrimitiveValue``
 [<Test>]
 let ``Dsl:Term:Value.PrimitiveValue json round-trip`` () =
   let testCases =
-    [ """{"kind": "int32", "int32":"123"}""", PrimitiveValue.Int32 123
-      """{"kind": "decimal", "decimal":"123.456"}""", PrimitiveValue.Decimal 123.456M
-      """{"kind": "boolean", "boolean":"true"}""", PrimitiveValue.Bool true
-      """{"kind": "guid", "guid":"00000000-0000-0000-0000-000000000001"}""",
+    [ """{"discriminator": "int32", "value":"123"}""", PrimitiveValue.Int32 123
+      """{"discriminator": "decimal", "value":"123.456"}""", PrimitiveValue.Decimal 123.456M
+      """{"discriminator": "boolean", "value":"true"}""", PrimitiveValue.Bool true
+      """{"discriminator": "guid", "value":"00000000-0000-0000-0000-000000000001"}""",
       PrimitiveValue.Guid(System.Guid("00000000-0000-0000-0000-000000000001"))
-      """{"kind": "string", "string":"hello"}""", PrimitiveValue.String "hello"
-      """{"kind": "date", "date":"2023-10-01"}""", PrimitiveValue.Date(System.DateOnly(2023, 10, 1))
-      """{"kind": "datetime", "datetime":"2023-10-01T12:00:00Z"}""",
+      """{"discriminator": "string", "value":"hello"}""", PrimitiveValue.String "hello"
+      """{"discriminator": "date", "value":"2023-10-01"}""", PrimitiveValue.Date(System.DateOnly(2023, 10, 1))
+      """{"discriminator": "datetime", "value":"2023-10-01T12:00:00Z"}""",
       PrimitiveValue.DateTime(System.DateTime(2023, 10, 1, 12, 0, 0, DateTimeKind.Utc))
-      """{"kind": "unit"}""", PrimitiveValue.Unit ]
+      """{"discriminator": "unit"}""", PrimitiveValue.Unit ]
 
   for json, expected in testCases do
     (expected, JsonValue.Parse json)

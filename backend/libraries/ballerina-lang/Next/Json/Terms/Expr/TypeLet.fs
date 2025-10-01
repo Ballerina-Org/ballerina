@@ -12,13 +12,13 @@ module TypeLet =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "type-let"
-  let private fieldKey = "type-let"
+  let private discriminator = "type-let"
 
   type Expr<'T> with
     static member FromJsonTypeLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun typeLetJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun typeLetJson ->
         reader {
           let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
           let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
@@ -39,5 +39,8 @@ module TypeLet =
         let typeId = typeId |> JsonValue.String
         let! body = rootToJson body
 
-        return [| typeId; ctx typeArg; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return
+          [| typeId; ctx typeArg; body |]
+          |> JsonValue.Array
+          |> Json.discriminator discriminator
       }

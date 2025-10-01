@@ -13,11 +13,12 @@
         <Compile Include="Errors\Model.fs" />
         <Compile Include="Errors\Localized\Model.fs" />
         <Compile Include="Core\Json\Patterns.fs" />
-        <Compile Include="Core\Json\Reader.fs" />
         <Compile Include="Core\Json\Sum.fs" />
+        <Compile Include="Core\Json\Reader.fs" />
         <Compile Include="Range\Model.fs" />
         <Compile Include="Queries\QuotationToLinq.fs" />
         <Compile Include="Crud\Model.fs" />
+        <Compile Include="Algorithms\TopologicalSort.fs" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="9.0.303" />

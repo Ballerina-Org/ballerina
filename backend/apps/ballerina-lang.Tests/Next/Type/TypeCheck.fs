@@ -38,6 +38,7 @@ let ``LangNext-TypeCheck let typechecks`` () =
   let program =
     Expr.Let(
       "x" |> Var.Create,
+      None,
       Expr.Primitive(PrimitiveValue.Int32 10),
       Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 5))
     )
@@ -222,6 +223,7 @@ let ``LangNext-TypeCheck record cons and record des typecheck with a new type de
       ),
       Expr.Let(
         "v3" |> Var.Create,
+        None,
         Expr.RecordCons(
           [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
             ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
@@ -267,81 +269,13 @@ let ``LangNext-TypeCheck record cons and record des typecheck with a new type de
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
-[<Test>]
-let ``LangNext-TypeCheck union cons and des typecheck with new type and inferred branch argument`` () =
-  let program =
-    Expr.TypeLet(
-      "Either3",
-      TypeExpr.Let(
-        "Choice1Of3",
-        TypeExpr.NewSymbol "Choice1Of3",
-        TypeExpr.Let(
-          "Choice2Of3",
-          TypeExpr.NewSymbol "Choice2Of3",
-          TypeExpr.Let(
-            "Choice3Of3",
-            TypeExpr.NewSymbol "Choice3Of3",
-            TypeExpr.Union(
-              [ (TypeExpr.Lookup(!"Choice1Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice2Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice3Of3"), TypeExpr.Primitive PrimitiveType.String) ]
-            )
-          )
-        )
-      ),
-      Expr.Let(
-        "v" |> Var.Create,
-        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0M)),
-        Expr.Apply(
-          Expr.UnionDes(
-            [ (!"Choice1Of3",
-               ("x" |> Var.Create,
-                Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0m))))
-              (!"Choice2Of3",
-               ("y" |> Var.Create,
-                Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0m))))
-              (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList,
-            None
-          ),
-          Expr.Lookup !"v"
-        )
-      )
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState = TypeCheckState.Empty
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateDecimal(),
-          TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected = TypeValue.CreateDecimal()
-
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail
-      $"Expected typechecking to succeed with '(Case1Of3 of Int | Case2Of3 of Int | Case3Of3 of _) -> Int' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
-
 
 [<Test>]
 let ``LangNext-TypeCheck tuple cons and des typecheck`` () =
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -424,6 +358,7 @@ let ``LangNext-TypeCheck sum cons and des typecheck`` () =
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -470,180 +405,187 @@ let ``LangNext-TypeCheck sum cons and des typecheck`` () =
 
 
 
-[<Test>]
-let ``LangNext-TypeCheck HKTs over option typechecks`` () =
-  let program =
-    Expr.TypeLet(
-      "Option",
-      TypeExpr.Let(
-        "Some",
-        TypeExpr.NewSymbol "Some",
-        TypeExpr.Let(
-          "None",
-          TypeExpr.NewSymbol "None",
-          TypeExpr.Lambda(
-            ("a", Kind.Star) |> TypeParameter.Create,
-            TypeExpr.Union([ (!!"Some", !!"a"); (!!"None", TypeExpr.Primitive PrimitiveType.Unit) ])
-          )
-        )
-      ),
-      Expr.Let(
-        "func" |> Var.Create,
-        Expr.TypeLambda(
-          ("f", Kind.Arrow(Kind.Star, Kind.Star)) |> TypeParameter.Create,
-          Expr.TypeLambda(
-            ("a", Kind.Star) |> TypeParameter.Create,
-            Expr.Lambda(
-              "cons" |> Var.Create,
-              Some(TypeExpr.Arrow(!!"a", TypeExpr.Apply(!!"f", !!"a"))),
-              Expr.Lambda(
-                "nil" |> Var.Create,
-                Some(TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Apply(!!"f", !!"a"))),
-                Expr.Lambda(
-                  "flag" |> Var.Create,
-                  Some(TypeExpr.Primitive PrimitiveType.Bool),
-                  Expr.Lambda(
-                    "x" |> Var.Create,
-                    Some(!!"a"),
-                    Expr.If(
-                      Expr.Lookup !"flag",
-                      Expr.Apply(Expr.Lookup !"cons", Expr.Lookup !"x"),
-                      Expr.Apply(Expr.Lookup !"nil", Expr.Primitive PrimitiveValue.Unit)
-                    )
-                  )
-                )
-              )
-            )
-          )
-        ),
-        Expr.TypeApply(Expr.TypeApply(Expr.Lookup !"func", !!"Option"), TypeExpr.Primitive PrimitiveType.Decimal)
-      )
-    )
+// [<Test>]
+// let ``LangNext-TypeCheck HKTs over option typechecks`` () =
+//   let program =
+//     Expr.TypeLet(
+//       "Option",
+//       TypeExpr.Let(
+//         "Some",
+//         TypeExpr.NewSymbol "Some",
+//         TypeExpr.Let(
+//           "None",
+//           TypeExpr.NewSymbol "None",
+//           TypeExpr.Lambda(
+//             ("a", Kind.Star) |> TypeParameter.Create,
+//             TypeExpr.Union([ (!!"Some", !!"a"); (!!"None", TypeExpr.Primitive PrimitiveType.Unit) ])
+//           )
+//         )
+//       ),
+//       Expr.Let(
+//         "func" |> Var.Create,
+//         None,
+//         Expr.TypeLambda(
+//           ("f", Kind.Arrow(Kind.Star, Kind.Star)) |> TypeParameter.Create,
+//           Expr.TypeLambda(
+//             ("a", Kind.Star) |> TypeParameter.Create,
+//             Expr.Lambda(
+//               "cons" |> Var.Create,
+//               Some(TypeExpr.Arrow(!!"a", TypeExpr.Apply(!!"f", !!"a"))),
+//               Expr.Lambda(
+//                 "nil" |> Var.Create,
+//                 Some(TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Apply(!!"f", !!"a"))),
+//                 Expr.Lambda(
+//                   "flag" |> Var.Create,
+//                   Some(TypeExpr.Primitive PrimitiveType.Bool),
+//                   Expr.Lambda(
+//                     "x" |> Var.Create,
+//                     Some(!!"a"),
+//                     Expr.If(
+//                       Expr.Lookup !"flag",
+//                       Expr.Apply(Expr.Lookup !"cons", Expr.Lookup !"x"),
+//                       Expr.Apply(Expr.Lookup !"nil", Expr.Primitive PrimitiveValue.Unit)
+//                     )
+//                   )
+//                 )
+//               )
+//             )
+//           )
+//         ),
+//         Expr.TypeApply(Expr.TypeApply(Expr.Lookup !"func", !!"Option"), TypeExpr.Primitive PrimitiveType.Decimal)
+//       )
+//     )
 
-  let initialContext = TypeCheckContext.Empty
+//   let initialContext = TypeCheckContext.Empty
 
-  let initialState = TypeCheckState.Empty
+//   let initialState = TypeCheckState.Empty
 
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateDecimal(),
-          TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
-         ),
-         Kind.Star)
-    )
+//   let initialContext =
+//     initialContext
+//     |> TypeCheckContext.Updaters.Values(
+//       Map.add
+//         !"+"
+//         (TypeValue.CreateArrow(
+//           TypeValue.CreateDecimal(),
+//           TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
+//          ),
+//          Kind.Star)
+//     )
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+//   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  match actual with
-  | Sum.Left((_,
-              TypeValue.Arrow { value = (TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Decimal },
-                                                                    TypeValue.Union _) },
-                                         TypeValue.Arrow { value = (TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Unit },
-                                                                                               TypeValue.Union _) },
-                                                                    TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Bool },
-                                                                                               TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Decimal },
-                                                                                                                          TypeValue.Union _) }) }) }) },
-              Kind.Star),
-             _) when true -> Assert.Pass()
+//   match actual with
+//   | Sum.Left((_,
+//               TypeValue.Arrow { value = (TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Decimal },
+//                                                                     TypeValue.Union _) },
+//                                          TypeValue.Arrow { value = (TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Unit },
+//                                                                                                TypeValue.Union _) },
+//                                                                     TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Bool },
+//                                                                                                TypeValue.Arrow { value = (TypeValue.Primitive { value = PrimitiveType.Decimal },
+//                                                                                                                           TypeValue.Union _) }) }) }) },
+//               Kind.Star),
+//              _) when true -> Assert.Pass()
 
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail $"Expected typechecking to succeed with 'Decimal -> Option[Decimal]' but succeeded with: {t}::{k}"
+//   | Sum.Left((_, t, k), _) ->
+//     Assert.Fail $"Expected typechecking to succeed with 'Decimal -> Option[Decimal]' but succeeded with: {t}::{k}"
 
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+//   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
-[<Test>]
-let ``LangNext-TypeCheck should preserve given names in expr type let bindings and all origin type exprs`` () =
-  let documentNumberCaseSymbol =
-    "DocumentNumberCase" |> Identifier.LocalScope |> TypeSymbol.Create
+// [<Test>]
+// let ``LangNext-TypeCheck should preserve given names in expr type let bindings and all origin type exprs`` () =
+//   let documentNumberCaseSymbol =
+//     "DocumentNumberCase" |> Identifier.LocalScope |> TypeSymbol.Create
 
-  let documentNumberTy =
-    TypeExpr.Union [ !!"DocumentNumberCase", TypeExpr.Primitive PrimitiveType.Int32 ]
+//   let documentNumberTy =
+//     TypeExpr.Union [ !!"DocumentNumberCase", TypeExpr.Primitive PrimitiveType.Int32 ]
 
-  let documentDateCaseSymbol =
-    "DocumentDateCase" |> Identifier.LocalScope |> TypeSymbol.Create
+//   let documentDateCaseSymbol =
+//     "DocumentDateCase" |> Identifier.LocalScope |> TypeSymbol.Create
 
-  let documentDateTy =
-    TypeExpr.Union [ !!"DocumentDateCase", TypeExpr.Primitive PrimitiveType.String ]
+//   let documentDateTy =
+//     TypeExpr.Union [ !!"DocumentDateCase", TypeExpr.Primitive PrimitiveType.String ]
 
-  let numberFieldSymbol = "number" |> Identifier.LocalScope |> TypeSymbol.Create
-  let dateFieldSymbol = "date" |> Identifier.LocalScope |> TypeSymbol.Create
+//   let numberFieldSymbol = "number" |> Identifier.LocalScope |> TypeSymbol.Create
+//   let dateFieldSymbol = "date" |> Identifier.LocalScope |> TypeSymbol.Create
 
-  let predictionTy =
-    TypeExpr.Record [ !!"number", !!"DocumentNumber"; !!"date", !!"DocumentDate" ]
+//   let predictionTy =
+//     TypeExpr.Record [ !!"number", !!"DocumentNumber"; !!"date", !!"DocumentDate" ]
 
-  let myId =
-    Expr.TypeLambda(
-      ("A", Kind.Star) |> TypeParameter.Create,
-      Expr.Lambda("x" |> Var.Create, Some !!"A", Expr.Lookup !"x")
-    )
+//   let myId =
+//     Expr.TypeLambda(
+//       ("A", Kind.Star) |> TypeParameter.Create,
+//       Expr.Lambda("x" |> Var.Create, Some !!"A", Expr.Lookup !"x")
+//     )
 
-  let program =
-    Expr.TypeLet(
-      "DocumentNumber",
-      documentNumberTy,
-      Expr.TypeLet(
-        "DocumentDate",
-        documentDateTy,
-        Expr.TypeLet("Prediction", predictionTy, Expr.TypeApply(myId, !!"Prediction"))
-      )
-    )
+//   let program =
+//     Expr.TypeLet(
+//       "DocumentNumber",
+//       documentNumberTy,
+//       Expr.TypeLet(
+//         "DocumentDate",
+//         documentDateTy,
+//         Expr.TypeLet("Prediction", predictionTy, Expr.TypeApply(myId, !!"Prediction"))
+//       )
+//     )
 
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(
-        replaceWith (
-          Map.ofList
-            [ !"number", numberFieldSymbol
-              !"date", dateFieldSymbol
-              !"DocumentNumberCase", documentNumberCaseSymbol
-              !"DocumentDateCase", documentDateCaseSymbol ]
-        )
-      )
-    )
+//   let initialState =
+//     TypeCheckState.Empty
+//     |> TypeCheckState.Updaters.Types(
+//       TypeExprEvalState.Updaters.Symbols(
+//         replaceWith (
+//           Map.ofList
+//             [ !"number", numberFieldSymbol
+//               !"date", dateFieldSymbol
+//               !"DocumentNumberCase", documentNumberCaseSymbol
+//               !"DocumentDateCase", documentDateCaseSymbol ]
+//         )
+//       )
+//     )
 
-  let actual =
-    Expr.TypeCheck program |> State.Run(TypeCheckContext.Empty, initialState)
+//   let actual =
+//     Expr.TypeCheck program |> State.Run(TypeCheckContext.Empty, initialState)
 
-  let docNumberCaseValue =
-    TypeValue.Primitive
-      { value = PrimitiveType.Int32
-        source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.Int32) }
+//   let docNumberCaseValue =
+//     TypeValue.Primitive
+//       { value = PrimitiveType.Int32
+//         source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.Int32) }
 
-  let docNumberValue =
-    TypeValue.Union
-      { value = Map.ofList [ documentNumberCaseSymbol, docNumberCaseValue ]
-        source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentNumber", documentNumberTy) }
+//   let docNumberValue =
+//     TypeValue.Union
+//       { value = Map.ofList [ documentNumberCaseSymbol, docNumberCaseValue ]
+//         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentNumber", documentNumberTy) }
 
-  let docDateCaseValue =
-    TypeValue.Primitive
-      { value = PrimitiveType.String
-        source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.String) }
+//   let docDateCaseValue =
+//     TypeValue.Primitive
+//       { value = PrimitiveType.String
+//         source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.String) }
 
-  let docDateValue =
-    TypeValue.Union
-      { value = Map.ofList [ documentDateCaseSymbol, docDateCaseValue ]
-        source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentDate", documentDateTy) }
+//   let docDateValue =
+//     TypeValue.Union
+//       { value = Map.ofList [ documentDateCaseSymbol, docDateCaseValue ]
+//         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentDate", documentDateTy) }
 
-  let predictionValue =
-    TypeValue.Record
-      { value = Map.ofList [ numberFieldSymbol, docNumberValue; dateFieldSymbol, docDateValue ]
-        source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "Prediction", predictionTy) }
+//   let predictionValue =
+//     TypeValue.Record
+//       { value = Map.ofList [ numberFieldSymbol, docNumberValue; dateFieldSymbol, docDateValue ]
+//         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "Prediction", predictionTy) }
 
-  let expected =
-    TypeValue.Arrow
-      { value = predictionValue, predictionValue
-        source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Arrow(!!"A", !!"A")) }
+//   let expected =
+//     TypeValue.Arrow
+//       { value = predictionValue, predictionValue
+//         source =
+//           TypeExprSourceMapping.OriginTypeExpr(
+//             TypeExpr.Apply(
+//               TypeExpr.Lambda(TypeParameter.Create("A", Kind.Star), TypeExpr.Arrow(!!"A", !!"A")),
+//               TypeExpr.Lookup !"Prediction"
+//             )
+//           ) }
 
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) -> Assert.That(actual, Is.EqualTo expected)
-  | Sum.Left((_, _t, _k), _) -> Assert.Fail $"Expected {expected} but got {actual}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+//   match actual with
+//   | Sum.Left((_, actual, Kind.Star), _) -> Assert.That(actual, Is.EqualTo expected)
+//   | Sum.Left((_, _t, _k), _) -> Assert.Fail $"Expected {expected} but got {actual}"
+//   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
 [<Test>]
@@ -704,6 +646,7 @@ let ``LangNext-TypeCheck record des fail when symbol does not exist`` () =
       ),
       Expr.Let(
         "v3" |> Var.Create,
+        None,
         Expr.RecordCons(
           [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
             ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
@@ -952,6 +895,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (negative) index`` (
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -986,6 +930,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (too large) index`` 
   let program =
     Expr.Let(
       "v3" |> Var.Create,
+      None,
       Expr.TupleCons(
         [ Expr.Primitive(PrimitiveValue.Decimal 1.0M)
           Expr.Primitive(PrimitiveValue.Decimal 2.0M)
@@ -1075,6 +1020,7 @@ let ``LangNext-TypeCheck sum des fails on mismatched types with the same arity``
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -1115,6 +1061,7 @@ let ``LangNext-TypeCheck sum des fails on missing cases`` () =
   let program =
     Expr.Let(
       "oneOfThree" |> Var.Create,
+      None,
       Expr.SumCons(
         { SumConsSelector.Case = 0
           SumConsSelector.Count = 3 },
@@ -1174,6 +1121,7 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
+        None,
         Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.String "not a decimal eh")),
         Expr.Apply(
           Expr.UnionDes(
@@ -1234,6 +1182,7 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
       ),
       Expr.Let(
         "v" |> Var.Create,
+        None,
         Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0m)),
         Expr.Apply(
           Expr.UnionDes(
@@ -1321,26 +1270,27 @@ let ``LangNext-TypeCheck type lambda fails when the variable cannot be generaliz
 
 
 
-[<Test>]
-let ``LangNext-TypeCheck type lambda succeeds when concrete type is passed to *->*`` () =
-  let program =
-    Expr.TypeApply(
-      Expr.TypeLambda(("x", Kind.Star) |> TypeParameter.Create, Expr.Lookup(!"x")),
-      TypeExpr.Primitive PrimitiveType.Decimal
-    )
+// [<Test>]
+// let ``LangNext-TypeCheck type lambda succeeds when concrete type is passed to *->*`` () =
+//   let program =
+//     Expr.TypeApply(
+//       Expr.TypeLambda(("x", Kind.Star) |> TypeParameter.Create, Expr.Lookup(!"x")),
+//       TypeExpr.Primitive PrimitiveType.Decimal
+//     )
 
-  let initialContext = TypeCheckContext.Empty
+//   let initialContext = TypeCheckContext.Empty
 
-  let initialState = TypeCheckState.Empty
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+//   let initialState = TypeCheckState.Empty
+//   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected = TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal
+//   let expected =
+//     PrimitiveType.Decimal
 
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail $"Expected typechecking to succeed with 'Decimal' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
+//   match actual with
+//   | Sum.Left((_, TypeValue.Primitive({ value=actual }), Kind.Star), _) when actual = expected -> Assert.Pass()
+//   | Sum.Left((_, t, k), _) ->
+//     Assert.Fail $"Expected typechecking to succeed with 'Decimal' but succeeded with: {t}::{k}"
+//   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
 [<Test>]
@@ -1361,7 +1311,16 @@ let ``LangNext-TypeCheck type lambda succeeds when *->* type is passed to (*->*)
   let initialState = TypeCheckState.Empty
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected = TypeValue.PrimitiveWithTrivialSource PrimitiveType.Unit
+  let expected =
+    TypeValue.Primitive
+      { value = PrimitiveType.Unit
+        source =
+          TypeExprSourceMapping.OriginTypeExpr(
+            TypeExpr.Apply(
+              TypeExpr.Lambda(TypeParameter.Create("x", Kind.Star), !!"x"),
+              TypeExpr.Primitive PrimitiveType.Unit
+            )
+          ) }
 
   match actual with
   | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()

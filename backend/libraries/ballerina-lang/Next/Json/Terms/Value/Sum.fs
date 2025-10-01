@@ -8,16 +8,16 @@ module Sum =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "sum"
-  let private fieldKey = "case"
+  let private discriminator = "sum"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonSum
       (fromJsonRoot: ValueParser<'T, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, 'valueExtension> =
-      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun elementsJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
         reader {
           let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
           let! k = k |> JsonValue.AsInt |> reader.OfSum
@@ -33,5 +33,5 @@ module Sum =
       reader {
         let i = i |> decimal |> JsonValue.Number
         let! v = rootToJson v
-        return [| i; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| i; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }

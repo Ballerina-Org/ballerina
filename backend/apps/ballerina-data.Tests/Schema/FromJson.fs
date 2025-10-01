@@ -49,7 +49,7 @@ let ``SpecNext-Schema lookup method parses`` () =
 let ``SpecNext-Schema updater descriptor parses`` () =
   let json =
     """ 
-      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int32","int32":"100"}]
+      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"discriminator":"bool","value":"true"}, {"discriminator":"int32","value":"100"}]
     """
     |> JsonValue.Parse
 
@@ -72,7 +72,7 @@ let ``SpecNext-Schema entity descriptor parses`` () =
   let json =
     """ 
     {
-      "type": { "kind":"lookup", "lookup":"MyType" },
+      "type": { "discriminator":"lookup", "value":"MyType" },
       "methods": ["get", "getMany", "create", "delete"],
       "updaters": [],
       "predicates": {}
@@ -187,16 +187,16 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
     {
       "entities": {
         "SourceTable": {
-          "type": { "kind":"lookup", "lookup":"SomeType" },
+          "type": { "discriminator":"lookup", "value":"SomeType" },
           "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
-          "predicates": { "SomePredicate": {"kind":"bool","bool":"false"} }
+          "predicates": { "SomePredicate": {"discriminator":"bool","value":"false"} }
         },
         "TargetTable": {
-          "type": { "kind":"lookup", "lookup":"AnotherType" },
+          "type": { "discriminator":"lookup", "value":"AnotherType" },
           "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
-          "predicates": { "AnotherPredicate": {"kind":"bool","bool":"true"} }
+          "predicates": { "AnotherPredicate": {"discriminator":"bool","value":"true"} }
         }
       },
       "lookups": {

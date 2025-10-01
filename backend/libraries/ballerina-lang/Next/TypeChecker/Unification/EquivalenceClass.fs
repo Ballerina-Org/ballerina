@@ -169,6 +169,35 @@ module EquivalenceClasses =
                 |> state.Throw
       }
 
+    static member DeleteVariable
+      (var: 'var)
+      : State<Unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      state {
+        let! classes = state.GetState()
+
+        if classes.Variables.ContainsKey var |> not then
+          return ()
+        else
+          let! var_key = EquivalenceClasses.getKey var
+          let! var_class = EquivalenceClasses.getVarClass var_key var
+          do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.remove var_key))
+
+          for otherVar in var_class.Variables do
+            let! other_var_key = EquivalenceClasses.getKey otherVar
+            let! other_var_class = EquivalenceClasses.getVarClass other_var_key otherVar
+
+            let other_var_class =
+              other_var_class |> EquivalenceClass.Updaters.Variables(Set.remove var)
+
+            let other_var_class =
+              other_var_class
+              |> EquivalenceClass.Updaters.Representative(Option.orElse var_class.Representative)
+
+            do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add other_var_key other_var_class))
+
+          return ()
+      }
+
     static member private mergeRepresentative
       (eqClass: EquivalenceClass<'var, 'value>)
       (value: 'value)

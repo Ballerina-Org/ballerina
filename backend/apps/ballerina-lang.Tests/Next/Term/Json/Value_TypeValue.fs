@@ -63,12 +63,12 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") }
 
   let testCases: List<string * Value<TypeValue, TestExt.ValueExt>> =
-    [ """{"kind": "var", "name":"myVar"}""", Var.Create "myVar" |> Value.Var
-      """{"kind": "int32", "int32":"123"}""", PrimitiveValue.Int32 123 |> Value.Primitive
-      """{"kind": "decimal", "decimal":"123.456"}""", PrimitiveValue.Decimal 123.456M |> Value.Primitive
-      """{"kind": "boolean", "boolean":"true"}""", PrimitiveValue.Bool true |> Value.Primitive
-      """{"kind": "record", "fields":[[{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"kind":"string","string":"baz"}],
-      [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32","int32":"42"}] 
+    [ """{"discriminator": "var", "value":"myVar"}""", Var.Create "myVar" |> Value.Var
+      """{"discriminator": "int32", "value":"123"}""", PrimitiveValue.Int32 123 |> Value.Primitive
+      """{"discriminator": "decimal", "value":"123.456"}""", PrimitiveValue.Decimal 123.456M |> Value.Primitive
+      """{"discriminator": "boolean", "value":"true"}""", PrimitiveValue.Bool true |> Value.Primitive
+      """{"discriminator": "record", "value":[[{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string","value":"baz"}],
+      [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32","value":"42"}] 
         ]}""",
       Value<TypeValue, TestExt.ValueExt>
         .Record(
@@ -76,20 +76,20 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
             [ foo, PrimitiveValue.Int32 42 |> Value.Primitive
               bar, PrimitiveValue.String "baz" |> Value.Primitive ]
         )
-      """{"kind": "union-case", "union-case": [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"kind":"int32","int32":"42"}]}""",
+      """{"discriminator": "union-case", "value": [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32","value":"42"}]}""",
       Value.UnionCase(foo, PrimitiveValue.Int32 42 |> Value.Primitive)
-      """{"kind": "tuple", "elements":[{"kind":"int32","int32":"1"},{"kind":"string","string":"two"}]}""",
+      """{"discriminator": "tuple", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"string","value":"two"}]}""",
       Value.Tuple(
         [ PrimitiveValue.Int32 1 |> Value.Primitive
           PrimitiveValue.String "two" |> Value.Primitive ]
       )
-      """{"kind": "sum", "case": [3, {"kind":"int32","int32":"42"}]}""",
+      """{"discriminator": "sum", "value": [3, {"discriminator":"int32","value":"42"}]}""",
       Value.Sum(3, PrimitiveValue.Int32 42 |> Value.Primitive)
-      """{"kind": "type-lambda", "type-lambda":[{"name":"T", "kind":{"kind":"star"}}, {"kind":"int32","int32":"42"}]}""",
+      """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
       Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> Expr.Primitive)
-      """{"kind": "lambda", "lambda": ["x", {"kind":"int32","int32":"42"}]}""",
+      """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
       Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive)
-      """{"kind": "list", "elements":[{"kind":"int32","int32":"1"},{"kind":"int32","int32":"2"}]}""",
+      """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         TestExt.ValueExt(
           Choice1Of3(

@@ -10,13 +10,13 @@ module TupleDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "tuple-des"
-  let private fieldKey = "tuple-des"
+  let private discriminator = "tuple-des"
 
   type Expr<'T> with
     static member FromJsonTupleDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun tupleDesJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun tupleDesJson ->
         reader {
           let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
@@ -33,5 +33,5 @@ module TupleDes =
         let! e = e |> rootToJson
         let index = sel.Index |> decimal |> JsonValue.Number
 
-        return [| e; index |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| e; index |] |> JsonValue.Array |> Json.discriminator discriminator
       }

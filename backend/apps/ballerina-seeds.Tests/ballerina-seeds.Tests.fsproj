@@ -9,6 +9,8 @@
 
     <ItemGroup>
         <Compile Include="Schema.fs" />
+        <Compile Include="Integration\TestData.fs" />
+        <Compile Include="Integration\End2End.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
     <ItemGroup>
@@ -27,6 +29,8 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-lang\Next\ballerina-lang.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-seeds\ballerina-seeds.fsproj" />
         <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
     </ItemGroup>
 
