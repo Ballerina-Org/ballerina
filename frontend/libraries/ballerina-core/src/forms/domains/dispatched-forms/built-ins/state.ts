@@ -219,11 +219,7 @@ export type ConcreteRenderers<
 > = {
   unit: {
     [_: string]: () =>
-      | UnitAbstractRendererView<
-          CustomPresentationContext,
-          Flags,
-          ExtraContext
-        >
+      | UnitAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           UnitAbstractRendererView<
             CustomPresentationContext,
@@ -234,11 +230,7 @@ export type ConcreteRenderers<
   };
   boolean: {
     [_: string]: () =>
-      | BoolAbstractRendererView<
-          CustomPresentationContext,
-          Flags,
-          ExtraContext
-        >
+      | BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           BoolAbstractRendererView<
             CustomPresentationContext,
@@ -309,11 +301,7 @@ export type ConcreteRenderers<
   };
   date: {
     [_: string]: () =>
-      | DateAbstractRendererView<
-          CustomPresentationContext,
-          Flags,
-          ExtraContext
-        >
+      | DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           DateAbstractRendererView<
             CustomPresentationContext,
@@ -324,11 +312,7 @@ export type ConcreteRenderers<
   };
   enumSingleSelection: {
     [_: string]: () =>
-      | EnumAbstractRendererView<
-          CustomPresentationContext,
-          Flags,
-          ExtraContext
-        >
+      | EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           EnumAbstractRendererView<
             CustomPresentationContext,
@@ -384,11 +368,7 @@ export type ConcreteRenderers<
   };
   list: {
     [_: string]: () =>
-      | ListAbstractRendererView<
-          CustomPresentationContext,
-          Flags,
-          ExtraContext
-        >
+      | ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           ListAbstractRendererView<
             CustomPresentationContext,

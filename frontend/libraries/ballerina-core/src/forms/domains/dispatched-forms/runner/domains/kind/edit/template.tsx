@@ -123,10 +123,5 @@ export const DispatchEditFormLauncherTemplate = <
       />
     );
   }).any([
-    DispatchEditFormRunner<
-      T,
-      Flags,
-      CustomPresentationContext,
-      ExtraContext
-    >(),
+    DispatchEditFormRunner<T, Flags, CustomPresentationContext, ExtraContext>(),
   ]);
