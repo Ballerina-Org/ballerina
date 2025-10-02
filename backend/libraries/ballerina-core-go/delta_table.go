@@ -3,8 +3,6 @@ package ballerina
 import (
 	"bytes"
 	"encoding/json"
-
-	"github.com/google/uuid"
 )
 
 type deltaTableEffectsEnum string
@@ -20,31 +18,31 @@ const (
 	tableAddEmpty    deltaTableEffectsEnum = "TableAddEmpty"
 )
 
-type DeltaTable[a any, deltaA any] struct {
+type DeltaTable[ID any, a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaTableEffectsEnum
-	value         *Tuple2[uuid.UUID, deltaA]
+	value         *Tuple2[ID, deltaA]
 	valueAll      *deltaA
-	addAt         *Tuple2[uuid.UUID, a]
-	removeAt      *uuid.UUID
-	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-	duplicateAt   *uuid.UUID
+	addAt         *Tuple2[ID, a]
+	removeAt      *ID
+	moveFromTo    *Tuple2[ID, ID]
+	duplicateAt   *ID
 	add           *a
 }
 
-var _ json.Unmarshaler = &DeltaTable[Unit, Unit]{}
-var _ json.Marshaler = DeltaTable[Unit, Unit]{}
+var _ json.Unmarshaler = &DeltaTable[Unit, Unit, Unit]{}
+var _ json.Marshaler = DeltaTable[Unit, Unit, Unit]{}
 
-func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
+func (d DeltaTable[ID, a, deltaA]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		DeltaBase
 		Discriminator deltaTableEffectsEnum
-		Value         *Tuple2[uuid.UUID, deltaA]
+		Value         *Tuple2[ID, deltaA]
 		ValueAll      *deltaA
-		AddAt         *Tuple2[uuid.UUID, a]
-		RemoveAt      *uuid.UUID
-		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-		DuplicateAt   *uuid.UUID
+		AddAt         *Tuple2[ID, a]
+		RemoveAt      *ID
+		MoveFromTo    *Tuple2[ID, ID]
+		DuplicateAt   *ID
 		Add           *a
 	}{
 		DeltaBase:     d.DeltaBase,
@@ -59,16 +57,16 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
+func (d *DeltaTable[ID, a, deltaA]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		DeltaBase
 		Discriminator deltaTableEffectsEnum
-		Value         *Tuple2[uuid.UUID, deltaA]
+		Value         *Tuple2[ID, deltaA]
 		ValueAll      *deltaA
-		AddAt         *Tuple2[uuid.UUID, a]
-		RemoveAt      *uuid.UUID
-		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
-		DuplicateAt   *uuid.UUID
+		AddAt         *Tuple2[ID, a]
+		RemoveAt      *ID
+		MoveFromTo    *Tuple2[ID, ID]
+		DuplicateAt   *ID
 		Add           *a
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
@@ -88,74 +86,74 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func NewDeltaTableValue[a any, deltaA any](index uuid.UUID, delta deltaA) DeltaTable[a, deltaA] {
+func NewDeltaTableValue[ID any, a any, deltaA any](index ID, delta deltaA) DeltaTable[ID, a, deltaA] {
 	val := NewTuple2(index, delta)
-	return DeltaTable[a, deltaA]{
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableValue,
 		value:         &val,
 	}
 }
-func NewDeltaTableValueAll[a any, deltaA any](delta deltaA) DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
+func NewDeltaTableValueAll[ID any, a any, deltaA any](delta deltaA) DeltaTable[ID, a, deltaA] {
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableValueAll,
 		valueAll:      &delta,
 	}
 }
-func NewDeltaTableAddAt[a any, deltaA any](index uuid.UUID, newElement a) DeltaTable[a, deltaA] {
+func NewDeltaTableAddAt[ID any, a any, deltaA any](index ID, newElement a) DeltaTable[ID, a, deltaA] {
 	addAt := NewTuple2(index, newElement)
-	return DeltaTable[a, deltaA]{
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableAddAt,
 		addAt:         &addAt,
 	}
 }
-func NewDeltaTableRemoveAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
+func NewDeltaTableRemoveAt[ID any, a any, deltaA any](index ID) DeltaTable[ID, a, deltaA] {
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableRemoveAt,
 		removeAt:      &index,
 	}
 }
-func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {
+func NewDeltaTableMoveFromTo[ID any, a any, deltaA any](from ID, to ID) DeltaTable[ID, a, deltaA] {
 	move := NewTuple2(from, to)
-	return DeltaTable[a, deltaA]{
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableMoveFromTo,
 		moveFromTo:    &move,
 	}
 }
-func NewDeltaTableDuplicateAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
+func NewDeltaTableDuplicateAt[ID any, a any, deltaA any](index ID) DeltaTable[ID, a, deltaA] {
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableDuplicateAt,
 		duplicateAt:   &index,
 	}
 }
-func NewDeltaTableAdd[a any, deltaA any](newElement a) DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
+func NewDeltaTableAdd[ID any, a any, deltaA any](newElement a) DeltaTable[ID, a, deltaA] {
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableAdd,
 		add:           &newElement,
 	}
 }
-func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
-	return DeltaTable[a, deltaA]{
+func NewDeltaTableAddEmpty[ID any, a any, deltaA any]() DeltaTable[ID, a, deltaA] {
+	return DeltaTable[ID, a, deltaA]{
 		discriminator: tableAddEmpty,
 	}
 }
 
-func MatchDeltaTable[a any, deltaA any, Result any](
-	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
+func MatchDeltaTable[ID comparable, a any, deltaA any, Result any](
+	onValue func(Tuple2[ID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
 	onValueAll func(deltaA) (Result, error),
-	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
-	onRemoveAt func(uuid.UUID) (Result, error),
-	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
-	onDuplicateAt func(uuid.UUID) (Result, error),
+	onAddAt func(Tuple2[ID, a]) (Result, error),
+	onRemoveAt func(ID) (Result, error),
+	onMoveFromTo func(Tuple2[ID, ID]) (Result, error),
+	onDuplicateAt func(ID) (Result, error),
 	onAdd func(a) (Result, error),
 	onAddEmpty func() (Result, error),
-) func(DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
-	return func(delta DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
-		return func(table ReaderWithError[Unit, Table[a]]) (Result, error) {
+) func(DeltaTable[ID, a, deltaA]) func(ReaderWithError[Unit, Table[ID, a]]) (Result, error) {
+	return func(delta DeltaTable[ID, a, deltaA]) func(ReaderWithError[Unit, Table[ID, a]]) (Result, error) {
+		return func(table ReaderWithError[Unit, Table[ID, a]]) (Result, error) {
 			var result Result
 			switch delta.discriminator {
 			case tableValue:
-				value := MapReaderWithError[Unit, Table[a], a](
-					func(table Table[a]) a {
+				value := MapReaderWithError[Unit, Table[ID, a], a](
+					func(table Table[ID, a]) a {
 						return table.Values[table.IdToIndex[delta.value.Item1]]
 					},
 				)(table)
