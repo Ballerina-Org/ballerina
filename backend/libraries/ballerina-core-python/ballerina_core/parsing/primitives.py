@@ -22,7 +22,7 @@ def string_from_json(value: Json) -> Sum[ParsingError, str]:
                 case _:
                     return Sum.left(ParsingError.single(f"Not a string: {string_value}"))
         case _:
-            return Sum.left(ParsingError.single(f"Not a string: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
 def int32_to_json(value: int) -> Json:
@@ -38,7 +38,7 @@ def int32_from_json(value: Json) -> Sum[ParsingError, int]:
                 case _:
                     return Sum.left(ParsingError.single(f"Not an int: {int_value}"))
         case _:
-            return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
 def unit_to_json(_: Unit) -> Json:
@@ -50,7 +50,7 @@ def unit_from_json(value: Json) -> Sum[ParsingError, Unit]:
         case {"discriminator": "unit"}:
             return Sum.right(unit)
         case _:
-            return Sum.left(ParsingError.single(f"Not a unit: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
 def bool_to_json(value: bool) -> Json:  # noqa: FBT001
@@ -66,7 +66,7 @@ def bool_from_json(value: Json) -> Sum[ParsingError, bool]:
                 case _:
                     return Sum.left(ParsingError.single(f"Not a bool: {bool_value}"))
         case _:
-            return Sum.left(ParsingError.single(f"Not a bool: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
 def float32_to_json(value: Decimal) -> Json:
@@ -85,7 +85,7 @@ def float32_from_json(value: Json) -> Sum[ParsingError, Decimal]:
                 case _:
                     return Sum.left(ParsingError.single(f"Not a string: {float_value}"))
         case _:
-            return Sum.left(ParsingError.single(f"Not a float: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
 def date_to_json(value: datetime.date) -> Json:
@@ -104,4 +104,4 @@ def date_from_json(value: Json) -> Sum[ParsingError, datetime.date]:
                 case _:
                     return Sum.left(ParsingError.single(f"Date is not a string: {date_value}"))
         case _:
-            return Sum.left(ParsingError.single(f"Not a date: {value}"))
+            return Sum.left(ParsingError.single(f"Invalid structure: {value}"))

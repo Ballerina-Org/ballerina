@@ -34,6 +34,6 @@ def list_from_json(item_from_json: FromJson[_A]) -> FromJson[Sequence[_A]]:
                     case _:
                         return Sum.left(ParsingError.single(f"Not a list: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a list: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing list:"))

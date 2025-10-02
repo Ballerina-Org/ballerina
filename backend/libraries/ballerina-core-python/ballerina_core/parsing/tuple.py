@@ -34,12 +34,12 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -76,10 +76,10 @@ def tuple_3_from_json(
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -122,10 +122,10 @@ def tuple_4_from_json(
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -178,10 +178,10 @@ def tuple_5_from_json(
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -244,10 +244,10 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -322,12 +322,12 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -418,12 +418,12 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -525,12 +525,12 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -643,12 +643,12 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                 )
                             )
                         return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
+                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
                         )
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 

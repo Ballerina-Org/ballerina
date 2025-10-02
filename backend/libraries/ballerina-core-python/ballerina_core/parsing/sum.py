@@ -16,21 +16,15 @@ def _case_to_json(discriminator: int, payload: Json) -> Json:
 
 def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
     match case_payload:
-        case list():
-            if len(case_payload) == 2:  # noqa: PLR2004
-                discriminator, payload = case_payload
-                match discriminator:
-                    case int():
-                        return Sum.right((discriminator, payload))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid discriminator: {discriminator}"))
-            else:
-                return Sum.left(
-                    ParsingError.single(f"Invalid case payload, list should have 2 elements: {case_payload}")
-                )
+        case [discriminator, payload]:
+            match discriminator:
+                case int():
+                    return Sum.right((discriminator, payload))
+                case _:
+                    return Sum.left(ParsingError.single(f"Invalid case payload, invalid discriminator: {case_payload}"))
         case _:
             return Sum.left(
-                ParsingError.single(f"Invalid case payload, should be a list: {case_payload}, got {type(case_payload)}")
+                ParsingError.single(f"Invalid case payload, got {case_payload}")
             )
 
 
