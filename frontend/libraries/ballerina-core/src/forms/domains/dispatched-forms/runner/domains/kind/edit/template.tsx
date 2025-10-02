@@ -80,9 +80,9 @@ export const DispatchEditFormLauncherTemplate = <
           ...props.context.formState,
           value: entity.value,
           locked: false,
-          disabled: false,
+          disabled: props.context.globallyDisabled,
           globallyDisabled: props.context.globallyDisabled,
-          readOnly: false,
+          readOnly: props.context.globallyReadOnly,
           globallyReadOnly: props.context.globallyReadOnly,
           type: DispatchParsedType.Default.primitive("unit"), // currently unused here
           bindings,

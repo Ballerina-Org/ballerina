@@ -80,9 +80,9 @@ export const MapAbstractRenderer = <
             value:
               (_.value.values.get(elementIndex) as ValueTuple)?.values.get(0) ||
               GetDefaultKeyFormValue(),
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings,
@@ -186,9 +186,9 @@ export const MapAbstractRenderer = <
               (_.value.values?.get(elementIndex) as ValueTuple)?.values.get(
                 1,
               ) || GetDefaultValueFormValue(),
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings,

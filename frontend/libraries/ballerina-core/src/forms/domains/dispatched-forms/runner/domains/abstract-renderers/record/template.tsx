@@ -102,9 +102,9 @@ export const RecordAbstractRenderer = <
             type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
               FieldTemplates.get(fieldName)!.GetDefaultState()),
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
