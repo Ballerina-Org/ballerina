@@ -12,7 +12,7 @@ import {
 
 import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
 import { Dispatcher } from "../../state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const UnionDispatcher = {
   Operations: {

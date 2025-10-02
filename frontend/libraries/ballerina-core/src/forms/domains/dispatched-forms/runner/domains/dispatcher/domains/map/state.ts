@@ -5,7 +5,7 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {

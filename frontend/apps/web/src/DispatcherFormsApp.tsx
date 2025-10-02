@@ -45,6 +45,7 @@ import {
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
+import { DispatchCreateFormLauncherState } from "ballerina-core/src/forms/domains/dispatched-forms/runner/domains/kind/create/state";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -113,19 +114,29 @@ export const DispatcherFormsApp = (props: {}) => {
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags
-    >().Default(),
+    >().Default.passthrough(),
   );
   const [personConfigState, setPersonConfigState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
       DispatchPassthroughFormFlags
-    >().Default(),
+    >().Default.passthrough(),
+  );
+
+  const [personCreateState, setPersonCreateState] = useState(
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags
+    >().Default.create(),
   );
 
   const [personEntity, setPersonEntity] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
   const [config, setConfig] = useState<
+    Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
+  >(Sum.Default.right("not initialized"));
+  const [createConfig, setCreateConfig] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
 
@@ -242,12 +253,14 @@ export const DispatcherFormsApp = (props: {}) => {
         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
           "person-transparent",
         )!.parseValueToApi;
-      setEntityPath(
-        DispatchDeltaTransfer.Default.FromDelta(
-          toApiRawParser as any, //TODO - fix type issue if worth it
-          parseCustomDelta,
-        )(delta),
-      );
+      const dispatchDeltaTransfer = DispatchDeltaTransfer.Default.FromDelta(
+        toApiRawParser as any, //TODO - fix type issue if worth it
+        parseCustomDelta,
+      )(delta);
+
+      console.debug("dispatchDeltaTransfer", dispatchDeltaTransfer);
+
+      setEntityPath(dispatchDeltaTransfer);
       setRemoteEntityVersionIdentifier(v4());
     }
   };
@@ -425,7 +438,6 @@ export const DispatcherFormsApp = (props: {}) => {
                             DispatchPersonFromConfigApis.streamApis,
                           enumOptionsSources:
                             DispatchPersonFromConfigApis.enumApis,
-                          entityApis: DispatchPersonFromConfigApis.entityApis,
                           tableApiSources:
                             DispatchPersonFromConfigApis.tableApiSources,
                           lookupSources:
@@ -476,7 +488,6 @@ export const DispatcherFormsApp = (props: {}) => {
                           DispatchPersonFromConfigApis.streamApis,
                         enumOptionsSources:
                           DispatchPersonFromConfigApis.enumApis,
-                        entityApis: DispatchPersonFromConfigApis.entityApis,
                         tableApiSources:
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:
@@ -493,6 +504,70 @@ export const DispatcherFormsApp = (props: {}) => {
                   view={unit}
                   foreignMutations={unit}
                 />
+
+                <h3>Create Person</h3>
+                <InstantiedPersonDispatchFormRunnerTemplate
+                  context={{
+                    ...specificationDeserializer,
+                    ...personCreateState,
+                    launcherRef: {
+                      name: "create-person",
+                      kind: "create",
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis,
+                        enumOptionsSources:
+                          DispatchPersonFromConfigApis.enumApis,
+                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                        tableApiSources:
+                          DispatchPersonFromConfigApis.tableApiSources,
+                        lookupSources:
+                          DispatchPersonFromConfigApis.lookupSources,
+                      },
+                      // config: {
+                      //   source: "api",
+                      //   getGlobalConfig: () =>
+                      //     DispatchPersonFromConfigApis.entityApis.get(
+                      //       "person-config",
+                      //     )(""),
+                      // },
+                      config: {
+                        source: "entity",
+                        value: config,
+                      },
+                    },
+                    remoteEntityVersionIdentifier,
+                    showFormParsingErrors: ShowFormsParsingErrors,
+                    extraContext: {
+                      flags: Set(["BC", "X"]),
+                    },
+                  }}
+                  setState={setPersonCreateState}
+                  view={unit}
+                  foreignMutations={unit}
+                />
+                <button
+                  onClick={() => {
+                    setPersonCreateState((_) =>
+                      _.innerFormState.kind == "create"
+                        ? {
+                            ..._,
+                            ...DispatchFormRunnerState<
+                              DispatchPassthroughFormInjectedTypes,
+                              DispatchPassthroughFormFlags
+                            >().Updaters.Template.create(
+                              DispatchCreateFormLauncherState<
+                                DispatchPassthroughFormInjectedTypes,
+                                DispatchPassthroughFormFlags
+                              >().Updaters.Template.submit(),
+                            )(_),
+                          }
+                        : _,
+                    );
+                  }}
+                >
+                  Create Person
+                </button>
               </td>
             </tr>
           </tbody>

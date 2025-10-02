@@ -201,6 +201,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        const [streamParams, shouldReload] =
+          props.context.customFormState.streamParams.value;
+
         return (
           <>
             <p>one admin renderer</p>
@@ -1445,6 +1448,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 gap: "10px",
               }}
             >
+              <div>
+                <input
+                  type="checkbox"
+                  checked={props.context.customFormState.applyToAll}
+                  onClick={() =>
+                    props.foreignMutations.setApplyToAll(
+                      !props.context.customFormState.applyToAll,
+                    )
+                  }
+                />
+                Apply to all
+              </div>
               <table>
                 <thead style={{ border: "1px solid black" }}>
                   <tr style={{ border: "1px solid black" }}>
@@ -2335,7 +2350,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 </li>
               );
             })}
-            {props.embeddedPlaceholderElementTemplate()(undefined)({
+            {props.embeddedPlaceholderElementTemplate(0)(undefined)({
               ...props,
               context: {
                 ...props.context,
@@ -2350,7 +2365,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 ...props.foreignMutations,
                 onChange: (upd, delta) => {
                   props.foreignMutations.add?.(undefined)(
-                    upd.kind == "l" ? undefined : upd.value,
+                    upd.kind == "l"
+                      ? undefined
+                      : (upd.value as BasicUpdater<PredicateValue>),
                   );
                 },
               },

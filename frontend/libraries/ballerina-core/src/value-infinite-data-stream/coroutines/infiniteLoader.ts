@@ -49,7 +49,7 @@ export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
                     .then(
                       updaters.Core.position(
                         ValueStreamPosition.Updaters.Core.nextStart(
-                          replaceWith(apiResult.value.to + 1),
+                          replaceWith(apiResult.value.to),
                         ),
                       ),
                     ),

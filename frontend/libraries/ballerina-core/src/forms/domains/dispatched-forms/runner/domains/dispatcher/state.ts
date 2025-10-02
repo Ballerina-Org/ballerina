@@ -18,7 +18,7 @@ import { TupleDispatcher } from "./domains/tupleDispatcher/state";
 import { UnionDispatcher } from "./domains/unionDispatcher/state";
 import { PrimitiveDispatcher } from "./domains/primitive/state";
 import { LookupRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
-import { DispatcherContextWithApiSources } from "../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../state";
 
 export const Dispatcher = {
   Operations: {

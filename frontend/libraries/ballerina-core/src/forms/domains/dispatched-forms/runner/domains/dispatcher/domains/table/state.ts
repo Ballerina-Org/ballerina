@@ -16,7 +16,7 @@ import {
 import { DispatchTableApiSource } from "../../../../../../../../../main";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 import { TableRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/state";
-import { DispatcherContextWithApiSources } from "../../../../coroutines/runner";
+import { DispatcherContextWithApiSources } from "../../../../state";
 import { List, Map } from "immutable";
 
 export const TableDispatcher = {

@@ -7,12 +7,12 @@ type One[a any] struct {
 }
 
 // type some[a any] struct { One[a]; Value a; Kind string }
-func Loaded[a any](value a) One[a] {
+func NewLoadedOne[a any](value a) One[a] {
 	return One[a]{Right[LazyOneValue, a](value)}
 }
 
 // type none[a any] struct { One[a]; Kind string }
-func Lazy[a any]() One[a] {
+func NewLazyOne[a any]() One[a] {
 	return One[a]{Left[LazyOneValue, a](LazyOneValue(NewUnit()))}
 }
 
@@ -23,7 +23,7 @@ func Lazy[a any]() One[a] {
 func MapOne[a any, b any](self One[a], f func(a) b) One[b] {
 	return Fold(
 		self.Sum,
-		func(_ LazyOneValue) One[b] { return Lazy[b]() },
-		func(value a) One[b] { return Loaded[b](f(value)) },
+		func(_ LazyOneValue) One[b] { return NewLazyOne[b]() },
+		func(value a) One[b] { return NewLoadedOne[b](f(value)) },
 	)
 }
