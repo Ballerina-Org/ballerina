@@ -58,17 +58,11 @@ def _handle_case_tuple(
 def sum2_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
     def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
         match value:
-            case dict():
-                if DISCRIMINATOR_KEY not in value:
-                    return Sum.left(ParsingError.single(f"Missing {DISCRIMINATOR_KEY}: {value}"))
-                if value[DISCRIMINATOR_KEY] != "sum":
-                    return Sum.left(ParsingError.single(f"Invalid {DISCRIMINATOR_KEY}: {value}"))
-                if VALUE_KEY not in value:
-                    return Sum.left(ParsingError.single(f"Missing {VALUE_KEY}: {value}"))
-                return _case_from_json(value[VALUE_KEY]).flat_map(
+            case {"discriminator": "sum", "value": case_payload}:
+                return _case_from_json(case_payload).flat_map(
                     lambda case_tuple: _handle_case_tuple(case_tuple, left_from_json, right_from_json)
                 )
             case _:
-                return Sum.left(ParsingError.single(f"Not a dictionary: {value}"))
+                return Sum.left(ParsingError.single(f"Sum2 got invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing sum2:"))
