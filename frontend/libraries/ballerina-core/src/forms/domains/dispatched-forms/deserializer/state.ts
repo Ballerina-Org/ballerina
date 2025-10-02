@@ -119,7 +119,7 @@ export type ErrorRendererProps = {
 export type DispatcherContext<
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 > = {
   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
@@ -130,26 +130,26 @@ export type DispatcherContext<
     typeof tryGetConcreteRenderer<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >
   >;
   lookupTypeRenderer: () => LookupTypeAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >;
   getDefaultRecordRenderer: (
     isNested: boolean,
   ) => RecordAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >;
   concreteRenderers: ConcreteRenderers<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >;
   defaultValue: (
@@ -181,14 +181,14 @@ export type DispatcherContext<
 export type DeserializedDispatchSpecification<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = {
   launchers: DispatchParsedLaunchers<T>;
   dispatcherContext: DispatcherContext<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >;
   parseValueToApi: (
@@ -208,13 +208,13 @@ export type DeserializedDispatchSpecification<
 export type DispatchSpecificationDeserializationResult<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = ValueOrErrors<
   DeserializedDispatchSpecification<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >,
   string
@@ -307,30 +307,30 @@ export const parseDispatchFormsToLaunchers =
   <
     T extends DispatchInjectablesTypes<T>,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext,
   >(
     injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
     apiConverters: DispatchApiConverters<T>,
     lookupTypeRenderer: () => LookupTypeAbstractRendererView<
-      CustomPresentationContexts,
+      CustomPresentationContext,
       Flags,
       ExtraContext
     >,
     defaultRecordRenderer: () => RecordAbstractRendererView<
-      CustomPresentationContexts,
+      CustomPresentationContext,
       Flags,
       ExtraContext
     >,
     defaultNestedRecordRenderer: () => RecordAbstractRendererView<
-      CustomPresentationContexts,
+      CustomPresentationContext,
       Flags,
       ExtraContext
     >,
     concreteRenderers: ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
     IdProvider: (props: IdWrapperProps) => React.ReactNode,
@@ -341,7 +341,7 @@ export const parseDispatchFormsToLaunchers =
   ): DispatchSpecificationDeserializationResult<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   > =>
     ValueOrErrors.Operations.All(
@@ -665,28 +665,28 @@ export const parseDispatchFormsToLaunchers =
 export type DispatchFormsParserContext<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = {
   lookupTypeRenderer: () => LookupTypeAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >;
   defaultRecordConcreteRenderer: () => RecordAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >;
   defaultNestedRecordConcreteRenderer: () => RecordAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >;
   concreteRenderers: ConcreteRenderers<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >;
   IdWrapper: (props: IdWrapperProps) => React.ReactNode;
@@ -699,7 +699,7 @@ export type DispatchFormsParserContext<
 export type DispatchFormsParserState<
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 > = {
   deserializedSpecification: Synchronized<
@@ -707,7 +707,7 @@ export type DispatchFormsParserState<
     DispatchSpecificationDeserializationResult<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >
   >;
@@ -716,14 +716,14 @@ export type DispatchFormsParserState<
 export const DispatchFormsParserState = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() => {
   return {
     Default: (): DispatchFormsParserState<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     > => ({
       deserializedSpecification: Synchronized.Default(unit),
@@ -733,7 +733,7 @@ export const DispatchFormsParserState = <
         DispatchFormsParserState<
           T,
           Flags,
-          CustomPresentationContexts,
+          CustomPresentationContext,
           ExtraContext
         >
       >()("deserializedSpecification"),

@@ -17,20 +17,20 @@ export const RecordDispatcher = {
     GetRecordConcreteRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       concreteRenderer: string | undefined,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,
     ): ValueOrErrors<
       RecordAbstractRendererView<
-        CustomPresentationContexts,
+        CustomPresentationContext,
         Flags,
         ExtraContext
       >,
@@ -44,14 +44,14 @@ export const RecordDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: RecordRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,
@@ -119,7 +119,7 @@ export const RecordDispatcher = {
           ).Then((concreteRenderer) =>
             ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
               RecordAbstractRenderer<
-                CustomPresentationContexts,
+                CustomPresentationContext,
                 Flags,
                 ExtraContext
               >(

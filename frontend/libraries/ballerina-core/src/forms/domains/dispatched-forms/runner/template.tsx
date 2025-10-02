@@ -1,55 +1,42 @@
-import { Map } from "immutable";
-
 import {
   CreateLauncherRef,
-  DispatchCommonFormRunnerState,
   DispatchFormRunnerContext,
   DispatchFormRunnerForeignMutationsExpected,
   DispatchFormRunnerState,
   EditLauncherRef,
-  LauncherRef,
   PassthroughLauncherRef,
 } from "./state";
 
-import {
-  Template,
-  unit,
-  BasicUpdater,
-  DispatchInjectablesTypes,
-  Unit,
-} from "../../../../../main";
+import { Template, DispatchInjectablesTypes } from "../../../../../main";
 
 import { DispatchPassthroughFormLauncherTemplate } from "./domains/kind/passthrough/template";
 import { DispatchEditFormLauncherTemplate } from "./domains/kind/edit/template";
 import { DispatchCreateFormLauncherTemplate } from "./domains/kind/create/template";
-import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
-import { DispatchEditFormLauncherState } from "./domains/kind/edit/state";
-import { DispatchPassthroughFormLauncherState } from "./domains/kind/passthrough/state";
 
 export const DispatchFormRunnerTemplate = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() => {
   const InstantiatedPassthroughFormLauncherTemplate =
     DispatchPassthroughFormLauncherTemplate<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >();
   const InstantiatedEditFormLauncherTemplate = DispatchEditFormLauncherTemplate<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >();
   const InstantiatedCreateFormLauncherTemplate =
     DispatchCreateFormLauncherTemplate<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >();
 
@@ -57,11 +44,16 @@ export const DispatchFormRunnerTemplate = <
     DispatchFormRunnerContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     > &
-      DispatchFormRunnerState<T, Flags>,
-    DispatchFormRunnerState<T, Flags>,
+      DispatchFormRunnerState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >,
+    DispatchFormRunnerState<T, Flags, CustomPresentationContext, ExtraContext>,
     DispatchFormRunnerForeignMutationsExpected
   >((props) => {
     if (
@@ -79,9 +71,12 @@ export const DispatchFormRunnerTemplate = <
           }}
           setState={(_) =>
             props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.Template.passthrough(
-                _,
-              ),
+              DispatchFormRunnerState<
+                T,
+                Flags,
+                CustomPresentationContext,
+                ExtraContext
+              >().Updaters.Template.passthrough(_),
             )
           }
         />
@@ -102,7 +97,12 @@ export const DispatchFormRunnerTemplate = <
           }}
           setState={(_) =>
             props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.Template.edit(_),
+              DispatchFormRunnerState<
+                T,
+                Flags,
+                CustomPresentationContext,
+                ExtraContext
+              >().Updaters.Template.edit(_),
             )
           }
         />
@@ -123,7 +123,12 @@ export const DispatchFormRunnerTemplate = <
           }}
           setState={(_) =>
             props.setState(
-              DispatchFormRunnerState<T, Flags>().Updaters.Template.create(_),
+              DispatchFormRunnerState<
+                T,
+                Flags,
+                CustomPresentationContext,
+                ExtraContext
+              >().Updaters.Template.create(_),
             )
           }
         />

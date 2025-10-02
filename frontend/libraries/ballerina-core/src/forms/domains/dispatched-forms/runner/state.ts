@@ -25,6 +25,9 @@ import {
   Updater,
   Renderer,
   DispatcherContext,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
 } from "../../../../../main";
 import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
 import {
@@ -36,10 +39,10 @@ import { DispatchPassthroughFormLauncherState } from "./domains/kind/passthrough
 export type DispatcherContextWithApiSources<
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 > = Omit<
-  DispatcherContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  DispatcherContext<T, Flags, CustomPresentationContext, ExtraContext>,
   "defaultState"
 > &
   BaseApiSources & {
@@ -102,36 +105,43 @@ export type LauncherRef<Flags = Unit> =
 
 export type DispatchFormRunnerStatus<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > =
   | { kind: "not initialized" }
   | { kind: "loading" }
   | {
       kind: "loaded";
       Form: Template<
-        any,
-        any,
-        {
-          onChange: DispatchOnChange<PredicateValue, Flags>;
-        },
-        any
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<T>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          CommonAbstractRendererState,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
       >;
     }
   | { kind: "error"; errors: List<string> };
 
 export type DispatchFormRunnerContext<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
+  Flags,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = {
   extraContext: ExtraContext;
+  globallyDisabled: boolean;
+  globallyReadOnly: boolean;
   launcherRef: LauncherRef<Flags>;
   showFormParsingErrors: BasicFun<
     DispatchSpecificationDeserializationResult<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
     JSX.Element
@@ -139,71 +149,185 @@ export type DispatchFormRunnerContext<
   remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
-} & DispatchFormsParserState<
-  T,
-  Flags,
-  CustomPresentationContexts,
-  ExtraContext
->;
+} & DispatchFormsParserState<T, Flags, CustomPresentationContext, ExtraContext>;
 
 export type DispatchFormRunnerState<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > = {
   innerFormState:
-    | { kind: "create"; state: DispatchCreateFormLauncherState<T, Flags> }
-    | { kind: "edit"; state: DispatchEditFormLauncherState<T, Flags> }
+    | {
+        kind: "create";
+        state: DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >;
+      }
+    | {
+        kind: "edit";
+        state: DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >;
+      }
     | {
         kind: "passthrough";
-        state: DispatchPassthroughFormLauncherState<T, Flags>;
+        state: DispatchPassthroughFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >;
       };
 };
 
 export const DispatchFormRunnerState = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >() => ({
   Default: {
-    create: (): DispatchFormRunnerState<T, Flags> => ({
+    create: (): DispatchFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    > => ({
       innerFormState: {
         kind: "create",
-        state: DispatchCreateFormLauncherState<T, Flags>().Default(),
+        state: DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Default(),
       },
     }),
-    edit: (): DispatchFormRunnerState<T, Flags> => ({
+    edit: (): DispatchFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    > => ({
       innerFormState: {
         kind: "edit",
-        state: DispatchEditFormLauncherState<T, Flags>().Default(),
+        state: DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Default(),
       },
     }),
-    passthrough: (): DispatchFormRunnerState<T, Flags> => ({
+    passthrough: (): DispatchFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    > => ({
       innerFormState: {
         kind: "passthrough",
-        state: DispatchPassthroughFormLauncherState<T, Flags>().Default(),
+        state: DispatchPassthroughFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Default(),
       },
     }),
   },
   Updaters: {
     Core: {
-      ...simpleUpdater<DispatchFormRunnerState<T, Flags>>()("innerFormState"),
+      ...simpleUpdater<
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("innerFormState"),
     },
     Template: {
       create: (
-        upd: BasicUpdater<DispatchCreateFormLauncherState<T, Flags>>,
-      ): Updater<DispatchFormRunnerState<T, Flags>> =>
-        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+        upd: BasicUpdater<
+          DispatchCreateFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >
+        >,
+      ): Updater<
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.innerFormState((v) =>
           v.kind === "create" ? { ...v, state: upd(v.state) } : v,
         ),
       edit: (
-        upd: BasicUpdater<DispatchEditFormLauncherState<T, Flags>>,
-      ): Updater<DispatchFormRunnerState<T, Flags>> =>
-        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+        upd: BasicUpdater<
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >
+        >,
+      ): Updater<
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.innerFormState((v) =>
           v.kind === "edit" ? { ...v, state: upd(v.state) } : v,
         ),
       passthrough: (
-        upd: BasicUpdater<DispatchPassthroughFormLauncherState<T, Flags>>,
-      ): Updater<DispatchFormRunnerState<T, Flags>> =>
-        DispatchFormRunnerState<T, Flags>().Updaters.Core.innerFormState((v) =>
+        upd: BasicUpdater<
+          DispatchPassthroughFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >
+        >,
+      ): Updater<
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.innerFormState((v) =>
           v.kind === "passthrough" ? { ...v, state: upd(v.state) } : v,
         ),
     },
@@ -214,24 +338,52 @@ export type DispatchFormRunnerForeignMutationsExpected = Unit;
 
 export type DispatchCommonFormRunnerState<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > = {
-  status: DispatchFormRunnerStatus<T, Flags>;
-  formState: any;
+  status: DispatchFormRunnerStatus<
+    T,
+    Flags,
+    CustomPresentationContext,
+    ExtraContext
+  >;
+  formState: CommonAbstractRendererState;
 };
 
 export const DispatchCommonFormRunnerState = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >() => {
   return {
-    Default: (): DispatchCommonFormRunnerState<T, Flags> => ({
+    Default: (): DispatchCommonFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    > => ({
       status: { kind: "not initialized" },
-      formState: unit,
+      formState: CommonAbstractRendererState.Default(),
     }),
     Updaters: {
-      ...simpleUpdater<DispatchCommonFormRunnerState<T, Flags>>()("status"),
-      ...simpleUpdater<DispatchCommonFormRunnerState<T, Flags>>()("formState"),
+      ...simpleUpdater<
+        DispatchCommonFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("status"),
+      ...simpleUpdater<
+        DispatchCommonFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("formState"),
     },
   };
 };

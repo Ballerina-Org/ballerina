@@ -17,14 +17,14 @@ export const OneDispatcher = {
     DispatchPreviewRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -42,14 +42,14 @@ export const OneDispatcher = {
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       api: string[],
       dispatcherContext: DispatcherContextWithApiSources<
         any,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> =>
@@ -88,14 +88,14 @@ export const OneDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -132,7 +132,7 @@ export const OneDispatcher = {
                       ValueOrErrors.Default.return(
                         OneAbstractRenderer(
                           LookupTypeAbstractRenderer<
-                            CustomPresentationContexts,
+                            CustomPresentationContext,
                             Flags,
                             ExtraContext
                           >(
@@ -143,7 +143,7 @@ export const OneDispatcher = {
                           ).withView(dispatcherContext.lookupTypeRenderer()),
                           previewRenderer
                             ? LookupTypeAbstractRenderer<
-                                CustomPresentationContexts,
+                                CustomPresentationContext,
                                 Flags,
                                 ExtraContext
                               >(

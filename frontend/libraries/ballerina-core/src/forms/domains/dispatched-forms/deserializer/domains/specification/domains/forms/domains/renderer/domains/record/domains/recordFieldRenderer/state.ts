@@ -57,7 +57,7 @@ export const RecordFieldRenderer = {
   Deserialize: <
     T extends DispatchInjectablesTypes<T>,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext,
   >(
     type: DispatchParsedType<T>,
@@ -65,7 +65,7 @@ export const RecordFieldRenderer = {
     concreteRenderers: ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
     types: Map<string, DispatchParsedType<T>>,

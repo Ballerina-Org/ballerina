@@ -11,18 +11,18 @@ import { syncCo } from "./_sync";
 export const DispatchCreateFormRunner = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() => {
   const Co = CreateCoBuilder<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >();
 
-  const init = initCo<T, Flags, CustomPresentationContexts, ExtraContext>(Co);
-  const sync = syncCo<T, Flags, CustomPresentationContexts, ExtraContext>(Co);
+  const init = initCo<T, Flags, CustomPresentationContext, ExtraContext>(Co);
+  const sync = syncCo<T, Flags, CustomPresentationContext, ExtraContext>(Co);
 
   return Co.Template<DispatchCreateFormLauncherForeignMutationsExpected<T>>(
     init,
