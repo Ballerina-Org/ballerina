@@ -131,28 +131,8 @@ export const OneDispatcher = {
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
                         OneAbstractRenderer(
-                          LookupTypeAbstractRenderer<
-                            CustomPresentationContext,
-                            Flags,
-                            ExtraContext
-                          >(
-                            detailsRenderer,
-                            renderer.type.arg,
-                            dispatcherContext.IdProvider,
-                            dispatcherContext.ErrorRenderer,
-                          ).withView(dispatcherContext.lookupTypeRenderer()),
-                          previewRenderer
-                            ? LookupTypeAbstractRenderer<
-                                CustomPresentationContext,
-                                Flags,
-                                ExtraContext
-                              >(
-                                previewRenderer,
-                                renderer.type.arg,
-                                dispatcherContext.IdProvider,
-                                dispatcherContext.ErrorRenderer,
-                              ).withView(dispatcherContext.lookupTypeRenderer())
-                            : undefined,
+                          detailsRenderer,
+                          previewRenderer,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           oneEntityType,
