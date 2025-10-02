@@ -345,7 +345,15 @@ def tuple_7_to_json(  # noqa: PLR0917,PLR0913
         a, b, c, d, e, f, g = value
         return {
             DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)],
+            VALUE_KEY: [
+                a_to_json(a),
+                b_to_json(b),
+                c_to_json(c),
+                d_to_json(d),
+                e_to_json(e),
+                f_to_json(f),
+                g_to_json(g),
+            ],
         }
 
     return to_json
