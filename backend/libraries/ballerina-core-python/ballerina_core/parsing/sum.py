@@ -48,11 +48,13 @@ def _handle_case_tuple(
     case_tuple: tuple[int, Json], left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR]
 ) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
     discriminator, payload = case_tuple
-    if discriminator == 0:
-        return left_from_json(payload).map_right(Sum.left)
-    if discriminator == 1:
-        return right_from_json(payload).map_right(Sum.right)
-    return Sum.left(ParsingError.single(f"Invalid discriminator: {discriminator}"))
+    match discriminator:
+        case 0:
+            return left_from_json(payload).map_left(ParsingError.with_context(f"When parsing case {discriminator}:")).map_right(Sum.left)
+        case 1:
+            return right_from_json(payload).map_left(ParsingError.with_context(f"When parsing case {discriminator}:")).map_right(Sum.right)
+        case _:
+            return Sum.left(ParsingError.single(f"Invalid case tuple: invalid discriminator: {case_tuple}"))
 
 
 def sum2_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /) -> FromJson[Sum[_SumL, _SumR]]:
