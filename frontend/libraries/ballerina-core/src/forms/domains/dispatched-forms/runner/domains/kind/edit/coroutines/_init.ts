@@ -25,18 +25,20 @@ import { EditCoBuilder } from "./builder";
 export const initCo = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >(
   Co: ReturnType<
-    typeof EditCoBuilder<T, Flags, CustomPresentationContexts, ExtraContext>
+    typeof EditCoBuilder<T, Flags, CustomPresentationContext, ExtraContext>
   >,
 ) => {
   const setChecked = (checked: boolean) =>
     Co.SetState(
       DispatchEditFormLauncherState<
         T,
-        Flags
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
       >().Updaters.Core.apiChecker.children.init(
         checked
           ? ApiResponseChecker.Updaters().toChecked()
@@ -60,8 +62,20 @@ export const initCo = <
       5,
       50,
     ).embed(
-      (_: DispatchEditFormLauncherState<T, Flags>) => _.entity,
-      DispatchEditFormLauncherState<T, Flags>().Updaters.Core.entity,
+      (
+        _: DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >,
+      ) => _.entity,
+      DispatchEditFormLauncherState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >().Updaters.Core.entity,
     );
 
   const configValueCo = (
@@ -70,7 +84,7 @@ export const initCo = <
     current: DispatchEditFormLauncherContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
   ) =>
@@ -84,11 +98,28 @@ export const initCo = <
               : Promise.resolve(result.value);
           }),
         ).embed(
-          (_: DispatchEditFormLauncherState<T, Flags>) => _.config,
-          DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config,
+          (
+            _: DispatchEditFormLauncherState<
+              T,
+              Flags,
+              CustomPresentationContext,
+              ExtraContext
+            >,
+          ) => _.config,
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >().Updaters.Core.config,
         )
       : Co.SetState(
-          DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config(
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >().Updaters.Core.config(
             replaceWith(
               current.launcherRef.config.value.kind == "l" &&
                 current.launcherRef.config.value.value.kind == "value"
@@ -104,8 +135,20 @@ export const initCo = <
         );
 
   const errorUpd = (errors: List<string>) =>
-    DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
-      replaceWith<DispatchFormRunnerStatus<T, Flags>>({
+    DispatchEditFormLauncherState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >().Updaters.Core.status(
+      replaceWith<
+        DispatchFormRunnerStatus<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >({
         kind: "error",
         errors,
       }),
@@ -113,8 +156,20 @@ export const initCo = <
 
   return Co.Seq([
     Co.SetState(
-      DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
-        replaceWith<DispatchFormRunnerStatus<T, Flags>>({ kind: "loading" }),
+      DispatchEditFormLauncherState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >().Updaters.Core.status(
+        replaceWith<
+          DispatchFormRunnerStatus<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >
+        >({ kind: "loading" }),
       ),
     ),
     setChecked(false),
@@ -199,7 +254,7 @@ export const initCo = <
             const dispatcherContextWithApiSources: DispatcherContextWithApiSources<
               T,
               Flags,
-              CustomPresentationContexts,
+              CustomPresentationContext,
               ExtraContext
             > = {
               ...dispatcherContext,
@@ -237,27 +292,52 @@ export const initCo = <
               return errorUpd(initialState.errors);
             }
 
-            return DispatchEditFormLauncherState<T, Flags>()
+            return DispatchEditFormLauncherState<
+              T,
+              Flags,
+              CustomPresentationContext,
+              ExtraContext
+            >()
               .Updaters.Core.formState(replaceWith(initialState.value))
               .thenMany([
-                DispatchEditFormLauncherState<T, Flags>().Updaters.Core.status(
-                  replaceWith<DispatchFormRunnerStatus<T, Flags>>({
+                DispatchEditFormLauncherState<
+                  T,
+                  Flags,
+                  CustomPresentationContext,
+                  ExtraContext
+                >().Updaters.Core.status(
+                  replaceWith<
+                    DispatchFormRunnerStatus<
+                      T,
+                      Flags,
+                      CustomPresentationContext,
+                      ExtraContext
+                    >
+                  >({
                     kind: "loaded",
                     Form: Form.value,
                   }),
                 ),
-                DispatchEditFormLauncherState<T, Flags>().Updaters.Core.config(
-                  replaceWith(_.config),
-                ),
+                DispatchEditFormLauncherState<
+                  T,
+                  Flags,
+                  CustomPresentationContext,
+                  ExtraContext
+                >().Updaters.Core.config(replaceWith(_.config)),
               ]);
           }),
         ]),
         HandleApiResponse<
-          DispatchEditFormLauncherState<T, Flags>,
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >,
           DispatchEditFormLauncherContext<
             T,
             Flags,
-            CustomPresentationContexts,
+            CustomPresentationContext,
             ExtraContext
           >,
           any

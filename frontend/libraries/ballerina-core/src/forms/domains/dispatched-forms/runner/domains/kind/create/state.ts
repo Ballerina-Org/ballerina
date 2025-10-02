@@ -23,11 +23,11 @@ export type DispatchCreateFormLauncherApi = {
 
 export type DispatchCreateFormLauncherContext<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > = Omit<
-  DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  DispatchFormRunnerContext<T, Flags, CustomPresentationContext, ExtraContext>,
   "launcherRef"
 > & {
   launcherRef: CreateLauncherRef;
@@ -35,8 +35,15 @@ export type DispatchCreateFormLauncherContext<
 
 export type DispatchCreateFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-> = DispatchCommonFormRunnerState<T, Flags> & {
+  Flags,
+  CustomPresentationContext,
+  ExtraContext = Unit,
+> = DispatchCommonFormRunnerState<
+  T,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext
+> & {
   entity: Synchronized<Unit, PredicateValue>;
   config: Synchronized<Unit, PredicateValue>;
   apiChecker: {
@@ -49,9 +56,21 @@ export type DispatchCreateFormLauncherState<
 export const DispatchCreateFormLauncherState = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >() => ({
-  Default: (): DispatchCreateFormLauncherState<T, Flags> => ({
-    ...DispatchCommonFormRunnerState<T, Flags>().Default(),
+  Default: (): DispatchCreateFormLauncherState<
+    T,
+    Flags,
+    CustomPresentationContext,
+    ExtraContext
+  > => ({
+    ...DispatchCommonFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >().Default(),
     entity: Synchronized.Default(unit),
     config: Synchronized.Default(unit),
     apiChecker: {
@@ -62,35 +81,105 @@ export const DispatchCreateFormLauncherState = <
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("status"),
-      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
-        "formState",
-      ),
-      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("entity"),
-      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()("config"),
-      ...simpleUpdater<DispatchCreateFormLauncherState<T, Flags>>()(
-        "apiRunner",
-      ),
-      ...simpleUpdaterWithChildren<DispatchCreateFormLauncherState<T, Flags>>()(
-        {
-          ...simpleUpdater<
-            DispatchCreateFormLauncherState<T, Flags>["apiChecker"]
-          >()("init"),
-          ...simpleUpdater<
-            DispatchCreateFormLauncherState<T, Flags>["apiChecker"]
-          >()("create"),
-        },
-      )("apiChecker"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("status"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("formState"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("entity"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("config"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("apiRunner"),
+      ...simpleUpdaterWithChildren<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()({
+        ...simpleUpdater<
+          DispatchCreateFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >["apiChecker"]
+        >()("init"),
+        ...simpleUpdater<
+          DispatchCreateFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >["apiChecker"]
+        >()("create"),
+      })("apiChecker"),
     },
     Template: {
       entity: (
         _: BasicUpdater<PredicateValue>,
-      ): Updater<DispatchCreateFormLauncherState<T, Flags>> =>
-        DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.entity(
+      ): Updater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.entity(
           Synchronized.Updaters.sync(AsyncState.Operations.map(_)),
         ),
-      submit: (): Updater<DispatchCreateFormLauncherState<T, Flags>> =>
-        DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.apiRunner(
+      submit: (): Updater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.apiRunner(
           Synchronized.Updaters.sync(AsyncState.Updaters.toLoading()),
         ),
     },

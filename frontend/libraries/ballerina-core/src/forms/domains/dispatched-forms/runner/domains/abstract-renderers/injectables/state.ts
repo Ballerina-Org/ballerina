@@ -69,14 +69,14 @@ export type DispatchInjectedPrimitives<T> = Map<
 
 export const injectedPrimitivesFromConcreteRenderers = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >(
   concreteRenderers: ConcreteRenderers<
     T,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext
   >,
   injectables: DispatchInjectables<T>,

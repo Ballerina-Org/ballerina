@@ -64,7 +64,7 @@ export const NestedRenderer = {
     DeserializeAs: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: DispatchParsedType<T>,
@@ -72,7 +72,7 @@ export const NestedRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       as: string,
@@ -89,7 +89,7 @@ export const NestedRenderer = {
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: DispatchParsedType<T>,
@@ -97,7 +97,7 @@ export const NestedRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,

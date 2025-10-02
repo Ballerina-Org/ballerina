@@ -21,14 +21,14 @@ export const PrimitiveDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: PrimitiveRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {

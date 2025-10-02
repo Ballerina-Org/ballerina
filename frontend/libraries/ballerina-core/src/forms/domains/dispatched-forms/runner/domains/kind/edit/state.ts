@@ -25,11 +25,11 @@ export type DispatchEditFormLauncherApi = {
 
 export type DispatchEditFormLauncherContext<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > = Omit<
-  DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  DispatchFormRunnerContext<T, Flags, CustomPresentationContext, ExtraContext>,
   "launcherRef"
 > & {
   launcherRef: EditLauncherRef;
@@ -37,8 +37,15 @@ export type DispatchEditFormLauncherContext<
 
 export type DispatchEditFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-> = DispatchCommonFormRunnerState<T, Flags> & {
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
+> = DispatchCommonFormRunnerState<
+  T,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext
+> & {
   entity: Synchronized<Unit, PredicateValue>;
   config: Synchronized<Unit, PredicateValue>;
   apiChecker: {
@@ -52,10 +59,22 @@ export type DispatchEditFormLauncherForeignMutationsExpected<T> = {};
 
 export const DispatchEditFormLauncherState = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >() => ({
-  Default: (): DispatchEditFormLauncherState<T, Flags> => ({
-    ...DispatchCommonFormRunnerState<T, Flags>().Default(),
+  Default: (): DispatchEditFormLauncherState<
+    T,
+    Flags,
+    CustomPresentationContext,
+    ExtraContext
+  > => ({
+    ...DispatchCommonFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >().Default(),
     entity: Synchronized.Default(unit),
     config: Synchronized.Default(unit),
     apiChecker: {
@@ -66,29 +85,105 @@ export const DispatchEditFormLauncherState = <
   }),
   Updaters: {
     Core: {
-      ...simpleUpdater<DispatchEditFormLauncherState<T, Flags>>()("status"),
-      ...simpleUpdater<DispatchEditFormLauncherState<T, Flags>>()("formState"),
-      ...simpleUpdater<DispatchEditFormLauncherState<T, Flags>>()("entity"),
-      ...simpleUpdater<DispatchEditFormLauncherState<T, Flags>>()("config"),
-      ...simpleUpdater<DispatchEditFormLauncherState<T, Flags>>()("apiRunner"),
-      ...simpleUpdaterWithChildren<DispatchEditFormLauncherState<T, Flags>>()({
+      ...simpleUpdater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("status"),
+      ...simpleUpdater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("formState"),
+      ...simpleUpdater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("entity"),
+      ...simpleUpdater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("config"),
+      ...simpleUpdater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("apiRunner"),
+      ...simpleUpdaterWithChildren<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()({
         ...simpleUpdater<
-          DispatchEditFormLauncherState<T, Flags>["apiChecker"]
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >["apiChecker"]
         >()("init"),
         ...simpleUpdater<
-          DispatchEditFormLauncherState<T, Flags>["apiChecker"]
+          DispatchEditFormLauncherState<
+            T,
+            Flags,
+            CustomPresentationContext,
+            ExtraContext
+          >["apiChecker"]
         >()("update"),
       })("apiChecker"),
     },
     Template: {
       entity: (
         _: BasicUpdater<PredicateValue>,
-      ): Updater<DispatchEditFormLauncherState<T, Flags>> =>
-        DispatchEditFormLauncherState<T, Flags>().Updaters.Core.entity(
+      ): Updater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.entity(
           Synchronized.Updaters.sync(AsyncState.Operations.map(_)),
         ),
-      submit: (): Updater<DispatchEditFormLauncherState<T, Flags>> =>
-        DispatchEditFormLauncherState<T, Flags>().Updaters.Core.apiRunner(
+      submit: (): Updater<
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      > =>
+        DispatchEditFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.apiRunner(
           Synchronized.Updaters.sync(AsyncState.Updaters.toLoading()),
         ),
     },

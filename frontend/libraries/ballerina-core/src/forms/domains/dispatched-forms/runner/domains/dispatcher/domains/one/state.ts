@@ -17,14 +17,14 @@ export const OneDispatcher = {
     DispatchPreviewRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -42,14 +42,14 @@ export const OneDispatcher = {
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       api: string[],
       dispatcherContext: DispatcherContextWithApiSources<
         any,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> =>
@@ -88,14 +88,14 @@ export const OneDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -131,28 +131,8 @@ export const OneDispatcher = {
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
                         OneAbstractRenderer(
-                          LookupTypeAbstractRenderer<
-                            CustomPresentationContexts,
-                            Flags,
-                            ExtraContext
-                          >(
-                            detailsRenderer,
-                            renderer.type.arg,
-                            dispatcherContext.IdProvider,
-                            dispatcherContext.ErrorRenderer,
-                          ).withView(dispatcherContext.lookupTypeRenderer()),
-                          previewRenderer
-                            ? LookupTypeAbstractRenderer<
-                                CustomPresentationContexts,
-                                Flags,
-                                ExtraContext
-                              >(
-                                previewRenderer,
-                                renderer.type.arg,
-                                dispatcherContext.IdProvider,
-                                dispatcherContext.ErrorRenderer,
-                              ).withView(dispatcherContext.lookupTypeRenderer())
-                            : undefined,
+                          detailsRenderer,
+                          previewRenderer,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           oneEntityType,

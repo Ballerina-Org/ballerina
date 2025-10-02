@@ -10,15 +10,20 @@ import {
 export const EditCoBuilder = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() =>
   CoTypedFactory<
     DispatchEditFormLauncherContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
-    DispatchEditFormLauncherState<T, Flags>
+    DispatchEditFormLauncherState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >
   >();
