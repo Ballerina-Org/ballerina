@@ -31,11 +31,11 @@ def test_tuple_2_to_json() -> None:
     value = (1, 2)
     serializer = tuple_2_to_json(int32_to_json, int32_to_json)
     serialized = serializer(value)
-    assert serialized == {"discriminator": "tuple", "value": [int32_to_json(1), int32_to_json(2)]}
+    assert serialized == {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [int32_to_json(1), int32_to_json(2)]}
 
 
 def test_tuple_2_from_json() -> None:
-    serialized: Json = {"discriminator": "tuple", "value": [int32_to_json(1), int32_to_json(2)]}
+    serialized: Json = {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [int32_to_json(1), int32_to_json(2)]}
     parser = tuple_2_from_json(int32_from_json, int32_from_json)
     value = parser(serialized)
     assert value == Sum.right((1, 2))

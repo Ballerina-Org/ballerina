@@ -1,5 +1,6 @@
 from typing import TypeVar
 
+from ballerina_core.parsing.keys import DISCRIMINATOR_KEY, VALUE_KEY
 from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
 from ballerina_core.sum import Sum
 
@@ -46,7 +47,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
 def tuple_2_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B]) -> ToJson[tuple[_A, _B]]:
     def to_json(value: tuple[_A, _B]) -> Json:
         a, b = value
-        return {"discriminator": "tuple", "value": [a_to_json(a), b_to_json(b)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b)]}
 
     return to_json
 
@@ -88,7 +89,7 @@ def tuple_3_from_json(
 def tuple_3_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B], c_to_json: ToJson[_C]) -> ToJson[tuple[_A, _B, _C]]:
     def to_json(value: tuple[_A, _B, _C]) -> Json:
         a, b, c = value
-        return {"discriminator": "tuple", "value": [a_to_json(a), b_to_json(b), c_to_json(c)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c)]}
 
     return to_json
 
@@ -136,7 +137,7 @@ def tuple_4_to_json(
 ) -> ToJson[tuple[_A, _B, _C, _D]]:
     def to_json(value: tuple[_A, _B, _C, _D]) -> Json:
         a, b, c, d = value
-        return {"discriminator": "tuple", "value": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)]}
 
     return to_json
 
@@ -193,8 +194,8 @@ def tuple_5_to_json(
     def to_json(value: tuple[_A, _B, _C, _D, _E]) -> Json:
         a, b, c, d, e = value
         return {
-            "discriminator": "tuple",
-            "value": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)],
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)],
         }
 
     return to_json
@@ -264,8 +265,8 @@ def tuple_6_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F]) -> Json:
         a, b, c, d, e, f = value
         return {
-            "discriminator": "tuple",
-            "value": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)],
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)],
         }
 
     return to_json
@@ -343,8 +344,8 @@ def tuple_7_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G]) -> Json:
         a, b, c, d, e, f, g = value
         return {
-            "discriminator": "tuple",
-            "value": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)],
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)],
         }
 
     return to_json
@@ -432,8 +433,8 @@ def tuple_8_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H]) -> Json:
         a, b, c, d, e, f, g, h = value
         return {
-            "discriminator": "tuple",
-            "value": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -540,8 +541,8 @@ def tuple_9_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]) -> Json:
         a, b, c, d, e, f, g, h, i = value
         return {
-            "discriminator": "tuple",
-            "value": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -659,8 +660,8 @@ def tuple_10_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]) -> Json:
         a, b, c, d, e, f, g, h, i, j = value
         return {
-            "discriminator": "tuple",
-            "value": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
