@@ -4,27 +4,25 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-
-	"github.com/google/uuid"
 )
 
-type Table[T any] struct {
+type Table[ID comparable, T any] struct {
 	Values    []T
-	IdToIndex map[uuid.UUID]int
+	IdToIndex map[ID]int
 	From      int
 	To        int
 	HasMore   bool
 }
 
-func NewTable[T any](values []T, getID func(T) uuid.UUID, from int, to int, hasMore bool) (Table[T], error) {
-	idToIndex := make(map[uuid.UUID]int)
+func NewTable[ID comparable, T any](values []T, getID func(T) ID, from int, to int, hasMore bool) (Table[ID, T], error) {
+	idToIndex := make(map[ID]int)
 	for i, value := range values {
 		idToIndex[getID(value)] = i
 	}
 	if len(idToIndex) != len(values) {
-		return Table[T]{}, fmt.Errorf("duplicate ids found")
+		return Table[ID, T]{}, fmt.Errorf("duplicate ids found")
 	}
-	return Table[T]{
+	return Table[ID, T]{
 		Values:    values,
 		IdToIndex: idToIndex,
 		From:      from,
@@ -41,14 +39,14 @@ func makeRange(n int) []int {
 	return expected
 }
 
-func NewTableFromIdToIndex[T any](values []T, idToIndex map[uuid.UUID]int, from int, to int, hasMore bool) (Table[T], error) {
+func NewTableFromIdToIndex[ID comparable, T any](values []T, idToIndex map[ID]int, from int, to int, hasMore bool) (Table[ID, T], error) {
 	n := len(values)
 	indices := slices.Sorted(maps.Values(idToIndex))
 
 	if !slices.Equal(indices, makeRange(n)) {
-		return Table[T]{}, fmt.Errorf("idToIndex does not cover the exact range [0, %d), got %v", n, indices)
+		return Table[ID, T]{}, fmt.Errorf("idToIndex does not cover the exact range [0, %d), got %v", n, indices)
 	}
-	return Table[T]{
+	return Table[ID, T]{
 		Values:    values,
 		IdToIndex: idToIndex,
 		From:      from,
@@ -57,10 +55,10 @@ func NewTableFromIdToIndex[T any](values []T, idToIndex map[uuid.UUID]int, from 
 	}, nil
 }
 
-func MapTable[T, U any](ts Table[T], f func(T) U) Table[U] {
+func MapTable[ID comparable, T, U any](ts Table[ID, T], f func(T) U) Table[ID, U] {
 	us := make([]U, len(ts.Values))
 	for i := range ts.Values {
 		us[i] = f(ts.Values[i])
 	}
-	return Table[U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore}
+	return Table[ID, U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore}
 }
