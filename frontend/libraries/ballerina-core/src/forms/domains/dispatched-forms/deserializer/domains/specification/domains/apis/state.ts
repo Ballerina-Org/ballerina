@@ -134,6 +134,9 @@ export type ColumnFilters<T> = {
   displayType: DispatchParsedType<T>;
   displayRenderer: Renderer<T>;
   filters: SumNType<T>;
+  label?: string;
+  tooltip?: string;
+  details?: string;
 };
 export type TableMethod = (typeof TableMethods)[keyof typeof TableMethods];
 export type TableApiName = string;
@@ -297,6 +300,30 @@ export const TableApis = {
                                               DispatchParsedType.Default.sumN(
                                                 filters.toArray(),
                                               ),
+                                            label:
+                                              typeof value.display ===
+                                                "object" &&
+                                              value.display !== null &&
+                                              "label" in value.display &&
+                                              isString(value.display.label)
+                                                ? value.display.label
+                                                : undefined,
+                                            tooltip:
+                                              typeof value.display ===
+                                                "object" &&
+                                              value.display !== null &&
+                                              "tooltip" in value.display &&
+                                              isString(value.display.tooltip)
+                                                ? value.display.tooltip
+                                                : undefined,
+                                            details:
+                                              typeof value.display ===
+                                                "object" &&
+                                              value.display !== null &&
+                                              "details" in value.display &&
+                                              isString(value.display.details)
+                                                ? value.display.details
+                                                : undefined,
                                           },
                                         ] as const),
                                       ),
