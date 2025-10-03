@@ -101,6 +101,9 @@ export const TableAbstractRenderer = <
       GetDefaultValue: () => PredicateValue;
       GetDefaultState: () => CommonAbstractRendererState;
       filters: SumNType<any>;
+      label?: string;
+      tooltip?: string;
+      details?: string;
     }
   >,
   parseToApiByType: (
