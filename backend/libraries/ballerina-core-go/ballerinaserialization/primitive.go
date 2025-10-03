@@ -26,18 +26,6 @@ var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Spr
 	return ballerina.Right[error, ballerina.Unit](ballerina.Unit{})
 })
 
-const stringDiscriminator = "string"
-
-var StringSerializer Serializer[string] = withContext(fmt.Sprintf("on %s", stringDiscriminator), wrappedMarshal[string])
-
-var StringDeserializer Deserializer[string] = withContext(fmt.Sprintf("on %s", stringDiscriminator), wrappedUnmarshal[string])
-
-const boolDiscriminator = "bool"
-
-var BoolSerializer Serializer[bool] = withContext(fmt.Sprintf("on %s", boolDiscriminator), wrappedMarshal[bool])
-
-var BoolDeserializer Deserializer[bool] = withContext(fmt.Sprintf("on %s", boolDiscriminator), wrappedUnmarshal[bool])
-
 type _primitiveTypeForSerialization struct {
 	Kind  string `json:"kind"`
 	Value string `json:"value"`
@@ -61,6 +49,26 @@ func deserializePrimitiveTypeTo[T any](kind string, parse func(string) (T, error
 		return ballerina.Bind(primitiveTypeForSerialization.getValueWithKind(kind), ballerina.GoErrorToSum(parse))
 	})
 }
+
+const stringDiscriminator = "string"
+
+var StringSerializer Serializer[string] = serializePrimitiveTypeFrom(stringDiscriminator, func(value string) string {
+	return value
+})
+
+var StringDeserializer Deserializer[string] = deserializePrimitiveTypeTo(stringDiscriminator, func(value string) (string, error) {
+	return value, nil
+})
+
+const boolDiscriminator = "bool"
+
+var BoolSerializer Serializer[bool] = serializePrimitiveTypeFrom(boolDiscriminator, func(value bool) string {
+	return strconv.FormatBool(value)
+})
+
+var BoolDeserializer Deserializer[bool] = deserializePrimitiveTypeTo(boolDiscriminator, func(value string) (bool, error) {
+	return strconv.ParseBool(value)
+})
 
 const intDiscriminator = "int"
 
