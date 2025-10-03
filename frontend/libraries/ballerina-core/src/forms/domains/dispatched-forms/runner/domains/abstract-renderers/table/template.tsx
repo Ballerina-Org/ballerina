@@ -552,6 +552,17 @@ export const TableAbstractRenderer = <
         />
       );
     }
+
+    visibleColumns.value.columns.map((column) => {
+      if (!CellTemplates.has(column)) {
+        console.warn(
+          `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
+
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
