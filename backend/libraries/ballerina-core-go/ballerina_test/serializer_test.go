@@ -194,7 +194,7 @@ func TestTuple2DeserializationError(t *testing.T) {
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on tuple2"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on tuple2"},
 		{name: "non-tuple-discriminator", serialized: json.RawMessage(`{"discriminator":"list","value":[{"discriminator":"unit"},{"discriminator":"unit"}]}`), expectedError: "on tuple2"},
-		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"list"}`), expectedError: "on tuple2"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"tuple"}`), expectedError: "on tuple2: missing value field"},
 	}
 
 	for _, testCase := range testCases {
