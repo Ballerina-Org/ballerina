@@ -14,8 +14,8 @@ func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 		return ballerina.Bind(ballerina.SumAll(ballerina.MapArray(elements, serializer)),
 			func(serializedElements []json.RawMessage) ballerina.Sum[error, json.RawMessage] {
 				return wrappedMarshal(_sequentialForSerialization{
-					Kind:     listDiscriminator,
-					Elements: serializedElements,
+					Discriminator: listDiscriminator,
+					Elements:      serializedElements,
 				})
 			})
 	})
@@ -23,7 +23,7 @@ func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 
 func ListDeserializer[T any](deserializer Deserializer[T]) Deserializer[[]T] {
 	return unmarshalWithContext(fmt.Sprintf("on %s", listDiscriminator), func(sequentialForSerialization _sequentialForSerialization) ballerina.Sum[error, []T] {
-		return ballerina.Bind(sequentialForSerialization.getElementsWithKind(listDiscriminator),
+		return ballerina.Bind(sequentialForSerialization.getElementsWithDiscriminator(listDiscriminator),
 			func(elements []json.RawMessage) ballerina.Sum[error, []T] {
 				return ballerina.SumAll(ballerina.MapArray(elements, deserializer))
 			})

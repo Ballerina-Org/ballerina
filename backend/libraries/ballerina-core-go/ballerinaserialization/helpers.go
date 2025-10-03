@@ -39,13 +39,13 @@ func unmarshalWithContext[T any, U any](context string, f func(T) ballerina.Sum[
 }
 
 type _sequentialForSerialization struct {
-	Kind     string            `json:"kind"`
-	Elements []json.RawMessage `json:"elements"`
+	Discriminator string            `json:"discriminator"`
+	Elements      []json.RawMessage `json:"elements"`
 }
 
-func (s _sequentialForSerialization) getElementsWithKind(kind string) ballerina.Sum[error, []json.RawMessage] {
-	if s.Kind != kind {
-		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Kind))
+func (s _sequentialForSerialization) getElementsWithDiscriminator(kind string) ballerina.Sum[error, []json.RawMessage] {
+	if s.Discriminator != kind {
+		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Discriminator))
 	}
 	if s.Elements == nil {
 		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("missing elements field"))

@@ -16,8 +16,8 @@ func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Seria
 		return ballerina.Bind(withContext("on item1", serializerA)(value.Item1), func(item1 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
 			return ballerina.Bind(withContext("on item2", serializerB)(value.Item2), func(item2 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
 				return wrappedMarshal(_sequentialForSerialization{
-					Kind:     tupleDiscriminator,
-					Elements: []json.RawMessage{item1, item2},
+					Discriminator: tupleDiscriminator,
+					Elements:      []json.RawMessage{item1, item2},
 				})
 			})
 		})
@@ -26,7 +26,7 @@ func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Seria
 
 func Tuple2Deserializer[A any, B any](deserializerA Deserializer[A], deserializerB Deserializer[B]) Deserializer[ballerina.Tuple2[A, B]] {
 	return unmarshalWithContext("on tuple2", func(sequentialForSerialization _sequentialForSerialization) ballerina.Sum[error, ballerina.Tuple2[A, B]] {
-		return ballerina.Bind(sequentialForSerialization.getElementsWithKind(tupleDiscriminator),
+		return ballerina.Bind(sequentialForSerialization.getElementsWithDiscriminator(tupleDiscriminator),
 			func(elements []json.RawMessage) ballerina.Sum[error, ballerina.Tuple2[A, B]] {
 				if len(elements) != 2 {
 					return ballerina.Left[error, ballerina.Tuple2[A, B]](fmt.Errorf("expected 2 elements in tuple, got %d", len(elements)))
