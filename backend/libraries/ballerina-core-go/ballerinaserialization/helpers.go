@@ -48,7 +48,7 @@ func (s _sequentialForSerialization) getElementsWithDiscriminator(kind string) b
 		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Discriminator))
 	}
 	if s.Value == nil {
-		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("missing elements field"))
+		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("missing value field"))
 	}
 	return ballerina.Right[error, []json.RawMessage](s.Value)
 }

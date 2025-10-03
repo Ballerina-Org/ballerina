@@ -237,10 +237,10 @@ func TestListDeserializationError(t *testing.T) {
 		expectedError string
 	}{
 		{name: "on-element", serialized: json.RawMessage(`{"discriminator":"list","elements":["not-bool"]}`), expectedError: "on list"},
-		{name: "not-list-elements", serialized: json.RawMessage(`{"discriminator":"list","not-elements":[true,false,true]}`), expectedError: "on list"},
+		{name: "not-list-value", serialized: json.RawMessage(`{"discriminator":"list","not-elements":[true,false,true]}`), expectedError: "on list"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on list"},
 		{name: "non-list-discriminator", serialized: json.RawMessage(`{"discriminator":"list","elements":[{"discriminator":"unit"},{"discriminator":"unit"}]}`), expectedError: "on list"},
-		{name: "no-elements-field", serialized: json.RawMessage(`{"discriminator":"list"}`), expectedError: "on list: missing elements field"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"list"}`), expectedError: "on list: missing value field"},
 	}
 
 	for _, testCase := range testCases {
