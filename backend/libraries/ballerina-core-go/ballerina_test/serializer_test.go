@@ -12,6 +12,7 @@ import (
 )
 
 func assertErrorContains[T any](t *testing.T, expected string, actual ballerina.Sum[error, T]) {
+	t.Helper()
 	ballerina.Fold(actual, func(err error) ballerina.Unit {
 		assert.Contains(t, err.Error(), expected)
 		return ballerina.NewUnit()
@@ -109,6 +110,7 @@ func TestSumDeserializationError(t *testing.T) {
 		{name: "on-sum-on-left", serialized: json.RawMessage(`{"case":"Sum.Left","value":{"kind":"not-unit"}}`), expectedError: "on sum: on left:"},
 		{name: "on-sum-on-right", serialized: json.RawMessage(`{"case":"Sum.Right","value":{"kind":"not-unit"}}`), expectedError: "on sum: on right:"},
 		{name: "not-sum-case", serialized: json.RawMessage(`{"case":"not-sum","value":{"kind":"unit"}}`), expectedError: "on sum: expected case to be 'Sum.Left' or 'Sum.Right', got not-sum"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"case":"Sum.Right"}`), expectedError: "on sum: on right: on unit: EOF"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on sum"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on sum"},
 	}
@@ -120,6 +122,7 @@ func TestSumDeserializationError(t *testing.T) {
 		})
 	}
 }
+
 func TestOptionSerialization(t *testing.T) {
 	t.Parallel()
 
@@ -174,6 +177,7 @@ func TestOptionDeserializationError(t *testing.T) {
 		{name: "not-option-case", serialized: json.RawMessage(`{"case":"not-option","value":{"kind":"unit"}}`), expectedError: "on option: expected case to be 'none' or 'some', got not-option"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on option"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on option"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"case":"not-option"}`), expectedError: "on option"},
 	}
 
 	for _, testCase := range testCases {
@@ -214,6 +218,7 @@ func TestTuple2DeserializationError(t *testing.T) {
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on tuple2"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on tuple2"},
 		{name: "non-tuple-kind", serialized: json.RawMessage(`{"kind":"list","elements":[{"kind":"unit"},{"kind":"unit"}]}`), expectedError: "on tuple2"},
+		{name: "no-elements-field", serialized: json.RawMessage(`{"kind":"list"}`), expectedError: "on tuple2"},
 	}
 
 	for _, testCase := range testCases {
@@ -251,6 +256,7 @@ func TestListDeserializationError(t *testing.T) {
 		{name: "not-list-elements", serialized: json.RawMessage(`{"kind":"list","not-elements":[true,false,true]}`), expectedError: "on list"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on list"},
 		{name: "non-list-kind", serialized: json.RawMessage(`{"kind":"list","elements":[{"kind":"unit"},{"kind":"unit"}]}`), expectedError: "on list"},
+		{name: "no-elements-field", serialized: json.RawMessage(`{"kind":"list"}`), expectedError: "on list: missing elements field"},
 	}
 
 	for _, testCase := range testCases {
