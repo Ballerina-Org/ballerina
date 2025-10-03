@@ -265,6 +265,16 @@ export const RecordAbstractRenderer = <
       return <></>;
     }
 
+    visibleFieldKeys.value.map((field) => {
+      if (field != null && !FieldTemplates.has(field)) {
+        console.warn(
+          `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
+
     const visibleFieldKeysSet = Set(
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),
     );
