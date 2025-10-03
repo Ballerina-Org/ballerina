@@ -16,6 +16,7 @@ module Extension =
   open FSharp.Data
   open Ballerina.StdLib.Json.Reader
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina.DSL.Next.Json.Keys
 
 
   let ListExtension<'ext>
@@ -224,7 +225,7 @@ module Extension =
       (rootValueParser: ValueParser<TypeValue, 'ext>)
       (v: JsonValue)
       : ValueParserReader<TypeValue, 'ext> =
-      reader.AssertKindAndContinueWithField v "list" "elements" (fun elementsJson ->
+      Reader.assertDiscriminatorAndContinueWithValue "list" v (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
           let! elements = elements |> Seq.map rootValueParser |> reader.All
@@ -238,7 +239,8 @@ module Extension =
       reader {
         let! v = getValueAsList v |> reader.OfSum
         let! elements = v |> List.map rootValueEncoder |> reader.All
-        return elements |> List.toArray |> JsonValue.Array |> Json.kind "list" "elements"
+
+        return elements |> List.toArray |> JsonValue.Array |> Json.discriminator "list"
       }
 
     { TypeName = listId, listSymbolId

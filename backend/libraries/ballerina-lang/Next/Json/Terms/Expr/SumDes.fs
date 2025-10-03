@@ -9,13 +9,13 @@ module SumDes =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "sum-des"
-  let private fieldKey = "sum-des"
+  let private discriminator = "sum-des"
 
   type Expr<'T> with
     static member FromJsonSumDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun sumDesJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun sumDesJson ->
         reader {
           let! caseHandlers = sumDesJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -46,4 +46,4 @@ module SumDes =
           return [| v; c |] |> JsonValue.Array
         })
       |> reader.All
-      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.kind kindKey fieldKey)
+      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.discriminator discriminator)

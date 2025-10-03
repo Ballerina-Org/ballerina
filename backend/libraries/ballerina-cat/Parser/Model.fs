@@ -16,7 +16,6 @@ module Model =
     | ParserResult of 'a * Option<List<'sym> * 'loc>
 
     static member Return(v: 'a) : ParserResult<'a, 'sym, 'loc, 'err> = ParserResult(v, None)
-
     static member FromState(v: 'a, s: List<'sym> * 'loc) : ParserResult<'a, 'sym, 'loc, 'err> = ParserResult(v, Some s)
 
     static member Map
@@ -127,33 +126,62 @@ module Model =
         | Right(e, s1) -> Left(ParserResult(Right e, s1)))
 
     member parser.All(ps: List<Parser<'a, 'sym, 'loc, 'err>>) : Parser<List<'a>, 'sym, 'loc, 'err> =
-      parser {
-        match ps with
-        | [] -> return []
-        | p :: ps ->
-          let! x = p
-          let! xs = parser.All ps
-          return x :: xs
-      }
+      Parser(fun s0 ->
+        let mutable s = None
+        let mutable res = ResizeArray<'a>()
+        let mutable err_acc: Option<'err> = None
+
+        for p in ps do
+          if err_acc.IsSome then
+            ()
+          else
+            let s0 = s |> Option.defaultValue s0
+
+            match p |> Parser.Run s0 with
+            | Left(ParserResult(v, s1)) ->
+              res.Add v
+              s <- s1 |> Option.orElse s
+            | Right(e, s1) ->
+              err_acc <-
+                match err_acc with
+                | Some err_acc -> err.Concat(err_acc, e) |> Some
+                | None -> Some e
+
+              s <- s1 |> Option.orElse s
+
+        match err_acc with
+        | None -> Left(ParserResult(res |> List.ofSeq, s)) // all succeeded
+        | Some err -> Right(err, None))
+
 
     member parser.Any(ps: List<Parser<'a, 'sym, 'loc, 'err>>) : Parser<'a, 'sym, 'loc, 'err> =
-      parser {
-        match ps with
-        | [] ->
-          let! loc0 = parser.Location
-          return! loc0 |> err.AnyFailed |> parser.Throw
-        | p :: ps ->
-          let! x = p |> parser.Try
+      Parser(fun s0 ->
+        let mutable s = None
+        let mutable res = None
+        let mutable err_acc: Option<'err> = None
 
-          match x with
-          | Left x -> return x
-          | Right e0 ->
-            let! res1 = parser.Any(ps) |> parser.Try
+        for p in ps do
+          if res.IsSome then
+            ()
+          else
+            let s0 = s |> Option.defaultValue s0
 
-            match res1 with
-            | Left x -> return x
-            | Right e1 -> return! err.Concat(e0, e1) |> parser.Throw
-      }
+            match p |> Parser.Run s0 with
+            | Left(ParserResult(v, s1)) ->
+              res <- Some v
+              s <- s1 |> Option.orElse s
+            | Right(e, s1) ->
+              err_acc <-
+                match err_acc with
+                | Some err_acc -> err.Concat(err_acc, e) |> Some
+                | None -> Some e
+
+              s <- s1 |> Option.orElse s
+
+        match res, err_acc with
+        | Some res, _ -> Left(ParserResult(res, s)) // all succeeded
+        | _, Some err -> Right(err, None)
+        | _ -> Right(err.AnyFailed(snd s0), None))
       |> parser.MapError err.FilterHighestPriorityOnly
 
     member parser.Stream: Parser<List<'sym>, 'sym, 'loc, 'err> =
@@ -173,24 +201,28 @@ module Model =
 
     member parser.Map (f: 'a -> 'b) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'b, 'sym, 'loc, 'err> = Parser.Map f p
 
-    member parser.Many(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> =
+    member private parser.ManyAcc (l: List<'a>) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> =
       parser {
         let! x = p |> parser.Try
 
         match x with
-        | Right _ -> return []
-        | Left x ->
-          let! xs = parser.Many p
-          return x :: xs
+        | Right _ -> return l |> List.rev
+        | Left x -> return! parser.ManyAcc (x :: l) p
       }
 
+    member parser.Many(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> = parser.ManyAcc [] p
+
     member parser.Lookahead(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
-      parser {
-        let! s = parser.State
-        let! res = p
-        do! parser.SetState s
-        return res
-      }
+      Parser(fun s0 ->
+        match p |> Parser.Run s0 with
+        | Left(ParserResult(v, _)) -> Left(ParserResult(v, None)) // restore original state
+        | Right(e, _) -> Right(e, None))
+    // parser {
+    //   let! s = parser.State
+    //   let! res = p
+    //   do! parser.SetState s
+    //   return res
+    // }
 
     member parser.Not(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<Unit, 'sym, 'loc, 'err> =
       parser {

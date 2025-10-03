@@ -52,6 +52,7 @@
         <Compile Include="TimeSpan/Model.fs" />
         <Compile Include="TimeSpan/Patterns.fs" />
         <Compile Include="TimeSpan/Extension.fs" />
+        <Compile Include="StdExtensions.fs" />
     </ItemGroup>
     <ItemGroup>
         <!--

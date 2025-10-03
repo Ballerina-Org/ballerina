@@ -10,13 +10,13 @@ module SumCons =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "sum"
-  let private fieldKey = "case"
+  let private discriminator = "sum"
 
   type Expr<'T> with
     static member FromJsonSumCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun elementsJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
           let! (case, count, v) = elementsJson |> JsonValue.AsTriple |> reader.OfSum
           let! case = case |> JsonValue.AsInt |> reader.OfSum
@@ -34,5 +34,5 @@ module SumCons =
         let case = sel.Case |> decimal |> JsonValue.Number
         let count = sel.Count |> decimal |> JsonValue.Number
         let! e = e |> rootToJson
-        return [| case; count; e |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| case; count; e |] |> JsonValue.Array |> Json.discriminator discriminator
       }

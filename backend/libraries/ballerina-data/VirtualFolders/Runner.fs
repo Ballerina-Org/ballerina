@@ -7,7 +7,6 @@ module VirtualFolders =
   let init () =
     { Name = "root"
       Path = []
-      IsLeaf = true
       Children =
         topLevelKeys
         |> List.map (fun key ->
@@ -33,8 +32,7 @@ module VirtualFolders =
     Folder
       { Name = name
         Path = parentPath @ [ name ]
-        Children = children
-        IsLeaf = children |> List.forall _.IsFile }
+        Children = children }
 
   let mkFile (parentPath: Path) (name: string) (content: JsonValue) : Content =
     File
@@ -108,8 +106,7 @@ module VirtualFolders =
           | _ ->
             { Name = dir
               Path = folder.Path @ [ dir ]
-              Children = []
-              IsLeaf = true }
+              Children = [] }
 
         let updated = (!) rest child
 
@@ -178,8 +175,7 @@ module FolderNode =
       Folder
         { Name = rootName
           Path = []
-          Children = []
-          IsLeaf = true }
+          Children = [] }
 
     files
     |> Seq.fold

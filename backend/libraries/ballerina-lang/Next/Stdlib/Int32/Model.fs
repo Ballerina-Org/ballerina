@@ -4,7 +4,8 @@ namespace Ballerina.DSL.Next.StdLib.Int32
 module Model =
   type Int32Operations<'ext> =
     | Plus of {| v1: Option<int32> |}
-    | Minus of {| v1: unit |}
+    | Times of {| v1: Option<int32> |}
+    | Minus of {| v1: Option<int32> |}
     | Divide of {| v1: Option<int32> |}
     | Power of {| v1: Option<int32> |}
     | Mod of {| v1: Option<int32> |}

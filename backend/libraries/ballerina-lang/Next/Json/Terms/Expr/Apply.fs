@@ -9,14 +9,13 @@ module Apply =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "apply"
-  let private fieldKey = "apply"
+  let private discriminator = "apply"
 
   type Expr<'T> with
     static member FromJsonApply (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun application ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun application ->
         reader {
           let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
           let! f = f |> fromRootJson
@@ -28,5 +27,5 @@ module Apply =
       reader {
         let! f = f |> rootToJson
         let! arg = arg |> rootToJson
-        return [| f; arg |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| f; arg |] |> JsonValue.Array |> Json.discriminator discriminator
       }

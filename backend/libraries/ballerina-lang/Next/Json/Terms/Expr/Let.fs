@@ -11,20 +11,20 @@ module Let =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "let"
-  let private fieldKey = "let"
+  let private discriminator = "let"
 
   type Expr<'T> with
     static member FromJsonLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun letJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun letJson ->
         reader {
           let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
           let! var = var |> JsonValue.AsString |> reader.OfSum
           let var = Var.Create var
           let! value = value |> fromRootJson
           let! body = body |> fromRootJson
-          return Expr.Let(var, value, body)
+          return Expr.Let(var, None, value, body)
         })
 
     static member ToJsonLet
@@ -37,5 +37,5 @@ module Let =
         let var = var.Name |> JsonValue.String
         let! value = value |> rootToJson
         let! body = body |> rootToJson
-        return [| var; value; body |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| var; value; body |] |> JsonValue.Array |> Json.discriminator discriminator
       }

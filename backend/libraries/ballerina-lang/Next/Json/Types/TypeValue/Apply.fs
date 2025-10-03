@@ -11,15 +11,15 @@ module TypeValueApply =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "apply"
-  let private fieldKey = "apply"
+  let private discriminator = "apply"
 
   type TypeValue with
     static member FromJsonApply
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun applyFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! (var, arg) = applyFields |> JsonValue.AsPair
           let! varType = var |> fromRootJson
@@ -32,4 +32,4 @@ module TypeValueApply =
       fun (var, arg) ->
         let varJson = var |> TypeValue.Var |> toRootJson
         let argJson = arg |> toRootJson
-        JsonValue.Array [| varJson; argJson |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| varJson; argJson |] |> Json.discriminator discriminator

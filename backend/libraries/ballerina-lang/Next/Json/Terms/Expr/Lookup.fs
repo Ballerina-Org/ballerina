@@ -11,13 +11,13 @@ module Lookup =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "lookup"
-  let private fieldKey = "name"
+  let private discriminator = "lookup"
 
   type Expr<'T> with
     static member FromJsonLookup(value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun nameJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun nameJson ->
         reader.Any2
           (reader {
             let! name = nameJson |> JsonValue.AsString |> reader.OfSum
@@ -34,9 +34,9 @@ module Lookup =
 
     static member ToJsonLookup(id: Identifier) : ExprEncoderReader<'T> =
       (match id with
-       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind kindKey fieldKey
+       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
        | Identifier.FullyQualified(scope, name) ->
          (name :: scope |> List.rev |> Seq.map JsonValue.String |> Seq.toArray)
          |> JsonValue.Array
-         |> Json.kind kindKey fieldKey)
+         |> Json.discriminator discriminator)
       |> reader.Return

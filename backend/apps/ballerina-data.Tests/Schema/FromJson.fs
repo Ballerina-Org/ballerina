@@ -49,7 +49,7 @@ let ``SpecNext-Schema lookup method parses`` () =
 let ``SpecNext-Schema updater descriptor parses`` () =
   let json =
     """ 
-      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"kind":"bool","bool":"true"}, {"kind":"int32","int32":"100"}]
+      [[["field", "FieldName"], ["listItem", "VariableBoundToChangedItem"], ["tupleItem", 7], ["unionCase", ["CaseName","VariableBoundToChangedCase"]], ["sumCase", [3, "VariableBoundToChangedSum"]]], {"discriminator":"bool","value":"true"}, {"discriminator":"int32","value":"100"}]
     """
     |> JsonValue.Parse
 
@@ -72,7 +72,7 @@ let ``SpecNext-Schema entity descriptor parses`` () =
   let json =
     """ 
     {
-      "type": { "kind":"lookup", "lookup":"MyType" },
+      "type": { "discriminator":"lookup", "value":"MyType" },
       "methods": ["get", "getMany", "create", "delete"],
       "updaters": [],
       "predicates": {}
@@ -148,8 +148,8 @@ let ``SpecNext-Schema lookup descriptor parses`` () =
     |> JsonValue.Parse
 
   let expected: LookupDescriptor =
-    { Source = "SourceTable"
-      Target = "TargetTable"
+    { Source = { EntityName = "SourceTable" }
+      Target = { EntityName = "TargetTable" }
       Forward =
         { Arity = { Min = Some 1; Max = None }
           Methods =
@@ -163,7 +163,7 @@ let ``SpecNext-Schema lookup descriptor parses`` () =
           Path = [] }
       Backward =
         Some(
-          "TargetToSource",
+          { LookupName = "TargetToSource" },
           { Arity = { Min = None; Max = None }
             Methods =
               Set.ofList
@@ -187,16 +187,16 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
     {
       "entities": {
         "SourceTable": {
-          "type": { "kind":"lookup", "lookup":"SomeType" },
+          "type": { "discriminator":"lookup", "value":"SomeType" },
           "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
-          "predicates": { "SomePredicate": {"kind":"bool","bool":"false"} }
+          "predicates": { "SomePredicate": {"discriminator":"bool","value":"false"} }
         },
         "TargetTable": {
-          "type": { "kind":"lookup", "lookup":"AnotherType" },
+          "type": { "discriminator":"lookup", "value":"AnotherType" },
           "methods": ["get", "getMany", "create", "delete"],
           "updaters": [],
-          "predicates": { "AnotherPredicate": {"kind":"bool","bool":"true"} }
+          "predicates": { "AnotherPredicate": {"discriminator":"bool","value":"true"} }
         }
       },
       "lookups": {
@@ -225,14 +225,14 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
   let expected: Schema<TypeExpr> =
     { Entities =
         Map.ofList
-          [ ("SourceTable",
+          [ ({ EntityName = "SourceTable" },
              { Type = TypeExpr.Lookup("SomeType" |> Identifier.LocalScope)
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
-            ("TargetTable",
+            ({ EntityName = "TargetTable" },
              { Type = TypeExpr.Lookup("AnotherType" |> Identifier.LocalScope)
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
@@ -241,9 +241,9 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                  |> Map.ofList }) ]
       Lookups =
         Map.ofList
-          [ ("SourceToTarget",
-             { Source = "SourceTable"
-               Target = "TargetTable"
+          [ ({ LookupName = "SourceToTarget" },
+             { Source = { EntityName = "SourceTable" }
+               Target = { EntityName = "TargetTable" }
                Forward =
                  { Arity = { Min = Some 1; Max = None }
                    Methods =
@@ -257,7 +257,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                    Path = [] }
                Backward =
                  Some(
-                   ("TargetToSource",
+                   ({ LookupName = "TargetToSource" },
                     { Arity = { Min = None; Max = None }
                       Methods = Set.ofList [ LookupMethod.Link; LookupMethod.Unlink ]
                       Path = [] })

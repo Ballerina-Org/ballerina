@@ -12,13 +12,13 @@ module RecordDes =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "record-field-lookup"
-  let private fieldKey = "record-field-lookup"
+  let private discriminator = "record-field-lookup"
 
   type Expr<'T> with
     static member FromJsonRecordDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun recordDesJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun recordDesJson ->
         reader {
           let! expr, field = recordDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
@@ -35,5 +35,5 @@ module RecordDes =
         let! expr = rootToJson expr
         let field = field |> Identifier.ToJson
 
-        return [| expr; field |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| expr; field |] |> JsonValue.Array |> Json.discriminator discriminator
       }

@@ -11,13 +11,13 @@ module Map =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "map"
-  let private fieldKey = "map"
+  let private discriminator = "map"
 
   type TypeValue with
     static member FromJsonMap(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun mapFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair
           let! keyType = key |> fromRootJson
@@ -29,4 +29,4 @@ module Map =
       fun (keyType, valueType) ->
         let keyJson = keyType |> toRootJson
         let valueJson = valueType |> toRootJson
-        JsonValue.Array [| keyJson; valueJson |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| keyJson; valueJson |] |> Json.discriminator discriminator

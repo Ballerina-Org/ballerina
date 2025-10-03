@@ -45,6 +45,13 @@ module Patterns =
       | Kind.Symbol -> sum.Return()
       | _ -> sum.Throw(Errors.Singleton $"Expected symbol kind, got {kind}")
 
+  type WithTypeExprSourceMapping<'v> with
+    static member Getters = {| Value = fun (v: WithTypeExprSourceMapping<'v>) -> v.value |}
+
+    static member Setters =
+      {| Value = fun (v: WithTypeExprSourceMapping<'v>, value: 'v) -> { v with value = value }
+         Source = fun (v: WithTypeExprSourceMapping<'v>, source: TypeExprSourceMapping) -> { v with source = source } |}
+
   type TypeValue with
 
     static member CreateUnit() : TypeValue =
@@ -311,6 +318,23 @@ module Patterns =
       | TypeValue.Set v -> TypeValue.CreateSet v.value
       | TypeValue.Map v -> TypeValue.CreateMap v.value
 
+    static member SetSourceMapping(t: TypeValue, source: TypeExprSourceMapping) =
+      match t with
+      | TypeValue.Var _ -> t
+      | TypeValue.Lookup _ -> t
+      | TypeValue.Imported _ -> t
+      | TypeValue.Primitive(p: WithTypeExprSourceMapping<PrimitiveType>) ->
+        WithTypeExprSourceMapping.Setters.Source(p, source) |> TypeValue.Primitive
+      | TypeValue.Apply v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Apply
+      | TypeValue.Lambda v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Lambda
+      | TypeValue.Arrow v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Arrow
+      | TypeValue.Record v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Record
+      | TypeValue.Tuple v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Tuple
+      | TypeValue.Union v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Union
+      | TypeValue.Sum v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
+      | TypeValue.Set v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Set
+      | TypeValue.Map v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Map
+
   type TypeValue with
     member t.AsExpr: TypeExpr =
       match t with
@@ -524,10 +548,6 @@ module Patterns =
             |> Errors.Singleton
             |> sum.Throw
       }
-
-  type WithTypeExprSourceMapping<'v> with
-    static member Getters = {| Value = fun (v: WithTypeExprSourceMapping<'v>) -> v.value |}
-
 
   type PrimitiveType with
     static member AsUnit(p: PrimitiveType) =

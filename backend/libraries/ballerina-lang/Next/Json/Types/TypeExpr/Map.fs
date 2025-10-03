@@ -8,13 +8,13 @@ module MapTypeExpr =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "map"
-  let private fieldKey = "map"
+  let private discriminator = "map"
 
   type TypeExpr with
     static member FromJsonMap(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun mapFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair
           let! keyType = key |> fromJsonRoot
@@ -26,4 +26,4 @@ module MapTypeExpr =
       fun (keyType, valueType) ->
         let keyJson = keyType |> rootToJson
         let valueJson = valueType |> rootToJson
-        JsonValue.Array [| keyJson; valueJson |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| keyJson; valueJson |] |> Json.discriminator discriminator

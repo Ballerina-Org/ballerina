@@ -9,13 +9,13 @@ module Apply =
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "apply"
-  let private fieldKey = "apply"
+  let private discriminator = "apply"
 
   type TypeExpr with
     static member FromJsonApply(fromJsonRoot: JsonParser<TypeExpr>) : JsonParser<TypeExpr> =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun applyFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! (functionField, argumentField) = applyFields |> JsonValue.AsPair
 
@@ -30,4 +30,5 @@ module Apply =
         let functionJson = functionType |> rootToJson
         let argumentJson = argumentType |> rootToJson
 
-        JsonValue.Array [| functionJson; argumentJson |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| functionJson; argumentJson |]
+        |> Json.discriminator discriminator
