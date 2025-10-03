@@ -17,7 +17,7 @@ func Tuple2Serializer[A any, B any](serializerA Serializer[A], serializerB Seria
 			return ballerina.Bind(withContext("on item2", serializerB)(value.Item2), func(item2 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
 				return wrappedMarshal(_sequentialForSerialization{
 					Discriminator: tupleDiscriminator,
-					Elements:      []json.RawMessage{item1, item2},
+					Value:         []json.RawMessage{item1, item2},
 				})
 			})
 		})

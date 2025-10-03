@@ -15,7 +15,7 @@ func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
 			func(serializedElements []json.RawMessage) ballerina.Sum[error, json.RawMessage] {
 				return wrappedMarshal(_sequentialForSerialization{
 					Discriminator: listDiscriminator,
-					Elements:      serializedElements,
+					Value:         serializedElements,
 				})
 			})
 	})
