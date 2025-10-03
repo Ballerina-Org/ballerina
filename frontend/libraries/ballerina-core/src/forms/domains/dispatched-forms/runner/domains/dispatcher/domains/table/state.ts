@@ -195,6 +195,9 @@ export const TableDispatcher = {
                       type: DispatchParsedType<any>;
                       GetDefaultValue: () => PredicateValue;
                       GetDefaultState: () => any;
+                      label: string | undefined;
+                      tooltip: string | undefined;
+                      details: string | undefined;
                     }
                   > = (() => {
                     if (filtering == undefined) {
@@ -222,6 +225,9 @@ export const TableDispatcher = {
                             columnFilters.displayType,
                             columnFilters.displayRenderer,
                           ),
+                        label: columnFilters.label,
+                        tooltip: columnFilters.tooltip,
+                        details: columnFilters.details,
                       }))
                       .filter(
                         (dispatchedFilterRenderer) =>
@@ -247,6 +253,9 @@ export const TableDispatcher = {
                           (
                             dispatchedFilterRenderer.GetDefaultState() as Value<any>
                           ).value,
+                        label: dispatchedFilterRenderer.label,
+                        tooltip: dispatchedFilterRenderer.tooltip,
+                        details: dispatchedFilterRenderer.details,
                       }));
                   })();
 

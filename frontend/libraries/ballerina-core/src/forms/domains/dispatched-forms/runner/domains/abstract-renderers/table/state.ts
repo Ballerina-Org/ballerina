@@ -535,6 +535,9 @@ export type TableAbstractRendererView<
         filters: Array<FilterType<any>>;
         GetDefaultValue: () => PredicateValue;
         GetDefaultState: () => CommonAbstractRendererState;
+        label?: string;
+        tooltip?: string;
+        details?: string;
       }
     >;
     AllowedSorting: Array<string>;
