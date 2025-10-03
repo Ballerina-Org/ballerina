@@ -107,10 +107,10 @@ func TestSumDeserializationError(t *testing.T) {
 		serialized    json.RawMessage
 		expectedError string
 	}{
-		{name: "on-sum-on-left", serialized: json.RawMessage(`{"case":"Sum.Left","value":{"kind":"not-unit"}}`), expectedError: "on sum: on left:"},
-		{name: "on-sum-on-right", serialized: json.RawMessage(`{"case":"Sum.Right","value":{"kind":"not-unit"}}`), expectedError: "on sum: on right:"},
+		{name: "on-sum-on-left", serialized: json.RawMessage(`{"case":"Sum.Left","value":{"kind":"not-unit"}}`), expectedError: "on sum: on Sum.Left:"},
+		{name: "on-sum-on-right", serialized: json.RawMessage(`{"case":"Sum.Right","value":{"kind":"not-unit"}}`), expectedError: "on sum: on Sum.Right:"},
 		{name: "not-sum-case", serialized: json.RawMessage(`{"case":"not-sum","value":{"kind":"unit"}}`), expectedError: "on sum: expected case to be 'Sum.Left' or 'Sum.Right', got not-sum"},
-		{name: "no-value-field", serialized: json.RawMessage(`{"case":"Sum.Right"}`), expectedError: "on sum: on right: on unit: EOF"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"case":"Sum.Right"}`), expectedError: "on sum: on Sum.Right: on unit: EOF"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on sum"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on sum"},
 	}

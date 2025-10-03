@@ -9,28 +9,34 @@ import (
 	ballerina "ballerina.com/core"
 )
 
+const unitDiscriminator = "unit"
+
 type _unitForSerialization struct {
 	Kind string `json:"kind"`
 }
 
-var UnitSerializer Serializer[ballerina.Unit] = withContext("on unit", func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
-	return wrappedMarshal(_unitForSerialization{Kind: "unit"})
+var UnitSerializer Serializer[ballerina.Unit] = withContext(fmt.Sprintf("on %s", unitDiscriminator), func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
+	return wrappedMarshal(_unitForSerialization{Kind: unitDiscriminator})
 })
 
-var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext("on unit", func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
-	if unitForSerialization.Kind != "unit" {
-		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected kind to be 'unit', got '%s'", unitForSerialization.Kind))
+var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Sprintf("on %s", unitDiscriminator), func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
+	if unitForSerialization.Kind != unitDiscriminator {
+		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected kind to be '%s', got '%s'", unitDiscriminator, unitForSerialization.Kind))
 	}
 	return ballerina.Right[error, ballerina.Unit](ballerina.Unit{})
 })
 
-var StringSerializer Serializer[string] = withContext("on string", wrappedMarshal[string])
+const stringDiscriminator = "string"
 
-var StringDeserializer Deserializer[string] = withContext("on string", wrappedUnmarshal[string])
+var StringSerializer Serializer[string] = withContext(fmt.Sprintf("on %s", stringDiscriminator), wrappedMarshal[string])
 
-var BoolSerializer Serializer[bool] = withContext("on bool", wrappedMarshal[bool])
+var StringDeserializer Deserializer[string] = withContext(fmt.Sprintf("on %s", stringDiscriminator), wrappedUnmarshal[string])
 
-var BoolDeserializer Deserializer[bool] = withContext("on bool", wrappedUnmarshal[bool])
+const boolDiscriminator = "bool"
+
+var BoolSerializer Serializer[bool] = withContext(fmt.Sprintf("on %s", boolDiscriminator), wrappedMarshal[bool])
+
+var BoolDeserializer Deserializer[bool] = withContext(fmt.Sprintf("on %s", boolDiscriminator), wrappedUnmarshal[bool])
 
 type _primitiveTypeForSerialization struct {
 	Kind  string `json:"kind"`
@@ -56,26 +62,32 @@ func deserializePrimitiveTypeTo[T any](kind string, parse func(string) (T, error
 	})
 }
 
-var IntSerializer Serializer[int64] = serializePrimitiveTypeFrom("int", func(value int64) string {
+const intDiscriminator = "int"
+
+var IntSerializer Serializer[int64] = serializePrimitiveTypeFrom(intDiscriminator, func(value int64) string {
 	return strconv.FormatInt(value, 10)
 })
 
-var IntDeserializer Deserializer[int64] = deserializePrimitiveTypeTo("int", func(value string) (int64, error) {
+var IntDeserializer Deserializer[int64] = deserializePrimitiveTypeTo(intDiscriminator, func(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
 })
 
-var FloatSerializer Serializer[float64] = serializePrimitiveTypeFrom("float", func(value float64) string {
+const floatDiscriminator = "float"
+
+var FloatSerializer Serializer[float64] = serializePrimitiveTypeFrom(floatDiscriminator, func(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)
 })
 
-var FloatDeserializer Deserializer[float64] = deserializePrimitiveTypeTo("float", func(value string) (float64, error) {
+var FloatDeserializer Deserializer[float64] = deserializePrimitiveTypeTo(floatDiscriminator, func(value string) (float64, error) {
 	return strconv.ParseFloat(value, 64)
 })
 
-var DateSerializer Serializer[time.Time] = serializePrimitiveTypeFrom("date", func(value time.Time) string {
+const dateDiscriminator = "date"
+
+var DateSerializer Serializer[time.Time] = serializePrimitiveTypeFrom(dateDiscriminator, func(value time.Time) string {
 	return value.Format(time.DateOnly)
 })
 
-var DateDeserializer Deserializer[time.Time] = deserializePrimitiveTypeTo("date", func(value string) (time.Time, error) {
+var DateDeserializer Deserializer[time.Time] = deserializePrimitiveTypeTo(dateDiscriminator, func(value string) (time.Time, error) {
 	return time.Parse(time.DateOnly, value)
 })
