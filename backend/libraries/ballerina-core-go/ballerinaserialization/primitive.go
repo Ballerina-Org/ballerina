@@ -52,23 +52,15 @@ func deserializePrimitiveTypeTo[T any](discriminator string, parse func(string) 
 
 const stringDiscriminator = "string"
 
-var StringSerializer Serializer[string] = serializePrimitiveTypeFrom(stringDiscriminator, func(value string) string {
-	return value
-})
+var StringSerializer Serializer[string] = serializePrimitiveTypeFrom(stringDiscriminator, ballerina.Identity)
 
-var StringDeserializer Deserializer[string] = deserializePrimitiveTypeTo(stringDiscriminator, func(value string) (string, error) {
-	return value, nil
-})
+var StringDeserializer Deserializer[string] = deserializePrimitiveTypeTo(stringDiscriminator, ballerina.ReturningNilError(ballerina.Identity[string]))
 
 const boolDiscriminator = "bool"
 
-var BoolSerializer Serializer[bool] = serializePrimitiveTypeFrom(boolDiscriminator, func(value bool) string {
-	return strconv.FormatBool(value)
-})
+var BoolSerializer Serializer[bool] = serializePrimitiveTypeFrom(boolDiscriminator, strconv.FormatBool)
 
-var BoolDeserializer Deserializer[bool] = deserializePrimitiveTypeTo(boolDiscriminator, func(value string) (bool, error) {
-	return strconv.ParseBool(value)
-})
+var BoolDeserializer Deserializer[bool] = deserializePrimitiveTypeTo(boolDiscriminator, strconv.ParseBool)
 
 const intDiscriminator = "int"
 

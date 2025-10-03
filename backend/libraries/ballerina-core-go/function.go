@@ -5,3 +5,7 @@ func ReturningNilError[A, B any](f func(A) B) func(A) (B, error) {
 		return f(a), nil
 	}
 }
+
+func Identity[A any](a A) A {
+	return a
+}
