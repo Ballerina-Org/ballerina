@@ -47,5 +47,8 @@ func (s _sequentialForSerialization) getElementsWithKind(kind string) ballerina.
 	if s.Kind != kind {
 		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Kind))
 	}
+	if s.Elements == nil {
+		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("missing elements field"))
+	}
 	return ballerina.Right[error, []json.RawMessage](s.Elements)
 }
