@@ -37,3 +37,15 @@ func unmarshalWithContext[T any, U any](context string, f func(T) ballerina.Sum[
 		return ballerina.Bind(wrappedUnmarshal[T](data), f)
 	})
 }
+
+type _sequentialForSerialization struct {
+	Kind     string            `json:"kind"`
+	Elements []json.RawMessage `json:"elements"`
+}
+
+func (s _sequentialForSerialization) getElementsWithKind(kind string) ballerina.Sum[error, []json.RawMessage] {
+	if s.Kind != kind {
+		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Kind))
+	}
+	return ballerina.Right[error, []json.RawMessage](s.Elements)
+}
