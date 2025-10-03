@@ -1,6 +1,7 @@
 ﻿namespace Ballerina.Seeds
 
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Schema.Model
 open Ballerina.Data.Seeds
@@ -9,12 +10,14 @@ open Ballerina.Data.Spec.Model
 open Ballerina.Errors
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
+
 open Ballerina.State.WithError
+open Ballerina.DSL.Next.StdLib.Extensions
 
 module Runner =
-  let seed
-    (schema: Schema<TypeValue>)
-    : Reader<SpecData<TypeValue, 'valueExtension>, SeedingContext<TypeValue>, Errors> =
+  let _extensions, languageContext = stdExtensions
+
+  let seed (schema: Schema<TypeValue>) : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 
@@ -22,7 +25,7 @@ module Runner =
         schema.Entities
         |> Map.map (fun _k -> EntityDescriptor.seed)
         |> state.AllMap
-        |> State.Run(ctx, ctx)
+        |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState.Types))
         |> reader.OfSum
         |> reader.MapError fst
 

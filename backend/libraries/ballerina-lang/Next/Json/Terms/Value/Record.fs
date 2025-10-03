@@ -11,16 +11,16 @@ module Record =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "record"
-  let private fieldKey = "fields"
+  let private discriminator = "record"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonRecord
       (fromJsonRoot: ValueParser<'T, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, 'valueExtension> =
-      reader.AssertKindAndContinueWithField json kindKey fieldKey (fun fieldsJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -55,5 +55,5 @@ module Record =
             })
           |> reader.All
 
-        return JsonValue.Array(fields |> List.toArray) |> Json.kind kindKey fieldKey
+        return JsonValue.Array(fields |> List.toArray) |> Json.discriminator discriminator
       }

@@ -9,14 +9,13 @@ module If =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "if"
-  let private fieldKey = "if"
+  let private discriminator = "if"
 
   type Expr<'T> with
     static member FromJsonIf (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun ifJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun ifJson ->
         reader {
           let! cond, thenBranch, elseBranch = ifJson |> JsonValue.AsTriple |> reader.OfSum
           let! cond = cond |> fromRootJson
@@ -39,5 +38,5 @@ module If =
         return
           [| condJson; thenJson; elseJson |]
           |> JsonValue.Array
-          |> Json.kind kindKey fieldKey
+          |> Json.discriminator discriminator
       }

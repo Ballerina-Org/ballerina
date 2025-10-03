@@ -68,6 +68,7 @@ module Lexer =
     | Times
     | Plus
     | Div
+    | Percentage
     | Bang
 
     override this.ToString() =
@@ -101,10 +102,12 @@ module Lexer =
       | NotEqual -> "!="
       | GreaterEqual -> ">="
       | LessThanOrEqual -> "<="
+      | Percentage -> "%"
 
   type Token =
     | Keyword of Keyword
     | Operator of Operator
+    | Comment of string
     | Identifier of string
     | StringLiteral of string
     | BoolLiteral of bool
@@ -116,6 +119,7 @@ module Lexer =
       | Keyword k -> $"`{k.ToString()}`"
       | Operator o -> o.ToString()
       | Identifier id -> id
+      | Comment s -> $"// {s}"
       | StringLiteral s -> $"\"{s}\""
       | BoolLiteral b -> if b then "true" else "false"
       | IntLiteral i -> i.ToString()
@@ -131,6 +135,10 @@ module Lexer =
 
     static member FromOperator operator location =
       { Token = operator |> Token.Operator
+        Location = location }
+
+    static member FromComment comment location =
+      { Token = comment |> Token.Comment
         Location = location }
 
     static member FromIdentifier identifier location =
@@ -259,7 +267,8 @@ module Lexer =
         word "*" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Times)
         word "+" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Plus)
         word "/" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Div)
-        word "!" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Bang) ]
+        word "!" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Bang)
+        word "%" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Percentage) ]
 
   let letter = tokenizer.Exactly Char.IsLetter
   let digit = tokenizer.Exactly Char.IsDigit
@@ -277,6 +286,15 @@ module Lexer =
       return LocalizedToken.FromIdentifier id loc
     }
 
+  let comment =
+    tokenizer {
+      do! word "//" |> tokenizer.Ignore
+      let! comment = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\n'))
+
+      let! loc = tokenizer.Location
+      return LocalizedToken.FromComment (String.Concat(comment)) loc
+    }
+
   let stringLiteral =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
@@ -289,6 +307,8 @@ module Lexer =
 
   let numberLiteral =
     tokenizer {
+      let! minus = tokenizer.Exactly '-' |> tokenizer.Try
+      let minus = minus.IsLeft
       let! int_part = digit |> tokenizer.AtLeastOne |> tokenizer.Map NonEmptyList.ToList
 
       let! frac_part =
@@ -313,6 +333,7 @@ module Lexer =
             |> Errors.Singleton
             |> tokenizer.Throw
         else
+          let value = if minus then -value else value
           return LocalizedToken.FromDecimalLiteral value loc
       | None ->
         let literal = String.Concat(int_part)
@@ -324,13 +345,14 @@ module Lexer =
             |> Errors.Singleton
             |> tokenizer.Throw
         else
+          let value = if minus then -value else value
           return LocalizedToken.FromIntLiteral value loc
     }
 
   let rec token =
     tokenizer {
       do! whitespace |> tokenizer.Try |> tokenizer.Ignore
-      let! t = tokenizer.Any [ keyword; operator; identifier; stringLiteral; numberLiteral ]
+      let! t = tokenizer.Any [ keyword; comment; stringLiteral; numberLiteral; operator; identifier ]
       do! tokenizer.Any [ whitespace; eos ] |> tokenizer.Try |> tokenizer.Ignore
       return t
     }
@@ -338,6 +360,13 @@ module Lexer =
   let rec tokens =
     tokenizer {
       let! res = token |> tokenizer.Many
+
+      let res =
+        res
+        |> List.filter (function
+          | { Token = Comment _ } -> false
+          | _ -> true)
+
       do! eos
       return res
     }

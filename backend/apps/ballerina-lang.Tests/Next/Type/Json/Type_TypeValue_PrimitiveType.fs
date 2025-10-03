@@ -24,17 +24,17 @@ let ``Assert PrimitiveType -> ToJson -> FromJson = PrimitiveType``
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
 let testCases =
-  [ ("""{"kind": "unit"}""", PrimitiveType.Unit)
-    ("""{"kind": "guid"}""", PrimitiveType.Guid)
-    ("""{"kind": "int32"}""", PrimitiveType.Int32)
-    ("""{"kind": "int64"}""", PrimitiveType.Int64)
-    ("""{"kind": "float32"}""", PrimitiveType.Float32)
-    ("""{"kind": "float64"}""", PrimitiveType.Float64)
-    ("""{"kind": "decimal"}""", PrimitiveType.Decimal)
-    ("""{"kind": "string"}""", PrimitiveType.String)
-    ("""{"kind": "bool"}""", PrimitiveType.Bool)
-    ("""{"kind": "datetime"}""", PrimitiveType.DateTime)
-    ("""{"kind": "dateonly"}""", PrimitiveType.DateOnly) ]
+  [ ("""{"discriminator": "unit"}""", PrimitiveType.Unit)
+    ("""{"discriminator": "guid"}""", PrimitiveType.Guid)
+    ("""{"discriminator": "int32"}""", PrimitiveType.Int32)
+    ("""{"discriminator": "int64"}""", PrimitiveType.Int64)
+    ("""{"discriminator": "float32"}""", PrimitiveType.Float32)
+    ("""{"discriminator": "float64"}""", PrimitiveType.Float64)
+    ("""{"discriminator": "decimal"}""", PrimitiveType.Decimal)
+    ("""{"discriminator": "string"}""", PrimitiveType.String)
+    ("""{"discriminator": "bool"}""", PrimitiveType.Bool)
+    ("""{"discriminator": "datetime"}""", PrimitiveType.DateTime)
+    ("""{"discriminator": "dateonly"}""", PrimitiveType.DateOnly) ]
 
 [<Test>]
 let ``Dsl:Type:Value.PrimitiveType json round-trip`` () =

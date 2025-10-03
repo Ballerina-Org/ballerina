@@ -98,7 +98,7 @@ module Validator =
       : Sum<ExprType, Errors> =
       let (!) = Renderer.Validate codegen ctx
 
-      let unify (expected: ExprType) (formType: ExprType) =
+      let unify (expected: ExprType) (formType: ExprType) : Sum<Unit, Errors> =
         ExprType.Unify
           Map.empty
           (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
@@ -111,14 +111,12 @@ module Validator =
           let! formType = FormBody.Type ctx.Types i
 
           let formType =
-            if i.IsTable |> not then
-              formType
-            else
-              match formType with
-              | ExprType.TableType row -> row
-              | _ -> formType
+            match formType with
+            | ExprType.TableType row -> row
+            | _ -> formType
 
           do! unify expectedType formType
+          do! FormBody.Validate codegen ctx i |> Sum.map ignore
           // NOTE: no need to recurse in the form body because the top-level-forms have already been validated
           formType
         }

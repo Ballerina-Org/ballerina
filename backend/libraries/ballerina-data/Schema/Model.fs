@@ -4,6 +4,9 @@ module Model =
   open Ballerina.Data.Arity.Model
   open Ballerina.DSL.Next.Terms.Model
 
+  type EntityName = { EntityName: string }
+  type LookupName = { LookupName: string }
+
   type LookupMethod =
     | Get
     | GetMany
@@ -42,11 +45,11 @@ module Model =
       Predicates: Map<string, Expr<'Type>> }
 
   and LookupDescriptor =
-    { Source: string
-      Target: string
+    { Source: EntityName
+      Target: EntityName
       Forward: DirectedLookupDescriptor
-      Backward: Option<string * DirectedLookupDescriptor> }
+      Backward: Option<LookupName * DirectedLookupDescriptor> }
 
   type Schema<'Type> =
-    { Entities: Map<string, EntityDescriptor<'Type>>
-      Lookups: Map<string, LookupDescriptor> }
+    { Entities: Map<EntityName, EntityDescriptor<'Type>>
+      Lookups: Map<LookupName, LookupDescriptor> }

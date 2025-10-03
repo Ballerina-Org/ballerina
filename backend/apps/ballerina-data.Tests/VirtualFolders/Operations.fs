@@ -19,7 +19,6 @@ let ``Update and read file`` () =
   let root =
     { Name = "Root"
       Path = []
-      IsLeaf = false
       Children =
         [ File
             { Name = "R"
@@ -30,12 +29,10 @@ let ``Update and read file`` () =
           Folder
             { Name = "F1"
               Path = [ "F1" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "F12"
                       Path = [ "F1"; "F12" ]
-                      IsLeaf = false
                       Children =
                         [ File
                             { Name = "X"
@@ -64,17 +61,14 @@ let ``Delete file`` () =
   let root =
     { Name = "Root"
       Path = []
-      IsLeaf = false
       Children =
         [ Folder
             { Name = "F1"
               Path = [ "F1" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "F12"
                       Path = [ "F1"; "F12" ]
-                      IsLeaf = false
                       Children =
                         [ File
                             { Name = "X"
@@ -101,17 +95,14 @@ let ``Insert file`` () =
   let root =
     { Name = "Root"
       Path = []
-      IsLeaf = false
       Children =
         [ Folder
             { Name = "F1"
               Path = [ "F1" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "F12"
                       Path = [ "F1"; "F12" ]
-                      IsLeaf = false
                       Children = [] }
                   File
                     { Name = "Y"
@@ -133,17 +124,14 @@ let ``Find file`` () =
   let root =
     { Name = "Root"
       Path = []
-      IsLeaf = false
       Children =
         [ Folder
             { Name = "F1"
               Path = [ "F1" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "F12"
                       Path = [ "F1"; "F12" ]
-                      IsLeaf = false
                       Children = [] }
                   File
                     { Name = "Y"

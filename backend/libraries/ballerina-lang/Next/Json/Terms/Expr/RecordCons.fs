@@ -12,13 +12,13 @@ module RecordCons =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "record-cons"
-  let private fieldKey = "fields"
+  let private discriminator = "record-cons"
 
   type Expr<'T> with
     static member FromJsonRecordCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun fieldsJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -51,5 +51,5 @@ module RecordCons =
             })
           |> reader.All
 
-        return all |> (List.toArray >> JsonValue.Array >> Json.kind kindKey fieldKey)
+        return all |> (List.toArray >> JsonValue.Array >> Json.discriminator discriminator)
       }
