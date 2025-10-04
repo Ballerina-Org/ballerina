@@ -2,6 +2,7 @@ package ballerina_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -327,4 +328,241 @@ func TestDateDeserialization(t *testing.T) {
 	serialized := json.RawMessage(`{"discriminator":"date","value":"2025-01-01"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, time.Time](time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)), deserialized)
+}
+
+type SomeRecord struct {
+	A int64
+	B string
+	C bool
+}
+
+func SomeRecordSerializer() ballerinaserialization.Serializer[SomeRecord] {
+	aSerializer := ballerinaserialization.IntSerializer
+	bSerializer := ballerinaserialization.StringSerializer
+	cSerializer := ballerinaserialization.BoolSerializer
+	return func(value SomeRecord) ballerina.Sum[error, json.RawMessage] {
+		return ballerina.Bind(
+			ballerinaserialization.WithContext(
+				"on item1",
+				aSerializer,
+			)(value.A),
+			func(item1 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+				return ballerina.Bind(
+					ballerinaserialization.WithContext(
+						"on item2",
+						bSerializer,
+					)(value.B),
+					func(item2 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+						return ballerina.Bind(
+							ballerinaserialization.WithContext(
+								"on item3",
+								cSerializer,
+							)(value.C),
+							func(item3 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+								return ballerinaserialization.WrappedMarshal(
+									ballerinaserialization.NewRecordForSerialization(
+										[][2]json.RawMessage{
+											{
+												json.RawMessage(`{"name": "A"}`), item1,
+											},
+											{
+												json.RawMessage(`{"name": "B"}`), item2,
+											},
+											{
+												json.RawMessage(`{"name": "C"}`), item3,
+											},
+										},
+									),
+								)
+							},
+						)
+					},
+				)
+			},
+		)
+	}
+}
+
+func SomeRecordDeserializer() ballerinaserialization.Deserializer[SomeRecord] {
+	aDeserializer := ballerinaserialization.IntDeserializer
+	bDeserializer := ballerinaserialization.StringDeserializer
+	cDeserializer := ballerinaserialization.BoolDeserializer
+	return ballerinaserialization.WithContext(
+		"on record",
+		func(value json.RawMessage) ballerina.Sum[error, SomeRecord] {
+			return ballerina.Bind(
+				ballerinaserialization.WrappedUnmarshal[ballerinaserialization.RecordForSerialization](value),
+				func(recordForSerialization ballerinaserialization.RecordForSerialization) ballerina.Sum[error, SomeRecord] {
+					if len(recordForSerialization.Value) != 3 {
+						return ballerina.Left[error, SomeRecord](fmt.Errorf("expected 3 fields in record, got %d", len(recordForSerialization.Value)))
+					}
+					fields := recordForSerialization.Value
+					return ballerina.Bind(
+						ballerinaserialization.WithContext("on field A", aDeserializer)(fields[0][1]),
+						func(item1 int64) ballerina.Sum[error, SomeRecord] {
+							return ballerina.Bind(
+								ballerinaserialization.WithContext("on field B", bDeserializer)(fields[1][1]),
+								func(item2 string) ballerina.Sum[error, SomeRecord] {
+									return ballerina.MapRight(
+										ballerinaserialization.WithContext("on field C", cDeserializer)(fields[2][1]),
+										func(item3 bool) SomeRecord {
+											return SomeRecord{A: item1, B: item2, C: item3}
+										},
+									)
+								},
+							)
+						},
+					)
+				},
+			)
+		},
+	)
+}
+
+type _SomeUnionCases string
+
+const (
+	_A _SomeUnionCases = "A"
+	_B _SomeUnionCases = "B"
+	_C _SomeUnionCases = "C"
+)
+
+type SomeUnion struct {
+	discriminator _SomeUnionCases
+	_A            *int64
+	_B            *string
+	_C            *bool
+}
+
+func NewSomeUnionA(value int64) SomeUnion {
+	return SomeUnion{
+		discriminator: _A,
+		_A:            &value,
+	}
+}
+func NewSomeUnionB(value string) SomeUnion {
+	return SomeUnion{
+		discriminator: _B,
+		_B:            &value,
+	}
+}
+func NewSomeUnionC(value bool) SomeUnion {
+	return SomeUnion{
+		discriminator: _C,
+		_C:            &value,
+	}
+}
+
+func MatchSomeUnion[Result any](
+	value SomeUnion,
+	onA func(int64) (Result, error),
+	onB func(string) (Result, error),
+	onC func(bool) (Result, error),
+) (Result, error) {
+	switch value.discriminator {
+	case _A:
+		result, err := onA(*value._A)
+		if err != nil {
+			return *new(Result), fmt.Errorf("onA:%w", err)
+		}
+		return result, nil
+	case _B:
+		result, err := onB(*value._B)
+		if err != nil {
+			return *new(Result), fmt.Errorf("onB:%w", err)
+		}
+		return result, nil
+	case _C:
+		result, err := onC(*value._C)
+		if err != nil {
+			return *new(Result), fmt.Errorf("onC:%w", err)
+		}
+		return result, nil
+	}
+	return *new(Result), fmt.Errorf("%s is not a valid discriminator value", value.discriminator)
+}
+
+func SomeUnionSerializer() ballerinaserialization.Serializer[SomeUnion] {
+	aSerializer := ballerinaserialization.IntSerializer
+	bSerializer := ballerinaserialization.StringSerializer
+	cSerializer := ballerinaserialization.BoolSerializer
+	return func(value SomeUnion) ballerina.Sum[error, json.RawMessage] {
+		serialized, err := MatchSomeUnion(
+			value,
+			func(item1 int64) (ballerina.Sum[error, json.RawMessage], error) {
+				return ballerina.Bind(
+					ballerinaserialization.WithContext("on A", aSerializer)(item1),
+					func(item1 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+						return ballerinaserialization.WrappedMarshal(
+							ballerinaserialization.NewUnionForSerialization("A", item1),
+						)
+					},
+				), nil
+			},
+			func(item2 string) (ballerina.Sum[error, json.RawMessage], error) {
+				return ballerina.Bind(
+					ballerinaserialization.WithContext("on B", bSerializer)(item2),
+					func(item2 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+						return ballerinaserialization.WrappedMarshal(
+							ballerinaserialization.NewUnionForSerialization("B", item2),
+						)
+					},
+				), nil
+			},
+			func(item3 bool) (ballerina.Sum[error, json.RawMessage], error) {
+				return ballerina.Bind(
+					ballerinaserialization.WithContext("on C", cSerializer)(item3),
+					func(item3 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+						return ballerinaserialization.WrappedMarshal(
+							ballerinaserialization.NewUnionForSerialization("C", item3),
+						)
+					},
+				), nil
+			},
+		)
+		if err != nil {
+			return ballerina.Left[error, json.RawMessage](err)
+		}
+		return serialized
+	}
+}
+
+func SomeUnionDeserializer() ballerinaserialization.Deserializer[SomeUnion] {
+	aDeserializer := ballerinaserialization.IntDeserializer
+	bDeserializer := ballerinaserialization.StringDeserializer
+	cDeserializer := ballerinaserialization.BoolDeserializer
+	return ballerinaserialization.WithContext(
+		"on SomeUnion",
+		func(value json.RawMessage) ballerina.Sum[error, SomeUnion] {
+			return ballerina.Bind(
+				ballerinaserialization.WrappedUnmarshal[ballerinaserialization.UnionForSerialization](value),
+				func(unionForSerialization ballerinaserialization.UnionForSerialization) ballerina.Sum[error, SomeUnion] {
+					return ballerina.Bind(
+						unionForSerialization.GetCaseName(),
+						func(caseName string) ballerina.Sum[error, SomeUnion] {
+							switch caseName {
+							case string(_A):
+								return ballerina.MapRight(
+									ballerinaserialization.WithContext("on case A", aDeserializer)(unionForSerialization.Value[1]),
+									NewSomeUnionA,
+								)
+							case string(_B):
+								return ballerina.MapRight(
+									ballerinaserialization.WithContext("on case B", bDeserializer)(unionForSerialization.Value[1]),
+									NewSomeUnionB,
+								)
+							case string(_C):
+								return ballerina.MapRight(
+									ballerinaserialization.WithContext("on case C", cDeserializer)(unionForSerialization.Value[1]),
+									NewSomeUnionC,
+								)
+							default:
+								return ballerina.Left[error, SomeUnion](fmt.Errorf("unknown union case: %s", caseName))
+							}
+						},
+					)
+				},
+			)
+		},
+	)
 }
