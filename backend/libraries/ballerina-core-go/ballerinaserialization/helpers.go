@@ -69,20 +69,19 @@ func NewRecordForSerialization(value [][2]json.RawMessage) RecordForSerializatio
 	}
 }
 
-var _ json.Unmarshaler = (*RecordForSerialization)(nil)
-
-func (r *RecordForSerialization) UnmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, r)
+func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, RecordForSerialization] {
+	var r RecordForSerialization
+	err := json.Unmarshal(data, &r)
 	if err != nil {
-		return err
+		return ballerina.Left[error, RecordForSerialization](err)
 	}
 	if r.Discriminator != "record" {
-		return fmt.Errorf("expected discriminator to be 'record', got %s", r.Discriminator)
+		return ballerina.Left[error, RecordForSerialization](fmt.Errorf("expected discriminator to be 'record', got %s", r.Discriminator))
 	}
 	if r.Value == nil {
-		return fmt.Errorf("missing value field")
+		return ballerina.Left[error, RecordForSerialization](fmt.Errorf("missing value field"))
 	}
-	return nil
+	return ballerina.Right[error, RecordForSerialization](r)
 }
 
 // Used in codegen
