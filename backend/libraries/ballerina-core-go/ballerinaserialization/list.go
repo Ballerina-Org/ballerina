@@ -10,10 +10,10 @@ import (
 const listDiscriminator = "list"
 
 func ListSerializer[T any](serializer Serializer[T]) Serializer[[]T] {
-	return withContext(fmt.Sprintf("on %s", listDiscriminator), func(elements []T) ballerina.Sum[error, json.RawMessage] {
+	return WithContext(fmt.Sprintf("on %s", listDiscriminator), func(elements []T) ballerina.Sum[error, json.RawMessage] {
 		return ballerina.Bind(ballerina.SumAll(ballerina.MapArray(elements, serializer)),
 			func(serializedElements []json.RawMessage) ballerina.Sum[error, json.RawMessage] {
-				return wrappedMarshal(_sequentialForSerialization{
+				return WrappedMarshal(_sequentialForSerialization{
 					Discriminator: listDiscriminator,
 					Value:         serializedElements,
 				})

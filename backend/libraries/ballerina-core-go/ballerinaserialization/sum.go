@@ -12,19 +12,19 @@ const (
 )
 
 func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer Serializer[R]) Serializer[ballerina.Sum[L, R]] {
-	return withContext("on sum", func(value ballerina.Sum[L, R]) ballerina.Sum[error, json.RawMessage] {
+	return WithContext("on sum", func(value ballerina.Sum[L, R]) ballerina.Sum[error, json.RawMessage] {
 		return ballerina.Bind(ballerina.Fold(value,
 			func(left L) ballerina.Sum[error, _sequentialForSerialization] {
-				return ballerina.MapRight(withContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
+				return ballerina.MapRight(WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
 					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("0"), value}}
 				})
 			},
 			func(right R) ballerina.Sum[error, _sequentialForSerialization] {
-				return ballerina.MapRight(withContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
+				return ballerina.MapRight(WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
 					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), value}}
 				})
 			},
-		), wrappedMarshal)
+		), WrappedMarshal)
 	})
 }
 
@@ -50,9 +50,9 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 
 			switch index {
 			case 0:
-				return ballerina.MapRight(withContext("on left", leftDeserializer)(secondElement), ballerina.Left[L, R])
+				return ballerina.MapRight(WithContext("on left", leftDeserializer)(secondElement), ballerina.Left[L, R])
 			case 1:
-				return ballerina.MapRight(withContext("on right", rightDeserializer)(secondElement), ballerina.Right[L, R])
+				return ballerina.MapRight(WithContext("on right", rightDeserializer)(secondElement), ballerina.Right[L, R])
 			}
 			return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected index to be 0 or 1, got %d", index))
 		},
