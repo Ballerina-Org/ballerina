@@ -49,7 +49,7 @@ module ExprJson =
         | Expr.TypeLambda(name, body) -> Expr.ToJsonTypeLambda Expr.ToJson name body
         | Expr.TypeApply(t, e) -> Expr.ToJsonTypeApply Expr.ToJson t e
         | Expr.Apply(e1, e2) -> Expr.ToJsonApply Expr.ToJson e1 e2
-        | Expr.Let(v, e1, e2) -> Expr.ToJsonLet Expr.ToJson v e1 e2
+        | Expr.Let(v, _, e1, e2) -> Expr.ToJsonLet Expr.ToJson v e1 e2
         | Expr.TypeLet(v, e1, e2) -> Expr.ToJsonTypeLet Expr.ToJson v e1 e2
         | Expr.RecordCons t -> Expr.ToJsonRecordCons Expr.ToJson t
         | Expr.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson a b

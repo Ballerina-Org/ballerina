@@ -37,7 +37,7 @@ module private Patterns =
     | :? DateTime as v -> AsDateTime v
     | x -> Other x
 
-type BogusDataGenerator<'Value>(cultureCode: string) =
+type BogusDataGenerator(cultureCode: string) =
   let randomSeed = 1234
   let faker = Faker cultureCode
   let fakeFor p = Hints.``for`` faker p

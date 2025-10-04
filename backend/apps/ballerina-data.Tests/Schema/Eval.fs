@@ -15,7 +15,7 @@ let ``SpecNext-Schema evaluates`` () =
   let source: Schema<TypeExpr> =
     { Entities =
         Map.ofList
-          [ ("SourceTable",
+          [ ({ EntityName = "SourceTable" },
              { Type = "SomeType" |> Identifier.LocalScope |> TypeExpr.Lookup
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
@@ -25,7 +25,7 @@ let ``SpecNext-Schema evaluates`` () =
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
-            ("TargetTable",
+            ({ EntityName = "TargetTable" },
              { Type = "AnotherType" |> Identifier.LocalScope |> TypeExpr.Lookup
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
@@ -47,7 +47,7 @@ let ``SpecNext-Schema evaluates`` () =
   let expected: Schema<TypeValue> =
     { Entities =
         Map.ofList
-          [ ("SourceTable",
+          [ ({ EntityName = "SourceTable" },
              { Type = SomeType
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
@@ -55,7 +55,7 @@ let ``SpecNext-Schema evaluates`` () =
                      Condition = Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)
                      Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates = Map.ofList [ ("SomePredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool false)) ] })
-            ("TargetTable",
+            ({ EntityName = "TargetTable" },
              { Type = AnotherType
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []

@@ -8,13 +8,13 @@ module Rotate =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "rotate"
-  let private fieldKey = "rotate"
+  let private discriminator = "rotate"
 
   type TypeExpr with
     static member FromJsonRotate(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fromJsonRoot >>= (TypeExpr.Rotate >> sum.Return))
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.Rotate >> sum.Return))
 
     static member ToJsonRotate(rootToJson: TypeExpr -> JsonValue) : TypeExpr -> JsonValue =
-      rootToJson >> Json.kind kindKey fieldKey
+      rootToJson >> Json.discriminator discriminator

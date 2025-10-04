@@ -9,11 +9,14 @@ module Model =
 
   type Path = string list
 
+  type Node =
+    | Folder
+    | File
+
   type JsonAtPath = { Path: Path; Content: JsonValue }
 
   type FolderNode =
     { Name: string
-      IsLeaf: bool
       Path: Path
       Children: Content list }
 

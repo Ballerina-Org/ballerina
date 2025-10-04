@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.Data.Json
 
+open Ballerina.Data.Schema.Model
+
 module Model =
   open System
   open Ballerina.Collections.Sum
@@ -36,7 +38,7 @@ module Model =
                   })
                 |> reader.All
 
-              let! name = name |> PrimitiveValue.String |> Primitive |> rootToJson
+              let! name = name.EntityName |> PrimitiveValue.String |> Primitive |> rootToJson
               return JsonValue.Record [| "name", name; "values", values |> Seq.toArray |> JsonValue.Array |]
             })
           |> reader.All
@@ -46,7 +48,7 @@ module Model =
           |> Map.toList
           |> List.map (fun (name, values) ->
             reader {
-              let! name = name |> PrimitiveValue.String |> Primitive |> rootToJson
+              let! name = name.LookupName |> PrimitiveValue.String |> Primitive |> rootToJson
 
               let! values =
                 values
@@ -121,7 +123,7 @@ module Model =
                   })
                 |> sum.All
 
-              return name, vs |> Map.ofList
+              return { EntityName = name }, vs |> Map.ofList
             })
           |> sum.All
 
@@ -154,7 +156,7 @@ module Model =
                 |> sum.All
 
               let vs = vs |> Map.ofList
-              return name, vs
+              return { LookupName = name }, vs
             })
           |> sum.All
 

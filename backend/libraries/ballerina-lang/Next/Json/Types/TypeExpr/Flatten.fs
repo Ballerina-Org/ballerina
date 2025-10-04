@@ -8,13 +8,13 @@ module Flatten =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "flatten"
-  let private fieldKey = "flatten"
+  let private discriminator = "flatten"
 
   type TypeExpr with
     static member FromJsonFlatten(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun flattenFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun flattenFields ->
         sum {
           let! (type1, type2) = flattenFields |> JsonValue.AsPair
           let! type1 = type1 |> fromJsonRoot
@@ -26,4 +26,4 @@ module Flatten =
       fun (type1, type2) ->
         let type1 = rootToJson type1
         let type2 = rootToJson type2
-        JsonValue.Array [| type1; type2 |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| type1; type2 |] |> Json.discriminator discriminator

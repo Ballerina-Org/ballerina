@@ -50,22 +50,57 @@ module Extension =
 
     let minusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32MinusId,
-      { Type = TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
-        Operation = Int32Operations.Minus {| v1 = () |}
+        Operation = Int32Operations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | Int32Operations.Minus v -> Some(Int32Operations.Minus v)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun (op, v) ->
             reader {
+              let! op = op |> Int32Operations.AsMinus |> reader.OfSum
               let! v = v |> Value.AsPrimitive |> reader.OfSum
               let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(-v))
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return Int32Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure - v))
             } }
+
+
+    let int32TimesId = Identifier.FullyQualified([ "Int32" ], "*")
+
+    let timesOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+      int32TimesId,
+      { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
+        Kind = Kind.Star
+        Operation = Int32Operations.Times {| v1 = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int32Operations.Times v -> Some(Int32Operations.Times v)
+            | _ -> None)
+        Apply =
+          fun (op, v) ->
+            reader {
+              let! op = op |> Int32Operations.AsTimes |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return Int32Operations.Times({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure * v))
+            } }
+
 
     let int32DivideId = Identifier.FullyQualified([ "Int32" ], "/")
 
@@ -319,6 +354,7 @@ module Extension =
       Operations =
         [ plusOperation
           minusOperation
+          timesOperation
           divideOperation
           powerOperation
           modOperation

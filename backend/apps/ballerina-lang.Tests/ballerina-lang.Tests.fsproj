@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="ExtensionsBootstrap.fs" />
     <Compile Include="Parser/Common.fs" />
     <Compile Include="Parser/ExprType.fs" />
     <Compile Include="ExprType/Unification.fs" />
@@ -25,6 +24,7 @@
     <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
     <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
     <Compile Include="Next\Term\Expr_Eval.fs" />
+    <Compile Include="Next\Integration.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

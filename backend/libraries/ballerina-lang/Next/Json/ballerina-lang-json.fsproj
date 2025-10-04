@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Keys.fs" />
         <Compile Include="Json.fs" />
 
         <Compile Include="Type\Var.fs" />

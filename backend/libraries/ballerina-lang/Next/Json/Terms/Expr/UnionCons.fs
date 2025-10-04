@@ -11,13 +11,13 @@ module UnionCons =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "union-case"
-  let private fieldKey = "union-case"
+  let private discriminator = "union-case"
 
   type Expr<'T> with
     static member FromJsonUnionCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun unionCaseJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionCaseJson ->
         reader {
           let! (k, v) = unionCaseJson |> JsonValue.AsPair |> reader.OfSum
           let! k = k |> Identifier.FromJson |> reader.OfSum
@@ -29,5 +29,5 @@ module UnionCons =
       reader {
         let k = k |> Identifier.ToJson
         let! v = v |> rootToJson
-        return [| k; v |] |> JsonValue.Array |> Json.kind kindKey fieldKey
+        return [| k; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }

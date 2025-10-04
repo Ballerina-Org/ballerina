@@ -169,18 +169,33 @@ module Eval =
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> Errors.Singleton |> state.Throw
           | TypeExpr.Primitive p -> return TypeValue.Primitive { value = p; source = source }, Kind.Star
           | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindType v |> state.OfStateReader
+          | TypeExpr.LetSymbols(xts, rest) ->
+            do!
+              xts
+              |> Seq.map (fun x ->
+                state {
+                  let s_x = TypeSymbol.Create(Identifier.LocalScope x)
+                  do! TypeExprEvalState.bindSymbol x s_x
+                })
+              |> state.All
+              |> state.Ignore
+
+            let! resultValue, resultKind = !rest
+            return TypeValue.SetSourceMapping(resultValue, source), resultKind
           | TypeExpr.Let(x, t_x, rest) ->
             return!
               state.Either
                 (state {
                   let! t_x = !t_x
                   do! TypeExprEvalState.bindType x t_x
-                  return! !rest
+                  let! resultValue, resultKind = !rest
+                  return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
                 (state {
                   let! s_x = !!t_x
                   do! TypeExprEvalState.bindSymbol x s_x
-                  return! !rest
+                  let! resultValue, resultKind = !rest
+                  return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
 
           | TypeExpr.Apply(f, a) ->
@@ -201,13 +216,15 @@ module Eval =
                     let! a = !!a
                     do! TypeExprEvalState.bindSymbol param.Name a
 
-                    return! !body
+                    let! resultValue, resultKind = !body
+                    return TypeValue.SetSourceMapping(resultValue, source), resultKind
                   | _ ->
                     let! a = !a
 
                     do! TypeExprEvalState.bindType param.Name a
 
-                    return! !body
+                    let! resultValue, resultKind = !body
+                    return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
                 (state {
                   let! f_var = f |> TypeValue.AsVar |> state.OfSum

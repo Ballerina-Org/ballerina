@@ -14,7 +14,6 @@ let ``Init structure works`` () =
   let root =
     { Name = "Root"
       Path = []
-      IsLeaf = false
       Children =
         [ File
             { Name = "alone"
@@ -25,28 +24,23 @@ let ``Init structure works`` () =
           Folder
             { Name = "A"
               Path = [ "A" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "A.1"
                       Path = [ "A"; "A.1" ]
-                      IsLeaf = false
                       Children =
                         [ Folder
                             { Name = "A.1.1"
                               Path = [ "A"; "A.1"; "A.1.1" ]
-                              IsLeaf = false
                               Children =
                                 [ Folder
                                     { Name = "A.1.2"
                                       Path = [ "A"; "A.1"; "A.1.2" ]
-                                      IsLeaf = false
                                       Children =
                                         [ Folder
                                             { Name = "A.1.2.3"
                                               Path = [ "A"; "A.1"; "A.1.2"; "A.1.2.3" ]
-                                              Children = []
-                                              IsLeaf = true }
+                                              Children = [] }
                                           File
                                             { Name = "file_x"
                                               Size = 1
@@ -66,13 +60,11 @@ let ``Init structure works`` () =
           Folder
             { Name = "B"
               Path = [ "B" ]
-              IsLeaf = false
               Children =
                 [ Folder
                     { Name = "B.1"
                       Path = [ "B"; "B.1" ]
-                      Children = []
-                      IsLeaf = true }
+                      Children = [] }
                   File
                     { Name = "file1-in-b"
                       Size = 1

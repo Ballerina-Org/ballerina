@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Schema.Model
 open Ballerina.Errors
@@ -59,7 +60,7 @@ module Arity =
 module EntityDescriptor =
   let seed
     (e: EntityDescriptor<TypeValue>)
-    : State<Map<Guid, Value<TypeValue, 'valueExtension>>, SeedingContext<TypeValue>, SeedingContext<TypeValue>, Errors> =
+    : State<Map<Guid, Value<TypeValue, ValueExt>>, SeedingContext, SeedingState, Errors> =
     state {
       let! ctx = state.GetContext()
       let itemsToSeed = ctx.WantedCount |> Option.defaultValue (Random().Next() % 50 + 50)
@@ -80,19 +81,19 @@ module EntityDescriptor =
     }
 
 module LookupDescriptor =
-  let seed<'T, 'valueExtension>
-    (entities: Map<string, Map<Guid, Value<'T, 'valueExtension>>>)
+  let seed
+    (entities: Map<EntityName, Map<Guid, Value<TypeValue, ValueExt>>>)
     (descriptor: LookupDescriptor)
     : Sum<Map<Guid, Set<Guid>>, Errors> =
 
     sum {
       let! sources =
         entities
-        |> Map.tryFindWithError descriptor.Source descriptor.Source "while seed lookup source descriptor"
+        |> Map.tryFindWithError descriptor.Source descriptor.Source.EntityName "while seed lookup source descriptor"
 
       let! targets =
         entities
-        |> Map.tryFindWithError descriptor.Target descriptor.Target "while seed lookup source descriptor"
+        |> Map.tryFindWithError descriptor.Target descriptor.Target.EntityName "while seed lookup source descriptor"
 
       let sourceKeys = sources |> Map.toList |> List.map fst
       let targetKeys = targets |> Map.toList |> List.map fst
@@ -115,7 +116,7 @@ module LookupDescriptor =
   let tryFlip
     (descriptor: LookupDescriptor)
     (lookup: Map<Guid, Set<Guid>>)
-    : Sum<Option<string * Map<Guid, Set<Guid>>>, Errors> =
+    : Sum<Option<LookupName * Map<Guid, Set<Guid>>>, Errors> =
     sum {
       match descriptor.Backward with
       | None -> return None

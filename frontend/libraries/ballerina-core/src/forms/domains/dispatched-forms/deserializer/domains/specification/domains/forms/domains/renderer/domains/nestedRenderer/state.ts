@@ -25,6 +25,21 @@ export type SerializedNestedRenderer = {
   api?: unknown;
 };
 
+const isLookupRenderer = (renderer: unknown): boolean => {
+  return (
+    typeof renderer === "object" &&
+    renderer !== null &&
+    !("options" in renderer) &&
+    !("stream" in renderer) &&
+    !("leftRenderer" in renderer) &&
+    !("rightRenderer" in renderer) &&
+    !("elementRenderer" in renderer) &&
+    !("itemRenderers" in renderer) &&
+    !("keyRenderer" in renderer) &&
+    !("valueRenderer" in renderer)
+  );
+};
+
 export type NestedRenderer<T> = {
   renderer: Renderer<T>;
   label?: string;
@@ -108,7 +123,7 @@ export const NestedRenderer = {
         Renderer.Operations.Deserialize(
           type,
           type.kind == "primitive" ||
-            type.kind == "lookup" ||
+            (type.kind == "lookup" && isLookupRenderer(validatedSerialized)) ||
             type.kind == "record" ||
             type.kind == "union" ||
             type.kind == "table"

@@ -8,13 +8,13 @@ module SetTypeExpr =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "set"
-  let private fieldKey = "set"
+  let private discriminator = "set"
 
   type TypeExpr with
     static member FromJsonSet(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fromJsonRoot >>= (TypeExpr.Set >> sum.Return))
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.Set >> sum.Return))
 
     static member ToJsonSet(rootToJson: TypeExpr -> JsonValue) : TypeExpr -> JsonValue =
-      rootToJson >> Json.kind kindKey fieldKey
+      rootToJson >> Json.discriminator discriminator

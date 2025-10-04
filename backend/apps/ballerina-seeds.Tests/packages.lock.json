@@ -46,6 +46,11 @@
           "Microsoft.Testing.Platform.MSBuild": "1.5.3"
         }
       },
+      "Bogus": {
+        "type": "Transitive",
+        "resolved": "35.6.3",
+        "contentHash": "+5omfZWy8gOcbpc48vKfMI4h/ecbdf3NQm6xCl3zMbaP4J3rMMm5h3kPFeIWBgt4mbz6YY0eeZDLR/6yv1khKw=="
+      },
       "FSharp.Data": {
         "type": "Transitive",
         "resolved": "6.6.0",
@@ -128,6 +133,11 @@
           "FSharp.Data.Json.Core": "6.6.0",
           "FSharp.Data.Runtime.Utilities": "6.6.0"
         }
+      },
+      "MathNet.Numerics": {
+        "type": "Transitive",
+        "resolved": "6.0.0-beta2",
+        "contentHash": "ew55vr5MqCEokG0jRsndoRSPNxdDvSgGwhWyxEFhzc8EuGn3TNtSGKRppCcpHnwXtjFiUvFBN+BBo75yrdKOrQ=="
       },
       "Microsoft.ApplicationInsights": {
         "type": "Transitive",
@@ -314,6 +324,128 @@
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"
+        }
+      },
+      "ballerina-data": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "MathNet.Numerics": "[6.0.0-beta2, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-eval": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-parser": "[1.0.0, )",
+          "ballerina-lang-stdlib": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-lang-v1": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-eval": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-json": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-models": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-parser": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-stdlib": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-eval": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-typecheck": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-v1": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang.tests": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "Microsoft.NET.Test.Sdk": "[17.14.1, )",
+          "NUnit": "[4.3.2, )",
+          "NUnit3TestAdapter": "[5.0.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "coverlet.collector": "[6.0.4, )"
+        }
+      },
+      "ballerina-seeds": {
+        "type": "Project",
+        "dependencies": {
+          "Bogus": "[35.6.3, )",
+          "FSharp.Core": "[9.0.303, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-data": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
         }
       },
       "ballerina-stdlib": {

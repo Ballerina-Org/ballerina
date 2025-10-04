@@ -186,9 +186,9 @@ module Patterns =
       | Expr.Lookup l -> sum.Return l
       | other -> sum.Throw(Errors.Singleton $"Expected a lookup but got {other}")
 
-    static member AsLet(e: Expr<'T>) : Sum<Var * Expr<'T> * Expr<'T>, Errors> =
+    static member AsLet(e: Expr<'T>) : Sum<Var * Option<'T> * Expr<'T> * Expr<'T>, Errors> =
       match e with
-      | Expr.Let(i, a, e) -> sum.Return(i, a, e)
+      | Expr.Let(i, i_t, a, e) -> sum.Return(i, i_t, a, e)
       | other -> sum.Throw(Errors.Singleton $"Expected a let but got {other}")
 
     static member AsLambda(e: Expr<'T>) : Sum<Var * Option<'T> * Expr<'T>, Errors> =

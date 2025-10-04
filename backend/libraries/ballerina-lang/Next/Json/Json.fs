@@ -8,6 +8,7 @@ open Ballerina.Reader.WithError
 open FSharp.Data
 open Ballerina.Fix
 open Ballerina.Collections.NonEmptyList
+open Keys
 
 // parsing
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
@@ -37,8 +38,8 @@ type ValueEncoder<'T, 'valueExtension> = Value<'T, 'valueExtension> -> ValueEnco
 type ValueEncoderLayer<'T, 'valueExtension> = ValueEncoder<'T, 'valueExtension> -> ValueEncoder<'T, 'valueExtension>
 
 module Json =
-  let kind (kind: string) (fields: string) (value: JsonValue) =
-    JsonValue.Record [| "kind", JsonValue.String kind; fields, value |]
+  let discriminator (discriminatorValue: string) (value: JsonValue) =
+    JsonValue.Record [| discriminatorKey, JsonValue.String discriminatorValue; valueKey, value |]
 
   let buildRootParser<'T, 'valueExtension>
     (layers: NonEmptyList<ValueParserLayer<'T, 'valueExtension>>)

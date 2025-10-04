@@ -200,89 +200,35 @@ module ExprType =
                   let! fields = json |> JsonValue.AsRecord
                   let! funJson = (fields |> sum.TryFindField "fun")
 
+                  let parseSingleArgLanguageConstruct
+                    (cons: ExprType -> ExprType)
+                    (name: string)
+                    : Sum<ExprType, Errors> =
+                    sum {
+                      do!
+                        funJson
+                        |> JsonValue.AsEnum(Set.singleton name)
+
+                        |> sum.Map(ignore)
+
+                      return!
+                        sum {
+                          let! argsJson = fields |> sum.TryFindField "args"
+                          let! arg = JsonValue.AsSingleton argsJson
+                          let! arg = !arg
+                          cons arg
+                        }
+                        |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+                    }
+
                   return!
                     sum.Any(
                       NonEmptyList.OfList(
-                        sum {
-                          do!
-                            funJson
-                            |> JsonValue.AsEnum(Set.singleton "SingleSelection")
-
-                            |> sum.Map(ignore)
-
-                          return!
-                            sum {
-                              let! argsJson = (fields |> sum.TryFindField "args")
-                              let! arg = JsonValue.AsSingleton argsJson
-                              let! arg = !arg
-                              return ExprType.OptionType arg
-                            }
-                            |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                        },
-                        [ sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "Option")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.OptionType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "One")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.OneType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "Many")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.ManyType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "MultiSelection")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.SetType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
+                        parseSingleArgLanguageConstruct ExprType.OptionType "SingleSelection",
+                        [ parseSingleArgLanguageConstruct ExprType.OptionType "Option"
+                          parseSingleArgLanguageConstruct ExprType.OneType "One"
+                          parseSingleArgLanguageConstruct ExprType.ManyType "Many"
+                          parseSingleArgLanguageConstruct ExprType.SetType "MultiSelection"
                           sum {
                             do!
                               funJson
@@ -299,54 +245,9 @@ module ExprType =
                               }
                               |> sum.MapError(Errors.WithPriority ErrorPriority.High)
                           }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "List")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.ListType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "Table")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.TableType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
-                          sum {
-                            do!
-                              funJson
-                              |> JsonValue.AsEnum(Set.singleton "ReadOnly")
-
-                              |> sum.Map(ignore)
-
-                            return!
-                              sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! arg = JsonValue.AsSingleton argsJson
-                                let! arg = !arg
-                                return ExprType.ReadOnlyType arg
-                              }
-                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-                          }
+                          parseSingleArgLanguageConstruct ExprType.ListType "List"
+                          parseSingleArgLanguageConstruct ExprType.TableType "Table"
+                          parseSingleArgLanguageConstruct ExprType.ReadOnlyType "ReadOnly"
                           sum {
                             do!
                               funJson

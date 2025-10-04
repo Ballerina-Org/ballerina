@@ -85,7 +85,7 @@ module Eval =
           | Value.Primitive(PrimitiveValue.Bool true) -> return! thenBody |> Expr.Eval
           | Value.Primitive(PrimitiveValue.Bool false) -> return! elseBody |> Expr.Eval
           | v -> return! $"expected boolean in if condition, got {v}" |> Errors.Singleton |> reader.Throw
-        | Expr.Let(var, valueExpr, body) ->
+        | Expr.Let(var, _varType, valueExpr, body) ->
           let! value = valueExpr |> Expr.Eval
 
           return!
@@ -172,14 +172,16 @@ module Eval =
 
                 return!
                   reader {
+
                     let! caseHandler =
                       cases
                       |> Map.tryFindWithError (unionVCase.Name) "union case" (unionVCase.ToFSharpString)
                       |> reader.OfSum
                       |> reader.Catch
+                      |> reader.Map(Sum.toOption)
 
                     match caseHandler with
-                    | Left caseHandler ->
+                    | Some caseHandler ->
                       let caseVar, caseBody = caseHandler
 
                       return!
@@ -187,7 +189,7 @@ module Eval =
                         |> reader.MapContext(
                           ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope caseVar.Name) unionV)
                         )
-                    | Right _ ->
+                    | None ->
                       match fallback with
                       | Some fallback -> return! !fallback
                       | None ->

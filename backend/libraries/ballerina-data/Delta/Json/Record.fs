@@ -9,6 +9,7 @@ module Record =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.Data.Delta.Model
+  open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
   type Delta<'valueExtension> with
@@ -16,7 +17,7 @@ module Record =
       (fromJsonRoot: DeltaParser<'valueExtension>)
       (json: JsonValue)
       : DeltaParserReader<'valueExtension> =
-      reader.AssertKindAndContinueWithField json "record" "record" (fun json ->
+      Reader.assertDiscriminatorAndContinueWithValue "record" json (fun json ->
         reader {
           let! fieldName, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! fieldName = fieldName |> JsonValue.AsString |> reader.OfSum
@@ -32,5 +33,5 @@ module Record =
       reader {
         let name = name |> JsonValue.String
         let! delta = delta |> rootToJson
-        return [| name; delta |] |> JsonValue.Array |> Json.kind "record" "record"
+        return [| name; delta |] |> JsonValue.Array |> Json.discriminator "record"
       }
