@@ -1,5 +1,6 @@
 from typing import TypeVar
 
+from ballerina_core.parsing.keys import DISCRIMINATOR_KEY, VALUE_KEY
 from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
 from ballerina_core.sum import Sum
 
@@ -19,7 +20,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B]]:
         length = 2
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -32,13 +33,11 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
                                     .map_right(lambda b: (a, b))
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -46,7 +45,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
 def tuple_2_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B]) -> ToJson[tuple[_A, _B]]:
     def to_json(value: tuple[_A, _B]) -> Json:
         a, b = value
-        return {"kind": "tuple", "elements": [a_to_json(a), b_to_json(b)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b)]}
 
     return to_json
 
@@ -57,7 +56,7 @@ def tuple_3_from_json(
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C]]:
         length = 3
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -74,11 +73,9 @@ def tuple_3_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -88,7 +85,7 @@ def tuple_3_from_json(
 def tuple_3_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B], c_to_json: ToJson[_C]) -> ToJson[tuple[_A, _B, _C]]:
     def to_json(value: tuple[_A, _B, _C]) -> Json:
         a, b, c = value
-        return {"kind": "tuple", "elements": [a_to_json(a), b_to_json(b), c_to_json(c)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c)]}
 
     return to_json
 
@@ -99,7 +96,7 @@ def tuple_4_from_json(
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D]]:
         length = 4
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -120,11 +117,9 @@ def tuple_4_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -136,7 +131,7 @@ def tuple_4_to_json(
 ) -> ToJson[tuple[_A, _B, _C, _D]]:
     def to_json(value: tuple[_A, _B, _C, _D]) -> Json:
         a, b, c, d = value
-        return {"kind": "tuple", "elements": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)]}
+        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)]}
 
     return to_json
 
@@ -151,7 +146,7 @@ def tuple_5_from_json(
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E]]:
         length = 5
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -176,11 +171,9 @@ def tuple_5_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -192,7 +185,10 @@ def tuple_5_to_json(
 ) -> ToJson[tuple[_A, _B, _C, _D, _E]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E]) -> Json:
         a, b, c, d, e = value
-        return {"kind": "tuple", "elements": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)]}
+        return {
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)],
+        }
 
     return to_json
 
@@ -208,7 +204,7 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F]]:
         length = 6
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -239,11 +235,9 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
                 return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
 
@@ -261,8 +255,8 @@ def tuple_6_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F]) -> Json:
         a, b, c, d, e, f = value
         return {
-            "kind": "tuple",
-            "elements": [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)],
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)],
         }
 
     return to_json
@@ -280,7 +274,7 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G]]:
         length = 7
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -317,13 +311,11 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -340,8 +332,8 @@ def tuple_7_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G]) -> Json:
         a, b, c, d, e, f, g = value
         return {
-            "kind": "tuple",
-            "elements": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -368,7 +360,7 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H]]:
         length = 8
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -413,13 +405,11 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -437,8 +427,8 @@ def tuple_8_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H]) -> Json:
         a, b, c, d, e, f, g, h = value
         return {
-            "kind": "tuple",
-            "elements": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -467,7 +457,7 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]]:
         length = 9
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -520,13 +510,11 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -545,8 +533,8 @@ def tuple_9_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]) -> Json:
         a, b, c, d, e, f, g, h, i = value
         return {
-            "kind": "tuple",
-            "elements": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -577,7 +565,7 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]]:
         length = 10
         match value:
-            case {"kind": "tuple", "elements": elements}:
+            case {"discriminator": "tuple", "value": elements}:
                 match elements:
                     case list():
                         if len(elements) == length:
@@ -638,13 +626,11 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {len(elements)}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
-                        return Sum.left(ParsingError.single(f"Not a tuple: {elements}"))
+                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -664,8 +650,8 @@ def tuple_10_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]) -> Json:
         a, b, c, d, e, f, g, h, i, j = value
         return {
-            "kind": "tuple",
-            "elements": [
+            DISCRIMINATOR_KEY: "tuple",
+            VALUE_KEY: [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
