@@ -24,7 +24,7 @@ class Option(Generic[_Option]):
     class Nothing:
         pass
 
-    value: Some[_Option] | Nothing
+    value: Nothing | Some[_Option]
 
     _O = TypeVar("_O")
 
@@ -36,23 +36,23 @@ class Option(Generic[_Option]):
     def none() -> Option[_Option]:
         return Option(Option.Nothing())
 
-    def fold(self, on_some: Callable[[_Option], _O], on_nothing: Callable[[], _O], /) -> _O:
+    def fold(self, on_nothing: Callable[[], _O], on_some: Callable[[_Option], _O], /) -> _O:
         match self.value:
-            case Option.Some(value):
-                return on_some(value)
             case Option.Nothing():
                 return on_nothing()
+            case Option.Some(value):
+                return on_some(value)
         assert_never(self.value)
 
     def map(self, on_some: Callable[[_Option], _O], /) -> Option[_O]:
-        return self.fold(lambda value: Option.some(on_some(value)), Option.none)
+        return self.fold(Option.none, lambda value: Option.some(on_some(value)))
 
     @staticmethod
     def lift(on_some: Callable[[_Option], _O], /) -> Callable[[Option[_Option]], Option[_O]]:
         return lambda option: option.map(on_some)
 
     def flat_map(self, on_some: Callable[[_Option], Option[_O]], /) -> Option[_O]:
-        return self.fold(on_some, Option.none)
+        return self.fold(Option.none, on_some)
 
     @staticmethod
     def flatten(to_flatten: Option[Option[_Option]], /) -> Option[_Option]:
