@@ -13,7 +13,12 @@ module Patterns =
       | Int32Operations.Plus v -> v.v1 |> sum.Return
       | _ -> failwith "Expected Plus operation"
 
-    static member AsMinus(op: Int32Operations<'ext>) : Sum<unit, Errors> =
+    static member AsTimes(op: Int32Operations<'ext>) : Sum<Option<int32>, Errors> =
+      match op with
+      | Int32Operations.Times v -> v.v1 |> sum.Return
+      | _ -> failwith "Expected Plus operation"
+
+    static member AsMinus(op: Int32Operations<'ext>) : Sum<Option<int32>, Errors> =
       match op with
       | Int32Operations.Minus v -> v.v1 |> sum.Return
       | _ -> failwith "Expected Minus operation"

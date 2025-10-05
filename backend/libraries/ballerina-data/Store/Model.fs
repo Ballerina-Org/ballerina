@@ -1,7 +1,5 @@
 ﻿namespace Ballerina.Data.Store
 
-open Ballerina.DSL.Next.Types
-
 module Model =
 
   open System
@@ -10,37 +8,34 @@ module Model =
   open Ballerina.State.WithError
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.Data.Spec.Model
-  open Ballerina.Data.Spec.Api.Model
   open Ballerina.Data.Store.Api.Model
   open Ballerina.Data.Schema.Model
-  open FSharp.Data
+  open Ballerina.DSL.Next.StdLib.Extensions
+  open Ballerina.DSL.Next.Types
 
   type TenantId = TenantId of Guid
 
-  type Seeds<'T, 'valueExtension> = SpecData<'T, 'valueExtension>
+  type Seeds = SpecData<TypeValue, ValueExt>
 
-  type Seeder<'T, 'valueExtension> = Schema<'T> -> Sum<Seeds<'T, 'valueExtension>, Errors>
-
-  type SpecState<'T, 'valueExtension> =
-    { Spec: Spec
-      Data: SpecData<'T, 'valueExtension>
-      Bridge: JsonValue option
-      Config: Config }
+  type Seeder = Schema<TypeValue> -> Sum<Seeds, Errors>
 
   type TenantStore = { ListTenants: unit -> TenantId list }
 
-  type SpecsStore<'valueExtension> =
-    { GetSpecApi: TenantId -> SpecApi
-      GetDataApi: TenantId -> SpecName -> SpecDataApi<'valueExtension> }
+  type SpecsStore =
+    { GetSpecApi: TenantId -> Sum<SpecApi<TypeValue, ValueExt>, Errors>
+      GetDataApi: TenantId -> SpecName -> Sum<SpecDataApi<ValueExt>, Errors> }
 
-  type Workspace<'T, 'valueExtension> =
+  type Workspace =
     { SeedSpecEval:
-        TenantId * Spec * Seeder<TypeValue, 'valueExtension> * TypeExprEvalState
-          -> State<unit, TypeExprEvalContext, TypeExprEvalState, Errors>
-      SeedSpec: TenantId * Spec * SpecData<'T, 'valueExtension> -> Sum<unit, Errors>
-      GetSeeds: TenantId -> SpecName -> Sum<SpecData<'T, 'valueExtension>, Errors> }
+        TenantId
+          -> SpecName
+          -> Seeder
+          -> TypeExprEvalState
+          -> State<Seeds, TypeExprEvalContext, TypeExprEvalState, Errors>
+      SeedSpec: TenantId * SpecName * SpecData<TypeValue, ValueExt> -> Sum<unit, Errors>
+      GetSeeds: TenantId -> SpecName -> Sum<Seeds, Errors> }
 
-  and Store<'T, 'valueExtension> =
-    { Specs: SpecsStore<'valueExtension>
+  and Store =
+    { Specs: SpecsStore
       Tenants: TenantStore
-      Workspace: Workspace<'T, 'valueExtension> }
+      Workspace: Workspace }

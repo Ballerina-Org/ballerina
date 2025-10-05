@@ -499,17 +499,19 @@ module Runner =
       state {
         let! lookupApiFields = lookupApiJson |> JsonValue.AsRecord |> state.OfSum
 
-        let! streamsJson, onesJson, manysJson =
-          state.All3
-            (state.Either (lookupApiFields |> state.TryFindField "streams") (state.Return(JsonValue.Record [||])))
-            (state.Either (lookupApiFields |> state.TryFindField "one") (state.Return(JsonValue.Record [||])))
-            (state.Either (lookupApiFields |> state.TryFindField "many") (state.Return(JsonValue.Record [||])))
+        let! streamsJson =
+          state.Either (lookupApiFields |> state.TryFindField "streams") (state.Return(JsonValue.Record [||]))
 
-        let! streamsFields, onesFields, manysFields =
-          state.All3
-            (streamsJson |> JsonValue.AsRecord |> state.OfSum)
-            (onesJson |> JsonValue.AsRecord |> state.OfSum)
-            (manysJson |> JsonValue.AsRecord |> state.OfSum)
+        let! onesJson = state.Either (lookupApiFields |> state.TryFindField "one") (state.Return(JsonValue.Record [||]))
+
+        let! manysJson =
+          state.Either (lookupApiFields |> state.TryFindField "many") (state.Return(JsonValue.Record [||]))
+
+        let! streamsFields = streamsJson |> JsonValue.AsRecord |> state.OfSum
+
+        let! onesFields = onesJson |> JsonValue.AsRecord |> state.OfSum
+
+        let! manysFields = manysJson |> JsonValue.AsRecord |> state.OfSum
 
         let! streams =
           state.All(

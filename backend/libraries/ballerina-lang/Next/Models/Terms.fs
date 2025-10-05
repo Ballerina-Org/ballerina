@@ -19,7 +19,7 @@ module Model =
     | TypeApply of Expr<'T> * 'T
     | Lambda of Var * Option<'T> * Expr<'T>
     | Apply of Expr<'T> * Expr<'T>
-    | Let of Var * Expr<'T> * Expr<'T>
+    | Let of Var * Option<'T> * Expr<'T> * Expr<'T>
     | TypeLet of string * 'T * Expr<'T>
     | RecordCons of List<Identifier * Expr<'T>>
     | UnionCons of Identifier * Expr<'T>

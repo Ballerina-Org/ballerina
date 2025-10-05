@@ -8,13 +8,13 @@ module LambdaTypeExpr =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "lambda"
-  let private fieldKey = "lambda"
+  let private discriminator = "lambda"
 
   type TypeExpr with
     static member FromJsonLambda(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun lambdaFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
         sum {
           let! param, body = lambdaFields |> JsonValue.AsPair
           let! param = param |> TypeParameter.FromJson
@@ -27,4 +27,4 @@ module LambdaTypeExpr =
       fun (param, body) ->
         let param = param |> TypeParameter.ToJson
         let body = body |> rootToJson
-        JsonValue.Array [| param; body |] |> Json.kind kindKey fieldKey
+        JsonValue.Array [| param; body |] |> Json.discriminator discriminator

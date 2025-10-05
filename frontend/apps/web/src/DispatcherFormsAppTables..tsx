@@ -97,8 +97,10 @@ export const DispatcherFormsAppTables = (props: {}) => {
   const [tablesRunnerState, setTablesRunnerState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
   );
 
   const [entity, setEntity] = useState<
@@ -300,7 +302,6 @@ export const DispatcherFormsAppTables = (props: {}) => {
                           DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
                         enumOptionsSources: UsersSetupFromConfigApis.enumApis,
                         lookupSources: UsersSetupFromConfigApis.lookupSources,
-                        entityApis: DispatchPersonFromConfigApis.entityApis,
                         tableApiSources:
                           UsersSetupFromConfigApis.tableApiSources,
                       },
@@ -310,6 +311,8 @@ export const DispatcherFormsAppTables = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
                   }}
                   setState={setTablesRunnerState}
                   view={unit}

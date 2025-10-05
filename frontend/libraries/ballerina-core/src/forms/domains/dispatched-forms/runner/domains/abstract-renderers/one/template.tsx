@@ -26,6 +26,12 @@ import {
   BaseFlags,
   Sum,
   ValueStreamPosition,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
+  Updater,
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -60,8 +66,26 @@ export const OneAbstractRenderer = <
   Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 >(
-  DetailsRenderer: Template<any, any, any, any>,
-  PreviewRenderer: Template<any, any, any, any> | undefined,
+  DetailsRenderer: Template<
+    RecordAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      RecordAbstractRendererState,
+    RecordAbstractRendererState,
+    RecordAbstractRendererForeignMutationsExpected<Flags>
+  >,
+  PreviewRenderer:
+    | Template<
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          RecordAbstractRendererState,
+        RecordAbstractRendererState,
+        RecordAbstractRendererForeignMutationsExpected<Flags>
+      >
+    | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   oneEntityType: RecordType<any>,
@@ -103,6 +127,13 @@ export const OneAbstractRenderer = <
         return undefined;
       }
 
+      if (!PredicateValue.Operations.IsRecord(_.value.value)) {
+        console.error(
+          `${_.domNodeAncestorPath + "[one][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
+        );
+        return undefined;
+      }
+
       const state =
         _.customFormState?.detailsState ??
         RecordAbstractRendererState.Default.zero();
@@ -110,7 +141,11 @@ export const OneAbstractRenderer = <
       return {
         value: _.value.value,
         ...state,
-        disabled: _.disabled,
+        readOnly: _.readOnly || _.globallyReadOnly,
+        globallyReadOnly: _.globallyReadOnly,
+        locked: _.locked,
+        disabled: _.disabled || _.globallyDisabled,
+        globallyDisabled: _.globallyDisabled,
         bindings: _.bindings,
         extraContext: _.extraContext,
         type: oneEntityType,
@@ -126,7 +161,7 @@ export const OneAbstractRenderer = <
       .mapState(
         (
           _: BasicUpdater<RecordAbstractRendererState>,
-        ): BasicUpdater<OneAbstractRendererState> =>
+        ): Updater<OneAbstractRendererState> =>
           OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
             _,
           ),
@@ -194,7 +229,11 @@ export const OneAbstractRenderer = <
           return {
             ...state,
             value,
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
+            locked: _.locked,
             bindings: _.bindings,
             extraContext: _.extraContext,
             type: oneEntityType,
@@ -210,7 +249,7 @@ export const OneAbstractRenderer = <
           .mapState(
             (
               _: BasicUpdater<RecordAbstractRendererState>,
-            ): BasicUpdater<OneAbstractRendererState> =>
+            ): Updater<OneAbstractRendererState> =>
               OneAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
                 MapRepo.Updaters.upsert(
                   id,

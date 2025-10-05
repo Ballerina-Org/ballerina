@@ -12,6 +12,7 @@ import {
   Bindings,
   PredicateValue,
   Synchronized,
+  DispatchParsedType,
 } from "../../../../../../../../main";
 import { DispatchCreateFormRunner } from "./coroutines/runner";
 import { Map } from "immutable";
@@ -19,17 +20,22 @@ import { Map } from "immutable";
 export const DispatchCreateFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() =>
   Template.Default<
     DispatchCreateFormLauncherContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
-    DispatchCreateFormLauncherState<T, Flags>,
+    DispatchCreateFormLauncherState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >,
     DispatchCreateFormLauncherForeignMutationsExpected<T>
   >((props) => {
     const entity = props.context.entity.sync;
@@ -75,19 +81,28 @@ export const DispatchCreateFormLauncherTemplate = <
           ...props.context.formState,
           value: entity.value,
           locked: false,
-          disabled: false,
+          disabled: props.context.globallyDisabled,
+          globallyDisabled: props.context.globallyDisabled,
+          readOnly: props.context.globallyReadOnly,
+          globallyReadOnly: props.context.globallyReadOnly,
+          type: DispatchParsedType.Default.primitive("unit"), // currently unused here
           bindings,
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
           lookupTypeAncestorNames: [],
+          customPresentationContext: undefined,
+          typeAncestors: [],
         }}
         setState={(stateUpdater) =>
           props.setState(
-            DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.formState(
-              stateUpdater,
-            ),
+            DispatchCreateFormLauncherState<
+              T,
+              Flags,
+              CustomPresentationContext,
+              ExtraContext
+            >().Updaters.Core.formState(stateUpdater),
           )
         }
         view={unit}
@@ -99,7 +114,9 @@ export const DispatchCreateFormLauncherTemplate = <
             props.setState(
               DispatchCreateFormLauncherState<
                 T,
-                Flags
+                Flags,
+                CustomPresentationContext,
+                ExtraContext
               >().Updaters.Template.entity(pvUpdater.value),
             );
           },
@@ -110,7 +127,7 @@ export const DispatchCreateFormLauncherTemplate = <
     DispatchCreateFormRunner<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >(),
   ]);

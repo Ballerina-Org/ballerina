@@ -59,16 +59,16 @@ let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJ
 [<Test>]
 let ``Dsl:Type.Kind json round-trip`` () =
   let testCases =
-    [ ("""{"kind": "symbol"}""", Kind.Symbol)
-      ("""{"kind": "star"}""", Kind.Star)
-      ("""{
-            "kind": "arrow",
-            "arrow": {
-              "param": { "kind": "star" },
-              "returnType": { "kind": "symbol" }
+    [ """{"discriminator": "symbol"}""", Kind.Symbol
+      """{"discriminator": "star"}""", Kind.Star
+      """{
+            "discriminator": "arrow",
+            "value": {
+              "param": { "discriminator": "star" },
+              "returnType": { "discriminator": "symbol" }
             }
           }""",
-       Kind.Arrow(Kind.Star, Kind.Symbol)) ]
+      Kind.Arrow(Kind.Star, Kind.Symbol) ]
 
   for (json, expected) in testCases do
     (expected, JsonValue.Parse json)
@@ -89,7 +89,7 @@ let ``Dsl:Type.Symbol json round-trip`` () =
 [<Test>]
 let ``Dsl:Type.Parameter json round-trip`` () =
   let json =
-    """{"name": "T", "kind": { "kind":"arrow", "arrow": { "param": { "kind": "symbol" }, "returnType": { "kind": "star" } } } }"""
+    """{"name": "T", "kind": { "discriminator":"arrow", "value": { "param": { "discriminator": "symbol" }, "returnType": { "discriminator": "star" } } } }"""
 
   let expected = TypeParameter.Create("T", Kind.Arrow(Kind.Symbol, Kind.Star))
 

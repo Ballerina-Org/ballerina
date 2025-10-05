@@ -1,18 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-    <!-- <PropertyGroup>
-        <OutputType>Exe</OutputType>
-    </PropertyGroup> -->
-
-    <ItemGroup>
-        <Compile Include="Playground.fs" />
-    </ItemGroup>
-    <ItemGroup>
-        <!--
-        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
-        <PackageReference Include="FSharp.Data" Version="6.6.0" />
-    </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\ballerina-cat\ballerina-cat.fsproj" />
         <ProjectReference Include="..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
@@ -24,6 +10,4 @@
         <ProjectReference Include=".\Stdlib\ballerina-lang-stdlib.fsproj" />
         <ProjectReference Include=".\Syntax\ballerina-lang-parser.fsproj" />
     </ItemGroup>
-
-
 </Project>

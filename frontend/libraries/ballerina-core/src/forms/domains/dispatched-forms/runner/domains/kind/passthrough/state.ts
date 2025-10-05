@@ -1,20 +1,18 @@
 import {
   DispatchCommonFormRunnerState,
   DispatchFormRunnerContext,
-  DispatchFormRunnerState,
   DispatchInjectablesTypes,
   PassthroughLauncherRef,
   simpleUpdater,
-  Unit,
 } from "../../../../../../../../main";
 
 export type DispatchPassthroughFormLauncherContext<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-  CustomPresentationContexts = Unit,
-  ExtraContext = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 > = Omit<
-  DispatchFormRunnerContext<T, Flags, CustomPresentationContexts, ExtraContext>,
+  DispatchFormRunnerContext<T, Flags, CustomPresentationContext, ExtraContext>,
   "launcherRef"
 > & {
   launcherRef: PassthroughLauncherRef<Flags>;
@@ -22,24 +20,53 @@ export type DispatchPassthroughFormLauncherContext<
 
 export type DispatchPassthroughFormLauncherState<
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
-> = DispatchCommonFormRunnerState<T, Flags>;
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
+> = DispatchCommonFormRunnerState<
+  T,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext
+>;
 
 export type DispatchPassthroughFormLauncherForeignMutationsExpected<T> = {};
 
 export const DispatchPassthroughFormLauncherState = <
   T extends DispatchInjectablesTypes<T>,
-  Flags = Unit,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
 >() => ({
-  Default: (): DispatchPassthroughFormLauncherState<T, Flags> => ({
-    ...DispatchCommonFormRunnerState<T, Flags>().Default(),
+  Default: (): DispatchPassthroughFormLauncherState<
+    T,
+    Flags,
+    CustomPresentationContext,
+    ExtraContext
+  > => ({
+    ...DispatchCommonFormRunnerState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >().Default(),
   }),
   Updaters: {
-    ...simpleUpdater<DispatchPassthroughFormLauncherState<T, Flags>>()(
-      "status",
-    ),
-    ...simpleUpdater<DispatchPassthroughFormLauncherState<T, Flags>>()(
-      "formState",
-    ),
+    ...simpleUpdater<
+      DispatchPassthroughFormLauncherState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >
+    >()("status"),
+    ...simpleUpdater<
+      DispatchPassthroughFormLauncherState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >
+    >()("formState"),
   },
 });

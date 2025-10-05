@@ -31,6 +31,7 @@ open Ballerina.DSL.Next.StdLib.Bool
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
+open Ballerina.DSL.Next.StdLib.List
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -41,7 +42,23 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-type private PrimitiveExt =
+type ValueExt =
+  | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt>
+
+  static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
+  static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
+
+and ListExt =
+  | ListOperations of ListOperations<ValueExt>
+  | ListValues of ListValues<ValueExt>
+
+and OptionExt =
+  | OptionOperations of OptionOperations<ValueExt>
+  | OptionValues of OptionValues<ValueExt>
+  | OptionConstructors of OptionConstructors
+
+and PrimitiveExt =
+  | BoolOperations of BoolOperations<ValueExt>
   | Int32Operations of Int32Operations<ValueExt>
   | Int64Operations of Int64Operations<ValueExt>
   | Float32Operations of Float32Operations<ValueExt>
@@ -49,156 +66,160 @@ type private PrimitiveExt =
   | DecimalOperations of DecimalOperations<ValueExt>
   | DateOnlyOperations of DateOnlyOperations<ValueExt>
   | DateTimeOperations of DateTimeOperations<ValueExt>
+  | TimeSpanOperations of TimeSpanOperations<ValueExt>
   | StringOperations of StringOperations<ValueExt>
   | GuidOperations of GuidOperations<ValueExt>
-  | BoolOperations of BoolOperations<ValueExt>
-  | TimeSpanOperations of TimeSpanOperations<ValueExt>
 
-and private OptionExt =
-  | OptionOperations of OptionOperations<ValueExt>
-  | OptionValues of OptionValues<ValueExt>
-  | OptionConstructors of OptionConstructors
+let listExtension =
+  ListExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice1Of3(ListValues x) -> Some x
+        | _ -> None)
+      Set = ListValues >> Choice1Of3 >> ValueExt.ValueExt }
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice1Of3(ListOperations x) -> Some x
+        | _ -> None)
+      Set = ListOperations >> Choice1Of3 >> ValueExt.ValueExt }
 
-and private ValueExt =
-  | ValueExt of Choice<OptionExt, PrimitiveExt>
-
-  static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
-  static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
-
-let private optionExtension =
+let optionExtension =
   OptionExtension<ValueExt>
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice1Of2(OptionValues x) -> Some x
+        | Choice2Of3(OptionValues x) -> Some x
         | _ -> None)
-      Set = OptionValues >> Choice1Of2 >> ValueExt.ValueExt }
+      Set = OptionValues >> Choice2Of3 >> ValueExt.ValueExt }
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice1Of2(OptionConstructors x) -> Some x
+        | Choice2Of3(OptionConstructors x) -> Some x
         | _ -> None)
-      Set = OptionConstructors >> Choice1Of2 >> ValueExt.ValueExt }
+      Set = OptionConstructors >> Choice2Of3 >> ValueExt.ValueExt }
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice1Of2(OptionOperations x) -> Some x
+        | Choice2Of3(OptionOperations x) -> Some x
         | _ -> None)
-      Set = OptionOperations >> Choice1Of2 >> ValueExt.ValueExt }
+      Set = OptionOperations >> Choice2Of3 >> ValueExt.ValueExt }
 
-let private int32Extension =
-  Int32Extension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(Int32Operations x) -> Some x
-        | _ -> None)
-      Set = Int32Operations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private int64Extension =
-  Int64Extension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(Int64Operations x) -> Some x
-        | _ -> None)
-      Set = Int64Operations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private float32Extension =
-  Float32Extension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(Float32Operations x) -> Some x
-        | _ -> None)
-      Set = Float32Operations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private float64Extension =
-  Float64Extension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(Float64Operations x) -> Some x
-        | _ -> None)
-      Set = Float64Operations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private decimalExtension =
-  DecimalExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(DecimalOperations x) -> Some x
-        | _ -> None)
-      Set = DecimalOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private dateOnlyExtension =
-  DateOnlyExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(DateOnlyOperations x) -> Some x
-        | _ -> None)
-      Set = DateOnlyOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private dateTimeExtension =
-  DateTimeExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(DateTimeOperations x) -> Some x
-        | _ -> None)
-      Set = DateTimeOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private timeSpanExtension =
-  TimeSpanExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(TimeSpanOperations x) -> Some x
-        | _ -> None)
-      Set = TimeSpanOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private stringExtension =
-  StringExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(StringOperations x) -> Some x
-        | _ -> None)
-      Set = StringOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private guidExtension =
-  GuidExtension<ValueExt>
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of2(GuidOperations x) -> Some x
-        | _ -> None)
-      Set = GuidOperations >> Choice2Of2 >> ValueExt.ValueExt }
-
-let private boolExtension =
+let boolExtension =
   BoolExtension<ValueExt>
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice2Of2(BoolOperations x) -> Some x
+        | Choice3Of3(BoolOperations x) -> Some x
         | _ -> None)
-      Set = BoolOperations >> Choice2Of2 >> ValueExt.ValueExt }
+      Set = BoolOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
-let private context =
+let int32Extension =
+  Int32Extension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(Int32Operations x) -> Some x
+        | _ -> None)
+      Set = Int32Operations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let int64Extension =
+  Int64Extension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(Int64Operations x) -> Some x
+        | _ -> None)
+      Set = Int64Operations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let float32Extension =
+  Float32Extension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(Float32Operations x) -> Some x
+        | _ -> None)
+      Set = Float32Operations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let float64Extension =
+  Float64Extension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(Float64Operations x) -> Some x
+        | _ -> None)
+      Set = Float64Operations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let decimalExtension =
+  DecimalExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(DecimalOperations x) -> Some x
+        | _ -> None)
+      Set = DecimalOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let dateOnlyExtension =
+  DateOnlyExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(DateOnlyOperations x) -> Some x
+        | _ -> None)
+      Set = DateOnlyOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let dateTimeExtension =
+  DateTimeExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(DateTimeOperations x) -> Some x
+        | _ -> None)
+      Set = DateTimeOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let timeSpanExtension =
+  TimeSpanExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(TimeSpanOperations x) -> Some x
+        | _ -> None)
+      Set = TimeSpanOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let stringExtension =
+  StringExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(StringOperations x) -> Some x
+        | _ -> None)
+      Set = StringOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let guidExtension =
+  GuidExtension<ValueExt>
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice3Of3(GuidOperations x) -> Some x
+        | _ -> None)
+      Set = GuidOperations >> Choice3Of3 >> ValueExt.ValueExt }
+
+let context =
   LanguageContext<ValueExt>.Empty
+  |> (listExtension |> TypeExtension.RegisterLanguageContext)
   |> (optionExtension |> TypeExtension.RegisterLanguageContext)
+  |> (boolExtension |> OperationsExtension.RegisterLanguageContext)
   |> (int32Extension |> OperationsExtension.RegisterLanguageContext)
   |> (int64Extension |> OperationsExtension.RegisterLanguageContext)
   |> (float32Extension |> OperationsExtension.RegisterLanguageContext)
   |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
+  |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
   |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
   |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
   |> (timeSpanExtension |> OperationsExtension.RegisterLanguageContext)
   |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
   |> (guidExtension |> OperationsExtension.RegisterLanguageContext)
-  |> (boolExtension |> OperationsExtension.RegisterLanguageContext)
-  |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
 
 [<Test>]
 let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
@@ -217,7 +238,7 @@ let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
     let actual = Expr.Eval program |> Reader.Run initialContext
 
     let expected: Value<TypeValue, ValueExt> =
-      Choice1Of2(OptionConstructors Option_Some) |> ValueExt |> Ext
+      Choice2Of3(OptionConstructors Option_Some) |> ValueExt |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
@@ -249,7 +270,7 @@ let ``LangNext-ExprEval construction of custom Option.Some succeeds`` () =
     let actual = Expr.Eval program |> Reader.Run initialContext
 
     let expected: Value<TypeValue, ValueExt> =
-      Choice1Of2(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
+      Choice2Of3(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
       |> ValueExt
       |> Ext
 
@@ -283,7 +304,7 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
     let actual = Expr.Eval program |> Reader.Run initialContext
 
     let expected: Value<TypeValue, ValueExt> =
-      Choice1Of2(OptionValues(Option None)) |> ValueExt |> Ext
+      Choice2Of3(OptionValues(Option None)) |> ValueExt |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
@@ -398,11 +419,37 @@ let ``Int32 addition operation works`` () =
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
 
 [<Test>]
+let ``Int32 multiplication operation works`` () =
+  let program =
+    Expr.Apply(
+      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "*")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Primitive(PrimitiveValue.Int32 3)
+    )
+
+  let typeCheckResult =
+    Expr.TypeCheck program
+    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+  match typeCheckResult with
+  | Left((typedProgram, typeValue, _), _) ->
+    Assert.That(typeValue, Is.EqualTo(TypeValue.CreateInt32()))
+
+    let evalResult = Expr.Eval typedProgram |> Reader.Run context.ExprEvalContext
+
+    match evalResult with
+    | Left result ->
+      match result with
+      | Value.Primitive(PrimitiveValue.Int32 15) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected Int32 15 but got {result}"
+    | Right err -> Assert.Fail $"Evaluation failed: {err}"
+  | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
+
+[<Test>]
 let ``Int32 subtraction operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "+")), Expr.Primitive(PrimitiveValue.Int32 10)),
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "-")), Expr.Primitive(PrimitiveValue.Int32 3))
+      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "-")), Expr.Primitive(PrimitiveValue.Int32 10)),
+      Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =

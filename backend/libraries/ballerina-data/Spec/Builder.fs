@@ -8,7 +8,7 @@ module Builder =
   open Ballerina.Data.Spec.Model
   open Ballerina.State.WithError
 
-  let typeContextFromSpecBody (spec: SpecFormat) : State<unit, TypeExprEvalContext, TypeExprEvalState, Errors> =
+  let typeContextFromSpecBody (spec: V2Format) : State<unit, TypeExprEvalContext, TypeExprEvalState, Errors> =
     spec.TypesV2
     |> List.map (fun (name, expr) ->
       state {

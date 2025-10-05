@@ -11,13 +11,13 @@ module UnionDes =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "union-match"
-  let private fieldKey = "union-match"
+  let private discriminator = "union-match"
 
   type Expr<'T> with
     static member FromJsonUnionDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
-      reader.AssertKindAndContinueWithField value kindKey fieldKey (fun unionDesJson ->
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionDesJson ->
         reader {
           let! caseHandlers = unionDesJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -60,5 +60,5 @@ module UnionDes =
             })
           |> reader.All
 
-        return JsonValue.Array(List.toArray cases) |> Json.kind kindKey fieldKey
+        return JsonValue.Array(List.toArray cases) |> Json.discriminator discriminator
       }

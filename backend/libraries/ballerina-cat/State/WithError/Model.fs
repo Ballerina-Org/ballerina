@@ -105,29 +105,62 @@ module WithError =
     member _.Throw(e: 'e) = State(fun _ -> Sum.Right(e, None))
     member state.Delay p = state.Bind((state.Return()), p)
 
-    member state.For(seq, body: _ -> State<Unit, _, _, _>) =
-      match seq |> Seq.tryHead with
-      | Some first -> state.Combine(body first, state.For(seq |> Seq.tail, body))
-      | None -> state { return () }
-
-    member state.Any<'a, 'c, 's, 'e>
-      (e: {| concat: 'e * 'e -> 'e |}, l: NonEmptyList<State<'a, 'c, 's, 'e>>)
+    member state.AnyAcc<'a, 'c, 's, 'e>
+      (e: {| concat: 'e * 'e -> 'e |}, e0: Option<'e>, l: NonEmptyList<State<'a, 'c, 's, 'e>>)
       : State<'a, 'c, 's, 'e> =
       state {
         match l with
         | NonEmptyList(p, ps) ->
           match! p |> state.Catch with
-          | Left result -> result
-          | Right error ->
+          | Left result -> return result
+          | Right e1 ->
+            let e1 =
+              match e0 with
+              | Some e0 -> e.concat (e0, e1)
+              | None -> e1
+
             match ps with
-            | [] -> return! error |> state.Throw
-            | p' :: ps' ->
-              match! state.Any(e, NonEmptyList.OfList(p', ps')) |> state.Catch with
-              | Left result -> result
-              | Right error' ->
-                let finalError = e.concat (error, error')
-                return! finalError |> state.Throw
+            | [] -> return! e1 |> state.Throw
+            | p' :: ps' -> return! state.AnyAcc(e, e1 |> Some, NonEmptyList.OfList(p', ps'))
       }
+
+    member state.Any<'a, 'c, 's, 'e>
+      (e: {| concat: 'e * 'e -> 'e |}, ps: NonEmptyList<State<'a, 'c, 's, 'e>>)
+      : State<'a, 'c, 's, 'e> =
+      State(fun (c: 'c, s0: 's) ->
+        let mutable s = None
+        let mutable errors: 'e option = None
+        let mutable result: 'a option = None
+
+        for p in ps do
+          if result.IsSome then
+            // Short-circuiting: if there are already errors, skip running further computations
+            ()
+          else
+            let s0 = s |> Option.defaultValue s0
+            let res = p.run (c, s0)
+
+            match res with
+            | Left(v, s1) ->
+              result <- Some v
+
+              match s1 with
+              | Some s1 -> s <- Some s1
+              | None -> ()
+            | Right(err, s1) ->
+              match s1 with
+              | Some s1 -> s <- Some s1
+              | None -> ()
+
+              errors <-
+                match errors with
+                | Some errs -> Some(e.concat (errs, err))
+                | None -> Some err
+
+        match result, errors with
+        | Some result, _ -> Left(result, s)
+        | None, Some errors -> Right(errors, None)
+        | _ -> failwith "Unreachable: NonEmptyList must have at least one element")
 
     member inline state.Any<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: NonEmptyList<State<'a, 'c, 's, 'b>>)
@@ -140,21 +173,33 @@ module WithError =
       NonEmptyList.OfList(p, ps) |> state.Any
 
     member state.All<'a, 'c, 's, 'e>(e: {| concat: 'e * 'e -> 'e |}, ps: List<State<'a, 'c, 's, 'e>>) =
-      match ps with
-      | [] -> state.Return []
-      | p :: ps ->
-        state {
-          let! p_res = p |> state.Catch
-          let! ps_res = state.All(e, ps) |> state.Catch
+      State(fun (c: 'c, s0: 's) ->
 
-          match p_res, ps_res with
-          | Left r, Left rs -> return r :: rs
-          | Right(err: 'e), Right(errs: 'e) ->
-            let allErrs = e.concat (err, errs)
-            return! state.Throw(allErrs)
-          | Right(err: 'e), _
-          | _, Right(err: 'e) -> return! state.Throw err
-        }
+        let mutable s = None
+        let mutable res = ResizeArray<'a>()
+        let mutable err_acc: Option<'e> = None
+
+        for p in ps do
+          if err_acc.IsSome then
+            ()
+          else
+            let s0 = s |> Option.defaultValue s0
+
+            match p |> State.Run(c, s0) with
+            | Left(v, s1) ->
+              res.Add v
+              s <- s1 |> Option.orElse s
+            | Right(err, s1) ->
+              err_acc <-
+                match err_acc with
+                | Some err_acc -> e.concat (err_acc, err) |> Some
+                | None -> Some err
+
+              s <- s1 |> Option.orElse s
+
+        match err_acc with
+        | None -> Left(res |> List.ofSeq, s) // all succeeded
+        | Some err -> Right(err, None))
 
     member inline state.All<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: List<State<'a, 'c, 's, 'b>>)
@@ -165,6 +210,9 @@ module WithError =
       (ps: seq<State<'a, 'c, 's, 'b>>)
       =
       state.All({| concat = 'b.Concat |}, ps |> Seq.toList)
+
+    member inline state.For(seq, body: _ -> State<Unit, _, _, _>) =
+      seq |> Seq.map body |> state.All |> state.Ignore
 
     member inline state.AllMap<'k, 'a, 'c, 's, 'b when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: Map<'k, State<'a, 'c, 's, 'b>>)
@@ -234,18 +282,7 @@ module WithError =
       (p1: State<'a, 'c, 's, 'e>)
       (p2: State<'a, 'c, 's, 'e>)
       =
-      state {
-        let! v1 = p1 |> state.Catch
-
-        match v1 with
-        | Left v -> return v
-        | Right e1 ->
-          let! v2 = p2 |> state.Catch
-
-          match v2 with
-          | Left v -> return v
-          | Right e2 -> return! state.Throw('e.Concat(e1, e2))
-      }
+      state.Any({| concat = 'e.Concat |}, NonEmptyList.OfList(p1, [ p2 ]))
 
     member inline state.Either3 (p1: State<'a, 'c, 's, 'e>) (p2: State<'a, 'c, 's, 'e>) (p3: State<'a, 'c, 's, 'e>) =
       state.Either p1 (state.Either p2 p3)

@@ -18,18 +18,20 @@ import { CreateCoBuilder } from "./builder";
 export const syncCo = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >(
   Co: ReturnType<
-    typeof CreateCoBuilder<T, Flags, CustomPresentationContexts, ExtraContext>
+    typeof CreateCoBuilder<T, Flags, CustomPresentationContext, ExtraContext>
   >,
 ) => {
   const setChecked = (checked: boolean) =>
     Co.SetState(
       DispatchCreateFormLauncherState<
         T,
-        Flags
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
       >().Updaters.Core.apiChecker.children.create(
         checked
           ? ApiResponseChecker.Updaters().toChecked()
@@ -82,14 +84,24 @@ export const syncCo = <
         50,
       ).embed(
         (_) => _.apiRunner,
-        DispatchCreateFormLauncherState<T, Flags>().Updaters.Core.apiRunner,
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >().Updaters.Core.apiRunner,
       ),
       HandleApiResponse<
-        DispatchCreateFormLauncherState<T, Flags>,
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >,
         DispatchCreateFormLauncherContext<
           T,
           Flags,
-          CustomPresentationContexts,
+          CustomPresentationContext,
           ExtraContext
         >,
         ApiErrors

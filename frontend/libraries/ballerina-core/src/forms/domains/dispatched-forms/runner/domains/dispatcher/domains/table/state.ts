@@ -24,14 +24,14 @@ export const TableDispatcher = {
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       api: string | undefined,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
@@ -47,14 +47,14 @@ export const TableDispatcher = {
     DispatchDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -72,14 +72,14 @@ export const TableDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       tableApi: string | undefined,
@@ -149,7 +149,7 @@ export const TableDispatcher = {
                                     {
                                       // Special attention - tables have a look up arg that represents the table entity type
                                       template: LookupTypeAbstractRenderer<
-                                        CustomPresentationContexts,
+                                        CustomPresentationContext,
                                         Flags,
                                         ExtraContext
                                       >(
@@ -195,6 +195,9 @@ export const TableDispatcher = {
                       type: DispatchParsedType<any>;
                       GetDefaultValue: () => PredicateValue;
                       GetDefaultState: () => any;
+                      label: string | undefined;
+                      tooltip: string | undefined;
+                      details: string | undefined;
                     }
                   > = (() => {
                     if (filtering == undefined) {
@@ -222,6 +225,9 @@ export const TableDispatcher = {
                             columnFilters.displayType,
                             columnFilters.displayRenderer,
                           ),
+                        label: columnFilters.label,
+                        tooltip: columnFilters.tooltip,
+                        details: columnFilters.details,
                       }))
                       .filter(
                         (dispatchedFilterRenderer) =>
@@ -247,6 +253,9 @@ export const TableDispatcher = {
                           (
                             dispatchedFilterRenderer.GetDefaultState() as Value<any>
                           ).value,
+                        label: dispatchedFilterRenderer.label,
+                        tooltip: dispatchedFilterRenderer.tooltip,
+                        details: dispatchedFilterRenderer.details,
                       }));
                   })();
 

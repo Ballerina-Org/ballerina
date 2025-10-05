@@ -10,18 +10,13 @@ import { EditCoBuilder } from "./builder";
 export const DispatchEditFormRunner = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() => {
-  const Co = EditCoBuilder<
-    T,
-    Flags,
-    CustomPresentationContexts,
-    ExtraContext
-  >();
+  const Co = EditCoBuilder<T, Flags, CustomPresentationContext, ExtraContext>();
 
-  const init = initCo<T, Flags, CustomPresentationContexts, ExtraContext>(Co);
-  const sync = syncCo<T, Flags, CustomPresentationContexts, ExtraContext>(Co);
+  const init = initCo<T, Flags, CustomPresentationContext, ExtraContext>(Co);
+  const sync = syncCo<T, Flags, CustomPresentationContext, ExtraContext>(Co);
 
   return Co.Template<DispatchEditFormLauncherForeignMutationsExpected<T>>(
     init,

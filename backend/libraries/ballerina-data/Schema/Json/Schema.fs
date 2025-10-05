@@ -257,13 +257,13 @@ module Schema =
               let! name = name |> JsonValue.AsString
               let! descriptor = b |> Map.tryFindWithError "descriptor" "lookup.backward" "descriptor"
               let! descriptor = DirectedLookupDescriptor.FromJson descriptor
-              return name, descriptor
+              return { LookupName = name }, descriptor
             })
           |> sum.RunOption
 
         return
-          { Source = source
-            Target = target
+          { Source = { EntityName = source }
+            Target = { EntityName = target }
             Forward = forward
             Backward = backward }
       }
@@ -275,13 +275,13 @@ module Schema =
         lookup.Backward
         |> Option.map (fun (name, descriptor) ->
           JsonValue.Record
-            [| "name", JsonValue.String name
+            [| "name", JsonValue.String name.LookupName
                "descriptor", DirectedLookupDescriptor.ToJson descriptor |])
         |> Option.defaultValue JsonValue.Null
 
       JsonValue.Record
-        [| "source", JsonValue.String lookup.Source
-           "target", JsonValue.String lookup.Target
+        [| "source", JsonValue.String lookup.Source.EntityName
+           "target", JsonValue.String lookup.Target.EntityName
            "forward", forwardJson
            "backward", backwardJson |]
 
@@ -293,8 +293,20 @@ module Schema =
         let! entities = jsonValue |> Map.tryFindWithError "entities" "root" "entities" |> reader.OfSum
         let! entities = entities |> JsonValue.AsRecordMap |> reader.OfSum
 
+        let entities =
+          entities
+          |> Map.toList
+          |> List.map (fun (k, v) -> { EntityName = k }, v)
+          |> Map.ofList
+
         let! lookups = jsonValue |> Map.tryFindWithError "lookups" "root" "lookups" |> reader.OfSum
         let! lookups = lookups |> JsonValue.AsRecordMap |> reader.OfSum
+
+        let lookups =
+          lookups
+          |> Map.toList
+          |> List.map (fun (k, v) -> { LookupName = k }, v)
+          |> Map.ofList
 
         let! entitiesMap =
           entities
@@ -332,10 +344,15 @@ module Schema =
           schema.Lookups
           |> Map.map (fun _ lookup -> LookupDescriptor.ToJson lookup)
           |> Map.toArray
+          |> Array.map (fun (k, v) -> k.LookupName, v)
           |> JsonValue.Record
 
         return
           JsonValue.Record
-            [| "entities", entitiesJson |> Map.toArray |> JsonValue.Record
+            [| "entities",
+               entitiesJson
+               |> Map.toArray
+               |> Array.map (fun (k, v) -> k.EntityName, v)
+               |> JsonValue.Record
                "lookups", lookupsJson |]
       }

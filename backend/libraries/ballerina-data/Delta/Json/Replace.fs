@@ -11,11 +11,12 @@ module Replace =
   open Ballerina.DSL.Next.Terms.Json
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
   type Delta<'valueExtension> with
     static member FromJsonReplace(json: JsonValue) : DeltaParserReader<'valueExtension> =
-      reader.AssertKindAndContinueWithField json "replace" "replace" (fun json ->
+      Reader.assertDiscriminatorAndContinueWithValue "replace" json (fun json ->
         reader {
           let! ctx = reader.GetContext()
           let! value = ctx json |> reader.OfSum
@@ -26,5 +27,5 @@ module Replace =
       reader {
         let! rootToJson = reader.GetContext()
         let! value = value |> rootToJson |> reader.OfSum
-        return value |> Json.kind "replace" "replace"
+        return value |> Json.discriminator "replace"
       }

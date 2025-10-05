@@ -55,11 +55,11 @@ let ``Delta.Multiple json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"multiple",
-      "multiple": [
+      "discriminator":"multiple",
+      "value": [
         {
-        "kind":"multiple",
-        "multiple": [
+        "discriminator":"multiple",
+        "value": [
         ]
         }
       ]
@@ -75,8 +75,8 @@ let ``Delta.Replace json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"replace",
-      "replace": {"kind":"int32","int32":"99"}
+      "discriminator":"replace",
+      "value": {"discriminator":"int32","value":"99"}
       }
     """
     |> JsonValue.Parse
@@ -94,11 +94,11 @@ let ``Delta.Record json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"record",
-      "record": ["Foo", 
+      "discriminator":"record",
+      "value": ["Foo", 
         {
-          "kind":"replace",
-          "replace": {"kind":"int32","int32":"99"}
+          "discriminator":"replace",
+          "value": {"discriminator":"int32","value":"99"}
         }
       ]
       }
@@ -116,11 +116,11 @@ let ``Delta.Union json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"union",
-      "union": ["Case1", 
+      "discriminator":"union",
+      "value": ["Case1", 
         {
-          "kind":"replace",
-          "replace": {"kind":"int32","int32":"99"}
+          "discriminator":"replace",
+          "value": {"discriminator":"int32","value":"99"}
         }
       ]
       }
@@ -137,11 +137,11 @@ let ``Delta.Tuple json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"tuple",
-      "tuple": [3, 
+      "discriminator":"tuple",
+      "value": [3, 
         {
-          "kind":"replace",
-          "replace": {"kind":"int32","int32":"99"}
+          "discriminator":"replace",
+          "value": {"discriminator":"int32","value":"99"}
         }
       ]
       }
@@ -158,11 +158,11 @@ let ``Delta.Sum json round-trip`` () =
   let json =
     """ 
       {
-      "kind":"sum",
-      "sum": [3, 
+      "discriminator":"sum",
+      "value": [3, 
         {
-          "kind":"replace",
-          "replace": {"kind":"int32","int32":"99"}
+          "discriminator":"replace",
+          "value": {"discriminator":"int32","value":"99"}
         }
       ]
       }

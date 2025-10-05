@@ -36,6 +36,7 @@ module Model =
   and TypeExpr =
     | Primitive of PrimitiveType
     | Let of string * TypeExpr * TypeExpr
+    | LetSymbols of List<string> * TypeExpr
     | NewSymbol of string
     | Lookup of Identifier
     | Apply of TypeExpr * TypeExpr

@@ -115,8 +115,10 @@ export const TraversalDispatchTest = (props: {}) => {
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -418,7 +420,6 @@ export const TraversalDispatchTest = (props: {}) => {
                       apiSources: {
                         infiniteStreamSources: TraversalPersonApis.streamApis,
                         enumOptionsSources: TraversalPersonApis.enumApis,
-                        entityApis: TraversalPersonApis.entityApis,
                         tableApiSources: TraversalPersonApis.tableApiSources,
                         lookupSources: TraversalPersonApis.lookupSources,
                       },
@@ -428,6 +429,8 @@ export const TraversalDispatchTest = (props: {}) => {
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}

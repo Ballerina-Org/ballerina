@@ -10,13 +10,13 @@ module TypeIdentifier =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Json
   open FSharp.Data
+  open Ballerina.DSL.Next.Json.Keys
 
-  let private kindKey = "id"
-  let private fieldKey = "name"
+  let private discriminator = "id"
 
   type Identifier with
-    static member FromJson: JsonValue -> Sum<Identifier, Errors> =
-      sum.AssertKindAndContinueWithField kindKey fieldKey (fun nameJson ->
+    static member FromJson =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun nameJson ->
         sum {
           let! name = nameJson |> JsonValue.AsString
           return name |> Identifier.LocalScope
@@ -25,8 +25,8 @@ module TypeIdentifier =
     static member ToJson: Identifier -> JsonValue =
       fun id ->
         match id with
-        | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind kindKey fieldKey
+        | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
         | Identifier.FullyQualified(scope, name) ->
           (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
           |> JsonValue.Array
-          |> Json.kind kindKey fieldKey
+          |> Json.discriminator discriminator

@@ -575,12 +575,18 @@ export type BinaryOperator = (typeof BinaryOperators)[number];
 
 export type Bindings = Map<string, PredicateValue>;
 
+const defaultPredicateDate = () => {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+};
+
 export const PredicateValue = {
   Default: {
     string: () => "",
     number: () => 0,
     boolean: () => false,
-    date: () => new Date(),
+    date: () => defaultPredicateDate(),
     unit: (): ValueUnit => ({ kind: "unit" }),
     tuple: (values: List<PredicateValue>): ValueTuple => ({
       kind: "tuple",

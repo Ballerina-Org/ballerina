@@ -30,16 +30,16 @@
     <Content Include="todo.md" />
     <Compile Include="Spec\Model.fs" />
     <Compile Include="Spec\Builder.fs" />
-    <Compile Include="Spec\Api.fs" />
     <Compile Include="Spec\Json.fs" />
+    <Compile Include="VirtualFolders\Model.fs" />
+    <Compile Include="VirtualFolders\Runner.fs" />
+    <Compile Include="VirtualFolders\Updaters.fs" />
+    <Compile Include="VirtualFolders\Json.fs" />
+    <Compile Include="VirtualFolders\Patterns.fs" />
     <Compile Include="Store\Api.fs" />
     <Compile Include="Store\Model.fs" />
     <Compile Include="Store\Updaters.fs" />
     <Compile Include="Store\Json.fs" />
-    <Compile Include="VirtualFolders\Model.fs" />
-    <Compile Include="VirtualFolders\Runner.fs" />
-    <Compile Include="VirtualFolders\Updaters.fs" />
-
   </ItemGroup>
 
   <ItemGroup>

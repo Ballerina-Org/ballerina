@@ -61,7 +61,10 @@ export const ListAbstractRenderer = <
             > &
               ListAbstractRendererState,
           ) => ({
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             value: PredicateValue.Operations.IsUnit(_.value)
               ? _.value
@@ -155,6 +158,9 @@ export const ListAbstractRenderer = <
               ListAbstractRendererState,
           ) => ({
             disabled: _.disabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             value: PredicateValue.Operations.IsUnit(_.value)
               ? _.value

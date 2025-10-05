@@ -42,6 +42,7 @@ module Unification =
           let! lVars = TypeExpr.FreeVariables l
           let! rVars = TypeExpr.FreeVariables r
           return Set.union lVars rVars
+        | TypeExpr.LetSymbols(_, e)
         | TypeExpr.KeyOf e
         | TypeExpr.Rotate e
         | TypeExpr.Set e -> return! TypeExpr.FreeVariables e

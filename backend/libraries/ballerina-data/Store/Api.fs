@@ -1,42 +1,57 @@
 ﻿namespace Ballerina.Data.Store.Api
 
+open Ballerina.Data.Schema.Model
+
 module Model =
 
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.Data.Delta.Model
-  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.Data.Delta.ToUpdater
+  open Ballerina.Data.Spec.Model
+  open Ballerina.Data.VirtualFolders
 
-  type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
+  //FIXME: folders stores v2 types that are used for seeds
+  //ensure the deserialized data (seeds, schema) are always in sync (taken from) serialized data (folders)
+  type Spec<'T, 'valueExtension> =
+    { Seeds: SpecData<'T, 'valueExtension>
+      Folders: FolderNode }
+
+  type SpecApi<'T, 'valueExtension> =
+    { Get: SpecName -> Sum<Spec<'T, 'valueExtension>, Errors>
+      Create: SpecName -> Spec<'T, 'valueExtension> -> Sum<unit, Errors>
+      Delete: SpecName -> Sum<Unit, Errors>
+      Update: SpecName -> Spec<'T, 'valueExtension> -> Sum<Unit, Errors>
+      List: unit -> Sum<SpecName list, Errors> }
 
   type EntitiesApi<'valueExtension> =
-    { Get: string -> Guid -> Sum<Value<'valueExtension>, Errors>
+    { Get: EntityName -> Guid -> Sum<Value<'valueExtension>, Errors>
       GetMany:
-        string
+        EntityName
           -> int * int
           -> Sum<
             {| Values: List<Guid * Value<'valueExtension>>
                HasMore: bool |},
             Errors
            >
-      Create: string -> Value<'valueExtension> -> Sum<Guid, Errors>
-      Update: string -> Guid * Delta<'valueExtension> -> Sum<Unit, Errors>
-      Delete: string -> Guid -> Sum<Unit, Errors> }
+      Create: EntityName -> Value<'valueExtension> -> Sum<Guid, Errors>
+      Update: EntityName -> Guid * Delta<'valueExtension> -> Sum<Unit, Errors>
+      Delete: EntityName -> Guid -> Sum<Unit, Errors> }
 
   type LookupsApi<'valueExtension> =
     { GetMany:
-        string
+        LookupName
           -> Guid * (int * int)
           -> Sum<
             {| Values: List<Value<'valueExtension>>
                HasMore: bool |},
             Errors
            >
-      Create: string -> Guid * Value<'valueExtension> -> Sum<Guid, Errors>
-      Delete: string -> Guid * Guid -> Sum<Unit, Errors>
-      Link: string -> Guid * Guid -> Sum<Unit, Errors>
-      Unlink: string -> Guid * Guid -> Sum<Unit, Errors> }
+      Create: LookupName -> Guid * Value<'valueExtension> -> Sum<Guid, Errors>
+      Delete: LookupName -> Guid * Guid -> Sum<Unit, Errors>
+      Link: LookupName -> Guid * Guid -> Sum<Unit, Errors>
+      Unlink: LookupName -> Guid * Guid -> Sum<Unit, Errors> }
 
   type SpecDataApi<'valueExtension> =
     { Entities: EntitiesApi<'valueExtension>

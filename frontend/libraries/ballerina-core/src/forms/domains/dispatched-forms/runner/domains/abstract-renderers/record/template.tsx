@@ -102,7 +102,10 @@ export const RecordAbstractRenderer = <
             type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
               FieldTemplates.get(fieldName)!.GetDefaultState()),
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
@@ -261,6 +264,16 @@ export const RecordAbstractRenderer = <
       console.error(visibleFieldKeys.errors.map((error) => error).join("\n"));
       return <></>;
     }
+
+    visibleFieldKeys.value.map((field) => {
+      if (field != null && !FieldTemplates.has(field)) {
+        console.warn(
+          `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
 
     const visibleFieldKeysSet = Set(
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),

@@ -14,14 +14,14 @@ export const LookupDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: LookupRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       tableApi: string | undefined,
@@ -46,7 +46,7 @@ export const LookupDispatcher = {
             .Then((template) =>
               ValueOrErrors.Default.return(
                 LookupTypeAbstractRenderer<
-                  CustomPresentationContexts,
+                  CustomPresentationContext,
                   Flags,
                   ExtraContext
                 >(

@@ -101,6 +101,9 @@ export const TableAbstractRenderer = <
       GetDefaultValue: () => PredicateValue;
       GetDefaultState: () => CommonAbstractRendererState;
       filters: SumNType<any>;
+      label?: string;
+      tooltip?: string;
+      details?: string;
     }
   >,
   parseToApiByType: (
@@ -188,7 +191,10 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...cellState,
-            disabled: disabled || _.disabled,
+            disabled: disabled || _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
@@ -350,7 +356,10 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...rowState,
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", value),
             extraContext: _.extraContext,
@@ -472,7 +481,7 @@ export const TableAbstractRenderer = <
         >((_) => ({
           value: _.value,
           locked: _.locked,
-          disabled: _.disabled,
+          disabled: false,
           bindings: _.bindings,
           extraContext: _.extraContext,
           type: filter.type,
@@ -543,6 +552,17 @@ export const TableAbstractRenderer = <
         />
       );
     }
+
+    visibleColumns.value.columns.map((column) => {
+      if (!CellTemplates.has(column)) {
+        console.warn(
+          `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
+
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations

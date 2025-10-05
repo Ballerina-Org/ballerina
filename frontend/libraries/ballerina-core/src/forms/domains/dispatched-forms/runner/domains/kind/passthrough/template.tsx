@@ -6,11 +6,17 @@ import {
 import {
   BasicUpdater,
   Bindings,
+  CommonAbstractRendererState,
+  DispatchDelta,
   DispatchFormRunnerState,
   DispatchInjectablesTypes,
+  DispatchParsedType,
+  Option,
+  PredicateValue,
   Template,
   unit,
   Unit,
+  Updater,
 } from "../../../../../../../../main";
 import { DispatchPassthroughFormRunner } from "./coroutines/runner";
 import { Map } from "immutable";
@@ -18,18 +24,28 @@ import { Map } from "immutable";
 export const DispatchPassthroughFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
   Flags,
-  CustomPresentationContexts,
+  CustomPresentationContext,
   ExtraContext,
 >() =>
   Template.Default<
     DispatchPassthroughFormLauncherContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     > &
-      DispatchFormRunnerState<T, Flags>,
-    DispatchPassthroughFormLauncherState<T, Flags>,
+      DispatchFormRunnerState<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >,
+    DispatchPassthroughFormLauncherState<
+      T,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext
+    >,
     DispatchPassthroughFormLauncherForeignMutationsExpected<T>
   >((props) => {
     const entity = props.context.launcherRef.entity;
@@ -82,26 +98,37 @@ export const DispatchPassthroughFormLauncherTemplate = <
           ...props.context.formState,
           value: entity.value.value,
           locked: false,
-          disabled: false,
+          disabled: props.context.globallyDisabled,
+          globallyDisabled: props.context.globallyDisabled,
+          readOnly: props.context.globallyReadOnly,
+          globallyReadOnly: props.context.globallyReadOnly,
+          type: DispatchParsedType.Default.primitive("unit"), // currently unused here
           bindings,
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
           lookupTypeAncestorNames: [],
-          // domNodeAncestorPath: `[${props.context.launcherRef.name}]`,
+          customPresentationContext: undefined,
+          typeAncestors: [],
         }}
-        setState={(stateUpdater) =>
+        setState={(stateUpdater: BasicUpdater<CommonAbstractRendererState>) =>
           props.setState(
-            DispatchPassthroughFormLauncherState<T, Flags>().Updaters.formState(
-              stateUpdater,
-            ),
+            DispatchPassthroughFormLauncherState<
+              T,
+              Flags,
+              CustomPresentationContext,
+              ExtraContext
+            >().Updaters.formState(stateUpdater),
           )
         }
         view={unit}
         foreignMutations={{
           ...props.foreignMutations,
-          onChange: (updater, delta) => {
+          onChange: (
+            updater: Option<BasicUpdater<PredicateValue>>,
+            delta: DispatchDelta<Flags>,
+          ) => {
             if (props.context.launcherRef.entity.kind == "r") return;
             props.context.launcherRef.onEntityChange(updater, delta);
           },
@@ -112,7 +139,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
     DispatchPassthroughFormRunner<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >().mapContext((context) => context),
   ]);

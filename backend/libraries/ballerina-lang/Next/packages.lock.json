@@ -9,8 +9,7 @@
         "contentHash": "6JlV8aD8qQvcmfoe/PMOxCHXc0uX4lR23u0fAyQtnVQxYULLoTZgwgZHSnRcuUHOvS3wULFWcwdnP1iwslH60g=="
       },
       "FSharp.Data": {
-        "type": "Direct",
-        "requested": "[6.6.0, )",
+        "type": "Transitive",
         "resolved": "6.6.0",
         "contentHash": "AC87/VZV1iGrnK1uG6QhX22HZARlFiCqdlckzPDgdE3+fzc0ZNRR3Y4ny5vbLvfDj2rjFoJdmRZy6kzI1C/sQQ==",
         "dependencies": {
