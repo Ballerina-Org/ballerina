@@ -23,9 +23,7 @@ def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
                 case _:
                     return Sum.left(ParsingError.single(f"Invalid case payload, invalid discriminator: {case_payload}"))
         case _:
-            return Sum.left(
-                ParsingError.single(f"Invalid case payload, got {case_payload}")
-            )
+            return Sum.left(ParsingError.single(f"Invalid case payload, got {case_payload}"))
 
 
 def sum2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
@@ -44,9 +42,17 @@ def _handle_case_tuple(
     discriminator, payload = case_tuple
     match discriminator:
         case 0:
-            return left_from_json(payload).map_left(ParsingError.with_context(f"When parsing case {discriminator}:")).map_right(Sum.left)
+            return (
+                left_from_json(payload)
+                .map_left(ParsingError.with_context(f"When parsing case {discriminator}:"))
+                .map_right(Sum.left)
+            )
         case 1:
-            return right_from_json(payload).map_left(ParsingError.with_context(f"When parsing case {discriminator}:")).map_right(Sum.right)
+            return (
+                right_from_json(payload)
+                .map_left(ParsingError.with_context(f"When parsing case {discriminator}:"))
+                .map_right(Sum.right)
+            )
         case _:
             return Sum.left(ParsingError.single(f"Invalid case tuple: invalid discriminator: {case_tuple}"))
 

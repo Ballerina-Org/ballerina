@@ -33,9 +33,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
                                     .map_right(lambda b: (a, b))
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -75,9 +73,7 @@ def tuple_3_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -121,9 +117,7 @@ def tuple_4_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -177,9 +171,7 @@ def tuple_5_from_json(
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -243,9 +235,7 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -321,9 +311,7 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -417,9 +405,7 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -524,9 +510,7 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
@@ -642,9 +626,7 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(
-                            ParsingError.single(f"Expected {length} elements in tuple, got {elements}")
-                        )
+                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
                     case _:
                         return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
             case _:
