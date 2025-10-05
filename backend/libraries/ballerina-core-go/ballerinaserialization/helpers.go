@@ -84,6 +84,23 @@ func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, RecordForSeria
 	return ballerina.Right[error, RecordForSerialization](r)
 }
 
+func (r RecordForSerialization) GetFieldByName(name string) ballerina.Sum[error, json.RawMessage] {
+	type recordField struct {
+		Name string `json:"name"`
+	}
+	for _, field := range r.Value {
+		var f recordField
+		err := json.Unmarshal(field[0], &f)
+		if err != nil {
+			return ballerina.Left[error, json.RawMessage](fmt.Errorf("failed to unmarshal record field %s: %w", name, err))
+		}
+		if f.Name == name {
+			return ballerina.Right[error, json.RawMessage](field[1])
+		}
+	}
+	return ballerina.Left[error, json.RawMessage](fmt.Errorf("field %s not found", name))
+}
+
 // Used in codegen
 type UnionForSerialization struct {
 	Discriminator string             `json:"discriminator"`
