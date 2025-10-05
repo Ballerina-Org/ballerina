@@ -191,9 +191,9 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...cellState,
-            disabled: disabled || _.disabled,
+            disabled: disabled || _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", rowValue),
@@ -356,9 +356,9 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...rowState,
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", value),
@@ -481,7 +481,7 @@ export const TableAbstractRenderer = <
         >((_) => ({
           value: _.value,
           locked: _.locked,
-          disabled: _.disabled,
+          disabled: false,
           bindings: _.bindings,
           extraContext: _.extraContext,
           type: filter.type,

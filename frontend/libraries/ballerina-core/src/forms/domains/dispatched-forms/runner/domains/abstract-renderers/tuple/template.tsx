@@ -67,11 +67,11 @@ export const DispatchTupleAbstractRenderer = <
             ...(_.itemFormStates.get(itemIndex) ||
               ItemFormStates.get(itemIndex)!()),
             value: _.value.values.get(itemIndex)!,
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
             locked: _.locked,
             bindings: _.bindings,
-            readOnly: _.readOnly,
+            readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             extraContext: _.extraContext,
             remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,

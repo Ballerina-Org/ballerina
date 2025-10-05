@@ -53,7 +53,7 @@ export const ReadOnlyAbstractRenderer = <
         > &
           ReadOnlyAbstractRendererState,
       ) => ({
-        disabled: _.disabled,
+        disabled: _.disabled || _.globallyDisabled,
         globallyDisabled: _.globallyDisabled,
         locked: _.locked,
         value: _.value.ReadOnly,
