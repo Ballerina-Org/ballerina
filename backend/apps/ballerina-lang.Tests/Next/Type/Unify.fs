@@ -8,6 +8,7 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
+open Ballerina.StdLib.OrderPreservingMap
 
 let private initialClasses = EquivalenceClasses<string, PrimitiveType>.Empty
 let private (!) = Identifier.LocalScope
@@ -141,12 +142,12 @@ let ``LangNext-Unify unifies types without variables`` () =
       TypeValue.CreateRecord(
         [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()
           "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString() ]
-        |> Map.ofList
+        |> OrderedMap.ofList
       )
       TypeValue.CreateUnion(
         [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()
           "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString() ]
-        |> Map.ofList
+        |> OrderedMap.ofList
       ) ]
 
   let actual =
@@ -325,15 +326,27 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
   let s2 = "s2" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let inputs1 =
-    TypeValue.CreateRecord([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList),
-    TypeValue.CreateRecord([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList)
+    TypeValue.CreateRecord(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    ),
+    TypeValue.CreateRecord(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    )
 
   let actual1 =
     (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
 
   let inputs2 =
-    TypeValue.CreateUnion([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList),
-    TypeValue.CreateUnion([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList)
+    TypeValue.CreateUnion(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    ),
+    TypeValue.CreateUnion(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    )
 
   let actual2 =
     (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -350,15 +363,27 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
   let s2 = "s2" |> Identifier.LocalScope |> TypeSymbol.Create
 
   let inputs1 =
-    TypeValue.CreateRecord([ s1, TypeValue.CreateInt32(); s2, TypeValue.CreateInt32() ] |> Map.ofList),
-    TypeValue.CreateRecord([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList)
+    TypeValue.CreateRecord(
+      [ s1, TypeValue.CreateInt32(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    ),
+    TypeValue.CreateRecord(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    )
 
   let actual1 =
     (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
 
   let inputs2 =
-    TypeValue.CreateUnion([ s1, TypeValue.CreateString(); s2, TypeValue.CreateDecimal() ] |> Map.ofList),
-    TypeValue.CreateUnion([ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ] |> Map.ofList)
+    TypeValue.CreateUnion(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateDecimal() ]
+      |> OrderedMap.ofList
+    ),
+    TypeValue.CreateUnion(
+      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      |> OrderedMap.ofList
+    )
 
   let actual2 =
     (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
@@ -374,12 +399,12 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
     TypeValue.CreateRecord(
       [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
         "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
-      |> Map.ofList
+      |> OrderedMap.ofList
     ),
     TypeValue.CreateRecord(
       [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
         "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
-      |> Map.ofList
+      |> OrderedMap.ofList
     )
 
   let actual1 =
@@ -389,12 +414,12 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
     TypeValue.CreateUnion(
       [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
         "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
-      |> Map.ofList
+      |> OrderedMap.ofList
     ),
     TypeValue.CreateUnion(
       [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
         "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
-      |> Map.ofList
+      |> OrderedMap.ofList
     )
 
   let actual2 =

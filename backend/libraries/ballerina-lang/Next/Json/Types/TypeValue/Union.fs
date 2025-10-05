@@ -13,6 +13,7 @@ module Union =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.StdLib.OrderPreservingMap
 
   let private discriminator = "union"
 
@@ -34,13 +35,13 @@ module Union =
                 return (caseKey, caseType)
               })
             |> sum.All
-            |> sum.Map Map.ofSeq
+            |> sum.Map OrderedMap.ofSeq
 
           return TypeValue.CreateUnion(caseTypes) // FIXME: origin should be serialized and parsed
         })
 
-    static member ToJsonUnion(rootToJson: TypeValue -> JsonValue) : Map<TypeSymbol, TypeValue> -> JsonValue =
-      Map.toArray
+    static member ToJsonUnion(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
+      OrderedMap.toArray
       >> Array.map (fun (symbol, value) -> JsonValue.Array [| TypeSymbol.ToJson symbol; rootToJson value |])
       >> JsonValue.Array
       >> Json.discriminator discriminator

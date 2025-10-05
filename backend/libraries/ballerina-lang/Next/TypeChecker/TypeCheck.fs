@@ -18,6 +18,7 @@ module TypeCheck =
   open Eval
   open Ballerina.Fun
   open System.Text.RegularExpressions
+  open Ballerina.StdLib.OrderPreservingMap
 
 
   type TypeCheckContext =
@@ -350,12 +351,12 @@ module TypeCheck =
                           [ state {
                               let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> state.OfSum
 
-                              let! (aCasesT: Map<TypeSymbol, (TypeValue * Kind)>) =
+                              let! aCasesT =
                                 aCasesT
-                                |> Map.map (fun _ -> TypeExpr.Eval None >> Expr<'T>.liftTypeEval)
-                                |> state.AllMap
+                                |> OrderedMap.map (fun _ -> TypeExpr.Eval None >> Expr<'T>.liftTypeEval)
+                                |> state.AllMapOrdered
 
-                              let aCasesT = aCasesT |> Map.map (fun _ -> fst)
+                              let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
 
                               do!
                                 TypeValue.Unify(f_input, TypeValue.CreateUnion aCasesT)
@@ -468,7 +469,7 @@ module TypeCheck =
                   |> state.All
 
                 let fieldsExpr = fields |> List.map fst
-                let fieldsTypes = fields |> List.map snd |> Map.ofList
+                let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
 
                 return Expr.RecordCons(fieldsExpr), TypeValue.CreateRecord fieldsTypes, Kind.Star
               }
@@ -494,7 +495,7 @@ module TypeCheck =
 
                 let! case_t =
                   cases
-                  |> Map.tryFindWithError cons_symbol "cases" cons.ToFSharpString
+                  |> OrderedMap.tryFindWithError cons_symbol "cases" cons.ToFSharpString
                   |> state.OfSum
 
                 let! value, t_value, value_k = !value
@@ -590,7 +591,7 @@ module TypeCheck =
 
                         let! t_field =
                           t_fields
-                          |> Map.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
+                          |> OrderedMap.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
                           |> state.OfSum
 
                         return Expr.RecordDes(fields, fieldName), t_field, Kind.Star
@@ -600,7 +601,7 @@ module TypeCheck =
 
                         let! t_field =
                           t_fields
-                          |> Map.toSeq
+                          |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
                           |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> Errors.Singleton)
                           |> state.OfSum
@@ -738,7 +739,10 @@ module TypeCheck =
                       let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
 
                       let handlerExprs = handlers |> Map.map (fun _ -> fst)
-                      let handlerTypes = handlers |> Map.map (fun _ -> snd) |> Map.values |> Map.ofSeq
+
+                      let handlerTypes =
+                        handlers |> Map.map (fun _ -> snd) |> Map.values |> OrderedMap.ofSeq
+
                       let! fallback = fallback |> Option.map (!) |> state.RunOption
 
                       let! fallback =
@@ -918,7 +922,7 @@ module TypeCheck =
                   definition_cases
                   |> Option.map (fun definition_cases ->
                     definition_cases
-                    |> Map.toSeq
+                    |> OrderedMap.toSeq
                     |> Seq.map (fun (k, argT) ->
                       state {
                         do!

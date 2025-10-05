@@ -14,6 +14,7 @@ module Unification =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.Eval
+  open Ballerina.StdLib.OrderPreservingMap
 
   type UnificationContext = TypeExprEvalState
 
@@ -103,7 +104,7 @@ module Unification =
         | TypeValue.Union { value = es } ->
           let! vars =
             es
-            |> Map.toSeq
+            |> OrderedMap.toSeq
             |> Seq.map (fun (_, v) -> TypeValue.FreeVariables v)
             |> reader.All
 
@@ -158,23 +159,31 @@ module Unification =
         | TypeValue.Record e1, TypeValue.Record e2 when e1.value.Count = e2.value.Count ->
           let! items =
             e1.value
-            |> Map.map (fun k v1 ->
+            |> OrderedMap.map (fun k v1 ->
               reader {
-                let! v2 = e2.value |> Map.tryFindWithError k "record" k.Name.LocalName |> reader.OfSum
+                let! v2 =
+                  e2.value
+                  |> OrderedMap.tryFindWithError k "record" k.Name.LocalName
+                  |> reader.OfSum
+
                 return! TypeValue.MostSpecific(v1, v2)
               })
-            |> reader.AllMap
+            |> reader.AllMapOrdered
 
           return TypeValue.CreateRecord items
         | TypeValue.Union e1, TypeValue.Union e2 when e1.value.Count = e2.value.Count ->
           let! items =
             e1.value
-            |> Map.map (fun k v1 ->
+            |> OrderedMap.map (fun k v1 ->
               reader {
-                let! v2 = e2.value |> Map.tryFindWithError k "union" k.Name.LocalName |> reader.OfSum
+                let! v2 =
+                  e2.value
+                  |> OrderedMap.tryFindWithError k "union" k.Name.LocalName
+                  |> reader.OfSum
+
                 return! TypeValue.MostSpecific(v1, v2)
               })
-            |> reader.AllMap
+            |> reader.AllMapOrdered
 
           return TypeValue.CreateUnion items
         | _ ->
@@ -307,9 +316,9 @@ module Unification =
           for (v1, v2) in List.zip e1 e2 do
             do! TypeValue.Unify(v1, v2)
         | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 }
-        | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when Map.count e1 = Map.count e2 ->
-          for (k1, v1) in e1 |> Map.toSeq do
-            let! v2 = e2 |> Map.tryFindWithError k1 "union" k1.Name.LocalName |> state.OfSum
+        | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
+          for (k1, v1) in e1 |> OrderedMap.toSeq do
+            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union" k1.Name.LocalName |> state.OfSum
             do! TypeValue.Unify(v1, v2)
         | _ -> return! $"Cannot unify types: {left} and {right}" |> Errors.Singleton |> state.Throw
       }
@@ -400,10 +409,10 @@ module Unification =
             let! es' = es |> Seq.map TypeValue.Instantiate |> state.All
             return TypeValue.Sum { value = es'; source = n }
           | TypeValue.Record { value = es; source = n } ->
-            let! es' = es |> Map.map (fun _ -> TypeValue.Instantiate) |> state.AllMap
+            let! es' = es |> OrderedMap.map (fun _ -> TypeValue.Instantiate) |> state.AllMapOrdered
             return TypeValue.Record { value = es'; source = n }
           | TypeValue.Union { value = es; source = n } ->
-            let! es' = es |> Map.map (fun _ -> TypeValue.Instantiate) |> state.AllMap
+            let! es' = es |> OrderedMap.map (fun _ -> TypeValue.Instantiate) |> state.AllMapOrdered
             return TypeValue.Union { value = es'; source = n }
           | TypeValue.Primitive _ -> return t
         }

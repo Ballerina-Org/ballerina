@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Next.Types
 [<AutoOpen>]
 module Model =
   open System
+  open Ballerina.StdLib.OrderPreservingMap
 
   type Identifier =
     | LocalScope of string
@@ -65,9 +66,9 @@ module Model =
     | Lambda of WithTypeExprSourceMapping<TypeParameter * TypeExpr>
     | Apply of WithTypeExprSourceMapping<TypeVar * TypeValue>
     | Arrow of WithTypeExprSourceMapping<TypeValue * TypeValue>
-    | Record of WithTypeExprSourceMapping<Map<TypeSymbol, TypeValue>>
+    | Record of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
     | Tuple of WithTypeExprSourceMapping<List<TypeValue>>
-    | Union of WithTypeExprSourceMapping<Map<TypeSymbol, TypeValue>>
+    | Union of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
     | Sum of WithTypeExprSourceMapping<List<TypeValue>>
     | Set of WithTypeExprSourceMapping<TypeValue>
     | Map of WithTypeExprSourceMapping<TypeValue * TypeValue>
@@ -89,8 +90,8 @@ module Model =
       Sym: TypeSymbol
       Parameters: List<TypeParameter>
       Arguments: List<TypeValue>
-      UnionLike: Option<Map<TypeSymbol, TypeExpr>>
-      RecordLike: Option<Map<TypeSymbol, TypeExpr>> }
+      UnionLike: Option<OrderedMap<TypeSymbol, TypeExpr>>
+      RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr>> }
 
   and PrimitiveType =
     | Unit

@@ -7,6 +7,7 @@ open Ballerina.DSL.Next.Types.Model
 open System
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.StdLib.OrderPreservingMap
 
 type TypeValueTestCase =
   { Name: string
@@ -75,7 +76,7 @@ let testCases guid : TypeValueTestCase list =
           { TypeSymbol.Name = "foo" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
           TypeValue.CreateInt32() ]
-        |> Map.ofList
+        |> OrderedMap.ofList
         |> TypeValue.CreateUnion }
     { Name = "Tuple"
       Json =
@@ -115,7 +116,7 @@ let testCases guid : TypeValueTestCase list =
           }"""
       Expected =
         TypeValue.CreateRecord(
-          Map.ofList
+          OrderedMap.ofList
             [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
               TypeValue.CreateString()

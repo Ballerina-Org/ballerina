@@ -12,6 +12,7 @@ open Ballerina.Reader.WithError
 open Ballerina.State.WithError
 open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.StdLib.List
+open Ballerina.StdLib.OrderPreservingMap
 
 type SeedingClue =
   | Absent
@@ -95,7 +96,7 @@ module Traverser =
             )
 
         | TypeValue.Union cases ->
-          let sampled = cases.value |> Map.toList |> List.randomSample 1
+          let sampled = cases.value |> OrderedMap.toList |> List.randomSample 1
 
           let! cases =
             sampled
@@ -116,7 +117,7 @@ module Traverser =
         | TypeValue.Record fields ->
           let! fields =
             fields.value
-            |> Map.toList
+            |> OrderedMap.toList
             |> List.map (fun (ts, tv) ->
               state {
                 let! v = !! ts.Name.LocalName tv

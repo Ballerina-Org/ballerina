@@ -8,6 +8,7 @@ module ToUpdater =
   open Ballerina.Data.Delta.Model
   open Ballerina.Errors
   open Ballerina.Fun
+  open Ballerina.StdLib.OrderPreservingMap
 
   type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
 
@@ -29,7 +30,7 @@ module ToUpdater =
 
           let! _, fieldType =
             fields.value
-            |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "fields" fieldName
+            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "fields" fieldName
 
           let! fieldUpdater = Delta.ToUpdater fieldType fieldDelta
 
@@ -52,7 +53,7 @@ module ToUpdater =
 
           let! _, caseType =
             cases.value
-            |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = caseName) "cases" caseName
+            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = caseName) "cases" caseName
 
           let! caseUpdater = caseDelta |> Delta.ToUpdater caseType
 

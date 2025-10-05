@@ -8,6 +8,7 @@ open Ballerina.DSL.Next.Types.Eval
 open Ballerina.State.WithError
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
+open Ballerina.StdLib.OrderPreservingMap
 
 [<Test>]
 let ``LangNext-TypeEval lookup looks up existing types`` () =
@@ -61,11 +62,11 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
   | Sum.Left(actual, _) ->
     match actual with
     | TypeValue.Union(cases), Kind.Star ->
-      match cases.value |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 }
-          Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String }
-          Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal }
-          Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool } ] -> Assert.Pass()
+      match cases.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v) with
+      | [ Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal }
+          Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool }
+          Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 }
+          Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String } ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
@@ -78,10 +79,10 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
   let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
-    TypeValue.CreateUnion(Map.ofList [ A, TypeValue.CreateInt32(); B, TypeValue.CreateString() ])
+    TypeValue.CreateUnion(OrderedMap.ofList [ A, TypeValue.CreateInt32(); B, TypeValue.CreateString() ])
 
   let t2 =
-    TypeValue.CreateUnion(Map.ofList [ C, TypeValue.CreateDecimal(); D, TypeValue.CreateBool() ])
+    TypeValue.CreateUnion(OrderedMap.ofList [ C, TypeValue.CreateDecimal(); D, TypeValue.CreateBool() ])
 
   let actual =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
@@ -100,11 +101,11 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
   | Sum.Left((actual, _), _) ->
     match actual with
     | TypeValue.Union(cases) ->
-      match cases.value |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 })
-          (Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String })
-          (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal })
-          (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool }) ] -> Assert.Pass()
+      match cases.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v) with
+      | [ (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal })
+          (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool })
+          (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 })
+          (Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String }) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
@@ -117,10 +118,10 @@ let ``LangNext-TypeEval Flatten of named records`` () =
   let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
-    TypeValue.CreateRecord(Map.ofList [ A, TypeValue.CreateInt32(); B, TypeValue.CreateString() ])
+    TypeValue.CreateRecord(OrderedMap.ofList [ A, TypeValue.CreateInt32(); B, TypeValue.CreateString() ])
 
   let t2 =
-    TypeValue.CreateRecord(Map.ofList [ C, TypeValue.CreateDecimal(); D, TypeValue.CreateBool() ])
+    TypeValue.CreateRecord(OrderedMap.ofList [ C, TypeValue.CreateDecimal(); D, TypeValue.CreateBool() ])
 
   let actual =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
@@ -139,11 +140,11 @@ let ``LangNext-TypeEval Flatten of named records`` () =
   | Sum.Left((actual, _), _) ->
     match actual with
     | TypeValue.Record(fields) ->
-      match fields.value |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 })
-          (Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String })
-          (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal })
-          (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool }) ] -> Assert.Pass()
+      match fields.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v) with
+      | [ (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal })
+          (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool })
+          (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 })
+          (Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.String }) ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {fields}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
@@ -200,7 +201,7 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
   let expected =
     TypeValue.Union
       { value =
-          Map.ofList
+          OrderedMap.ofList
             [ A, TypeValue.CreateUnit()
               B, TypeValue.CreateUnit()
               C, TypeValue.CreateUnit() ]
@@ -249,12 +250,14 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
   | Sum.Left((actual, _), _) ->
     match actual with
     | TypeValue.Union(cases) ->
-      match cases.value |> Map.toList |> List.map (fun (k, v) -> k.Name, v) with
-      | [ (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Unit })
+      match cases.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v) with
+      | [ (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Unit })
+          (Identifier.LocalScope "E", TypeValue.Primitive { value = PrimitiveType.Unit })
+          (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Unit })
           (Identifier.LocalScope "B", TypeValue.Primitive { value = PrimitiveType.Unit })
           (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Unit })
-          (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Unit })
-          (Identifier.LocalScope "E", TypeValue.Primitive { value = PrimitiveType.Unit }) ] -> Assert.Pass()
+
+        ] -> Assert.Pass()
       | _ -> Assert.Fail $"Expected flattened union but got {cases}"
     | _ -> Assert.Fail $"Expected union but got {actual}"
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
@@ -295,7 +298,7 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
 
   let expected =
     TypeValue.Union
-      { value = Map.ofList [ B, TypeValue.CreateUnit(); C, TypeValue.CreateUnit() ]
+      { value = OrderedMap.ofList [ B, TypeValue.CreateUnit(); C, TypeValue.CreateUnit() ]
         source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Exclude(t1, t2)) }
 
   match actual with
@@ -337,7 +340,7 @@ let ``LangNext-TypeEval Exclude of Records`` () =
   let expected =
     TypeValue.Record
       { value =
-          Map.ofList
+          OrderedMap.ofList
             [ B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
         source = TypeExprSourceMapping.OriginTypeExpr t3 }
@@ -396,7 +399,7 @@ n =
   let expected =
     TypeValue.Union
       { value =
-          Map.ofList
+          OrderedMap.ofList
             [ B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
         source = TypeExprSourceMapping.OriginTypeExpr t3 }
@@ -468,7 +471,7 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
   let expected =
     TypeValue.Record
       { value =
-          Map.ofList
+          OrderedMap.ofList
             [ A, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
               B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
@@ -505,7 +508,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
   let expected =
     TypeValue.Union
       { value =
-          Map.ofList
+          OrderedMap.ofList
             [ A, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
               B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]

@@ -6,6 +6,7 @@ module Patterns =
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.StdLib.OrderPreservingMap
 
   type TypeVar with
     static member Create(name: string) : TypeVar =
@@ -144,7 +145,7 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Arrow" }
 
-    static member CreateRecord(v: Map<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
       TypeValue.Record
         { value = v
           source = NoSourceMapping "Record" }
@@ -154,7 +155,7 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Tuple" }
 
-    static member CreateUnion(v: Map<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateUnion(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
       TypeValue.Union
         { value = v
           source = NoSourceMapping "Union" }
@@ -347,14 +348,14 @@ module Patterns =
       | Record { value = fields } ->
         TypeExpr.Record(
           fields
-          |> Map.toList
+          |> OrderedMap.toList
           |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Tuple { value = elements } -> TypeExpr.Tuple(elements |> List.map (fun e -> e.AsExpr))
       | Union { value = cases } ->
         TypeExpr.Union(
           cases
-          |> Map.toList
+          |> OrderedMap.toList
           |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Sum { value = elements } -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
@@ -398,7 +399,7 @@ module Patterns =
                 return (k, v)
               })
             |> sum.All
-            |> sum.Map(Map.ofSeq)
+            |> sum.Map(OrderedMap.ofSeq)
 
           return TypeValue.CreateRecord fields
         | TypeExpr.Tuple(fields) ->
@@ -415,7 +416,7 @@ module Patterns =
                 return (k, v)
               })
             |> sum.All
-            |> sum.Map(Map.ofSeq)
+            |> sum.Map(OrderedMap.ofSeq)
 
           return TypeValue.CreateUnion cases
         | TypeExpr.Sum(fields) ->
