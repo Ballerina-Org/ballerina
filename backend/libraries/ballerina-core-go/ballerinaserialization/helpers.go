@@ -97,17 +97,16 @@ func NewUnionForSerialization(caseName string, value json.RawMessage) UnionForSe
 	}
 }
 
-var _ json.Unmarshaler = (*UnionForSerialization)(nil)
-
-func (u *UnionForSerialization) UnmarshalJSON(data []byte) error {
-	err := json.Unmarshal(data, u)
+func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
+	var u UnionForSerialization
+	err := json.Unmarshal(data, &u)
 	if err != nil {
-		return err
+		return ballerina.Left[error, UnionForSerialization](err)
 	}
 	if u.Discriminator != "union" {
-		return fmt.Errorf("expected discriminator to be 'union', got %s", u.Discriminator)
+		return ballerina.Left[error, UnionForSerialization](fmt.Errorf("expected discriminator to be 'union', got %s", u.Discriminator))
 	}
-	return nil
+	return ballerina.Right[error, UnionForSerialization](u)
 }
 
 func (u UnionForSerialization) GetCaseName() ballerina.Sum[error, string] {
