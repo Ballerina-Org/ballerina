@@ -9,6 +9,7 @@ module Eval =
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.StdLib.OrderPreservingMap
 
   type TypeBindings = Map<Identifier, TypeValue * Kind>
   type UnionCaseConstructorBindings = Map<Identifier, TypeValue>
@@ -277,7 +278,7 @@ module Eval =
                   return (k, v)
                 })
               |> state.All
-              |> state.Map(Map.ofSeq)
+              |> state.Map(OrderedMap.ofSeq)
 
             return TypeValue.Record { value = fields; source = source }, Kind.Star
           | TypeExpr.Tuple(items) ->
@@ -303,7 +304,7 @@ module Eval =
                   return (k, v)
                 })
               |> state.All
-              |> state.Map(Map.ofSeq)
+              |> state.Map(OrderedMap.ofSeq)
 
             return TypeValue.Union { value = cases; source = source }, Kind.Star
           | TypeExpr.Set(element) ->
@@ -332,7 +333,8 @@ module Eval =
               |> state.Map WithTypeExprSourceMapping.Getters.Value
 
             let mappedCasesFixThis =
-              cases |> Map.map (fun _ _ -> TypeValue.CreatePrimitive PrimitiveType.Unit)
+              cases
+              |> OrderedMap.map (fun _ _ -> TypeValue.CreatePrimitive PrimitiveType.Unit)
 
             return
               TypeValue.Union
@@ -372,14 +374,14 @@ module Eval =
                     |> state.OfSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let cases1 = cases1 |> Map.toSeq
+                  let cases1 = cases1 |> OrderedMap.toSeq
                   let keys1 = cases1 |> Seq.map fst |> Set.ofSeq
 
-                  let cases2 = cases2 |> Map.toSeq
+                  let cases2 = cases2 |> OrderedMap.toSeq
                   let keys2 = cases2 |> Seq.map fst |> Set.ofSeq
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
-                    let cases = cases1 |> Seq.append cases2 |> Map.ofSeq
+                    let cases = cases1 |> Seq.append cases2 |> OrderedMap.ofSeq
                     return TypeValue.Union { value = cases; source = source }, Kind.Star
                   else
                     return!
@@ -400,14 +402,14 @@ module Eval =
                     |> state.OfSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let fields1 = fields1 |> Map.toSeq
+                  let fields1 = fields1 |> OrderedMap.toSeq
                   let keys1 = fields1 |> Seq.map fst |> Set.ofSeq
 
-                  let fields2 = fields2 |> Map.toSeq
+                  let fields2 = fields2 |> OrderedMap.toSeq
                   let keys2 = fields2 |> Seq.map fst |> Set.ofSeq
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
-                    let fields = fields1 |> Seq.append fields2 |> Map.ofSeq
+                    let fields = fields1 |> Seq.append fields2 |> OrderedMap.ofSeq
                     return TypeValue.Record { value = fields; source = source }, Kind.Star
                   else
                     return!
@@ -436,8 +438,8 @@ module Eval =
                     |> state.OfSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let keys2 = cases2 |> Map.keys |> Set.ofSeq
-                  let cases = cases1 |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
+                  let keys2 = cases2 |> OrderedMap.keys |> Set.ofSeq
+                  let cases = cases1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
                   return TypeValue.Union { value = cases; source = source }, Kind.Star
                 })
                 (state {
@@ -453,9 +455,11 @@ module Eval =
                     |> state.OfSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let keys2 = fields2 |> Map.keys |> Set.ofSeq
+                  let keys2 = fields2 |> OrderedMap.keys |> Set.ofSeq
 
-                  let fields = fields1 |> Map.filter (fun k _ -> keys2 |> Set.contains k |> not)
+                  let fields =
+                    fields1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
+
                   return TypeValue.Record { value = fields; source = source }, Kind.Star
                 })
           | TypeExpr.Rotate(t) ->

@@ -70,11 +70,11 @@ module Errors =
 
       do Console.ResetColor()
 
+  let private withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
+    o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
+
   type Map<'k, 'v when 'k: comparison> with
     static member tryFindWithError k k_category k_error m =
-      let withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
-        o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
-
       m
       |> Map.tryFind k
       |> withError (sprintf "Cannot find %s '%s'" k_category k_error)
@@ -85,10 +85,6 @@ module Errors =
       (k_error: string)
       (m: Map<'k, 'v>)
       : Sum<'k * 'v, Errors> =
-
-      let withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
-        o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
-
       m
       |> Seq.map (fun (KeyValue(k, v)) -> (k, v))
       |> Seq.tryFind predicate

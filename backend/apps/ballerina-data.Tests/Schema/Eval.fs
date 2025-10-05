@@ -9,6 +9,7 @@ open Ballerina.DSL.Next.Types.Eval
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Data.TypeEval
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.StdLib.OrderPreservingMap
 
 [<Test>]
 let ``SpecNext-Schema evaluates`` () =
@@ -36,12 +37,12 @@ let ``SpecNext-Schema evaluates`` () =
 
   let SomeType =
     TypeValue.CreateRecord(
-      Map.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()) ]
+      OrderedMap.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()) ]
     )
 
   let AnotherType =
     TypeValue.CreateRecord(
-      Map.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()) ]
+      OrderedMap.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()) ]
     )
 
   let expected: Schema<TypeValue> =

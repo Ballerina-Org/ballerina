@@ -19,12 +19,7 @@ module AutomaticSymbolCreation =
           })
         |> sum.All
 
-      let wrappedTypeExpr =
-        List.foldBack
-          (fun (symbolName: string) (accExpr: TypeExpr) ->
-            TypeExpr.Let(symbolName, TypeExpr.NewSymbol symbolName, accExpr))
-          symbolNames
-          typeExpr
+      let wrappedTypeExpr = TypeExpr.LetSymbols(symbolNames, typeExpr)
 
       return wrappedTypeExpr
     }

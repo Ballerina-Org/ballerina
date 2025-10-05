@@ -8,6 +8,7 @@ open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.StdLib.OrderPreservingMap
 
 let symbol name : TypeSymbol =
   { Name = name |> Identifier.LocalScope
@@ -19,7 +20,7 @@ let ``Delta.Union: Updates matching union case correctly`` () =
   let caseSymbol = symbol caseName
   let caseType = TypeValue.CreateInt32()
 
-  let unionType = TypeValue.CreateUnion(Map.ofList [ caseSymbol, caseType ])
+  let unionType = TypeValue.CreateUnion(OrderedMap.ofList [ caseSymbol, caseType ])
 
   let unionValue =
     Value<Unit>.UnionCase(caseSymbol, PrimitiveValue.Int32 10 |> Value<Unit>.Primitive)
@@ -43,7 +44,8 @@ let ``Delta.Union: Returns original value when case does not match`` () =
   let unmatchedSymbol = symbol "unmatched"
   let caseType = TypeValue.CreateInt32()
 
-  let unionType = TypeValue.CreateUnion(Map.ofList [ unmatchedSymbol, caseType ])
+  let unionType =
+    TypeValue.CreateUnion(OrderedMap.ofList [ unmatchedSymbol, caseType ])
 
   let unionValue =
     Value<Unit>.UnionCase(actualSymbol, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
@@ -60,7 +62,7 @@ let ``Delta.Union: Returns original value when case does not match`` () =
 
 [<Test>]
 let ``Delta.Union: Fails when case not found in type`` () =
-  let unionType = TypeValue.CreateUnion Map.empty
+  let unionType = TypeValue.CreateUnion OrderedMap.empty
 
   let delta =
     Delta.Union("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))

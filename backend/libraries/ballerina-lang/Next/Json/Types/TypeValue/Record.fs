@@ -12,6 +12,7 @@ module Record =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.StdLib.OrderPreservingMap
 
   let private discriminator = "record"
 
@@ -33,13 +34,13 @@ module Record =
                 return (fieldKey, fieldType)
               })
             |> sum.All
-            |> sum.Map Map.ofSeq
+            |> sum.Map OrderedMap.ofSeq
 
           return TypeValue.CreateRecord(fieldTypes) // FIXME: origin should be serialized and parsed
         })
 
-    static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : Map<TypeSymbol, TypeValue> -> JsonValue =
-      Map.toArray
+    static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
+      OrderedMap.toArray
       >> Array.map (fun (fieldKey, fieldValue) ->
         let fieldKey = fieldKey |> TypeSymbol.ToJson
         let fieldValue = rootToJson fieldValue

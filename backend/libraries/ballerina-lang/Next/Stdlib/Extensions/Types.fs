@@ -13,6 +13,7 @@ module Types =
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
+  open Ballerina.StdLib.OrderPreservingMap
 
   type TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> with
     static member RegisterTypeCheckContext
@@ -63,7 +64,7 @@ module Types =
                     typeExt.Cases
                     |> Map.toSeq
                     |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
-                    |> Map.ofSeq
+                    |> OrderedMap.ofSeq
                     |> Some
                 RecordLike = None }
             )

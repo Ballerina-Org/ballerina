@@ -14,6 +14,7 @@ open Ballerina.State.WithError
 open Ballerina.Reader.WithError
 open Ballerina.Fun
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
+open Ballerina.StdLib.OrderPreservingMap
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -124,7 +125,7 @@ let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
   let expected =
-    TypeValue.CreateRecord([ X, TypeValue.CreateInt32(); Y, TypeValue.CreateBool() ] |> Map.ofList)
+    TypeValue.CreateRecord([ X, TypeValue.CreateInt32(); Y, TypeValue.CreateBool() ] |> OrderedMap.ofList)
 
   match actual with
   | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
@@ -188,9 +189,9 @@ let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred
                                          TypeValue.Primitive({ value = PrimitiveType.Int32 })) }),
               Kind.Star),
              _) when
-    cases |> Seq.length = 3
-    && cases |> Map.tryFind Case1Of3 = Some(TypeValue.CreateInt32())
-    && cases |> Map.tryFind Case2Of3 = Some(TypeValue.CreateInt32())
+    cases |> OrderedMap.count = 3
+    && cases |> OrderedMap.tryFind Case1Of3 = Some(TypeValue.CreateInt32())
+    && cases |> OrderedMap.tryFind Case2Of3 = Some(TypeValue.CreateInt32())
     ->
     Assert.Pass()
   | Sum.Left((_, t, k), _) ->
@@ -553,7 +554,7 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
 
   let docNumberValue =
     TypeValue.Union
-      { value = Map.ofList [ documentNumberCaseSymbol, docNumberCaseValue ]
+      { value = OrderedMap.ofList [ documentNumberCaseSymbol, docNumberCaseValue ]
         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentNumber", documentNumberTy) }
 
   let docDateCaseValue =
@@ -563,12 +564,12 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
 
   let docDateValue =
     TypeValue.Union
-      { value = Map.ofList [ documentDateCaseSymbol, docDateCaseValue ]
+      { value = OrderedMap.ofList [ documentDateCaseSymbol, docDateCaseValue ]
         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "DocumentDate", documentDateTy) }
 
   let predictionValue =
     TypeValue.Record
-      { value = Map.ofList [ numberFieldSymbol, docNumberValue; dateFieldSymbol, docDateValue ]
+      { value = OrderedMap.ofList [ numberFieldSymbol, docNumberValue; dateFieldSymbol, docDateValue ]
         source = TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName "Prediction", predictionTy) }
 
   let expected =

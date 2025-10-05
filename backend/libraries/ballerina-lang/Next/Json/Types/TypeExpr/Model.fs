@@ -55,5 +55,5 @@ module TypeExpr =
         | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude TypeExpr.ToJson (a, b)
         | TypeExpr.NewSymbol _ -> JsonValue.Null
         | TypeExpr.Let(_, _, rest) -> TypeExpr.ToJson rest
-        | TypeExpr.LetSymbols _ -> failwith "Not implemented"
+        | TypeExpr.LetSymbols(_, rest) -> TypeExpr.ToJson rest
         | TypeExpr.Imported _ -> failwith "Not implemented"

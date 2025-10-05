@@ -8,7 +8,7 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
-
+open Ballerina.StdLib.OrderPreservingMap
 
 let symbol name : TypeSymbol =
   { Name = name |> Identifier.LocalScope
@@ -20,7 +20,7 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   let typeSymbol = symbol fieldName
   let typeValue = TypeValue.CreateInt32()
 
-  let recordType = TypeValue.CreateRecord(Map.ofList [ typeSymbol, typeValue ])
+  let recordType = TypeValue.CreateRecord(OrderedMap.ofList [ typeSymbol, typeValue ])
 
   let recordValue =
     Value<Unit>.Record(Map.ofList [ typeSymbol, Value<Unit>.Primitive(PrimitiveValue.Int32 99) ])
@@ -40,7 +40,7 @@ let ``Delta.Record: Updates field in a record correctly`` () =
 
 [<Test>]
 let ``Delta.Record: Fails when field not found in type`` () =
-  let recordType = TypeValue.CreateRecord Map.empty
+  let recordType = TypeValue.CreateRecord OrderedMap.empty
 
   let delta =
     Delta.Record("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
@@ -55,7 +55,7 @@ let ``Delta.Record: Fails when field not found in value`` () =
   let typeSymbol = symbol fieldName
   let typeValue = TypeValue.CreateInt32()
 
-  let recordType = TypeValue.CreateRecord(Map.ofList [ typeSymbol, typeValue ])
+  let recordType = TypeValue.CreateRecord(OrderedMap.ofList [ typeSymbol, typeValue ])
 
   let recordValue = Value<Unit>.Record(Map.empty)
 
