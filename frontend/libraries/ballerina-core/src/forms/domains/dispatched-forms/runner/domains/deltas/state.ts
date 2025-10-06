@@ -127,6 +127,12 @@ export type DispatchDeltaList<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "ArrayValueAll";
+      nestedDelta: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "ArrayAdd";
       value: PredicateValue;
       state: any;
@@ -396,6 +402,10 @@ export type DispatchDeltaTransferList<DispatchDeltaTransferCustom> =
         number,
         DispatchDeltaTransfer<DispatchDeltaTransferCustom>
       >;
+    }
+  | {
+      Discriminator: "ArrayValueAll";
+      ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "ArrayAddAt"; AddAt: DispatchTransferTuple2<number, any> }
   | { Discriminator: "ArrayRemoveAt"; RemoveAt: number }
@@ -829,6 +839,30 @@ export const DispatchDeltaTransfer = {
                       ],
                       ...value[2],
                     ]
+                  : value[2],
+              ]),
+            );
+          }
+          if (delta.kind == "ArrayValueAll") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "ArrayValueAll",
+                  ValueAll: value[0],
+                },
+                `[ArrayValueAll]${value[1]}`,
+                delta.flags
+                  ? [[delta.flags, `[ArrayValueAll]${value[1]}`], ...value[2]]
                   : value[2],
               ]),
             );

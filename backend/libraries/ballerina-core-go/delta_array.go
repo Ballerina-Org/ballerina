@@ -9,6 +9,7 @@ type deltaArrayEffectsEnum string
 
 const (
 	arrayValue       deltaArrayEffectsEnum = "ArrayValue"
+	arrayValueAll    deltaArrayEffectsEnum = "ArrayValueAll"
 	arrayAddAt       deltaArrayEffectsEnum = "ArrayAddAt"
 	arrayRemoveAt    deltaArrayEffectsEnum = "ArrayRemoveAt"
 	arrayMoveFromTo  deltaArrayEffectsEnum = "ArrayMoveFromTo"
@@ -21,6 +22,7 @@ type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaArrayEffectsEnum
 	value         *Tuple2[int, deltaA]
+	valueAll      *deltaA
 	addAt         *Tuple2[int, a]
 	removeAt      *int
 	moveFromTo    *Tuple2[int, int]
@@ -37,6 +39,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase
 		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
 		MoveFromTo    *Tuple2[int, int]
@@ -47,6 +50,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
+		ValueAll:      d.valueAll,
 		AddAt:         d.addAt,
 		RemoveAt:      d.removeAt,
 		MoveFromTo:    d.moveFromTo,
@@ -61,6 +65,7 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 		DeltaBase
 		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
 		MoveFromTo    *Tuple2[int, int]
@@ -76,6 +81,7 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
+	d.valueAll = aux.ValueAll
 	d.addAt = aux.AddAt
 	d.removeAt = aux.RemoveAt
 	d.moveFromTo = aux.MoveFromTo
@@ -96,6 +102,12 @@ func NewDeltaArrayValue[a any, deltaA any](index int, delta deltaA) DeltaArray[a
 	return DeltaArray[a, deltaA]{
 		discriminator: arrayValue,
 		value:         &tmp,
+	}
+}
+func NewDeltaArrayValueAll[a any, deltaA any](delta deltaA) DeltaArray[a, deltaA] {
+	return DeltaArray[a, deltaA]{
+		discriminator: arrayValueAll,
+		valueAll:      &delta,
 	}
 }
 func NewDeltaArrayAddAt[a any, deltaA any](index int, newElement a) DeltaArray[a, deltaA] {
@@ -133,6 +145,7 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 
 func MatchDeltaArray[a any, deltaA any, Result any](
 	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
+	onValueAll func(deltaA) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
@@ -151,6 +164,8 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 					},
 				)(value)
 				return onValue(*delta.value)(arrayElement)
+			case arrayValueAll:
+				return onValueAll(*delta.valueAll)
 			case arrayAddAt:
 				return onAddAt(*delta.addAt)
 			case arrayRemoveAt:
