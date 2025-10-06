@@ -43,9 +43,9 @@ type _sequentialForSerialization struct {
 	Value         []json.RawMessage `json:"value"`
 }
 
-func (s _sequentialForSerialization) getElementsWithDiscriminator(kind string) ballerina.Sum[error, []json.RawMessage] {
-	if s.Discriminator != kind {
-		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected kind to be '%s', got %s", kind, s.Discriminator))
+func (s _sequentialForSerialization) getElementsWithDiscriminator(discriminator string) ballerina.Sum[error, []json.RawMessage] {
+	if s.Discriminator != discriminator {
+		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("expected discriminator to be '%s', got %s", discriminator, s.Discriminator))
 	}
 	if s.Value == nil {
 		return ballerina.Left[error, []json.RawMessage](fmt.Errorf("missing value field"))
