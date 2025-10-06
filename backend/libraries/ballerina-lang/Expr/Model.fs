@@ -218,6 +218,10 @@ module Model =
   and CaseName = { CaseName: string }
   and VarTypes = Map<VarName, ExprType>
 
+  type TranslationOverride with
+    static member Type({ KeyType = keyType }: TranslationOverride) : ExprType =
+      ExprType.MapType(ExprType.OptionType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
+
 
 // type Value<'ExprExtension, 'ValueExtension> with
 //   member self.toObject =
