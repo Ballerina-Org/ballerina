@@ -67,7 +67,10 @@ let private run program =
             s.Types.UnionCases
             |> Map.map (fun k _ ->
               Value<TypeValue, ValueExt>
-                .Lambda("_" |> Var.Create, Expr.UnionCons(k, "_" |> Identifier.LocalScope |> Expr.Lookup)))
+                .Lambda(
+                  "_" |> Var.Create,
+                  Expr.UnionCons(k, ("_" |> Identifier.LocalScope, Location.Unknown) |> Expr.Lookup, Location.Unknown)
+                ))
             |> Map.toList
 
         let evalContext =

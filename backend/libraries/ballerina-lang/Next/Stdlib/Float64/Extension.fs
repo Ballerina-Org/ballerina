@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Float64
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -34,11 +34,21 @@ module Extension =
             | Float64Operations.Plus v -> Some(Float64Operations.Plus v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsPlus |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsPlus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -61,10 +71,15 @@ module Extension =
             | Float64Operations.Minus v -> Some(Float64Operations.Minus v)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(-v))
             } }
@@ -82,11 +97,21 @@ module Extension =
             | Float64Operations.Divide v -> Some(Float64Operations.Divide v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsDivide |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsDivide
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -110,17 +135,32 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsPower |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsPower
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsFloat64
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Float64Operations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
-                let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(pown vClosure v))
             } }
 
@@ -137,11 +177,21 @@ module Extension =
             | Float64Operations.Mod v -> Some(Float64Operations.Mod v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsMod |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsMod
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -164,11 +214,21 @@ module Extension =
             | Float64Operations.Equal v -> Some(Float64Operations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -191,11 +251,21 @@ module Extension =
             | Float64Operations.NotEqual v -> Some(Float64Operations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -218,11 +288,21 @@ module Extension =
             | Float64Operations.GreaterThan v -> Some(Float64Operations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -245,11 +325,21 @@ module Extension =
             | Float64Operations.GreaterThanOrEqual v -> Some(Float64Operations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -275,11 +365,21 @@ module Extension =
             | Float64Operations.LessThan v -> Some(Float64Operations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -302,11 +402,21 @@ module Extension =
             | Float64Operations.LessThanOrEqual v -> Some(Float64Operations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application

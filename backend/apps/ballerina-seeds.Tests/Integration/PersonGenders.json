@@ -1,0 +1,159 @@
+﻿{
+  "typesV2": {
+    "Gender": {
+      "discriminator": "union",
+      "value": [
+        [
+          {
+            "discriminator": "lookup",
+            "value": "F"
+          },
+          {
+            "discriminator": "unit"
+          }
+        ],
+        [
+          {
+            "discriminator": "lookup",
+            "value": "M"
+          },
+          {
+            "discriminator": "unit"
+          }
+        ],
+        [
+          {
+            "discriminator": "lookup",
+            "value": "X"
+          },
+          {
+            "discriminator": "unit"
+          }
+        ]
+      ]
+    },
+    "PublicData": {
+      "discriminator": "record",
+      "value": [
+        [
+          {
+            "discriminator": "lookup",
+            "value": "Height"
+          },
+          {
+            "discriminator": "int32"
+          }
+        ]
+      ]
+    },
+    "Person": {
+      "discriminator": "record",
+      "value": [
+        [
+          {
+            "discriminator": "lookup",
+            "value": "Surname"
+          },
+          {
+            "discriminator": "string"
+          }
+        ],
+        [
+          {
+            "discriminator": "lookup",
+            "value": "Biology"
+          },
+          {
+            "discriminator": "union",
+            "value": [
+              [
+                {
+                  "discriminator": "lookup",
+                  "value": "Public"
+                },
+                {
+                  "discriminator": "lookup",
+                  "value": "PublicData"
+                }
+              ],
+              [
+                {
+                  "discriminator": "lookup",
+                  "value": "Secret"
+                },
+                {
+                  "discriminator": "unit"
+                }
+              ]
+            ]
+          }
+        ]
+      ]
+    }
+  },
+  "schema": {
+    "entities": {
+      "People": {
+        "type": {
+          "discriminator": "lookup",
+          "value": "Person"
+        },
+        "methods": [
+          "get",
+          "getMany",
+          "create",
+          "delete"
+        ],
+        "updaters": [
+        ],
+        "predicates": {
+          "SomePredicate": {
+            "discriminator": "bool",
+            "value": "false"
+          }
+        }
+      },
+      "Genders": {
+        "type": {
+          "discriminator": "lookup",
+          "value": "Gender"
+        },
+        "methods": [
+          "get",
+          "getMany",
+          "create",
+          "delete"
+        ],
+        "updaters": [],
+        "predicates": {
+          "SomePredicate": {
+            "discriminator": "bool",
+            "value": "false"
+          }
+        }
+      }
+    },
+    "lookups": {
+      "PeopleGenders": {
+        "source": "People",
+        "target": "Genders",
+        "forward": {
+          "arity": {
+            "min": 1,
+            "max": 1
+          },
+          "methods": [
+            "get",
+            "getMany",
+            "create",
+            "delete",
+            "link",
+            "unlink"
+          ],
+          "path": [["field", "Biology"], ["unionCase", ["Public","var"]], ["field", "Gender"]]
+
+        }
+      }
+    }
+  }
+}

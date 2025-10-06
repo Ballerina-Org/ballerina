@@ -8,13 +8,14 @@ module Model =
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.LocalizedErrors
 
   type Var =
     { Name: string }
 
     static member Create name : Var = { Var.Name = name }
 
-  type Expr<'T> =
+  type ExprRec<'T> =
     | TypeLambda of TypeParameter * Expr<'T>
     | TypeApply of Expr<'T> * 'T
     | Lambda of Var * Option<'T> * Expr<'T>
@@ -32,6 +33,10 @@ module Model =
     | Primitive of PrimitiveValue
     | Lookup of Identifier
     | If of Expr<'T> * Expr<'T> * Expr<'T>
+
+  and Expr<'T> =
+    { Expr: ExprRec<'T>
+      Location: Location }
 
   and SumConsSelector = { Case: int; Count: int }
   and TupleDesSelector = { Index: int }

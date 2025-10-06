@@ -12,6 +12,7 @@ module Expr =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Terms.Patterns
   open Model
   open Common
   open Precedence
@@ -50,37 +51,39 @@ module Expr =
     let stringLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.StringLiteral s -> Expr.Primitive(PrimitiveValue.String s) |> Some
+        | Token.StringLiteral s -> Expr.Primitive(PrimitiveValue.String s, t.Location) |> Some
         | _ -> None)
 
     let intLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.IntLiteral s -> Expr.Primitive(PrimitiveValue.Int32 s) |> Some
+        | Token.IntLiteral s -> Expr.Primitive(PrimitiveValue.Int32 s, t.Location) |> Some
         | _ -> None)
 
     let decimalLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.DecimalLiteral d -> Expr.Primitive(PrimitiveValue.Decimal d) |> Some
+        | Token.DecimalLiteral d -> Expr.Primitive(PrimitiveValue.Decimal d, t.Location) |> Some
         | _ -> None)
 
     let boolLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.BoolLiteral b -> Expr.Primitive(PrimitiveValue.Bool b) |> Some
+        | Token.BoolLiteral b -> Expr.Primitive(PrimitiveValue.Bool b, t.Location) |> Some
         | _ -> None)
 
     let unitLiteral () =
       parser {
         do! openRoundBracketOperator
         do! closeRoundBracketOperator
-        return Expr.Primitive PrimitiveValue.Unit
+        let! loc = parser.Location
+        return Expr.Primitive(PrimitiveValue.Unit, loc)
       }
 
     let matchWith () =
       parser {
         do! parseKeyword Keyword.Match
+        let! loc = parser.Location
 
         return!
           parser {
@@ -118,7 +121,7 @@ module Expr =
               |> parser.Try
               |> parser.Map Sum.toOption
 
-            return Expr.Apply(Expr.UnionDes(cases, fallback), matchedExpr)
+            return Expr.Apply(Expr.UnionDes(cases, fallback, loc), matchedExpr, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -126,6 +129,7 @@ module Expr =
     let exprLambda () =
       parser {
         do! parseKeyword Keyword.Fun
+        let! loc = parser.Location
 
         return!
           parser {
@@ -147,7 +151,7 @@ module Expr =
 
             do! parseOperator Operator.SingleArrow
             let! body = expr parseAllComplexShapes
-            return Expr.Lambda(Var.Create paramName, paramType, body)
+            return Expr.Lambda(Var.Create paramName, paramType, body, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
 
@@ -156,6 +160,7 @@ module Expr =
     let exprLet () =
       parser {
         do! letKeyword
+        let! loc = parser.Location
 
         return!
           parser {
@@ -198,7 +203,7 @@ module Expr =
             let! value = expr parseAllComplexShapes
             do! inKeyword
             let! body = expr parseAllComplexShapes
-            return Expr.Let(paramName |> Var.Create, paramType, value, body)
+            return Expr.Let(paramName |> Var.Create, paramType, value, body, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -206,6 +211,7 @@ module Expr =
     let exprConditional () =
       parser {
         do! ifKeyword
+        let! loc = parser.Location
 
         return!
           parser {
@@ -214,7 +220,7 @@ module Expr =
             let! thenBranch = expr parseAllComplexShapes
             do! elseKeyword
             let! elseBranch = expr parseAllComplexShapes
-            return Expr.If(cond, thenBranch, elseBranch)
+            return Expr.If(cond, thenBranch, elseBranch, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -222,6 +228,7 @@ module Expr =
     let recordCons () =
       parser {
         do! openCurlyBracketOperator
+        let! loc = parser.Location
 
         return!
           parser {
@@ -238,7 +245,7 @@ module Expr =
 
             do! closeCurlyBracketOperator
 
-            return Expr.RecordCons fields
+            return Expr.RecordCons(fields, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -285,6 +292,7 @@ module Expr =
     let typeLet () =
       parser {
         do! typeKeyword
+        let! loc = parser.Location
 
         return!
           parser {
@@ -312,7 +320,7 @@ module Expr =
 
             let typeDecl = TypeExpr.LetSymbols(symbols, typeDecl)
 
-            return Expr.TypeLet(id, typeDecl, body)
+            return Expr.TypeLet(id, typeDecl, body, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -321,7 +329,8 @@ module Expr =
       let singleOperator op =
         parser {
           do! parseOperator op
-          return op.ToString() |> Identifier.LocalScope |> Expr.Lookup
+          let! loc = parser.Location
+          return (op.ToString() |> Identifier.LocalScope, loc) |> Expr.Lookup
         }
 
       singleOperator Operator.Bang
@@ -331,8 +340,9 @@ module Expr =
     let identifierLookup () =
       parser {
         let! id = identifierMatch
+        let! loc = parser.Location
         // do Console.WriteLine($"{String.replicate (depth * 2) indent}> Parsed identifier: {id.ToFSharpString}")
-        return Expr.Lookup(Identifier.LocalScope id)
+        return Expr.Lookup(Identifier.LocalScope id, loc)
       }
 
     let scopedIdentifier () =
@@ -524,16 +534,20 @@ module Expr =
                     collapseBinaryOperatorsChain
                       { Compose =
                           fun (e1, op, e2) ->
-                            Expr.Apply(Expr.Apply(Expr.Lookup(Identifier.LocalScope(op.ToString())), e1), e2)
+                            Expr.Apply(
+                              Expr.Apply(Expr.Lookup(Identifier.LocalScope(op.ToString()), loc), e1, loc),
+                              e2,
+                              loc
+                            )
                         ToExpr = id }
                       loc
                       precedence
                       chain
                 | ScopedIdentifier ids ->
-                  match acc with
-                  | Expr.Lookup(Identifier.LocalScope id) ->
+                  match acc.Expr with
+                  | ExprRec.Lookup(Identifier.LocalScope id) ->
                     let ids = (id :: (ids |> NonEmptyList.ToList)) |> List.rev
-                    return Expr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head))
+                    return Expr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head), loc)
                   | _ ->
                     return!
                       (loc, $"Error: cannot collapse scoped identifier chain on non-identifier")
@@ -541,13 +555,17 @@ module Expr =
                       |> sum.Throw
                 | RecordDes ids ->
                   return
-                    Expr.RecordDes(acc, ids |> NonEmptyList.ToList |> List.rev |> List.head |> Identifier.LocalScope)
-                | TupleCons fields -> return Expr.TupleCons(acc :: (fields |> NonEmptyList.ToList))
+                    Expr.RecordDes(
+                      acc,
+                      ids |> NonEmptyList.ToList |> List.rev |> List.head |> Identifier.LocalScope,
+                      loc
+                    )
+                | TupleCons fields -> return Expr.TupleCons(acc :: (fields |> NonEmptyList.ToList), loc)
                 | ApplicationArguments args ->
                   let smartApply (t1, t2) =
                     match t2 with
-                    | Sum.Left t2 -> Expr.Apply(t1, t2)
-                    | Sum.Right t2 -> Expr.TypeApply(t1, t2)
+                    | Sum.Left t2 -> Expr.Apply(t1, t2, loc)
+                    | Sum.Right t2 -> Expr.TypeApply(t1, t2, loc)
 
                   return args |> NonEmptyList.ToList |> List.fold (fun acc e -> smartApply (acc, e)) acc
               })

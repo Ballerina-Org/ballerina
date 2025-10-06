@@ -45,7 +45,8 @@ module TypeLambdas =
 
         let newOps = [ ext.EvalToTypeApplicable; ext.EvalToApplicable ]
 
-        let ops = fun v -> reader.Any(ops v, newOps |> List.map (fun newOp -> newOp v))
+        let ops =
+          fun loc0 v -> reader.Any(ops loc0 v, newOps |> List.map (fun newOp -> newOp loc0 v))
 
         let id, _, _ = ext.ExtensionType
 

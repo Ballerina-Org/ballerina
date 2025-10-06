@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.DateOnly
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -35,11 +35,21 @@ module Extension =
             | DateOnlyOperations.Diff v -> Some(DateOnlyOperations.Diff v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsDiff |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsDiff
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -64,11 +74,21 @@ module Extension =
             | DateOnlyOperations.Equal v -> Some(DateOnlyOperations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -91,11 +111,21 @@ module Extension =
             | DateOnlyOperations.NotEqual v -> Some(DateOnlyOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -118,11 +148,21 @@ module Extension =
             | DateOnlyOperations.GreaterThan v -> Some(DateOnlyOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -145,11 +185,21 @@ module Extension =
             | DateOnlyOperations.GreaterThanOrEqual v -> Some(DateOnlyOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -175,11 +225,21 @@ module Extension =
             | DateOnlyOperations.LessThan v -> Some(DateOnlyOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -202,11 +262,21 @@ module Extension =
             | DateOnlyOperations.LessThanOrEqual v -> Some(DateOnlyOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -240,19 +310,30 @@ module Extension =
             | DateOnlyOperations.ToDateTime v -> Some(DateOnlyOperations.ToDateTime v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DateOnlyOperations.AsToDateTime |> reader.OfSum
+              let! op =
+                op
+                |> DateOnlyOperations.AsToDateTime
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op, v with
               | None, Value.Primitive(PrimitiveValue.Date v) -> // the closure is empty - first step in the application
                 return DateOnlyOperations.ToDateTime {| v1 = Some(v) |} |> operationLens.Set |> Ext
               | Some(vClosure), Value.Tuple v -> // the closure has the first operand - second step in the application
-                let! v = v |> List.map (fun v -> v |> Value.AsPrimitive |> reader.OfSum) |> reader.All
+                let! v =
+                  v
+                  |> List.map (fun v -> v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum)
+                  |> reader.All
 
                 let! v =
                   v
-                  |> List.map (fun v -> v |> PrimitiveValue.AsInt32 |> reader.OfSum)
+                  |> List.map (fun v ->
+                    v
+                    |> PrimitiveValue.AsInt32
+                    |> sum.MapError(Errors.FromErrors loc0)
+                    |> reader.OfSum)
                   |> reader.All
 
                 match v with
@@ -261,8 +342,11 @@ module Extension =
                     System.DateTime(vClosure.Year, vClosure.Month, vClosure.Day, v1, v2, v3)
 
                   return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.DateTime(dateTime))
-                | _ -> return! sum.Throw(Errors.Singleton "Expected a tuple of 3 int32s") |> reader.OfSum
-              | _ -> return! sum.Throw(Errors.Singleton "Expected a tuple or date") |> reader.OfSum
+                | _ ->
+                  return!
+                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple of 3 int32s"))
+                    |> reader.OfSum
+              | _ -> return! sum.Throw(Errors.Singleton(loc0, "Expected a tuple or date")) |> reader.OfSum
             } }
 
     let dateOnlyYearId = Identifier.FullyQualified([ "DateOnly" ], "getYear")
@@ -278,10 +362,15 @@ module Extension =
             | DateOnlyOperations.Year -> Some(DateOnlyOperations.Year)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
             } }
@@ -299,10 +388,15 @@ module Extension =
             | DateOnlyOperations.Month -> Some(DateOnlyOperations.Month)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
             } }
@@ -320,10 +414,15 @@ module Extension =
             | DateOnlyOperations.Day -> Some(DateOnlyOperations.Day)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
             } }
@@ -341,10 +440,15 @@ module Extension =
             | DateOnlyOperations.DayOfWeek -> Some(DateOnlyOperations.DayOfWeek)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
             } }
@@ -362,10 +466,15 @@ module Extension =
             | DateOnlyOperations.DayOfYear -> Some(DateOnlyOperations.DayOfYear)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDate |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
             } }

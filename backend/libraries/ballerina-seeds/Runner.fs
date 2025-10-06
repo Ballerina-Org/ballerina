@@ -7,7 +7,7 @@ open Ballerina.Data.Schema.Model
 open Ballerina.Data.Seeds
 
 open Ballerina.Data.Spec.Model
-open Ballerina.Errors
+open Ballerina.LocalizedErrors
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 

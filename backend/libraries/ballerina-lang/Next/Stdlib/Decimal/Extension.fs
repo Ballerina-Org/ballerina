@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Decimal
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -37,11 +37,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsPlus |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsPlus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -65,10 +75,15 @@ module Extension =
             | DecimalOperations.Minus v -> Some(DecimalOperations.Minus v)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(-v))
             } }
@@ -86,11 +101,21 @@ module Extension =
             | DecimalOperations.Divide v -> Some(DecimalOperations.Divide v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsDivide |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsDivide
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -114,17 +139,32 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsPower |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsPower
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsDecimal
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return DecimalOperations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
-                let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(pown vClosure v))
             } }
 
@@ -141,11 +181,21 @@ module Extension =
             | DecimalOperations.Mod v -> Some(DecimalOperations.Mod v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsMod |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsMod
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -168,11 +218,21 @@ module Extension =
             | DecimalOperations.Equal v -> Some(DecimalOperations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -195,11 +255,21 @@ module Extension =
             | DecimalOperations.NotEqual v -> Some(DecimalOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -222,11 +292,21 @@ module Extension =
             | DecimalOperations.GreaterThan v -> Some(DecimalOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -249,11 +329,21 @@ module Extension =
             | DecimalOperations.GreaterThanOrEqual v -> Some(DecimalOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -279,11 +369,21 @@ module Extension =
             | DecimalOperations.LessThan v -> Some(DecimalOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -306,11 +406,21 @@ module Extension =
             | DecimalOperations.LessThanOrEqual v -> Some(DecimalOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application

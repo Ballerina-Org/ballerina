@@ -168,7 +168,7 @@ module Lexer =
          AnyFailed = fun loc -> (loc, "No matching token") |> Errors.Singleton
          NotFailed = fun loc -> (loc, $"Expected token not found at {loc}") |> Errors.Singleton
          UnexpectedSymbol = fun loc c -> (loc, $"Unexpected symbol: {c}") |> Errors.Singleton
-         FilterHighestPriorityOnly = Errors.HighestPriority
+         FilterHighestPriorityOnly = Errors.FilterHighestPriorityOnly
          Concat = Errors.Concat |}
     )
 

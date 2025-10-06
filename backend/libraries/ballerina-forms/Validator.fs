@@ -593,30 +593,31 @@ module Validator =
         | ExprType.GenericApplicationType _ ->
           return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic application")
         | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
-          match fr with
-          | Renderer.RecordRenderer _ -> return! error expectedType fr
-          | Renderer.UnionRenderer _ -> return! error expectedType fr
-          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
-          | Renderer.PrimitiveRenderer _ -> return! error expectedType fr
-          | Renderer.MapRenderer renderer ->
-            do!
-              !
-                ExprType.MapType(ExprType.OptionType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
-                (renderer |> Renderer.MapRenderer)
-              |> Sum.map ignore
+          match keyType with
+          | ExprType.LookupType { VarName = varName } ->
+            let (LanguageStreamType languageStreamType) = codegen.LanguageStreamType
 
-            ExprType.TranslationOverride { Label = label; KeyType = keyType }
-          | Renderer.SumRenderer _ -> return! error expectedType fr
-          | Renderer.ListRenderer _ -> return! error expectedType fr
-          | Renderer.OptionRenderer _ -> return! error expectedType fr
-          | Renderer.OneRenderer _ -> return! error expectedType fr
-          | Renderer.ManyRenderer _ -> return! error expectedType fr
-          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
-          | Renderer.EnumRenderer _ -> return! error expectedType fr
-          | Renderer.StreamRenderer _ -> return! error expectedType fr
-          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
-          | Renderer.TableFormRenderer _ -> return! error expectedType fr
-          | Renderer.TupleRenderer _ -> return! error expectedType fr
+            if languageStreamType = varName then
+              let expectedType = TranslationOverride.Type { Label = label; KeyType = keyType }
+              do! ! expectedType fr |> Sum.map ignore
+              ExprType.TranslationOverride { Label = label; KeyType = keyType }
+            else
+              return!
+                sum.Throw(
+                  Errors.Singleton(
+                    sprintf
+                      "Error: translation override key type %s is not the configured language stream type %s"
+                      varName
+                      languageStreamType
+                  )
+                )
+          | _ ->
+            return!
+              sum.Throw(
+                Errors.Singleton(
+                  sprintf "Error: translation override key type %s is not a lookup type" (keyType.ToString())
+                )
+              )
       }
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with

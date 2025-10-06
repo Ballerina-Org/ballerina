@@ -7,7 +7,8 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Terms
+open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Json

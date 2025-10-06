@@ -12,6 +12,7 @@ module Let =
   open Ballerina.Reader.WithError
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "let"
 

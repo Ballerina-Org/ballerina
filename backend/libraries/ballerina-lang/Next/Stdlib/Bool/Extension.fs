@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Bool
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -32,11 +32,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc (op, v) ->
             reader {
-              let! op = op |> BoolOperations.AsAnd |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! op =
+                op
+                |> BoolOperations.AsAnd
+                |> sum.MapError(Errors.FromErrors loc)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -60,11 +70,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> BoolOperations.AsOr |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! op =
+                op
+                |> BoolOperations.AsOr
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -88,10 +108,15 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(not v))
             } }

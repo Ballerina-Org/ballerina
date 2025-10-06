@@ -4,7 +4,7 @@ module Model =
 
   open System
   open Ballerina.Collections.Sum
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.State.WithError
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.Data.Spec.Model

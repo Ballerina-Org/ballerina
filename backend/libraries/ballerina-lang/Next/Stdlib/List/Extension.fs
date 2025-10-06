@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.List
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types
@@ -32,10 +32,14 @@ module Extension =
     let listConsId = Identifier.FullyQualified([ "List" ], "Cons")
     let listNilId = Identifier.FullyQualified([ "List" ], "Nil")
 
-    let getValueAsList (v: Value<TypeValue, 'ext>) : Sum<List<Value<TypeValue, 'ext>>, Errors> =
+    let getValueAsList (v: Value<TypeValue, 'ext>) : Sum<List<Value<TypeValue, 'ext>>, Ballerina.Errors.Errors> =
       sum {
         let! v = v |> Value.AsExt
-        let! v = valueLens.Get v |> sum.OfOption("cannot get list value" |> Errors.Singleton)
+
+        let! v =
+          valueLens.Get v
+          |> sum.OfOption("cannot get list value" |> Ballerina.Errors.Errors.Singleton)
+
         let! v = v |> ListValues.AsList
         v
       }
@@ -70,30 +74,40 @@ module Extension =
             | List_Filter v -> Some(List_Filter v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> ListOperations.AsFilter |> reader.OfSum
+              let! op =
+                op
+                |> ListOperations.AsFilter
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return ListOperations.List_Filter({| f = Some v |}) |> operationLens.Set
               | Some predicate -> // the closure has the function - second step in the application
-                let! v = v |> Value.AsExt |> reader.OfSum
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                 let! v =
                   valueLens.Get v
-                  |> sum.OfOption("cannot get option value" |> Errors.Singleton)
+                  |> sum.OfOption((loc0, "cannot get option value") |> Errors.Singleton)
                   |> reader.OfSum
 
-                let! v = v |> ListValues.AsList |> reader.OfSum
+                let! v = v |> ListValues.AsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                 let! v' =
                   v
                   |> List.map (fun v ->
                     reader {
-                      let! res = Expr.EvalApply(predicate, v)
-                      let! res = res |> Value.AsPrimitive |> reader.OfSum
-                      let! res = res |> PrimitiveValue.AsBool |> reader.OfSum
+                      let! res = Expr.EvalApply loc0 (predicate, v)
+                      let! res = res |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                      let! res =
+                        res
+                        |> PrimitiveValue.AsBool
+                        |> sum.MapError(Errors.FromErrors loc0)
+                        |> reader.OfSum
+
                       return v, res
                     })
                   |> reader.All
@@ -132,17 +146,21 @@ module Extension =
             | List_Map v -> Some(List_Map v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> ListOperations.AsMap |> reader.OfSum
+              let! op =
+                op
+                |> ListOperations.AsMap
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return ListOperations.List_Map({| f = Some v |}) |> operationLens.Set
               | Some f -> // the closure has the function - second step in the application
-                let! v = getValueAsList v |> reader.OfSum
+                let! v = getValueAsList v |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
-                let! v' = v |> List.map (fun v -> Expr.EvalApply(f, v)) |> reader.All
+                let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 (f, v)) |> reader.All
 
                 return ListValues.List v' |> valueLens.Set
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
@@ -172,26 +190,34 @@ module Extension =
             | List_Cons -> Some List_Cons
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              do! op |> ListOperations.AsCons |> reader.OfSum
+              do!
+                op
+                |> ListOperations.AsCons
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
-              let! items = v |> Value.AsTuple |> reader.OfSum
+              let! items = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               match items with
               | [ head; tail ] ->
-                let! tail = tail |> Value.AsExt |> reader.OfSum
+                let! tail = tail |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                 let! tail =
                   tail
                   |> valueLens.Get
-                  |> sum.OfOption($"Error: expected list" |> Errors.Singleton)
+                  |> sum.OfOption((loc0, $"Error: expected list") |> Errors.Singleton)
                   |> reader.OfSum
 
-                let! tail = tail |> ListValues.AsList |> reader.OfSum
+                let! tail =
+                  tail
+                  |> ListValues.AsList
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
 
                 return ListValues.List(head :: tail) |> valueLens.Set
-              | _ -> return! "Error: expected pair" |> Errors.Singleton |> reader.Throw
+              | _ -> return! (loc0, "Error: expected pair") |> Errors.Singleton |> reader.Throw
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
@@ -213,9 +239,13 @@ module Extension =
             | List_Nil -> Some List_Nil
             | _ -> None)
         Apply =
-          fun (op, _) ->
+          fun loc0 (op, _) ->
             reader {
-              do! op |> ListOperations.AsNil |> reader.OfSum
+              do!
+                op
+                |> ListOperations.AsNil
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return ListValues.List [] |> valueLens.Set
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
@@ -228,6 +258,7 @@ module Extension =
       Reader.assertDiscriminatorAndContinueWithValue "list" v (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
+
           let! elements = elements |> Seq.map rootValueParser |> reader.All
           return toValueFromList elements
         })

@@ -6,7 +6,7 @@ module Model =
 
   open System
   open Ballerina.Collections.Sum
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.Data.Delta.Model
   open Ballerina.Data.Delta.ToUpdater
   open Ballerina.Data.Spec.Model

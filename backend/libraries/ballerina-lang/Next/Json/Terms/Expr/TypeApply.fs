@@ -10,6 +10,7 @@ module TypeApply =
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "type-apply"
 
