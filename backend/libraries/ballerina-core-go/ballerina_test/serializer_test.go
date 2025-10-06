@@ -46,7 +46,7 @@ func TestUnitDeserializationError(t *testing.T) {
 		serialized    json.RawMessage
 		expectedError string
 	}{
-		{name: "not-unit-kind", serialized: json.RawMessage(`{"discriminator":"not-unit"}`), expectedError: "on unit: expected kind to be 'unit', got 'not-unit'"},
+		{name: "not-unit-kind", serialized: json.RawMessage(`{"discriminator":"not-unit"}`), expectedError: "on unit: expected discriminator to be 'unit', got 'not-unit'"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on unit"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on unit"},
 	}
@@ -107,8 +107,8 @@ func TestSumDeserializationError(t *testing.T) {
 		serialized    json.RawMessage
 		expectedError string
 	}{
-		{name: "on-sum-on-left", serialized: json.RawMessage(`{"discriminator":"sum","value":[0,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on left: on unit: expected kind to be 'unit', got 'not-unit'"},
-		{name: "on-sum-on-right", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on right: on unit: expected kind to be 'unit', got 'not-unit'"},
+		{name: "on-sum-on-left", serialized: json.RawMessage(`{"discriminator":"sum","value":[0,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on left: on unit: expected discriminator to be 'unit', got 'not-unit'"},
+		{name: "on-sum-on-right", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on right: on unit: expected discriminator to be 'unit', got 'not-unit'"},
 		{name: "not-sum-case", serialized: json.RawMessage(`{"discriminator":"not-sum","value":[0,{"discriminator":"unit"}]}`), expectedError: "on sum: expected discriminator to be 'sum', got 'not-sum'"},
 		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"sum"}`), expectedError: "on sum: expected 2 elements in sum, got 0"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on sum"},
