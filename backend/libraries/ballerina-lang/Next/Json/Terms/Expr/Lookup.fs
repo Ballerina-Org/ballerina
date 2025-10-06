@@ -12,6 +12,7 @@ module Lookup =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "lookup"
 

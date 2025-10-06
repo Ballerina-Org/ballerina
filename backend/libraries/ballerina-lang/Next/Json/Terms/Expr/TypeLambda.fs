@@ -13,6 +13,7 @@ module TypeLambda =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "type-lambda"
 

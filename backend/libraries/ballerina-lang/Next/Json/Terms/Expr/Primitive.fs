@@ -10,6 +10,7 @@ module PrimitiveExpr =
   open Ballerina.Reader.WithError
   open Ballerina.Reader.WithError.Operators
   open Ballerina.DSL.Next.Terms.Json.Primitive
+  open Ballerina.DSL.Next.Terms.Patterns
 
   type Expr<'T> with
     static member FromJsonPrimitive: ExprParser<'T> =

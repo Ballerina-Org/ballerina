@@ -6,7 +6,7 @@ module TypeCheck =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -41,13 +41,13 @@ module TypeCheck =
       {| Types = fun (c: TypeCheckContext) -> c.Types
          Values = fun (c: TypeCheckContext) -> c.Values |}
 
-    static member TryFindVar(id: Identifier) : TypeCheckerResult<TypeValue * Kind> =
+    static member TryFindVar(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
       state {
         let! ctx = state.GetContext()
 
         return!
           ctx.Values
-          |> Map.tryFindWithError id "variables" id.ToFSharpString
+          |> Map.tryFindWithError id "variables" id.ToFSharpString loc
           |> state.OfSum
       }
 
@@ -68,33 +68,33 @@ module TypeCheck =
       { Bindings = ctx.Types
         VisitedVars = Set.empty }
 
-    static member TryFindSymbol(id: Identifier) : TypeCheckerResult<TypeSymbol> =
+    static member TryFindSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
       state {
         let! ctx = state.GetState()
 
         return!
           ctx.Types.Symbols
-          |> Map.tryFindWithError id "symbols" id.ToFSharpString
+          |> Map.tryFindWithError id "symbols" id.ToFSharpString loc
           |> state.OfSum
       }
 
-    static member TryFindType(id: Identifier) : TypeCheckerResult<TypeValue * Kind> =
+    static member TryFindType(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
       state {
         let! ctx = state.GetState()
 
         return!
           ctx.Types.Bindings
-          |> Map.tryFindWithError id "type bindings" id.ToFSharpString
+          |> Map.tryFindWithError id "type bindings" id.ToFSharpString loc
           |> state.OfSum
       }
 
-    static member TryFindUnionCaseConstructor(id: Identifier) : TypeCheckerResult<TypeValue> =
+    static member TryFindUnionCaseConstructor(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue> =
       state {
         let! ctx = state.GetState()
 
         return!
           ctx.Types.UnionCases
-          |> Map.tryFindWithError id "union cases" id.ToFSharpString
+          |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
           |> state.OfSum
       }
 
@@ -173,59 +173,78 @@ module TypeCheck =
       fun t ->
         let (!) = Expr<'T>.TypeCheck
 
+        let loc0 = t.Location
+        let error e = Errors.Singleton(loc0, e)
+
+        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
+          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+
         state {
-          match t with
-          | Expr.Primitive(PrimitiveValue.Int32 v) ->
-            return Expr.Primitive(PrimitiveValue.Int32 v), TypeValue.CreatePrimitive PrimitiveType.Int32, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.Int64 v) ->
-            return Expr.Primitive(PrimitiveValue.Int64 v), TypeValue.CreatePrimitive PrimitiveType.Int64, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.Float32 v) ->
-            return Expr.Primitive(PrimitiveValue.Float32 v), TypeValue.CreatePrimitive PrimitiveType.Float32, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.Float64 v) ->
-            return Expr.Primitive(PrimitiveValue.Float64 v), TypeValue.CreatePrimitive PrimitiveType.Float64, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.Bool v) ->
-            return Expr.Primitive(PrimitiveValue.Bool v), TypeValue.CreatePrimitive PrimitiveType.Bool, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.Date v) ->
-            return Expr.Primitive(PrimitiveValue.Date v), TypeValue.CreatePrimitive PrimitiveType.DateOnly, Kind.Star
-
-          | Expr.Primitive(PrimitiveValue.DateTime v) ->
+          match t.Expr with
+          | ExprRec.Primitive(PrimitiveValue.Int32 v) ->
             return
-              Expr.Primitive(PrimitiveValue.DateTime v), TypeValue.CreatePrimitive PrimitiveType.DateTime, Kind.Star
+              Expr.Primitive(PrimitiveValue.Int32 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Int32, Kind.Star
 
-          | Expr.Primitive(PrimitiveValue.TimeSpan v) ->
+          | ExprRec.Primitive(PrimitiveValue.Int64 v) ->
             return
-              Expr.Primitive(PrimitiveValue.TimeSpan v), TypeValue.CreatePrimitive PrimitiveType.TimeSpan, Kind.Star
+              Expr.Primitive(PrimitiveValue.Int64 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Int64, Kind.Star
 
-          | Expr.Primitive(PrimitiveValue.Decimal v) ->
-            return Expr.Primitive(PrimitiveValue.Decimal v), TypeValue.CreatePrimitive PrimitiveType.Decimal, Kind.Star
+          | ExprRec.Primitive(PrimitiveValue.Float32 v) ->
+            return
+              Expr.Primitive(PrimitiveValue.Float32 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Float32, Kind.Star
 
-          | Expr.Primitive(PrimitiveValue.Guid v) ->
-            return Expr.Primitive(PrimitiveValue.Guid v), TypeValue.CreatePrimitive PrimitiveType.Guid, Kind.Star
+          | ExprRec.Primitive(PrimitiveValue.Float64 v) ->
+            return
+              Expr.Primitive(PrimitiveValue.Float64 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Float64, Kind.Star
 
-          | Expr.Primitive(PrimitiveValue.String v) ->
-            return Expr.Primitive(PrimitiveValue.String v), TypeValue.CreatePrimitive PrimitiveType.String, Kind.Star
+          | ExprRec.Primitive(PrimitiveValue.Bool v) ->
+            return Expr.Primitive(PrimitiveValue.Bool v, loc0), TypeValue.CreatePrimitive PrimitiveType.Bool, Kind.Star
 
-          | Expr.Primitive(PrimitiveValue.Unit) ->
-            return Expr.Primitive(PrimitiveValue.Unit), TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star
+          | ExprRec.Primitive(PrimitiveValue.Date v) ->
+            return
+              Expr.Primitive(PrimitiveValue.Date v, loc0), TypeValue.CreatePrimitive PrimitiveType.DateOnly, Kind.Star
 
-          | Expr.Lookup id ->
-            let! t_id, id_k = state.Either (TypeCheckContext.TryFindVar id) (TypeCheckState.TryFindType id)
-            return Expr.Lookup id, t_id, id_k
-          | Expr.Apply(f, a_expr) ->
+          | ExprRec.Primitive(PrimitiveValue.DateTime v) ->
+            return
+              Expr.Primitive(PrimitiveValue.DateTime v, loc0),
+              TypeValue.CreatePrimitive PrimitiveType.DateTime,
+              Kind.Star
+
+          | ExprRec.Primitive(PrimitiveValue.TimeSpan v) ->
+            return
+              Expr.Primitive(PrimitiveValue.TimeSpan v, loc0),
+              TypeValue.CreatePrimitive PrimitiveType.TimeSpan,
+              Kind.Star
+
+          | ExprRec.Primitive(PrimitiveValue.Decimal v) ->
+            return
+              Expr.Primitive(PrimitiveValue.Decimal v, loc0), TypeValue.CreatePrimitive PrimitiveType.Decimal, Kind.Star
+
+          | ExprRec.Primitive(PrimitiveValue.Guid v) ->
+            return Expr.Primitive(PrimitiveValue.Guid v, loc0), TypeValue.CreatePrimitive PrimitiveType.Guid, Kind.Star
+
+          | ExprRec.Primitive(PrimitiveValue.String v) ->
+            return
+              Expr.Primitive(PrimitiveValue.String v, loc0), TypeValue.CreatePrimitive PrimitiveType.String, Kind.Star
+
+          | ExprRec.Primitive(PrimitiveValue.Unit) ->
+            return Expr.Primitive(PrimitiveValue.Unit, loc0), TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star
+
+          | ExprRec.Lookup id ->
+            let! t_id, id_k =
+              state.Either (TypeCheckContext.TryFindVar(id, loc0)) (TypeCheckState.TryFindType(id, loc0))
+
+            return Expr.Lookup(id, loc0), t_id, id_k
+          | ExprRec.Apply(f, a_expr) ->
             return!
               state {
                 let! a, t_a, a_k = !a_expr
-                do! a_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 return!
                   state.Either
                     (state {
-                      let! f_lookup = f |> Expr.AsLookup |> state.OfSum
+                      let! f_lookup = f |> Expr.AsLookup |> ofSum
 
                       return!
                         state.Either
@@ -242,22 +261,22 @@ module TypeCheck =
                               return!
                                 !Expr.SumCons({ SumConsSelector.Case = case
                                                 Count = count },
-                                              a_expr)
+                                              a_expr,
+                                              loc0)
                             | _ ->
                               return!
                                 state.Throw(
-                                  Errors.Singleton
-                                    $"Error: cannot find variable or type with name {id.ToFSharpString} in the context"
+                                  error
+                                    $"Error: cannot find variable or type with name {f_lookup.ToFSharpString} in the context"
                                 )
                           })
                           (state {
-                            let! resolved = TypeCheckContext.TryFindVar f_lookup |> state.Catch
+                            let! resolved = TypeCheckContext.TryFindVar(f_lookup, loc0) |> state.Catch
                             // ensure we do not apply ad-hoc polymorphism to bound variables
                             do!
                               resolved
                               |> Sum.AsRight
-                              |> Sum.fromOption (fun () ->
-                                $"Error: variable found, skipping branch" |> Errors.Singleton)
+                              |> Sum.fromOption (fun () -> $"Error: variable found, skipping branch" |> error)
                               |> state.OfSum
                               |> state.Ignore
 
@@ -265,160 +284,181 @@ module TypeCheck =
                             | Identifier.LocalScope f_lookup when
                               adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup
                               ->
-                              let! a_primitive = t_a |> TypeValue.AsPrimitive |> state.OfSum
-                              let a_primitive = a_primitive.value
+                              return!
+                                state {
+                                  let! a_primitive = t_a |> TypeValue.AsPrimitive |> ofSum
+                                  let a_primitive = a_primitive.value
 
-                              let! adHocResolution =
-                                adHocPolymorphismBinary
-                                |> Map.tryFindWithError
-                                  (f_lookup, a_primitive)
-                                  "ad-hoc polymorphism resolutions"
-                                  f_lookup.ToFSharpString
-                                |> state.OfSum
+                                  let! adHocResolution =
+                                    adHocPolymorphismBinary
+                                    |> Map.tryFindWithError
+                                      (f_lookup, a_primitive)
+                                      "ad-hoc polymorphism resolutions"
+                                      f_lookup.ToFSharpString
+                                      loc0
+                                    |> state.OfSum
 
-                              let! adhoc_op, adhoc_op_t, adhoc_op_k =
-                                !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup))
+                                  let! adhoc_op, adhoc_op_t, adhoc_op_k =
+                                    !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup),
+                                                 loc0)
 
-                              do! adhoc_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                                  do! adhoc_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                              do!
-                                TypeValue.Unify(
-                                  TypeValue.CreateArrow(
-                                    TypeValue.CreatePrimitive adHocResolution.MatchedInput,
+                                  do!
+                                    TypeValue.Unify(
+                                      loc0,
+                                      TypeValue.CreateArrow(
+                                        TypeValue.CreatePrimitive adHocResolution.MatchedInput,
+                                        TypeValue.CreateArrow(
+                                          TypeValue.CreatePrimitive adHocResolution.OtherInput,
+                                          TypeValue.CreatePrimitive adHocResolution.Output
+                                        )
+                                      ),
+                                      adhoc_op_t
+                                    )
+                                    |> Expr<'T>.liftUnification
+
+                                  let t_res =
                                     TypeValue.CreateArrow(
                                       TypeValue.CreatePrimitive adHocResolution.OtherInput,
                                       TypeValue.CreatePrimitive adHocResolution.Output
                                     )
-                                  ),
-                                  adhoc_op_t
-                                )
-                                |> Expr<'T>.liftUnification
 
-                              let t_res =
-                                TypeValue.CreateArrow(
-                                  TypeValue.CreatePrimitive adHocResolution.OtherInput,
-                                  TypeValue.CreatePrimitive adHocResolution.Output
-                                )
+                                  let k_res = Kind.Star
+                                  return Expr.Apply(adhoc_op, a, loc0), t_res, k_res
 
-                              let k_res = Kind.Star
-                              return Expr.Apply(adhoc_op, a), t_res, k_res
+                                }
+                                |> state.MapError(Errors.SetPriority ErrorPriority.High)
                             | Identifier.LocalScope name when (name = "!") ->
-                              do!
-                                TypeValue.Unify(TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
-                                |> Expr<'T>.liftUnification
+                              return!
+                                state {
+                                  do!
+                                    TypeValue.Unify(loc0, TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
+                                    |> Expr<'T>.liftUnification
 
-                              let! bool_op, bool_op_t, bool_op_k =
-                                !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name))
+                                  let! bool_op, bool_op_t, bool_op_k =
+                                    !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name), loc0)
 
-                              do! bool_op_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                                  do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                              do!
-                                TypeValue.Unify(
-                                  TypeValue.CreateArrow(
-                                    TypeValue.CreatePrimitive PrimitiveType.Bool,
-                                    TypeValue.CreatePrimitive PrimitiveType.Bool
-                                  ),
-                                  bool_op_t
-                                )
-                                |> Expr<'T>.liftUnification
+                                  do!
+                                    TypeValue.Unify(
+                                      loc0,
+                                      TypeValue.CreateArrow(
+                                        TypeValue.CreatePrimitive PrimitiveType.Bool,
+                                        TypeValue.CreatePrimitive PrimitiveType.Bool
+                                      ),
+                                      bool_op_t
+                                    )
+                                    |> Expr<'T>.liftUnification
 
-                              let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
-                              let k_res = Kind.Star
-                              return Expr.Apply(bool_op, a), t_res, k_res
+                                  let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
+                                  let k_res = Kind.Star
+                                  return Expr.Apply(bool_op, a, loc0), t_res, k_res
+                                }
+                                |> state.MapError(Errors.SetPriority ErrorPriority.High)
                             | _ ->
                               return!
                                 $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
-                                |> Errors.Singleton
+                                |> error
                                 |> state.Throw
+                                |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
                           })
                     })
                     (state {
                       let! f, t_f, f_k = !f
-                      do! f_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                      do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       let! (f_input, f_output) =
                         TypeValue.AsArrow t_f
-                        |> state.OfSum
+                        |> ofSum
                         |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                       return!
                         state.Any(
                           state {
-                            do! TypeValue.Unify(f_input, t_a) |> Expr<'T>.liftUnification
-                            let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
-                            return Expr.Apply(f, a), f_output, Kind.Star
+                            let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> ofSum
+
+                            return!
+                              state {
+                                let! aCasesT =
+                                  aCasesT
+                                  |> OrderedMap.map (fun _ -> TypeExpr.Eval None loc0 >> Expr<'T>.liftTypeEval)
+                                  |> state.AllMapOrdered
+
+                                let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
+
+                                do!
+                                  TypeValue.Unify(loc0, f_input, TypeValue.CreateUnion aCasesT)
+                                  |> Expr<'T>.liftUnification
+
+                                let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
+                                return Expr.Apply(f, a, loc0), f_output, Kind.Star
+                              }
+                              |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
                           },
                           [ state {
-                              let! aCasesT = t_a |> TypeValue.AsImportedUnionLike |> state.OfSum
-
-                              let! aCasesT =
-                                aCasesT
-                                |> OrderedMap.map (fun _ -> TypeExpr.Eval None >> Expr<'T>.liftTypeEval)
-                                |> state.AllMapOrdered
-
-                              let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
-
-                              do!
-                                TypeValue.Unify(f_input, TypeValue.CreateUnion aCasesT)
-                                |> Expr<'T>.liftUnification
-
-                              let! f_output = f_output |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
-                              return Expr.Apply(f, a), f_output, Kind.Star
-                            } ]
+                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T>.liftUnification
+                              let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
+                              return Expr.Apply(f, a, loc0), f_output, Kind.Star
+                            }
+                            |> state.MapError(Errors.SetPriority ErrorPriority.Medium) ]
                         )
                     })
 
               }
-              |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a_expr} `"))
+              |> state.MapError(Errors.FilterHighestPriorityOnly)
 
-          | Expr.If(cond, thenBranch, elseBranch) ->
+          // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `{f} {a_expr} `"))
+
+          | ExprRec.If(cond, thenBranch, elseBranch) ->
             return!
               state {
                 let! cond, t_cond, cond_k = !cond
-                do! cond_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! cond_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 do!
-                  TypeValue.Unify(t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
+                  TypeValue.Unify(loc0, t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
                   |> Expr<'T>.liftUnification
 
                 let! thenBranch, t_then, then_k = !thenBranch
                 let! elseBranch, t_else, else_k = !elseBranch
-                do! then_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-                do! else_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! then_k |> Kind.AsStar |> ofSum |> state.Ignore
+                do! else_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                do! TypeValue.Unify(t_then, t_else) |> Expr<'T>.liftUnification
-                let! t_then = t_then |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                do! TypeValue.Unify(loc0, t_then, t_else) |> Expr<'T>.liftUnification
+                let! t_then = t_then |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
 
-                return Expr.If(cond, thenBranch, elseBranch), t_then, Kind.Star
+                return Expr.If(cond, thenBranch, elseBranch, loc0), t_then, Kind.Star
               }
-              |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `if {cond} ...`"))
+          // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `if {cond} ...`"))
 
-          | Expr.Let(x, x_type, e1, e2) ->
+          | ExprRec.Let(x, x_type, e1, e2) ->
             return!
               state {
                 let! e1, t1, k1 = !e1
 
                 match x_type with
                 | Some x_type ->
-                  let! x_type, x_type_kind = x_type |> TypeExpr.Eval None |> Expr<'T>.liftTypeEval
-                  do! x_type_kind |> Kind.AsStar |> state.OfSum |> state.Ignore
-                  do! TypeValue.Unify(t1, x_type) |> Expr<'T>.liftUnification
+                  let! x_type, x_type_kind = x_type |> TypeExpr.Eval None loc0 |> Expr<'T>.liftTypeEval
+                  do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
+                  do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T>.liftUnification
                 | _ -> ()
 
                 let! e2, t2, k2 =
                   !e2
                   |> state.MapContext(TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope x.Name) (t1, k1)))
 
-                return Expr.Let(x, None, e1, e2), t2, k2
+                return Expr.Let(x, None, e1, e2, loc0), t2, k2
               }
-              |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `let {x.Name} = ...`"))
+          // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `let {x.Name} = ...`"))
 
-          | Expr.Lambda(x, t, body) ->
+          | ExprRec.Lambda(x, t, body) ->
             return!
               state {
                 let! t =
                   t
-                  |> Option.map (fun t -> t |> TypeExpr.Eval None |> Expr<'T>.liftTypeEval)
+                  |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T>.liftTypeEval)
                   |> state.RunOption
 
                 // (p: State<'a, UnificationContext, UnificationState, Errors>)
@@ -441,20 +481,20 @@ module TypeCheck =
                     TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope x.Name) freshVarType)
                   )
 
-                do! body_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                let! t_x = freshVarType |> fst |> TypeValue.Instantiate |> Expr<'T>.liftInstantiation
+                let! t_x = freshVarType |> fst |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
 
                 // do!
                 //     UnificationState.DeleteVariable freshVar
                 //       |> TypeValue.EquivalenceClassesOp
                 //       |> Expr<'T>.liftUnification
 
-                return Expr.Lambda(x, Some t_x, body), TypeValue.CreateArrow(t_x, t_body), Kind.Star
+                return Expr.Lambda(x, Some t_x, body, loc0), TypeValue.CreateArrow(t_x, t_body), Kind.Star
               }
-              |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))
+          // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))
 
-          | Expr.RecordCons(fields) ->
+          | ExprRec.RecordCons(fields) ->
             return!
               state {
                 let! fields =
@@ -462,8 +502,8 @@ module TypeCheck =
                   |> List.map (fun (k, v) ->
                     state {
                       let! v, t_v, v_k = !v
-                      do! v_k |> Kind.AsStar |> state.OfSum |> state.Ignore
-                      let! k_s = TypeCheckState.TryFindSymbol k
+                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! k_s = TypeCheckState.TryFindSymbol(k, loc0)
                       return (k, v), (k_s, t_v)
                     })
                   |> state.All
@@ -471,50 +511,50 @@ module TypeCheck =
                 let fieldsExpr = fields |> List.map fst
                 let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
 
-                return Expr.RecordCons(fieldsExpr), TypeValue.CreateRecord fieldsTypes, Kind.Star
+                return Expr.RecordCons(fieldsExpr, loc0), TypeValue.CreateRecord fieldsTypes, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `{{ {fields |> List.map (fun (id, _) -> id.ToFSharpString + "=...")} }}` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `{{ {fields |> List.map (fun (id, _) -> id.ToFSharpString + "=...")} }}` = ...`"""
+          //   )
+          // )
 
-          | Expr.UnionCons(cons, value) ->
+          | ExprRec.UnionCons(cons, value) ->
             return!
               state {
-                let! cons_symbol = TypeCheckState.TryFindSymbol cons
-                let! union_t, union_k = TypeCheckState.TryFindType cons
-                do! union_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                let! cons_symbol = TypeCheckState.TryFindSymbol(cons, loc0)
+                let! union_t, union_k = TypeCheckState.TryFindType(cons, loc0)
+                do! union_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let! cases =
                   union_t
                   |> TypeValue.AsUnion
-                  |> state.OfSum
+                  |> ofSum
                   |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                 let! case_t =
                   cases
                   |> OrderedMap.tryFindWithError cons_symbol "cases" cons.ToFSharpString
-                  |> state.OfSum
+                  |> ofSum
 
                 let! value, t_value, value_k = !value
-                do! value_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                do! TypeValue.Unify(t_value, case_t) |> Expr.liftUnification
+                do! TypeValue.Unify(loc0, t_value, case_t) |> Expr.liftUnification
 
-                let! union_t = union_t |> TypeValue.Instantiate |> Expr.liftInstantiation
+                let! union_t = union_t |> TypeValue.Instantiate loc0 |> Expr.liftInstantiation
 
-                return Expr.UnionCons(cons, value), union_t, Kind.Star
+                return Expr.UnionCons(cons, value, loc0), union_t, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `{cons.ToFSharpString}({value.ToFSharpString.ReasonablyClamped})` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `{cons.ToFSharpString}({value.ToFSharpString.ReasonablyClamped})` = ...`"""
+          //   )
+          // )
 
-          | Expr.TupleCons(fields) ->
+          | ExprRec.TupleCons(fields) ->
             return!
               state {
                 let! fields =
@@ -522,7 +562,7 @@ module TypeCheck =
                   |> List.map (fun (v) ->
                     state {
                       let! v, t_v, v_k = !v
-                      do! v_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                       return v, t_v
                     })
                   |> state.All
@@ -530,22 +570,22 @@ module TypeCheck =
                 let fieldsExpr = fields |> List.map fst
                 let fieldsTypes = fields |> List.map snd
 
-                return Expr.TupleCons(fieldsExpr), TypeValue.CreateTuple fieldsTypes, Kind.Star
+                return Expr.TupleCons(fieldsExpr, loc0), TypeValue.CreateTuple fieldsTypes, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `(( {fields |> List.map (fun f -> f.ToFSharpString + ", ")} ))` = ...`"""
-                      .ReasonablyClamped
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `(( {fields |> List.map (fun f -> f.ToFSharpString + ", ")} ))` = ...`"""
+          //         .ReasonablyClamped
 
-                )
-              )
+          //   )
+          // )
 
-          | Expr.SumCons(cons, value) ->
+          | ExprRec.SumCons(cons, value) ->
             return!
               state {
                 let! value, t_value, value_k = !value
-                do! value_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let cases =
                   [ 0 .. cons.Count - 1 ]
@@ -562,18 +602,18 @@ module TypeCheck =
 
                 let sum_t = TypeValue.CreateSum cases
 
-                return Expr.SumCons(cons, value), sum_t, Kind.Star
+                return Expr.SumCons(cons, value, loc0), sum_t, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `case{cons.Case}of{cons.Count}({value.ToFSharpString.ReasonablyClamped})` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `case{cons.Case}of{cons.Count}({value.ToFSharpString.ReasonablyClamped})` = ...`"""
+          //   )
+          // )
 
-          | Expr.RecordDes(fields_expr, fieldName) ->
+          | ExprRec.RecordDes(fields_expr, fieldName) ->
             let! fields, t_fields, fields_k = !fields_expr
-            do! fields_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+            do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return!
               state.Either
@@ -581,43 +621,43 @@ module TypeCheck =
                   let! t_fields =
                     t_fields
                     |> TypeValue.AsRecord
-                    |> state.OfSum
+                    |> ofSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                   return!
                     state.Either
                       (state {
-                        let! field_symbol = TypeCheckState.TryFindSymbol fieldName
+                        let! field_symbol = TypeCheckState.TryFindSymbol(fieldName, loc0)
 
                         let! t_field =
                           t_fields
                           |> OrderedMap.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
-                          |> state.OfSum
+                          |> ofSum
 
-                        return Expr.RecordDes(fields, fieldName), t_field, Kind.Star
+                        return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
                       })
                       (state {
-                        let! localFieldName = Identifier.AsLocalScope fieldName |> state.OfSum
+                        let! localFieldName = Identifier.AsLocalScope fieldName |> ofSum
 
                         let! t_field =
                           t_fields
                           |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
-                          |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> Errors.Singleton)
+                          |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> error)
                           |> state.OfSum
                           |> state.Map snd
 
-                        return Expr.RecordDes(fields, fieldName), t_field, Kind.Star
+                        return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
                       })
                 })
                 (state {
                   let! _ =
                     t_fields
                     |> TypeValue.AsTuple
-                    |> state.OfSum
+                    |> ofSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let! fieldName = Identifier.AsLocalScope fieldName |> state.OfSum
+                  let! fieldName = Identifier.AsLocalScope fieldName |> ofSum
 
                   let index =
                     fieldName
@@ -630,51 +670,48 @@ module TypeCheck =
                   let index = index |> Option.map (fun index -> index - 1)
 
                   match index with
-                  | Some index -> return! !Expr.TupleDes(fields_expr, { Index = index })
+                  | Some index -> return! !Expr.TupleDes(fields_expr, { Index = index }, loc0)
                   | None ->
                     return!
                       $"Error: cannot find field {fieldName} in tuple {fields}"
-                      |> Errors.Singleton
+                      |> error
                       |> state.Throw
                 })
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `({fields.ToFSharpString.ReasonablyClamped}).{fieldName.ToFSharpString}` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `({fields.ToFSharpString.ReasonablyClamped}).{fieldName.ToFSharpString}` = ...`"""
+          //   )
+          // )
 
-          | Expr.TupleDes(fields, fieldName) ->
+          | ExprRec.TupleDes(fields, fieldName) ->
             return!
               state {
                 let! fields, t_fields, fields_k = !fields
-                do! fields_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let! t_fields =
                   t_fields
                   |> TypeValue.AsTuple
-                  |> state.OfSum
+                  |> ofSum
                   |> state.Map WithTypeExprSourceMapping.Getters.Value
 
                 let! t_field =
                   t_fields
                   |> List.tryItem fieldName.Index
-                  |> sum.OfOption(
-                    $"Error: cannot find item {fieldName.Index} in tuple {fields}"
-                    |> Errors.Singleton
-                  )
+                  |> sum.OfOption($"Error: cannot find item {fieldName.Index} in tuple {fields}" |> error)
                   |> state.OfSum
 
-                return Expr.TupleDes(fields, fieldName), t_field, Kind.Star
+                return Expr.TupleDes(fields, fieldName, loc0), t_field, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `({fields.ToFSharpString.ReasonablyClamped}).item{fieldName.Index}` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `({fields.ToFSharpString.ReasonablyClamped}).item{fieldName.Index}` = ...`"""
+          //   )
+          // )
 
-          | Expr.UnionDes(handlers, fallback) ->
+          | ExprRec.UnionDes(handlers, fallback) ->
             return!
               state {
                 let guid = Guid.CreateVersion7()
@@ -694,7 +731,7 @@ module TypeCheck =
                         |> Map.toSeq
                         |> Seq.map (fun (k, value) ->
                           state {
-                            let! k_s = TypeCheckState.TryFindSymbol k
+                            let! k_s = TypeCheckState.TryFindSymbol(k, loc0)
                             return k, (value, k_s)
                           })
                         |> state.All
@@ -725,11 +762,11 @@ module TypeCheck =
                                 )
                               )
 
-                            do! body_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                            do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                            do! TypeValue.Unify(body_t, result_t) |> Expr.liftUnification
+                            do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
-                            let! var_t = TypeValue.Instantiate var_t |> Expr.liftInstantiation
+                            let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
 
                             return (var, body), ((k_s, var_t), fresh_var)
                           })
@@ -750,12 +787,12 @@ module TypeCheck =
                           match fallback with
                           | None -> return None
                           | Some(fallback, fallbackT, fallbackK) ->
-                            do! fallbackK |> Kind.AsStar |> state.OfSum |> state.Ignore
-                            do! TypeValue.Unify(fallbackT, result_t) |> Expr.liftUnification
+                            do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
+                            do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
                             return fallback |> Some
                         }
 
-                      let! result_t = TypeValue.Instantiate result_t |> Expr.liftInstantiation
+                      let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
 
                       do ignore handler_vars
                       // for kv in handler_vars |> Map.values do
@@ -778,7 +815,7 @@ module TypeCheck =
                         |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
                         |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                      return Expr.UnionDes(handlerExprs, fallback), arrowValue, Kind.Star
+                      return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
                     })
                     (state {
                       let! handlers =
@@ -795,7 +832,7 @@ module TypeCheck =
                               let case = (matches.[0].Value |> int) - 1
                               let count = matches.[1].Value |> int
                               return { Case = case; Count = count }, handler
-                            | _ -> return! $"Error: cannot find symbol {k}" |> Errors.Singleton |> state.Throw
+                            | _ -> return! $"Error: cannot find symbol {k}" |> error |> state.Throw
                           })
                         |> state.All
                         |> state.Map(List.sortBy (fst >> (fun c -> c.Case)))
@@ -805,23 +842,23 @@ module TypeCheck =
                       if handler_indices <> [ 0 .. (handler_indices.Length - 1) ] then
                         return!
                           $"Error: handlers must cover all cases from 1 to {handler_indices.Length - 1}, found {handler_indices}"
-                          |> Errors.Singleton
+                          |> error
                           |> state.Throw
                       else
-                        return! !Expr.SumDes(handlers |> List.map snd)
+                        return! !Expr.SumDes(handlers |> List.map snd, loc0)
                     })
 
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `match-case {{ {handlers
-                                                             |> Map.toSeq
-                                                             |> Seq.map (fun (id, (x, _)) -> "| " + id.ToFSharpString + " " + x.Name + " -> ...")} }}` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `match-case {{ {handlers
+          //                                                |> Map.toSeq
+          //                                                |> Seq.map (fun (id, (x, _)) -> "| " + id.ToFSharpString + " " + x.Name + " -> ...")} }}` = ...`"""
+          //   )
+          // )
 
-          | Expr.SumDes(handlers) ->
+          | ExprRec.SumDes(handlers) ->
             return!
               state {
                 let guid = Guid.CreateVersion7()
@@ -851,11 +888,11 @@ module TypeCheck =
                           TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star))
                         )
 
-                      do! body_k |> Kind.AsStar |> state.OfSum |> state.Ignore
+                      do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                      do! TypeValue.Unify(body_t, result_var_t) |> Expr.liftUnification
+                      do! TypeValue.Unify(loc0, body_t, result_var_t) |> Expr.liftUnification
 
-                      let! var_t = TypeValue.Instantiate var_t |> Expr.liftInstantiation
+                      let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
 
                       return ((var, body), var_t), fresh_var
                     })
@@ -867,11 +904,11 @@ module TypeCheck =
                 let handlerExprs = handlers |> List.map fst
                 let handlerTypes = handlers |> List.map snd
 
-                let! result_t = TypeValue.Instantiate result_var_t |> Expr.liftInstantiation
+                let! result_t = TypeValue.Instantiate loc0 result_var_t |> Expr.liftInstantiation
 
                 let sumValue = TypeValue.CreateSum handlerTypes
                 let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
-                let! arrowValue = TypeValue.Instantiate arrowValue |> Expr.liftInstantiation
+                let! arrowValue = TypeValue.Instantiate loc0 arrowValue |> Expr.liftInstantiation
 
                 do ignore handler_vars
                 // for kv in handler_vars do
@@ -885,21 +922,21 @@ module TypeCheck =
                 //       |> TypeValue.EquivalenceClassesOp
                 //       |> Expr<'T>.liftUnification
 
-                return Expr.SumDes handlerExprs, arrowValue, Kind.Star
+                return Expr.SumDes(handlerExprs, loc0), arrowValue, Kind.Star
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `match-case {{ {handlers
-                                                             |> Seq.mapi (fun id ((x, _)) -> "| case" + id.ToString() + " " + x.Name + " -> ...")} }}` = ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `match-case {{ {handlers
+          //                                                |> Seq.mapi (fun id ((x, _)) -> "| case" + id.ToString() + " " + x.Name + " -> ...")} }}` = ...`"""
+          //   )
+          // )
 
-          | Expr.TypeLet(typeIdentifier, typeDefinition, rest) ->
+          | ExprRec.TypeLet(typeIdentifier, typeDefinition, rest) ->
             return!
               state {
                 let! typeDefinition =
-                  TypeExpr.Eval (Some(ExprTypeLetBindingName typeIdentifier)) typeDefinition
+                  TypeExpr.Eval (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
                   |> Expr.liftTypeEval
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Types(
@@ -913,7 +950,7 @@ module TypeCheck =
                   typeDefinition
                   |> fst
                   |> TypeValue.AsUnion
-                  |> state.OfSum
+                  |> ofSum
                   |> state.Catch
                   |> state.Map(Sum.toOption)
                   |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
@@ -949,14 +986,14 @@ module TypeCheck =
 
                 return! !rest
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `type {typeIdentifier} = {typeDefinition.ToFSharpString.ReasonablyClamped} ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `type {typeIdentifier} = {typeDefinition.ToFSharpString.ReasonablyClamped} ...`"""
+          //   )
+          // )
 
-          | Expr.TypeLambda(t_par, body) ->
+          | ExprRec.TypeLambda(t_par, body) ->
             return!
               state {
                 let fresh_t_par_var =
@@ -967,7 +1004,7 @@ module TypeCheck =
                 do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_t_par_var))
 
                 let! t_par_type =
-                  TypeExprEvalState.tryFindType (Identifier.LocalScope t_par.Name)
+                  TypeExprEvalState.tryFindType (Identifier.LocalScope t_par.Name, loc0)
                   |> state.OfStateReader
                   |> Expr.liftTypeEval
                   |> state.Catch
@@ -987,44 +1024,47 @@ module TypeCheck =
 
                 // cleanup unification state, slightly more radical than pop
                 do!
-                  UnificationState.TryDeleteFreeVariable fresh_t_par_var
-                  |> TypeValue.EquivalenceClassesOp
+                  UnificationState.TryDeleteFreeVariable(fresh_t_par_var, loc0)
+                  |> TypeValue.EquivalenceClassesOp loc0
                   |> Expr.liftUnification
 
                 return
-                  Expr.TypeLambda(t_par, body),
+                  Expr.TypeLambda(t_par, body, loc0),
                   TypeValue.CreateLambda(t_par, t_body.AsExpr),
                   Kind.Arrow(t_par.Kind, body_k)
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `fun {t_par.Name} => {body.ToFSharpString.ReasonablyClamped} ...`"""
-                )
-              )
+          // |> state.MapError(
+          //   Errors.Map(
+          //     String.appendNewline
+          //       $"""...when typechecking `fun {t_par.Name} => {body.ToFSharpString.ReasonablyClamped} ...`"""
+          //   )
+          // )
 
-          | Expr.TypeApply(fExpr, tExpr) ->
+          | ExprRec.TypeApply(fExpr, tExpr) ->
             return!
               state {
                 let! f, f_t, f_k = !fExpr
 
-                let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> state.OfSum
-                let! t_val, t_k = tExpr |> TypeExpr.Eval None |> Expr.liftTypeEval
+                let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
+                let! t_val, t_k = tExpr |> TypeExpr.Eval None loc0 |> Expr.liftTypeEval
 
                 if f_k_i <> t_k then
                   return!
                     $"Error: mismatched kind, expected {f_k_i} but got {t_k}"
-                    |> Errors.Singleton
+                    |> error
                     |> state.Throw
                 else
-                  let! f_res, _ = TypeExpr.Apply(f_t.AsExpr, tExpr) |> TypeExpr.Eval None |> Expr.liftTypeEval
+                  let! f_res, _ =
+                    TypeExpr.Apply(f_t.AsExpr, tExpr)
+                    |> TypeExpr.Eval None loc0
+                    |> Expr.liftTypeEval
 
-                  return Expr.TypeApply(f, t_val), f_res, f_k_o
+                  return Expr.TypeApply(f, t_val, loc0), f_res, f_k_o
               }
-              |> state.MapError(
-                Errors.Map(
-                  String.appendNewline
-                    $"""...when typechecking `{fExpr.ToFSharpString.ReasonablyClamped}[{t.ToFSharpString.ReasonablyClamped}] ...`"""
-                )
-              )
+        // |> state.MapError(
+        //   Errors.Map(
+        //     String.appendNewline
+        //       $"""...when typechecking `{fExpr.ToFSharpString.ReasonablyClamped}[{t.ToFSharpString.ReasonablyClamped}] ...`"""
+        //   )
+        // )
         }

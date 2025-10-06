@@ -12,7 +12,7 @@ module Model =
     override id.ToString() =
       match id with
       | LocalScope name -> name
-      | FullyQualified(names, name) -> String.Join(".", names) + "." + name
+      | FullyQualified(names, name) -> String.Join("::", names) + "::" + name
 
   type TypeParameter = { Name: string; Kind: Kind }
 
@@ -55,6 +55,43 @@ module Model =
     | Rotate of TypeExpr
     | Imported of ImportedTypeValue
 
+    override self.ToString() =
+      match self with
+      | Imported i ->
+        let comma = ", "
+        $"{i.Sym.Name}[{String.Join(comma, i.Arguments)}]"
+      | Primitive p -> p.ToString()
+      | Let(name, value, body) -> $"Let {name} = {value} in {body})"
+      | LetSymbols(names, body) -> let comma = ", " in $"LetSymbols({String.Join(comma, names)}) in {body})"
+      | NewSymbol name -> $"NewSymbol({name})"
+      | Lookup id -> id.ToString()
+      | Apply(f, a) -> $"{f}[{a}]"
+      | Lambda(param, body) -> $"Fun {param.Name}::{param.Kind} => {body}"
+      | Arrow(t1, t2) -> $"({t1} -> {t2})"
+      | Record fields ->
+        let comma = ", "
+        let fieldStrs = fields |> List.map (fun (name, typ) -> $"{name}: {typ}")
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Tuple types ->
+        let comma = ", "
+        $"[{String.Join(comma, types)}]"
+      | Union types ->
+        let comma = " | "
+        let typeStrs = types |> List.map (fun (name, typ) -> $"{name}: {typ}")
+        $"({String.Join(comma, typeStrs)})"
+      | Set t -> $"Set[{t}]"
+      | Map(k, v) -> $"Map[{k}, {v}]"
+      | KeyOf t -> $"KeyOf[{t}]"
+      | Sum types ->
+        let comma = " + "
+        $"({String.Join(comma, types)})"
+
+      | Flatten(t1, t2) -> $"Flatten[{t1}, {t2}]"
+      | Exclude(t1, t2) -> $"Exclude[{t1}, {t2}]"
+      | Rotate t -> $"Rotate[{t}]"
+
+
+
   and TypeBinding =
     { Identifier: Identifier
       Type: TypeExpr }
@@ -73,6 +110,41 @@ module Model =
     | Set of WithTypeExprSourceMapping<TypeValue>
     | Map of WithTypeExprSourceMapping<TypeValue * TypeValue>
     | Imported of ImportedTypeValue // FIXME: This should also have an orig name, implement once the extension is implemented completely
+
+    override self.ToString() =
+      match self with
+      | Imported i ->
+        let comma = ", "
+        $"{i.Sym.Name}[{String.Join(comma, i.Arguments)}]"
+      | Primitive p -> p.value.ToString()
+      | Lookup id -> id.ToString()
+      | Var v -> v.Name.ToString()
+      | Apply({ value = (f, a) }) -> $"{f}[{a}]"
+      | Lambda({ value = (param, body) }) -> $"Fun {param.Name} => {body}"
+      | Arrow({ value = (t1, t2) }) -> $"({t1} -> {t2})"
+      | Record({ value = fields }) ->
+        let comma = ", "
+
+        let fieldStrs =
+          fields |> OrderedMap.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
+
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Tuple types ->
+        let comma = ", "
+        $"[{String.Join(comma, types)}]"
+      | Union({ value = types }) ->
+        let comma = " | "
+
+        let typeStrs =
+          types |> OrderedMap.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
+
+        $"({String.Join(comma, typeStrs)})"
+      | Set t -> $"Set[{t}]"
+      | Map({ value = (k, v) }) -> $"Map[{k}, {v}]"
+      | Sum({ value = types }) ->
+        let comma = " + "
+        $"({String.Join(comma, types)})"
+
 
   and ExprTypeLetBindingName = ExprTypeLetBindingName of string
 

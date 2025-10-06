@@ -372,11 +372,12 @@ module Patterns =
       }
 
     static member AsValue
-      (tryFind: Identifier -> Sum<TypeValue, Errors>)
-      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Errors>)
+      (loc0: Ballerina.LocalizedErrors.Location)
+      (tryFind: Identifier -> Sum<TypeValue, Ballerina.LocalizedErrors.Errors>)
+      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Ballerina.LocalizedErrors.Errors>)
       (t: TypeExpr)
-      : Sum<TypeValue, Errors> =
-      let (!) = TypeExpr.AsValue tryFind tryFindSymbol
+      : Sum<TypeValue, Ballerina.LocalizedErrors.Errors> =
+      let (!) = TypeExpr.AsValue loc0 tryFind tryFindSymbol
 
       sum {
         match t with
@@ -393,7 +394,10 @@ module Patterns =
             fields
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k = TypeExpr.AsLookup k
+                let! k =
+                  TypeExpr.AsLookup k
+                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+
                 let! k = tryFindSymbol k
                 let! v = !v
                 return (k, v)
@@ -410,7 +414,10 @@ module Patterns =
             cases
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k = TypeExpr.AsLookup k
+                let! k =
+                  TypeExpr.AsLookup k
+                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+
                 let! k = tryFindSymbol k
                 let! v = !v
                 return (k, v)
@@ -429,7 +436,11 @@ module Patterns =
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
-        | _ -> return! $"Error: expected type value, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (loc0, $"Error: expected type value, got {t}")
+            |> Ballerina.LocalizedErrors.Errors.Singleton
+            |> sum.Throw
       }
 
     static member AsUnion(t: TypeExpr) =

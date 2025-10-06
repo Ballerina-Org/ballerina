@@ -11,6 +11,7 @@ module Model =
   type FormName = FormName of string
   type LauncherName = LauncherName of string
   type Label = Label of string
+  type LanguageStreamType = LanguageStreamType of string
 
   type EnumRendererType =
     | Option
@@ -68,7 +69,8 @@ module Model =
       InvalidEnumValueCombinationError: CodegenConfigErrorDef
       StreamNotFoundError: CodegenConfigErrorDef
       ContainerRenderers: Set<RendererName>
-      GenerateReplace: Set<string> }
+      GenerateReplace: Set<string>
+      LanguageStreamType: LanguageStreamType }
 
   and GenericType =
     | Option

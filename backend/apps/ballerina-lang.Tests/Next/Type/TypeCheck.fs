@@ -3,7 +3,8 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.TypeCheck
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.Errors
-open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Terms
+open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Eval
@@ -1044,7 +1045,7 @@ let ``LangNext-TypeCheck sum des fails on mismatched types with the same arity``
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected_error_messages = [ "Cannot unify types"; "Sum" ]
+  let expected_error_messages = [ "Cannot unify types" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
@@ -1084,7 +1085,7 @@ let ``LangNext-TypeCheck sum des fails on missing cases`` () =
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected_error_messages = [ "Cannot unify types"; "Sum" ]
+  let expected_error_messages = [ "Cannot unify types"; "Decimal + " ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
@@ -1204,7 +1205,7 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot unify types"; "Union" ]
+  let expected_error_messages = [ "Cannot unify types"; "Decimal | " ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"

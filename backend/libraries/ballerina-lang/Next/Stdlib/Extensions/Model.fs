@@ -7,6 +7,7 @@ module Model =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Json
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.LocalizedErrors
 
   type LanguageContext<'ext> =
     { TypeCheckContext: TypeCheckContext
@@ -27,7 +28,7 @@ module Model =
       Kind: Kind // *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
-      Apply: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: Identifier * TypeSymbol // example: "Option"
@@ -52,7 +53,7 @@ module Model =
       Kind: Kind // * => * => *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
-      Apply: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'ext> }
+      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'ext> }
 
   and TypeCaseExtension<'ext, 'extConstructors, 'extValues> =
     { CaseType: TypeExpr // "a"
@@ -60,7 +61,7 @@ module Model =
       Constructor: 'extConstructors
       ValueLens: PartialLens<'ext, 'extValues> // lens to access the value inside the extension value
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value
-      Apply: 'extConstructors * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+      Apply: Location -> 'extConstructors * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: Identifier * TypeValue * Kind

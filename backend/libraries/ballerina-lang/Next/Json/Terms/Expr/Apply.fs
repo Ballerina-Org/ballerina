@@ -9,6 +9,7 @@ module Apply =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Json.Keys
 
   let private discriminator = "apply"
