@@ -1,5 +1,8 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Json
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Model =
   open Ballerina.StdLib.String
@@ -9,9 +12,9 @@ module Model =
   open FSharp.Data
   open Ballerina.Errors
 
-  type Delta with
+  type Delta<'valueExtension> with
 
-    static member FromJson: DeltaParser =
+    static member FromJson: DeltaParser<'valueExtension> =
       fun json ->
         reader.Any(
           Delta.FromJsonMultiple Delta.FromJson json,
@@ -27,12 +30,11 @@ module Model =
         )
         |> reader.MapError(Errors.HighestPriority)
 
-    static member ToJson: Delta -> JsonValue =
-      fun delta ->
-        match delta with
-        | Delta.Multiple deltas -> Delta.ToJsonMultiple Delta.ToJson deltas
-        | Delta.Replace v -> Delta.ToJsonReplace v
-        | Delta.Record(fieldName, fieldDelta) -> Delta.ToJsonRecord Delta.ToJson (fieldName, fieldDelta)
-        | Delta.Union(caseName, caseDelta) -> Delta.ToJsonUnion Delta.ToJson (caseName, caseDelta)
-        | Delta.Tuple(fieldIndex, fieldDelta) -> Delta.ToJsonTuple Delta.ToJson (fieldIndex, fieldDelta)
-        | Delta.Sum(index, fieldDelta) -> Delta.ToJsonSum Delta.ToJson (index, fieldDelta)
+    static member ToJson(delta: Delta<'valueExtension>) : DeltaEncoderReader<'valueExtension> =
+      match delta with
+      | Delta.Multiple deltas -> Delta.ToJsonMultiple Delta.ToJson deltas
+      | Delta.Replace v -> Delta.ToJsonReplace v
+      | Delta.Record(fieldName, fieldDelta) -> Delta.ToJsonRecord Delta.ToJson fieldName fieldDelta
+      | Delta.Union(caseName, caseDelta) -> Delta.ToJsonUnion Delta.ToJson caseName caseDelta
+      | Delta.Tuple(fieldIndex, fieldDelta) -> Delta.ToJsonTuple Delta.ToJson fieldIndex fieldDelta
+      | Delta.Sum(index, fieldDelta) -> Delta.ToJsonSum Delta.ToJson index fieldDelta

@@ -64,12 +64,15 @@ export const SumAbstractRenderer = <
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.left,
-              disabled: _.disabled,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
               locked: _.locked,
               value: PredicateValue.Operations.IsUnit(_.value)
                 ? _.value
                 : _.value.value.value,
               bindings: _.bindings,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
               extraContext: _.extraContext,
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
@@ -147,12 +150,15 @@ export const SumAbstractRenderer = <
                 SumAbstractRendererState,
             ) => ({
               ..._.customFormState.right,
-              disabled: _.disabled,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
               locked: _.locked,
               value: PredicateValue.Operations.IsUnit(_.value)
                 ? _.value
                 : _.value.value.value,
               bindings: _.bindings,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
               extraContext: _.extraContext,
               type: _.type.args[1],
               customPresentationContext: _.customPresentationContext,

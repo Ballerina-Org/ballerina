@@ -8,15 +8,9 @@ import (
 type deltaOneEffectsEnum string
 
 const (
-	oneReplace     deltaOneEffectsEnum = "OneReplace"
-	oneValue       deltaOneEffectsEnum = "OneValue"
-	oneCreateValue deltaOneEffectsEnum = "OneCreateValue"
-	oneDeleteValue deltaOneEffectsEnum = "OneDeleteValue"
+	oneReplace deltaOneEffectsEnum = "OneReplace"
+	oneValue   deltaOneEffectsEnum = "OneValue"
 )
-
-var allDeltaOneEffectsEnumCases = [...]deltaOneEffectsEnum{oneReplace, oneValue, oneCreateValue, oneDeleteValue}
-
-func DefaultDeltaOneEffectsEnum() deltaOneEffectsEnum { return allDeltaOneEffectsEnumCases[0] }
 
 type DeltaOne[a any, deltaA any] struct {
 	DeltaBase
@@ -81,24 +75,10 @@ func NewDeltaOneValue[a any, deltaA any](delta deltaA) DeltaOne[a, deltaA] {
 		value:         &delta,
 	}
 }
-func NewDeltaOneCreateValue[a any, deltaA any](value a) DeltaOne[a, deltaA] {
-	return DeltaOne[a, deltaA]{
-		discriminator: oneCreateValue,
-		createValue:   &value,
-	}
-}
-func NewDeltaOneDeleteValue[a any, deltaA any]() DeltaOne[a, deltaA] {
-	unit := NewUnit()
-	return DeltaOne[a, deltaA]{
-		discriminator: oneDeleteValue,
-		deleteValue:   &unit,
-	}
-}
+
 func MatchDeltaOne[a any, deltaA any, Result any](
 	onReplace func(a) func(ReaderWithError[Unit, One[a]]) (Result, error),
 	onValue func(deltaA) func(ReaderWithError[Unit, a]) (Result, error),
-	onCreateValue func(a) (Result, error),
-	onDeleteValue func() (Result, error),
 ) func(DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
 	return func(delta DeltaOne[a, deltaA]) func(ReaderWithError[Unit, One[a]]) (Result, error) {
 		return func(one ReaderWithError[Unit, One[a]]) (Result, error) {
@@ -118,7 +98,7 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 						return PureReader[Unit, Sum[error, a]](
 							Fold(
 								one.Sum,
-								func(Unit) Sum[error, a] {
+								func(LazyOneValue) Sum[error, a] {
 									return Left[error, a](fmt.Errorf("one is not set"))
 								},
 								Right[error, a],
@@ -127,13 +107,6 @@ func MatchDeltaOne[a any, deltaA any, Result any](
 					},
 				)(one)
 				return onValue(*delta.value)(value)
-			case oneCreateValue:
-				if delta.createValue == nil {
-					return result, NewInvalidDiscriminatorError("nil createValue", "DeltaOne")
-				}
-				return onCreateValue(*delta.createValue)
-			case oneDeleteValue:
-				return onDeleteValue()
 			}
 			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaOne")
 		}

@@ -1,6 +1,5 @@
 import {
   BasicFun,
-  DispatcherContext,
   Guid,
   OneAbstractRenderer,
   DispatchInjectablesTypes,
@@ -11,20 +10,21 @@ import {
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const OneDispatcher = {
   Operations: {
     DispatchPreviewRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -42,14 +42,14 @@ export const OneDispatcher = {
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       api: string[],
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         any,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> =>
@@ -88,14 +88,14 @@ export const OneDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: OneRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -131,28 +131,8 @@ export const OneDispatcher = {
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
                         OneAbstractRenderer(
-                          LookupTypeAbstractRenderer<
-                            CustomPresentationContexts,
-                            Flags,
-                            ExtraContext
-                          >(
-                            detailsRenderer,
-                            renderer.type.arg,
-                            dispatcherContext.IdProvider,
-                            dispatcherContext.ErrorRenderer,
-                          ).withView(dispatcherContext.lookupTypeRenderer()),
-                          previewRenderer
-                            ? LookupTypeAbstractRenderer<
-                                CustomPresentationContexts,
-                                Flags,
-                                ExtraContext
-                              >(
-                                previewRenderer,
-                                renderer.type.arg,
-                                dispatcherContext.IdProvider,
-                                dispatcherContext.ErrorRenderer,
-                              ).withView(dispatcherContext.lookupTypeRenderer())
-                            : undefined,
+                          detailsRenderer,
+                          previewRenderer,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           oneEntityType,
@@ -163,6 +143,7 @@ export const OneDispatcher = {
                             fromApiParser: dispatcherContext.parseFromApiByType(
                               renderer.type.arg,
                             ),
+                            type: renderer.type,
                           }))
                           .withView(concreteRenderer),
                       ),

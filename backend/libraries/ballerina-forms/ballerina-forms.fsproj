@@ -2,22 +2,9 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-
-        <!-- NuGet package metadata -->
-        <PackageId>Ballerina.Forms</PackageId>
-        <Version>1.0.0</Version>
-        <Authors>Dr. Giuseppe Maggiore</Authors>
-        <Company>Ballerina-Org</Company>
-        <Description>Forms library for Ballerina</Description>
-
-        <!-- Repository info -->
-        <RepositoryUrl>https://github.com/Ballerina-Org/ballerina</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <RootNamespace>Ballerinca.Forms</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Models/Many.fs" />
         <Compile Include="Model.fs" />
         <Compile Include="Parser/Model.fs" />
         <Compile Include="Parser/FormsPatterns.fs" />
@@ -25,7 +12,6 @@
         <Compile Include="Parser/Renderers.fs" />
         <Compile Include="Parser/Runner.fs" />
         <Compile Include="Validator.fs" />
-        <Compile Include="Next\Model.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -38,7 +24,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
-        <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
+        <ProjectReference Include="..\ballerina-lang\ballerina-lang-v1.fsproj" />
     </ItemGroup>
 
 </Project>

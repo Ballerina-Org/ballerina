@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>ballerina_data</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
-    <ProjectReference Include="..\ballerina-lang\ballerina-lang.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\ballerina-lang.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,17 +27,23 @@
     <Compile Include="Schema\Model.fs" />
     <Compile Include="Schema\Json\Schema.fs" />
     <Compile Include="Schema\TypeEval.fs" />
-    <Compile Include="Spec.fs" />
-    <Compile Include="Seeds.fs" />
-    <Compile Include="Db.fs" />
-    <Compile Include="Api.fs" />
     <Content Include="todo.md" />
-
+    <Compile Include="Spec\Model.fs" />
+    <Compile Include="Spec\Builder.fs" />
+    <Compile Include="Spec\Json.fs" />
+    <Compile Include="VirtualFolders\Model.fs" />
+    <Compile Include="VirtualFolders\Runner.fs" />
+    <Compile Include="VirtualFolders\Updaters.fs" />
+    <Compile Include="VirtualFolders\Json.fs" />
+    <Compile Include="VirtualFolders\Patterns.fs" />
+    <Compile Include="Store\Api.fs" />
+    <Compile Include="Store\Model.fs" />
+    <Compile Include="Store\Updaters.fs" />
+    <Compile Include="Store\Json.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="9.0.303" />
-    <PackageReference Include="AutoBogus" Version="2.13.1" />
     <PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
   </ItemGroup>
 

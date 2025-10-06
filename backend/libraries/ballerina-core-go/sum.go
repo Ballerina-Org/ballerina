@@ -33,6 +33,18 @@ func (s Sum[L, R]) Swap() Sum[R, L] {
 	)
 }
 
+func MapLeft[L any, R any, LO any](e Sum[L, R], leftMap func(L) LO) Sum[LO, R] {
+	return BiMap(e, leftMap, id[R])
+}
+
+func MapRight[L any, R any, RO any](e Sum[L, R], rightMap func(R) RO) Sum[L, RO] {
+	return BiMap(e, id[L], rightMap)
+}
+
+func Bind[L any, R any, RO any](e Sum[L, R], rightMap func(R) Sum[L, RO]) Sum[L, RO] {
+	return Fold(e, func(l L) Sum[L, RO] { return Left[L, RO](l) }, rightMap)
+}
+
 func BiMap[L any, R any, LO any, RO any](e Sum[L, R], leftMap func(L) LO, rightMap func(R) RO) Sum[LO, RO] {
 	if e.isRight {
 		return Right[LO, RO](rightMap(e.right))
@@ -67,6 +79,27 @@ func FoldWithError[L any, R any, O any](e Sum[L, R], leftMap func(L) (O, error),
 		return rightMap(e.right)
 	}
 	return leftMap(e.left)
+}
+
+func GoErrorToSum[T, U any](f func(T) (U, error)) func(T) Sum[error, U] {
+	return func(value T) Sum[error, U] {
+		result, err := f(value)
+		if err != nil {
+			return Left[error, U](err)
+		}
+		return Right[error, U](result)
+	}
+}
+
+// NOTE: we collect only the first error we encounter
+func SumAll[T any](values []Sum[error, T]) Sum[error, []T] {
+	return FoldLeftArray(values, Right[error, []T]([]T{}), func(acc Sum[error, []T], value Sum[error, T]) Sum[error, []T] {
+		return Bind(value, func(value T) Sum[error, []T] {
+			return MapRight(acc, func(acc []T) []T {
+				return append(acc, value)
+			})
+		})
+	})
 }
 
 // Serialization

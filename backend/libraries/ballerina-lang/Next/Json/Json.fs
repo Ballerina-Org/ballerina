@@ -1,23 +1,66 @@
 ﻿namespace Ballerina.DSL.Next.Json
 
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types.Model
 open Ballerina.Errors
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
-open Ballerina.DSL.Next.Types.Model
 open FSharp.Data
+open Ballerina.Fix
+open Ballerina.Collections.NonEmptyList
+open Keys
 
-type ValueParser = JsonValue -> Sum<Value<TypeValue>, Errors>
+// parsing
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
-type ValueParser<'T> = Reader<Value<'T>, JsonParser<'T>, Errors>
-type ExprParser<'T> = Reader<Expr<'T>, JsonParser<'T>, Errors>
 
-type TypeValueSerializer = TypeValue -> Sum<JsonValue, Errors>
-type TypeValueParser = JsonValue -> Sum<TypeValue, Errors>
+type ValueParserReader<'T, 'valueExtension> =
+  Reader<Value<'T, 'valueExtension>, JsonParser<Expr<'T>> * JsonParser<'T>, Errors>
 
-type TypeExprSerializer = TypeExpr -> Sum<JsonValue, Errors>
-type TypeExprParser = JsonValue -> Sum<TypeExpr, Errors>
+type ExprParserReader<'T> = Reader<Expr<'T>, JsonParser<'T>, Errors>
+
+type ValueParser<'T, 'valueExtension> = JsonValue -> ValueParserReader<'T, 'valueExtension>
+type ExprParser<'T> = JsonValue -> ExprParserReader<'T>
+
+type TypeExprParser = JsonParser<TypeExpr>
+
+type ValueParserLayer<'T, 'valueExtension> = ValueParser<'T, 'valueExtension> -> ValueParser<'T, 'valueExtension>
+
+// encoding/serializing
+type JsonEncoder<'T> = 'T -> JsonValue
+type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors>
+
+type ExprEncoderReader<'T> = Reader<JsonValue, JsonEncoder<'T>, Errors>
+type ExprEncoder<'T> = Expr<'T> -> ExprEncoderReader<'T>
+
+type ValueEncoderReader<'T> = Reader<JsonValue, JsonEncoderWithError<Expr<'T>> * JsonEncoder<'T>, Errors>
+type ValueEncoder<'T, 'valueExtension> = Value<'T, 'valueExtension> -> ValueEncoderReader<'T>
+
+type ValueEncoderLayer<'T, 'valueExtension> = ValueEncoder<'T, 'valueExtension> -> ValueEncoder<'T, 'valueExtension>
 
 module Json =
-  let kind (kind: string) (fields: string) (value: JsonValue) =
-    JsonValue.Record [| "kind", JsonValue.String kind; fields, value |]
+  let discriminator (discriminatorValue: string) (value: JsonValue) =
+    JsonValue.Record [| discriminatorKey, JsonValue.String discriminatorValue; valueKey, value |]
+
+  let buildRootParser<'T, 'valueExtension>
+    (layers: NonEmptyList<ValueParserLayer<'T, 'valueExtension>>)
+    : ValueParser<'T, 'valueExtension> =
+    let F
+      (layers: NonEmptyList<ValueParserLayer<'T, 'valueExtension>>)
+      (self: ValueParser<'T, 'valueExtension>)
+      : ValueParser<'T, 'valueExtension> =
+      fun data -> reader.Any(layers |> NonEmptyList.map (fun layer -> layer self data))
+
+    let parsingOperation = F layers
+    fix parsingOperation
+
+  let buildRootEncoder<'T, 'valueExtension>
+    (layers: NonEmptyList<ValueEncoderLayer<'T, 'valueExtension>>)
+    : ValueEncoder<'T, 'valueExtension> =
+    let F
+      (layers: NonEmptyList<ValueEncoderLayer<'T, 'valueExtension>>)
+      (self: ValueEncoder<'T, 'valueExtension>)
+      : ValueEncoder<'T, 'valueExtension> =
+      fun value -> reader.Any(layers |> NonEmptyList.map (fun layer -> layer self value))
+
+    let encodingOperation = F layers
+    fix encodingOperation

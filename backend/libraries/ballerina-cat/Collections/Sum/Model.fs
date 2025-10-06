@@ -1,6 +1,7 @@
-﻿namespace Ballerina.Collections
+﻿namespace Ballerina.Collections.Sum
 
-module Sum =
+[<AutoOpen>]
+module Model =
   open Ballerina.Fun
   open System
   open System.Threading.Tasks
@@ -41,6 +42,16 @@ module Sum =
 
     static member bind<'a, 'b, 'c>(k: 'a -> Sum<'c, 'b>) : Sum<'a, 'b> -> Sum<'c, 'b> =
       Sum.map<'a, 'b, Sum<'c, 'b>> k >> Sum.flatten
+
+    static member AsLeft<'a, 'b>(p: Sum<'a, 'b>) : Option<'a> =
+      match p with
+      | Left a -> Some a
+      | Right _ -> None
+
+    static member AsRight<'a, 'b>(p: Sum<'a, 'b>) : Option<'b> =
+      match p with
+      | Left _ -> None
+      | Right b -> Some b
 
   let inline (<+>) (f: 'a -> 'a1) (g: 'b -> 'b1) = Sum.map2<'a, 'b, 'a1, 'b1> f g
 
@@ -167,8 +178,9 @@ module Sum =
 
   let sum = SumBuilder()
 
-  module Operators =
-    let (>>=) f g = fun x -> sum.Bind(f x, g)
+// [<AutoOpen>]
+module Operators =
+  let (>>=) f g = fun x -> sum.Bind(f x, g)
 
   type Sum<'a, 'b> with
     static member Then(f, g) = fun x -> sum.Bind(f x, g)

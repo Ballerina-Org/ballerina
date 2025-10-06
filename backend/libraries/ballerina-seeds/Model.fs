@@ -2,72 +2,15 @@
 
 open System
 open System.Collections.Generic
-open Ballerina
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
-open Ballerina.Data.Model
-open Ballerina.Data.Seeds.Model
+open Ballerina.Data.Schema.Model
 open Ballerina.Errors
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.Data
 open Ballerina.Data.Arity.Model
-open Ballerina.Reader.WithError
 open Ballerina.Seeds
-
-module Updaters =
-  type Seeds<'T> with
-    static member Updaters =
-      {| Entities = fun u (s: Seeds<'T>) -> { s with Seeds.Entities = u s.Entities }
-         Lookups = fun u (s: Seeds<'T>) -> { s with Seeds.Lookups = u s.Lookups } |}
-
-    static member Print(db: Seeds<'T>) =
-      let entities () =
-        db.Entities
-        |> Map.toList
-        |> List.groupBy fst
-        |> List.map (fun (name, values) ->
-          values
-          |> List.indexed
-          |> List.takeWhile (fun (i, _) -> i < 5)
-          |> List.map (fun (_k, (_, v)) ->
-            v
-            |> Map.toList
-            |> List.indexed
-            |> List.takeWhile (fun (i, _) -> i < 5)
-            |> List.map (fun (k, (id, _v)) -> $"{name} - {k + 1}: {id}")))
-
-      let lookups () =
-        db.Lookups
-        |> Map.toList
-        |> List.groupBy fst
-        |> List.map (fun (_name, values) ->
-          values
-          |> List.indexed
-          |> List.takeWhile (fun (i, _) -> i < 5)
-          |> List.map (fun (_k, (_, v)) ->
-            v
-            |> Map.toList
-            |> List.indexed
-            |> List.takeWhile (fun (i, _) -> i < 5)
-            |> List.map (fun (_k, (id, vs)) ->
-              let ids = vs |> Set.toArray |> Seq.indexed |> Seq.takeWhile (fun (i, _) -> i < 5)
-
-              ids
-              |> Seq.iter (fun (_, targetId) ->
-                let sourceName =
-                  db.Entities
-                  |> Map.tryFindKey (fun _ v -> v |> Map.containsKey id)
-                  |> Option.defaultValue "Unknown"
-
-                let targetName =
-                  db.Entities
-                  |> Map.tryFindKey (fun _ v -> v |> Map.containsKey targetId)
-                  |> Option.defaultValue "Unknown"
-
-                printfn $"{sourceName} ({id}) --- {_name} --> {targetName} ({targetId})"))))
-
-      printfn $"{entities ()}"
-      printfn $"{lookups ()}"
+open Ballerina.State.WithError
 
 module Arity =
   let seedOneToOne (sources: 's list) (targets: 't list) : ('s * 't list) list =
@@ -115,9 +58,11 @@ module Arity =
         Some(source, selected))
 
 module EntityDescriptor =
-  let seed (e: EntityDescriptor<TypeValue>) : Reader<Map<Guid, Value<TypeValue>>, SeedingContext<TypeValue>, Errors> =
-    reader {
-      let! ctx = reader.GetContext()
+  let seed
+    (e: EntityDescriptor<TypeValue>)
+    : State<Map<Guid, Value<TypeValue, ValueExt>>, SeedingContext, SeedingState, Errors> =
+    state {
+      let! ctx = state.GetContext()
       let itemsToSeed = ctx.WantedCount |> Option.defaultValue (Random().Next() % 50 + 50)
 
       return!
@@ -127,28 +72,28 @@ module EntityDescriptor =
             yield Guid.CreateVersion7(), value
         }
         |> Seq.map (fun (guid, value) ->
-          reader {
+          state {
             let! v = value
             return guid, v
           })
-        |> reader.All
-        |> reader.Map Map.ofList
+        |> state.All
+        |> state.Map Map.ofSeq
     }
 
 module LookupDescriptor =
-  let seed<'T>
-    (entities: Map<string, Map<Guid, Value<'T>>>)
+  let seed
+    (entities: Map<EntityName, Map<Guid, Value<TypeValue, ValueExt>>>)
     (descriptor: LookupDescriptor)
     : Sum<Map<Guid, Set<Guid>>, Errors> =
 
     sum {
       let! sources =
         entities
-        |> Map.tryFindWithError descriptor.Source descriptor.Source "while seed lookup source descriptor"
+        |> Map.tryFindWithError descriptor.Source descriptor.Source.EntityName "while seed lookup source descriptor"
 
       let! targets =
         entities
-        |> Map.tryFindWithError descriptor.Target descriptor.Target "while seed lookup source descriptor"
+        |> Map.tryFindWithError descriptor.Target descriptor.Target.EntityName "while seed lookup source descriptor"
 
       let sourceKeys = sources |> Map.toList |> List.map fst
       let targetKeys = targets |> Map.toList |> List.map fst
@@ -171,7 +116,7 @@ module LookupDescriptor =
   let tryFlip
     (descriptor: LookupDescriptor)
     (lookup: Map<Guid, Set<Guid>>)
-    : Sum<Option<string * Map<Guid, Set<Guid>>>, Errors> =
+    : Sum<Option<LookupName * Map<Guid, Set<Guid>>>, Errors> =
     sum {
       match descriptor.Backward with
       | None -> return None

@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Types.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Apply =
   open FSharp.Data
@@ -7,11 +9,13 @@ module Apply =
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
-  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "apply"
 
   type TypeExpr with
-    static member FromJsonApply(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "apply" "apply" (fun applyFields ->
+    static member FromJsonApply(fromJsonRoot: JsonParser<TypeExpr>) : JsonParser<TypeExpr> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! (functionField, argumentField) = applyFields |> JsonValue.AsPair
 
@@ -26,4 +30,5 @@ module Apply =
         let functionJson = functionType |> rootToJson
         let argumentJson = argumentType |> rootToJson
 
-        JsonValue.Array [| functionJson; argumentJson |] |> Json.kind "apply" "apply"
+        JsonValue.Array [| functionJson; argumentJson |]
+        |> Json.discriminator discriminator

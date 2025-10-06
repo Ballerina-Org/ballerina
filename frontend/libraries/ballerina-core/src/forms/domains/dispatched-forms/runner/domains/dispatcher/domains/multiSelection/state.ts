@@ -1,6 +1,5 @@
 import {
   EnumMultiselectAbstractRenderer,
-  DispatcherContext,
   InfiniteMultiselectDropdownFormAbstractRenderer,
   ValueOrErrors,
   PredicateValue,
@@ -14,20 +13,21 @@ import { Template } from "../../../../../../../../template/state";
 import { OrderedMap } from "immutable";
 import { StreamRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/stream/state";
 import { EnumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/enum/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const MultiSelectionDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: EnumRenderer<T> | StreamRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
@@ -87,7 +87,12 @@ export const MultiSelectionDispatcher = {
                       InfiniteMultiselectDropdownFormAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
-                      ).withView(concreteRenderer),
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type: renderer.type,
+                        }))
+                        .withView(concreteRenderer),
                     ),
                   )
                   .MapErrors((errors) =>

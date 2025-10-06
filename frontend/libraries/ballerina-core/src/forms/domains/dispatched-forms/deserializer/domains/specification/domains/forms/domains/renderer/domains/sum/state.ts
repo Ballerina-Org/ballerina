@@ -66,7 +66,7 @@ export const SumRenderer = {
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: SumType<T>,
@@ -74,7 +74,7 @@ export const SumRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,

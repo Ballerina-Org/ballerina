@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -12,10 +13,6 @@ const (
 	sumLeft    deltaSumEffectsEnum = "SumLeft"
 	sumRight   deltaSumEffectsEnum = "SumRight"
 )
-
-var allDeltaSumEffectsEnumCases = [...]deltaSumEffectsEnum{sumReplace, sumLeft, sumRight}
-
-func DefaultDeltaSumEffectsEnum() deltaSumEffectsEnum { return allDeltaSumEffectsEnumCases[0] }
 
 type DeltaSum[a any, b any, deltaA any, deltaB any] struct {
 	DeltaBase
@@ -52,7 +49,9 @@ func (d *DeltaSum[a, b, deltaA, deltaB]) UnmarshalJSON(data []byte) error {
 		Left          *deltaA
 		Right         *deltaB
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

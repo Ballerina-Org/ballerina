@@ -9,19 +9,24 @@ module Lookup =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "lookup"
 
   type TypeValue with
     static member FromJsonLookup: JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "lookup" "lookup" (fun lookupFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lookupFields ->
         sum {
           let! name = lookupFields |> JsonValue.AsString
+
           return TypeValue.Lookup(Identifier.LocalScope name)
+
         })
 
     static member ToJsonLookup(id: Identifier) : JsonValue =
       match id with
-      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "lookup"
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
       | Identifier.FullyQualified(scope, name) ->
         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
         |> JsonValue.Array
-        |> Json.kind "lookup" "lookup"
+        |> Json.discriminator discriminator

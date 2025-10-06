@@ -1,4 +1,3 @@
-import { DispatcherContext } from "../../../../../deserializer/state";
 import {
   DispatchInjectablesTypes,
   ListAbstractRenderer,
@@ -7,6 +6,7 @@ import {
 } from "../../../../../../../../../main";
 import { ListRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 //TODO check type
 export const ListDispatcher = {
@@ -14,14 +14,14 @@ export const ListDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: ListRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -58,7 +58,12 @@ export const ListDispatcher = {
                           renderer.methods ?? [],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
-                        ).withView(concreteRenderer),
+                        )
+                          .mapContext((_: any) => ({
+                            ..._,
+                            type: renderer.type,
+                          }))
+                          .withView(concreteRenderer),
                       ),
                     ),
                 ),

@@ -10,10 +10,14 @@ module UnionDes =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "union-match"
 
   type Expr<'T> with
-    static member FromJsonUnionDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "union-match" "union-match" (fun unionDesJson ->
+    static member FromJsonUnionDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionDesJson ->
         reader {
           let! caseHandlers = unionDesJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -32,20 +36,29 @@ module UnionDes =
             |> reader.All
             |> reader.Map Map.ofSeq
 
-          return Expr.UnionDes(caseHandlers)
+          return Expr.UnionDes(caseHandlers, None)
         })
 
-    static member ToJsonUnionDes(rootToJson: Expr<'T> -> JsonValue) : Map<Identifier, CaseHandler<'T>> -> JsonValue =
-      fun union ->
-        let cases =
+    static member ToJsonUnionDes
+      (rootToJson: ExprEncoder<'T>)
+      (union: Map<Identifier, CaseHandler<'T>>)
+      (_fallback: Option<Expr<'T>>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! cases =
           union
           |> Map.toList
           |> List.map (fun (caseName, (handlerVar, handlerExpr)) ->
-            let caseNameJson = caseName |> Identifier.ToJson
+            reader {
+              let caseNameJson = caseName |> Identifier.ToJson
+              let! handlerExpr = rootToJson handlerExpr
 
-            let handlerJson =
-              JsonValue.Array [| JsonValue.String handlerVar.Name; rootToJson handlerExpr |]
+              let handlerJson =
+                JsonValue.Array [| JsonValue.String handlerVar.Name; handlerExpr |]
 
-            JsonValue.Array [| caseNameJson; handlerJson |])
+              return JsonValue.Array [| caseNameJson; handlerJson |]
+            })
+          |> reader.All
 
-        JsonValue.Array(List.toArray cases) |> Json.kind "union-match" "union-match"
+        return JsonValue.Array(List.toArray cases) |> Json.discriminator discriminator
+      }

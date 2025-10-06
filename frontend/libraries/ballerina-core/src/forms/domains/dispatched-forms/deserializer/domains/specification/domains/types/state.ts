@@ -52,9 +52,14 @@ export type SerializedKeyOfType<T> = {
   args?: Array<string>;
 };
 
+export type SerializedTranslationOverrideType = {
+  fun?: "TranslationOverride";
+  args?: Array<string>;
+};
+
 export type ValidatedSerializedKeyOfType<T> = {
   fun: "KeyOf";
-  args: Array<string>;
+  args: [string, Array<string>?];
 };
 
 export type SerializedLookupType = string;
@@ -67,7 +72,8 @@ export type SerializedType<T> =
   | SerializedUnionType
   | SerializedRecordType
   | SerializedOptionType
-  | SerializedKeyOfType<T>;
+  | SerializedKeyOfType<T>
+  | SerializedTranslationOverrideType;
 
 export const DispatchPrimitiveTypeNames = [
   "unit",
@@ -188,7 +194,7 @@ export const SerializedType = {
     _.fun == "KeyOf" &&
     "args" in _ &&
     Array.isArray(_.args) &&
-    _.args.length == 1 &&
+    (_.args.length == 1 || (_.args.length == 2 && Array.isArray(_.args[1]))) &&
     DispatchisString(_.args[0]),
   isOne: <T>(
     _: SerializedType<T>,
@@ -202,6 +208,17 @@ export const SerializedType = {
     _.args.length == 1,
   isRecordFields: (_: unknown) =>
     typeof _ == "object" && _ != null && !("fun" in _) && !("args" in _),
+  isTranslationOverride: (
+    _: unknown,
+  ): _ is { fun: "TranslationOverride"; args: Array<string> } =>
+    typeof _ == "object" &&
+    _ != null &&
+    "fun" in _ &&
+    _.fun == "TranslationOverride" &&
+    "args" in _ &&
+    Array.isArray(_.args) &&
+    _.args.length == 2 &&
+    DispatchisString(_.args[0]),
 };
 
 export type StringSerializedType = string;
@@ -857,6 +874,11 @@ export const DispatchParsedType = {
                   Map(
                     parsingResult[0].fields
                       .keySeq()
+                      .filter(
+                        (key) =>
+                          rawType.args[1] == undefined ||
+                          !rawType.args[1].includes(key),
+                      )
                       .toArray()
                       .map((key) => [
                         key,
@@ -1488,6 +1510,23 @@ export const DispatchParsedType = {
             typeNames,
             serializedTypes,
             alreadyParsedTypes,
+          );
+        if (SerializedType.isTranslationOverride(rawType))
+          return DispatchParsedType.Operations.ParseRawType(
+            "TranslationOverride:Language",
+            rawType.args[0],
+            typeNames,
+            serializedTypes,
+            alreadyParsedTypes,
+            injectedPrimitives,
+          ).Then(([parsedArg0, ..._]) =>
+            ValueOrErrors.Default.return([
+              DispatchParsedType.Default.map([
+                DispatchParsedType.Default.singleSelection([parsedArg0]),
+                DispatchParsedType.Default.primitive("string"),
+              ]),
+              alreadyParsedTypes,
+            ]),
           );
         return ValueOrErrors.Default.throwOne(
           `Unrecognised type "${typeName}" : ${JSON.stringify(rawType)}`,

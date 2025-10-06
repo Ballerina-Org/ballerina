@@ -10,14 +10,18 @@ module Set =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+
+  let private discriminator = "set"
 
   type TypeValue with
     static member FromJsonSet(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "set" "set" (fun elementType ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun elementType ->
         sum {
           let! elementType = elementType |> fromRootJson
-          return TypeValue.Set elementType
+          return TypeValue.CreateSet(elementType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonSet(toRootJson: TypeValue -> JsonValue) : TypeValue -> JsonValue =
-      toRootJson >> Json.kind "set" "set"
+      toRootJson >> Json.discriminator discriminator

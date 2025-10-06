@@ -1,10 +1,10 @@
 import {
   DispatchInjectablesTypes,
-  DispatcherContext,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../../main";
 import { RecordFieldRenderer } from "../../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
+import { DispatcherContextWithApiSources } from "../../../../../state";
 import { NestedDispatcher } from "../../nestedDispatcher/state";
 
 export const RecordFieldDispatcher = {
@@ -12,15 +12,15 @@ export const RecordFieldDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       fieldName: string,
       renderer: RecordFieldRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,

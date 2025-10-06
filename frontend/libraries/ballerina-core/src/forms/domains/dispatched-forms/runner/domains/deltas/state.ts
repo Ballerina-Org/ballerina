@@ -295,6 +295,12 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "TableValueAll";
+      nestedDelta: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "TableAddEmpty";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
@@ -364,10 +370,7 @@ export type DispatchDeltaTransferPrimitive =
   | { Discriminator: "GuidReplace"; Replace: string }
   | { Discriminator: "Int32Replace"; Replace: bigint }
   | { Discriminator: "Float32Replace"; Replace: number };
-export type DispatchDeltaTransferUnit = {
-  Discriminator: "UnitReplace";
-  Replace: any;
-};
+export type DispatchDeltaTransferUnit = {};
 export type DispatchDeltaTransferOption<DispatchDeltaTransferCustom> =
   | { Discriminator: "OptionReplace"; Replace: any }
   | {
@@ -452,6 +455,10 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
         Item1: string;
         Item2: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
       };
+    }
+  | {
+      Discriminator: "TableValueAll";
+      ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
@@ -648,24 +655,18 @@ export const DispatchDeltaTransfer = {
             );
           }
           if (delta.kind == "UnitReplace") {
-            return toRawObject(delta.replace, delta.type, delta.state).Then(
-              (value) =>
-                ValueOrErrors.Default.return<
-                  [
-                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                    DispatchDeltaTransferComparand,
-                    AggregatedFlags<Flags>,
-                  ],
-                  string
-                >([
-                  {
-                    Discriminator: "UnitReplace",
-                    Replace: value,
-                  },
-                  "UnitReplace",
-                  delta.flags ? [[delta.flags, "UnitReplace"]] : [],
-                ]),
-            );
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {},
+              "UnitReplace",
+              delta.flags ? [[delta.flags, "UnitReplace"]] : [],
+            ]);
           }
           if (delta.kind == "OptionReplace") {
             return toRawObject(delta.replace, delta.type, delta.state).Then(
@@ -1338,6 +1339,30 @@ export const DispatchDeltaTransfer = {
                       [delta.flags, `[TableValue][${delta.id}]${value[1]}`],
                       ...value[2],
                     ]
+                  : value[2],
+              ]),
+            );
+          }
+          if (delta.kind == "TableValueAll") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "TableValueAll",
+                  ValueAll: value[0],
+                },
+                `[TableValueAll]${value[1]}`,
+                delta.flags
+                  ? [[delta.flags, `[TableValueAll]${value[1]}`], ...value[2]]
                   : value[2],
               ]),
             );

@@ -12,20 +12,21 @@ import {
 
 import { UnionRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/union/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const UnionDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: UnionRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,

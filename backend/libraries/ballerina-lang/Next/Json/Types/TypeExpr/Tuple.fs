@@ -8,10 +8,13 @@ module TupleTypeExpr =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "tuple"
 
   type TypeExpr with
     static member FromJsonTuple(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "tuple" "tuple" (fun tupleFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun tupleFields ->
         sum {
           let! elements = tupleFields |> JsonValue.AsArray
           let! elementTypes = elements |> Array.map (fun element -> element |> fromJsonRoot) |> sum.All
@@ -22,4 +25,4 @@ module TupleTypeExpr =
       List.map rootToJson
       >> List.toArray
       >> JsonValue.Array
-      >> Json.kind "tuple" "tuple"
+      >> Json.discriminator discriminator

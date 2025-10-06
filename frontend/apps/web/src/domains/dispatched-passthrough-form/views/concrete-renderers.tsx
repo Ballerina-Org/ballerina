@@ -17,6 +17,7 @@ import {
   FilterTypeKind,
   ListRepo,
   BasicUpdater,
+  ValueTuple,
 } from "ballerina-core";
 import { OrderedMap, Map, Set, List } from "immutable";
 import React, { useEffect, useState } from "react";
@@ -128,7 +129,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -136,6 +137,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -202,6 +204,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
+        const [streamParams, shouldReload] =
+          props.context.customFormState.streamParams.value;
+
         return (
           <>
             <p>one admin renderer</p>
@@ -230,7 +235,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 <input
                   disabled={props.context.disabled}
                   value={
-                    props.context.customFormState.streamParams.value.get(
+                    props.context.customFormState.streamParams.value[0].get(
                       "search",
                     ) ?? ""
                   }
@@ -238,6 +243,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                     props.foreignMutations.setStreamParam(
                       "search",
                       e.currentTarget.value,
+                      true,
                     )
                   }
                 />
@@ -356,7 +362,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -364,6 +370,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -527,7 +534,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -535,6 +542,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -875,7 +883,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               <input
                 disabled={props.context.disabled}
                 value={
-                  props.context.customFormState.streamParams.value.get(
+                  props.context.customFormState.streamParams.value[0].get(
                     "search",
                   ) ?? ""
                 }
@@ -883,6 +891,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   props.foreignMutations.setStreamParam(
                     "search",
                     e.currentTarget.value,
+                    true,
                   )
                 }
               />
@@ -1529,7 +1538,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             PredicateValue.Operations.KindAndValueToFilter(kind, value),
           ),
         );
-        props.foreignMutations.updateFilters(filters);
+        props.foreignMutations.updateFilters(filters, true);
       }, [colFilters]);
 
       const handleFilterValueChange = (
@@ -1715,6 +1724,18 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                 gap: "10px",
               }}
             >
+              <div>
+                <input
+                  type="checkbox"
+                  checked={props.context.customFormState.applyToAll}
+                  onClick={() =>
+                    props.foreignMutations.setApplyToAll(
+                      !props.context.customFormState.applyToAll,
+                    )
+                  }
+                />
+                Apply to all
+              </div>
               <table>
                 <thead style={{ border: "1px solid black" }}>
                   <tr style={{ border: "1px solid black" }}>
@@ -2845,6 +2866,28 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   </div>
                 </li>
               );
+            })}
+            {props.embeddedPlaceholderElementTemplate(0)(undefined)({
+              ...props,
+              context: {
+                ...props.context,
+                customPresentationContext: {
+                  listElement: {
+                    isLastListElement: false,
+                  },
+                },
+              },
+              view: unit,
+              foreignMutations: {
+                ...props.foreignMutations,
+                onChange: (upd, delta) => {
+                  props.foreignMutations.add?.(undefined)(
+                    upd.kind == "l"
+                      ? undefined
+                      : (upd.value as BasicUpdater<PredicateValue>),
+                  );
+                },
+              },
             })}
           </ul>
           {props.foreignMutations.add && (

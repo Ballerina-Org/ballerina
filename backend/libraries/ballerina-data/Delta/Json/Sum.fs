@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Sum =
   open Ballerina.Reader.WithError
@@ -7,11 +9,15 @@ module Sum =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.Data.Delta.Model
+  open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonSum(fromJsonRoot: DeltaParser) : DeltaParser =
-      reader.AssertKindAndContinueWithField "sum" "sum" (fun json ->
+  type Delta<'valueExtension> with
+    static member FromJsonSum
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue "sum" json (fun json ->
         reader {
           let! caseIndex, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! caseIndex = caseIndex |> JsonValue.AsInt |> reader.OfSum
@@ -19,8 +25,13 @@ module Sum =
           return Delta.Sum(caseIndex, caseDelta)
         })
 
-    static member ToJsonSum(rootToJson: Delta -> JsonValue) : int * Delta -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> decimal |> JsonValue.Number
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "sum" "sum"
+    static member ToJsonSum
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (i: int)
+      (v: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = v |> rootToJson
+        return [| i; v |] |> JsonValue.Array |> Json.discriminator "sum"
+      }

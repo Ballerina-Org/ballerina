@@ -57,9 +57,10 @@ module Many =
       }
 
     static member ParseManyAllRenderer
+      (label: Label option)
       parseNestedRenderer
       (parentJsonFields: (string * JsonValue)[])
-      (json: JsonValue)
+      (name: RendererName)
       : State<
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
@@ -69,9 +70,8 @@ module Many =
       =
       state {
         let! config = state.GetContext()
-        let! s = json |> JsonValue.AsString |> state.OfSum
 
-        if config.Many.SupportedRenderers.AllRenderers |> Set.contains s then
+        if config.Many.SupportedRenderers.AllRenderers |> Set.contains name then
 
           return!
             state {
@@ -84,11 +84,8 @@ module Many =
 
               return
                 ManyAllRenderer
-                  {| Many =
-                      PrimitiveRenderer
-                        { PrimitiveRendererName = s
-                          PrimitiveRendererId = Guid.CreateVersion7()
-                          Type = ManyType itemRenderer.Type }
+                  {| Label = label
+                     Many = name
                      Element = itemRenderer
                      ManyApiId = manyApi |}
                 |> ManyRenderer
@@ -96,14 +93,14 @@ module Many =
 
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
-          return!
-            state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {json.ToString().ReasonablyClamped}")
+          return! state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {name}")
       }
 
     static member ParseManyItemRenderer
+      (label: Label option)
       parseNestedRenderer
       (parentJsonFields: (string * JsonValue)[])
-      (json: JsonValue)
+      (name: RendererName)
       : State<
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
@@ -113,9 +110,8 @@ module Many =
       =
       state {
         let! config = state.GetContext()
-        let! s = json |> JsonValue.AsString |> state.OfSum
 
-        if config.Many.SupportedRenderers.LinkedUnlinkedRenderers |> Set.contains s then
+        if config.Many.SupportedRenderers.LinkedUnlinkedRenderers |> Set.contains name then
 
           return!
             state {
@@ -133,11 +129,8 @@ module Many =
 
               return
                 ManyLinkedUnlinkedRenderer
-                  {| Many =
-                      PrimitiveRenderer
-                        { PrimitiveRendererName = s
-                          PrimitiveRendererId = Guid.CreateVersion7()
-                          Type = ManyType linkedRenderer.Type }
+                  {| Label = label
+                     Many = name
                      Linked = linkedRenderer
                      Unlinked = unlinkedRenderer
                      ManyApiId = manyApi |}
@@ -146,6 +139,5 @@ module Many =
 
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
-          return!
-            state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {json.ToString().ReasonablyClamped}")
+          return! state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {name}")
       }

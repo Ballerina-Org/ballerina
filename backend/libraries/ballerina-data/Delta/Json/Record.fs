@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Record =
   open Ballerina.Reader.WithError
@@ -7,11 +9,15 @@ module Record =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.Data.Delta.Model
+  open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonRecord(fromJsonRoot: DeltaParser) : DeltaParser =
-      reader.AssertKindAndContinueWithField "record" "record" (fun json ->
+  type Delta<'valueExtension> with
+    static member FromJsonRecord
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue "record" json (fun json ->
         reader {
           let! fieldName, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! fieldName = fieldName |> JsonValue.AsString |> reader.OfSum
@@ -19,8 +25,13 @@ module Record =
           return Delta.Record(fieldName, fieldDelta)
         })
 
-    static member ToJsonRecord(rootToJson: Delta -> JsonValue) : string * Delta -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> JsonValue.String
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "record" "record"
+    static member ToJsonRecord
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (name: string)
+      (delta: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let name = name |> JsonValue.String
+        let! delta = delta |> rootToJson
+        return [| name; delta |] |> JsonValue.Array |> Json.discriminator "record"
+      }

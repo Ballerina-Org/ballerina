@@ -11,20 +11,21 @@ import {
 import { TupleType } from "../../../../../deserializer/domains/specification/domains/types/state";
 import { TupleRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/tuple/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const TupleDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: TupleRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -68,7 +69,12 @@ export const TupleDispatcher = {
                     ),
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
-                  ).withView(concreteRenderer),
+                  )
+                    .mapContext((_: any) => ({
+                      ..._,
+                      type: renderer.type,
+                    }))
+                    .withView(concreteRenderer),
                 ),
               ),
           ),

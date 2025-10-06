@@ -1,6 +1,4 @@
-import { DispatcherContext } from "../../../../../deserializer/state";
 import {
-  CommonAbstractRendererState,
   DispatchInjectablesTypes,
   ReadOnlyAbstractRenderer,
   Template,
@@ -8,20 +6,21 @@ import {
 } from "../../../../../../../../../main";
 import { ReadOnlyRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/readOnly/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const ReadOnlyDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: ReadOnlyRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -47,7 +46,12 @@ export const ReadOnlyDispatcher = {
                       childTemplate,
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
-                    ).withView(concreteRenderer),
+                    )
+                      .mapContext((_: any) => ({
+                        ..._,
+                        type: renderer.type,
+                      }))
+                      .withView(concreteRenderer),
                   ),
                 ),
             ),

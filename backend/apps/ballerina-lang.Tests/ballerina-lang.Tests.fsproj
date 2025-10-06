@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>Ballerina.Lang.Tests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
@@ -12,6 +11,7 @@
     <Compile Include="Parser/Common.fs" />
     <Compile Include="Parser/ExprType.fs" />
     <Compile Include="ExprType/Unification.fs" />
+    <Compile Include="Next/Type/Patterns.fs" />
     <Compile Include="Next/Type/Eval.fs" />
     <Compile Include="Next/Type/Unify.fs" />
     <Compile Include="Next/Type/TypeCheck.fs" />
@@ -23,6 +23,8 @@
     <Compile Include="Next\Term\Json\Value_TypeValue_Primitive.fs" />
     <Compile Include="Next\Term\Json\Value_TypeValue.fs" />
     <Compile Include="Next\Term\Json\Expr_TypeExpr.fs" />
+    <Compile Include="Next\Term\Expr_Eval.fs" />
+    <Compile Include="Next\Integration.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -39,7 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
-    <ProjectReference Include="..\..\libraries\ballerina-lang\ballerina-lang.fsproj" />
+    <ProjectReference
+      Include="..\..\libraries\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-lang\Next\ballerina-lang.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="..\..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\ballerina-lang-v1.fsproj" />
+        <ProjectReference Include=".\Models\ballerina-lang-models.fsproj" />
+        <ProjectReference Include=".\TypeChecker\ballerina-lang-typecheck.fsproj" />
+        <ProjectReference Include=".\Eval\ballerina-lang-eval.fsproj" />
+        <ProjectReference Include=".\Json\ballerina-lang-json.fsproj" />
+        <ProjectReference Include=".\Stdlib\ballerina-lang-stdlib.fsproj" />
+        <ProjectReference Include=".\Syntax\ballerina-lang-parser.fsproj" />
+    </ItemGroup>
+</Project>

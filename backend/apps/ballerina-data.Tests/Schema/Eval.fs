@@ -1,33 +1,34 @@
 module Ballerina.Data.Tests.Schema.Eval
 
+open Ballerina.Data.Schema.Model
 open Ballerina.State.WithError
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Eval
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.Data.Model
 open Ballerina.Data.TypeEval
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.StdLib.OrderPreservingMap
 
 [<Test>]
 let ``SpecNext-Schema evaluates`` () =
   let source: Schema<TypeExpr> =
     { Entities =
         Map.ofList
-          [ ("SourceTable",
+          [ ({ EntityName = "SourceTable" },
              { Type = "SomeType" |> Identifier.LocalScope |> TypeExpr.Lookup
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeExpr>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates =
                  [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
-            ("TargetTable",
+            ({ EntityName = "TargetTable" },
              { Type = "AnotherType" |> Identifier.LocalScope |> TypeExpr.Lookup
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
                  [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)) ]
@@ -35,25 +36,29 @@ let ``SpecNext-Schema evaluates`` () =
       Lookups = Map.empty }
 
   let SomeType =
-    TypeValue.Record(Map.ofList [ ("Foo" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.Int32) ])
+    TypeValue.CreateRecord(
+      OrderedMap.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()) ]
+    )
 
   let AnotherType =
-    TypeValue.Record(Map.ofList [ ("Bar" |> TypeSymbol.Create, TypeValue.Primitive PrimitiveType.String) ])
+    TypeValue.CreateRecord(
+      OrderedMap.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()) ]
+    )
 
   let expected: Schema<TypeValue> =
     { Entities =
         Map.ofList
-          [ ("SourceTable",
+          [ ({ EntityName = "SourceTable" },
              { Type = SomeType
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
                      Condition = Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int 42) } ]
+                     Expr = Expr<TypeValue>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates = Map.ofList [ ("SomePredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool false)) ] })
-            ("TargetTable",
+            ({ EntityName = "TargetTable" },
              { Type = AnotherType
-               Methods = Set.ofList [ Get; GetMany; Create; Delete; Update ]
+               Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates = Map.ofList [ ("AnotherPredicate", Expr<TypeValue>.Primitive(PrimitiveValue.Bool true)) ] }) ]
       Lookups = Map.empty }

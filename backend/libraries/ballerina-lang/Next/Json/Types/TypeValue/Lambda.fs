@@ -11,10 +11,14 @@ module Lambda =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Collections.Sum.Operators
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "lambda"
 
   type TypeValue with
     static member FromJsonLambda(fromExpr: JsonValue -> Sum<TypeExpr, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "lambda" "lambda" (fun lambdaFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
         sum {
           let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
 
@@ -24,7 +28,7 @@ module Lambda =
 
           let! body = lambdaFields |> (Map.tryFindWithError "body" "lambda" "body" >>= fromExpr)
 
-          return TypeValue.Lambda(param, body)
+          return TypeValue.CreateLambda(param, body) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonLambda(rootToJson: TypeExpr -> JsonValue) : TypeParameter * TypeExpr -> JsonValue =
@@ -33,4 +37,4 @@ module Lambda =
         let bodyJson = body |> rootToJson
 
         JsonValue.Record [| ("param", paramJson); ("body", bodyJson) |]
-        |> Json.kind "lambda" "lambda"
+        |> Json.discriminator discriminator

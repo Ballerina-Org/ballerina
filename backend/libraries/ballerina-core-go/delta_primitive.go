@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 	"time"
 
@@ -12,10 +13,6 @@ type deltaIntEffectsEnum string
 const (
 	intReplace deltaIntEffectsEnum = "IntReplace"
 )
-
-var allDeltaIntEffectsEnumCases = [...]deltaIntEffectsEnum{intReplace}
-
-func DefaultDeltaIntEffectsEnum() deltaIntEffectsEnum { return allDeltaIntEffectsEnumCases[0] }
 
 type DeltaInt struct {
 	DeltaBase
@@ -44,7 +41,9 @@ func (d *DeltaInt) UnmarshalJSON(data []byte) error {
 		Discriminator deltaIntEffectsEnum
 		Replace       int
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -80,10 +79,6 @@ const (
 	int64Replace deltaInt64EffectsEnum = "Int64Replace"
 )
 
-var allDeltaInt64EffectsEnumCases = [...]deltaInt64EffectsEnum{int64Replace}
-
-func DefaultDeltaInt64EffectsEnum() deltaInt64EffectsEnum { return allDeltaInt64EffectsEnumCases[0] }
-
 type DeltaInt64 struct {
 	DeltaBase
 	discriminator deltaInt64EffectsEnum
@@ -111,7 +106,9 @@ func (d *DeltaInt64) UnmarshalJSON(data []byte) error {
 		Discriminator deltaInt64EffectsEnum
 		Replace       int64
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -147,10 +144,6 @@ const (
 	stringReplace deltaStringEffectsEnum = "StringReplace"
 )
 
-var allDeltaStringEffectsEnumCases = [...]deltaStringEffectsEnum{stringReplace}
-
-func DefaultDeltaStringEffectsEnum() deltaStringEffectsEnum { return allDeltaStringEffectsEnumCases[0] }
-
 type DeltaString struct {
 	DeltaBase
 	discriminator deltaStringEffectsEnum
@@ -178,7 +171,9 @@ func (d *DeltaString) UnmarshalJSON(data []byte) error {
 		Discriminator deltaStringEffectsEnum
 		Replace       string
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -214,10 +209,6 @@ const (
 	boolReplace deltaBoolEffectsEnum = "BoolReplace"
 )
 
-var allDeltaBoolEffectsEnumCases = [...]deltaBoolEffectsEnum{boolReplace}
-
-func DefaultDeltaBoolEffectsEnum() deltaBoolEffectsEnum { return allDeltaBoolEffectsEnumCases[0] }
-
 type DeltaBool struct {
 	DeltaBase
 	discriminator deltaBoolEffectsEnum
@@ -245,7 +236,9 @@ func (d *DeltaBool) UnmarshalJSON(data []byte) error {
 		Discriminator deltaBoolEffectsEnum
 		Replace       bool
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -281,10 +274,6 @@ const (
 	guidReplace deltaGuidEffectsEnum = "GuidReplace"
 )
 
-var allDeltaGuidEffectsEnumCases = [...]deltaGuidEffectsEnum{guidReplace}
-
-func DefaultDeltaGuidEffectsEnum() deltaGuidEffectsEnum { return allDeltaGuidEffectsEnumCases[0] }
-
 type DeltaGuid struct {
 	DeltaBase
 	discriminator deltaGuidEffectsEnum
@@ -312,7 +301,9 @@ func (d *DeltaGuid) UnmarshalJSON(data []byte) error {
 		Discriminator deltaGuidEffectsEnum
 		Replace       uuid.UUID
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -352,10 +343,6 @@ const (
 	timeReplace deltaTimeEffectsEnum = "TimeReplace"
 )
 
-var allDeltaTimeEffectsEnumCases = [...]deltaTimeEffectsEnum{timeReplace}
-
-func DefaultDeltaTimeEffectsEnum() deltaTimeEffectsEnum { return allDeltaTimeEffectsEnumCases[0] }
-
 type DeltaTime struct {
 	DeltaBase
 	discriminator deltaTimeEffectsEnum
@@ -383,7 +370,9 @@ func (d *DeltaTime) UnmarshalJSON(data []byte) error {
 		Discriminator deltaTimeEffectsEnum
 		Replace       time.Time
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -419,10 +408,6 @@ const (
 	int32Replace deltaInt32EffectsEnum = "Int32Replace"
 )
 
-var allDeltaInt32EffectsEnumCases = [...]deltaInt32EffectsEnum{int32Replace}
-
-func DefaultDeltaInt32EffectsEnum() deltaInt32EffectsEnum { return allDeltaInt32EffectsEnumCases[0] }
-
 type DeltaInt32 struct {
 	DeltaBase
 	discriminator deltaInt32EffectsEnum
@@ -450,7 +435,9 @@ func (d *DeltaInt32) UnmarshalJSON(data []byte) error {
 		Discriminator deltaInt32EffectsEnum
 		Replace       int32
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -486,12 +473,6 @@ const (
 	float32Replace deltaFloat32EffectsEnum = "Float32Replace"
 )
 
-var allDeltaFloat32EffectsEnumCases = [...]deltaFloat32EffectsEnum{float32Replace}
-
-func DefaultDeltaFloat32EffectsEnum() deltaFloat32EffectsEnum {
-	return allDeltaFloat32EffectsEnumCases[0]
-}
-
 type DeltaFloat32 struct {
 	DeltaBase
 	discriminator deltaFloat32EffectsEnum
@@ -519,7 +500,9 @@ func (d *DeltaFloat32) UnmarshalJSON(data []byte) error {
 		Discriminator deltaFloat32EffectsEnum
 		Replace       float32
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -555,12 +538,6 @@ const (
 	float64Replace deltaFloat64EffectsEnum = "Float64Replace"
 )
 
-var allDeltaFloat64EffectsEnumCases = [...]deltaFloat64EffectsEnum{float64Replace}
-
-func DefaultDeltaFloat64EffectsEnum() deltaFloat64EffectsEnum {
-	return allDeltaFloat64EffectsEnumCases[0]
-}
-
 type DeltaFloat64 struct {
 	DeltaBase
 	discriminator deltaFloat64EffectsEnum
@@ -588,7 +565,9 @@ func (d *DeltaFloat64) UnmarshalJSON(data []byte) error {
 		Discriminator deltaFloat64EffectsEnum
 		Replace       float64
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

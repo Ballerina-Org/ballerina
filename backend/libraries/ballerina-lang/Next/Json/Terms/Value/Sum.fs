@@ -8,27 +8,30 @@ module Sum =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  type Value<'T> with
-    static member FromJsonSum(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
-      fun json ->
+  let private discriminator = "sum"
+
+  type Value<'T, 'valueExtension> with
+    static member FromJsonSum
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "sum"
-              "case"
-              (fun elementsJson ->
-                reader {
-                  let! (k, v) = elementsJson |> JsonValue.AsPair |> reader.OfSum
-                  let! k = k |> JsonValue.AsInt |> reader.OfSum
-                  let! v = (fromJsonRoot v)
-                  return Value.Sum(k, v)
-                })
-              (json)
-        }
+          let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
+          let! k = k |> JsonValue.AsInt |> reader.OfSum
+          let! v = fromJsonRoot v
+          return Value.Sum(k, v)
+        })
 
-    static member ToJsonSum(rootToJson: Value<'T> -> JsonValue) : int * Value<'T> -> JsonValue =
-      fun (i, v) ->
-        let i = JsonValue.Number(decimal i)
-        let v = rootToJson v
-        [| i; v |] |> JsonValue.Array |> Json.kind "sum" "case"
+    static member ToJsonSum
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (i: int)
+      (v: Value<'T, 'valueExtension>)
+      : ValueEncoderReader<'T> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = rootToJson v
+        return [| i; v |] |> JsonValue.Array |> Json.discriminator discriminator
+      }

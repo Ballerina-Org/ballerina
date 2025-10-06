@@ -5,36 +5,30 @@ module TypeLambda =
   open Ballerina.Reader.WithError
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
-  open Ballerina.Collections.Sum
-  open Ballerina.Collections.Sum.Operators
-  open Ballerina.Errors
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  type Value<'T> with
-    static member FromJsonTypeLambda(_fromJsonRoot: JsonValue -> ExprParser<'T>) : JsonValue -> ValueParser<'T> =
-      fun json ->
+  let private discriminator = "type-lambda"
+
+  type Value<'T, 'valueExtension> with
+    static member FromJsonTypeLambda(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun typeParamJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "type-lambda"
-              "type-lambda"
-              (fun typeParamJson ->
-                reader {
-                  let! (typeParam, body) = typeParamJson |> JsonValue.AsPair |> reader.OfSum
-                  let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
-                  let! body = body |> Expr.FromJson
-                  return Value.TypeLambda(typeParam, body)
-                })
-              (json)
-        }
+          let! exprFromJsonRoot, _ = reader.GetContext()
+          let! typeParam, body = typeParamJson |> JsonValue.AsPair |> reader.OfSum
+          let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
+          let! body = body |> exprFromJsonRoot |> reader.OfSum
+          return Value.TypeLambda(typeParam, body)
+        })
 
-    static member ToJsonTypeLambda(toJsonRoot: Expr<'T> -> JsonValue) : TypeParameter * Expr<'T> -> JsonValue =
-      fun (tp, body) ->
-        let tp = TypeParameter.ToJson tp
-        let bodyJson = toJsonRoot body
-        [| tp; bodyJson |] |> JsonValue.Array |> Json.kind "type-lambda" "type-lambda"
+    static member ToJsonTypeLambda (typeParam: TypeParameter) (body: Expr<'T>) : ValueEncoderReader<'T> =
+      reader {
+        let! rootExprEncoder, _ = reader.GetContext()
+        let tp = TypeParameter.ToJson typeParam
+        let! bodyJson = body |> rootExprEncoder |> reader.OfSum
+        return [| tp; bodyJson |] |> JsonValue.Array |> Json.discriminator discriminator
+      }

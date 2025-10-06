@@ -1,10 +1,6 @@
 namespace Ballerina.Reader
 
 module WithError =
-  open Ballerina.Fun
-  open Ballerina.Collections.Sum
-  open Ballerina.Collections
-  open Ballerina.Collections.NonEmptyList
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
 
@@ -105,6 +101,16 @@ module WithError =
     member _.Ignore<'c, 'a, 'e>(r: Reader<'a, 'c, 'e>) : Reader<Unit, 'c, 'e> = Reader.map (fun _ -> ()) r
 
     member _.GetContext() : Reader<'c, 'c, 'e> = Reader(fun c -> sum { return c })
+
+    member reader.RunOption(p: Option<Reader<'a, 'c, 'e>>) =
+      reader {
+        match p with
+        | Some p ->
+          let! a = p
+          return Some a
+        | None -> return None
+      }
+
 
   let reader = ReaderBuilder()
 

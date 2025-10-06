@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina.DSL.Next.Types.Model
+
 [<AutoOpen>]
 module Tuple =
   open Ballerina.Reader.WithError
@@ -7,11 +9,15 @@ module Tuple =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.Data.Delta.Model
+  open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta with
-    static member FromJsonTuple(fromJsonRoot: DeltaParser) : DeltaParser =
-      reader.AssertKindAndContinueWithField "tuple" "tuple" (fun json ->
+  type Delta<'valueExtension> with
+    static member FromJsonTuple
+      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue "tuple" json (fun json ->
         reader {
           let! fieldIndex, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
           let! fieldIndex = fieldIndex |> JsonValue.AsInt |> reader.OfSum
@@ -19,8 +25,13 @@ module Tuple =
           return Delta.Tuple(fieldIndex, fieldDelta)
         })
 
-    static member ToJsonTuple(rootToJson: Delta -> JsonValue) : int * Delta -> JsonValue =
-      fun (caseName, caseDelta) ->
-        let caseName = caseName |> decimal |> JsonValue.Number
-        let caseDelta = caseDelta |> rootToJson
-        [| caseName; caseDelta |] |> JsonValue.Array |> Json.kind "tuple" "tuple"
+    static member ToJsonTuple
+      (rootToJson: DeltaEncoder<'valueExtension>)
+      (i: int)
+      (v: Delta<'valueExtension>)
+      : DeltaEncoderReader<'valueExtension> =
+      reader {
+        let i = i |> decimal |> JsonValue.Number
+        let! v = v |> rootToJson
+        return [| i; v |] |> JsonValue.Array |> Json.discriminator "tuple"
+      }

@@ -8,6 +8,7 @@ module TypeCheck =
   open Ballerina.DSL.Expr.Types.Patterns
   open Ballerina.Errors
   open Ballerina.StdLib.Object
+  open Ballerina.Collections.Map
 
   type TypeName = string
 
@@ -218,6 +219,7 @@ module TypeCheck =
 
           sum {
             match v with
+            | Value.Unit -> return ExprType.UnitType
             | Value.Tuple items ->
               let! evaluatedItems = items |> List.map Expr.Value |> List.map (!) |> sum.All
               let itemTypes = evaluatedItems
@@ -399,6 +401,61 @@ module TypeCheck =
             return ExprType.RecordType(evaluatedFields |> Map.ofSeq)
           }
 
+        and typeCheckPrepend
+          (vars: VarTypes)
+          (typeBindings: TypeBindings)
+          (newCases: List<string>)
+          (expr: Expr<'ExprExtension, 'ValueExtension>)
+          : Sum<ExprType, Errors> =
+          // NOTE: this operation is completely overfit to our use case in the API
+          let (!) = eval vars typeBindings
+
+          let prependCases newCases cases =
+            let newCases =
+              newCases
+              |> List.map (fun case ->
+                ({ CaseName = case },
+                 { CaseName = case
+                   Fields = ExprType.UnitType }))
+              |> Map.ofList
+
+            let mapKeysToSet = Map.keys >> Set.ofSeq
+
+            let intersection = newCases |> mapKeysToSet |> Set.intersect (cases |> mapKeysToSet)
+
+            if intersection |> Set.isEmpty then
+              sum.Return(
+                ExprType.SetType(
+                  RecordType(Map.ofList [ "Value", ExprType.UnionType(Map.merge (fun a _ -> a) newCases cases) ])
+                )
+              )
+            else
+              sum.Throw(Errors.Singleton $"Error: cases {intersection} already exist in union {cases}")
+
+          if newCases |> List.length <> (newCases |> List.distinct |> List.length) then
+            sum.Throw(Errors.Singleton $"Error: cases {newCases} must be unique")
+          else
+            sum {
+              let! eType = !expr
+
+              let wrongTypeError =
+                $$"""Error: cannot prepend new cases {{newCases}} to {{expr}} because it's not a set of a reference with single field 'Value' that is a reference to a sum/union, but of type {{eType}}"""
+                |> Errors.Singleton
+
+              match eType with
+              | SetType(LookupType typeId) ->
+                let! inner = lookup (LookupType typeId)
+                let! recordFields = inner |> ExprType.AsRecord
+
+                if recordFields |> Map.count = 1 && recordFields |> Map.containsKey "Value" then
+                  let! valueType = lookup recordFields["Value"]
+                  let! cases = valueType |> ExprType.AsUnion
+                  return! prependCases newCases cases
+                else
+                  return! sum.Throw wrongTypeError
+              | _ -> return! sum.Throw wrongTypeError
+            }
+
         and eval
           (vars: VarTypes)
           (typeBindings: TypeBindings)
@@ -421,6 +478,7 @@ module TypeCheck =
             | Expr.Let(x, e, rest) -> typeCheckLet vars typeBindings x e rest
             | Expr.LetType(typeName, typeDef, rest) -> typeCheckLetType vars typeBindings typeName typeDef rest
             | Expr.Annotate(_, _) -> notImplementedError "Annotate"
+            | Expr.Prepend(newCases, expr) -> typeCheckPrepend vars typeBindings newCases expr
             | Expr.Extension ext ->
               typeCheckExprExtension
                 (Expr.typeCheck typeCheckExprExtension typeCheckValueExtension)

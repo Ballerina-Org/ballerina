@@ -9,10 +9,14 @@ module TupleDes =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "tuple-des"
 
   type Expr<'T> with
-    static member FromJsonTupleDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "tuple-des" "tuple-des" (fun tupleDesJson ->
+    static member FromJsonTupleDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun tupleDesJson ->
         reader {
           let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
@@ -20,9 +24,14 @@ module TupleDes =
           return Expr.TupleDes(expr, { Index = index })
         })
 
-    static member ToJsonTupleDes(rootToJson: Expr<'T> -> JsonValue) : Expr<'T> * TupleDesSelector -> JsonValue =
-      fun (e, sel) ->
-        let e = e |> rootToJson
+    static member ToJsonTupleDes
+      (rootToJson: ExprEncoder<'T>)
+      (e: Expr<'T>)
+      (sel: TupleDesSelector)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! e = e |> rootToJson
         let index = sel.Index |> decimal |> JsonValue.Number
 
-        [| e; index |] |> JsonValue.Array |> Json.kind "tuple-des" "tuple-des"
+        return [| e; index |] |> JsonValue.Array |> Json.discriminator discriminator
+      }

@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 )
 
@@ -16,10 +17,6 @@ const (
 	case7Of8 sum8CasesEnum = "case7Of8"
 	case8Of8 sum8CasesEnum = "case8Of8"
 )
-
-var AllSum8CasesEnum = [...]sum8CasesEnum{case1Of8, case2Of8, case3Of8, case4Of8, case5Of8, case6Of8, case7Of8, case8Of8}
-
-func DefaultSum8CasesEnum() sum8CasesEnum { return AllSum8CasesEnum[0] }
 
 type Sum8[case1 any, case2 any, case3 any, case4 any, case5 any, case6 any, case7 any, case8 any] struct {
 	discriminator sum8CasesEnum
@@ -163,7 +160,9 @@ func (d *Sum8[case1, case2, case3, case4, case5, case6, case7, case8]) Unmarshal
 		Case7         *case7
 		Case8         *case8
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.discriminator = aux.Discriminator

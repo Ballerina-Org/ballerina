@@ -4,26 +4,26 @@ from ballerina_core.option import Option
 def test_some() -> None:
     value: int = 42
     option: Option[int] = Option.some(value)
-    result = option.fold(lambda x: x * 2, lambda: 0)
+    result = option.fold(lambda: 0, lambda x: x * 2)
     assert result == value * 2
 
 
 def test_nothing() -> None:
     option: Option[int] = Option.none()
-    result = option.fold(lambda x: x * 2, lambda: 0)
+    result = option.fold(lambda: 0, lambda x: x * 2)
     assert result == 0
 
 
 def test_fold_with_none() -> None:
     option: Option[int] = Option.none()
-    result = option.fold(lambda x: x * 2, lambda: None)
+    result = option.fold(lambda: None, lambda x: x * 2)
     assert result is None
 
 
 def test_fold_with_some() -> None:
     value: int = 42
     option: Option[int] = Option.some(value)
-    result = option.fold(lambda x: x * 2, lambda: None)
+    result = option.fold(lambda: None, lambda x: x * 2)
     assert result == value * 2
 
 

@@ -22,7 +22,6 @@ module TypeValue =
           TypeValue.FromJsonTuple TypeValue.FromJson json
           TypeValue.FromJsonUnion TypeValue.FromJson json
           TypeValue.FromJsonSum TypeValue.FromJson json
-          TypeValue.FromJsonList TypeValue.FromJson json
           TypeValue.FromJsonSet TypeValue.FromJson json
           TypeValue.FromJsonMap TypeValue.FromJson json
           $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
@@ -32,19 +31,20 @@ module TypeValue =
       )
       |> sum.MapError(Errors.HighestPriority)
 
-    static member ToJson: TypeValue -> JsonValue =
-      fun typeValue ->
-        match typeValue with
-        | TypeValue.Primitive primitive -> TypeValue.ToJsonPrimitive primitive
-        | TypeValue.Var var -> TypeValue.ToJsonVar var
-        | TypeValue.Lookup lookup -> TypeValue.ToJsonLookup lookup
-        | TypeValue.Arrow(fromType, toType) -> TypeValue.ToJsonArrow TypeValue.ToJson (fromType, toType)
-        | TypeValue.Lambda(paramType, returnType) -> TypeValue.ToJsonLambda TypeExpr.ToJson (paramType, returnType)
-        | TypeValue.Record fields -> TypeValue.ToJsonRecord TypeValue.ToJson fields
-        | TypeValue.Tuple fields -> TypeValue.ToJsonTuple TypeValue.ToJson fields
-        | TypeValue.Union cases -> TypeValue.ToJsonUnion TypeValue.ToJson cases
-        | TypeValue.Sum values -> TypeValue.ToJsonSum TypeValue.ToJson values
-        | TypeValue.List itemType -> TypeValue.ToJsonList TypeValue.ToJson itemType
-        | TypeValue.Set itemType -> TypeValue.ToJsonSet TypeValue.ToJson itemType
-        | TypeValue.Map(keyType, valueType) -> TypeValue.ToJsonMap TypeValue.ToJson (keyType, valueType)
-        | TypeValue.Apply(var, arg) -> TypeValue.ToJsonApply TypeValue.ToJson (var, arg)
+    static member ToJson(v: TypeValue) : JsonValue =
+      match v with
+      | TypeValue.Primitive primitive -> TypeValue.ToJsonPrimitive primitive.value
+      | TypeValue.Var var -> TypeValue.ToJsonVar var
+      | TypeValue.Lookup lookup -> TypeValue.ToJsonLookup lookup
+      | TypeValue.Arrow { value = fromType, toType } -> TypeValue.ToJsonArrow TypeValue.ToJson (fromType, toType)
+      | TypeValue.Lambda { value = paramType, returnType } ->
+        TypeValue.ToJsonLambda TypeExpr.ToJson (paramType, returnType)
+      | TypeValue.Record { value = fields } -> TypeValue.ToJsonRecord TypeValue.ToJson fields
+      | TypeValue.Tuple { value = fields } -> TypeValue.ToJsonTuple TypeValue.ToJson fields
+      | TypeValue.Union { value = cases } -> TypeValue.ToJsonUnion TypeValue.ToJson cases
+      | TypeValue.Sum { value = values } -> TypeValue.ToJsonSum TypeValue.ToJson values
+      | TypeValue.Set { value = itemType } -> TypeValue.ToJsonSet TypeValue.ToJson itemType
+      | TypeValue.Map { value = keyType, valueType } -> TypeValue.ToJsonMap TypeValue.ToJson (keyType, valueType)
+      | TypeValue.Apply { value = var, arg } -> TypeValue.ToJsonApply TypeValue.ToJson (var, arg)
+      | TypeValue.Imported _ ->
+        failwith "this should fallback to TypeExpr.ToJson once the type value carries its origin"

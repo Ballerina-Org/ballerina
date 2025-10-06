@@ -19,17 +19,17 @@ import {
 export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() => {
   const Co = CoTypedFactory<
     DispatchFormsParserContext<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
-    DispatchFormsParserState<T, Flags, CustomPresentationContexts, ExtraContext>
+    DispatchFormsParserState<T, Flags, CustomPresentationContext, ExtraContext>
   >();
 
   return Co.Template<Unit>(
@@ -39,7 +39,7 @@ export const LoadAndDeserializeSpecification = <
         DispatchSpecificationDeserializationResult<
           T,
           Flags,
-          CustomPresentationContexts,
+          CustomPresentationContext,
           ExtraContext
         >
       >(
@@ -96,13 +96,8 @@ export const LoadAndDeserializeSpecification = <
             current.defaultRecordConcreteRenderer,
             current.defaultNestedRecordConcreteRenderer,
             current.concreteRenderers,
-            current.infiniteStreamSources,
-            current.enumOptionsSources,
-            current.entityApis,
             current.IdWrapper,
             current.ErrorRenderer,
-            current.tableApiSources,
-            current.lookupSources,
           )(deserializationResult.value);
 
           if (result.kind == "errors") {
@@ -119,7 +114,7 @@ export const LoadAndDeserializeSpecification = <
         DispatchFormsParserState<
           T,
           Flags,
-          CustomPresentationContexts,
+          CustomPresentationContext,
           ExtraContext
         >().Updaters.deserializedSpecification,
       ),

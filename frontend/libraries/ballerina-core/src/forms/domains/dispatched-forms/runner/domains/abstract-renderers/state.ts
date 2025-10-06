@@ -17,6 +17,9 @@ export type CommonAbstractRendererReadonlyContext<
   value: V;
   locked: boolean;
   disabled: boolean;
+  globallyDisabled: boolean;
+  readOnly: boolean;
+  globallyReadOnly: boolean; // ignore writeable signals if true, set only for whole form
   bindings: Bindings;
   extraContext: ExtraContext;
   type: T;

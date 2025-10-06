@@ -14,20 +14,21 @@ import { BoolAbstractRenderer } from "../../../abstract-renderers/boolean/templa
 import { SecretAbstractRenderer } from "../../../abstract-renderers/secret/template";
 import { Base64FileAbstractRenderer } from "../../../abstract-renderers/base-64-file/template";
 import { PrimitiveRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/primitive/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const PrimitiveDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: PrimitiveRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
@@ -152,7 +153,12 @@ export const PrimitiveDispatcher = {
                 DateAbstractRenderer(
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                ).withView(concreteRenderer),
+                )
+                  .mapContext((_: any) => ({
+                    ..._,
+                    type: renderer.type,
+                  }))
+                  .withView(concreteRenderer),
               ),
             );
         }

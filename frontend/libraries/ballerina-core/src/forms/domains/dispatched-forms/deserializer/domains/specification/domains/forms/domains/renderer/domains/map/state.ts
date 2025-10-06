@@ -62,7 +62,7 @@ export const MapRenderer = {
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: MapType<T>,
@@ -70,7 +70,7 @@ export const MapRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,

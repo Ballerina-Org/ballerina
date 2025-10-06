@@ -8,11 +8,15 @@ module ToUpdater =
   open Ballerina.Data.Delta.Model
   open Ballerina.Errors
   open Ballerina.Fun
+  open Ballerina.StdLib.OrderPreservingMap
 
-  type Value = Ballerina.DSL.Next.Terms.Model.Value<TypeValue>
+  type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
 
-  type Delta with
-    static member ToUpdater (valueType: TypeValue) (delta: Delta) : Sum<Value -> Sum<Value, Errors>, Errors> =
+  type Delta<'valueExtension> with
+    static member ToUpdater
+      (valueType: TypeValue)
+      (delta: Delta<'valueExtension>)
+      : Sum<Value<'valueExtension> -> Sum<Value<'valueExtension>, Errors>, Errors> =
       sum {
         match delta with
         | Multiple deltas ->
@@ -25,19 +29,19 @@ module ToUpdater =
           let! fields = TypeValue.AsRecord valueType
 
           let! _, fieldType =
-            fields
-            |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "fields" fieldName
+            fields.value
+            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "fields" fieldName
 
           let! fieldUpdater = Delta.ToUpdater fieldType fieldDelta
 
           return
-            fun (v: Value) ->
+            fun (v: Value<'valueExtension>) ->
               sum {
                 let! fieldValues = Value.AsRecord v
 
                 let! targetSymbol, currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "field values" fieldName
+                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "field values" fieldName
 
                 let! updatedValue = fieldUpdater currentValue
 
@@ -48,8 +52,8 @@ module ToUpdater =
           let! cases = valueType |> TypeValue.AsUnion
 
           let! _, caseType =
-            cases
-            |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = caseName) "cases" caseName
+            cases.value
+            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = caseName) "cases" caseName
 
           let! caseUpdater = caseDelta |> Delta.ToUpdater caseType
 
@@ -58,7 +62,7 @@ module ToUpdater =
               sum {
                 let! valueCaseName, caseValue = v |> Value.AsUnion
 
-                if caseName <> valueCaseName.Name then
+                if caseName <> valueCaseName.Name.LocalName then
                   return v
                 else
                   let! caseValue = caseUpdater caseValue
@@ -68,7 +72,7 @@ module ToUpdater =
           let! fields = valueType |> TypeValue.AsTuple
 
           let! fieldType =
-            fields
+            fields.value
             |> List.tryItem fieldIndex
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: tuple does not have field at index {fieldIndex}")
 
@@ -93,7 +97,7 @@ module ToUpdater =
           let! cases = valueType |> TypeValue.AsSum
 
           let! caseType =
-            cases
+            cases.value
             |> List.tryItem caseIndex
             |> Sum.fromOption (fun () -> Errors.Singleton $"Error: sum does not have case at index {caseIndex}")
 

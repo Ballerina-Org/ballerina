@@ -17,256 +17,606 @@ module Validator =
   open Ballerina.Errors
   open System
 
+  let private (>>=) m f = sum.Bind(m, f)
+
+  let private validateGroupPredicates
+    (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
+    (typeCheck: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
+    (vars: Map<VarName, ExprType>)
+    (localType: ExprType)
+    (visibleExpr: Expr<'ExprExtension, 'ValueExtension>)
+    : State<Unit, CodeGenConfig, ValidationState, Errors> =
+    state {
+      let! eType =
+        typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars visibleExpr
+        |> state.OfSum
+
+      let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
+
+      let getLookedUpExprType (eType: ExprType) : Sum<ExprType, Errors> =
+        sum {
+          match eType with
+          | ExprType.LookupType l ->
+            let! typeBinding = ctx.Types |> Map.tryFindWithError l.VarName "types" "types"
+            return typeBinding.Type
+          | _ -> return eType
+        }
+
+      let! eTypeInSet = getLookedUpExprType eTypeSetArg >>= ExprType.AsRecord |> state.OfSum
+
+      let! eTypeEnum = eTypeInSet |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
+
+      let! eTypeEnumCases = getLookedUpExprType eTypeEnum >>= ExprType.AsUnion |> state.OfSum
+
+
+      match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
+      | Some nonUnitCaseFields ->
+        return!
+          state.Throw(
+            Errors.Singleton
+              $"Error: all cases of {eTypeEnum.ToString()} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
+          )
+      | _ ->
+        let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
+        let! fields = localType |> ExprType.AsRecord |> state.OfSum
+        let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
+
+        let missingFields = caseNames - fields
+        let missingCaseNames = fields - caseNames
+
+        let warn (msg: string) =
+          do Console.ForegroundColor <- ConsoleColor.DarkMagenta
+          Console.WriteLine msg
+          do Console.ResetColor()
+
+        if missingFields |> Set.isEmpty |> not then
+          warn
+            $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so toggling that field will have no effect!"
+
+        if missingCaseNames |> Set.isEmpty |> not then
+          warn
+            $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
+
+        return ()
+    }
+
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (formType: ExprType)
+      (expectedType: ExprType)
       (fr: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      Renderer.Validate codegen ctx formType fr.Renderer
+      Renderer.Validate codegen ctx expectedType fr.Renderer
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (formType: ExprType)
+      (expectedType: ExprType)
       (fr: Renderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      let (!) = Renderer.Validate codegen ctx formType
+      let (!) = Renderer.Validate codegen ctx
 
-      sum {
-        match fr with
-        | Renderer.Multiple(m) ->
-          do! !m.First.NestedRenderer.Renderer |> Sum.map ignore
+      let unify (expected: ExprType) (formType: ExprType) : Sum<Unit, Errors> =
+        ExprType.Unify
+          Map.empty
+          (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
+          expected
+          formType
+        |> Sum.map ignore
 
-          do!
-            (m.Rest |> Map.values)
-            |> Seq.map (fun r -> !r.Renderer)
-            |> sum.All
-            |> Sum.map ignore
-
-          do!
-            (m.Rest |> Map.values)
-            |> Seq.map (fun r ->
-              ExprType.Unify
-                Map.empty
-                (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                r.Renderer.Type
-                m.First.NestedRenderer.Type)
-            |> sum.All
-            |> Sum.map ignore
-
-
-          return m.First.NestedRenderer.Type
-        | Renderer.InlineFormRenderer i ->
-          let formType = i.Body.Type
+      let handleInlineFormRenderer (i: FormBody<'ExprExtension, 'ValueExtension>) : Sum<ExprType, Errors> =
+        sum {
+          let! formType = FormBody.Type ctx.Types i
 
           let formType =
-            if i.Body.IsTable |> not then
-              formType
-            else
-              match formType with
-              | ExprType.TableType row -> row
-              | _ -> formType
+            match formType with
+            | ExprType.TableType row -> row
+            | _ -> formType
 
-          return! FormBody.Validate codegen ctx formType i.Body
-        | Renderer.FormRenderer(_, _) -> return fr.Type
-        | Renderer.TableFormRenderer(f, _, tableApiId) ->
-          let! _ = ctx.TryFindForm f.FormName
-          let! api = ctx.TryFindTableApi tableApiId.TableName
-          let! apiRowType = api |> fst |> (fun a -> ctx.TryFindType a.TypeId.VarName)
+          do! unify expectedType formType
+          do! FormBody.Validate codegen ctx i |> Sum.map ignore
+          // NOTE: no need to recurse in the form body because the top-level-forms have already been validated
+          formType
+        }
+        |> sum.WithErrorContext $"...when validating inline form renderer"
 
-          do!
-            ExprType.Unify
-              Map.empty
-              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-              fr.Type
-              (apiRowType.Type |> ExprType.TableType)
-            |> Sum.map ignore
+      let handleFormRenderer (f: FormConfigId) (typeId: ExprTypeId) : Sum<ExprType, Errors> =
+        sum {
+          let! formTypeBinding = ctx.TryFindType typeId.VarName
+          let! form = ctx.TryFindForm f.FormName
+          let formType = formTypeBinding.Type
 
-          return fr.Type
-        | Renderer.OneRenderer(l) ->
-          do! !l.One |> Sum.map ignore
-          do! !l.Details.Renderer |> Sum.map ignore
+          do! unify expectedType formType
 
-          let! apiMethods =
-            match l.OneApiId with
-            | Some(Choice2Of2(apiTypeId, apiName)) ->
-              sum {
-                let! (oneApi, oneApiMethods) = ctx.TryFindOne apiTypeId.VarName apiName
-                let! oneApi = ctx.TryFindType oneApi.TypeId.VarName
-                let oneApi = oneApi.Type
+          return! FormBody.Validate codegen ctx form.Body
+        }
 
-                do!
-                  ExprType.Unify
-                    Map.empty
-                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                    fr.Type
-                    (oneApi |> ExprType.OneType)
-                  |> Sum.map ignore
 
-                return oneApiMethods
-              }
-            | Some(Choice1Of2(_)) -> sum { return Set.singleton CrudMethod.GetManyUnlinked }
-            | _ -> sum { return Set.empty }
 
-          match l.Preview with
-          | Some preview ->
-            if apiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+      let handlePrimitiveRenderer
+        ({ Type = rendererType
+           PrimitiveRendererName = RendererName rendererName }: PrimitiveRenderer)
+        : Sum<ExprType, Errors> =
+        sum {
+          do! unify expectedType rendererType
+
+          expectedType
+        }
+        |> sum.WithErrorContext(sprintf "...when validating primitive renderer %s" rendererName)
+
+      sum {
+        let error (expectedType: ExprType) (renderer: Renderer<'ExprExtension, 'ValueExtension>) =
+          sum.Throw(
+            Errors.Singleton(
+              sprintf "Error: unexpected renderer for %s type: %s" (expectedType.ToString()) (renderer.ToString())
+            )
+          )
+
+        match expectedType with
+        | ExprType.UnitType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.CustomType _ ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.VarType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for var type")
+        | ExprType.LookupType typeId ->
+          let! lookupType = ctx.TryFindType typeId.VarName
+          return! ! lookupType.Type fr
+        | ExprType.KeyOf _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for key of")
+        | ExprType.PrimitiveType _ ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.RecordType _ ->
+          match fr with
+          | Renderer.RecordRenderer fields ->
+            match fields.Renderer with
+            | Some renderer ->
+              let! rendererFields =
+                codegen.Record.SupportedRenderers
+                |> Map.tryFindWithError
+                  renderer
+                  "record renderer"
+                  (renderer
+                   |> (function
+                   | RendererName r -> r))
+
+              if rendererFields |> Set.isEmpty |> not then
+                let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
+
+                if renderedFields <> rendererFields then
+                  return!
+                    sum.Throw(
+                      Errors.Singleton
+                        $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
+                    )
+                else
+                  return ()
+              else
+                return ()
+            | _ -> return ()
+
+            do!
+              sum.All(
+                fields.Fields.Fields
+                |> Map.values
+                |> Seq.map (FieldConfig.Validate codegen ctx expectedType)
+                |> Seq.toList
+              )
+              |> Sum.map ignore
+
+            expectedType // FIXME: this should be reconstructed from the fields
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.UnionType typeCases ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer formCases ->
+            let unallowedCases =
+              typeCases
+              |> Map.filter (fun _ typeCase -> typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType |> not)
+
+            let typeCaseNames =
+              typeCases |> Map.values |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
+
+            let formCaseNames = formCases.Cases |> Map.keys |> Set.ofSeq
+
+            let missingTypeCases = typeCaseNames - formCaseNames
+            let missingFormCases = formCaseNames - typeCaseNames
+
+            if missingTypeCases |> Set.isEmpty |> not then
+              return! sum.Throw(Errors.Singleton $"Error: missing type cases {missingTypeCases.ToFSharpString}")
+            elif missingFormCases |> Set.isEmpty |> not then
+              return! sum.Throw(Errors.Singleton $"Error: missing form cases {missingFormCases.ToFSharpString}")
+            elif unallowedCases |> Map.isEmpty |> not then
               return!
                 sum.Throw(
                   Errors.Singleton
-                    $"Error: api {l.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyLinked.ToFSharpString} method."
+                    $"Error: case(s) {unallowedCases |> Map.keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq} have unallowed type(s), only lookup types and unit types are allowed"
                 )
             else
-              return ()
+              do!
+                typeCases
+                |> Seq.map (fun typeCase ->
+                  match formCases.Cases |> Map.tryFind typeCase.Key.CaseName with
+                  | None ->
+                    sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
+                  | Some formCase ->
+                    NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase
+                    |> sum.WithErrorContext $"...when validating case {typeCase.Key.CaseName}")
+                |> sum.All
+                |> Sum.map ignore
 
-            do! !preview.Renderer |> Sum.map ignore
-          | _ -> return ()
-
-          return fr.Type
-        | Renderer.ManyRenderer(ManyAllRenderer l) ->
-          do! !l.Many |> Sum.map ignore
-          do! !l.Element.Renderer |> Sum.map ignore
-
-          let! manyApiMethods =
-            sum {
-              match l.ManyApiId with
-              | Some(rootEntityId, manyApiName) ->
-                let! (manyApi, manyApiMethods) = ctx.TryFindMany rootEntityId.VarName manyApiName
-                let! manyType = ctx.TryFindType manyApi.TypeId.VarName
-                let manyType = manyType.Type
-
-                do!
-                  ExprType.Unify
-                    Map.empty
-                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                    fr.Type
-                    (manyType |> ExprType.ManyType)
-                  |> Sum.map ignore
-
-                return manyApiMethods
-              | None -> return Set.empty
-            }
-
-          if manyApiMethods |> Set.contains CrudMethod.GetAll |> not then
-            return!
-              $"Error: many renderer for all items needs the API to support 'get all'"
-              |> Errors.Singleton
-              |> sum.Throw
-          else
-            return fr.Type
-
-        | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer l) ->
-          do! !l.Many |> Sum.map ignore
-
-          let linkedType = l.Linked.Type
-
-          let! manyApiMethods =
-            sum {
-              match l.ManyApiId with
-              | Some(rootEntityId, manyApiName) ->
-                let! (manyApi, manyApiMethods) = ctx.TryFindMany rootEntityId.VarName manyApiName
-                let! manyType = ctx.TryFindType manyApi.TypeId.VarName
-                let manyType = manyType.Type
-
-                do!
-                  ExprType.Unify
-                    Map.empty
-                    (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                    fr.Type
-                    (manyType |> ExprType.ManyType)
-                  |> Sum.map ignore
-
-                return manyApiMethods
-              | None -> return Set.empty
-            }
-
-          match l.Unlinked with
-          | Some unlinked ->
-            if manyApiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+              expectedType // FIXME: this should be reconstructed from the cases
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.MapType(expectedKeyType, expectedValueType) ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer renderer ->
+            let! validatedKeyType = ! expectedKeyType renderer.Key.Renderer
+            let! validatedValueType = ! expectedValueType renderer.Value.Renderer
+            ExprType.MapType(validatedKeyType, validatedValueType)
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.SumType(expectedLeftType, expectedRightType) ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer renderer ->
+            let! validatedLeftType = ! expectedLeftType renderer.Left.Renderer
+            let! validatedRightType = ! expectedRightType renderer.Right.Renderer
+            ExprType.SumType(validatedLeftType, validatedRightType)
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.TupleType elementTypes ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer renderer ->
+            if List.length renderer.Elements <> List.length elementTypes then
               return!
-                $"Error: many renderer has an unlinked renderer but the many API does not support 'get many unlinked'"
+                $"Error: tuple renderer has {List.length renderer.Elements} elements but the expected type has {List.length elementTypes} elements"
                 |> Errors.Singleton
                 |> sum.Throw
             else
-              let unlinkedType = unlinked.Type
 
-              do!
-                ExprType.Unify
-                  Map.empty
-                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                  linkedType
-                  unlinkedType
-                |> Sum.map ignore
+              let! validatedElements =
+                List.zip elementTypes renderer.Elements
+                |> List.mapi (fun index (t, r) ->
+                  ! t r.Renderer
+                  |> sum.WithErrorContext
+                    $"...when validating tuple element {index + 1}/{List.length renderer.Elements}")
+                |> sum.All
 
-              do! !unlinked.Renderer |> Sum.map ignore
-          | None -> return ()
+              ExprType.TupleType validatedElements
+        | ExprType.OptionType expectedInnerType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer renderer ->
+            do! ! ExprType.UnitType renderer.None.Renderer |> Sum.map ignore
+            return! ! expectedInnerType renderer.Some.Renderer |> Sum.map ExprType.OptionType
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer(_, _, enumRendererType, rendererTypeId, RendererName rendererName) ->
+            match enumRendererType with
+            | EnumRendererType.Option ->
+              return!
+                sum {
+                  do! unify expectedType (ExprType.OptionType(ExprType.LookupType rendererTypeId))
 
-          do! !l.Linked.Renderer |> Sum.map ignore
-          return fr.Type
+                  expectedType
+                }
+                |> sum.WithErrorContext(sprintf "...when validating enum renderer %s" rendererName)
+            | EnumRendererType.Set ->
+              return! sum.Throw(Errors.Singleton "Error: set enum renderer is not supported on option type")
+          | Renderer.StreamRenderer(_, _, streamRendererType, rendererTypeId, RendererName rendererName) ->
+            match streamRendererType with
+            | StreamRendererType.Option ->
+              return!
+                sum {
+                  do! unify expectedType (ExprType.OptionType(ExprType.LookupType rendererTypeId))
 
-        | Renderer.ReadOnlyRenderer(l) ->
-          do! !l.ReadOnly |> Sum.map ignore
-          do! !l.Value.Renderer |> Sum.map ignore
+                  expectedType
+                }
+                |> sum.WithErrorContext(sprintf "...when validating stream renderer %s" rendererName)
+            | StreamRendererType.Set ->
+              return! sum.Throw(Errors.Singleton "Error: set stream renderer is not supported on option type")
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.OneType expectedInnerType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer renderer ->
+            let! apiMethods =
+              sum {
+                let! oneApiEntity, oneApiMethods =
+                  ctx.TryFindOne (fst renderer.OneApiId).VarName (snd renderer.OneApiId)
 
-          return fr.Type
-        | Renderer.OptionRenderer(l) ->
-          do! !l.Option |> Sum.map ignore
-          do! !l.None.Renderer |> Sum.map ignore
-          do! !l.Some.Renderer |> Sum.map ignore
+                let! oneApiType = ctx.TryFindType oneApiEntity.TypeId.VarName
+                let oneApi = oneApiType.Type
 
-          return fr.Type
-        | Renderer.ListRenderer(l) ->
-          do! !l.List |> Sum.map ignore
-          do! !l.Element.Renderer |> Sum.map ignore
+                do! unify (expectedInnerType |> ExprType.OneType) (oneApi |> ExprType.OneType)
 
-          return fr.Type
-        // | Renderer.TableRenderer(t) ->
-        //   do! !t.Table |> Sum.map ignore
-        //   do! !t.Row.Renderer |> Sum.map ignore
+                return oneApiMethods
+              }
 
-        //   do! t.Children |> validateChildren
+            match renderer.Preview with
+            | Some preview ->
+              if apiMethods |> Set.contains CrudMethod.GetManyUnlinked |> not then
+                return!
+                  sum.Throw(
+                    Errors.Singleton
+                      $"Error: api {renderer.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyUnlinked.ToFSharpString} method."
+                  )
+              else
+                return ()
 
-        //   return fr.Type
-        | Renderer.MapRenderer(m) ->
-          do! !m.Map |> Sum.map ignore
-          do! !m.Key.Renderer |> Sum.map ignore
-          do! !m.Value.Renderer |> Sum.map ignore
+              do! ! expectedInnerType preview.Renderer |> Sum.map ignore
+            | None -> return ()
 
-          return fr.Type
-        | Renderer.SumRenderer(s) ->
-          do! !s.Sum |> Sum.map ignore
-          do! !s.Left.Renderer |> Sum.map ignore
-          do! !s.Right.Renderer |> Sum.map ignore
+            return! ! expectedInnerType renderer.Details.Renderer |> Sum.map ExprType.OneType
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.ReadOnlyType innerType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer renderer ->
+            return! ! innerType renderer.Value.Renderer |> Sum.map ExprType.ReadOnlyType
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.ManyType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for many type")
+        | ExprType.ListType innerType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer renderer -> return! ! innerType renderer.Element.Renderer |> Sum.map ExprType.ListType
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.TableType expectedRowType ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer(formConfigId, formRowType, tableApiId) ->
+            let! _ = ctx.TryFindForm formConfigId.FormName
+            let! tableApi, _ = ctx.TryFindTableApi tableApiId.TableName
+            let! apiRowType = ctx.TryFindType tableApi.TypeId.VarName
 
-          return fr.Type
-        | Renderer.PrimitiveRenderer _ ->
+            do! unify (expectedRowType |> ExprType.TableType) (apiRowType.Type |> ExprType.TableType)
 
-          return fr.Type
-        | Renderer.EnumRenderer(_, enumRenderer) ->
-          do! !enumRenderer |> Sum.map ignore
-          return fr.Type
-        | Renderer.StreamRenderer(_, streamRenderer) ->
+            ExprType.TableType formRowType // NOTE: nothing to recurse into
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.SetType _ ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer renderer -> return! handlePrimitiveRenderer renderer
+          | Renderer.MapRenderer _ -> return! error expectedType fr
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer(_, _, enumRendererType, rendererTypeId, RendererName rendererName) ->
+            match enumRendererType with
+            | EnumRendererType.Option ->
+              return! sum.Throw(Errors.Singleton "Error: option enum renderer is not supported on set type")
+            | EnumRendererType.Set ->
+              return!
+                sum {
+                  do! unify expectedType (ExprType.SetType(ExprType.LookupType rendererTypeId))
+                  expectedType
+                }
+                |> sum.WithErrorContext(sprintf "...when validating enum renderer %s" rendererName)
+          | Renderer.StreamRenderer(_, _, streamRendererType, rendererTypeId, RendererName rendererName) ->
+            match streamRendererType with
+            | StreamRendererType.Option ->
+              return! sum.Throw(Errors.Singleton "Error: option stream renderer is not supported on set type")
+            | StreamRendererType.Set ->
+              return!
+                sum {
+                  do! unify expectedType (ExprType.SetType(ExprType.LookupType rendererTypeId))
 
-          do! !streamRenderer |> Sum.map ignore
+                  expectedType
+                }
+                |> sum.WithErrorContext(sprintf "...when validating stream renderer %s" rendererName)
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
+        | ExprType.ArrowType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for arrow type")
+        | ExprType.GenericType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic type")
+        | ExprType.GenericApplicationType _ ->
+          return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic application")
+        | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
+          match fr with
+          | Renderer.RecordRenderer _ -> return! error expectedType fr
+          | Renderer.UnionRenderer _ -> return! error expectedType fr
+          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
+          | Renderer.PrimitiveRenderer _ -> return! error expectedType fr
+          | Renderer.MapRenderer renderer ->
+            do!
+              !
+                ExprType.MapType(ExprType.OptionType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
+                (renderer |> Renderer.MapRenderer)
+              |> Sum.map ignore
 
-          return fr.Type
-        | Renderer.TupleRenderer t ->
-          do! t.Elements |> Seq.map (fun e -> !e.Renderer) |> sum.All |> Sum.map ignore
-
-
-          return fr.Type
-      // | Renderer.UnionRenderer r ->
-
-      //   do!
-      //     r.Cases
-      //     |> Seq.map (fun c -> !c.Value |> Sum.map ignore)
-      //     |> sum.All
-      //     |> Sum.map ignore
-
-      //   return fr.Type
+            ExprType.TranslationOverride { Label = label; KeyType = keyType }
+          | Renderer.SumRenderer _ -> return! error expectedType fr
+          | Renderer.ListRenderer _ -> return! error expectedType fr
+          | Renderer.OptionRenderer _ -> return! error expectedType fr
+          | Renderer.OneRenderer _ -> return! error expectedType fr
+          | Renderer.ManyRenderer _ -> return! error expectedType fr
+          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
+          | Renderer.EnumRenderer _ -> return! error expectedType fr
+          | Renderer.StreamRenderer _ -> return! error expectedType fr
+          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
+          | Renderer.TableFormRenderer _ -> return! error expectedType fr
+          | Renderer.TupleRenderer _ -> return! error expectedType fr
       }
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
@@ -301,51 +651,61 @@ module Validator =
       (localType: ExprType)
       (r: Renderer<'ExprExtension, 'ValueExtension>)
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
-      let (!) =
-        Renderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
-
       let (!!) =
         NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
 
       state {
         match r with
-        | Renderer.Multiple(m) ->
-          do! !!m.First.NestedRenderer
-          do! (m.Rest |> Map.values) |> Seq.map (!!) |> state.All |> state.Map ignore
+        | Renderer.RecordRenderer fields ->
+          do! FormFields.ValidatePredicates ctx typeCheck globalType rootType localType fields.Fields
+        | Renderer.UnionRenderer cases ->
+          let! typeCases = localType |> ExprType.AsUnion |> state.OfSum
+
+          for case in cases.Cases do
+            let! typeCase =
+              typeCases
+              |> Map.tryFind ({ CaseName = case.Key })
+              |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find type case {case.Key}")
+              |> state.OfSum
+
+            do!
+              NestedRenderer.ValidatePredicates
+                FormConfig.ValidatePredicates
+                ctx
+                typeCheck
+                globalType
+                rootType
+                typeCase.Fields
+                case.Value
         | Renderer.InlineFormRenderer i ->
-          let formType = i.Body.Type
+          let! formType = FormBody.Type ctx.Types i |> state.OfSum
 
           let formType =
-            if i.Body.IsTable |> not then
+            if i.IsTable |> not then
               formType
             else
               match formType with
               | ExprType.TableType row -> row
               | _ -> formType
 
-          do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType i.Body
+          do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType i
         | Renderer.PrimitiveRenderer _ -> return ()
-        | Renderer.EnumRenderer(_, e) -> return! !e
+        | Renderer.EnumRenderer _ -> return ()
         | Renderer.TupleRenderer e ->
-          do! !e.Tuple
 
           for element in e.Elements do
             do! !!element
 
         | Renderer.OneRenderer e ->
-          do! !e.One
           do! !!e.Details
 
           match e.Preview with
           | Some preview -> do! !!preview
           | _ -> return ()
 
-        | Renderer.ManyRenderer(ManyAllRenderer e) ->
-          do! !e.Many
-          do! !!e.Element
+        | Renderer.ManyRenderer(ManyAllRenderer e) -> do! !!e.Element
 
         | Renderer.ManyRenderer(ManyLinkedUnlinkedRenderer e) ->
-          do! !e.Many
           do! !!e.Linked
 
           match e.Unlinked with
@@ -353,17 +713,12 @@ module Validator =
           | None -> return ()
 
         | Renderer.OptionRenderer e ->
-          do! !e.Option
           do! !!e.None
           do! !!e.Some
 
-        | Renderer.ReadOnlyRenderer e ->
-          do! !e.ReadOnly
-          do! !!e.Value
+        | Renderer.ReadOnlyRenderer e -> do! !!e.Value
 
-        | Renderer.ListRenderer e ->
-          do! !e.List
-          do! !!e.Element
+        | Renderer.ListRenderer e -> do! !!e.Element
 
         // | Renderer.TableRenderer e ->
         //   do! !e.Table
@@ -371,16 +726,14 @@ module Validator =
 
         //   do! e.Children |> validateChildrenPredicates
         | Renderer.MapRenderer kv ->
-          do! !kv.Map
           do! !!kv.Key
           do! !!kv.Value
 
         | Renderer.SumRenderer s ->
-          do! !s.Sum
           do! !!s.Left
           do! !!s.Right
 
-        | Renderer.StreamRenderer(_, e) -> return! !e
+        | Renderer.StreamRenderer _ -> return ()
         | Renderer.FormRenderer(f, _) ->
           let! f = ctx.TryFindForm f.FormName |> state.OfSum
           let! _ = state.GetState()
@@ -412,33 +765,29 @@ module Validator =
     static member Validate
       (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (formType: ExprType)
+      (recordType: ExprType)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
       sum {
-        let! rendererType =
-          Renderer.Validate codegen ctx formType fc.Renderer
-          |> sum.WithErrorContext $"...when validating field config renderer for {fc.FieldName}"
 
-        match formType with
+        match recordType with
         | RecordType fields ->
           match fields |> Map.tryFind fc.FieldName with
-          | Some fieldType ->
-            let! fieldType = ExprType.ResolveLookup ctx.Types fieldType
+          | Some expectedFieldType ->
+            let! expectedFieldType = ExprType.ResolveLookup ctx.Types expectedFieldType
 
             do!
-              ExprType.Unify
-                Map.empty
-                (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                rendererType
-                fieldType
+              Renderer.Validate codegen ctx expectedFieldType fc.Renderer
+              |> sum.WithErrorContext $"...when validating field config renderer for {fc.FieldName}"
               |> Sum.map ignore
 
             return ()
           | None ->
             return!
-              sum.Throw(Errors.Singleton(sprintf "Error: field name %A is not found in type %A" fc.FieldName formType))
-        | _ -> return! sum.Throw(Errors.Singleton(sprintf "Error: form type %A is not a record type" formType))
+              sum.Throw(
+                Errors.Singleton(sprintf "Error: field name %A is not found in type %A" fc.FieldName recordType)
+              )
+        | _ -> return! sum.Throw(Errors.Singleton(sprintf "Error: form type %A is not a record type" recordType))
       }
       |> sum.WithErrorContext $"...when validating field {fc.FieldName}"
 
@@ -518,159 +867,66 @@ module Validator =
             FieldConfig.ValidatePredicates ctx typeCheck globalType rootType localType true f.Value
             |> state.Map ignore
 
-        for tab in formFields.Tabs.FormTabs |> Map.values do
-          for col in tab.FormColumns |> Map.values do
-            for group in col.FormGroups |> Map.values do
-              match group with
-              | FormGroup.Computed e ->
-                let vars =
-                  [ ("global", globalType); ("root", rootType); ("local", localType) ]
-                  |> Seq.map (VarName.Create <*> id)
-                  |> Map.ofSeq
+        let disabledFieldsValidation =
+          match formFields.Disabled with
+          | FormGroup.Computed e ->
+            let vars =
+              [ ("global", globalType); ("root", rootType); ("local", localType) ]
+              |> Seq.map (VarName.Create <*> id)
+              |> Map.ofSeq
 
-                let! eType =
-                  typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars e
-                  |> state.OfSum
+            validateGroupPredicates ctx typeCheck vars localType e
+          | _ -> state.Return()
 
-                let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
-                let! eTypeRefId = ExprType.AsLookupId eTypeSetArg |> state.OfSum
+        let tabsValidation: State<Unit, CodeGenConfig, ValidationState, Errors> =
+          formFields.Tabs.FormTabs
+          |> Map.values
+          |> Seq.collect (fun tab ->
+            tab.FormColumns
+            |> Map.values
+            |> Seq.collect (fun col ->
+              col.FormGroups
+              |> Map.values
+              |> Seq.choose (fun group ->
+                match group with
+                | FormGroup.Computed e ->
+                  let vars =
+                    [ ("global", globalType); ("root", rootType); ("local", localType) ]
+                    |> Seq.map (VarName.Create <*> id)
+                    |> Map.ofSeq
 
-                let! eTypeRef =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
-                  |> state.OfSum
+                  Some(validateGroupPredicates ctx typeCheck vars localType e)
+                | _ -> None)))
+          |> Seq.toList
+          |> state.All
+          |> state.Map ignore
 
-                let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
-
-                let! eTypeEnum = eTypeRefFields |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
-                let! eTypeEnumId = ExprType.AsLookupId eTypeEnum |> state.OfSum
-
-                let! eTypeEnum =
-                  ctx.Types
-                  |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
-                  |> state.OfSum
-
-                let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
-
-                match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
-                | Some nonUnitCaseFields ->
-                  return!
-                    state.Throw(
-                      Errors.Singleton
-                        $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
-                    )
-                | _ ->
-                  let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
-                  let! fields = localType |> ExprType.AsRecord |> state.OfSum
-                  let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
-
-                  let missingFields = caseNames - fields
-                  let missingCaseNames = fields - caseNames
-
-                  let warn (msg: string) =
-                    do Console.ForegroundColor <- ConsoleColor.DarkMagenta
-                    Console.WriteLine msg
-                    do Console.ResetColor()
-
-                  if missingFields |> Set.isEmpty |> not then
-                    warn
-                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so enabling that field will have no effect!"
-
-                  if missingCaseNames |> Set.isEmpty |> not then
-                    warn
-                      $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
-
-                  return ()
-              | _ -> return ()
+        do! state.All2 disabledFieldsValidation tabsValidation |> state.Map ignore
       }
 
-    static member Validate
-      (codegen: CodeGenConfig)
-      (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (rootType: ExprType)
-      (body: FormFields<'ExprExtension, 'ValueExtension>)
-      : Sum<Unit, Errors> =
-      sum.All(
-        body.Fields
-        |> Map.values
-        |> Seq.map (FieldConfig.Validate codegen ctx rootType)
-        |> Seq.toList
-      )
-      |> Sum.map ignore
+
 
   and FormBody<'ExprExtension, 'ValueExtension> with
     static member Validate
       (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
-      (localType: ExprType)
       (body: FormBody<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       sum {
-        match localType, body with
-        | ExprType.UnionType typeCases, FormBody.Union formCases ->
-          let typeCaseNames =
-            typeCases |> Map.values |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
+        match body with
+        | FormBody.Annotated renderer ->
+          return! Renderer.Validate codegen ctx (ExprType.LookupType renderer.TypeId) renderer.Renderer
+        | FormBody.Table table ->
+          let! rowType = ctx.TryFindType table.RowTypeId.VarName
 
-          let formCaseNames = formCases.Cases |> Map.keys |> Set.ofSeq
-
-          let missingTypeCases = typeCaseNames - formCaseNames
-          let missingFormCases = formCaseNames - typeCaseNames
-
-          if missingTypeCases |> Set.isEmpty |> not then
-            return! sum.Throw(Errors.Singleton $"Error: missing type cases {missingTypeCases.ToFSharpString}")
-          elif missingFormCases |> Set.isEmpty |> not then
-            return! sum.Throw(Errors.Singleton $"Error: missing form cases {missingFormCases.ToFSharpString}")
-          else
-            do!
-              typeCases
-              |> Seq.map (fun typeCase ->
-                match formCases.Cases |> Map.tryFind typeCase.Key.CaseName with
-                | None ->
-                  sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
-                | Some formCase -> NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase)
-              |> sum.All
-              |> Sum.map ignore
-
-            return localType
-        | ExprType.UnionType _, _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton $"Error: the form type is a union, expected cases in the body but found fields instead."
-            )
-        | _, FormBody.Record fields ->
-          match fields.Renderer with
-          | Some renderer ->
-            let! rendererFields =
-              codegen.Record.SupportedRenderers
-              |> Map.tryFindWithError renderer "record renderer" renderer
-
-            if rendererFields |> Set.isEmpty |> not then
-              let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
-
-              if renderedFields <> rendererFields then
-                return!
-                  sum.Throw(
-                    Errors.Singleton
-                      $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
-                  )
-              else
-                return ()
-            else
-              return ()
-          | _ -> return ()
-
-          do! FormFields.Validate codegen ctx localType fields.Fields
-          return localType
-        | _, FormBody.Table table ->
           match table.Details with
-          | Some details -> do! NestedRenderer.Validate codegen ctx localType details |> Sum.map ignore
+          | Some details -> do! NestedRenderer.Validate codegen ctx rowType.Type details |> Sum.map ignore
           | None -> return ()
 
           // match table.Preview with
           // | Some preview -> do! FormBody.Validate codegen ctx localType preview |> Sum.map ignore
           // | None -> return ()
-
-          let! rowFields = table.RowType |> ExprType.AsRecord
+          let! rowFields = rowType.Type |> ExprType.AsRecord
 
           do!
             table.HighlightedFilters
@@ -682,14 +938,14 @@ module Validator =
             sum.All(
               table.Columns
               |> Map.values
-              |> Seq.map (fun c -> FieldConfig.Validate codegen ctx localType c.FieldConfig)
+              |> Seq.map (fun c ->
+                FieldConfig.Validate codegen ctx rowType.Type c.FieldConfig
+                |> sum.WithErrorContext $"...when validating table column {c.FieldConfig.FieldName}")
               |> Seq.toList
             )
             |> Sum.map ignore
 
-          return ExprType.TableType localType
-
-        | _ -> return! sum.Throw(Errors.Singleton $"Error: mismatched form type and form body")
+          ExprType.TableType rowType.Type
       }
 
     static member ValidatePredicates
@@ -702,27 +958,16 @@ module Validator =
       : State<Unit, CodeGenConfig, ValidationState, Errors> =
       state {
         match body with
-        | FormBody.Record fields ->
-          do! FormFields.ValidatePredicates ctx typeCheck globalType rootType localType fields.Fields
-        | FormBody.Union cases ->
-          let! typeCases = localType |> ExprType.AsUnion |> state.OfSum
-
-          for case in cases.Cases do
-            let! typeCase =
-              typeCases
-              |> Map.tryFind ({ CaseName = case.Key })
-              |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find type case {case.Key}")
-              |> state.OfSum
-
-            do!
-              NestedRenderer.ValidatePredicates
-                FormConfig.ValidatePredicates
-                ctx
-                typeCheck
-                globalType
-                rootType
-                typeCase.Fields
-                case.Value
+        | FormBody.Annotated renderer ->
+          do!
+            Renderer.ValidatePredicates
+              FormConfig.ValidatePredicates
+              ctx
+              typeCheck
+              globalType
+              rootType
+              localType
+              renderer.Renderer
         | FormBody.Table table ->
           let rowType = localType
           let! rowTypeFields = rowType |> ExprType.AsRecord |> state.OfSum
@@ -759,60 +1004,7 @@ module Validator =
             let vars =
               [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
 
-            let! eType =
-              typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars visibleExpr
-              |> state.OfSum
-
-            let! eTypeSetArg = ExprType.AsSet eType |> state.OfSum
-            let! eTypeRefId = ExprType.AsLookupId eTypeSetArg |> state.OfSum
-
-            let! eTypeRef =
-              ctx.Types
-              |> Map.tryFindWithError eTypeRefId.VarName "types" "types"
-              |> state.OfSum
-
-            let! eTypeRefFields = ExprType.AsRecord eTypeRef.Type |> state.OfSum
-
-            let! eTypeEnum = eTypeRefFields |> Map.tryFindWithError "Value" "fields" "fields" |> state.OfSum
-            let! eTypeEnumId = ExprType.AsLookupId eTypeEnum |> state.OfSum
-
-            let! eTypeEnum =
-              ctx.Types
-              |> Map.tryFindWithError eTypeEnumId.VarName "types" "types"
-              |> state.OfSum
-
-            let! eTypeEnumCases = eTypeEnum.Type |> ExprType.AsUnion |> state.OfSum
-
-            match eTypeEnumCases |> Seq.tryFind (fun c -> c.Value.Fields.IsUnitType |> not) with
-            | Some nonUnitCaseFields ->
-              return!
-                state.Throw(
-                  Errors.Singleton
-                    $"Error: all cases of {eTypeEnum.TypeId.VarName} should be of type unit (ie the type is a proper enum), but {nonUnitCaseFields.Key} has type {nonUnitCaseFields.Value}"
-                )
-            | _ ->
-              let caseNames = eTypeEnumCases.Keys |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
-              let! fields = localType |> ExprType.AsRecord |> state.OfSum
-              let fields = fields |> Seq.map (fun c -> c.Key) |> Set.ofSeq
-
-              let missingFields = caseNames - fields
-              let missingCaseNames = fields - caseNames
-
-              let warn (msg: string) =
-                do Console.ForegroundColor <- ConsoleColor.DarkMagenta
-                Console.WriteLine msg
-                do Console.ResetColor()
-
-              if missingFields |> Set.isEmpty |> not then
-                warn
-                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: fields {missingFields |> Seq.toList} are missing from the type and so toggling that field will have no effect!"
-
-              if missingCaseNames |> Set.isEmpty |> not then
-                warn
-                  $"Warning: the group provides fields {caseNames |> Seq.toList} but the form type has fields {fields |> Seq.toList}: cases {missingCaseNames |> Seq.toList} are missing from the group and so toggling that field is not possible!"
-
-              return ()
-
+            return! validateGroupPredicates ctx typeCheck vars localType visibleExpr
       }
 
   and FormConfig<'ExprExtension, 'ValueExtension> with
@@ -821,22 +1013,7 @@ module Validator =
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
-      sum {
-        let formType = formConfig.Body |> FormBody.FormDeclarationType
-
-        do! FormBody.Validate config ctx formType formConfig.Body |> Sum.map ignore
-
-        match formConfig.ContainerRenderer with
-        | Some containerName ->
-          if config.ContainerRenderers |> Set.contains containerName |> not then
-            return!
-              sum.Throw(
-                Errors.Singleton $"Error: {formConfig.FormName} uses non-existing container renderer {containerName}"
-              )
-          else
-            return ()
-        | None -> return ()
-      }
+      sum { do! FormBody.Validate config ctx formConfig.Body |> Sum.map ignore }
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
 
     static member ValidatePredicates
@@ -857,7 +1034,7 @@ module Validator =
         if s.PredicateValidationHistory |> Set.contains processedForm |> not then
           do! state.SetState(ValidationState.Updaters.PredicateValidationHistory(Set.add processedForm))
 
-          let formType = formConfig.Body |> FormBody.FormDeclarationType
+          let! formType = formConfig.Body |> FormBody.FormDeclarationType ctx.Types |> state.OfSum
 
           do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType formConfig.Body
 
@@ -878,7 +1055,7 @@ module Validator =
       state {
         let! formConfig = ctx.TryFindForm formLauncher.Form.FormName |> state.OfSum
 
-        let formType = formConfig.Body |> FormBody.FormDeclarationType
+        let! formType = formConfig.Body |> FormBody.FormDeclarationType ctx.Types |> state.OfSum
 
         match formLauncher.Mode with
         | FormLauncherMode.Create({ EntityApi = entityApi
@@ -907,10 +1084,7 @@ module Validator =
 
             match formLauncher.Mode with
             | FormLauncherMode.Create _ ->
-              if
-                Set.ofList [ CrudMethod.Create; CrudMethod.Default ]
-                |> Set.isSuperset (entityApi |> snd)
-              then
+              if Set.singleton CrudMethod.Get |> Set.isSuperset (entityApi |> snd) then
                 return ()
               else
                 return!
@@ -924,10 +1098,7 @@ module Validator =
                   )
                   |> state.OfSum
             | _ ->
-              if
-                Set.ofList [ CrudMethod.Get; CrudMethod.Update ]
-                |> Set.isSuperset (entityApi |> snd)
-              then
+              if Set.singleton CrudMethod.Get |> Set.isSuperset (entityApi |> snd) then
                 return ()
               else
                 return!
@@ -954,7 +1125,7 @@ module Validator =
         | FormLauncherMode.Passthrough m ->
           let! configEntityType = ctx.TryFindType m.ConfigType.VarName |> state.OfSum
 
-          let entityType = (formConfig.Body |> FormBody.FormDeclarationType)
+          let! entityType = (formConfig.Body |> FormBody.FormDeclarationType ctx.Types) |> state.OfSum
 
           do!
             FormConfig.ValidatePredicates ctx typeCheck configEntityType.Type entityType formConfig
@@ -974,7 +1145,7 @@ module Validator =
             |> Sum.map ignore
             |> state.OfSum
 
-          let entityType = (formConfig.Body |> FormBody.FormDeclarationType)
+          let! entityType = (formConfig.Body |> FormBody.FormDeclarationType ctx.Types) |> state.OfSum
 
           do!
             FormConfig.ValidatePredicates ctx typeCheck configEntityType.Type entityType formConfig
@@ -1079,15 +1250,10 @@ module Validator =
           |> Map.map (fun filterableField filtering ->
             sum {
               do! fields |> sum.TryFindField filterableField |> sum.Map ignore
-              let! rendererType = NestedRenderer.Validate codegen ctx filtering.Type filtering.Display
 
               do!
-                ExprType.Unify
-                  Map.empty
-                  (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-                  rendererType
-                  filtering.Type
-                |> sum.Map ignore
+                NestedRenderer.Validate codegen ctx filtering.Type filtering.Display
+                |> Sum.map ignore
 
               return ()
             }
@@ -1113,6 +1279,49 @@ module Validator =
       |> sum.WithErrorContext $"...when validating table {(fst tableApi).TableName}"
 
   type LookupApi<'ExprExtension, 'ValueExtension> with
+    static member GetIdType(lookupType: TypeBinding) : Sum<ExprType, Errors> =
+      sum {
+        let! (idType: ExprType) =
+          sum.Any2
+            (sum {
+              let! fields =
+                lookupType.Type
+                |> ExprType.AsRecord
+                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+
+              return!
+                (sum.Any2
+                  (fields |> Map.tryFindWithError "id" "key" "id")
+                  (fields |> Map.tryFindWithError "Id" "key" "Id"))
+                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+            })
+            (sum {
+              let! fields =
+                lookupType.Type
+                |> ExprType.AsTuple
+                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+
+              return!
+                fields
+                |> Seq.tryHead
+                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
+                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+            })
+          |> sum.MapError Errors.HighestPriority
+
+        match idType with
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType) -> idType
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> idType
+        | _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton
+                $"Error: type {lookupType.TypeId.VarName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idType}'."
+            )
+      }
+      |> sum.WithErrorContext(sprintf "...when getting ID for %s" lookupType.TypeId.VarName)
+
+  type LookupApi<'ExprExtension, 'ValueExtension> with
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
@@ -1121,36 +1330,7 @@ module Validator =
       sum {
         let! lookupType = ctx.TryFindType lookupApi.EntityName
 
-        let! (idField: ExprType) =
-          sum.Any2
-            (sum {
-              let! fields = lookupType.Type |> ExprType.AsRecord
-
-              return!
-                sum.Any2
-                  (fields |> Map.tryFindWithError "id" "key" "id")
-                  (fields |> Map.tryFindWithError "Id" "key" "Id")
-            })
-            (sum {
-              let! fields = lookupType.Type |> ExprType.AsTuple
-
-              return!
-                fields
-                |> Seq.tryHead
-                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
-            })
-
-        match idField with
-        | ExprType.PrimitiveType(PrimitiveType.EntityIdUUIDType)
-        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) -> return ()
-        | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton
-                $"Error: type {lookupApi.EntityName} is expected to have an 'Id' field of type 'entityIdString' or 'entityIdUUID', but it has one of type '{idField}'."
-            )
-            |> Sum.map ignore
-
+        do! LookupApi.GetIdType lookupType |> Sum.map ignore
         return ()
       }
 
@@ -1165,7 +1345,9 @@ module Validator =
           sum.All(
             ctx.Apis.Enums
             |> Map.values
-            |> Seq.map (EnumApi.Validate codegenTargetConfig.EnumValueFieldName ctx)
+            |> Seq.map (fun enumApi ->
+              EnumApi.Validate codegenTargetConfig.EnumValueFieldName ctx enumApi
+              |> sum.WithErrorContext(sprintf "...when validating enum API for enum %s" enumApi.EnumName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1175,7 +1357,9 @@ module Validator =
           sum.All(
             ctx.Apis.Streams
             |> Map.values
-            |> Seq.map (StreamApi.Validate codegenTargetConfig ctx)
+            |> Seq.map (fun streamApi ->
+              StreamApi.Validate codegenTargetConfig ctx streamApi
+              |> sum.WithErrorContext(sprintf "...when validating stream API for stream %s" streamApi.StreamName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1187,7 +1371,9 @@ module Validator =
           sum.All(
             ctx.Apis.Tables
             |> Map.values
-            |> Seq.map (TableApi.Validate codegenTargetConfig codegenConfig ctx)
+            |> Seq.map (fun tableApi ->
+              TableApi.Validate codegenTargetConfig codegenConfig ctx tableApi
+              |> sum.WithErrorContext(sprintf "...when validating table API for table %s" (tableApi |> fst).TableName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1197,7 +1383,9 @@ module Validator =
           sum.All(
             ctx.Apis.Lookups
             |> Map.values
-            |> Seq.map (LookupApi.Validate codegenTargetConfig ctx)
+            |> Seq.map (fun lookupApi ->
+              LookupApi.Validate codegenTargetConfig ctx lookupApi
+              |> sum.WithErrorContext(sprintf "...when validating lookup API for entity %s" lookupApi.EntityName))
             |> Seq.toList
           )
           |> Sum.map ignore
@@ -1210,7 +1398,13 @@ module Validator =
           sum.All(
             ctx.Forms
             |> Map.values
-            |> Seq.map (FormConfig.Validate codegenConfig ctx)
+            |> Seq.map (fun formConfig ->
+              FormConfig.Validate codegenConfig ctx formConfig
+              |> sum.WithErrorContext(
+                sprintf
+                  "...when validating form config for form %s"
+                  (formConfig.FormName |> fun (FormName name) -> name)
+              ))
             |> Seq.toList
           )
           |> Sum.map ignore

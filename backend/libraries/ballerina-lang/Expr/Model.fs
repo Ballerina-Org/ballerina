@@ -11,6 +11,7 @@ module Model =
 
   type Vars<'ExprExtension, 'ValueExtension> = Map<VarName, Value<'ExprExtension, 'ValueExtension>>
 
+  and TranslationOverride = { Label: string; KeyType: ExprType }
 
   and VarName =
     { VarName: string }
@@ -73,6 +74,7 @@ module Model =
     | LetType of ExprTypeId * ExprType * Expr<'ExprExtension, 'ValueExtension>
     | GenericApply of Expr<'ExprExtension, 'ValueExtension> * ExprType
     | Annotate of Expr<'ExprExtension, 'ValueExtension> * ExprType
+    | Prepend of List<string> * Expr<'ExprExtension, 'ValueExtension>
     | Extension of 'ExprExtension
 
     override e.ToString() =
@@ -106,6 +108,7 @@ module Model =
       | LetType(typeName, expr, rest) -> $"type {typeName} = {expr} in {rest}"
       | GenericApply(e, t) -> $"{e}[{t}]"
       | Annotate(e, t) -> $"{e} : {t}"
+      | Prepend(elements, e) -> $"prepend {e} with {elements}"
       | Extension ext -> ext.ToString()
 
   and PrimitiveType =
@@ -168,6 +171,7 @@ module Model =
     | ArrowType of ExprType * ExprType
     | GenericType of ExprTypeId * ExprTypeKind * ExprType
     | GenericApplicationType of ExprType * ExprType
+    | TranslationOverride of TranslationOverride
 
     override t.ToString() : string =
       let (!) (t: ExprType) = t.ToString()
@@ -208,6 +212,7 @@ module Model =
       | ExprType.ArrowType(l, r) -> $"({!l}) -> {!r}"
       | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} => {!exprType}"
       | GenericApplicationType(f, a) -> $"{!f} {!a}"
+      | TranslationOverride label -> $"TranslationOverride \"{label}\" "
 
   and UnionCase = { CaseName: string; Fields: ExprType }
   and CaseName = { CaseName: string }

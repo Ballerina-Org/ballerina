@@ -1,6 +1,9 @@
 package ballerina
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+)
 
 type deltaArrayEffectsEnum string
 
@@ -11,11 +14,8 @@ const (
 	arrayMoveFromTo  deltaArrayEffectsEnum = "ArrayMoveFromTo"
 	arrayDuplicateAt deltaArrayEffectsEnum = "ArrayDuplicateAt"
 	arrayAdd         deltaArrayEffectsEnum = "ArrayAdd"
+	arrayReplace     deltaArrayEffectsEnum = "ArrayReplace"
 )
-
-var allDeltaArrayEffectsEnumCases = [...]deltaArrayEffectsEnum{arrayValue, arrayAddAt, arrayRemoveAt, arrayMoveFromTo, arrayDuplicateAt, arrayAdd}
-
-func DefaultDeltaArrayEffectsEnum() deltaArrayEffectsEnum { return allDeltaArrayEffectsEnumCases[0] }
 
 type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
@@ -26,6 +26,7 @@ type DeltaArray[a any, deltaA any] struct {
 	moveFromTo    *Tuple2[int, int]
 	duplicateAt   *int
 	add           *a
+	replace       *[]a
 }
 
 var _ json.Unmarshaler = &DeltaArray[Unit, Unit]{}
@@ -41,6 +42,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		MoveFromTo    *Tuple2[int, int]
 		DuplicateAt   *int
 		Add           *a
+		Replace       *[]a
 	}{
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
@@ -50,6 +52,7 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		MoveFromTo:    d.moveFromTo,
 		DuplicateAt:   d.duplicateAt,
 		Add:           d.add,
+		Replace:       d.replace,
 	})
 }
 
@@ -63,8 +66,11 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 		MoveFromTo    *Tuple2[int, int]
 		DuplicateAt   *int
 		Add           *a
+		Replace       *[]a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase
@@ -75,9 +81,16 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.moveFromTo = aux.MoveFromTo
 	d.duplicateAt = aux.DuplicateAt
 	d.add = aux.Add
+	d.replace = aux.Replace
 	return nil
 }
 
+func NewDeltaArrayReplace[a any, deltaA any](value []a) DeltaArray[a, deltaA] {
+	return DeltaArray[a, deltaA]{
+		discriminator: arrayReplace,
+		replace:       &value,
+	}
+}
 func NewDeltaArrayValue[a any, deltaA any](index int, delta deltaA) DeltaArray[a, deltaA] {
 	tmp := NewTuple2(index, delta)
 	return DeltaArray[a, deltaA]{
@@ -125,6 +138,7 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
+	onReplace func([]a) (Result, error),
 ) func(DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
 	return func(delta DeltaArray[a, deltaA]) func(ReaderWithError[Unit, Array[a]]) (Result, error) {
 		return func(value ReaderWithError[Unit, Array[a]]) (Result, error) {
@@ -147,6 +161,8 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 				return onDuplicateAt(*delta.duplicateAt)
 			case arrayAdd:
 				return onAdd(*delta.add)
+			case arrayReplace:
+				return onReplace(*delta.replace)
 			}
 			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaArray")
 		}

@@ -122,14 +122,14 @@ export const LookupRenderer = {
     ResolveRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: LookupRenderer<T>,
       forms: DispatcherContext<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >["forms"],
     ): ValueOrErrors<Renderer<T>, string> =>
@@ -144,7 +144,7 @@ export const LookupRenderer = {
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       serialized: SerializedLookup<T>,
@@ -152,7 +152,7 @@ export const LookupRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,

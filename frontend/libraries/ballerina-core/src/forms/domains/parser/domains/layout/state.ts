@@ -249,20 +249,91 @@ export const FormLayout = {
   },
 };
 
-export type PredicateVisibleColumns =
+export type PredicateComputedOrInlined =
   | {
       kind: "Computed";
-      columns: Expr;
+      content: Expr;
     }
   | {
       kind: "Inlined";
-      columns: Array<string>;
+      content: Array<string>;
     };
 
-export const RawVisibleColumns = {
-  isInlined: (rawVisibleColumns: unknown): rawVisibleColumns is Array<string> =>
-    Array.isArray(rawVisibleColumns) &&
-    rawVisibleColumns.every((column) => typeof column == "string"),
+export const RawComputedOrInlined = {
+  isInlined: (
+    rawComputedOrInlined: unknown,
+  ): rawComputedOrInlined is Array<string> =>
+    Array.isArray(rawComputedOrInlined) &&
+    rawComputedOrInlined.every((item) => typeof item == "string"),
+};
+
+export type CalculatedDisabledFields = {
+  fields: Array<string>;
+};
+
+export const DisabledFields = {
+  Default: (): CalculatedDisabledFields => ({
+    fields: [],
+  }),
+  Operations: {
+    ParseLayout: (
+      rawLayout: unknown,
+    ): ValueOrErrors<PredicateComputedOrInlined, string> => {
+      if (!rawLayout || typeof rawLayout != "object") {
+        return ValueOrErrors.Default.throwOne(
+          `Invalid layout, expected object, got ${JSON.stringify(rawLayout)}`,
+        );
+      }
+
+      if (
+        !("disabledFields" in rawLayout) ||
+        typeof rawLayout.disabledFields != "object" ||
+        rawLayout.disabledFields == null
+      ) {
+        return ValueOrErrors.Default.return({
+          kind: "Inlined",
+          content: [],
+        });
+      }
+
+      if (RawComputedOrInlined.isInlined(rawLayout.disabledFields)) {
+        return ValueOrErrors.Default.return<PredicateComputedOrInlined, string>(
+          {
+            kind: "Inlined",
+            content: rawLayout.disabledFields,
+          },
+        );
+      }
+      return Expr.Operations.parse(rawLayout.disabledFields).Then((expr) =>
+        ValueOrErrors.Default.return<PredicateComputedOrInlined, string>({
+          kind: "Computed",
+          content: expr,
+        }),
+      );
+    },
+    Compute: (
+      bindings: Bindings,
+      disabledFields: PredicateComputedOrInlined,
+    ): ValueOrErrors<CalculatedDisabledFields, string> => {
+      if (disabledFields.kind == "Inlined") {
+        return ValueOrErrors.Default.return({
+          fields: disabledFields.content,
+        });
+      }
+      return Expr.Operations.Evaluate(bindings)(disabledFields.content).Then(
+        (result) => {
+          if (!PredicateValue.Operations.IsRecord(result)) {
+            return ValueOrErrors.Default.throwOne(
+              `Invalid disabled fields: ${JSON.stringify(result)}`,
+            );
+          }
+          return ValueOrErrors.Default.return({
+            fields: Array.from(result.fields.keys()),
+          });
+        },
+      );
+    },
+  },
 };
 
 export type CalculatedTableLayout = {
@@ -276,30 +347,32 @@ export const TableLayout = {
   Operations: {
     ParseLayout: (
       rawVisibleColumns: unknown,
-    ): ValueOrErrors<PredicateVisibleColumns, string> => {
-      if (RawVisibleColumns.isInlined(rawVisibleColumns)) {
-        return ValueOrErrors.Default.return({
-          kind: "Inlined",
-          columns: rawVisibleColumns,
-        });
+    ): ValueOrErrors<PredicateComputedOrInlined, string> => {
+      if (RawComputedOrInlined.isInlined(rawVisibleColumns)) {
+        return ValueOrErrors.Default.return<PredicateComputedOrInlined, string>(
+          {
+            kind: "Inlined",
+            content: rawVisibleColumns,
+          },
+        );
       }
       return Expr.Operations.parse(rawVisibleColumns).Then((expr) =>
         ValueOrErrors.Default.return({
           kind: "Computed",
-          columns: expr,
+          content: expr,
         }),
       );
     },
     ComputeLayout: (
       bindings: Bindings,
-      visibleColumns: PredicateVisibleColumns,
+      visibleColumns: PredicateComputedOrInlined,
     ): ValueOrErrors<CalculatedTableLayout, string> => {
       if (visibleColumns.kind == "Inlined") {
         return ValueOrErrors.Default.return({
-          columns: visibleColumns.columns,
+          columns: visibleColumns.content,
         });
       }
-      return Expr.Operations.Evaluate(bindings)(visibleColumns.columns).Then(
+      return Expr.Operations.Evaluate(bindings)(visibleColumns.content).Then(
         (result) => {
           if (!PredicateValue.Operations.IsRecord(result)) {
             return ValueOrErrors.Default.throwOne(

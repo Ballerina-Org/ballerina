@@ -16,8 +16,8 @@ _NONE_VALUE: str = "none"
 def option_to_json(some_to_json: ToJson[_Option], none_to_json: ToJson[Unit], /) -> ToJson[Option[_Option]]:
     def to_json(value: Option[_Option]) -> Json:
         return value.fold(
-            lambda a: {_CASE_KEY: _SOME_VALUE, _VALUE_KEY: some_to_json(a)},
             lambda: {_CASE_KEY: _NONE_VALUE, _VALUE_KEY: none_to_json(unit)},
+            lambda a: {_CASE_KEY: _SOME_VALUE, _VALUE_KEY: some_to_json(a)},
         )
 
     return to_json

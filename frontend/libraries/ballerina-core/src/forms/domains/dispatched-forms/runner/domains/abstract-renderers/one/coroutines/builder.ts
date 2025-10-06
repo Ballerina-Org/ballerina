@@ -49,5 +49,5 @@ export const DebouncerCo = <
 
 export const DebouncedCo = CoTypedFactory<
   { onDebounce: SimpleCallback<void> },
-  Value<Map<string, string>>
+  Value<[Map<string, string>, boolean]>
 >();

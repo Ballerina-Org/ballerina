@@ -1,9 +1,7 @@
-import { List, Map, OrderedMap } from "immutable";
+import { List, Map } from "immutable";
 import {
   Expr,
-  RecordType,
   ValueOrErrors,
-  DispatcherContext,
   Template,
   MapRepo,
   RecordAbstractRenderer,
@@ -12,26 +10,27 @@ import {
 } from "../../../../../../../../../main";
 import { RecordRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/state";
 import { RecordFieldDispatcher } from "./recordField/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const RecordDispatcher = {
   Operations: {
     GetRecordConcreteRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       concreteRenderer: string | undefined,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,
     ): ValueOrErrors<
       RecordAbstractRendererView<
-        CustomPresentationContexts,
+        CustomPresentationContext,
         Flags,
         ExtraContext
       >,
@@ -45,14 +44,14 @@ export const RecordDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: RecordRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,
@@ -120,7 +119,7 @@ export const RecordDispatcher = {
           ).Then((concreteRenderer) =>
             ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
               RecordAbstractRenderer<
-                CustomPresentationContexts,
+                CustomPresentationContext,
                 Flags,
                 ExtraContext
               >(
@@ -128,6 +127,7 @@ export const RecordDispatcher = {
                   fieldTemplates.map((template) => [template[0], template[1]]),
                 ),
                 renderer.tabs,
+                renderer.disabledFields,
                 dispatcherContext.IdProvider,
                 dispatcherContext.ErrorRenderer,
                 isInlined,

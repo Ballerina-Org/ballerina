@@ -11,12 +11,16 @@ module Arrow =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Collections.Sum.Operators
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "arrow"
 
   type TypeValue with
     static member FromJsonArrow
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "arrow" "arrow" (fun arrowFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
           let! arrowFields = arrowFields |> JsonValue.AsRecordMap
 
@@ -26,7 +30,7 @@ module Arrow =
             arrowFields
             |> (Map.tryFindWithError "returnType" "arrow" "returnType" >>= fromRootJson)
 
-          return TypeValue.Arrow(param, returnType)
+          return TypeValue.CreateArrow(param, returnType) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonArrow(rootToJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =
@@ -35,4 +39,4 @@ module Arrow =
         let jsonType = jsonType |> rootToJson
 
         JsonValue.Record([| ("param", param); ("returnType", jsonType) |])
-        |> Json.kind "arrow" "arrow"
+        |> Json.discriminator discriminator

@@ -4,22 +4,22 @@ import {
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import { NestedRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/nestedRenderer/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const NestedDispatcher = {
   Operations: {
     DispatchAs: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       as: string,
@@ -37,14 +37,14 @@ export const NestedDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: NestedRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,

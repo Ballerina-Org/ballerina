@@ -49,11 +49,9 @@ export const TableLoadWithRetries =
                         current.customFormState.loadingState ==
                           "reload from 0" || current.value.to == 0
                           ? 0
-                          : current.value.to + 1,
+                          : current.value.to,
                       filtersAndSorting:
-                        current.customFormState.filterAndSortParam === ""
-                          ? undefined
-                          : current.customFormState.filterAndSortParam,
+                        current.customFormState.filterAndSortParam,
                     }),
                   () => "error" as const,
                 ),

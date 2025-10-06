@@ -1,6 +1,7 @@
 package ballerina
 
 import (
+	"bytes"
 	"encoding/json"
 )
 
@@ -27,7 +28,9 @@ func (d *IsNotNull[T]) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		IsNotNull Unit
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	return nil

@@ -10,10 +10,14 @@ module UnionCons =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "union-case"
 
   type Expr<'T> with
-    static member FromJsonUnionCons(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "union-case" "union-case" (fun unionCaseJson ->
+    static member FromJsonUnionCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionCaseJson ->
         reader {
           let! (k, v) = unionCaseJson |> JsonValue.AsPair |> reader.OfSum
           let! k = k |> Identifier.FromJson |> reader.OfSum
@@ -21,8 +25,9 @@ module UnionCons =
           return Expr.UnionCons(k, v)
         })
 
-    static member ToJsonUnionCons(rootToJson: Expr<'T> -> JsonValue) : Identifier * Expr<'T> -> JsonValue =
-      fun (k, v) ->
+    static member ToJsonUnionCons (rootToJson: ExprEncoder<'T>) (k: Identifier) (v: Expr<'T>) : ExprEncoderReader<'T> =
+      reader {
         let k = k |> Identifier.ToJson
-        let v = v |> rootToJson
-        [| k; v |] |> JsonValue.Array |> Json.kind "union-case" "union-case"
+        let! v = v |> rootToJson
+        return [| k; v |] |> JsonValue.Array |> Json.discriminator discriminator
+      }

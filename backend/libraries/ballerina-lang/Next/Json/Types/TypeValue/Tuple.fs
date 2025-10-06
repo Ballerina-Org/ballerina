@@ -10,20 +10,24 @@ module Tuple =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "tuple"
 
   type TypeValue with
     static member FromJsonTuple
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "tuple" "tuple" (fun tupleFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun tupleFields ->
         sum {
           let! elements = tupleFields |> JsonValue.AsArray
           let! elementTypes = elements |> Array.map (fun element -> element |> fromRootJson) |> sum.All
-          return TypeValue.Tuple(elementTypes)
+          return TypeValue.CreateTuple(elementTypes) // FIXME: origin should be serialized and parsed
         })
 
     static member ToJsonTuple(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =
       List.toArray
       >> Array.map rootToJson
       >> JsonValue.Array
-      >> Json.kind "tuple" "tuple"
+      >> Json.discriminator discriminator

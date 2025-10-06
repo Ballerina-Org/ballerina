@@ -214,19 +214,15 @@ type BuiltInApiConverters = {
 export type ConcreteRenderers<
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
-  CustomPresentationContexts = Unit,
+  CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = {
   unit: {
     [_: string]: () =>
-      | UnitAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | UnitAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           UnitAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -234,14 +230,10 @@ export type ConcreteRenderers<
   };
   boolean: {
     [_: string]: () =>
-      | BoolAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           BoolAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -250,13 +242,13 @@ export type ConcreteRenderers<
   number: {
     [_: string]: () =>
       | NumberAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           NumberAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -265,13 +257,13 @@ export type ConcreteRenderers<
   string: {
     [_: string]: () =>
       | StringAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           StringAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -280,13 +272,13 @@ export type ConcreteRenderers<
   base64File: {
     [_: string]: () =>
       | Base64FileAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           Base64FileAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -295,13 +287,13 @@ export type ConcreteRenderers<
   secret: {
     [_: string]: () =>
       | SecretAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           SecretAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -309,14 +301,10 @@ export type ConcreteRenderers<
   };
   date: {
     [_: string]: () =>
-      | DateAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           DateAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -324,14 +312,10 @@ export type ConcreteRenderers<
   };
   enumSingleSelection: {
     [_: string]: () =>
-      | EnumAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           EnumAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -340,13 +324,13 @@ export type ConcreteRenderers<
   enumMultiSelection: {
     [_: string]: () =>
       | EnumMultiselectAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           EnumMultiselectAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -355,13 +339,13 @@ export type ConcreteRenderers<
   streamSingleSelection: {
     [_: string]: () =>
       | SearchableInfiniteStreamAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           SearchableInfiniteStreamAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -370,13 +354,13 @@ export type ConcreteRenderers<
   streamMultiSelection: {
     [_: string]: () =>
       | SearchableInfiniteStreamMultiselectAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           SearchableInfiniteStreamMultiselectAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -384,14 +368,10 @@ export type ConcreteRenderers<
   };
   list: {
     [_: string]: () =>
-      | ListAbstractRendererView<
-          CustomPresentationContexts,
-          Flags,
-          ExtraContext
-        >
+      | ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           ListAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -399,10 +379,10 @@ export type ConcreteRenderers<
   };
   map: {
     [_: string]: () =>
-      | MapAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | MapAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           MapAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -411,13 +391,13 @@ export type ConcreteRenderers<
   tuple: {
     [_: string]: () =>
       | TupleAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           TupleAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -425,10 +405,10 @@ export type ConcreteRenderers<
   };
   sum: {
     [_: string]: () =>
-      | SumAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           SumAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -436,10 +416,10 @@ export type ConcreteRenderers<
   };
   sumUnitDate: {
     [_: string]: () =>
-      | SumAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           SumAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -448,13 +428,13 @@ export type ConcreteRenderers<
   record: {
     [_: string]: () =>
       | RecordAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           RecordAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -463,13 +443,13 @@ export type ConcreteRenderers<
   table: {
     [_: string]: () =>
       | TableAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           TableAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -478,13 +458,13 @@ export type ConcreteRenderers<
   union: {
     [_: string]: () =>
       | UnionAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           UnionAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -492,10 +472,10 @@ export type ConcreteRenderers<
   };
   one: {
     [_: string]: () =>
-      | OneAbstractRendererView<CustomPresentationContexts, Flags, ExtraContext>
+      | OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
           OneAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -504,13 +484,13 @@ export type ConcreteRenderers<
   readOnly: {
     [_: string]: () =>
       | ReadOnlyAbstractRendererView<
-          CustomPresentationContexts,
+          CustomPresentationContext,
           Flags,
           ExtraContext
         >
       | React.MemoExoticComponent<
           ReadOnlyAbstractRendererView<
-            CustomPresentationContexts,
+            CustomPresentationContext,
             Flags,
             ExtraContext
           >
@@ -546,13 +526,13 @@ export const concreteRendererToKind =
   <
     T extends DispatchInjectablesTypes<T>,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext = Unit,
   >(
     concreteRenderers: ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
   ) =>
@@ -572,13 +552,13 @@ export const tryGetConcreteRenderer =
   <
     T extends DispatchInjectablesTypes<T>,
     Flags,
-    CustomPresentationContexts,
+    CustomPresentationContext,
     ExtraContext,
   >(
     concreteRenderers: ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
   ) =>
@@ -586,7 +566,7 @@ export const tryGetConcreteRenderer =
     K extends keyof ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >,
   >(
@@ -594,7 +574,7 @@ export const tryGetConcreteRenderer =
     name: keyof ConcreteRenderers<
       T,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext
     >[K],
   ): ValueOrErrors<
@@ -602,12 +582,12 @@ export const tryGetConcreteRenderer =
       ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >[K][keyof ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >[K]]
     >,
@@ -627,23 +607,23 @@ export const tryGetConcreteRenderer =
   };
 
 export const getDefaultRecordRenderer = <
-  CustomPresentationContexts,
+  CustomPresentationContext,
   Flags,
   ExtraContext,
 >(
   isNested: boolean,
   defaultRecordRenderer: () => RecordAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >,
   defaultNestedRecordRenderer: () => RecordAbstractRendererView<
-    CustomPresentationContexts,
+    CustomPresentationContext,
     Flags,
     ExtraContext
   >,
 ): RecordAbstractRendererView<
-  CustomPresentationContexts,
+  CustomPresentationContext,
   Flags,
   ExtraContext
 > => (isNested ? defaultNestedRecordRenderer() : defaultRecordRenderer());
@@ -1215,9 +1195,9 @@ export const dispatchDefaultValue =
               injectedPrimitives,
               types,
               forms,
-            )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
+            )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
               ValueOrErrors.Default.return(
-                PredicateValue.Default.sum(Sum.Default.right(right)),
+                PredicateValue.Default.sum(Sum.Default.left(left)),
               ),
             )
           : renderer.kind == "sumUnitDateRenderer"
@@ -1822,7 +1802,14 @@ export const dispatchToAPIRawValue =
           types,
           converters,
           injectedPrimitives,
-        )(raw.fields, formState);
+        )(raw.fields, formState).Then((value) =>
+          ValueOrErrors.Default.return(
+            converters["union"].toAPIRawValue([
+              { caseName, fields: value },
+              formState?.commonFormState?.modifiedByUser ?? false,
+            ]),
+          ),
+        );
       }
 
       if (t.kind == "singleSelection") {
@@ -1872,10 +1859,37 @@ export const dispatchToAPIRawValue =
           );
         }
 
+        const filteredRawValues = raw.fields.filter((value) => {
+          if (!PredicateValue.Operations.IsRecord(value)) {
+            console.warn(
+              "Received a non-record value in a multi selection, ignoring: ",
+              JSON.stringify(value),
+            );
+            return false;
+          }
+
+          const fieldsObject = value.fields.toJS();
+
+          if (
+            !CollectionReference.Operations.IsCollectionReference(
+              fieldsObject,
+            ) &&
+            !EnumReference.Operations.IsEnumReference(fieldsObject)
+          ) {
+            console.warn(
+              "Received a non-collection or enum reference value in a multi selection, ignoring: ",
+              JSON.stringify(value),
+            );
+            return false;
+          }
+          return true;
+        });
+
         const rawValue: Map<
           string,
           ValueOrErrors<CollectionReference | EnumReference, string>
-        > = raw.fields.map((value) => {
+        > = filteredRawValues.map((value) => {
+          // should never happen due to the filter above but is a type check
           if (!PredicateValue.Operations.IsRecord(value)) {
             return ValueOrErrors.Default.throwOne(
               `Record expected but got ${JSON.stringify(value)}`,
@@ -1895,6 +1909,7 @@ export const dispatchToAPIRawValue =
               )}`,
             );
           }
+
           return ValueOrErrors.Default.return(fieldsObject);
         });
 

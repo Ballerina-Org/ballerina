@@ -11,48 +11,49 @@ module Record =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  type FromJsonRoot<'T> = JsonValue -> Reader<Value<'T>, JsonParser<'T>, Errors>
+  let private discriminator = "record"
 
-  type Value<'T> with
-    static member FromJsonRecord(fromJsonRoot: FromJsonRoot<'T>) : JsonValue -> ValueParser<'T> =
-      fun json ->
+  type Value<'T, 'valueExtension> with
+    static member FromJsonRecord
+      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun fieldsJson ->
         reader {
+          let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
 
-          return!
-            reader.AssertKindAndContinueWithField
-              "record"
-              "fields"
-              (fun fieldsJson ->
-                reader {
-                  let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
+          let! fields =
+            fields
+            |> Seq.map (fun field ->
+              reader {
+                let! k, v = field |> JsonValue.AsPair |> reader.OfSum
+                let! k = TypeSymbol.FromJson k |> reader.OfSum
+                let! v = fromJsonRoot v
+                return k, v
+              })
+            |> reader.All
+            |> reader.Map Map.ofSeq
 
-                  let! fields =
-                    fields
-                    |> Seq.map (fun field ->
-                      reader {
-                        let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
-                        let! k = TypeSymbol.FromJson k |> reader.OfSum
-                        let! v = (fromJsonRoot v)
-                        return (k, v)
-                      })
-                    |> reader.All
-                    |> reader.Map Map.ofSeq
+          return Value.Record(fields)
+        })
 
-                  return Value.Record(fields)
-                })
-              (json)
-        }
-
-    static member ToJsonRecord(toRootJson: Value<'T> -> JsonValue) : Map<TypeSymbol, Value<'T>> -> JsonValue =
-      fun fields ->
-        let fieldsJson =
+    static member ToJsonRecord
+      (rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (fields: Map<TypeSymbol, Value<'T, 'valueExtension>>)
+      : ValueEncoderReader<'T> =
+      reader {
+        let! fields =
           fields
           |> Map.toList
           |> List.map (fun (ts, v) ->
+            reader {
+              let k = TypeSymbol.ToJson ts
+              let! v = rootToJson v
+              return [| k; v |] |> JsonValue.Array
+            })
+          |> reader.All
 
-            let k = TypeSymbol.ToJson ts
-            let v = toRootJson v
-            [| k; v |] |> JsonValue.Array)
-
-        JsonValue.Array(fieldsJson |> Array.ofSeq) |> Json.kind "record" "fields"
+        return JsonValue.Array(fields |> List.toArray) |> Json.discriminator discriminator
+      }

@@ -10,10 +10,13 @@ module SumTypeExpr =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "sum"
 
   type TypeExpr with
     static member FromJsonSum(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "sum" "sum" (fun sumFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun sumFields ->
         sum {
           let! sumFields = sumFields |> JsonValue.AsArray
           let! caseTypes = sumFields |> Array.map fromJsonRoot |> sum.All
@@ -21,4 +24,7 @@ module SumTypeExpr =
         })
 
     static member ToJsonSum(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr> -> JsonValue =
-      List.map rootToJson >> List.toArray >> JsonValue.Array >> Json.kind "sum" "sum"
+      List.map rootToJson
+      >> List.toArray
+      >> JsonValue.Array
+      >> Json.discriminator discriminator

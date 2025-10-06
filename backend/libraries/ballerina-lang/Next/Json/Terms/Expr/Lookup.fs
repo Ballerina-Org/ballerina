@@ -6,24 +6,37 @@ open Ballerina.DSL.Next.Json
 module Lookup =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
-
+  open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "lookup"
 
   type Expr<'T> with
-    static member FromJsonLookup: JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "lookup" "name" (fun nameJson ->
-        reader {
-          let! name = nameJson |> JsonValue.AsString |> reader.OfSum
-          return Expr.Lookup(name |> Identifier.LocalScope)
-        })
+    static member FromJsonLookup(value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun nameJson ->
+        reader.Any2
+          (reader {
+            let! name = nameJson |> JsonValue.AsString |> reader.OfSum
+            return Expr.Lookup(name |> Identifier.LocalScope)
+          })
+          (reader {
+            let! path = nameJson |> JsonValue.AsArray |> reader.OfSum
+            let! path = path |> Seq.map (JsonValue.AsString >> reader.OfSum) |> reader.All
 
-    static member ToJsonLookup(id: Identifier) : JsonValue =
-      match id with
-      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.kind "lookup" "name"
-      | Identifier.FullyQualified(scope, name) ->
-        (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
-        |> JsonValue.Array
-        |> Json.kind "lookup" "name"
+            match path |> List.rev with
+            | [] -> return! Errors.Singleton "Empty path in fully qualified identifier" |> reader.Throw
+            | x :: xs -> return Expr.Lookup(Identifier.FullyQualified(xs, x))
+          }))
+
+    static member ToJsonLookup(id: Identifier) : ExprEncoderReader<'T> =
+      (match id with
+       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
+       | Identifier.FullyQualified(scope, name) ->
+         (name :: scope |> List.rev |> Seq.map JsonValue.String |> Seq.toArray)
+         |> JsonValue.Array
+         |> Json.discriminator discriminator)
+      |> reader.Return

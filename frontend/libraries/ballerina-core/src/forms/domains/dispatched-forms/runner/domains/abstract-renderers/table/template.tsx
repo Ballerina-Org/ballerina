@@ -6,7 +6,7 @@ import {
   TableAbstractRendererState,
   TableLayout,
   Expr,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
   DispatchDelta,
   ValueOrErrors,
   TableAbstractRendererReadonlyContext,
@@ -79,7 +79,7 @@ export const TableAbstractRenderer = <
         RecordAbstractRendererForeignMutationsExpected<Flags>
       >
     | undefined,
-  Layout: PredicateVisibleColumns,
+  Layout: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -101,6 +101,9 @@ export const TableAbstractRenderer = <
       GetDefaultValue: () => PredicateValue;
       GetDefaultState: () => CommonAbstractRendererState;
       filters: SumNType<any>;
+      label?: string;
+      tooltip?: string;
+      details?: string;
     }
   >,
   parseToApiByType: (
@@ -188,7 +191,10 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...cellState,
-            disabled: disabled || _.disabled,
+            disabled: disabled || _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", rowValue),
             extraContext: _.extraContext,
@@ -264,8 +270,14 @@ export const TableAbstractRenderer = <
             };
 
             const delta: DispatchDelta<Flags> = {
-              kind: "TableValue",
-              id: rowId,
+              ...(props.context.customFormState.applyToAll
+                ? {
+                    kind: "TableValueAll",
+                  }
+                : {
+                    kind: "TableValue",
+                    id: rowId,
+                  }),
               nestedDelta: nestedRecordDelta,
               flags,
               sourceAncestorLookupTypeNames:
@@ -344,7 +356,10 @@ export const TableAbstractRenderer = <
           return {
             value,
             ...rowState,
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: _.bindings.set("local", value),
             extraContext: _.extraContext,
@@ -466,7 +481,7 @@ export const TableAbstractRenderer = <
         >((_) => ({
           value: _.value,
           locked: _.locked,
-          disabled: _.disabled,
+          disabled: false,
           bindings: _.bindings,
           extraContext: _.extraContext,
           type: filter.type,
@@ -537,6 +552,17 @@ export const TableAbstractRenderer = <
         />
       );
     }
+
+    visibleColumns.value.columns.map((column) => {
+      if (!CellTemplates.has(column)) {
+        console.warn(
+          `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
+
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
@@ -668,6 +694,29 @@ export const TableAbstractRenderer = <
                     replaceWith(Set()),
                   ),
                 ),
+              setApplyToAll: (applyToAll: boolean) =>
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children.applyToAll(
+                    replaceWith(applyToAll),
+                  ),
+                ),
+              applyToAll: (nestedDelta, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "TableValueAll",
+                  nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
+                props.foreignMutations.onChange(Option.Default.none(), delta);
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {
@@ -756,12 +805,16 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
-              updateFilters: (filters: Map<string, List<ValueFilter>>) => {
+              updateFilters: (
+                filters: Map<string, List<ValueFilter>>,
+                shouldReload: boolean,
+              ) => {
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.updateFilters(
                     filters,
                     Filters.map(({ filters }) => filters),
                     parseToApiByType,
+                    shouldReload,
                   ),
                 );
               },

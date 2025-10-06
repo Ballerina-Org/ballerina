@@ -202,7 +202,7 @@
     },
     "AddressesFieldsEnum": {
       "fun": "KeyOf",
-      "args": ["AddressFields"]
+      "args": ["AddressFields", ["Departments"]]
     },
     "AddressesFieldRef": {
       "fields": {
@@ -2111,6 +2111,7 @@
           }
         }
       },
+      "disabledFields": ["Job"],
       "tabs": {
         "main": {
           "columns": {
@@ -2148,16 +2149,12 @@
             },
             "addresses": {
               "groups": {
-                "main": {
-                  "kind": "fieldLookup",
-                  "operands": [
-                    {
-                      "kind": "varLookup",
-                      "varName": "global"
-                    },
-                    "ActiveAddressFields"
-                  ]
-                }
+                "main": [
+                  "AddressesByCity",
+                  "AddressesWithColorLabel",
+                  "AddressesBy",
+                  "AddressesAndAddressesWithLabel"
+                ]
               }
             }
           }

@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <RootNamespace>Ballerina.StdLib.Tests</RootNamespace>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
@@ -10,6 +9,8 @@
 
     <ItemGroup>
         <Compile Include="State\WithError\Model.fs" />
+        <Compile Include="Algorithms\TopologicalSort.fs" />
+        <Compile Include="Core\OrderedMap.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

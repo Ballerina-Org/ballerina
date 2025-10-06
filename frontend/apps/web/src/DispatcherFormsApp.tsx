@@ -45,6 +45,7 @@ import {
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
+import { DispatchCreateFormLauncherState } from "ballerina-core/src/forms/domains/dispatched-forms/runner/domains/kind/create/state";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -112,20 +113,36 @@ export const DispatcherFormsApp = (props: {}) => {
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
   );
   const [personConfigState, setPersonConfigState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
+  );
+
+  const [personCreateState, setPersonCreateState] = useState(
+    DispatchFormRunnerState<
+      DispatchPassthroughFormInjectedTypes,
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.create(),
   );
 
   const [personEntity, setPersonEntity] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
   const [config, setConfig] = useState<
+    Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
+  >(Sum.Default.right("not initialized"));
+  const [createConfig, setCreateConfig] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
 
@@ -242,12 +259,14 @@ export const DispatcherFormsApp = (props: {}) => {
         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
           "person-transparent",
         )!.parseValueToApi;
-      setEntityPath(
-        DispatchDeltaTransfer.Default.FromDelta(
-          toApiRawParser as any, //TODO - fix type issue if worth it
-          parseCustomDelta,
-        )(delta),
-      );
+      const dispatchDeltaTransfer = DispatchDeltaTransfer.Default.FromDelta(
+        toApiRawParser as any, //TODO - fix type issue if worth it
+        parseCustomDelta,
+      )(delta);
+
+      console.debug("dispatchDeltaTransfer", dispatchDeltaTransfer);
+
+      setEntityPath(dispatchDeltaTransfer);
       setRemoteEntityVersionIdentifier(v4());
     }
   };
@@ -380,13 +399,6 @@ export const DispatcherFormsApp = (props: {}) => {
                     defaultNestedRecordConcreteRenderer:
                       DispatchEntityNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources:
-                      DispatchFromConfigApis.streamApis,
-                    enumOptionsSources: DispatchFromConfigApis.enumApis,
-                    entityApis: DispatchFromConfigApis.entityApis,
-                    tableApiSources:
-                      DispatchFromConfigApis.tableApiSources,
-                    lookupSources: DispatchFromConfigApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,
@@ -427,6 +439,16 @@ export const DispatcherFormsApp = (props: {}) => {
                           ),
                         ),
                         onEntityChange: onPersonConfigChange,
+                        apiSources: {
+                          infiniteStreamSources:
+                            DispatchPersonFromConfigApis.streamApis,
+                          enumOptionsSources:
+                            DispatchPersonFromConfigApis.enumApis,
+                          tableApiSources:
+                            DispatchPersonFromConfigApis.tableApiSources,
+                          lookupSources:
+                            DispatchPersonFromConfigApis.lookupSources,
+                        },
                       },
                       remoteEntityVersionIdentifier:
                         remoteConfigEntityVersionIdentifier,
@@ -434,6 +456,8 @@ export const DispatcherFormsApp = (props: {}) => {
                       extraContext: {
                         flags: Set(["BC", "X"]),
                       },
+                      globallyDisabled: false,
+                      globallyReadOnly: false,
                     }}
                     setState={setPersonConfigState}
                     view={unit}
@@ -467,17 +491,99 @@ export const DispatcherFormsApp = (props: {}) => {
                       entity: personEntity,
                       config,
                       onEntityChange: onPersonEntityChange,
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis,
+                        enumOptionsSources:
+                          DispatchPersonFromConfigApis.enumApis,
+                        tableApiSources:
+                          DispatchPersonFromConfigApis.tableApiSources,
+                        lookupSources:
+                          DispatchPersonFromConfigApis.lookupSources,
+                      },
                     },
                     remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}
                   foreignMutations={unit}
                 />
+
+                <h3>Create Person</h3>
+                <InstantiedPersonDispatchFormRunnerTemplate
+                  context={{
+                    ...specificationDeserializer,
+                    ...personCreateState,
+                    launcherRef: {
+                      name: "create-person",
+                      kind: "create",
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis,
+                        enumOptionsSources:
+                          DispatchPersonFromConfigApis.enumApis,
+                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                        tableApiSources:
+                          DispatchPersonFromConfigApis.tableApiSources,
+                        lookupSources:
+                          DispatchPersonFromConfigApis.lookupSources,
+                      },
+                      // config: {
+                      //   source: "api",
+                      //   getGlobalConfig: () =>
+                      //     DispatchPersonFromConfigApis.entityApis.get(
+                      //       "person-config",
+                      //     )(""),
+                      // },
+                      config: {
+                        source: "entity",
+                        value: config,
+                      },
+                    },
+                    remoteEntityVersionIdentifier,
+                    showFormParsingErrors: ShowFormsParsingErrors,
+                    extraContext: {
+                      flags: Set(["BC", "X"]),
+                    },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
+                  }}
+                  setState={setPersonCreateState}
+                  view={unit}
+                  foreignMutations={unit}
+                />
+                <button
+                  onClick={() => {
+                    setPersonCreateState((_) =>
+                      _.innerFormState.kind == "create"
+                        ? {
+                            ..._,
+                            ...DispatchFormRunnerState<
+                              DispatchPassthroughFormInjectedTypes,
+                              DispatchPassthroughFormFlags,
+                              DispatchPassthroughFormCustomPresentationContext,
+                              DispatchPassthroughFormExtraContext
+                            >().Updaters.Template.create(
+                              DispatchCreateFormLauncherState<
+                                DispatchPassthroughFormInjectedTypes,
+                                DispatchPassthroughFormFlags,
+                                DispatchPassthroughFormCustomPresentationContext,
+                                DispatchPassthroughFormExtraContext
+                              >().Updaters.Template.submit(),
+                            )(_),
+                          }
+                        : _,
+                    );
+                  }}
+                >
+                  Create Person
+                </button>
               </td>
             </tr>
           </tbody>

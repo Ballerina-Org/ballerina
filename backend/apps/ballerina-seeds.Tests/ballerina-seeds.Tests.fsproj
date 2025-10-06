@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <RootNamespace>ballerina_seeds.Tests</RootNamespace>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
@@ -9,8 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Arity.fs" />
         <Compile Include="Schema.fs" />
+        <Compile Include="Integration\TestData.fs" />
+        <Compile Include="Integration\End2End.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
     <ItemGroup>
@@ -29,8 +29,10 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-lang\Next\ballerina-lang.fsproj" />
         <ProjectReference Include="..\..\libraries\ballerina-seeds\ballerina-seeds.fsproj" />
         <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\ballerina-lang.Tests\ballerina-lang.Tests.fsproj" />
     </ItemGroup>
 
 </Project>

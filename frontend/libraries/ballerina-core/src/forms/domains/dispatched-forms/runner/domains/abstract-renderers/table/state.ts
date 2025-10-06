@@ -30,6 +30,8 @@ import {
   SumNType,
   ValueSumN,
   ValueUnit,
+  id,
+  DispatchDelta,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -47,6 +49,26 @@ export type TableAbstractRendererReadonlyContext<
   apiMethods: Array<TableMethod>;
   sorting: Array<string>;
   highlightedFilters: Array<string>;
+};
+
+type FiltersAndSorting = {
+  Filters: object;
+  Sorting: any[];
+};
+
+const FiltersAndSorting = {
+  Default: (
+    Filters: FiltersAndSorting["Filters"],
+    Sorting: FiltersAndSorting["Sorting"],
+  ): FiltersAndSorting => ({
+    Filters,
+    Sorting,
+  }),
+  Operations: {
+    Serialize: (filtersAndSorting: FiltersAndSorting): string => {
+      return btoa(JSON.stringify(filtersAndSorting));
+    },
+  },
 };
 
 export type TableAbstractRendererSelectedDetailRow =
@@ -70,6 +92,7 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     sorting: Map<string, "Ascending" | "Descending" | undefined>;
     filterAndSortParam: string;
     filterStates: Map<string, List<any>>;
+    applyToAll: boolean;
   };
 };
 export const TableAbstractRendererState = {
@@ -81,11 +104,14 @@ export const TableAbstractRendererState = {
       isFilteringInitialized: false,
       selectedRows: Set(),
       selectedDetailRow: undefined,
-      filterAndSortParam: "",
+      filterAndSortParam: FiltersAndSorting.Operations.Serialize(
+        FiltersAndSorting.Default({}, []),
+      ),
       rowStates: Map(),
       filters: Map(),
       sorting: Map(),
       filterStates: Map(),
+      applyToAll: false,
     },
   }),
   Updaters: {
@@ -121,6 +147,9 @@ export const TableAbstractRendererState = {
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "loadingState",
         ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "applyToAll",
+        ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
         ...simpleUpdater<TableAbstractRendererState["commonFormState"]>()(
@@ -137,6 +166,7 @@ export const TableAbstractRendererState = {
           value: PredicateValue,
           state: any,
         ) => ValueOrErrors<any, string>,
+        shouldReload: boolean,
       ): Updater<TableAbstractRendererState> =>
         Updater((_) =>
           TableAbstractRendererState.Updaters.Core.customFormState.children
@@ -149,17 +179,18 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     _.customFormState.sorting,
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
             )
             .then(
-              TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
-                replaceWith<
-                  TableAbstractRendererState["customFormState"]["loadingState"]
-                >("reload from 0"),
-              ),
+              shouldReload
+                ? TableAbstractRendererState.Updaters.Core.customFormState.children.loadingState(
+                    replaceWith<
+                      TableAbstractRendererState["customFormState"]["loadingState"]
+                    >("reload from 0"),
+                  )
+                : id,
             )(_),
         ),
       addSorting: (
@@ -188,7 +219,6 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -226,7 +256,6 @@ export const TableAbstractRendererState = {
                     filterTypes,
                     sortingUpdater(_.customFormState.sorting),
                     toApiRaw,
-                    _.customFormState.isFilteringInitialized,
                   ),
                 ),
               ),
@@ -269,15 +298,7 @@ export const TableAbstractRendererState = {
         value: PredicateValue,
         state: any,
       ) => ValueOrErrors<any, string>,
-      isFilteringInitialized: boolean,
     ): string => {
-      if (
-        !isFilteringInitialized ||
-        (filterValues.valueSeq().every((filters) => filters.size == 0) &&
-          sorting.size == 0)
-      ) {
-        return "";
-      }
       const filterTypes = sumNFilterTypes.map(
         (sumNType) => sumNType.args as Array<FilterType<any>>,
       );
@@ -366,50 +387,54 @@ export const TableAbstractRendererState = {
           ? []
           : parsedValueSorting.value.toArray();
 
-      const params = {
-        Filters: parsedFiltersValues,
-        Sorting: finalSorting,
-      };
-      return btoa(JSON.stringify(params));
+      const params = FiltersAndSorting.Default(
+        parsedFiltersValues,
+        finalSorting,
+      );
+      return FiltersAndSorting.Operations.Serialize(params);
     },
     tableValuesToValueRecord: (
       values: any,
       fromApiRaw: (value: any) => ValueOrErrors<PredicateValue, string>,
     ): OrderedMap<string, ValueRecord> =>
       OrderedMap(
-        Object.entries(values).map(([key, _]) => {
-     
-          const parsedRow = fromApiRaw(_);
-          if (parsedRow.kind == "errors") {
-            console.error(parsedRow.errors.toJS());
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (!PredicateValue.Operations.IsRecord(parsedRow.value)) {
-            console.error("Expected a record");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (!parsedRow.value.fields.has("Id")) {
-            console.error("Expected a record with 'Id' field");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          if (typeof parsedRow.value.fields.get("Id")! !== "string") {
-            console.error("Id must be a string");
-            return [
-              key.toString(),
-              PredicateValue.Default.record(OrderedMap()),
-            ];
-          }
-          return [parsedRow.value.fields.get("Id")! as string, parsedRow.value];
-        }),
+        values === null || values === undefined
+          ? OrderedMap()
+          : Object.entries(values).map(([key, _]) => {
+              const parsedRow = fromApiRaw(_);
+              if (parsedRow.kind == "errors") {
+                console.error(parsedRow.errors.toJS());
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (!PredicateValue.Operations.IsRecord(parsedRow.value)) {
+                console.error("Expected a record");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (!parsedRow.value.fields.has("Id")) {
+                console.error("Expected a record with 'Id' field");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              if (typeof parsedRow.value.fields.get("Id")! !== "string") {
+                console.error("Id must be a string");
+                return [
+                  key.toString(),
+                  PredicateValue.Default.record(OrderedMap()),
+                ];
+              }
+              return [
+                parsedRow.value.fields.get("Id")! as string,
+                parsedRow.value,
+              ];
+            }),
       ),
   },
 };
@@ -426,13 +451,18 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   selectAllRows: SimpleCallback<void>;
   clearRows: SimpleCallback<void>;
   onChange: DispatchOnChange<ValueTable, Flags>;
+  setApplyToAll: SimpleCallback<boolean>;
+  applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
   add: VoidCallbackWithOptionalFlags<Flags> | undefined;
   remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   moveTo:
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
-  updateFilters: (filters: Map<string, List<ValueFilter>>) => void;
+  updateFilters: (
+    filters: Map<string, List<ValueFilter>>,
+    shouldReload: boolean,
+  ) => void;
   addSorting: (
     columnName: string,
     direction: "Ascending" | "Descending" | undefined,
@@ -505,6 +535,9 @@ export type TableAbstractRendererView<
         filters: Array<FilterType<any>>;
         GetDefaultValue: () => PredicateValue;
         GetDefaultState: () => CommonAbstractRendererState;
+        label?: string;
+        tooltip?: string;
+        details?: string;
       }
     >;
     AllowedSorting: Array<string>;

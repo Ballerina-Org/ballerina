@@ -4,26 +4,24 @@ import {
   LookupTypeAbstractRenderer,
   Template,
 } from "../../../../../../../../../main";
-import {
-  DispatcherContext,
-  ValueOrErrors,
-} from "../../../../../../../../../main";
+import { ValueOrErrors } from "../../../../../../../../../main";
 import { LookupRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
 import { Dispatcher } from "../../state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const LookupDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: LookupRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       tableApi: string | undefined,
@@ -48,7 +46,7 @@ export const LookupDispatcher = {
             .Then((template) =>
               ValueOrErrors.Default.return(
                 LookupTypeAbstractRenderer<
-                  CustomPresentationContexts,
+                  CustomPresentationContext,
                   Flags,
                   ExtraContext
                 >(
@@ -56,7 +54,12 @@ export const LookupDispatcher = {
                   renderer.type,
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
-                ).withView(dispatcherContext.lookupTypeRenderer()),
+                )
+                  .mapContext((_: any) => ({
+                    ..._,
+                    type: renderer.type,
+                  }))
+                  .withView(dispatcherContext.lookupTypeRenderer()),
               ),
             )
             .MapErrors((errors) =>

@@ -13,3 +13,11 @@ func DefaultArray[T any]() Array[T] {
 	var res Array[T] = make([]T, 0)
 	return res
 }
+
+func FoldLeftArray[T any, U any](ts []T, initial U, f func(U, T) U) U {
+	result := initial
+	for _, item := range ts {
+		result = f(result, item)
+	}
+	return result
+}

@@ -1,7 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json.Expr
 
 open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.Types.Json
+open Ballerina.Errors
 
 [<AutoOpen>]
 module TypeLet =
@@ -12,10 +12,13 @@ module TypeLet =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "type-let"
 
   type Expr<'T> with
-    static member FromJsonTypeLet(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "type-let" "type-let" (fun typeLetJson ->
+    static member FromJsonTypeLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun typeLetJson ->
         reader {
           let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
           let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
@@ -25,16 +28,19 @@ module TypeLet =
           return Expr.TypeLet(typeId, typeArg, body)
         })
 
-    static member ToJsonTypeLet(rootToJson: Expr<'T> -> JsonValue) : string * 'T * Expr<'T> -> JsonValue =
-      fun (typeId, typeArg, body) ->
+    static member ToJsonTypeLet
+      (rootToJson: ExprEncoder<'T>)
+      (typeId: string)
+      (typeArg: 'T)
+      (body: Expr<'T>)
+      : ExprEncoderReader<'T> =
+      reader {
+        let! ctx = reader.GetContext()
         let typeId = typeId |> JsonValue.String
+        let! body = rootToJson body
 
-        match box typeArg with
-        | :? TypeExpr as typeExpr ->
-          let argJson = TypeExpr.ToJson typeExpr
-          let body = body |> rootToJson
-
-          [| typeId; argJson; body |]
+        return
+          [| typeId; ctx typeArg; body |]
           |> JsonValue.Array
-          |> Json.kind "type-let" "type-let"
-        | other -> failwith $"Expected a TypeExpr but got {other.GetType().Name}"
+          |> Json.discriminator discriminator
+      }

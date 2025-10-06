@@ -21,6 +21,8 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
   StringSerializedType,
+  DisabledFields,
+  PredicateComputedOrInlined,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -56,6 +58,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   Layout: PredicateFormLayout,
+  DisabledFieldsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -104,7 +107,10 @@ export const RecordAbstractRenderer = <
             type: _.type.fields.get(fieldName)!,
             ...(_.fieldStates?.get(fieldName) ||
               FieldTemplates.get(fieldName)!.GetDefaultState()),
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
             extraContext: _.extraContext,
@@ -264,15 +270,37 @@ export const RecordAbstractRenderer = <
       return <></>;
     }
 
+    visibleFieldKeys.value.map((field) => {
+      if (field != null && !FieldTemplates.has(field)) {
+        console.warn(
+          `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
+          \n...When rendering \n...${domNodeId}
+          `,
+        );
+      }
+    });
+
     const visibleFieldKeysSet = Set(
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),
     );
+
+    const calculatedDisabledFields = DisabledFields.Operations.Compute(
+      updatedBindings,
+      DisabledFieldsPredicate,
+    );
+
+    const disabledFieldsValue =
+      calculatedDisabledFields.kind == "value"
+        ? calculatedDisabledFields.value.fields
+        : [];
 
     const disabledFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map(({ disabled }, fieldName) =>
           disabled == undefined
-            ? ValueOrErrors.Default.return(null)
+            ? disabledFieldsValue.includes(fieldName)
+              ? ValueOrErrors.Default.return(fieldName)
+              : ValueOrErrors.Default.return(null)
             : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
                 disabled,
               ).Then((value) =>

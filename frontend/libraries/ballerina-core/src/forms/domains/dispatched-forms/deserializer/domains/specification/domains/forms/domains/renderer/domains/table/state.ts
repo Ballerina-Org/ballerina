@@ -8,7 +8,7 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   isString,
-  PredicateVisibleColumns,
+  PredicateComputedOrInlined,
   TableLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -28,7 +28,7 @@ export type TableRenderer<T> = {
   kind: "tableRenderer";
   type: TableType<T>;
   columns: Map<string, TableCellRenderer<T>>;
-  visibleColumns: PredicateVisibleColumns;
+  visibleColumns: PredicateComputedOrInlined;
   concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
   api?: string;
@@ -38,7 +38,7 @@ export const TableRenderer = {
   Default: <T>(
     type: TableType<T>,
     columns: Map<string, TableCellRenderer<T>>,
-    visibleColumns: PredicateVisibleColumns,
+    visibleColumns: PredicateComputedOrInlined,
     concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
     api?: string,
@@ -100,7 +100,7 @@ export const TableRenderer = {
     DeserializeDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: TableType<T>,
@@ -108,7 +108,7 @@ export const TableRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
@@ -125,7 +125,7 @@ export const TableRenderer = {
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       type: TableType<T>,
@@ -133,7 +133,7 @@ export const TableRenderer = {
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,

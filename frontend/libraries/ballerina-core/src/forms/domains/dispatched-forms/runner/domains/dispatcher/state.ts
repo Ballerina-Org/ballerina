@@ -1,8 +1,5 @@
 import {
-  DispatcherContext,
   DispatchInjectablesTypes,
-  DispatchParsedType,
-  StringSerializedType,
   Template,
   ValueOrErrors,
 } from "../../../../../../../main";
@@ -21,20 +18,21 @@ import { TupleDispatcher } from "./domains/tupleDispatcher/state";
 import { UnionDispatcher } from "./domains/unionDispatcher/state";
 import { PrimitiveDispatcher } from "./domains/primitive/state";
 import { LookupRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/lookup/state";
+import { DispatcherContextWithApiSources } from "../../state";
 
 export const Dispatcher = {
   Operations: {
     DispatchAs: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       as: string,
@@ -54,14 +52,14 @@ export const Dispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: Renderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isNested: boolean,

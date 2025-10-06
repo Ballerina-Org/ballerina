@@ -8,10 +8,14 @@ module KeyOf =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "keyOf"
+  open Ballerina.DSL.Next.Json.Keys
 
   type TypeExpr with
     static member FromJsonKeyOf(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "keyOf" "keyOf" (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
 
     static member ToJsonKeyOf(rootToJson: TypeExpr -> JsonValue) : TypeExpr -> JsonValue =
-      rootToJson >> Json.kind "keyOf" "keyOf"
+      rootToJson >> Json.discriminator discriminator

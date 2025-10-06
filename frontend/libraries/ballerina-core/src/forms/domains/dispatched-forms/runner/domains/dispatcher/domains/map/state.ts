@@ -5,7 +5,7 @@ import {
   Template,
 } from "../../../../../../../../../main";
 import { MapRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/map/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 
 export const MapDispatcher = {
@@ -13,14 +13,14 @@ export const MapDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: MapRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -78,7 +78,12 @@ export const MapDispatcher = {
                                     valueTemplate,
                                     dispatcherContext.IdProvider,
                                     dispatcherContext.ErrorRenderer,
-                                  ).withView(concreteRenderer),
+                                  )
+                                    .mapContext((_: any) => ({
+                                      ..._,
+                                      type: renderer.type,
+                                    }))
+                                    .withView(concreteRenderer),
                                 ),
                               ),
                           ),

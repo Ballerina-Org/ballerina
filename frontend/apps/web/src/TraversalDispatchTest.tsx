@@ -115,8 +115,10 @@ export const TraversalDispatchTest = (props: {}) => {
   const [personPassthroughFormState, setPersonPassthroughFormState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
   );
 
   const [personEntity, setPersonEntity] = useState<
@@ -365,11 +367,6 @@ export const TraversalDispatchTest = (props: {}) => {
                     defaultNestedRecordConcreteRenderer:
                       DispatchEntityNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources: TraversalPersonApis.streamApis,
-                    enumOptionsSources: TraversalPersonApis.enumApis,
-                    entityApis: TraversalPersonApis.entityApis,
-                    tableApiSources: TraversalPersonApis.tableApiSources,
-                    lookupSources: TraversalPersonApis.lookupSources,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,
                     ErrorRenderer,
@@ -420,12 +417,20 @@ export const TraversalDispatchTest = (props: {}) => {
                       entity: personEntity,
                       config,
                       onEntityChange: onPersonEntityChange,
+                      apiSources: {
+                        infiniteStreamSources: TraversalPersonApis.streamApis,
+                        enumOptionsSources: TraversalPersonApis.enumApis,
+                        tableApiSources: TraversalPersonApis.tableApiSources,
+                        lookupSources: TraversalPersonApis.lookupSources,
+                      },
                     },
                     showFormParsingErrors: ShowFormsParsingErrors,
                     remoteEntityVersionIdentifier: "",
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}

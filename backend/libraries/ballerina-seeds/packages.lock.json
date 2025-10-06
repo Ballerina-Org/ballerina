@@ -2,26 +2,17 @@
   "version": 1,
   "dependencies": {
     "net9.0": {
-      "AutoBogus": {
+      "Bogus": {
         "type": "Direct",
-        "requested": "[2.13.1, )",
-        "resolved": "2.13.1",
-        "contentHash": "9bvwy/Y53M/AWXzYaClv0jU9Xg/Ycyth3cQuUFWZRw5Dv4UsHV00iSrDplcheG6l5mL5SI/eif7X2INhuBvjQw==",
-        "dependencies": {
-          "Bogus": "31.0.3",
-          "System.Data.DataSetExtensions": "4.5.0"
-        }
+        "requested": "[35.6.3, )",
+        "resolved": "35.6.3",
+        "contentHash": "+5omfZWy8gOcbpc48vKfMI4h/ecbdf3NQm6xCl3zMbaP4J3rMMm5h3kPFeIWBgt4mbz6YY0eeZDLR/6yv1khKw=="
       },
       "FSharp.Core": {
         "type": "Direct",
         "requested": "[9.0.303, )",
         "resolved": "9.0.303",
         "contentHash": "6JlV8aD8qQvcmfoe/PMOxCHXc0uX4lR23u0fAyQtnVQxYULLoTZgwgZHSnRcuUHOvS3wULFWcwdnP1iwslH60g=="
-      },
-      "Bogus": {
-        "type": "Transitive",
-        "resolved": "31.0.3",
-        "contentHash": "CMVbZndfEihsd7A5GgdfMQTNiUzjTTng2IPoTe4J2cyxUaEqCW5M5HO8uGF/Qkq1NL219AbLHX+4dx9MxWDSiA=="
       },
       "FSharp.Data": {
         "type": "Transitive",
@@ -197,43 +188,117 @@
         "resolved": "9.0.7",
         "contentHash": "ti/zD9BuuO50IqlvhWQs9GHxkCmoph5BHjGiWKdg2t6Or8XoyAfRJiKag+uvd/fpASnNklfsB01WpZ4fhAe0VQ=="
       },
-      "System.Data.DataSetExtensions": {
-        "type": "Transitive",
-        "resolved": "4.5.0",
-        "contentHash": "221clPs1445HkTBZPL+K9sDBdJRB8UN8rgjO3ztB0CQ26z//fmJXtlsr6whGatscsKGBrhJl5bwJuKSA8mwFOw=="
-      },
-      "ballerina-data": {
-        "type": "Project",
-        "dependencies": {
-          "AutoBogus": "[2.13.1, )",
-          "Ballerina.Cat": "[1.0.0, )",
-          "Ballerina.Lang": "[1.0.0, )",
-          "FSharp.Core": "[9.0.303, )",
-          "MathNet.Numerics": "[6.0.0-beta2, )"
-        }
-      },
-      "Ballerina.Cat": {
+      "ballerina-cat": {
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )"
         }
       },
-      "Ballerina.Lang": {
+      "ballerina-data": {
         "type": "Project",
         "dependencies": {
-          "Ballerina.Cat": "[1.0.0, )",
-          "Ballerina.StdLib": "[1.0.0, )",
           "FSharp.Core": "[9.0.303, )",
-          "FSharp.Data": "[6.6.0, )"
+          "MathNet.Numerics": "[6.0.0-beta2, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )"
         }
       },
-      "Ballerina.StdLib": {
+      "ballerina-lang": {
         "type": "Project",
         "dependencies": {
-          "Ballerina.Cat": "[1.0.0, )",
+          "FSharp.Core": "[9.0.303, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-eval": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-parser": "[1.0.0, )",
+          "ballerina-lang-stdlib": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-lang-v1": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-eval": {
+        "type": "Project",
+        "dependencies": {
           "FSharp.Core": "[9.0.303, )",
           "FSharp.Data": "[6.6.0, )",
-          "Microsoft.EntityFrameworkCore": "[9.0.7, )"
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-json": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-models": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-parser": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-stdlib": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-eval": "[1.0.0, )",
+          "ballerina-lang-json": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-typecheck": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-v1": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-stdlib": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303, )",
+          "FSharp.Data": "[6.6.0, )",
+          "Microsoft.EntityFrameworkCore": "[9.0.7, )",
+          "ballerina-cat": "[1.0.0, )"
         }
       }
     },

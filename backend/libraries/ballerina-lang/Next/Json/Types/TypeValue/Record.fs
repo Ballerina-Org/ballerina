@@ -10,12 +10,17 @@ module Record =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.StdLib.OrderPreservingMap
+
+  let private discriminator = "record"
 
   type TypeValue with
     static member FromJsonRecord
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
       : JsonValue -> Sum<TypeValue, Errors> =
-      sum.AssertKindAndContinueWithField "record" "record" (fun recordFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
         sum {
           let! fields = recordFields |> JsonValue.AsArray
 
@@ -29,16 +34,16 @@ module Record =
                 return (fieldKey, fieldType)
               })
             |> sum.All
-            |> sum.Map Map.ofSeq
+            |> sum.Map OrderedMap.ofSeq
 
-          return TypeValue.Record(fieldTypes)
+          return TypeValue.CreateRecord(fieldTypes) // FIXME: origin should be serialized and parsed
         })
 
-    static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : Map<TypeSymbol, TypeValue> -> JsonValue =
-      Map.toArray
+    static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
+      OrderedMap.toArray
       >> Array.map (fun (fieldKey, fieldValue) ->
         let fieldKey = fieldKey |> TypeSymbol.ToJson
         let fieldValue = rootToJson fieldValue
         JsonValue.Array [| fieldKey; fieldValue |])
       >> JsonValue.Array
-      >> Json.kind "record" "record"
+      >> Json.discriminator discriminator

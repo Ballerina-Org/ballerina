@@ -2,39 +2,36 @@ import {
   Expr,
   DispatchParsedType,
   MapRepo,
-  TableType,
   Template,
   ValueOrErrors,
   TableAbstractRenderer,
   DispatchInjectablesTypes,
   PredicateValue,
-  LookupType,
   LookupTypeAbstractRenderer,
   Dispatcher,
   Value,
-  FilterType,
   SumNType,
 } from "../../../../../../../../../main";
 
 import { DispatchTableApiSource } from "../../../../../../../../../main";
 import { NestedDispatcher } from "../nestedDispatcher/state";
-import { DispatcherContext } from "../../../../../deserializer/state";
-import { List, Map } from "immutable";
 import { TableRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
+import { List, Map } from "immutable";
 
 export const TableDispatcher = {
   Operations: {
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       api: string | undefined,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
     ): ValueOrErrors<DispatchTableApiSource, string> =>
@@ -50,14 +47,14 @@ export const TableDispatcher = {
     DispatchDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -75,14 +72,14 @@ export const TableDispatcher = {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: TableRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       tableApi: string | undefined,
@@ -152,7 +149,7 @@ export const TableDispatcher = {
                                     {
                                       // Special attention - tables have a look up arg that represents the table entity type
                                       template: LookupTypeAbstractRenderer<
-                                        CustomPresentationContexts,
+                                        CustomPresentationContext,
                                         Flags,
                                         ExtraContext
                                       >(
@@ -198,10 +195,13 @@ export const TableDispatcher = {
                       type: DispatchParsedType<any>;
                       GetDefaultValue: () => PredicateValue;
                       GetDefaultState: () => any;
+                      label: string | undefined;
+                      tooltip: string | undefined;
+                      details: string | undefined;
                     }
                   > = (() => {
                     if (filtering == undefined) {
-                      return Map();
+                      return Map([]);
                     }
                     return filtering
                       .map((columnFilters) => ({
@@ -225,6 +225,9 @@ export const TableDispatcher = {
                             columnFilters.displayType,
                             columnFilters.displayRenderer,
                           ),
+                        label: columnFilters.label,
+                        tooltip: columnFilters.tooltip,
+                        details: columnFilters.details,
                       }))
                       .filter(
                         (dispatchedFilterRenderer) =>
@@ -250,6 +253,9 @@ export const TableDispatcher = {
                           (
                             dispatchedFilterRenderer.GetDefaultState() as Value<any>
                           ).value,
+                        label: dispatchedFilterRenderer.label,
+                        tooltip: dispatchedFilterRenderer.tooltip,
+                        details: dispatchedFilterRenderer.details,
                       }));
                   })();
 

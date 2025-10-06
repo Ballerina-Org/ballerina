@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="TypeEval.fs" />
+        <Compile Include="Unification/EquivalenceClass.fs" />
+        <Compile Include="Unification/Unification.fs" />
+        <Compile Include="AdHocPolymorphicOperators.fs" />
+        <Compile Include="TypeCheck.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
+    </ItemGroup>
+
+
+</Project>

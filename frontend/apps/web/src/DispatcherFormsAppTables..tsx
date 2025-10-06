@@ -26,14 +26,14 @@ import {
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import {
-  DispatchFromConfigApis,
+  DispatchPersonFromConfigApis,
   UsersSetupFromConfigApis,
 } from "playground-core";
 import SPEC from "../public/SampleSpecs/example-tables.json";
 import {
-  DispatchEntityContainerFormView,
-  DispatchLookupTypeRenderer,
-  DispatchEntityNestedContainerFormView,
+  DispatchPersonContainerFormView,
+  DispatchPersonLookupTypeRenderer,
+  DispatchPersonNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
@@ -97,8 +97,10 @@ export const DispatcherFormsAppTables = (props: {}) => {
   const [tablesRunnerState, setTablesRunnerState] = useState(
     DispatchFormRunnerState<
       DispatchPassthroughFormInjectedTypes,
-      DispatchPassthroughFormFlags
-    >().Default(),
+      DispatchPassthroughFormFlags,
+      DispatchPassthroughFormCustomPresentationContext,
+      DispatchPassthroughFormExtraContext
+    >().Default.passthrough(),
   );
 
   const [entity, setEntity] = useState<
@@ -237,20 +239,14 @@ export const DispatcherFormsAppTables = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
-                    lookupTypeRenderer: DispatchLookupTypeRenderer,
+                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
-                      DispatchEntityContainerFormView,
+                      DispatchPersonContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
-                      DispatchEntityNestedContainerFormView,
+                      DispatchPersonNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                    infiniteStreamSources:
-                      DispatchFromConfigApis.streamApis, // TODO make and test some table cell streams
-                    enumOptionsSources: UsersSetupFromConfigApis.enumApis,
-                    lookupSources: UsersSetupFromConfigApis.lookupSources,
-                    entityApis: DispatchFromConfigApis.entityApis,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
-                    tableApiSources: UsersSetupFromConfigApis.tableApiSources,
                     IdWrapper,
                     ErrorRenderer,
                     injectedPrimitives: [
@@ -301,12 +297,22 @@ export const DispatcherFormsAppTables = (props: {}) => {
                         ),
                       ),
                       onEntityChange,
+                      apiSources: {
+                        infiniteStreamSources:
+                          DispatchPersonFromConfigApis.streamApis, // TODO make and test some table cell streams
+                        enumOptionsSources: UsersSetupFromConfigApis.enumApis,
+                        lookupSources: UsersSetupFromConfigApis.lookupSources,
+                        tableApiSources:
+                          UsersSetupFromConfigApis.tableApiSources,
+                      },
                     },
                     remoteEntityVersionIdentifier: "",
                     showFormParsingErrors: ShowFormsParsingErrors,
                     extraContext: {
                       flags: Set(["BC", "X"]),
                     },
+                    globallyDisabled: false,
+                    globallyReadOnly: false,
                   }}
                   setState={setTablesRunnerState}
                   view={unit}

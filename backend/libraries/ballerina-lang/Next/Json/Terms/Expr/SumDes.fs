@@ -7,12 +7,15 @@ module SumDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "sum-des"
 
   type Expr<'T> with
-    static member FromJsonSumDes(fromRootJson: JsonValue -> ExprParser<'T>) : JsonValue -> ExprParser<'T> =
-      reader.AssertKindAndContinueWithField "sum-des" "sum-des" (fun sumDesJson ->
+    static member FromJsonSumDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun sumDesJson ->
         reader {
           let! caseHandlers = sumDesJson |> JsonValue.AsArray |> reader.OfSum
 
@@ -31,11 +34,16 @@ module SumDes =
           return Expr.SumDes(caseHandlers)
         })
 
-    static member ToJsonSumDes(rootToJson: Expr<'T> -> JsonValue) : List<CaseHandler<'T>> -> JsonValue =
-      List.map (fun (v, c) ->
-        let v = v.Name |> JsonValue.String
-        let c = c |> rootToJson
-        [| v; c |] |> JsonValue.Array)
-      >> Array.ofList
-      >> JsonValue.Array
-      >> Json.kind "sum-des" "sum-des"
+    static member ToJsonSumDes
+      (rootToJson: ExprEncoder<'T>)
+      (caseHandlers: List<CaseHandler<'T>>)
+      : ExprEncoderReader<'T> =
+      caseHandlers
+      |> List.map (fun (v, c) ->
+        reader {
+          let v = v.Name |> JsonValue.String
+          let! c = c |> rootToJson
+          return [| v; c |] |> JsonValue.Array
+        })
+      |> reader.All
+      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.discriminator discriminator)

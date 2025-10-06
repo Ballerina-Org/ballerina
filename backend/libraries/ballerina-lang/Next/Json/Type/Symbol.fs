@@ -24,7 +24,10 @@ module TypeSymbolJson =
           |> (Map.tryFindWithError "guid" "TypeSymbol" "guid" >>= JsonValue.AsString)
 
         match Guid.TryParse(guid) with
-        | true, parsedGuid -> return { Name = name; Guid = parsedGuid }
+        | true, parsedGuid ->
+          return
+            { Name = name |> Identifier.LocalScope
+              Guid = parsedGuid }
         | false, _ ->
           return!
             $"Error: Invalid GUID format '{guid}' in 'TypeSymbol'."
@@ -34,5 +37,5 @@ module TypeSymbolJson =
 
     static member ToJson(ts: TypeSymbol) : JsonValue =
       JsonValue.Record
-        [| "name", JsonValue.String ts.Name
+        [| "name", JsonValue.String(ts.Name.ToString())
            "guid", JsonValue.String(ts.Guid.ToString()) |]

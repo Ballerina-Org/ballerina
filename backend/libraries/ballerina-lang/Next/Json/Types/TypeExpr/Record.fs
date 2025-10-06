@@ -8,10 +8,13 @@ module RecordTypeExpr =
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Json.Keys
+
+  let private discriminator = "record"
 
   type TypeExpr with
     static member FromJsonRecord(fromJsonRoot: TypeExprParser) : TypeExprParser =
-      sum.AssertKindAndContinueWithField "record" "record" (fun recordFields ->
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
         sum {
           let! fields = recordFields |> JsonValue.AsArray
 
@@ -26,7 +29,9 @@ module RecordTypeExpr =
               })
             |> sum.All
 
-          return TypeExpr.Record(fieldTypes)
+          let record = TypeExpr.Record(fieldTypes)
+          let! wrappedRecord = AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst)
+          return wrappedRecord
         })
 
     static member ToJsonRecord(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr * TypeExpr> -> JsonValue =
@@ -38,4 +43,4 @@ module RecordTypeExpr =
             let fieldTypeJson = rootToJson fieldType
             JsonValue.Array [| fieldKeyJson; fieldTypeJson |])
 
-        JsonValue.Array(fieldPairs |> Array.ofSeq) |> Json.kind "record" "record"
+        JsonValue.Array(fieldPairs |> Array.ofSeq) |> Json.discriminator discriminator

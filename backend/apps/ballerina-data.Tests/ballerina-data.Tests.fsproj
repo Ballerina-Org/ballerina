@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <RootNamespace>ballerina_data.Tests</RootNamespace>
         <LangVersion>latest</LangVersion>
         <IsPackable>false</IsPackable>
@@ -18,6 +17,8 @@
         <Compile Include="Delta\Multiple.fs" />
         <Compile Include="Schema/FromJson.fs" />
         <Compile Include="Schema/Eval.fs" />
+        <Compile Include="VirtualFolders\Init.fs" />
+        <Compile Include="VirtualFolders\Operations.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
@@ -39,8 +40,11 @@
     <ItemGroup>
         <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
         <ProjectReference Include="..\..\libraries\ballerina-data\ballerina-data.fsproj" />
-        <ProjectReference Include="..\..\libraries\ballerina-lang\ballerina-lang.fsproj" />
-        <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference
+            Include="..\..\libraries\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+        <ProjectReference
+            Include="..\..\libraries\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
+        <ProjectReference Include="..\..\libraries\ballerina-lang\Next\ballerina-lang.fsproj" />
     </ItemGroup>
 
 </Project>

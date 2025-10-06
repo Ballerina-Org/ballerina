@@ -13,6 +13,9 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  id,
+  BasicUpdater,
+  ValueTuple,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ListMethods } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
@@ -58,7 +61,10 @@ export const ListAbstractRenderer = <
             > &
               ListAbstractRendererState,
           ) => ({
-            disabled: _.disabled,
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
             value: PredicateValue.Operations.IsUnit(_.value)
               ? _.value
@@ -94,6 +100,109 @@ export const ListAbstractRenderer = <
             const delta: DispatchDelta<Flags> = {
               kind: "ArrayValue",
               value: [elementIndex, nestedDelta],
+              flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
+            };
+            props.foreignMutations.onChange(
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((list) =>
+                      list.values.has(elementIndex)
+                        ? PredicateValue.Default.tuple(
+                            list.values.update(
+                              elementIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : list,
+                    ),
+                  ),
+              delta,
+            );
+            props.setState(
+              ListAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                ListAbstractRendererState.Updaters.Core.elementFormStates(
+                  MapRepo.Updaters.upsert(
+                    elementIndex,
+                    () => GetDefaultElementState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              ),
+            );
+          },
+        }));
+
+  const embeddedPlaceholderElementTemplate =
+    (elementIndex: number) => (flags: Flags | undefined) =>
+      elementTemplate
+        .mapContext(
+          (
+            _: ListAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
+              ListAbstractRendererState,
+          ) => ({
+            disabled: _.disabled,
+            globallyDisabled: _.globallyDisabled,
+            readOnly: _.readOnly,
+            globallyReadOnly: _.globallyReadOnly,
+            locked: _.locked,
+            value: PredicateValue.Operations.IsUnit(_.value)
+              ? _.value
+              : _.value.values.get(elementIndex) || GetDefaultElementValue(),
+            ...(_.elementFormStates?.get(elementIndex) ||
+              GetDefaultElementState()),
+            bindings: _.bindings,
+            extraContext: _.extraContext,
+            type: _.type.args[0],
+            customPresentationContext: _.customPresentationContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            domNodeAncestorPath:
+              _.domNodeAncestorPath + `[list][${elementIndex}]`,
+            typeAncestors: [_.type as DispatchParsedType<T>].concat(
+              _.typeAncestors,
+            ),
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          }),
+        )
+        .mapState((_) =>
+          ListAbstractRendererState.Updaters.Core.elementFormStates(id),
+        )
+        .mapForeignMutationsFromProps<
+          ListAbstractRendererForeignMutationsExpected<Flags>
+        >((props) => ({
+          onChange: (elementUpdater, nestedDelta) => {
+            const value =
+              props.context.value.kind == "tuple"
+                ? props.context.value.values.get(elementIndex) ||
+                  GetDefaultElementValue()
+                : GetDefaultElementValue();
+            const delta: DispatchDelta<Flags> = {
+              kind: "ArrayAdd",
+              value:
+                elementUpdater.kind == "r"
+                  ? elementUpdater.value(value)
+                  : GetDefaultElementValue(),
+              state: {
+                commonFormState: props.context.commonFormState,
+                elementFormStates: props.context.elementFormStates,
+              },
+              type: props.context.type.args[0],
               flags,
               sourceAncestorLookupTypeNames:
                 nestedDelta.sourceAncestorLookupTypeNames,
@@ -183,10 +292,13 @@ export const ListAbstractRenderer = <
               ...props.foreignMutations,
               add: !methods.includes("add")
                 ? undefined
-                : (flags) => {
+                : (flags) => (customUpdater?: BasicUpdater<PredicateValue>) => {
+                    const updater = customUpdater ?? id;
+                    const updatedValue = updater(GetDefaultElementValue());
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "ArrayAdd",
-                      value: GetDefaultElementValue(),
+                      value: updatedValue,
                       state: {
                         commonFormState: props.context.commonFormState,
                         elementFormStates: props.context.elementFormStates,
@@ -201,7 +313,7 @@ export const ListAbstractRenderer = <
                         Updater((list) =>
                           PredicateValue.Default.tuple(
                             ListRepo.Updaters.push<PredicateValue>(
-                              GetDefaultElementValue(),
+                              updatedValue,
                             )(list.values),
                           ),
                         ),
@@ -343,6 +455,9 @@ export const ListAbstractRenderer = <
                   },
             }}
             embeddedElementTemplate={embeddedElementTemplate}
+            embeddedPlaceholderElementTemplate={
+              embeddedPlaceholderElementTemplate
+            }
           />
         </IdProvider>
       </>

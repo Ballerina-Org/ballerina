@@ -6,31 +6,29 @@ module Lambda =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
 
-  type Value<'T> with
-    static member FromJsonLambda(fromJsonRoot: JsonValue -> ExprParser<'T>) : JsonValue -> ValueParser<'T> =
-      fun json ->
+  let private discriminator = "lambda"
+
+  type Value<'T, 'valueExtension> with
+    static member FromJsonLambda(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun lambdaJson ->
         reader {
-          return!
-            reader.AssertKindAndContinueWithField
-              "lambda"
-              "lambda"
-              (fun lambdaJson ->
-                reader {
-                  let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
-                  let! var = var |> JsonValue.AsString |> reader.OfSum
-                  let var = Var.Create var
-                  let! body = body |> fromJsonRoot
-                  return Value.Lambda(var, body)
-                })
-              (json)
-        }
+          let! exprFromJsonRoot, _ = reader.GetContext()
+          let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
+          let! var = var |> JsonValue.AsString |> reader.OfSum
+          let var = Var.Create var
+          let! body = body |> exprFromJsonRoot |> reader.OfSum
+          return Value.Lambda(var, body)
+        })
 
-    static member ToJsonLambda(toRootJson: Expr<'T> -> JsonValue) : Var * Expr<'T> -> JsonValue =
-      fun (var, body) ->
+    static member ToJsonLambda (var: Var) (body: Expr<'T>) : ValueEncoderReader<'T> =
+      reader {
+        let! rootExprEncoder, _ = reader.GetContext()
         let var = var.Name |> JsonValue.String
-        let body = body |> toRootJson
-        [| var; body |] |> JsonValue.Array |> Json.kind "lambda" "lambda"
+        let! body = body |> rootExprEncoder |> reader.OfSum
+        return [| var; body |] |> JsonValue.Array |> Json.discriminator discriminator
+      }

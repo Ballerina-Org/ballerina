@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Extensions/Model.fs" />
+        <Compile Include="Extensions/Patterns.fs" />
+        <Compile Include="Extensions/Types.fs" />
+        <Compile Include="Extensions/Operations.fs" />
+        <Compile Include="Extensions/TypeLambdas.fs" />
+
+        <Compile Include="Option/Model.fs" />
+        <Compile Include="Option/Patterns.fs" />
+        <Compile Include="Option/Extension.fs" />
+
+        <Compile Include="List/Model.fs" />
+        <Compile Include="List/Patterns.fs" />
+        <Compile Include="List/Extension.fs" />
+
+        <Compile Include="Int32/Model.fs" />
+        <Compile Include="Int32/Patterns.fs" />
+        <Compile Include="Int32/Extension.fs" />
+        <Compile Include="Int64/Model.fs" />
+        <Compile Include="Int64/Patterns.fs" />
+        <Compile Include="Int64/Extension.fs" />
+        <Compile Include="Float32/Model.fs" />
+        <Compile Include="Float32/Patterns.fs" />
+        <Compile Include="Float32/Extension.fs" />
+        <Compile Include="Float64/Model.fs" />
+        <Compile Include="Float64/Patterns.fs" />
+        <Compile Include="Float64/Extension.fs" />
+        <Compile Include="Decimal/Model.fs" />
+        <Compile Include="Decimal/Patterns.fs" />
+        <Compile Include="Decimal/Extension.fs" />
+        <Compile Include="String/Model.fs" />
+        <Compile Include="String/Patterns.fs" />
+        <Compile Include="String/Extension.fs" />
+        <Compile Include="Bool/Model.fs" />
+        <Compile Include="Bool/Patterns.fs" />
+        <Compile Include="Bool/Extension.fs" />
+        <Compile Include="Guid/Model.fs" />
+        <Compile Include="Guid/Patterns.fs" />
+        <Compile Include="Guid/Extension.fs" />
+        <Compile Include="DateTime/Model.fs" />
+        <Compile Include="DateTime/Patterns.fs" />
+        <Compile Include="DateTime/Extension.fs" />
+        <Compile Include="DateOnly/Model.fs" />
+        <Compile Include="DateOnly/Patterns.fs" />
+        <Compile Include="DateOnly/Extension.fs" />
+        <Compile Include="TimeSpan/Model.fs" />
+        <Compile Include="TimeSpan/Patterns.fs" />
+        <Compile Include="TimeSpan/Extension.fs" />
+        <Compile Include="StdExtensions.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
+        <ProjectReference Include="..\TypeChecker\ballerina-lang-typecheck.fsproj" />
+        <ProjectReference Include="..\Eval\ballerina-lang-eval.fsproj" />
+        <ProjectReference Include="..\Json\ballerina-lang-json.fsproj" />
+    </ItemGroup>
+
+
+</Project>

@@ -1,5 +1,4 @@
 import {
-  DispatcherContext,
   DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
@@ -9,20 +8,21 @@ import { SumAbstractRenderer } from "../../../abstract-renderers/sum/template";
 import { SumRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/sum/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 import { SumUnitDateRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/sumUnitDate/state";
+import { DispatcherContextWithApiSources } from "../../../../state";
 
 export const SumDispatcher = {
   Operations: {
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
-      CustomPresentationContexts,
+      CustomPresentationContext,
       ExtraContext,
     >(
       renderer: SumRenderer<T> | SumUnitDateRenderer<T>,
-      dispatcherContext: DispatcherContext<
+      dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
-        CustomPresentationContexts,
+        CustomPresentationContext,
         ExtraContext
       >,
       isInlined: boolean,
@@ -71,7 +71,12 @@ export const SumDispatcher = {
                         dispatcherContext.ErrorRenderer,
                         leftForm,
                         rightForm,
-                      ).withView(concreteRenderer),
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type: renderer.type,
+                        }))
+                        .withView(concreteRenderer),
                     ),
                   );
           }),

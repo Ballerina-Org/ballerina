@@ -1,6 +1,9 @@
 package ballerina
 
-import "encoding/json"
+import (
+	"bytes"
+	"encoding/json"
+)
 
 type deltaSetEffectsEnum string
 
@@ -9,10 +12,6 @@ const (
 	setAdd    deltaSetEffectsEnum = "SetAdd"
 	setRemove deltaSetEffectsEnum = "SetRemove"
 )
-
-var allDeltaSetEffectsEnumCases = [...]deltaSetEffectsEnum{setValue, setAdd, setRemove}
-
-func DefaultDeltaSetEffectsEnum() deltaSetEffectsEnum { return allDeltaSetEffectsEnumCases[0] }
 
 type DeltaSet[a comparable, deltaA any] struct {
 	DeltaBase
@@ -49,7 +48,9 @@ func (d *DeltaSet[a, deltaA]) UnmarshalJSON(data []byte) error {
 		Add           *a
 		Remove        *a
 	}
-	if err := json.Unmarshal(data, &aux); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&aux); err != nil {
 		return err
 	}
 	d.DeltaBase = aux.DeltaBase

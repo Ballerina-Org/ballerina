@@ -12,7 +12,6 @@ open Ballerina.DSL.Next.Json
 open Ballerina.DSL.Next.Types.Json.TypeExpr
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Types.Json
-open Ballerina.DSL.Next.KitchenSink
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
@@ -60,16 +59,16 @@ let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJ
 [<Test>]
 let ``Dsl:Type.Kind json round-trip`` () =
   let testCases =
-    [ ("""{"kind": "symbol"}""", Kind.Symbol)
-      ("""{"kind": "star"}""", Kind.Star)
-      ("""{
-            "kind": "arrow",
-            "arrow": {
-              "param": { "kind": "star" },
-              "returnType": { "kind": "symbol" }
+    [ """{"discriminator": "symbol"}""", Kind.Symbol
+      """{"discriminator": "star"}""", Kind.Star
+      """{
+            "discriminator": "arrow",
+            "value": {
+              "param": { "discriminator": "star" },
+              "returnType": { "discriminator": "symbol" }
             }
           }""",
-       Kind.Arrow(Kind.Star, Kind.Symbol)) ]
+      Kind.Arrow(Kind.Star, Kind.Symbol) ]
 
   for (json, expected) in testCases do
     (expected, JsonValue.Parse json)
@@ -81,7 +80,7 @@ let ``Dsl:Type.Symbol json round-trip`` () =
   let json = $"""{{"name": "MyType", "guid": "{guid}"}}"""
 
   let expected =
-    { TypeSymbol.Name = "MyType"
+    { TypeSymbol.Name = "MyType" |> Identifier.LocalScope
       TypeSymbol.Guid = guid }
 
   (expected, JsonValue.Parse json)
@@ -90,7 +89,7 @@ let ``Dsl:Type.Symbol json round-trip`` () =
 [<Test>]
 let ``Dsl:Type.Parameter json round-trip`` () =
   let json =
-    """{"name": "T", "kind": { "kind":"arrow", "arrow": { "param": { "kind": "symbol" }, "returnType": { "kind": "star" } } } }"""
+    """{"name": "T", "kind": { "discriminator":"arrow", "value": { "param": { "discriminator": "symbol" }, "returnType": { "discriminator": "star" } } } }"""
 
   let expected = TypeParameter.Create("T", Kind.Arrow(Kind.Symbol, Kind.Star))
 
