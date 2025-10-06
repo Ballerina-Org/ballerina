@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import {HorizontalDropdown} from "../layout/dropdown.tsx"
+import {Dropdown} from "../layout/dropdown.tsx"
 import {getOrInitSpec, getSpec, Ide, VirtualFolders} from "playground-core";
 import {AddSpec, AddSpecInner} from "./add-spec.tsx";
 import {BasicFun, Updater} from "ballerina-core";
@@ -8,9 +8,9 @@ import {SpecMode, SpecOrigin} from "playground-core/ide/domains/spec/state.ts";
 type SelectSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
 export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
-    return props.phase == "choose" && props.existing.specs.length > 0  
+    return props.phase == "choose" && props.specSelection.specs.length > 0  
         ?
-        <HorizontalDropdown
+        <Dropdown
             label={"Select spec"}
             onChange={async (name: string) => {
                 const spec = await getSpec(name);
@@ -25,7 +25,7 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                 props.setState(u)
     
             }}
-            options={props.existing.specs}/>
+            options={props.specSelection.specs}/>
 
         : <></>
 }

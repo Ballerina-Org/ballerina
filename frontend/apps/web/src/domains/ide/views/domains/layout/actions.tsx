@@ -11,7 +11,7 @@ import {
     VscPlay,
     VscChecklist,
     VscMerge,
-    VscTriangleLeft, VscTriangleRight, VscFolderLibrary
+    VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings
 } from "react-icons/vsc";
 
 
@@ -39,6 +39,7 @@ type ActionsProps = {
     onSave?: () => void;
     onMerge?: () => void;
     onHide?: () => void;
+    onSettings?: () => void;
     
 };
 
@@ -46,13 +47,18 @@ export const Actions: React.FC<ActionsProps> = ({
             context,
             hideRight = false,
             onAction,
-    canValidate = false,
+            onSettings,
+            canValidate = false,
             canRun = true,
     
             onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
 
-        }) => (
-    <div className={"p-5 mt-3.5 flex space-x-1 w-full"}>
+        }) => {
+    const isWellKnownFile = context.phase === "locked"
+        && context.locked.workspace.kind === "selected"
+        && (context.locked.workspace.current.kind == 'file' && context.locked.workspace.current.file.name == "codegen")
+    return (
+    <div className={"p-5 mt-10.5 flex space-x-1 w-full"}>
         {/*{context.phase === "choose" && context.specOrigin === "existing" && (*/}
         {/*    <button*/}
         {/*        className="btn tooltip tooltip-bottom"*/}
@@ -78,13 +84,15 @@ export const Actions: React.FC<ActionsProps> = ({
                 <VscSave size={size} />
             </button>
         )}
-        {context.phase === "locked"  && (
+        {
+            context.phase === "locked"  
+            && !isWellKnownFile && (
             <div className="indicator">
                 {context.locked.validatedSpec.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
                 <button
                     className="btn tooltip tooltip-bottom"
                     data-tip="Validate"
-                    disabled={!canValidate}
+                    disabled={!canValidate || isWellKnownFile}
                 >
                     <VscMerge size={size} onClick={onMerge} />
                 </button>
@@ -96,6 +104,7 @@ export const Actions: React.FC<ActionsProps> = ({
                 className="btn tooltip tooltip-bottom"
                 data-tip="Seed"
                 onClick={onSeed}
+                disabled={isWellKnownFile}
             >
                 <VscDatabase size={size} />
             </button>
@@ -110,12 +119,24 @@ export const Actions: React.FC<ActionsProps> = ({
                 className="btn tooltip tooltip-bottom"
                 data-tip="Run Forms Engine"
                 onClick={onRun}
-                disabled={!canRun}
+                disabled={!canRun || isWellKnownFile}
             >
                 <VscPlay size={size} />
             </button>
         )}
-
+        {context.phase === "locked"
+            //&& context.step === "design"
+            //&& context.locked.seeds.kind == "r" 
+            //&& context.locked.virtualFolders.merged.kind == "r" 
+            && (
+                <button
+                    className="btn tooltip tooltip-bottom"
+                    data-tip="Change setting"
+                    onClick={onSettings}
+                >
+                    <VscSettings size={size} />
+                </button>
+            )}
         {context.phase === "locked" && hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"
@@ -135,4 +156,5 @@ export const Actions: React.FC<ActionsProps> = ({
         )}
     </div>
 );
+}
 

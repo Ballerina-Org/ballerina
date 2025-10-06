@@ -30,6 +30,7 @@ export const AddSpecButtons = (props: AddSpecProps): React.ReactElement => {
                         const formsMode: SpecMode = { mode: 'scratch', entry: 'upload-manual' };
                         const specOrigin: SpecOrigin = { origin: 'creating'}
                         const vfs = await initSpec(props.name.value, formsMode);
+                        debugger
                         if(vfs.kind == "errors") {
                             props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                             return;
@@ -51,7 +52,7 @@ export const AddSpecButtons = (props: AddSpecProps): React.ReactElement => {
                         const u = Ide.Updaters.Phases.choosing.startUpload('upload-folder');
                         props.setState(u)
                     }}
-                    data-tip="Create with uploading files">
+                    data-tip="Upload files to compose a specification">
                     <VscFolderLibrary className="mt-2" size={20}/>
                 </label>
                 <label
@@ -61,7 +62,7 @@ export const AddSpecButtons = (props: AddSpecProps): React.ReactElement => {
                         const u = Ide.Updaters.Phases.choosing.startUpload('upload-zip');
                         props.setState(u)
                     }}
-                    data-tip="Create with uploading files">
+                    data-tip="Upload zipped project room to explore and/or adjsut specs">
                     <VscFileZip className="mt-2" size={20}/>
                 </label>
             </form>

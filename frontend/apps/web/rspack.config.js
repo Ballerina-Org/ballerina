@@ -69,16 +69,16 @@ module.exports = {
     ],
   },
   devServer: {
-    port: 5002,
+    port: 5001,
       ...(isIDE && {
           proxy: {
               [process.env.API_PREFIX]: {
                   target: process.env.API_ORIGIN,
                   changeOrigin: true,
                   secure: false,
-                  proxyTimeout: 600_000, // 10 minutes (used by http-proxy)
+                  proxyTimeout: 600_000,
                   timeout: 600_000,
-                  onProxyReq(proxyReq /*, req, res */) {
+                  onProxyReq(proxyReq) {
                       proxyReq.setHeader("Tenant-Id", process.env.TENANT_ID);
                   },
               },

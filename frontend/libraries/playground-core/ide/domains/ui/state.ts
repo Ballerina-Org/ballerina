@@ -2,9 +2,13 @@
 import {List} from "immutable";
 
 export type CommonUI = {
-    existing: { specs: string[]; selected: Option<string> },
+    specSelection: {
+        specs: string[],         
+        selected: Option<string>,
+    };
     name: Value<string>,
-
+    settingsVisible: boolean,
+    heroVisible: boolean,
     bootstrappingError: List<string>,
     choosingError: List<string>,
     lockingError: List<string>,
@@ -13,9 +17,10 @@ export type CommonUI = {
 
 export const CommonUI = {
     Default: () : CommonUI => ({
-        existing: { specs: [], selected: Option.Default.none() },
+        specSelection: { specs: [], selected: Option.Default.none() },
         name: Value.Default("Spec Name"),
-
+        settingsVisible: false,
+        heroVisible: true,
         bootstrappingError: List(),
         choosingError: List(),
         lockingError: List(),

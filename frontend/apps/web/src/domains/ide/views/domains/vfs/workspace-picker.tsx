@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import TreeView, { flattenTree, INode} from "react-accessible-treeview";
 import {VscArrowSmallDown} from "react-icons/vsc";
-import {FlatNode, Meta, NodeId, ProgressiveWorkspace, VirtualFolders} from "playground-core";
+import {Node, Meta, NodeId, WorkspaceState, VirtualFolders} from "playground-core";
 import {BasicFun} from "ballerina-core";
 import {Set} from "immutable";
 
@@ -23,16 +23,16 @@ function cx(...args: Array<string | Record<string, boolean> | undefined | null |
 
 const SizeBadge: React.FC<{ bytes?: number }> = ({ bytes = 0 }) => {
     const size = Number(bytes);
-    let tone: "badge-success" | "badge-warning" | "badge-error";
+    let tone: "badge-secondary" | "badge-warning" | "badge-error";
 
     switch (true) {
-        case size <= 10 * 1024: tone = "badge-success"; break;
+        case size <= 10 * 1024: tone = "badge-secondary"; break;
         case size < 102400: tone = "badge-warning"; break;
         default: tone = "badge-error";   break;
     }
 
     return (
-        <div className={`ml-5 badge badge-sm ${tone} ml-auto`}>
+        <div className={`ml-5 mr-5 badge badge-sm ${tone} ml-auto`}>
             {VirtualFolders.Operations.formatBytes(size)}
         </div>
     );
@@ -40,28 +40,36 @@ const SizeBadge: React.FC<{ bytes?: number }> = ({ bytes = 0 }) => {
 
 export type MultiSelectCheckboxControlledProps = { 
     mode: 'reader' | 'uploader',
-    workspace: ProgressiveWorkspace, 
-    onSelectedFolder?: BasicFun<FlatNode, void>,
-    onSelectedFile?: BasicFun<FlatNode, void>
-    onAcceptedNodes?: BasicFun<FlatNode, void> }
+    workspace: WorkspaceState, 
+    onSelectedFolder?: BasicFun<Node, void>,
+    onSelectedFile?: BasicFun<Node, void>
+    onAcceptedNodes?: BasicFun<Node, void> }
 
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
-
+    debugger
     const data: INode<Meta>[] = 
         flattenTree(props.workspace.nodes);
 
-
     const [selectedIds, setSelectedIds] = useState(data.map(x => x.id));
     const [chosenIds, setChosenIds] = useState<Set<NodeId>>(Set(data.map(x => x.id)));
-
+    const folders = data.filter(x => chosenIds.has(x.id)).filter(x => x.metadata?.kind == "dir")?.length - 1 || 0;
     return (
         <div>
-            <div className="indicator">
-                <span className="indicator-item badge badge-secondary">all items: {chosenIds.size - 1 }</span>
-                <button className="btn">Folders: {
-                    data.filter(x => chosenIds.has(x.id)).filter( x => x.metadata?.kind == "dir")?.length - 1 || 0
-                }</button>
-            </div>
+            {/*<div className="stats stats-vertical sm:stats-horizontal shadow p-3">*/}
+            {/*    <div className="stat text-center">*/}
+            {/*        <div className="stat-title text-sm">Folders</div>*/}
+            {/*        <div className="stat-value text-xl">{folders}*/}
+            {/*            */}
+            {/*        </div>*/}
+            {/*        <div className="stat-desc text-xs"></div>*/}
+            {/*    </div>*/}
+            
+            {/*    <div className="stat text-center">*/}
+            {/*        <div className="stat-title text-sm">Files</div>*/}
+            {/*        <div className="stat-value text-xl">{chosenIds.size - 1 - folders}</div>*/}
+            {/*        <div className="stat-desc text-xs"></div>*/}
+            {/*    </div>*/}
+            {/*</div>*/}
             <div className="">
                 <TreeView
                     data={data}
@@ -73,7 +81,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                     propagateSelectUpwards
                     togglableSelect
                     onSelect={(props) => {
-               
+
                         setChosenIds(Set(props.treeState.selectedIds))
                     }
                     }
@@ -100,7 +108,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                 }}
                             >
       
-                                <div className={"w-full flex mt-3"}>
+                                <div className={element.metadata?.kind == "dir" ? "w-full flex mt-3" :"contents mt-3"}>
                                 {isBranch && <ArrowIcon isOpen={isExpanded} />}
                                 <CheckBoxIcon
                                     mode={props.mode}
@@ -120,30 +128,30 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                     &&  <button 
                                         className="ml-3 btn btn-neutral btn-xs"
                                         onClick={() => { 
-                                            const selected = element as unknown as FlatNode
+                                            const selected = element as unknown as Node
                                             if (props.onSelectedFolder) {
                                                 let item =
                                                     ({ ...selected, children: selected.children?.map((child: any) => 
                                                         data.find(x => x.id === child)
                                                     )})
                                        
-                                                props.onSelectedFolder(item as FlatNode);
+                                                props.onSelectedFolder(item as Node);
                                             }
                                         }}
                                     >select folder</button>}
+                                    
+                        
                                     {props.mode == 'reader' && props.workspace.mode != 'compose' && element.metadata?.kind == "file"
-                                        &&  <button
-                                            className="ml-3 mr-3 btn btn-neutral btn-dash btn-xs"
+                                        &&  <div className={""}><SizeBadge bytes={(element.metadata as Meta)?.size} /><button
+                                            className="ml-auto btn btn-neutral btn-dash btn-xs"
                                             onClick={() => {
-                                                const selected = element as unknown as FlatNode
+                                                const selected = element as unknown as Node
                                                 if (props.onSelectedFile) {
 
                                                     props.onSelectedFile(selected);
                                                 }
                                             }}
-                                        >select file</button>}
-                                {element.metadata?.kind == "file" 
-                                    && <SizeBadge bytes={(element.metadata as Meta)?.size} />}
+                                        >select file</button></div>}
                             </div>
                             </div>
                         );

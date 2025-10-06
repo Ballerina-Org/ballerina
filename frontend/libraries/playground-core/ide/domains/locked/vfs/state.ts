@@ -1,48 +1,39 @@
-﻿import {
-    Debounced,
-    Option,
-    replaceWith,
-    simpleUpdater,
-    Synchronized,
-    Updater,
-    Value,
-    ValueOrErrors
-} from "ballerina-core";
-import { Map } from "immutable";
-import {FlatNode} from "./upload/model";
-import {Ide} from "../../../state";
-import {LockedSpec} from "../state";
+﻿import {Updater,ValueOrErrors} from "ballerina-core";
+import {FlatNode, Node} from "./upload/model";
 import {SpecOrigin, SpecMode} from "../../spec/state";
-export type TopLevelKey = "types" | "forms" | "apis" | "launchers" | "typesV2" | "schema" | "config";
 
-export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
-export type JsonSection = Record<string, JsonValue>;
-export type KnownSections = Partial<Record<TopLevelKey, JsonSection>>;
 
 export type SelectedWorkspace =
-    | { kind: 'folder', folder: FlatNode }
-    | { kind: 'file', folder: FlatNode, file: FlatNode }
+    | { kind: 'folder', folder: Node }
+    | { kind: 'file', folder: Node, file: Node }
 
-export type ProgressiveWorkspace =
+export type WorkspaceState =
     (
-    | { kind: 'stale', nodes: FlatNode }
-    | { kind: 'unstale', nodes: FlatNode, current: SelectedWorkspace }
+    | { kind: 'view', nodes: Node }
+    | { kind: 'selected', nodes: Node, current: SelectedWorkspace }
     ) 
     & Readonly<SpecMode>
     & Readonly<SpecOrigin>
 
-export const ProgressiveWorkspace = {
-    Default: (nodes: FlatNode, mode: SpecMode, origin: SpecOrigin): ProgressiveWorkspace => ({
-        kind: 'stale',
+export const WorkspaceState = {
+    Default: (nodes: Node, mode: SpecMode, origin: SpecOrigin): WorkspaceState => ({
+        kind: 'view',
         nodes: nodes,
         ...mode,
         ...origin
     }),
     Updater: {
-        changeFileContent: (newContent: any): Updater<ProgressiveWorkspace> =>
+        reloadContent: (next: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
-                if (!(workspace.kind === "unstale" && workspace.current.kind === "file")) {
+                return ({
+                    ...workspace,
+                    kind: 'view',
+                    nodes: next,
+                })
+            }),
+        changeFileContent: (newContent: any): Updater<WorkspaceState> =>
+            Updater(workspace => {
+                if (!(workspace.kind === "selected" && workspace.current.kind === "file")) {
                     window.alert("design issue: vfs from file content");
                     return workspace;
                 }
@@ -55,7 +46,7 @@ export const ProgressiveWorkspace = {
                     }
                 })
             }),
-        selectFile: (file: FlatNode): Updater<ProgressiveWorkspace> =>
+        selectFile: (file: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
                 const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, file.metadata.path);
                 debugger
@@ -65,7 +56,7 @@ export const ProgressiveWorkspace = {
                 }
                 return ({
                     ...workspace,
-                    kind: 'unstale',
+                    kind: 'selected',
                     current: {
                         kind: 'file',
                         file: file,
@@ -73,9 +64,9 @@ export const ProgressiveWorkspace = {
                     }
                 })
             }),
-        selectFolder: (folder: FlatNode): Updater<ProgressiveWorkspace> =>
+        selectFolder: (folder: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
-                if (!(workspace.kind === "unstale")) {
+                if (!(workspace.kind === "selected")) {
                     window.alert("design issue: vfs from file content");
                     return workspace;
                 }
@@ -103,7 +94,7 @@ export const VirtualFolders = {
             const n = bytes / Math.pow(k, i);
             return `${n.toFixed(n >= 10 || i === 0 ? 0 : 1)} ${sizes[i]}`;
         },
-        markLeaves: (n: FlatNode): FlatNode => {
+        markLeaves: (n: Node): Node => {
             if (n.metadata.kind === "file") {
                 return { ...n, metadata: { ...n.metadata, isLeaf: true } };
             }
@@ -118,10 +109,10 @@ export const VirtualFolders = {
             };
         },
         insert: async (
-            node: FlatNode,
+            node: Node,
             pathParts: string[],
             fileOrJson: File | Record<string, unknown>
-        ): Promise<FlatNode> => {
+        ): Promise<Node> => {
             if (pathParts.length === 0) return node;
 
             const [head, ...rest] = pathParts;
@@ -142,7 +133,7 @@ export const VirtualFolders = {
                 const size =
                     fileOrJson instanceof File ? fileOrJson.size : JSON.stringify(fileOrJson).length;
 
-                const fileNode: FlatNode = {
+                const fileNode: Node = {
                     id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
                     name: head,
                     parent: node.id ?? null,
@@ -236,8 +227,8 @@ export const VirtualFolders = {
         // },
         buildTreeFromFolder(
             files: FileList,
-            root: FlatNode
-        ): Promise<FlatNode> {
+            root: Node
+        ): Promise<Node> {
             return Array.from(files).reduce(
                 (promiseAcc, file) =>
                     promiseAcc.then(async (acc) => {
@@ -251,8 +242,8 @@ export const VirtualFolders = {
         },
         buildTreeFromZipContent(
             files: { path: string[]; content: Record<string, unknown> }[],
-            root: FlatNode
-        ): Promise<FlatNode> {
+            root: Node
+        ): Promise<Node> {
             return Array.from(files).reduce(
                 (promiseAcc, file) =>
                     promiseAcc.then(async (acc) => {
@@ -264,9 +255,9 @@ export const VirtualFolders = {
                 Promise.resolve(root)
             );
         },
-        fileListToTree: async (files: FileList): Promise<ValueOrErrors<FlatNode, string>> => {
+        fileListToTree: async (files: FileList): Promise<ValueOrErrors<Node, string>> => {
             try {
-                const root: FlatNode = {
+                const root: Node = {
                     id: "root",
                     name: "root",
                     parent: null,
@@ -282,9 +273,9 @@ export const VirtualFolders = {
                 return ValueOrErrors.Default.throwOne(e);
             }
         },
-        fileArrayToTree: async (files: { path: string[]; content: Record<string, unknown> }[]): Promise<ValueOrErrors<FlatNode, string>> => {
+        fileArrayToTree: async (files: { path: string[]; content: Record<string, unknown> }[]): Promise<ValueOrErrors<Node, string>> => {
             try {
-                const root: FlatNode = {
+                const root: Node = {
                     id: "root",
                     name: "root",
                     parent: null,

@@ -13,5 +13,5 @@ export const NoSpescInfo = (props: NoSpecInfoProps): React.ReactElement => {
             </svg>
             <span>You have no current specifications. Start with a name for the new spec and then upload files.</span>
         </div>
-    return props.phase == "choose" && props.existing.specs.length == 0 ? div : <></>
+    return props.phase == "choose" && props.specSelection.specs.length == 0 ? div : <></>
 }

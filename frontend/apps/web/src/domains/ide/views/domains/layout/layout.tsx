@@ -28,6 +28,10 @@ import {AddOrSelectSpec} from "../choose/layout.tsx";
 import {EntitiesSelector} from "../forms/entities-selector.tsx";
 import {FormSkeleton} from "../forms/skeleton.tsx";
 import {LauncherAndEntity} from "../forms/launcher-entity.tsx";
+import {SettingsPanel} from "./settings.tsx";
+import {languages} from "monaco-editor";
+import json = languages.json;
+import {Hero} from "./hero.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -56,9 +60,12 @@ export const IdeLayout: IdeView = (props) =>{
             <AppToaster />
             <NoSpescInfo {...props.context} />
             <Loader {...props.context} />
-            <Navbar {...props.context} theme={theme} setTheme={setTheme} />
-            {props.context.phase !== "bootstrap" && 
-                <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
+            <Hero {...props.context} setState={props.setState}/>
+            
+            {props.context.phase !== "bootstrap" && props.context.phase !== "hero" && 
+                <>
+                    <Navbar {...props.context} theme={theme} setTheme={setTheme} />
+                    <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
                     <Panel minSize={20} defaultSize={50}>
                         <aside className="relative h-full">
                         <AddSpec {...props.context} setState={props.setState} />
@@ -68,7 +75,7 @@ export const IdeLayout: IdeView = (props) =>{
                             <Actions
                                 canValidate={
                                 props.context.phase == 'locked' 
-                                    && props.context.locked.workspace.kind == 'unstale'
+                                    && props.context.locked.workspace.kind == 'selected'
        
                                 }
                                 hideRight={hideRight}
@@ -77,7 +84,7 @@ export const IdeLayout: IdeView = (props) =>{
                                 onSave={
                                     async () => {
                                         if(!(props.context.phase == "locked" 
-                                            && props.context.locked.workspace.kind == 'unstale' 
+                                            && props.context.locked.workspace.kind == 'selected' 
                                             && props.context.locked.workspace.current.kind == 'file')) {
                                             notify.error('UX bad state','Saving should be possible only in a locked phase');
                                             return
@@ -93,7 +100,7 @@ export const IdeLayout: IdeView = (props) =>{
                                     }
                                 }
                                 onMerge={ async ()=>{
-                                    if(!(props.context.phase == 'locked' && props.context.locked.workspace.kind == 'unstale' && props.context.locked.workspace.current.kind == 'file')) return;
+                                    if(!(props.context.phase == 'locked' && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file')) return;
                                     debugger
                                     const json =
                                         props.context.locked.workspace.mode == 'compose' || props.context.locked.workspace.mode == 'scratch'
@@ -111,6 +118,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         return
                                     }
                                 }}
+                                onSettings={()=> props.setState(Ide.Updaters.CommonUI.toggleSettings())}
                                 onRun={() =>{
                                     props.setState(LockedSpec.Operations.enableRun());
                                     forceRerender();
@@ -136,7 +144,8 @@ export const IdeLayout: IdeView = (props) =>{
                         {/*<p>is merged: {props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.kind }</p>*/}
                         {/*<p>selected launcher: {props.context.phase == 'locked' && props.context.locked.selectedLauncher.kind }</p>*/}
                         {/*<p>selected entity: {props.context.phase == 'locked' && props.context.locked.selectedEntity.kind }</p>*/}
-                       <VfsLayout {...props.context} setState={props.setState} />
+                            <SettingsPanel  {...props.context} setState={props.setState}/>
+                            <VfsLayout {...props.context} setState={props.setState} />
                       
                     </aside>
                     </Panel>
@@ -149,18 +158,18 @@ export const IdeLayout: IdeView = (props) =>{
                                     <aside className="relative h-full">
                                         <FormSkeleton {...props.context} setState={props.setState} />
                                         
-                                        { props.context.phase == "locked" &&  props.context.step == 'preDisplay' 
+                                        { props.context.phase == "locked" &&  props.context.locked.progress.kind == 'preDisplay' 
                                             && <div className="card bg-base-100 w-full mt-5">
                                             <div className="card-body w-full">
-                                                <LauncherAndEntity {...props.context.selectEntityFromLauncher} setState={props.setState} />
-                                                { props.context.selectEntityFromLauncher.kind == 'done'
+                                                <LauncherAndEntity {...props.context.locked.progress.selectEntityFromLauncher} setState={props.setState} />
+                                                { props.context.locked.progress.selectEntityFromLauncher.kind == 'done'
                                                     && props.context.locked.validatedSpec.kind == "r"
                                                     && <><DispatcherFormsApp
                                                         key={version}
-                                                        launcherName={props.context.selectEntityFromLauncher.a.key}
-                                                        launcherConfigName={props.context.selectEntityFromLauncher.a.configType}
+                                                        launcherName={props.context.locked.progress.selectEntityFromLauncher.a.key}
+                                                        launcherConfigName={props.context.locked.progress.selectEntityFromLauncher.a.configType}
                                                         specName={props.context.name.value}
-                                                        entityName={props.context.selectEntityFromLauncher.b}
+                                                        entityName={props.context.locked.progress.selectEntityFromLauncher.b}
                                                         setState={props.setState}
                                                         typeName={"Person"}
                                                         spec={props.context.locked.validatedSpec.value}/></>
@@ -178,20 +187,35 @@ export const IdeLayout: IdeView = (props) =>{
                                     <div className="inset-0 top-0 z-20 m-0 p-0">
                                         <div className="space-y-2  w-full">
                                             {
-                                                props.context.bootstrappingError.map(error => (<pre data-prefix="6"
-                                                                                                    className="m-0 pl-3 bg-rose-700 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                props.context.bootstrappingError.map(error => 
+                                                    (<pre 
+                                                        data-prefix="6"
+                                                        className="m-0 pl-3 bg-rose-700 text-warning-content">
+                                                        <code>Error!</code>
+                                                        {error}
+                                                    </pre>))
                                             }
                                             {
-                                                props.context.choosingError.map(error => (<pre data-prefix="6"
-                                                                                               className="m-0 pl-3 bg-rose-500 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                props.context.choosingError.map(error => 
+                                                    (<pre data-prefix="6"
+                                                          className="m-0 pl-3 bg-rose-500 text-warning-content">
+                                                        <code>Error!</code>
+                                                        {error}
+                                                    </pre>))
                                             }
                                             {
-                                                props.context.lockingError.map(error => (<pre data-prefix="6"
-                                                                                              className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Error!</code>{error}</pre>))
+                                                props.context.lockingError.map(error => 
+                                                    (<pre data-prefix="6"
+                                                          className="m-0 pl-3 bg-rose-300 text-warning-content">
+                                                        <code>Error!</code>
+                                                        {error}</pre>))
                                             }
                                             {
-                                                props.context.formsError.map(error => (<pre data-prefix="6"
-                                                                                            className="m-0 pl-3 bg-rose-300 text-warning-content"><code>Forms!</code>{error}</pre>))
+                                                props.context.formsError.map(error => 
+                                                    (<pre data-prefix="6"
+                                                          className="m-0 pl-3 bg-rose-300 text-warning-content">
+                                                        <code>Forms!</code>
+                                                        {error}</pre>))
                                             }
                                         </div>
                                     </div>
@@ -209,6 +233,6 @@ export const IdeLayout: IdeView = (props) =>{
                             </Panel>
                         </PanelGroup>
                      </Panel>}
-                </PanelGroup>}
+                </PanelGroup></>}
         </div>)
 };

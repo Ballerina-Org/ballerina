@@ -1,5 +1,5 @@
 ﻿import React, {Dispatch, SetStateAction, useState} from "react";
-import {FlatNode, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
+import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value, ValueOrErrors} from "ballerina-core";
 
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
@@ -17,8 +17,9 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
         setResult(content);
     };
     const formsMode: SpecMode = { mode: 'explore', entry: 'upload-zip'};
-    return (props.phase == 'choose' && props.entry == 'upload-zip' && props.progressIndicator == 'upload-started')
-        ? <div className="card bg-gray-200 text-black w-full  mt-12">
+
+    return (props.phase == 'choose' && props.choose.entry == 'upload-zip' && props.choose.progressIndicator == 'upload-started')
+        ? <div className="card bg-gray-200 text-black w-full  mt-12 m-5">
                 <div className="card-body items-start gap-3">
 
                     <div className="card-body items-start gap-3">

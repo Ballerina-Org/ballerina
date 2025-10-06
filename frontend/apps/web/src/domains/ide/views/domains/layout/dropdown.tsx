@@ -8,7 +8,7 @@ type Props = {
     onChange?: (value: string) => void;
 };
 
-export const HorizontalDropdown: React.FC<Props> = ({ label, options, onChange }) => {
+export const Dropdown: React.FC<Props> = ({ label, options, onChange }) => {
     const [selected, setSelected] = useState<string>("");
     
     const handleChange = (opt:string) => {

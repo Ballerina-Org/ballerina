@@ -1,72 +1,52 @@
 ﻿import {Option, Updater} from "ballerina-core";
-import {Ide, PhaseUpdater} from "../../state";
-import {KnownSections, ProgressiveWorkspace} from "./vfs/state";
-import {FlatNode} from "./vfs/upload/model";
+import {Ide} from "../../state";
+import {WorkspaceState} from "./vfs/state";
+import {FlatNode, Node} from "./vfs/upload/model";
 import {IdeEntity, IdeLauncher} from "../spec/state";
+import {ProgressiveAB} from "../types/Progresssive";
+import {LockedUpdater, LockedUpdaterFull} from "../types/PhaseUpdater";
+import {KnownSections} from "../types/Json";
 
-export type ProgressiveUI<A, B> =
-    | { kind: "selectA", options: A[] }
-    | { kind: "selectB", a: A, options: B[] }
-    | { kind: "done", a: A, b: B };
-
-export const PreForms ={
+export const ProgressiveLauncherAndEntities ={
     fromLaunchers: 
         (launchers: IdeLauncher[])
-            : ProgressiveUI<IdeLauncher, IdeEntity> => 
+            : ProgressiveAB<IdeLauncher, IdeEntity> => 
             ({ kind: "selectA", options: launchers }),
     fromLauncherAndEntities: 
         (launcher: IdeLauncher, entities: IdeEntity[])
-            : ProgressiveUI<IdeLauncher, IdeEntity> => 
+            : ProgressiveAB<IdeLauncher, IdeEntity> => 
             ({ kind: "selectB", a: launcher, options: entities}),
     selectEntity:
         (launcher: IdeLauncher, entity: IdeEntity)
-            : ProgressiveUI<IdeLauncher, IdeEntity> => 
+            : ProgressiveAB<IdeLauncher, IdeEntity> => 
             ({ kind: "done", a: launcher, b: entity}),
 }
 
 export type LockedStep =
-    | { step: 'design' }
-    | { step: 'preDisplay', selectEntityFromLauncher: ProgressiveUI<IdeLauncher, IdeEntity> };
+    | { kind: 'design' }
+    | { kind: 'preDisplay', selectEntityFromLauncher: ProgressiveAB<IdeLauncher, IdeEntity> };
 
 export const LockedStep = {
     Updaters: {
         Core: {
-            fromLaunchers: (launchers: IdeLauncher []) => 
-                ({ step: 'preDisplay', selectEntityFromLauncher: PreForms.fromLaunchers(launchers) }),
-            fromLauncherAndEntities:
-                (launcher: IdeLauncher, entities: IdeEntity[]) => 
-                    ({ step: 'preDisplay', selectEntityFromLauncher: PreForms.fromLauncherAndEntities(launcher, entities) }),
-            selectEntity:
-                (launcher: IdeLauncher, entity: IdeEntity)=>
-                    ({ step: 'preDisplay', selectEntityFromLauncher: PreForms.selectEntity(launcher, entity)})
+            fromLaunchers: (launchers: IdeLauncher []) : LockedStep => 
+                ({ kind: 'preDisplay', 
+                    selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLaunchers(launchers) }),
+            fromLauncherAndEntities: (launcher: IdeLauncher, entities: IdeEntity[]) : LockedStep  => 
+                ({ kind: 'preDisplay', 
+                    selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLauncherAndEntities(launcher, entities) }),
+            selectEntity: (launcher: IdeLauncher, entity: IdeEntity) : LockedStep =>
+                ({ kind: 'preDisplay', 
+                    selectEntityFromLauncher: ProgressiveLauncherAndEntities.selectEntity(launcher, entity)})
         }
     }
 }
 
 export type LockedSpec = {
-    workspace: ProgressiveWorkspace,
+    workspace: WorkspaceState,
+    progress: LockedStep,
     validatedSpec: Option<KnownSections> // merged or full single
 };
-
-const LockedUpdater = (
-    updater: (locked: LockedSpec) => LockedSpec
-) => PhaseUpdater<Ide, "locked", "locked">("locked", "locked", updater);
-
-function LockedUpdaterFull(
-    updater: (locked: LockedSpec, ide: Ide) => LockedSpec | Ide
-) {
-    return (ide: Ide): Ide => {
-        if (ide.phase === "locked") {
-            const result = updater(ide.locked, ide);
-            if ("phase" in result) {
-                return result;
-            } else {
-                return { ...ide, locked: result };
-            }
-        }
-        return ide;
-    };
-}
 
 export const LockedSpec = {
     Updaters: {
@@ -103,11 +83,8 @@ export const LockedSpec = {
                         if(entities.length == 0) return ({...locked});
 
                         const step = LockedStep.Updaters.Core.fromLauncherAndEntities(launcher, entities)
-
-                        return ({
-                        ...locked,
-                        ...step
-                        } satisfies LockedSpec)
+                        return (
+                            { ...locked, progress: step } satisfies LockedSpec)
                     }
                 )),
             selectLauncher: (launcher: IdeLauncher): Updater<Ide> =>
@@ -194,7 +171,7 @@ export const LockedSpec = {
             //         }
             //         return ide
             //     }),
-            workspace: (workspace: Updater<ProgressiveWorkspace>): Updater<Ide> =>
+            workspace: (workspace: Updater<WorkspaceState>): Updater<Ide> =>
                 Updater(ide =>
                     ide.phase == 'locked'
                         ? ({...ide, locked: {...ide.locked, workspace: workspace(ide.locked.workspace)}})
@@ -203,19 +180,34 @@ export const LockedSpec = {
     },
     Operations: {
         enableRun: (): Updater<Ide> =>
-            Updater((ide: Ide) => {
-                    if (ide.phase != 'locked' || ide.locked.validatedSpec.kind == "l") return ide;
+            Updater(
+                LockedUpdater(locked => {
+                    if (locked.validatedSpec.kind == "l") return locked;
 
-                    const launchers = Object.entries(ide.locked.validatedSpec.value.launchers!);
-                    const ls = 
+                    const launchers = Object.entries(locked.validatedSpec.value.launchers!);
+                    const ls =
                         launchers.filter(([, value]) => typeof value === "object" && value !== null)
-                        .map(([key, value]) => ({
-                            key,
-                            ...(value as object),
-                        })) as any
+                            .map(([key, value]) => ({
+                                key,
+                                ...(value as object),
+                            })) as any
                     const step = LockedStep.Updaters.Core.fromLaunchers(ls);
-                    return ({...ide, locked: {...ide.locked, ...step}})
-                })
+                    return ({...locked, ...step})
+                    
+                })),
+            //Updater((ide: Ide) => {
+                //     if (ide.phase != 'locked' || ide.locked.validatedSpec.kind == "l") return ide;
+                //
+                //     const launchers = Object.entries(ide.locked.validatedSpec.value.launchers!);
+                //     const ls = 
+                //         launchers.filter(([, value]) => typeof value === "object" && value !== null)
+                //         .map(([key, value]) => ({
+                //             key,
+                //             ...(value as object),
+                //         })) as any
+                //     const step = LockedStep.Updaters.Core.fromLaunchers(ls);
+                //     return ({...ide, locked: {...ide.locked, ...step}})
+                // })
            
                 // ide.phase == 'locked' 
                 // && ide.locked.validatedSpec.kind == "r" ? 

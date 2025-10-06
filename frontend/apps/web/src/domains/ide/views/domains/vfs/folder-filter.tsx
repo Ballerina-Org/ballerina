@@ -1,9 +1,9 @@
-﻿import {ProgressiveWorkspace} from "playground-core";
+﻿import {WorkspaceState} from "playground-core";
 import React from "react";
 import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
 
 type FolderFilterProps = {
-    workspace: ProgressiveWorkspace
+    workspace: WorkspaceState
     update?: any
 };
 
@@ -12,7 +12,7 @@ export const FolderFilter = ({
      update,
  }: FolderFilterProps) => {
     
-    if (workspace.kind !== "unstale") return null;
+    if (workspace.kind !== "selected") return null;
     
     const files = (workspace.current.folder.children || [])?.filter(x => x.metadata.kind === "file");
 
@@ -43,7 +43,7 @@ export const FolderFilter = ({
                                     aria-label={f.name}
                                     onChange={async () => {
                                         const s_u = 
-                                            LockedSpec.Updaters.Core.workspace(ProgressiveWorkspace.Updater.selectFile(f))
+                                            LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(f))
                                         update(s_u);
                                     }}
                                 />

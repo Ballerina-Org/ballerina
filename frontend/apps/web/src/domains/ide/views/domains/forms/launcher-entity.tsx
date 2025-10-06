@@ -1,11 +1,12 @@
-﻿import {getSpec, Ide, LockedSpec, ProgressiveUI, ProgressiveWorkspace} from "playground-core";
+﻿import {getSpec, Ide, LockedSpec, WorkspaceState} from "playground-core";
 import {BasicFun, Updater} from "ballerina-core";
 import React from "react";
 import {IdeEntity, IdeLauncher} from "playground-core/ide/domains/spec/state.ts";
 import LauncherSelector from "./launcher-selector.tsx";
 import {EntitiesSelector} from "./entities-selector.tsx";
+import {ProgressiveAB} from "playground-core/ide/domains/types/Progresssive.ts";
 
-type LauncherAndEntityProps = ProgressiveUI<IdeLauncher, IdeEntity> & { setState: BasicFun<Updater<Ide>, void> };
+type LauncherAndEntityProps = ProgressiveAB<IdeLauncher, IdeEntity> & { setState: BasicFun<Updater<Ide>, void> };
 
 export const LauncherAndEntity = (props: LauncherAndEntityProps): React.ReactElement => {
     switch (props.kind) {

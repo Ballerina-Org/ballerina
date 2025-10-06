@@ -10,7 +10,7 @@ type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
     return <fieldset className="fieldset w-full">
         <AddSpecButtons {...props}/>
-        {props.phase == 'choose' && props.progressIndicator == 'upload-in-progress' 
+        {props.phase == 'choose' && props.choose.progressIndicator == 'upload-in-progress' 
             && <progress className="progress progress-success w-56" value="100" max="100"></progress>}
         <AddSpecUploadFolder {...props} />
         <AddSpecUploadZipped {...props} />
@@ -18,7 +18,7 @@ export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
 }
 
 export const AddSpec = (props: AddSpecProps): React.ReactElement => {
-    return props.phase == "choose" && props.specOrigin.origin == 'creating' && props.existing.specs.length == 0  ? 
+    return props.phase == "choose" && props.choose.specOrigin.origin == 'creating' && props.specSelection.specs.length == 0  ? 
         <AddSpecInner {...props} /> : <></>
 }
 

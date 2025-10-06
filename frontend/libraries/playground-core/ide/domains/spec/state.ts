@@ -13,14 +13,14 @@
 */
 
 export type DataEntry =
-    | 'upload-manual'         // user starts from scratch (with predefined files) and creates a spec on the fly
-    | 'upload-zip'     // user uploads zipped full forms -> it put the spec in the compose mode
-    | 'upload-folder'; // user upload folder of partial forms -> it puts the spec in the select mode
+    | 'upload-manual'   
+    | 'upload-zip'     
+    | 'upload-folder'
 
 export type SpecMode =
-    | { mode: 'compose', entry: Extract<DataEntry, 'upload-folder'> }
-    | { mode: 'explore', entry: Extract<DataEntry, 'upload-zip'> }
-    | { mode: 'scratch', entry: Extract<DataEntry, 'upload-manual'> }
+    | { mode: 'compose', entry: Extract<DataEntry, 'upload-folder'> } // data-driven
+    | { mode: 'explore', entry: Extract<DataEntry, 'upload-zip'> }    // project-room
+    | { mode: 'scratch', entry: Extract<DataEntry, 'upload-manual'> } // 
 
 export type SpecOrigin = { origin: 'selected' | 'creating' }
 

@@ -1,21 +1,23 @@
 ﻿import React from "react";
 
-import {FlatNode, ProgressiveWorkspace} from "playground-core";
+import {getZippedWorkspace, Node, WorkspaceState} from "playground-core";
 import {BasicFun, FormsConfigMerger, Option, Unit} from "ballerina-core";
 import {List} from "immutable";
 import { MultiSelectCheckboxControlled } from "./workspace-picker.tsx";
+import {VscExport} from "react-icons/vsc";
 
 type DrawerProps = {
     mode: 'upload' | 'select-current-folder';
-    workspace: ProgressiveWorkspace;
+    workspace: WorkspaceState;
+    name: string;
     drawerId?: string;
-    onSelectedFolder: (folder: FlatNode) => void;
-    onSelectedFile: (file: FlatNode) => void;
+    onSelectedFolder: (folder: Node) => void;
+    onSelectedFile: (file: Node) => void;
 };
 
-export function Drawer({ mode, workspace, drawerId = 'ide-drawer', onSelectedFolder, onSelectedFile }: DrawerProps) {
-    const [root, setRoot] = React.useState<Option<FlatNode>>(Option.Default.none());
-    const [nodes, setNodes] = React.useState<FlatNode>(workspace.nodes);
+export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelectedFolder, onSelectedFile }: DrawerProps) {
+    const [root, setRoot] = React.useState<Option<Node>>(Option.Default.none());
+    const [nodes, setNodes] = React.useState<Node>(workspace.nodes);
 
     return (
         <div className="drawer pt-16">
@@ -27,6 +29,27 @@ export function Drawer({ mode, workspace, drawerId = 'ide-drawer', onSelectedFol
 
                 <ul className="menu bg-base-200 text-base-content min-h-full w-[40vw] p-4">
                     <div className="flex w-full">
+                        <button 
+                            className="btn btn-accent btn-dash"
+                            onClick={async ()=> {
+                                const response = await getZippedWorkspace(name);
+                                if(response.kind == "errors") return;
+                                debugger
+                                const blob = new Blob([response.value], { type: "application/zip" });
+                                const url = window.URL.createObjectURL(blob);
+
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = `${name}.zip`; 
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                window.URL.revokeObjectURL(url);
+                            }}
+                        >
+                            Export
+                            <VscExport size={20} />
+                        </button>
                     </div>
                     <div className="mt-4">
                         <MultiSelectCheckboxControlled

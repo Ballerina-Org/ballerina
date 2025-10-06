@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import {FlatNode, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
+import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
 import {MultiSelectCheckboxControlled} from "../vfs/workspace-picker.tsx"
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
@@ -8,7 +8,7 @@ import {SpecMode, SpecOrigin} from "playground-core/ide/domains/spec/state.ts";
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => {
-    const [node, setNode] = React.useState<Option<FlatNode>>(Option.Default.none());
+    const [node, setNode] = React.useState<Option<Node>>(Option.Default.none());
     const handlePick = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const list = e.currentTarget.files;
         if (!list || list.length === 0) return;
@@ -20,7 +20,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
     }, []);
     const formsMode: SpecMode = { mode: 'compose', entry: 'upload-folder' };
     const specOrigin: SpecOrigin = { origin: 'creating'}
-    return  (props.phase == 'choose' && props.entry == 'upload-folder' && props.progressIndicator == 'upload-started')
+    return  (props.phase == 'choose' && props.choose.entry == 'upload-folder' && props.choose.progressIndicator == 'upload-started')
         ?
             <div className="card bg-gray-200 text-black w-full  mt-12">
                 <div className="card-body items-start gap-3">
@@ -40,13 +40,13 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                             { node.kind == "r"
                                 && <MultiSelectCheckboxControlled
                                     workspace={{
-                                        kind: "stale",
+                                        kind: "view",
                                         nodes: node.value,
                                         ...formsMode,
                                         ...specOrigin,
                                     }}
                                     mode={'uploader'}
-                                    onAcceptedNodes={(node: FlatNode)=> {
+                                    onAcceptedNodes={(node: Node)=> {
                                     }
                                     } /> }
                         </div>

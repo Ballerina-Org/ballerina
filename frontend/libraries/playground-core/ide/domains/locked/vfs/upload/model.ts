@@ -1,16 +1,14 @@
-﻿
-import {KnownSections} from "../state";
-import {Option, Updater} from "ballerina-core";
+﻿import {Option, Updater} from "ballerina-core";
 
-export type Meta =  {
-    kind: "dir" | "file";
-    path: string;
-    size?: number;
-    isLeaf?: boolean;
-    content?: any;
-    checked: boolean;
+export type Meta = {
+    kind: 'dir' | 'file',
+    path: string,
+    size?: number,
+    isLeaf?: boolean,
+    content?: any,
+    checked: boolean,
 };
-//
+
 export type NodeId = number | string;
 
 //same as INode from "react-accessible-treeview" in web 
@@ -23,27 +21,27 @@ export interface INode<Meta> {
     metadata: Meta;
 }
 
-export type FlatNode = INode<Meta>;
+export type Node = INode<Meta>;
 
 export const FlatNode = {
     Updaters: {
         Template: {
-            fileContent: (content: any): Updater<FlatNode> =>
+            fileContent: (content: any): Updater<Node> =>
                 Updater(node =>
                     ({...node, metadata: {...node.metadata, content: content}}))
         }
     },
     Operations: {
-        filterLeafFolders:(node: FlatNode): FlatNode =>
+        filterLeafFolders:(node: Node): Node =>
             node.metadata.kind == "file" 
                 ? node 
                 : node.metadata.isLeaf 
                 ? ({...node, children: node.children?.map(n => FlatNode.Operations.filterLeafFolders(n))}) 
                 : node,
-        replaceFileAtPath: (root: FlatNode, path: string, newFile: FlatNode): FlatNode => {
+        replaceFileAtPath: (root: Node, path: string, newFile: Node): Node => {
             const parts = path.split("/").filter(Boolean);
 
-            const recurse = (node: FlatNode, pathParts: string[]): FlatNode => {
+            const recurse = (node: Node, pathParts: string[]): Node => {
                 if (pathParts.length === 0) return node;
 
                 const [current, ...rest] = pathParts;
@@ -60,10 +58,10 @@ export const FlatNode = {
 
             return recurse(root, parts);
         },
-        findFileByPath: (root: FlatNode, path: string): FlatNode | null => {
+        findFileByPath: (root: Node, path: string): Node | null => {
             const parts = path.split("/").filter(Boolean);
 
-            const recurse = (node: FlatNode, pathParts: string[]): FlatNode | null => {
+            const recurse = (node: Node, pathParts: string[]): Node | null => {
                 if (pathParts.length === 0) return null;
 
                 const [current, ...rest] = pathParts;
@@ -82,8 +80,8 @@ export const FlatNode = {
 
             return recurse(root, parts);
         },
-        findFileByName: (root: FlatNode, fileName: string): Option<FlatNode> => {
-            const recurse = (node: FlatNode): Option<FlatNode> => {
+        findFileByName: (root: Node, fileName: string): Option<Node> => {
+            const recurse = (node: Node): Option<Node> => {
                 if (node.metadata.kind === "file" && node.name === fileName) {
                     return Option.Default.some(node);
                 }
@@ -118,10 +116,11 @@ export const FlatNode = {
         //
         //     return recurse(root, parts);
         // },
-        findFolderByPath: (root: FlatNode, path: string): FlatNode | null => {
+        findFolderByPath: (root: Node, path: string): Node | null => {
+           
             const parts = path.split("/").filter(Boolean);
 
-            const recurse = (node: FlatNode, pathParts: string[]): FlatNode | null => {
+            const recurse = (node: Node, pathParts: string[]): Node | null => {
                 if (pathParts.length === 0) {
                     return node.metadata.kind === "dir" ? node : null;
                 }
@@ -129,7 +128,10 @@ export const FlatNode = {
                 if (node.metadata.kind !== "dir" || !node.children) return null;
 
                 const [current, ...rest] = pathParts;
-
+                if(current == "root") {
+                    debugger
+                    return node;
+                } 
                 const child = node.children.find(c => c.name === current);
                 if (!child) return null;
                 if (rest.length === 0 && child.metadata.kind === "file") {

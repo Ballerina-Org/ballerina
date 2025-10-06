@@ -1,9 +1,9 @@
 ﻿
 import {axiosVOE} from "./api";
-import {KnownSections} from "../domains/locked/vfs/state";
 import {ValueOrErrors} from "ballerina-core";
-import {FlatNode} from "../domains/locked/vfs/upload/model";
+import {Node} from "../domains/locked/vfs/upload/model";
 import {SpecMode} from "../domains/spec/state";
+import {KnownSections} from "../domains/types/Json";
 
 
 export const listSpecs = async () =>
@@ -14,13 +14,21 @@ export const listSpecs = async () =>
 
 export const getSpec = async (name: string) =>
 
-    await axiosVOE<{ folders: FlatNode, settings: {workspaceMode: string, dataEntry: string}}, any>({
+    await axiosVOE<{ folders: Node, settings: {workspaceMode: string, dataEntry: string}}, any>({
         method: "GET",
         url: `/specs/${name}`,
     });
 
+export const getZippedWorkspace = async (name: string) =>
+
+    await axiosVOE<any, any>({
+        method: "GET",
+        url: `/specs/${name}/download-zip`,
+        responseType: "blob"
+    });
+
 export const initSpec = async (name: string, formsMode: SpecMode) =>
-    await axiosVOE<{ folders: FlatNode, settings: {workspaceMode: string}}, any>({
+    await axiosVOE<{ folders: Node, settings: {workspaceMode: string}}, any>({
         method: "Post",
         url: `/specs/${name}`,
         data: {
@@ -29,18 +37,20 @@ export const initSpec = async (name: string, formsMode: SpecMode) =>
         }
     });
 
-export const postVfs = async (name: string, node: FlatNode) =>
+export const postVfs = async (name: string, node: Node) =>
     await axiosVOE<any>({
         method: "Post",
         url: `/specs/${name}/vfs`,
         data: node
     });
-// export const postVfsNode = async (name: string, node: FlatNode) =>
-//     await axiosVOE<any>({
-//         method: "Post",
-//         url: `/specs/${name}/vfs/node`,
-//         data: node
-//     });
+
+export const postCodegen = async (name: string, node: Node) =>
+    await axiosVOE<any>({
+        method: "Post",
+        url: `/specs/${name}/codegen`,
+        data: node
+    });
+
 export const getOrInitSpec = async (origin: 'create' | 'existing', formsMode: SpecMode, name: string) =>
     origin == 'existing' ? await getSpec(name) : await initSpec(name, formsMode).then(() => getSpec(name));
 
