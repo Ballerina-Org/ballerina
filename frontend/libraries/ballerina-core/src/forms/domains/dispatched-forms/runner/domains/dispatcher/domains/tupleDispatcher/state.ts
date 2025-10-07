@@ -67,6 +67,7 @@ export const TupleDispatcher = {
                     Map(
                       templates.map((template) => [template[0], template[1]]),
                     ),
+                    renderer.itemRenderers,
                     dispatcherContext.IdProvider,
                     dispatcherContext.ErrorRenderer,
                   )

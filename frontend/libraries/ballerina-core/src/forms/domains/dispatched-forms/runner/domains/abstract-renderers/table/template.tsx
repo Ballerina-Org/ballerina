@@ -37,6 +37,7 @@ import {
   SumNType,
   DispatchTableApiSource,
   ValueUnit,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -44,6 +45,7 @@ import {
   TableInitialiseFiltersAndSortingRunner,
   TableInitialiseTableRunner,
 } from "./coroutines/runner";
+import { TableCellRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/domains/tableCellRenderer/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -69,6 +71,7 @@ export const TableAbstractRenderer = <
       GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
+  CellRenderers: Map<string, TableCellRenderer<any>>,
   DetailsRenderer:
     | Template<
         RecordAbstractRendererReadonlyContext<
@@ -79,6 +82,7 @@ export const TableAbstractRenderer = <
         RecordAbstractRendererForeignMutationsExpected<Flags>
       >
     | undefined,
+  DetailsRendererRaw: NestedRenderer<any> | undefined,
   Layout: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -171,6 +175,11 @@ export const TableAbstractRenderer = <
           > &
             TableAbstractRendererState
         >((_) => {
+          const labelContext =
+            CommonAbstractRendererState.Operations.GetLabelContext(
+              _.labelContext,
+              CellRenderers.get(column)!,
+            );
           const rowState = _.customFormState.rowStates.get(rowId);
 
           const cellState =
@@ -207,6 +216,7 @@ export const TableAbstractRenderer = <
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            labelContext,
           };
         })
 
@@ -303,161 +313,172 @@ export const TableAbstractRenderer = <
           },
         }));
 
-  const embedDetailsRenderer = DetailsRenderer
-    ? (flags: Flags | undefined) =>
-        DetailsRenderer.mapContext<
-          TableAbstractRendererReadonlyContext<
-            CustomPresentationContext,
-            ExtraContext
-          > &
-            TableAbstractRendererState
-        >((_) => {
-          const { selectedDetailRow } = _.customFormState;
-
-          if (selectedDetailRow == undefined) {
-            console.error(
-              `Selected detail row is undefined\n
-              ...When rendering table field\n
-              ...${_.domNodeAncestorPath}`,
-            );
-            return undefined;
-          }
-
-          if (
-            !PredicateValue.Operations.IsString(selectedDetailRow) &&
-            !PredicateValue.Operations.IsUnit(selectedDetailRow)
-          ) {
-            console.error(
-              `Selected detail row is not a string or unit\n
-              ...When rendering table field\n
-              ...${_.domNodeAncestorPath}`,
-            );
-            return undefined;
-          }
-
-          const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
-            ? ValueUnit.Default()
-            : _.value.data.get(selectedDetailRow);
-
-          if (value == undefined) {
-            console.error(
-              `Value is undefined for selected detail row\n
-              ...When rendering table field\n
-              ...${_.domNodeAncestorPath}`,
-            );
-            return undefined;
-          }
-
-          const rowState = PredicateValue.Operations.IsString(selectedDetailRow)
-            ? (_.customFormState.rowStates.get(selectedDetailRow) ??
-              RecordAbstractRendererState.Default.fieldState(Map()))
-            : RecordAbstractRendererState.Default.fieldState(Map());
-
-          return {
-            value,
-            ...rowState,
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings.set("local", value),
-            extraContext: _.extraContext,
-            type: TableEntityType,
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          };
-        })
-          .mapStateFromProps<TableAbstractRendererState>(([props, updater]) => {
-            const { selectedDetailRow } = props.context.customFormState;
+  const embedDetailsRenderer =
+    DetailsRenderer && DetailsRendererRaw
+      ? (flags: Flags | undefined) =>
+          DetailsRenderer.mapContext<
+            TableAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
+              TableAbstractRendererState
+          >((_) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                DetailsRendererRaw,
+              );
+            const { selectedDetailRow } = _.customFormState;
 
             if (selectedDetailRow == undefined) {
               console.error(
                 `Selected detail row is undefined\n
+              ...When rendering table field\n
+              ...${_.domNodeAncestorPath}`,
+              );
+              return undefined;
+            }
+
+            if (
+              !PredicateValue.Operations.IsString(selectedDetailRow) &&
+              !PredicateValue.Operations.IsUnit(selectedDetailRow)
+            ) {
+              console.error(
+                `Selected detail row is not a string or unit\n
+              ...When rendering table field\n
+              ...${_.domNodeAncestorPath}`,
+              );
+              return undefined;
+            }
+
+            const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
+              ? ValueUnit.Default()
+              : _.value.data.get(selectedDetailRow);
+
+            if (value == undefined) {
+              console.error(
+                `Value is undefined for selected detail row\n
+              ...When rendering table field\n
+              ...${_.domNodeAncestorPath}`,
+              );
+              return undefined;
+            }
+
+            const rowState = PredicateValue.Operations.IsString(
+              selectedDetailRow,
+            )
+              ? (_.customFormState.rowStates.get(selectedDetailRow) ??
+                RecordAbstractRendererState.Default.fieldState(Map()))
+              : RecordAbstractRendererState.Default.fieldState(Map());
+
+            return {
+              value,
+              ...rowState,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: _.bindings.set("local", value),
+              extraContext: _.extraContext,
+              type: TableEntityType,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              labelContext,
+            };
+          })
+            .mapStateFromProps<TableAbstractRendererState>(
+              ([props, updater]) => {
+                const { selectedDetailRow } = props.context.customFormState;
+
+                if (selectedDetailRow == undefined) {
+                  console.error(
+                    `Selected detail row is undefined\n
                 ...When rendering table detail view \n
                 ...${props.context.domNodeAncestorPath}`,
-              );
-              return id;
-            }
-            if (!PredicateValue.Operations.IsString(selectedDetailRow)) {
-              return id;
-            }
-            return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
-              MapRepo.Updaters.upsert(
-                selectedDetailRow,
-                () => RecordAbstractRendererState.Default.fieldState(Map()),
-                updater,
-              ),
-            );
-          })
-          .mapForeignMutationsFromProps<
-            TableAbstractRendererForeignMutationsExpected<Flags>
-          >((props) => ({
-            onChange: (
-              nestedUpdater: Option<BasicUpdater<ValueRecord>>,
-              nestedDelta: DispatchDelta<Flags>,
-            ) => {
-              const { selectedDetailRow } = props.context.customFormState;
-
-              if (selectedDetailRow == undefined) {
-                console.error(
-                  `Selected detail row is undefined\n
-                  ...When rendering table field\n
-                  ...${props.context.domNodeAncestorPath}`,
-                );
-                return id;
-              }
-
-              if (
-                !PredicateValue.Operations.IsString(selectedDetailRow) &&
-                !PredicateValue.Operations.IsUnit(selectedDetailRow)
-              ) {
-                console.error(
-                  `Selected detail row is not a string or unit\n
-                    ...When rendering table field\n
-                    ...${props.context.domNodeAncestorPath}`,
-                );
-                return id;
-              }
-
-              if (PredicateValue.Operations.IsString(selectedDetailRow)) {
-                props.setState(
-                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                    replaceWith(true),
+                  );
+                  return id;
+                }
+                if (!PredicateValue.Operations.IsString(selectedDetailRow)) {
+                  return id;
+                }
+                return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+                  MapRepo.Updaters.upsert(
+                    selectedDetailRow,
+                    () => RecordAbstractRendererState.Default.fieldState(Map()),
+                    updater,
                   ),
                 );
+              },
+            )
+            .mapForeignMutationsFromProps<
+              TableAbstractRendererForeignMutationsExpected<Flags>
+            >((props) => ({
+              onChange: (
+                nestedUpdater: Option<BasicUpdater<ValueRecord>>,
+                nestedDelta: DispatchDelta<Flags>,
+              ) => {
+                const { selectedDetailRow } = props.context.customFormState;
 
-                const delta: DispatchDelta<Flags> = {
-                  kind: "TableValue",
-                  id: selectedDetailRow,
-                  nestedDelta: nestedDelta,
-                  flags,
-                  sourceAncestorLookupTypeNames:
-                    nestedDelta.sourceAncestorLookupTypeNames,
-                };
+                if (selectedDetailRow == undefined) {
+                  console.error(
+                    `Selected detail row is undefined\n
+                  ...When rendering table field\n
+                  ...${props.context.domNodeAncestorPath}`,
+                  );
+                  return id;
+                }
 
-                const updater =
-                  nestedUpdater.kind == "l"
-                    ? nestedUpdater
-                    : Option.Default.some(
-                        ValueTable.Updaters.data(
-                          MapRepo.Updaters.update(
-                            selectedDetailRow,
-                            nestedUpdater.value,
+                if (
+                  !PredicateValue.Operations.IsString(selectedDetailRow) &&
+                  !PredicateValue.Operations.IsUnit(selectedDetailRow)
+                ) {
+                  console.error(
+                    `Selected detail row is not a string or unit\n
+                    ...When rendering table field\n
+                    ...${props.context.domNodeAncestorPath}`,
+                  );
+                  return id;
+                }
+
+                if (PredicateValue.Operations.IsString(selectedDetailRow)) {
+                  props.setState(
+                    TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  );
+
+                  const delta: DispatchDelta<Flags> = {
+                    kind: "TableValue",
+                    id: selectedDetailRow,
+                    nestedDelta: nestedDelta,
+                    flags,
+                    sourceAncestorLookupTypeNames:
+                      nestedDelta.sourceAncestorLookupTypeNames,
+                  };
+
+                  const updater =
+                    nestedUpdater.kind == "l"
+                      ? nestedUpdater
+                      : Option.Default.some(
+                          ValueTable.Updaters.data(
+                            MapRepo.Updaters.update(
+                              selectedDetailRow,
+                              nestedUpdater.value,
+                            ),
                           ),
-                        ),
-                      );
+                        );
 
-                props.foreignMutations.onChange(updater, delta);
-              }
-            },
-          }))
-    : undefined;
+                  props.foreignMutations.onChange(updater, delta);
+                }
+              },
+            }))
+      : undefined;
 
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
     embedCellTemplate(column, cellTemplate.template),

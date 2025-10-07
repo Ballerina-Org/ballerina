@@ -78,6 +78,7 @@ export const UnionDispatcher = {
                       Map(
                         templates.map((template) => [template[0], template[1]]),
                       ),
+                      renderer.cases,
                       dispatcherContext.IdProvider,
                       dispatcherContext.ErrorRenderer,
                     )

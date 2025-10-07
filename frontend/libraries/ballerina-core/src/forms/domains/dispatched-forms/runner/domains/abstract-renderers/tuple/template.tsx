@@ -23,6 +23,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import {
   DispatchParsedType,
@@ -49,6 +50,7 @@ export const DispatchTupleAbstractRenderer = <
       CommonAbstractRendererForeignMutationsExpected<Flags>
     >
   >,
+  ItemRenderers: Array<NestedRenderer<any>>,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -63,27 +65,36 @@ export const DispatchTupleAbstractRenderer = <
               ExtraContext
             > &
               TupleAbstractRendererState,
-          ) => ({
-            ...(_.itemFormStates.get(itemIndex) ||
-              ItemFormStates.get(itemIndex)!()),
-            value: _.value.values.get(itemIndex)!,
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            locked: _.locked,
-            bindings: _.bindings,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            extraContext: _.extraContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            customPresentationContext: _.customPresentationContext,
-            type: _.type.args[itemIndex],
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const itemRenderer = ItemRenderers[itemIndex];
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                itemRenderer,
+              );
+            return {
+              ...(_.itemFormStates.get(itemIndex) ||
+                ItemFormStates.get(itemIndex)!()),
+              value: _.value.values.get(itemIndex)!,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              locked: _.locked,
+              bindings: _.bindings,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              extraContext: _.extraContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              customPresentationContext: _.customPresentationContext,
+              type: _.type.args[itemIndex],
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              labelContext: labelContext,
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState(
           (

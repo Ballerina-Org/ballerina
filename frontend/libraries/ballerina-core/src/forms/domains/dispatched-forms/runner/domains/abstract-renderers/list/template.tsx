@@ -16,6 +16,7 @@ import {
   id,
   BasicUpdater,
   ValueTuple,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { ListMethods } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/list/state";
@@ -46,6 +47,7 @@ export const ListAbstractRenderer = <
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
+  ElementRenderer: NestedRenderer<any>,
   methods: ListMethods,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
@@ -60,29 +62,37 @@ export const ListAbstractRenderer = <
               ExtraContext
             > &
               ListAbstractRendererState,
-          ) => ({
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            value: PredicateValue.Operations.IsUnit(_.value)
-              ? _.value
-              : _.value.values.get(elementIndex) || GetDefaultElementValue(),
-            ...(_.elementFormStates?.get(elementIndex) ||
-              GetDefaultElementState()),
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            type: _.type.args[0],
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[list][${elementIndex}]`,
-            typeAncestors: [_.type as DispatchParsedType<T>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                ElementRenderer,
+              );
+            return {
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              value: PredicateValue.Operations.IsUnit(_.value)
+                ? _.value
+                : _.value.values.get(elementIndex) || GetDefaultElementValue(),
+              ...(_.elementFormStates?.get(elementIndex) ||
+                GetDefaultElementState()),
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              type: _.type.args[0],
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              typeAncestors: [_.type as DispatchParsedType<T>].concat(
+                _.typeAncestors,
+              ),
+              labelContext,
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState((_) =>
           ListAbstractRendererState.Updaters.Core.elementFormStates(
@@ -156,29 +166,37 @@ export const ListAbstractRenderer = <
               ExtraContext
             > &
               ListAbstractRendererState,
-          ) => ({
-            disabled: _.disabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            value: PredicateValue.Operations.IsUnit(_.value)
-              ? _.value
-              : _.value.values.get(elementIndex) || GetDefaultElementValue(),
-            ...(_.elementFormStates?.get(elementIndex) ||
-              GetDefaultElementState()),
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            type: _.type.args[0],
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[list][${elementIndex}]`,
-            typeAncestors: [_.type as DispatchParsedType<T>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                ElementRenderer,
+              );
+            return {
+              disabled: _.disabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              value: PredicateValue.Operations.IsUnit(_.value)
+                ? _.value
+                : _.value.values.get(elementIndex) || GetDefaultElementValue(),
+              ...(_.elementFormStates?.get(elementIndex) ||
+                GetDefaultElementState()),
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              type: ElementRenderer.renderer.type,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              typeAncestors: [_.type as DispatchParsedType<T>].concat(
+                _.typeAncestors,
+              ),
+              labelContext,
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState((_) =>
           ListAbstractRendererState.Updaters.Core.elementFormStates(id),

@@ -281,7 +281,9 @@ export const TableDispatcher = {
                         return ValueOrErrors.Default.return(
                           TableAbstractRenderer(
                             Map(cellTemplates),
+                            renderer.columns,
                             detailsRenderer,
+                            renderer.detailsRenderer,
                             renderer.visibleColumns,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,

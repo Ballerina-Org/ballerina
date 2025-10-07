@@ -126,6 +126,7 @@ export const RecordDispatcher = {
                 Map(
                   fieldTemplates.map((template) => [template[0], template[1]]),
                 ),
+                renderer.fields,
                 renderer.tabs,
                 renderer.disabledFields,
                 dispatcherContext.IdProvider,
