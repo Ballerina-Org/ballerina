@@ -21,7 +21,11 @@ module Model =
     | Star
     | Arrow of Kind * Kind
 
-  and TypeSymbol = { Name: Identifier; Guid: Guid }
+  and TypeSymbol =
+    { Name: Identifier
+      Guid: Guid }
+
+    override s.ToString() = s.Name.ToString()
 
   and TypeVar =
     { Name: string
@@ -166,6 +170,10 @@ module Model =
       Arguments: List<TypeValue>
       UnionLike: Option<OrderedMap<TypeSymbol, TypeExpr>>
       RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr>> }
+
+    override self.ToString() =
+      let comma = ", "
+      $"{self.Sym.Name}[{String.Join(comma, self.Arguments)}]"
 
   and PrimitiveType =
     | Unit

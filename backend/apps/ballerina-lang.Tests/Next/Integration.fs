@@ -524,3 +524,34 @@ in match t with
     | _ -> Assert.Fail($"Expected 18, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration list append succeeds`` () =
+  let program =
+    """
+let cons = List::Cons [string]
+in let nil = List::Nil [string] ()
+in let l1 = cons("hello", cons(" ", cons("world", nil)))
+in let l2 = cons("bonjour", cons(" ", cons("monde", nil)))
+in List::append [string] l1 l2
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Ext(ValueExt(Choice1Of3(ListExt.ListValues(ListValues.List [ Value.Primitive(String "hello")
+                                                                   Value.Primitive(String " ")
+                                                                   Value.Primitive(String "world")
+                                                                   Value.Primitive(String "bonjour")
+                                                                   Value.Primitive(String " ")
+                                                                   Value.Primitive(String "monde") ])))) ->
+      Assert.Pass()
+    | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")

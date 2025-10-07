@@ -15,6 +15,11 @@ module Patterns =
       | List_Map v -> v.f |> sum.Return
       | _ -> $"Error: Expected List_Map, found {op}" |> Errors.Singleton |> sum.Throw
 
+    static member AsAppend(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue, 'ext>>, Errors> =
+      match op with
+      | List_Append v -> v.l |> sum.Return
+      | _ -> $"Error: Expected List_Append, found {op}" |> Errors.Singleton |> sum.Throw
+
     static member AsFilter(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue, 'ext>>, Errors> =
       match op with
       | List_Filter v -> v.f |> sum.Return

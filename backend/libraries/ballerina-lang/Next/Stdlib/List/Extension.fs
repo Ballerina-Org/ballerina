@@ -31,6 +31,7 @@ module Extension =
     let listLengthId = Identifier.FullyQualified([ "List" ], "length")
     let listFilterId = Identifier.FullyQualified([ "List" ], "filter")
     let listMapId = Identifier.FullyQualified([ "List" ], "map")
+    let listAppendId = Identifier.FullyQualified([ "List" ], "append")
     let listConsId = Identifier.FullyQualified([ "List" ], "Cons")
     let listNilId = Identifier.FullyQualified([ "List" ], "Nil")
 
@@ -289,6 +290,54 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
+    let appendOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      listAppendId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("a", aKind),
+            TypeExpr.Arrow(
+              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a")),
+              TypeExpr.Arrow(
+                TypeExpr.Apply(
+                  TypeExpr.Lookup(Identifier.LocalScope "List"),
+                  TypeExpr.Lookup(Identifier.LocalScope "a")
+                ),
+                TypeExpr.Apply(
+                  TypeExpr.Lookup(Identifier.LocalScope "List"),
+                  TypeExpr.Lookup(Identifier.LocalScope "a")
+                )
+              )
+            )
+          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Star)
+        Operation = List_Append {| l = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | List_Append v -> Some(List_Append v)
+            | _ -> None)
+        Apply =
+          fun loc0 (op, v) ->
+            reader {
+              let! op =
+                op
+                |> ListOperations.AsAppend
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return ListOperations.List_Append({| l = Some v |}) |> operationLens.Set |> Ext
+              | Some l -> // the closure has the first list - second step in the application
+                let! l = l |> getValueAsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! v = v |> getValueAsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let v' = List.append l v
+
+                return ListValues.List v' |> valueLens.Set |> Ext
+            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+      }
+
     let consOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listConsId,
       { Type =
@@ -406,6 +455,7 @@ module Extension =
           foldOperation
           filterOperation
           mapOperation
+          appendOperation
           consOperation
           nilOperation ]
         |> Map.ofList

@@ -1174,27 +1174,33 @@ module Renderers =
         let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse primitivesExt exprParser fields
 
-        let! visible =
-          visibleJson
-          |> Sum.toOption
-          |> Option.map (exprParser >> state.OfSum)
-          |> state.RunOption
+        match renderer with
+        // FIXME: This replicas a shortcoming of the frontend parser, can be removed once fixed
+        | Renderer.RecordRenderer _ ->
+          return!
+            state.Throw(Errors.Singleton """For record fields, record renderers must be wrapped in {"renderer": ...}""")
+        | _ ->
+          let! visible =
+            visibleJson
+            |> Sum.toOption
+            |> Option.map (exprParser >> state.OfSum)
+            |> state.RunOption
 
-        let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
+          let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
 
-        let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
+          let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
 
-        let fc =
-          { FieldName = fieldName
-            FieldId = Guid.CreateVersion7()
-            Label = label
-            Tooltip = tooltip
-            Details = details
-            Renderer = renderer
-            Visible = visible
-            Disabled = disabled }
+          let fc =
+            { FieldName = fieldName
+              FieldId = Guid.CreateVersion7()
+              Label = label
+              Tooltip = tooltip
+              Details = details
+              Renderer = renderer
+              Visible = visible
+              Disabled = disabled }
 
-        return fc
+          fc
       }
       |> state.WithErrorContext $"...when parsing field {fieldName}"
 
