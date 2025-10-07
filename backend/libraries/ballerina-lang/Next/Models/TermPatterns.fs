@@ -107,9 +107,11 @@ module Patterns =
       | Value.Var var -> sum.Return var
       | other -> sum.Throw(Errors.Singleton $"Expected a variable type but got {other}")
 
-    static member AsLambda(v: Value<'T, 'valueExt>) : Sum<Var * Expr<'T>, Errors> =
+    static member AsLambda
+      (v: Value<'T, 'valueExt>)
+      : Sum<Var * Expr<'T> * Map<Identifier, Value<'T, 'valueExt>>, Errors> =
       match v with
-      | Value.Lambda(v, e) -> sum.Return(v, e)
+      | Value.Lambda(v, e, closure) -> sum.Return(v, e, closure)
       | other -> sum.Throw(Errors.Singleton $"Expected a lambda but got {other}")
 
     static member AsTypeLamba(v: Value<'T, 'valueExt>) : Sum<TypeParameter * Expr<'T>, Errors> =

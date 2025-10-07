@@ -154,7 +154,7 @@ module Types =
                       Applicable(fun arg ->
                         reader {
                           let! constructed = caseExt.Apply loc0 (v, arg)
-                          return constructed |> Ext
+                          return constructed
                         })
                   },
                   [ acc loc0 v ]

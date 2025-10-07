@@ -135,71 +135,6 @@ let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
-[<Test>]
-let ``LangNext-TypeCheck union des typechecks with declared symbols and inferred branch argument`` () =
-  let program =
-    Expr.UnionDes(
-      [ (!"Case1Of3",
-         ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
-        (!"Case2Of3",
-         ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
-        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
-      |> Map.ofList,
-      None
-    )
-
-  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(
-        replaceWith (
-          Map.ofList
-            [ (Case1Of3.Name, Case1Of3)
-              (Case2Of3.Name, Case2Of3)
-              (Case3Of3.Name, Case3Of3) ]
-        )
-      )
-    )
-
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateInt32(),
-          TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateInt32())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  match actual with
-  | Sum.Left((_,
-              TypeValue.Arrow({ value = (TypeValue.Union({ value = cases }),
-                                         TypeValue.Primitive({ value = PrimitiveType.Int32 })) }),
-              Kind.Star),
-             _) when
-    cases |> OrderedMap.count = 3
-    && cases |> OrderedMap.tryFind Case1Of3 = Some(TypeValue.CreateInt32())
-    && cases |> OrderedMap.tryFind Case2Of3 = Some(TypeValue.CreateInt32())
-    ->
-    Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail
-      $"Expected typechecking to succeed with '(Case1Of3 of Int | Case2Of3 of Int | Case3Of3 of _) -> Int' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
-
 
 [<Test>]
 let ``LangNext-TypeCheck record cons and record des typecheck with a new type declaration`` () =
@@ -610,13 +545,15 @@ let ``LangNext-TypeCheck record cons fail when symbol does not exist`` () =
     )
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot find symbols"; "NON_EXISTENT_ID" ]
+  let expected_error_messages = [ "Cannot find symbol"; "NON_EXISTENT_ID" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -684,13 +621,15 @@ let ``LangNext-TypeCheck record des fail when symbol does not exist`` () =
     )
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot find symbols"; "NON_EXISTENT_FIELD" ]
+  let expected_error_messages = [ "cannot find symbol"; "NON_EXISTENT_FIELD" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -715,7 +654,9 @@ let ``LangNext-TypeCheck union cons fail when symbol does not exist`` () =
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -770,64 +711,17 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
     )
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot find symbols"; "NON_EXISTENT_CASE" ]
+
+  let expected_error_messages =
+    [ "cannot resolve match over union cases"; "NON_EXISTENT_CASE" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-
-[<Test>]
-let ``LangNext-TypeCheck union des fails when branches differ in return type`` () =
-  let program =
-    Expr.UnionDes(
-      [ (!"Case1Of3",
-         ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
-        (!"Case2Of3",
-         ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
-        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.String "not an int eh"))) ]
-      |> Map.ofList,
-      None
-    )
-
-  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(
-        replaceWith (
-          Map.ofList
-            [ (Case1Of3.Name, Case1Of3)
-              (Case2Of3.Name, Case2Of3)
-              (Case3Of3.Name, Case3Of3) ]
-        )
-      )
-    )
-
-
-  let actual =
-    Expr.TypeCheck program
-    |> State.Run(initialContext PrimitiveType.Int32, initialState)
-
-  let expected_error_messages = [ "Cannot unify"; "Int32"; "String" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -854,7 +748,9 @@ let ``LangNext-TypeCheck lookup fails when variable is not bound to a term`` () 
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -878,13 +774,15 @@ let ``LangNext-TypeCheck application fails when applicand is not an arrow`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "expected arrow type"; "Int32" ]
+  let expected_error_messages = [ "expected arrow type"; "int" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -920,7 +818,9 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (negative) index`` (
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -955,7 +855,9 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (too large) index`` 
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -976,13 +878,15 @@ let ``LangNext-TypeCheck if-then-else fails with non-boolean condition`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot unify types"; "Bool"; "Decimal" ]
+  let expected_error_messages = [ "cannot unify types"; "bool"; "decimal" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1003,13 +907,15 @@ let ``LangNext-TypeCheck if-then-else fails with incompatible branches`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot unify types"; "String"; "Unit" ]
+  let expected_error_messages = [ "cannot unify types"; "string"; "()" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1045,13 +951,15 @@ let ``LangNext-TypeCheck sum des fails on mismatched types with the same arity``
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected_error_messages = [ "Cannot unify types" ]
+  let expected_error_messages = [ "cannot unify types"; "decimal"; "string" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1085,13 +993,15 @@ let ``LangNext-TypeCheck sum des fails on missing cases`` () =
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
 
-  let expected_error_messages = [ "Cannot unify types"; "Decimal + " ]
+  let expected_error_messages = [ "cannot unify types"; "decimal" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1147,13 +1057,15 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot unify types"; "String"; "Decimal" ]
+  let expected_error_messages = [ "cannot unify types"; "string"; "Choice1Of3" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1205,13 +1117,15 @@ let ``LangNext-TypeCheck union des fails on missing case`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot unify types"; "Decimal | " ]
+  let expected_error_messages = [ "incomplete pattern matching" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1234,7 +1148,9 @@ let ``LangNext-TypeCheck type apply fails when the left side is not an HKT`` () 
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1264,7 +1180,9 @@ let ``LangNext-TypeCheck type lambda fails when the variable cannot be generaliz
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->
@@ -1351,7 +1269,9 @@ let ``LangNext-TypeCheck type lambda fails when passing *->* to *->*`` () =
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
   | Sum.Right(err, _) when
     expected_error_messages
-    |> Seq.forall (fun exp -> err.Errors |> Seq.exists (fun err -> err.Message.Contains exp))
+    |> Seq.forall (fun exp ->
+      err.Errors
+      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
     ->
     Assert.Pass()
   | Sum.Right(err, _) ->

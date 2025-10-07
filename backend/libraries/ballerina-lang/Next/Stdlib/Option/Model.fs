@@ -9,6 +9,23 @@ module Model =
     | Option_Some
     | Option_None
 
-  type OptionOperations<'ext> = Option_Map of {| f: Option<Value<TypeValue, 'ext>> |}
+    override self.ToString() : string =
+      match self with
+      | Option_Some -> "Option::Some"
+      | Option_None -> "Option::None"
 
-  type OptionValues<'ext> = Option of Option<Value<TypeValue, 'ext>>
+  type OptionOperations<'ext> =
+    | Option_Map of {| f: Option<Value<TypeValue, 'ext>> |}
+
+    override self.ToString() : string =
+      match self with
+      | Option_Map _ -> "Option::map"
+
+
+  type OptionValues<'ext> =
+    | Option of Option<Value<TypeValue, 'ext>>
+
+    override self.ToString() : string =
+      match self with
+      | Option(Some v) -> $"Some({v.ToString()})"
+      | Option(None) -> "None"

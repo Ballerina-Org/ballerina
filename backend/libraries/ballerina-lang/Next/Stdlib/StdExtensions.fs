@@ -19,6 +19,12 @@ open Ballerina.DSL.Next.StdLib.Bool
 type ValueExt =
   | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt>
 
+  override self.ToString() =
+    match self with
+    | ValueExt(Choice1Of3 ext) -> ext.ToString()
+    | ValueExt(Choice2Of3 ext) -> ext.ToString()
+    | ValueExt(Choice3Of3 ext) -> ext.ToString()
+
   static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
@@ -26,10 +32,21 @@ and ListExt =
   | ListOperations of ListOperations<ValueExt>
   | ListValues of ListValues<ValueExt>
 
+  override self.ToString() : string =
+    match self with
+    | ListOperations ops -> ops.ToString()
+    | ListValues vals -> vals.ToString()
+
 and OptionExt =
   | OptionOperations of OptionOperations<ValueExt>
   | OptionValues of OptionValues<ValueExt>
   | OptionConstructors of OptionConstructors
+
+  override self.ToString() : string =
+    match self with
+    | OptionOperations ops -> ops.ToString()
+    | OptionValues vals -> vals.ToString()
+    | OptionConstructors cons -> cons.ToString()
 
 and PrimitiveExt =
   | BoolOperations of BoolOperations<ValueExt>
@@ -43,6 +60,20 @@ and PrimitiveExt =
   | TimeSpanOperations of TimeSpanOperations<ValueExt>
   | StringOperations of StringOperations<ValueExt>
   | GuidOperations of GuidOperations<ValueExt>
+
+  override self.ToString() : string =
+    match self with
+    | BoolOperations ops -> ops.ToString()
+    | Int32Operations ops -> ops.ToString()
+    | Int64Operations ops -> ops.ToString()
+    | Float32Operations ops -> ops.ToString()
+    | Float64Operations ops -> ops.ToString()
+    | DecimalOperations ops -> ops.ToString()
+    | DateOnlyOperations ops -> ops.ToString()
+    | DateTimeOperations ops -> ops.ToString()
+    | TimeSpanOperations ops -> ops.ToString()
+    | StringOperations ops -> ops.ToString()
+    | GuidOperations ops -> ops.ToString()
 
 type StdExtensions =
   { List: TypeExtension<ValueExt, Unit, ListValues<ValueExt>, ListOperations<ValueExt>>

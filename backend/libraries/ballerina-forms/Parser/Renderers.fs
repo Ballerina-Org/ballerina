@@ -319,10 +319,10 @@ module Renderers =
 
               return
                 MapRenderer
-                  {| Label = label
-                     Map = name
-                     Key = keyRenderer
-                     Value = valueRenderer |}
+                  { Label = label
+                    Map = name
+                    Key = keyRenderer
+                    Value = valueRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -358,10 +358,10 @@ module Renderers =
 
               return
                 SumRenderer
-                  {| Sum = name
-                     Label = label
-                     Left = leftRenderer
-                     Right = rightRenderer |}
+                  { Sum = name
+                    Label = label
+                    Left = leftRenderer
+                    Right = rightRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -395,10 +395,10 @@ module Renderers =
 
               let res =
                 OptionRenderer
-                  {| Label = label
-                     Option = name
-                     Some = someRenderer
-                     None = noneRenderer |}
+                  { Label = label
+                    Option = name
+                    Some = someRenderer
+                    None = noneRenderer }
 
               return res
             }
@@ -461,11 +461,11 @@ module Renderers =
 
               return
                 OneRenderer
-                  {| Label = label
-                     One = name
-                     OneApiId = oneApiId
-                     Details = details
-                     Preview = preview |}
+                  { Label = label
+                    One = name
+                    OneApiId = oneApiId
+                    Details = details
+                    Preview = preview }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -496,9 +496,9 @@ module Renderers =
 
               return
                 ReadOnlyRenderer
-                  {| ReadOnly = name
-                     Label = label
-                     Value = valueRenderer |}
+                  { ReadOnly = name
+                    Label = label
+                    Value = valueRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -540,10 +540,10 @@ module Renderers =
 
               return
                 ListRenderer
-                  {| Label = label
-                     List = name
-                     Element = elementRenderer
-                     MethodLabels = actionLabels |}
+                  { Label = label
+                    List = name
+                    Element = elementRenderer
+                    MethodLabels = actionLabels }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -664,9 +664,9 @@ module Renderers =
             else
               return
                 TupleRenderer
-                  {| Label = label
-                     Tuple = name
-                     Elements = itemRenderers |}
+                  { Label = label
+                    Tuple = name
+                    Elements = itemRenderers }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
@@ -697,8 +697,8 @@ module Renderers =
           |> state.RunOption
 
         Renderer.RecordRenderer
-          {| Renderer = renderer
-             Fields = formFields |}
+          { Renderer = renderer
+            Fields = formFields }
       }
 
     static member ParseUnionRenderer
@@ -755,7 +755,7 @@ module Renderers =
                 |> state.Map(Map.ofSeq)
 
 
-              Renderer.UnionRenderer {| Renderer = renderer; Cases = cases |}
+              Renderer.UnionRenderer { Renderer = renderer; Cases = cases }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }

@@ -129,9 +129,9 @@ module Model =
           fields |> OrderedMap.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
 
         $"{{{String.Join(comma, fieldStrs)}}}"
-      | Tuple types ->
-        let comma = ", "
-        $"[{String.Join(comma, types)}]"
+      | Tuple({ value = types }) ->
+        let comma = " * "
+        $"({String.Join(comma, types)})"
       | Union({ value = types }) ->
         let comma = " | "
 
@@ -157,6 +157,8 @@ module Model =
     { value: 'v
       source: TypeExprSourceMapping }
 
+    override self.ToString() = self.value.ToString()
+
   and ImportedTypeValue =
     { Id: Identifier
       Sym: TypeSymbol
@@ -178,3 +180,18 @@ module Model =
     | DateTime
     | DateOnly
     | TimeSpan
+
+    override self.ToString() =
+      match self with
+      | Unit -> "()"
+      | Guid -> "Guid"
+      | Int32 -> "int"
+      | Int64 -> "int:Signed64"
+      | Float32 -> "float:Float32"
+      | Float64 -> "float"
+      | Decimal -> "decimal"
+      | Bool -> "boolean"
+      | String -> "string"
+      | DateTime -> "time:Utc"
+      | DateOnly -> "time:Date"
+      | TimeSpan -> "time:Interval"

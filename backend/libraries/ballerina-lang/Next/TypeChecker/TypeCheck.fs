@@ -19,6 +19,7 @@ module TypeCheck =
   open Ballerina.Fun
   open System.Text.RegularExpressions
   open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Collections.NonEmptyList
 
 
   type TypeCheckContext =
@@ -88,7 +89,9 @@ module TypeCheck =
           |> state.OfSum
       }
 
-    static member TryFindUnionCaseConstructor(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue> =
+    static member TryFindUnionCaseConstructor
+      (id: Identifier, loc: Location)
+      : TypeCheckerResult<TypeValue * OrderedMap<TypeSymbol, TypeValue>> =
       state {
         let! ctx = state.GetState()
 
@@ -247,7 +250,16 @@ module TypeCheck =
                       let! f_lookup = f |> Expr.AsLookup |> ofSum
 
                       return!
-                        state.Either
+                        state.Either3
+                          (state {
+                            let! union_cons_t = TypeCheckState.TryFindUnionCaseConstructor(f_lookup, loc0)
+                            let f_i = union_cons_t |> fst
+                            let f_o = union_cons_t |> snd |> TypeValue.CreateUnion
+                            let f_k = Kind.Star
+                            do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T>.liftUnification
+
+                            return Expr.Apply(Expr.Lookup f_lookup, a, loc0), f_o, f_k
+                          })
                           (state {
                             match f_lookup with
                             | Identifier.LocalScope name
@@ -263,6 +275,7 @@ module TypeCheck =
                                                 Count = count },
                                               a_expr,
                                               loc0)
+                                |> state.MapError(Errors.SetPriority ErrorPriority.High)
                             | _ ->
                               return!
                                 state.Throw(
@@ -336,27 +349,31 @@ module TypeCheck =
                                     TypeValue.Unify(loc0, TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
                                     |> Expr<'T>.liftUnification
 
-                                  let! bool_op, bool_op_t, bool_op_k =
-                                    !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name), loc0)
+                                  return!
+                                    state {
+                                      let! bool_op, bool_op_t, bool_op_k =
+                                        !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name), loc0)
 
-                                  do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
+                                      do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                                  do!
-                                    TypeValue.Unify(
-                                      loc0,
-                                      TypeValue.CreateArrow(
-                                        TypeValue.CreatePrimitive PrimitiveType.Bool,
-                                        TypeValue.CreatePrimitive PrimitiveType.Bool
-                                      ),
-                                      bool_op_t
-                                    )
-                                    |> Expr<'T>.liftUnification
+                                      do!
+                                        TypeValue.Unify(
+                                          loc0,
+                                          TypeValue.CreateArrow(
+                                            TypeValue.CreatePrimitive PrimitiveType.Bool,
+                                            TypeValue.CreatePrimitive PrimitiveType.Bool
+                                          ),
+                                          bool_op_t
+                                        )
+                                        |> Expr<'T>.liftUnification
 
-                                  let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
-                                  let k_res = Kind.Star
-                                  return Expr.Apply(bool_op, a, loc0), t_res, k_res
+                                      let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
+                                      let k_res = Kind.Star
+                                      return Expr.Apply(bool_op, a, loc0), t_res, k_res
+                                    }
+                                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
+
                                 }
-                                |> state.MapError(Errors.SetPriority ErrorPriority.High)
                             | _ ->
                               return!
                                 $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
@@ -373,6 +390,7 @@ module TypeCheck =
                         TypeValue.AsArrow t_f
                         |> ofSum
                         |> state.Map WithTypeExprSourceMapping.Getters.Value
+                        |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
 
                       return!
                         state.Any(
@@ -395,15 +413,22 @@ module TypeCheck =
                                 let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
                                 return Expr.Apply(f, a, loc0), f_output, Kind.Star
                               }
-                              |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                              |> state.MapError(Errors.SetPriority ErrorPriority.High)
                           },
                           [ state {
                               do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T>.liftUnification
+
                               let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
                               return Expr.Apply(f, a, loc0), f_output, Kind.Star
                             }
-                            |> state.MapError(Errors.SetPriority ErrorPriority.Medium) ]
+                            |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                            // $"Error: cannot resolve application"
+                            // |> error
+                            // |> state.Throw
+                            // |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                            ]
                         )
+                        |> state.MapError Errors.FilterHighestPriorityOnly
                     })
 
               }
@@ -629,25 +654,33 @@ module TypeCheck =
                       (state {
                         let! field_symbol = TypeCheckState.TryFindSymbol(fieldName, loc0)
 
-                        let! t_field =
-                          t_fields
-                          |> OrderedMap.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
-                          |> ofSum
+                        return!
+                          state {
+                            let! t_field =
+                              t_fields
+                              |> OrderedMap.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
+                              |> ofSum
 
-                        return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
+                            return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
+                          }
+                          |> state.MapError(Errors.SetPriority ErrorPriority.High)
                       })
                       (state {
                         let! localFieldName = Identifier.AsLocalScope fieldName |> ofSum
 
-                        let! t_field =
-                          t_fields
-                          |> OrderedMap.toSeq
-                          |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
-                          |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> error)
-                          |> state.OfSum
-                          |> state.Map snd
+                        return!
+                          state {
+                            let! t_field =
+                              t_fields
+                              |> OrderedMap.toSeq
+                              |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
+                              |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> error)
+                              |> state.OfSum
+                              |> state.Map snd
 
-                        return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
+                            return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
+                          }
+                          |> state.MapError(Errors.SetPriority ErrorPriority.High)
                       })
                 })
                 (state {
@@ -657,25 +690,29 @@ module TypeCheck =
                     |> ofSum
                     |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  let! fieldName = Identifier.AsLocalScope fieldName |> ofSum
+                  return!
+                    state {
+                      let! fieldName = Identifier.AsLocalScope fieldName |> ofSum
 
-                  let index =
-                    fieldName
-                    |> String.filter Char.IsDigit
-                    |> Int32.TryParse
-                    |> function
-                      | true, v -> Some v
-                      | false, _ -> None
+                      let index =
+                        fieldName
+                        |> String.filter Char.IsDigit
+                        |> Int32.TryParse
+                        |> function
+                          | true, v -> Some v
+                          | false, _ -> None
 
-                  let index = index |> Option.map (fun index -> index - 1)
+                      let index = index |> Option.map (fun index -> index - 1)
 
-                  match index with
-                  | Some index -> return! !Expr.TupleDes(fields_expr, { Index = index }, loc0)
-                  | None ->
-                    return!
-                      $"Error: cannot find field {fieldName} in tuple {fields}"
-                      |> error
-                      |> state.Throw
+                      match index with
+                      | Some index -> return! !Expr.TupleDes(fields_expr, { Index = index }, loc0)
+                      | None ->
+                        return!
+                          $"Error: cannot find field {fieldName} in tuple {fields}"
+                          |> error
+                          |> state.Throw
+                    }
+                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
                 })
           // |> state.MapError(
           //   Errors.Map(
@@ -724,8 +761,26 @@ module TypeCheck =
                 let result_t = result_var |> TypeValue.Var
 
                 return!
-                  state.Either
+                  state.Either3
                     (state {
+                      let handler_case_resolvers =
+                        handlers
+                        |> Map.keys
+                        |> Seq.map (fun id -> TypeCheckState.TryFindUnionCaseConstructor(id, loc0))
+                        |> Seq.toList
+
+                      let handler_case_resolvers =
+                        match handler_case_resolvers with
+                        | x :: xs -> NonEmptyList.OfList(x, xs)
+                        | [] ->
+                          NonEmptyList.OfList(
+                            state.Throw(error "No handlers provided")
+                            |> state.MapError(Errors.SetPriority ErrorPriority.Medium),
+                            []
+                          )
+
+                      let! union_t = handler_case_resolvers |> state.Any |> state.Map snd
+
                       let! handlers =
                         handlers
                         |> Map.toSeq
@@ -737,85 +792,87 @@ module TypeCheck =
                         |> state.All
                         |> state.Map Map.ofSeq
 
-                      let! handlers =
-                        handlers
-                        |> Map.map (fun _k ((var, body), k_s) ->
-                          state {
-                            let guid = Guid.CreateVersion7()
-
-                            let fresh_var =
-                              { TypeVar.Name = var.Name + "_case_" + guid.ToString()
-                                Guid = guid }
-
-                            do!
-                              state.SetState(
-                                TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var)
-                              )
-
-                            let var_t = fresh_var |> TypeValue.Var
-
-                            let! body, body_t, body_k =
-                              !body
-                              |> state.MapContext(
-                                TypeCheckContext.Updaters.Values(
-                                  Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star)
-                                )
-                              )
-
-                            do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
-
-                            let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
-
-                            return (var, body), ((k_s, var_t), fresh_var)
-                          })
-                        |> state.AllMap
-
-                      let handler_vars = handlers |> Map.map (fun _ -> snd >> snd)
-                      let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
-
-                      let handlerExprs = handlers |> Map.map (fun _ -> fst)
-
-                      let handlerTypes =
-                        handlers |> Map.map (fun _ -> snd) |> Map.values |> OrderedMap.ofSeq
-
-                      let! fallback = fallback |> Option.map (!) |> state.RunOption
-
-                      let! fallback =
+                      return!
                         state {
+                          let! handlers =
+                            handlers
+                            |> Map.map (fun _k ((var, body), k_s) ->
+                              state {
+                                // let guid = Guid.CreateVersion7()
+
+                                // let fresh_var =
+                                //   { TypeVar.Name = var.Name + "_case_" + guid.ToString()
+                                //     Guid = guid }
+
+                                // do!
+                                //   state.SetState(
+                                //     TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var)
+                                //   )
+                                let! var_t =
+                                  union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
+
+                                let! body, body_t, body_k =
+                                  !body
+                                  |> state.MapContext(
+                                    TypeCheckContext.Updaters.Values(
+                                      Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star)
+                                    )
+                                  )
+
+                                do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                                do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
+
+                                let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
+
+                                return (var, body), (k_s, var_t)
+                              })
+                            |> state.AllMap
+
+                          let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
+
+                          let handlerExprs = handlers |> Map.map (fun _ -> fst)
+
+                          let! fallback = fallback |> Option.map (!) |> state.RunOption
+
+                          let! fallback =
+                            state {
+                              match fallback with
+                              | None -> return None
+                              | Some(fallback, fallbackT, fallbackK) ->
+                                do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
+                                do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
+                                return fallback |> Some
+                            }
+
                           match fallback with
-                          | None -> return None
-                          | Some(fallback, fallbackT, fallbackK) ->
-                            do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
-                            do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
-                            return fallback |> Some
+                          | Some _ -> ()
+                          | None ->
+                            let handlers = handlers |> Map.keys |> Set.ofSeq
+                            let union_cases = union_t |> OrderedMap.keys |> Set.ofSeq
+
+                            if handlers.Count <> union_cases.Count then
+                              return! $"Error: incomplete pattern matching" |> error |> state.Throw
+
+                          let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
+
+                          // do!
+                          //     UnificationState.DeleteVariable result_var
+                          //       |> TypeValue.EquivalenceClassesOp
+                          //       |> Expr<'T>.liftUnification
+
+                          let unionValue = TypeValue.CreateUnion union_t
+                          let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
+
+                          let handlerExprs =
+                            handlerExprs
+                            |> Map.toSeq
+                            |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
+                            |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
+
+                          return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
                         }
-
-                      let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
-
-                      do ignore handler_vars
-                      // for kv in handler_vars |> Map.values do
-                      //   do!
-                      //       UnificationState.DeleteVariable kv
-                      //         |> TypeValue.EquivalenceClassesOp
-                      //         |> Expr<'T>.liftUnification
-
-                      // do!
-                      //     UnificationState.DeleteVariable result_var
-                      //       |> TypeValue.EquivalenceClassesOp
-                      //       |> Expr<'T>.liftUnification
-
-                      let unionValue = TypeValue.CreateUnion handlerTypes
-                      let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
-
-                      let handlerExprs =
-                        handlerExprs
-                        |> Map.toSeq
-                        |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
-                        |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
-
-                      return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
+                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
                     })
                     (state {
                       let! handlers =
@@ -837,16 +894,36 @@ module TypeCheck =
                         |> state.All
                         |> state.Map(List.sortBy (fst >> (fun c -> c.Case)))
 
-                      let handler_indices = handlers |> List.map fst |> List.map (fun c -> c.Case)
+                      return!
+                        state {
+                          let handler_indices = handlers |> List.map fst |> List.map (fun c -> c.Case)
 
-                      if handler_indices <> [ 0 .. (handler_indices.Length - 1) ] then
-                        return!
-                          $"Error: handlers must cover all cases from 1 to {handler_indices.Length - 1}, found {handler_indices}"
-                          |> error
-                          |> state.Throw
-                      else
-                        return! !Expr.SumDes(handlers |> List.map snd, loc0)
+                          if handler_indices <> [ 0 .. (handler_indices.Length - 1) ] then
+                            return!
+                              $"Error: handlers must cover all cases from 1 to {handler_indices.Length - 1}, found {handler_indices}"
+                              |> error
+                              |> state.Throw
+                          else
+                            return! !Expr.SumDes(handlers |> List.map snd, loc0)
+                        }
+                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
                     })
+                    (state {
+                      let comma = ", "
+
+                      let handlers =
+                        handlers
+                        |> Map.toSeq
+                        |> Seq.map (fun (k, _) -> k.ToFSharpString)
+                        |> String.concat comma
+
+                      return!
+                        $"Error: cannot resolve match over union cases {handlers}"
+                        |> error
+                        |> state.Throw
+                        |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                    })
+                  |> state.MapError Errors.FilterHighestPriorityOnly
 
               }
           // |> state.MapError(
@@ -963,15 +1040,39 @@ module TypeCheck =
                     |> Seq.map (fun (k, argT) ->
                       state {
                         do!
-                          TypeExprEvalState.bindUnionCaseConstructor
-                            k.Name.LocalName
-                            (TypeValue.CreateArrow(argT, typeDefinition |> fst))
+                          TypeExprEvalState.bindUnionCaseConstructor k.Name.LocalName (argT, definition_cases)
                           |> Expr.liftTypeEval
+                      })
+                    |> state.All
+                    |> state.Map ignore)
+                  |> state.RunOption
+                  |> state.Map ignore
+                  |> state.MapContext(
+                    TypeCheckContext.Updaters.Types(
+                      TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
+                    )
+                  )
 
+                let! definition_fields =
+                  typeDefinition
+                  |> fst
+                  |> TypeValue.AsRecord
+                  |> ofSum
+                  |> state.Catch
+                  |> state.Map(Sum.toOption)
+                  |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
+
+                do!
+                  definition_fields
+                  |> Option.map (fun definition_fields ->
+                    definition_fields
+                    |> OrderedMap.toSeq
+                    |> Seq.map (fun (k, argT) ->
+                      state {
                         do!
-                          TypeExprEvalState.bindType
+                          TypeExprEvalState.bindRecordField
                             k.Name.LocalName
-                            (TypeValue.CreateArrow(argT, typeDefinition |> fst), Kind.Star)
+                            (TypeValue.CreateArrow(typeDefinition |> fst, argT))
                           |> Expr.liftTypeEval
                       })
                     |> state.All

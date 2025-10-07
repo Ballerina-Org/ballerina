@@ -22,7 +22,7 @@ module Lambda =
           let! var = var |> JsonValue.AsString |> reader.OfSum
           let var = Var.Create var
           let! body = body |> exprFromJsonRoot |> reader.OfSum
-          return Value.Lambda(var, body)
+          return Value.Lambda(var, body, Map.empty)
         })
 
     static member ToJsonLambda (var: Var) (body: Expr<'T>) : ValueEncoderReader<'T> =

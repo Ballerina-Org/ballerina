@@ -27,6 +27,8 @@ module Extension =
     let listId = Identifier.LocalScope "List"
     let listSymbolId = listId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
+    let listFoldId = Identifier.FullyQualified([ "List" ], "fold")
+    let listLengthId = Identifier.FullyQualified([ "List" ], "length")
     let listFilterId = Identifier.FullyQualified([ "List" ], "filter")
     let listMapId = Identifier.FullyQualified([ "List" ], "map")
     let listConsId = Identifier.FullyQualified([ "List" ], "Cons")
@@ -46,6 +48,127 @@ module Extension =
 
     let toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
       ListValues.List v |> valueLens.Set |> Ext
+
+    let lengthOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      listLengthId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("a", aKind),
+            TypeExpr.Arrow(
+              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a")),
+              TypeExpr.Primitive(PrimitiveType.Int32)
+            )
+          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Star)
+        Operation = List_Length
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | List_Length -> Some(List_Length)
+            | _ -> None)
+        Apply =
+          fun loc0 (op, v) ->
+            reader {
+              do!
+                op
+                |> ListOperations.AsLength
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                valueLens.Get v
+                |> sum.OfOption((loc0, "cannot get option value") |> Errors.Singleton)
+                |> reader.OfSum
+
+              let! v = v |> ListValues.AsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              return Value.Primitive(PrimitiveValue.Int32(v.Length))
+            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+      }
+
+    let foldOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      listFoldId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("a", aKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("acc", aKind),
+              TypeExpr.Arrow(
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "acc"),
+                  TypeExpr.Arrow(
+                    TypeExpr.Lookup(Identifier.LocalScope "a"),
+                    TypeExpr.Lookup(Identifier.LocalScope "acc")
+                  )
+                ),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "acc"),
+                  TypeExpr.Arrow(
+                    TypeExpr.Apply(
+                      TypeExpr.Lookup(Identifier.LocalScope "List"),
+                      TypeExpr.Lookup(Identifier.LocalScope "a")
+                    ),
+                    TypeExpr.Lookup(Identifier.LocalScope "acc")
+                  )
+                )
+              )
+            )
+          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        Operation = List_Fold {| f = None; acc = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | List_Fold v -> Some(List_Fold v)
+            | _ -> None)
+        Apply =
+          fun loc0 (op, v) ->
+            reader {
+              let! f, acc =
+                op
+                |> ListOperations.AsFold
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match f with
+              | None -> // the closure is empty - first step in the application
+                return
+                  ListOperations.List_Fold({| f = Some v; acc = None |})
+                  |> operationLens.Set
+                  |> Ext
+              | Some f -> // the closure has the function - second step in the application
+                match acc with
+                | None -> // the closure has the function but not the accumulator - second step in the application
+                  return
+                    ListOperations.List_Fold({| f = Some f; acc = Some v |})
+                    |> operationLens.Set
+                    |> Ext
+                | Some acc -> // the closure has the function and the accumulator - third step in the application
+                  let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! v =
+                    valueLens.Get v
+                    |> sum.OfOption((loc0, "cannot get option value") |> Errors.Singleton)
+                    |> reader.OfSum
+
+                  let! l = v |> ListValues.AsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! l =
+                    l
+                    |> List.fold
+                      (fun acc v ->
+                        reader {
+                          let! acc = acc
+                          let! f1 = Expr.EvalApply loc0 (f, acc)
+                          return! Expr.EvalApply loc0 (f1, v)
+                        })
+                      (reader { return acc })
+
+                  return l
+            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+      }
 
     let filterOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFilterId,
@@ -84,7 +207,7 @@ module Extension =
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return ListOperations.List_Filter({| f = Some v |}) |> operationLens.Set
+                return ListOperations.List_Filter({| f = Some v |}) |> operationLens.Set |> Ext
               | Some predicate -> // the closure has the function - second step in the application
                 let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -112,7 +235,7 @@ module Extension =
                     })
                   |> reader.All
 
-                return v' |> List.filter snd |> List.map fst |> ListValues.List |> valueLens.Set
+                return v' |> List.filter snd |> List.map fst |> ListValues.List |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
@@ -156,13 +279,13 @@ module Extension =
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return ListOperations.List_Map({| f = Some v |}) |> operationLens.Set
+                return ListOperations.List_Map({| f = Some v |}) |> operationLens.Set |> Ext
               | Some f -> // the closure has the function - second step in the application
                 let! v = getValueAsList v |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                 let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 (f, v)) |> reader.All
 
-                return ListValues.List v' |> valueLens.Set
+                return ListValues.List v' |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
@@ -216,7 +339,7 @@ module Extension =
                   |> sum.MapError(Errors.FromErrors loc0)
                   |> reader.OfSum
 
-                return ListValues.List(head :: tail) |> valueLens.Set
+                return ListValues.List(head :: tail) |> valueLens.Set |> Ext
               | _ -> return! (loc0, "Error: expected pair") |> Errors.Singleton |> reader.Throw
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
@@ -247,7 +370,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return ListValues.List [] |> valueLens.Set
+              return ListValues.List [] |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
@@ -278,7 +401,14 @@ module Extension =
       TypeVars = [ (aVar, aKind) ]
       WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = Map.empty
-      Operations = [ filterOperation; mapOperation; consOperation; nilOperation ] |> Map.ofList
+      Operations =
+        [ lengthOperation
+          foldOperation
+          filterOperation
+          mapOperation
+          consOperation
+          nilOperation ]
+        |> Map.ofList
       Deconstruct =
         fun (v: ListValues<'ext>) ->
           match v with

@@ -146,6 +146,39 @@ module Validator =
         }
         |> sum.WithErrorContext(sprintf "...when validating primitive renderer %s" rendererName)
 
+      let recordRendererMatchesSupportedRenderersFields
+        ({ Renderer = rendererName
+           Fields = fields }: RecordRenderer<'ExprExtension, 'ValueExtension>)
+        : Sum<Unit, Errors> =
+        sum {
+          match rendererName with
+          | Some renderer ->
+            let! rendererFields =
+              codegen.Record.SupportedRenderers
+              |> Map.tryFindWithError
+                renderer
+                "record renderer"
+                (renderer
+                 |> (function
+                 | RendererName r -> r))
+
+            if rendererFields |> Set.isEmpty |> not then
+              let renderedFields = fields.Fields |> Map.keys |> Set.ofSeq
+
+              if renderedFields <> rendererFields then
+                return!
+                  sum.Throw(
+                    Errors.Singleton
+                      $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
+                  )
+              else
+                return ()
+            else
+              return ()
+          | None -> return ()
+        }
+
+
       sum {
         let error (expectedType: ExprType) (renderer: Renderer<'ExprExtension, 'ValueExtension>) =
           sum.Throw(
@@ -217,31 +250,7 @@ module Validator =
         | ExprType.RecordType _ ->
           match fr with
           | Renderer.RecordRenderer fields ->
-            match fields.Renderer with
-            | Some renderer ->
-              let! rendererFields =
-                codegen.Record.SupportedRenderers
-                |> Map.tryFindWithError
-                  renderer
-                  "record renderer"
-                  (renderer
-                   |> (function
-                   | RendererName r -> r))
-
-              if rendererFields |> Set.isEmpty |> not then
-                let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
-
-                if renderedFields <> rendererFields then
-                  return!
-                    sum.Throw(
-                      Errors.Singleton
-                        $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
-                    )
-                else
-                  return ()
-              else
-                return ()
-            | _ -> return ()
+            do! recordRendererMatchesSupportedRenderersFields fields
 
             do!
               sum.All(
@@ -1283,31 +1292,15 @@ module Validator =
     static member GetIdType(lookupType: TypeBinding) : Sum<ExprType, Errors> =
       sum {
         let! (idType: ExprType) =
-          sum.Any2
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsRecord
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+          sum {
+            let! fields = lookupType.Type |> ExprType.AsRecord
 
-              return!
-                (sum.Any2
-                  (fields |> Map.tryFindWithError "id" "key" "id")
-                  (fields |> Map.tryFindWithError "Id" "key" "Id"))
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsTuple
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
-
-              return!
-                fields
-                |> Seq.tryHead
-                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
+            return!
+              (sum.Any2
+                (fields |> Map.tryFindWithError "id" "key" "id")
+                (fields |> Map.tryFindWithError "Id" "key" "Id"))
+              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+          }
           |> sum.MapError Errors.HighestPriority
 
         match idType with

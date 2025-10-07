@@ -639,8 +639,8 @@ module Runner =
                         {| TypeId = formType.TypeId
                            Renderer =
                             Renderer.UnionRenderer
-                              {| Cases = Map.empty
-                                 Renderer = RendererName "" |} |}
+                              { Cases = Map.empty
+                                Renderer = RendererName "" } |}
 
                     FormId = Guid.CreateVersion7()
                     FormName = formName }
