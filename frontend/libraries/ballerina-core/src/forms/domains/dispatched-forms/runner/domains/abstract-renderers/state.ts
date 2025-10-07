@@ -72,7 +72,9 @@ export const CommonAbstractRendererState = {
         | TableCellRenderer<any>
         | Renderer<any>,
     ) => {
-      const actualRenderer = !("renderer" in renderer) ? renderer : renderer.renderer;
+      const actualRenderer = !("renderer" in renderer)
+        ? renderer
+        : renderer.renderer;
       if (
         actualRenderer.kind == "lookupType-lookupRenderer" ||
         actualRenderer.kind == "inlinedType-lookupRenderer"

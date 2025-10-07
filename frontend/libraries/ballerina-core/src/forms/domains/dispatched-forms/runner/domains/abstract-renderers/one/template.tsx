@@ -126,7 +126,11 @@ export const OneAbstractRenderer = <
           ExtraContext
         >
     >((_) => {
-      const labelContext = CommonAbstractRendererState.Operations.GetLabelContext(_.labelContext, DetailsRendererRaw);
+      const labelContext =
+        CommonAbstractRendererState.Operations.GetLabelContext(
+          _.labelContext,
+          DetailsRendererRaw,
+        );
       if (PredicateValue.Operations.IsUnit(_.value)) {
         return undefined;
       }
@@ -219,97 +223,108 @@ export const OneAbstractRenderer = <
         },
       }));
 
-  const embeddedPreviewRenderer = PreviewRenderer && PreviewRendererRaw
-    ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
-        PreviewRenderer.mapContext<
-          OneAbstractRendererState &
-            OneAbstractRendererReadonlyContext<
-              CustomPresentationContext,
-              ExtraContext
-            >
-        >((_) => {
-          const labelContext = CommonAbstractRendererState.Operations.GetLabelContext(_.labelContext, PreviewRendererRaw);
-          const state =
-            _.customFormState?.previewStates.get(id) ??
-            RecordAbstractRendererState.Default.zero();
-          return {
-            ...state,
-            value,
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            type: oneEntityType,
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-            labelContext,
-          };
-        })
-          .mapState(
-            (
-              _: BasicUpdater<RecordAbstractRendererState>,
-            ): Updater<OneAbstractRendererState> =>
-              OneAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
-                MapRepo.Updaters.upsert(
-                  id,
-                  () => RecordAbstractRendererState.Default.zero(),
-                  _,
-                ),
+  const embeddedPreviewRenderer =
+    PreviewRenderer && PreviewRendererRaw
+      ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
+          PreviewRenderer.mapContext<
+            OneAbstractRendererState &
+              OneAbstractRendererReadonlyContext<
+                CustomPresentationContext,
+                ExtraContext
+              >
+          >((_) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                PreviewRendererRaw,
+              );
+            const state =
+              _.customFormState?.previewStates.get(id) ??
+              RecordAbstractRendererState.Default.zero();
+            return {
+              ...state,
+              value,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              type: oneEntityType,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
               ),
-          )
-          .mapForeignMutationsFromProps<
-            OneAbstractRendererViewForeignMutationsExpected<Flags>
-          >((props) => ({
-            onChange: (
-              updater: Option<BasicUpdater<ValueRecord>>,
-              nestedDelta: DispatchDelta<Flags>,
-            ) => {
-              props.setState(
-                OneAbstractRendererState.Updaters.Core.commonFormState.children
-                  .modifiedByUser(replaceWith(true))
-                  .then(
-                    OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                      RecordAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
+              domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              labelContext,
+            };
+          })
+            .mapState(
+              (
+                _: BasicUpdater<RecordAbstractRendererState>,
+              ): Updater<OneAbstractRendererState> =>
+                OneAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
+                  MapRepo.Updaters.upsert(
+                    id,
+                    () => RecordAbstractRendererState.Default.zero(),
+                    _,
+                  ),
+                ),
+            )
+            .mapForeignMutationsFromProps<
+              OneAbstractRendererViewForeignMutationsExpected<Flags>
+            >((props) => ({
+              onChange: (
+                updater: Option<BasicUpdater<ValueRecord>>,
+                nestedDelta: DispatchDelta<Flags>,
+              ) => {
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.commonFormState.children
+                    .modifiedByUser(replaceWith(true))
+                    .then(
+                      OneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                        RecordAbstractRendererState.Updaters.Core.commonFormState(
+                          DispatchCommonFormState.Updaters.modifiedByUser(
+                            replaceWith(true),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              );
+                );
 
-              const delta: DispatchDelta<Flags> = {
-                kind: "OneValue",
-                nestedDelta,
-                flags,
-                sourceAncestorLookupTypeNames:
-                  nestedDelta.sourceAncestorLookupTypeNames,
-              };
+                const delta: DispatchDelta<Flags> = {
+                  kind: "OneValue",
+                  nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
 
-              props.foreignMutations.onChange(
-                updater.kind == "l"
-                  ? Option.Default.none()
-                  : Option.Default.some<BasicUpdater<ValueOption | ValueUnit>>(
-                      (__: ValueOption | ValueUnit): ValueOption | ValueUnit =>
-                        __.kind == "unit"
-                          ? ValueUnit.Default()
-                          : !PredicateValue.Operations.IsRecord(__.value)
+                props.foreignMutations.onChange(
+                  updater.kind == "l"
+                    ? Option.Default.none()
+                    : Option.Default.some<
+                        BasicUpdater<ValueOption | ValueUnit>
+                      >(
+                        (
+                          __: ValueOption | ValueUnit,
+                        ): ValueOption | ValueUnit =>
+                          __.kind == "unit"
                             ? ValueUnit.Default()
-                            : ValueOption.Default.some(updater.value(__.value)),
-                    ),
-                delta,
-              );
-            },
-          }))
-    : undefined;
+                            : !PredicateValue.Operations.IsRecord(__.value)
+                              ? ValueUnit.Default()
+                              : ValueOption.Default.some(
+                                  updater.value(__.value),
+                                ),
+                      ),
+                  delta,
+                );
+              },
+            }))
+      : undefined;
 
   return Template.Default<
     OneAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
