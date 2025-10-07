@@ -16,6 +16,7 @@ module Eval =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeCheck
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina
 
   type ExprEvalContext<'valueExtension> =
     { Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
@@ -67,12 +68,13 @@ module Eval =
 
     static member EvalApply (loc0: Location) (fV, argV) =
       reader {
-        let! fVVar, fvBody = fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+        let! fVVar, fvBody, closure = fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+        let closure = closure |> Map.add (Identifier.LocalScope fVVar.Name) argV
 
         return!
           fvBody
           |> Expr.Eval
-          |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope fVVar.Name) argV))
+          |> reader.MapContext(ExprEvalContext.Updaters.Values(replaceWith closure))
       }
 
     static member Eval<'valueExtension>
@@ -260,11 +262,14 @@ module Eval =
           return!
             reader.Any(
               reader {
-                let! fVVar, fvBody = fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! fVVar, fvBody, closure =
+                  fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let closure = closure |> Map.add (Identifier.LocalScope fVVar.Name) argV
 
                 return!
                   !fvBody
-                  |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope fVVar.Name) argV))
+                  |> reader.MapContext(ExprEvalContext.Updaters.Values(replaceWith closure))
               },
               [ (reader {
                   let! fExt = fV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
@@ -281,7 +286,9 @@ module Eval =
                 }) ]
             )
 
-        | ExprRec.Lambda(var, _, body) -> return Value.Lambda(var, body)
+        | ExprRec.Lambda(var, _, body) ->
+          let! context = reader.GetContext()
+          return Value.Lambda(var, body, context.Values)
         | ExprRec.TypeLambda(_, body)
         | ExprRec.TypeLet(_, _, body) -> return! !body
         | ExprRec.TypeApply(typeLambda, typeArg) ->

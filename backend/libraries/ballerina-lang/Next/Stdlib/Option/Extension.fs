@@ -111,7 +111,7 @@ module Extension =
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set
+                return OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set |> Ext
               | Some f -> // the closure has the function - second step in the application
                 let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -131,7 +131,7 @@ module Extension =
                   |> FSharp.Core.Option.map (fun v -> Expr.EvalApply loc0 (f, v))
                   |> reader.RunOption
 
-                return OptionValues.Option v' |> valueLens.Set
+                return OptionValues.Option v' |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 

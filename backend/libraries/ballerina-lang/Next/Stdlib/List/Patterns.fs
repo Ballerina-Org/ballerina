@@ -20,6 +20,18 @@ module Patterns =
       | List_Filter v -> v.f |> sum.Return
       | _ -> $"Error: Expected List_Filter, found {op}" |> Errors.Singleton |> sum.Throw
 
+    static member AsFold
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue, 'ext>> * Option<Value<TypeValue, 'ext>>, Errors> =
+      match op with
+      | List_Fold v -> (v.f, v.acc) |> sum.Return
+      | _ -> $"Error: Expected List_Fold, found {op}" |> Errors.Singleton |> sum.Throw
+
+    static member AsLength(op: ListOperations<'ext>) : Sum<Unit, Errors> =
+      match op with
+      | List_Length -> () |> sum.Return
+      | _ -> $"Error: Expected List_Length, found {op}" |> Errors.Singleton |> sum.Throw
+
     static member AsCons(op: ListOperations<'ext>) : Sum<Unit, Errors> =
       match op with
       | List_Cons -> () |> sum.Return

@@ -87,7 +87,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
       Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> Expr.Primitive)
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
-      Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive)
+      Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive, Map.empty)
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(

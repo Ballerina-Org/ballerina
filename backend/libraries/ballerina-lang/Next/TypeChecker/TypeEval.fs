@@ -12,7 +12,8 @@ module Eval =
   open Ballerina.StdLib.OrderPreservingMap
 
   type TypeBindings = Map<Identifier, TypeValue * Kind>
-  type UnionCaseConstructorBindings = Map<Identifier, TypeValue>
+  type UnionCaseConstructorBindings = Map<Identifier, TypeValue * OrderedMap<TypeSymbol, TypeValue>>
+  type RecordFieldBindings = Map<Identifier, TypeValue>
 
   type TypeSymbols = Map<Identifier, TypeSymbol>
 
@@ -21,6 +22,7 @@ module Eval =
   type TypeExprEvalState =
     { Bindings: TypeBindings
       UnionCases: UnionCaseConstructorBindings
+      RecordFields: RecordFieldBindings
       Symbols: TypeSymbols }
 
   type TypeExprEvalResult = State<TypeValue * Kind, TypeExprEvalContext, TypeExprEvalState, Errors>
@@ -38,6 +40,7 @@ module Eval =
     static member Empty: TypeExprEvalState =
       { Bindings = Map.empty
         UnionCases = Map.empty
+        RecordFields = Map.empty
         Symbols = Map.empty }
 
     static member Create(bindings: TypeBindings, symbols: TypeSymbols) : TypeExprEvalState =
@@ -61,13 +64,23 @@ module Eval =
 
     static member tryFindUnionCaseConstructor
       (v: Identifier, loc: Location)
-      : Reader<TypeValue, TypeExprEvalState, Errors> =
+      : Reader<TypeValue * OrderedMap<TypeSymbol, TypeValue>, TypeExprEvalState, Errors> =
       reader {
         let! s = reader.GetContext()
 
         return!
           s.UnionCases
           |> Map.tryFindWithError v "union cases" v.ToFSharpString loc
+          |> reader.OfSum
+      }
+
+    static member tryFindRecordField(v: Identifier, loc: Location) : Reader<TypeValue, TypeExprEvalState, Errors> =
+      reader {
+        let! s = reader.GetContext()
+
+        return!
+          s.RecordFields
+          |> Map.tryFindWithError v "record fields" v.ToFSharpString loc
           |> reader.OfSum
       }
 
@@ -87,6 +100,10 @@ module Eval =
           fun u (c: TypeExprEvalState) ->
             { c with
                 UnionCases = c.UnionCases |> u }
+         RecordFields =
+          fun u (c: TypeExprEvalState) ->
+            { c with
+                RecordFields = c.RecordFields |> u }
          Symbols = fun u (c: TypeExprEvalState) -> { c with Symbols = c.Symbols |> u } |}
 
     static member unbindType x =
@@ -110,6 +127,15 @@ module Eval =
         do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.LocalScope x) t_x))
 
         do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
+      }
+
+    static member bindRecordField x t_x =
+      state {
+        let! ctx = state.GetContext()
+        do! state.SetState(TypeExprEvalState.Updaters.RecordFields(Map.add (Identifier.LocalScope x) t_x))
+
+        do!
+          state.SetState(TypeExprEvalState.Updaters.RecordFields(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
       }
 
     static member bindSymbol x t_x =
@@ -205,7 +231,7 @@ module Eval =
             return TypeValue.SetSourceMapping(resultValue, source), resultKind
           | TypeExpr.Let(x, t_x, rest) ->
             return!
-              state.Either
+              state.Either3
                 (state {
                   let! t_x = !t_x
                   do! TypeExprEvalState.bindType x t_x
@@ -218,13 +244,15 @@ module Eval =
                   let! resultValue, resultKind = !rest
                   return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
+                (state { return! $"Error: cannot evaluate let binding {x}" |> error |> state.Throw }
+                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
 
           | TypeExpr.Apply(f, a) ->
             let! f, f_k = !f
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
             return!
-              state.Either
+              state.Either3
                 (state {
                   let! param, body =
                     f
@@ -260,6 +288,8 @@ module Eval =
                   else
                     return TypeValue.Apply { value = (f_var, a); source = source }, f_k_o
                 })
+                (state { return! $"Error: cannot evaluate application " |> error |> state.Throw }
+                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
           | TypeExpr.Lambda(param, bodyExpr) ->
             let fresh_var_t =
               TypeValue.Var(
@@ -380,7 +410,7 @@ module Eval =
             do! type2_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return!
-              state.Either
+              state.Either3
                 (state {
                   let! cases1 =
                     type1
@@ -437,6 +467,8 @@ module Eval =
                       |> error
                       |> state.Throw
                 })
+                (state { return! $"Error: cannot evaluate flattening " |> error |> state.Throw }
+                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
           | TypeExpr.Exclude(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2
@@ -444,7 +476,7 @@ module Eval =
             do! type2_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return!
-              state.Either
+              state.Either3
                 (state {
                   let! cases1 =
                     type1
@@ -482,12 +514,14 @@ module Eval =
 
                   return TypeValue.Record { value = fields; source = source }, Kind.Star
                 })
+                (state { return! $"Error: cannot evaluate exclude " |> error |> state.Throw }
+                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
           | TypeExpr.Rotate(t) ->
             let! t, t_k = !t
             do! t_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return!
-              state.Either
+              state.Either3
                 (state {
                   let! cases = t |> TypeValue.AsUnion |> ofSum
 
@@ -502,4 +536,6 @@ module Eval =
                         source = source },
                     Kind.Star
                 })
+                (state { return! $"Error: cannot evaluate rotation" |> error |> state.Throw }
+                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
         }

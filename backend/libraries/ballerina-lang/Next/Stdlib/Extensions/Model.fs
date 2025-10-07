@@ -53,7 +53,7 @@ module Model =
       Kind: Kind // * => * => *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
-      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'ext> }
+      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeCaseExtension<'ext, 'extConstructors, 'extValues> =
     { CaseType: TypeExpr // "a"
