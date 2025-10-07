@@ -453,6 +453,29 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
+              setApplyToAll: (applyToAll: boolean) =>
+                props.setState(
+                  ListAbstractRendererState.Updaters.Core.customFormState.children.applyToAll(
+                    replaceWith(applyToAll),
+                  ),
+                ),
+              applyToAll: (nestedDelta, flags) => {
+                const delta: DispatchDelta<Flags> = {
+                  kind: "ArrayValueAll",
+                  nestedDelta,
+                  flags,
+                  sourceAncestorLookupTypeNames:
+                    nestedDelta.sourceAncestorLookupTypeNames,
+                };
+                props.foreignMutations.onChange(Option.Default.none(), delta);
+                props.setState(
+                  ListAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+              },
             }}
             embeddedElementTemplate={embeddedElementTemplate}
             embeddedPlaceholderElementTemplate={
