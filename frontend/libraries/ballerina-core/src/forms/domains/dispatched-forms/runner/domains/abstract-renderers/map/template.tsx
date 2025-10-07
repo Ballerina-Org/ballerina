@@ -24,6 +24,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import {
   DispatchParsedType,
@@ -61,6 +62,8 @@ export const MapAbstractRenderer = <
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
+  KeyRenderer: NestedRenderer<any>,
+  ValueRenderer: NestedRenderer<any>,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -74,29 +77,38 @@ export const MapAbstractRenderer = <
               ExtraContext
             > &
               MapAbstractRendererState,
-          ) => ({
-            ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
-              GetDefaultKeyFormState()),
-            value:
-              (_.value.values.get(elementIndex) as ValueTuple)?.values.get(0) ||
-              GetDefaultKeyFormValue(),
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            type: _.type.args[0],
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                KeyRenderer,
+              );
+            return {
+              ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
+                GetDefaultKeyFormState()),
+              value:
+                (_.value.values.get(elementIndex) as ValueTuple)?.values.get(
+                  0,
+                ) || GetDefaultKeyFormValue(),
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              type: _.type.args[0],
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              labelContext,
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState(
           (
@@ -179,30 +191,38 @@ export const MapAbstractRenderer = <
               ExtraContext
             > &
               MapAbstractRendererState,
-          ) => ({
-            ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
-              GetDefaultValueFormState()),
-            value:
-              (_.value.values?.get(elementIndex) as ValueTuple)?.values.get(
-                1,
-              ) || GetDefaultValueFormValue(),
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            type: _.type.args[1],
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                ValueRenderer,
+              );
+            return {
+              ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
+                GetDefaultValueFormState()),
+              value:
+                (_.value.values?.get(elementIndex) as ValueTuple)?.values.get(
+                  1,
+                ) || GetDefaultValueFormValue(),
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              type: _.type.args[1],
+              labelContext,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState(
           (

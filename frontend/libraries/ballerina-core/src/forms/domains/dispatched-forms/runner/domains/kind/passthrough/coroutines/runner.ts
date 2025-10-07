@@ -276,6 +276,14 @@ export const DispatchPassthroughFormRunner = <
                     Flags,
                     CustomPresentationContext,
                     ExtraContext
+                  >().Updaters.formName(replaceWith(passthroughFormLauncher.formName)),
+                )
+                .then(
+                  DispatchCommonFormRunnerState<
+                    T,
+                    Flags,
+                    CustomPresentationContext,
+                    ExtraContext
                   >().Updaters.status(
                     replaceWith<
                       DispatchFormRunnerStatus<

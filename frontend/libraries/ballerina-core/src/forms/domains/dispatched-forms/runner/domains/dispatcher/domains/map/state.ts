@@ -76,6 +76,8 @@ export const MapDispatcher = {
                                     () => defaultValueValue,
                                     keyTemplate,
                                     valueTemplate,
+                                    renderer.keyRenderer,
+                                    renderer.valueRenderer,
                                     dispatcherContext.IdProvider,
                                     dispatcherContext.ErrorRenderer,
                                   )

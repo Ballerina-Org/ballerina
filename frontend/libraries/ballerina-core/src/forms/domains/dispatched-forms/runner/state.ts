@@ -349,6 +349,7 @@ export type DispatchCommonFormRunnerState<
     ExtraContext
   >;
   formState: CommonAbstractRendererState;
+  formName: string;
 };
 
 export const DispatchCommonFormRunnerState = <
@@ -366,6 +367,7 @@ export const DispatchCommonFormRunnerState = <
     > => ({
       status: { kind: "not initialized" },
       formState: CommonAbstractRendererState.Default(),
+      formName: "",
     }),
     Updaters: {
       ...simpleUpdater<
@@ -384,6 +386,14 @@ export const DispatchCommonFormRunnerState = <
           ExtraContext
         >
       >()("formState"),
+      ...simpleUpdater<
+        DispatchCommonFormRunnerState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("formName"),
     },
   };
 };

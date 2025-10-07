@@ -12,6 +12,7 @@ import {
   DispatchInjectablesTypes,
   DispatchParsedType,
   Option,
+  PassthroughLauncherRef,
   PredicateValue,
   Template,
   unit,
@@ -107,7 +108,8 @@ export const DispatchPassthroughFormLauncherTemplate = <
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
-          domNodeAncestorPath: "",
+          domNodeAncestorPath: `[${props.context.formName}]`,
+          labelContext: props.context.formName,
           lookupTypeAncestorNames: [],
           customPresentationContext: undefined,
           typeAncestors: [],

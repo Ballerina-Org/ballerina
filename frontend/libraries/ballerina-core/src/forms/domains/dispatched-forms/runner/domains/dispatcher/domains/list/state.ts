@@ -55,6 +55,7 @@ export const ListDispatcher = {
                           () => defaultElementState,
                           () => defaultElementValue,
                           elementTemplate,
+                          renderer.elementRenderer,
                           renderer.methods ?? [],
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,

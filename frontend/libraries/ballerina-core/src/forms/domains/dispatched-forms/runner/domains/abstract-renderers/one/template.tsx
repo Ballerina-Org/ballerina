@@ -32,6 +32,7 @@ import {
   Updater,
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -88,6 +89,8 @@ export const OneAbstractRenderer = <
     | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  DetailsRendererRaw: NestedRenderer<any>,
+  PreviewRendererRaw: NestedRenderer<any> | undefined,
   oneEntityType: RecordType<any>,
 ) => {
   const typedInitializeStreamRunner = initializeStreamRunner<
@@ -123,6 +126,7 @@ export const OneAbstractRenderer = <
           ExtraContext
         >
     >((_) => {
+      const labelContext = CommonAbstractRendererState.Operations.GetLabelContext(_.labelContext, DetailsRendererRaw);
       if (PredicateValue.Operations.IsUnit(_.value)) {
         return undefined;
       }
@@ -156,6 +160,7 @@ export const OneAbstractRenderer = <
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+        labelContext,
       };
     })
       .mapState(
@@ -214,7 +219,7 @@ export const OneAbstractRenderer = <
         },
       }));
 
-  const embeddedPreviewRenderer = PreviewRenderer
+  const embeddedPreviewRenderer = PreviewRenderer && PreviewRendererRaw
     ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
         PreviewRenderer.mapContext<
           OneAbstractRendererState &
@@ -223,6 +228,7 @@ export const OneAbstractRenderer = <
               ExtraContext
             >
         >((_) => {
+          const labelContext = CommonAbstractRendererState.Operations.GetLabelContext(_.labelContext, PreviewRendererRaw);
           const state =
             _.customFormState?.previewStates.get(id) ??
             RecordAbstractRendererState.Default.zero();
@@ -244,6 +250,7 @@ export const OneAbstractRenderer = <
             ),
             domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            labelContext,
           };
         })
           .mapState(

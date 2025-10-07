@@ -2,11 +2,15 @@ import {
   Bindings,
   DispatchOnChange,
   DispatchParsedType,
+  NestedRenderer,
   PredicateValue,
+  Renderer,
   simpleUpdater,
   simpleUpdaterWithChildren,
   Unit,
 } from "../../../../../../../main";
+import { RecordFieldRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
+import { TableCellRenderer } from "../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/domains/tableCellRenderer/state";
 
 export type CommonAbstractRendererReadonlyContext<
   T extends DispatchParsedType<any>,
@@ -26,6 +30,7 @@ export type CommonAbstractRendererReadonlyContext<
   label?: string;
   tooltip?: string;
   details?: string;
+  labelContext: string;
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
@@ -56,6 +61,25 @@ export const CommonAbstractRendererState = {
           "modifiedByUser",
         ),
       })("commonFormState"),
+    },
+  },
+  Operations: {
+    GetLabelContext: (
+      parentLabelContext: string,
+      renderer:
+        | NestedRenderer<any>
+        | RecordFieldRenderer<any>
+        | TableCellRenderer<any>
+        | Renderer<any>,
+    ) => {
+      const actualRenderer = !("renderer" in renderer) ? renderer : renderer.renderer;
+      if (
+        actualRenderer.kind == "lookupType-lookupRenderer" ||
+        actualRenderer.kind == "inlinedType-lookupRenderer"
+      ) {
+        return actualRenderer.lookupRenderer;
+      }
+      return parentLabelContext;
     },
   },
 };
