@@ -57,48 +57,53 @@ func (s _sequentialForSerialization) getElementsWithDiscriminator(kind string) b
 }
 
 // Used in codegen
-type RecordForSerialization struct {
+type recordForSerialization struct {
 	Discriminator string               `json:"discriminator"`
 	Value         [][2]json.RawMessage `json:"value"`
 }
 
-func NewRecordForSerialization(value [][2]json.RawMessage) RecordForSerialization {
-	return RecordForSerialization{
+func NewRecordForSerialization(value [][2]json.RawMessage) recordForSerialization {
+	return recordForSerialization{
 		Discriminator: "record",
 		Value:         value,
 	}
 }
 
-func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, RecordForSerialization] {
-	var r RecordForSerialization
+func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, map[string]json.RawMessage] {
+	var r recordForSerialization
 	err := json.Unmarshal(data, &r)
 	if err != nil {
-		return ballerina.Left[error, RecordForSerialization](err)
+		return ballerina.Left[error, map[string]json.RawMessage](err)
 	}
 	if r.Discriminator != "record" {
-		return ballerina.Left[error, RecordForSerialization](fmt.Errorf("expected discriminator to be 'record', got %s", r.Discriminator))
+		return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("expected discriminator to be 'record', got %s", r.Discriminator))
 	}
 	if r.Value == nil {
-		return ballerina.Left[error, RecordForSerialization](fmt.Errorf("missing value field"))
+		return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("missing value field"))
 	}
-	return ballerina.Right[error, RecordForSerialization](r)
-}
-
-func (r RecordForSerialization) GetFieldByName(name string) ballerina.Sum[error, json.RawMessage] {
 	type recordField struct {
 		Name string `json:"name"`
 	}
-	for _, field := range r.Value {
-		var f recordField
-		err := json.Unmarshal(field[0], &f)
+	fields := make(map[string]json.RawMessage, len(r.Value))
+	for i, field := range r.Value {
+		var fieldName recordField
+		err := json.Unmarshal(field[0], &fieldName)
 		if err != nil {
-			return ballerina.Left[error, json.RawMessage](fmt.Errorf("failed to unmarshal record field %s: %w", name, err))
+			return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("failed to unmarshal record field name %d: %w", i, err))
 		}
-		if f.Name == name {
-			return ballerina.Right[error, json.RawMessage](field[1])
-		}
+		fields[fieldName.Name] = field[1]
 	}
-	return ballerina.Left[error, json.RawMessage](fmt.Errorf("field %s not found", name))
+	return ballerina.Right[error, map[string]json.RawMessage](fields)
+}
+
+func GetRecordFieldByName(fields map[string]json.RawMessage) func(string) ballerina.Sum[error, json.RawMessage] {
+	return func(name string) ballerina.Sum[error, json.RawMessage] {
+		field, ok := fields[name]
+		if !ok {
+			return ballerina.Left[error, json.RawMessage](fmt.Errorf("field %s not found", name))
+		}
+		return ballerina.Right[error, json.RawMessage](field)
+	}
 }
 
 // Used in codegen
