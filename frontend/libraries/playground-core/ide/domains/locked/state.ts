@@ -92,7 +92,7 @@ export const LockedSpec = {
                     LockedUpdaterFull((locked, ide) => {
                         const schema = FlatNode.Operations.findFileByName(
                             locked.workspace.nodes,
-                            "schema.json"
+                            "schema"
                         );
 
                         if (schema.kind === "l") {
@@ -122,7 +122,7 @@ export const LockedSpec = {
 
                         return {
                             ...locked,
-                            ...step,
+                            progress: step,
                         } satisfies LockedSpec;
                     })
                 ),
@@ -130,7 +130,7 @@ export const LockedSpec = {
                 Updater(ide => {
                     if(ide.phase != 'locked') return ide;
                     const step = LockedStep.Updaters.Core.selectEntity(launcher, entity)
-                    return ({...ide, locked: {...ide.locked, ...step}})
+                    return ({...ide, locked: {...ide.locked, progress: step}});
                 }),
   
         },
@@ -138,7 +138,7 @@ export const LockedSpec = {
             validated: (json: KnownSections): Updater<Ide> => 
                 Updater(ide =>
                     ide.phase != 'locked' ? ide:
-                        ({...ide, validated: Option.Default.some(json)})),
+                        ({...ide, locked: {...ide.locked, validatedSpec: Option.Default.some(json)}})),
             // selectLauncher: (l: any): Updater<Ide> =>
             //     Updater(ide => {
             //         if(!(ide.phase == 'locked' && ide.step == 'preDisplay')){
@@ -182,6 +182,7 @@ export const LockedSpec = {
         enableRun: (): Updater<Ide> =>
             Updater(
                 LockedUpdater(locked => {
+
                     if (locked.validatedSpec.kind == "l") return locked;
 
                     const launchers = Object.entries(locked.validatedSpec.value.launchers!);
@@ -191,8 +192,11 @@ export const LockedSpec = {
                                 key,
                                 ...(value as object),
                             })) as any
+                    
                     const step = LockedStep.Updaters.Core.fromLaunchers(ls);
-                    return ({...locked, ...step})
+                    const next = {...locked, progress: step}
+                    debugger
+                    return next;
                     
                 })),
             //Updater((ide: Ide) => {

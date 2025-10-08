@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
+import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders, FlatNode, WorkspaceState} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
 import {MultiSelectCheckboxControlled} from "../vfs/workspace-picker.tsx"
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
@@ -18,7 +18,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
         if(node.kind == "errors") props.setState(Ide.Updaters.CommonUI.chooseErrors(node.errors))
         else setNode(Option.Default.some(node.value));
     }, []);
-    const formsMode: SpecMode = { mode: 'compose', entry: 'upload-folder' };
+    const formsMode: SpecMode = { mode: 'scratch', entry: 'upload-manual' };
     const specOrigin: SpecOrigin = { origin: 'creating'}
     return  (props.phase == 'choose' && props.choose.entry == 'upload-folder' && props.choose.progressIndicator == 'upload-started')
         ?
@@ -54,14 +54,13 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                     <div className="card-actions justify-end">
                         <button
                             onClick={async ()=>{
-                                
+                                //TODO: unify this in updaters/operations
                                 const vfs = await initSpec(props.name.value, formsMode);
                                 if(vfs.kind == "errors") {
                                     props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
                                     return;
                                 }
-     
-
+                                
                                 if(node.kind == "r") {
                                     
                                     const u = Ide.Updaters.Phases.choosing.progressUpload()
@@ -75,7 +74,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                                 .then(Ide.Updaters.Phases.choosing.finishUpload()))
                                         return;
                                     }
-      
+                                    debugger
                                     const u2 = 
                                         Ide.Updaters.Phases.choosing.finishUpload()
                                             .then(
@@ -84,7 +83,20 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                                     node.value,
                                                     {origin: 'creating'},
                                                     formsMode
-                                                )   )
+                                                ))
+                                            .then((ide: Ide) => {
+                                                if(ide.phase != 'locked') return ide;
+                                                
+                                                if(!FlatNode.Operations.hasSingleFolderBelowRoot(node.value)) {
+                                                    return ide;
+                                                }
+                                           
+                                                return ({...ide,
+                                                   locked: {
+                                                    ...ide.locked, 
+                                                       workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.locked.workspace) }
+                                                })
+                                            })
                                     props.setState(u2)
                                     LocalStorage_SpecName.set(props.name.value);
 

@@ -441,13 +441,13 @@ export const DispatcherFormsApp = (props: {}) => {
                         onEntityChange: onPersonConfigChange,
                         apiSources: {
                           infiniteStreamSources:
-                            DispatchPersonFromConfigApis.streamApis,
+                            DispatchFromConfigApis.streamApis,
                           enumOptionsSources:
-                            DispatchPersonFromConfigApis.enumApis,
+                            DispatchFromConfigApis.enumApis,
                           tableApiSources:
-                            DispatchPersonFromConfigApis.tableApiSources,
+                            DispatchFromConfigApis.tableApiSources,
                           lookupSources:
-                            DispatchPersonFromConfigApis.lookupSources,
+                            DispatchFromConfigApis.lookupSources,
                         },
                       },
                       remoteEntityVersionIdentifier:
@@ -493,13 +493,13 @@ export const DispatcherFormsApp = (props: {}) => {
                       onEntityChange: onPersonEntityChange,
                       apiSources: {
                         infiniteStreamSources:
-                          DispatchPersonFromConfigApis.streamApis,
+                          DispatchFromConfigApis.streamApis,
                         enumOptionsSources:
-                          DispatchPersonFromConfigApis.enumApis,
+                          DispatchFromConfigApis.enumApis,
                         tableApiSources:
-                          DispatchPersonFromConfigApis.tableApiSources,
+                          DispatchFromConfigApis.tableApiSources,
                         lookupSources:
-                          DispatchPersonFromConfigApis.lookupSources,
+                          DispatchFromConfigApis.lookupSources,
                       },
                     },
                     remoteEntityVersionIdentifier,
@@ -525,14 +525,14 @@ export const DispatcherFormsApp = (props: {}) => {
                       kind: "create",
                       apiSources: {
                         infiniteStreamSources:
-                          DispatchPersonFromConfigApis.streamApis,
+                          DispatchFromConfigApis.streamApis,
                         enumOptionsSources:
-                          DispatchPersonFromConfigApis.enumApis,
-                        entityApis: DispatchPersonFromConfigApis.entityApis,
+                          DispatchFromConfigApis.enumApis,
+                        entityApis: DispatchFromConfigApis.entityApis,
                         tableApiSources:
-                          DispatchPersonFromConfigApis.tableApiSources,
+                          DispatchFromConfigApis.tableApiSources,
                         lookupSources:
-                          DispatchPersonFromConfigApis.lookupSources,
+                          DispatchFromConfigApis.lookupSources,
                       },
                       // config: {
                       //   source: "api",

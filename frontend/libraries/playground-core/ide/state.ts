@@ -83,7 +83,9 @@ export const Ide = {
         }
     },
     Operations: {
-
+        clearErrors: () => Ide.Updaters.CommonUI.lockingErrors(List([])).then(
+            Ide.Updaters.CommonUI.chooseErrors(List([])).then(Ide.Updaters.CommonUI.bootstrapErrors(List([])))
+        )
     },
     ForeignMutations: (
         _: ForeignMutationsInput<IdeReadonlyContext, IdeWritableState>,

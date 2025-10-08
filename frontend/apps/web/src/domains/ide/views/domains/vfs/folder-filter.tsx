@@ -20,12 +20,12 @@ export const FolderFilter = ({
         <>
         <div className="w-full">
             <div className="mt-3 flex w-full">
-                <div className="filter mb-7 join-item space-x-1">
+                <div className="form">
                     <input
-                        className="btn filter-reset"
-                        type="radio"
-                        name="virtual-files"
-                        aria-label="All"
+                        className="btn btn-square"
+                        type="reset"
+                       // name="virtual-files"
+                        value="×"
                     />
 
                     {files.map((f) => {
@@ -38,8 +38,9 @@ export const FolderFilter = ({
                             >
                                 <input
                                     className="btn"
-                                    type="radio"
-                                    name="virtual-files"
+                                    type="checkbox"
+                                    //name="virtual-files"
+                                    checked={workspace.current.kind === "file"  && workspace.current.file.name === f.name}
                                     aria-label={f.name}
                                     onChange={async () => {
                                         const s_u = 

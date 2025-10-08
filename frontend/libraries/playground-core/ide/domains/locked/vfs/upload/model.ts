@@ -32,6 +32,16 @@ export const FlatNode = {
         }
     },
     Operations: {
+        hasSingleFolderBelowRoot<Meta>(root: Node): boolean {
+            const dir = (root.children || []).filter(x => x.metadata.kind === 'dir');
+            return dir.length == 1;
+        },
+        getFilesForSingleFolderBelowRoot(root: Node): Node[] {
+            if (!FlatNode.Operations.hasSingleFolderBelowRoot(root)) return [];
+            const main = (root.children || []).filter(x => x.metadata.kind === 'dir')[0];
+            const files = (main.children || []).filter(x => x.metadata.kind === 'file')
+            return files
+        },
         filterLeafFolders:(node: Node): Node =>
             node.metadata.kind == "file" 
                 ? node 

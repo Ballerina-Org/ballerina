@@ -126,14 +126,18 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     const [passthroughFormState, setPassthroughFormState] = useState(
         DispatchFormRunnerState<
             DispatchPassthroughFormInjectedTypes,
-            DispatchPassthroughFormFlags
-        >().Default(),
+            DispatchPassthroughFormFlags,
+            DispatchPassthroughFormCustomPresentationContext,
+            DispatchPassthroughFormExtraContext
+        >().Default.passthrough(),
     );
-    const [entityConfigState, setEntityConfigState] = useState(
+    const [configState, setConfigState] = useState(
         DispatchFormRunnerState<
             DispatchPassthroughFormInjectedTypes,
-            DispatchPassthroughFormFlags
-        >().Default(),
+            DispatchPassthroughFormFlags,
+            DispatchPassthroughFormCustomPresentationContext,
+            DispatchPassthroughFormExtraContext
+        >().Default.passthrough(),
     );
 
     const [entity, setEntity] = useState<
@@ -379,12 +383,11 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     fieldTypeConverters: DispatchFieldTypeConverters,
                                     defaultNestedRecordConcreteRenderer:DispatchEntityNestedContainerFormView,
                                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                                    
-                                    infiniteStreamSources:UnmockingApisStreams.streamApis,
-                                    enumOptionsSources:UnmockingApisEnums.enumApis,
-                                    entityApis: DispatchFromConfigApis.entityApis, //UnmockingApisEntities.entityApis,
-                                    tableApiSources: DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
-                                    lookupSources: UnmockingApisLookups.lookupSources,
+                                    //infiniteStreamSources:UnmockingApisStreams.streamApis,
+                                    //enumOptionsSources:UnmockingApisEnums.enumApis,
+                                    //entityApis: DispatchFromConfigApis.entityApis, //UnmockingApisEntities.entityApis,
+                                    //tableApiSources: DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
+                                    //lookupSources: UnmockingApisLookups.lookupSources,
                                     
                                     getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
                                     IdWrapper,
@@ -466,12 +469,21 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                         entity: entity,
                                         config,
                                         onEntityChange: onEntityChange,
+                                        apiSources: {
+                                            infiniteStreamSources: UnmockingApisStreams.streamApis,
+                                            enumOptionsSources: UnmockingApisEnums.enumApis,
+                                            tableApiSources:
+                                            DispatchFromConfigApis.tableApiSources,
+                                            lookupSources:UnmockingApisLookups.lookupSources,
+                                        },
                                     },
                                     remoteEntityVersionIdentifier,
                                     showFormParsingErrors: ShowFormsParsingErrors,
                                     extraContext: {
                                         flags: Set(["BC", "X"]),
                                     },
+                                    globallyDisabled: false,
+                                    globallyReadOnly: false,
                                 }}
                                 setState={setPassthroughFormState}
                                 view={unit}

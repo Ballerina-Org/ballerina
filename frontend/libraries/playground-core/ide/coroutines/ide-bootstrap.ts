@@ -10,7 +10,7 @@ import {Bootstrap} from "../domains/bootstrap/state";
 export const bootstrap =
     Co.Seq([
             Co.SetState(Bootstrap.Updaters.Core.init("Retrieving specifications")),
-            Co.Wait(1000),
+            //Co.Wait(1000),
             Co.Await<ValueOrErrors<string[], any>, any>(() =>
                 listSpecs(), (_err: any) => {}).then(res =>{
                    

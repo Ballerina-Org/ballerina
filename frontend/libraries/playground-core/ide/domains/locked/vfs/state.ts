@@ -49,7 +49,6 @@ export const WorkspaceState = {
         selectFile: (file: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
                 const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, file.metadata.path);
-                debugger
                 if(folder == null) {
                     window.alert("design issue: vfs from file content select file");
                     return workspace;
@@ -64,24 +63,37 @@ export const WorkspaceState = {
                     }
                 })
             }),
+        defaultForSingleFolder: (): Updater<WorkspaceState> =>
+            Updater(workspace =>
+                {
+
+                    if(!FlatNode.Operations.hasSingleFolderBelowRoot(workspace.nodes)) {
+                        return workspace;
+                    }
+                    
+                    const files = FlatNode.Operations.getFilesForSingleFolderBelowRoot(workspace.nodes);
+                    if(files.length  == 0) return workspace;
+                    return WorkspaceState.Updater.selectFile(files[0])(workspace);
+                }
+            ),
         selectFolder: (folder: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
-                if (!(workspace.kind === "selected")) {
-                    window.alert("design issue: vfs from file content");
+                if(!folder.children || folder.children?.length == 0) {
+                    window.alert("folder has no children");
                     return workspace;
                 }
-
+                const file = folder.children[0]
                 return ({
                     ...workspace,
+                    kind: 'selected',
                     current: {
-                        ...workspace.current,
                         kind: 'folder',
-                        folder: folder
+                        folder: folder,
+                        file: file
                     }
                 })
             })
     }
-
 }
 
 export const VirtualFolders = {

@@ -6,7 +6,7 @@ import {
 
     update,
     VirtualFolders,
-    validateCompose, validateExplore
+    validateCompose, validateExplore, getSpec
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -32,6 +32,7 @@ import {SettingsPanel} from "./settings.tsx";
 import {languages} from "monaco-editor";
 import json = languages.json;
 import {Hero} from "./hero.tsx";
+import {List} from "immutable";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -95,18 +96,24 @@ export const IdeLayout: IdeView = (props) =>{
                                             await update(
                                                 props.context.name.value, 
                                                 currentFile.metadata.path, currentFile.metadata.content);
-                                        fromVoe( call,'Specification save')
+                                        
+                                        
+                                        fromVoe(call,'Specification save');
+                                        const updated = await getSpec(props.context.name.value);
+                                        if(updated.kind == "value") {
+                                             props.setState(Ide.Updaters.Phases.locking.refreshVfs(updated.value.folders));
+                                        }
                                         
                                     }
                                 }
                                 onMerge={ async ()=>{
                                     if(!(props.context.phase == 'locked' && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file')) return;
-                                    debugger
+                                    props.setState(
+                                        Ide.Operations.clearErrors())
                                     const json =
                                         props.context.locked.workspace.mode == 'compose' || props.context.locked.workspace.mode == 'scratch'
                                             ? await validateCompose(props.context.name.value)
                                             : await validateExplore(props.context.name.value, props.context.locked.workspace.current.file.metadata.path.split("/"))
-
                                     const u =
                                         json.kind == "errors"
                                             ? Ide.Updaters.CommonUI.lockingErrors(json.errors)

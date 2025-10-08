@@ -56,7 +56,10 @@ export const Actions: React.FC<ActionsProps> = ({
         }) => {
     const isWellKnownFile = context.phase === "locked"
         && context.locked.workspace.kind === "selected"
-        && (context.locked.workspace.current.kind == 'file' && context.locked.workspace.current.file.name == "codegen")
+        && (context.locked.workspace.current.kind == 'file' 
+            && (context.locked.workspace.current.file.name.replace(".json","") == "codegen"
+        || context.locked.workspace.current.file.name.replace(".json","") == "seeds" 
+            || context.locked.workspace.current.file.name.replace(".json","") == "merged" ))
     return (
     <div className={"p-5 mt-10.5 flex space-x-1 w-full"}>
         {/*{context.phase === "choose" && context.specOrigin === "existing" && (*/}

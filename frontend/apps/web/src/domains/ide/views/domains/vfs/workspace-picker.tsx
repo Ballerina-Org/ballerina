@@ -126,9 +126,11 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                 </label>
                                 {props.mode == 'reader' &&  element.metadata?.kind == "dir" && props.workspace.mode == 'compose'
                                     &&  <button 
-                                        className="ml-3 btn btn-neutral btn-xs"
+                                        className="ml-auto btn btn-neutral btn-xs"
                                         onClick={() => { 
+                                            
                                             const selected = element as unknown as Node
+                                            debugger
                                             if (props.onSelectedFolder) {
                                                 let item =
                                                     ({ ...selected, children: selected.children?.map((child: any) => 
