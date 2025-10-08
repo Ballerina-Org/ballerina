@@ -18,10 +18,30 @@ module Eval =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina
 
+  type ExprEvalContextSymbols =
+    { Types: Map<Identifier, TypeSymbol>
+      RecordFields: Map<Identifier, TypeSymbol>
+      UnionCases: Map<Identifier, TypeSymbol> }
+
+    static member Empty =
+      { Types = Map.empty
+        RecordFields = Map.empty
+        UnionCases = Map.empty }
+
+    static member FromTypeChecker(ctx: Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols) =
+      { Types = ctx.Types
+        RecordFields = ctx.RecordFields
+        UnionCases = ctx.UnionCases }
+
+    static member Append (s1: ExprEvalContextSymbols) (s2: ExprEvalContextSymbols) =
+      { Types = Map.fold (fun acc k v -> Map.add k v acc) s1.Types s2.Types
+        RecordFields = Map.fold (fun acc k v -> Map.add k v acc) s1.RecordFields s2.RecordFields
+        UnionCases = Map.fold (fun acc k v -> Map.add k v acc) s1.UnionCases s2.UnionCases }
+
   type ExprEvalContext<'valueExtension> =
     { Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
       ExtensionOps: ValueExtensionOps<'valueExtension>
-      Symbols: Map<Identifier, TypeSymbol> }
+      Symbols: ExprEvalContextSymbols }
 
   and ExtEvalResult<'valueExtension> =
     | Result of Value<TypeValue, 'valueExtension>
@@ -49,7 +69,7 @@ module Eval =
                 (loc0, $"Error: cannot evaluate empty extension")
                 |> Errors.Singleton
                 |> reader.Throw }
-        Symbols = Map.empty }
+        Symbols = ExprEvalContextSymbols.Empty }
 
     static member Getters =
       {| Values = fun (c: ExprEvalContext<'valueExtension>) -> c.Values
@@ -120,7 +140,7 @@ module Eval =
                 let! v = !field
 
                 let! id =
-                  ctx.Symbols
+                  ctx.Symbols.RecordFields
                   |> Map.tryFindWithError id "record field id" (id.ToFSharpString) loc0
                   |> reader.OfSum
 
@@ -128,6 +148,36 @@ module Eval =
               })
             |> reader.All
             |> reader.Map Map.ofList
+
+          return Value.Record(fields)
+        | ExprRec.RecordWith(record, fields) ->
+          let! recordV = !record
+
+          let! recordV =
+            recordV
+            |> Value.AsRecord
+            |> sum.MapError(Errors.FromErrors loc0)
+            |> reader.OfSum
+
+          let! ctx = reader.GetContext()
+
+          let! fields =
+            fields
+            |> List.map (fun (id, field) ->
+              reader {
+                let! v = !field
+
+                let! id =
+                  ctx.Symbols.RecordFields
+                  |> Map.tryFindWithError id "record field id" (id.ToFSharpString) loc0
+                  |> reader.OfSum
+
+                return id, v
+              })
+            |> reader.All
+            |> reader.Map Map.ofList
+
+          let fields = Map.fold (fun acc k v -> Map.add k v acc) recordV fields
 
           return Value.Record(fields)
         | ExprRec.RecordDes(recordExpr, fieldId) ->
@@ -142,7 +192,7 @@ module Eval =
           let! ctx = reader.GetContext()
 
           let! fieldId =
-            ctx.Symbols
+            ctx.Symbols.RecordFields
             |> Map.tryFindWithError fieldId "record field id" (fieldId.ToFSharpString) loc0
             |> reader.OfSum
 
@@ -175,7 +225,7 @@ module Eval =
           let! ctx = reader.GetContext()
 
           let! tag =
-            ctx.Symbols
+            ctx.Symbols.UnionCases
             |> Map.tryFindWithError tag "record field id" (tag.ToFSharpString) loc0
             |> reader.OfSum
 

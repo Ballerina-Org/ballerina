@@ -49,6 +49,7 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{ "discriminator":"record", "value": [[{"discriminator":"lookup", "value":"foo"}, {"discriminator":"int32"}], [{"discriminator":"lookup", "value":"bar"}, {"discriminator":"string"}]] }""",
       TypeExpr.LetSymbols(
         [ "foo"; "bar" ],
+        SymbolsKind.RecordFields,
         TypeExpr.Record
           [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
             (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
@@ -75,6 +76,7 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       TypeExpr.KeyOf(
         TypeExpr.LetSymbols(
           [ "foo" ],
+          SymbolsKind.RecordFields,
           TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32) ]
         )
       )
@@ -85,6 +87,7 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{ "discriminator": "union", "value": [[{"discriminator":"lookup", "value": "foo"}, {"discriminator": "int32"}], [{"discriminator": "lookup", "value": "bar"}, {"discriminator": "string"}]] }""",
       TypeExpr.LetSymbols(
         [ "foo"; "bar" ],
+        SymbolsKind.UnionConstructors,
         TypeExpr.Union
           [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
             (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]

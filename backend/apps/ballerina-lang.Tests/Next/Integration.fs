@@ -57,10 +57,11 @@ let private run program =
 
         let evalContext = context.ExprEvalContext
 
-        let typeCheckedSymbols =
-          match typeCheckFinalState with
-          | None -> []
-          | Some s -> s.Types.Symbols |> Map.toList
+        let typeCheckedSymbols: ExprEvalContextSymbols =
+          (match typeCheckFinalState with
+           | None -> TypeExprEvalSymbols.Empty
+           | Some s -> s.Types.Symbols)
+          |> ExprEvalContextSymbols.FromTypeChecker
 
         let unionCaseConstructors =
           match typeCheckFinalState with
@@ -78,7 +79,7 @@ let private run program =
 
         let evalContext =
           { evalContext with
-              Symbols = (evalContext.Symbols |> Map.toList) @ typeCheckedSymbols |> Map.ofList
+              Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
               // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
               Values = (evalContext.Values |> Map.toList) @ unionCaseConstructors |> Map.ofList }
 

@@ -171,6 +171,14 @@ module Patterns =
     static member RecordCons(fields: List<Identifier * Expr<'T>>) =
       Expr<'T>.RecordCons(fields, Location.Unknown)
 
+    static member RecordWith(record: Expr<'T>, fields: List<Identifier * Expr<'T>>, loc: Location) =
+      { Expr = RecordWith(record, fields)
+        Location = loc }
+
+    static member RecordWith(record: Expr<'T>, fields: List<Identifier * Expr<'T>>) =
+      { Expr = RecordWith(record, fields)
+        Location = Location.Unknown }
+
     static member UnionCons(id: Identifier, e: Expr<'T>, loc: Location) =
       { Expr = UnionCons(id, e)
         Location = loc }

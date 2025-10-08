@@ -5,7 +5,9 @@ module AutomaticSymbolCreation =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Errors
 
-  let wrapWithLet (typeExpr: TypeExpr, lookupsRepresentingSymbols: List<TypeExpr>) : Sum<TypeExpr, Errors> =
+  let wrapWithLet
+    (typeExpr: TypeExpr, lookupsRepresentingSymbols: List<TypeExpr>, symbolsKind: SymbolsKind)
+    : Sum<TypeExpr, Errors> =
     sum {
       let! symbolNames =
         lookupsRepresentingSymbols
@@ -19,7 +21,7 @@ module AutomaticSymbolCreation =
           })
         |> sum.All
 
-      let wrappedTypeExpr = TypeExpr.LetSymbols(symbolNames, typeExpr)
+      let wrappedTypeExpr = TypeExpr.LetSymbols(symbolNames, symbolsKind, typeExpr)
 
       return wrappedTypeExpr
     }

@@ -43,7 +43,7 @@ module Unification =
           let! lVars = TypeExpr.FreeVariables l
           let! rVars = TypeExpr.FreeVariables r
           return Set.union lVars rVars
-        | TypeExpr.LetSymbols(_, e)
+        | TypeExpr.LetSymbols(_, _, e)
         | TypeExpr.KeyOf e
         | TypeExpr.Rotate e
         | TypeExpr.Set e -> return! TypeExpr.FreeVariables e
@@ -281,9 +281,9 @@ module Unification =
                   let s2 = TypeSymbol.Create(Identifier.LocalScope p2.Name)
 
                   ctx
-                  |> UnificationContext.Updaters.Symbols(Map.add !p1.Name s1 >> Map.add !p2.Name s2),
-                  ctx |> UnificationContext.Updaters.Symbols(Map.add !p1.Name s1),
-                  ctx |> UnificationContext.Updaters.Symbols(Map.add !p2.Name s2)
+                  |> UnificationContext.Updaters.Symbols.Types(Map.add !p1.Name s1 >> Map.add !p2.Name s2),
+                  ctx |> UnificationContext.Updaters.Symbols.Types(Map.add !p1.Name s1),
+                  ctx |> UnificationContext.Updaters.Symbols.Types(Map.add !p2.Name s2)
               }
 
             let! v1 =
@@ -293,7 +293,7 @@ module Unification =
                 ((fun t -> UnificationContext.tryFindType (t, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx1)
-                ((fun s -> UnificationContext.tryFindSymbol (s, loc0)) >> Reader.Run ctx1)
+                ((fun s -> UnificationContext.tryFindTypeSymbol (s, loc0)) >> Reader.Run ctx1)
               |> state.OfSum
 
             let! v2 =
@@ -303,7 +303,7 @@ module Unification =
                 ((fun t -> UnificationContext.tryFindType (t, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx2)
-                ((fun s -> UnificationContext.tryFindSymbol (s, loc0)) >> Reader.Run ctx2)
+                ((fun s -> UnificationContext.tryFindTypeSymbol (s, loc0)) >> Reader.Run ctx2)
               |> state.OfSum
 
             // do Console.WriteLine($"Unifying lambda types: {v1} and {v2}")
@@ -323,10 +323,13 @@ module Unification =
         | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when List.length e1 = List.length e2 ->
           for (v1, v2) in List.zip e1 e2 do
             do! v1 == v2
-        | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 }
+        | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 } when e1.Count = e2.Count ->
+          for (k1, v1) in e1 |> OrderedMap.toSeq do
+            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "record field" k1.Name.LocalName |> ofSum
+            do! v1 == v2
         | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
           for (k1, v1) in e1 |> OrderedMap.toSeq do
-            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union" k1.Name.LocalName |> ofSum
+            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union field" k1.Name.LocalName |> ofSum
             do! v1 == v2
         | _ -> return! $"Cannot unify types: {left} and {right}" |> error |> state.Throw
       }

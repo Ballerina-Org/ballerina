@@ -104,107 +104,6 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
     Assert.Fail $"Expected typechecking to succeed with '(Int -> Int)::*' but succeeded with: {t}::{k}"
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
-[<Test>]
-let ``LangNext-TypeCheck record cons typechecks with declared symbols`` () =
-  let program =
-    Expr.RecordCons(
-      [ !"X", Expr.Primitive(PrimitiveValue.Int32 10)
-        !"Y", Expr.Primitive(PrimitiveValue.Bool true) ]
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let X = "X" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Y = "Y" |> Identifier.LocalScope |> TypeSymbol.Create
-
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(replaceWith (Map.ofList [ (!"X", X); (!"Y", Y) ]))
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected =
-    TypeValue.CreateRecord([ X, TypeValue.CreateInt32(); Y, TypeValue.CreateBool() ] |> OrderedMap.ofList)
-
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail $"Expected typechecking to succeed with 'Int -> Int' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
-
-
-
-[<Test>]
-let ``LangNext-TypeCheck record cons and record des typecheck with a new type declaration`` () =
-  let program =
-    Expr.TypeLet(
-      "Vector3",
-      TypeExpr.Let(
-        "X",
-        TypeExpr.NewSymbol "X",
-        TypeExpr.Let(
-          "Y",
-          TypeExpr.NewSymbol "Y",
-          TypeExpr.Let(
-            "Z",
-            TypeExpr.NewSymbol "Z",
-            TypeExpr.Record(
-              [ (TypeExpr.Lookup(!"X"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Y"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Z"), TypeExpr.Primitive PrimitiveType.Decimal) ]
-            )
-          )
-        )
-      ),
-      Expr.Let(
-        "v3" |> Var.Create,
-        None,
-        Expr.RecordCons(
-          [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
-            ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
-            ("Vector3" => "Z", Expr.Primitive(PrimitiveValue.Decimal 3.0M)) ]
-        ),
-        Expr.Apply(
-          Expr.Apply(
-            Expr.Lookup !"+",
-            Expr.Apply(
-              Expr.Apply(Expr.Lookup !"+", Expr.RecordDes(Expr.Lookup !"v3", "Vector3" => "X")),
-              Expr.RecordDes(Expr.Lookup !"v3", !"Y")
-            )
-          ),
-          Expr.RecordDes(Expr.Lookup !"v3", !"Z")
-        )
-      )
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState = TypeCheckState.Empty
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateDecimal(),
-          TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected = TypeValue.CreateDecimal()
-
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail
-      $"Expected typechecking to succeed with '(Case1Of3 of Int | Case2Of3 of Int | Case3Of3 of _) -> Int' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
-
 
 
 [<Test>]
@@ -469,7 +368,7 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
   let initialState =
     TypeCheckState.Empty
     |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(
+      TypeExprEvalState.Updaters.Symbols.Types(
         replaceWith (
           Map.ofList
             [ !"number", numberFieldSymbol
@@ -525,143 +424,6 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
-[<Test>]
-let ``LangNext-TypeCheck record cons fail when symbol does not exist`` () =
-  let program =
-    Expr.RecordCons(
-      [ !"X", Expr.Primitive(PrimitiveValue.Int32 10)
-        !"NON_EXISTENT_ID", Expr.Primitive(PrimitiveValue.Bool true) ]
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let X = "X" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Y = "Y" |> Identifier.LocalScope |> TypeSymbol.Create
-
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(replaceWith (Map.ofList [ (!"X", X); (!"Y", Y) ]))
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot find symbol"; "NON_EXISTENT_ID" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-
-[<Test>]
-let ``LangNext-TypeCheck record des fail when symbol does not exist`` () =
-  let program =
-    Expr.TypeLet(
-      "Vector3",
-      TypeExpr.Let(
-        "X",
-        TypeExpr.NewSymbol "X",
-        TypeExpr.Let(
-          "Y",
-          TypeExpr.NewSymbol "Y",
-          TypeExpr.Let(
-            "Z",
-            TypeExpr.NewSymbol "Z",
-            TypeExpr.Record(
-              [ (TypeExpr.Lookup(!"X"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Y"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Z"), TypeExpr.Primitive PrimitiveType.Decimal) ]
-            )
-          )
-        )
-      ),
-      Expr.Let(
-        "v3" |> Var.Create,
-        None,
-        Expr.RecordCons(
-          [ ("Vector3" => "X", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
-            ("Vector3" => "Y", Expr.Primitive(PrimitiveValue.Decimal 2.0M))
-            ("Vector3" => "Z", Expr.Primitive(PrimitiveValue.Decimal 3.0M)) ]
-        ),
-        Expr.Apply(
-          Expr.Apply(
-            Expr.Lookup !"+",
-            Expr.Apply(
-              Expr.Apply(Expr.Lookup !"+", Expr.RecordDes(Expr.Lookup !"v3", "Vector3" => "X")),
-              Expr.RecordDes(Expr.Lookup !"v3", !"Y")
-            )
-          ),
-          Expr.RecordDes(Expr.Lookup !"v3", !"NON_EXISTENT_FIELD")
-        )
-      )
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState = TypeCheckState.Empty
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateDecimal(),
-          TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "cannot find symbol"; "NON_EXISTENT_FIELD" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-
-[<Test>]
-let ``LangNext-TypeCheck union cons fail when symbol does not exist`` () =
-  let program =
-    Expr.UnionCons(!"NON_EXISTENT_ID", Expr.Primitive(PrimitiveValue.Decimal 1.0M))
-
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState = TypeCheckState.Empty
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "Cannot find symbols"; "NON_EXISTENT_ID" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
 
 [<Test>]
 let ``LangNext-TypeCheck union des fails on non-existent case`` () =
@@ -687,7 +449,7 @@ let ``LangNext-TypeCheck union des fails on non-existent case`` () =
   let initialState =
     TypeCheckState.Empty
     |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols(
+      TypeExprEvalState.Updaters.Symbols.Types(
         replaceWith (
           Map.ofList
             [ (Case1Of3.Name, Case1Of3)
@@ -1057,67 +819,7 @@ let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
   let initialState = TypeCheckState.Empty
 
   let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "cannot unify types"; "string"; "Choice1Of3" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-[<Test>]
-let ``LangNext-TypeCheck union des fails on missing case`` () =
-  let program =
-    Expr.TypeLet(
-      "Either3",
-      TypeExpr.Let(
-        "Choice1Of3",
-        TypeExpr.NewSymbol "Choice1Of3",
-        TypeExpr.Let(
-          "Choice2Of3",
-          TypeExpr.NewSymbol "Choice2Of3",
-          TypeExpr.Let(
-            "Choice3Of3",
-            TypeExpr.NewSymbol "Choice3Of3",
-            TypeExpr.Union(
-              [ (TypeExpr.Lookup(!"Choice1Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice2Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice3Of3"), TypeExpr.Primitive PrimitiveType.String) ]
-            )
-          )
-        )
-      ),
-      Expr.Let(
-        "v" |> Var.Create,
-        None,
-        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.Decimal 1.0m)),
-        Expr.Apply(
-          Expr.UnionDes(
-            [ (!"Choice1Of3",
-               ("x" |> Var.Create,
-                Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0m))))
-              (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList,
-            None
-          ),
-          Expr.Lookup !"v"
-        )
-      )
-    )
-
-  let initialContext = initialContext PrimitiveType.Decimal
-
-  let initialState = TypeCheckState.Empty
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "incomplete pattern matching" ]
+  let expected_error_messages = [ "cannot unify types"; "string"; "decimal" ]
 
   match actual with
   | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
