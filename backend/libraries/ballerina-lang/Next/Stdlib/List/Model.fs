@@ -1,6 +1,5 @@
 namespace Ballerina.DSL.Next.StdLib.List
 
-[<AutoOpen>]
 module Model =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
@@ -14,6 +13,7 @@ module Model =
     | List_Nil
     | List_Map of {| f: Option<Value<TypeValue, 'ext>> |}
     | List_Filter of {| f: Option<Value<TypeValue, 'ext>> |}
+    | List_Append of {| l: Option<Value<TypeValue, 'ext>> |}
     | List_Fold of
       {| f: Option<Value<TypeValue, 'ext>>
          acc: Option<Value<TypeValue, 'ext>> |}
@@ -25,6 +25,7 @@ module Model =
       | List_Nil -> "List::Nil"
       | List_Map _ -> "List::map"
       | List_Filter _ -> "List::filter"
+      | List_Append _ -> "List::append"
       | List_Fold _ -> "List::fold"
       | List_Length -> "List::length"
 

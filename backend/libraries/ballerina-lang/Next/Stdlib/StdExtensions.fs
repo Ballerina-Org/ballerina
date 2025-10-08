@@ -3,18 +3,7 @@
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.Lenses
 open Ballerina.DSL.Next.Extensions
-open Ballerina.DSL.Next.StdLib.List
-open Ballerina.DSL.Next.StdLib.Option
-open Ballerina.DSL.Next.StdLib.Int32
-open Ballerina.DSL.Next.StdLib.Int64
-open Ballerina.DSL.Next.StdLib.Float32
-open Ballerina.DSL.Next.StdLib.Float64
-open Ballerina.DSL.Next.StdLib.Decimal
-open Ballerina.DSL.Next.StdLib.DateOnly
-open Ballerina.DSL.Next.StdLib.DateTime
-open Ballerina.DSL.Next.StdLib.String
-open Ballerina.DSL.Next.StdLib.Guid
-open Ballerina.DSL.Next.StdLib.Bool
+open Ballerina.DSL.Next.StdLib
 
 type ValueExt =
   | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt>
@@ -29,8 +18,8 @@ type ValueExt =
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
 and ListExt =
-  | ListOperations of ListOperations<ValueExt>
-  | ListValues of ListValues<ValueExt>
+  | ListOperations of List.Model.ListOperations<ValueExt>
+  | ListValues of List.Model.ListValues<ValueExt>
 
   override self.ToString() : string =
     match self with
@@ -38,9 +27,9 @@ and ListExt =
     | ListValues vals -> vals.ToString()
 
 and OptionExt =
-  | OptionOperations of OptionOperations<ValueExt>
-  | OptionValues of OptionValues<ValueExt>
-  | OptionConstructors of OptionConstructors
+  | OptionOperations of Option.Model.OptionOperations<ValueExt>
+  | OptionValues of Option.Model.OptionValues<ValueExt>
+  | OptionConstructors of Option.Model.OptionConstructors
 
   override self.ToString() : string =
     match self with
@@ -49,17 +38,17 @@ and OptionExt =
     | OptionConstructors cons -> cons.ToString()
 
 and PrimitiveExt =
-  | BoolOperations of BoolOperations<ValueExt>
-  | Int32Operations of Int32Operations<ValueExt>
-  | Int64Operations of Int64Operations<ValueExt>
-  | Float32Operations of Float32Operations<ValueExt>
-  | Float64Operations of Float64Operations<ValueExt>
-  | DecimalOperations of DecimalOperations<ValueExt>
-  | DateOnlyOperations of DateOnlyOperations<ValueExt>
-  | DateTimeOperations of DateTimeOperations<ValueExt>
-  | TimeSpanOperations of TimeSpanOperations<ValueExt>
-  | StringOperations of StringOperations<ValueExt>
-  | GuidOperations of GuidOperations<ValueExt>
+  | BoolOperations of Bool.Model.BoolOperations<ValueExt>
+  | Int32Operations of Int32.Model.Int32Operations<ValueExt>
+  | Int64Operations of Int64.Model.Int64Operations<ValueExt>
+  | Float32Operations of Float32.Model.Float32Operations<ValueExt>
+  | Float64Operations of Float64.Model.Float64Operations<ValueExt>
+  | DecimalOperations of Decimal.Model.DecimalOperations<ValueExt>
+  | DateOnlyOperations of DateOnly.Model.DateOnlyOperations<ValueExt>
+  | DateTimeOperations of DateTime.Model.DateTimeOperations<ValueExt>
+  | TimeSpanOperations of TimeSpan.Model.TimeSpanOperations<ValueExt>
+  | StringOperations of String.Model.StringOperations<ValueExt>
+  | GuidOperations of Guid.Model.GuidOperations<ValueExt>
 
   override self.ToString() : string =
     match self with
@@ -76,22 +65,22 @@ and PrimitiveExt =
     | GuidOperations ops -> ops.ToString()
 
 type StdExtensions =
-  { List: TypeExtension<ValueExt, Unit, ListValues<ValueExt>, ListOperations<ValueExt>>
-    Bool: OperationsExtension<ValueExt, BoolOperations<ValueExt>>
-    Int32: OperationsExtension<ValueExt, Int32Operations<ValueExt>>
-    Int64: OperationsExtension<ValueExt, Int64Operations<ValueExt>>
-    Float32: OperationsExtension<ValueExt, Float32Operations<ValueExt>>
-    Float64: OperationsExtension<ValueExt, Float64Operations<ValueExt>>
-    Decimal: OperationsExtension<ValueExt, DecimalOperations<ValueExt>>
-    DateOnly: OperationsExtension<ValueExt, DateOnlyOperations<ValueExt>>
-    DateTime: OperationsExtension<ValueExt, DateTimeOperations<ValueExt>>
-    String: OperationsExtension<ValueExt, StringOperations<ValueExt>>
-    Guid: OperationsExtension<ValueExt, GuidOperations<ValueExt>> }
+  { List: TypeExtension<ValueExt, Unit, List.Model.ListValues<ValueExt>, List.Model.ListOperations<ValueExt>>
+    Bool: OperationsExtension<ValueExt, Bool.Model.BoolOperations<ValueExt>>
+    Int32: OperationsExtension<ValueExt, Int32.Model.Int32Operations<ValueExt>>
+    Int64: OperationsExtension<ValueExt, Int64.Model.Int64Operations<ValueExt>>
+    Float32: OperationsExtension<ValueExt, Float32.Model.Float32Operations<ValueExt>>
+    Float64: OperationsExtension<ValueExt, Float64.Model.Float64Operations<ValueExt>>
+    Decimal: OperationsExtension<ValueExt, Decimal.Model.DecimalOperations<ValueExt>>
+    DateOnly: OperationsExtension<ValueExt, DateOnly.Model.DateOnlyOperations<ValueExt>>
+    DateTime: OperationsExtension<ValueExt, DateTime.Model.DateTimeOperations<ValueExt>>
+    String: OperationsExtension<ValueExt, String.Model.StringOperations<ValueExt>>
+    Guid: OperationsExtension<ValueExt, Guid.Model.GuidOperations<ValueExt>> }
 
 let stdExtensions =
 
   let listExtension =
-    ListExtension<ValueExt>
+    List.Extension.ListExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -106,7 +95,7 @@ let stdExtensions =
         Set = ListOperations >> Choice1Of3 >> ValueExt.ValueExt }
 
   let optionExtension =
-    OptionExtension<ValueExt>
+    Option.Extension.OptionExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -127,7 +116,7 @@ let stdExtensions =
         Set = OptionOperations >> Choice2Of3 >> ValueExt.ValueExt }
 
   let boolExtension =
-    BoolExtension<ValueExt>
+    Bool.Extension.BoolExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -136,7 +125,7 @@ let stdExtensions =
         Set = BoolOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let int32Extension =
-    Int32Extension<ValueExt>
+    Int32.Extension.Int32Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -145,7 +134,7 @@ let stdExtensions =
         Set = Int32Operations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let int64Extension =
-    Int64Extension<ValueExt>
+    Int64.Extension.Int64Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -154,7 +143,7 @@ let stdExtensions =
         Set = Int64Operations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let float32Extension =
-    Float32Extension<ValueExt>
+    Float32.Extension.Float32Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -163,7 +152,7 @@ let stdExtensions =
         Set = Float32Operations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let float64Extension =
-    Float64Extension<ValueExt>
+    Float64.Extension.Float64Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -172,7 +161,7 @@ let stdExtensions =
         Set = Float64Operations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let decimalExtension =
-    DecimalExtension<ValueExt>
+    Decimal.Extension.DecimalExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -181,7 +170,7 @@ let stdExtensions =
         Set = DecimalOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let dateOnlyExtension =
-    DateOnlyExtension<ValueExt>
+    DateOnly.Extension.DateOnlyExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -190,7 +179,7 @@ let stdExtensions =
         Set = DateOnlyOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let dateTimeExtension =
-    DateTimeExtension<ValueExt>
+    DateTime.Extension.DateTimeExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -208,7 +197,7 @@ let stdExtensions =
         Set = TimeSpanOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let stringExtension =
-    StringExtension<ValueExt>
+    String.Extension.StringExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -217,7 +206,7 @@ let stdExtensions =
         Set = StringOperations >> Choice3Of3 >> ValueExt.ValueExt }
 
   let guidExtension =
-    GuidExtension<ValueExt>
+    Guid.Extension.GuidExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function

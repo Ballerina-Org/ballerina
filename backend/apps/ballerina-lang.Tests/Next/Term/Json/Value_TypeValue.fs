@@ -12,7 +12,7 @@ open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.DSL.Next.StdLib.Extensions
@@ -93,7 +93,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
         ValueExt(
           Choice1Of3(
             ListValues(
-              List
+              List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive
                   PrimitiveValue.Int32 2 |> Value.Primitive ]
             )

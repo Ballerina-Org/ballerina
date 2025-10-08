@@ -26,7 +26,8 @@ open Ballerina.Parser
 open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.Syntax
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next
+open Ballerina.DSL.Next.StdLib
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -460,14 +461,14 @@ in l,l1,l2,l3,l4
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of3(ListExt.ListValues(ListValues.List [ Value.Primitive(Int32 1)
-                                                                           Value.Primitive(Int32 -2)
-                                                                           Value.Primitive(Int32 3) ]))))
-              Ext(ValueExt(Choice1Of3(ListExt.ListValues(ListValues.List [ Value.Primitive(Bool true)
-                                                                           Value.Primitive(Bool false)
-                                                                           Value.Primitive(Bool true) ]))))
-              Ext(ValueExt(Choice1Of3(ListExt.ListValues(ListValues.List [ Value.Primitive(Int32 1)
-                                                                           Value.Primitive(Int32 3) ]))))
+    | Tuple [ Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 -2)
+                                                                                             Value.Primitive(Int32 3) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+                                                                                             Value.Primitive(Bool false)
+                                                                                             Value.Primitive(Bool true) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 3) ]))))
               Value.Primitive(Int32 2)
               Value.Primitive(Bool false) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
@@ -522,5 +523,36 @@ in match t with
     match value with
     | Value.Primitive(Int32 0) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected 18, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration list append succeeds`` () =
+  let program =
+    """
+let cons = List::Cons [string]
+in let nil = List::Nil [string] ()
+in let l1 = cons("hello", cons(" ", cons("world", nil)))
+in let l2 = cons("bonjour", cons(" ", cons("monde", nil)))
+in List::append [string] l1 l2
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Ext(ValueExt(Choice1Of3(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "world")
+                                                                              Value.Primitive(String "bonjour")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "monde") ])))) ->
+      Assert.Pass()
+    | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")

@@ -22,7 +22,7 @@ open Ballerina.Seeds.Test
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.DSL.Next.StdLib.Extensions
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 open Ballerina.Data.Spec.Json
 open Ballerina.Data.Spec.Model
 open Ballerina.Data.Schema.Model
@@ -210,7 +210,7 @@ let ``Seeds: List extension`` () =
           | Choice1Of3(ListExt.ListValues v) -> sum.Return v
           | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
 
-        let (List values) = listValues
+        let (List.Model.ListValues.List values) = listValues
 
         let! values = values |> Seq.map Value.AsPrimitive |> sum.All
         let! strings = values |> Seq.map PrimitiveValue.AsString |> sum.All
