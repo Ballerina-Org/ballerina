@@ -622,8 +622,10 @@ export const TableAbstractRenderer = <
 
     const hasMoreValues = props.context.value.hasMoreValues;
 
+    const validColumns = CellTemplates.keySeq().toArray();
+
     const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
-      CellTemplates.keySeq().toArray().includes(_),
+      validColumns.includes(_),
     );
 
     const embeddedTableData =
@@ -643,11 +645,13 @@ export const TableAbstractRenderer = <
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
         : props.context.value.data.map((rowData, rowId) =>
-            rowData.fields.map((_, column) =>
-              EmbeddedCellTemplates.get(column)!(rowId)(
-                rowData.fields.get(column)!,
-              )(disabledColumnKeysSet.has(column)),
-            ),
+            rowData.fields
+              .filter((_, column) => validColumns.includes(column))
+              .map((_, column) =>
+                EmbeddedCellTemplates.get(column)!(rowId)(
+                  rowData.fields.get(column)!,
+                )(disabledColumnKeysSet.has(column)),
+              ),
           );
 
     if (props.context.customFormState.isFilteringInitialized == false) {
