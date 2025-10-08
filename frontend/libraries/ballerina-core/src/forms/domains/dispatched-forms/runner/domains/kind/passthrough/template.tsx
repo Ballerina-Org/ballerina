@@ -108,7 +108,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
           extraContext: props.context.extraContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
-          domNodeAncestorPath: `[${props.context.formName}]`,
+          domNodeAncestorPath: "",
           labelContext: props.context.formName,
           lookupTypeAncestorNames: [],
           customPresentationContext: undefined,
