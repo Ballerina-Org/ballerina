@@ -66,6 +66,8 @@ export const UnionAbstractRenderer = <
               CommonAbstractRendererState.Operations.GetLabelContext(
                 _.labelContext,
                 CaseRenderers.get(caseName)!,
+                true,
+                caseName,
               );
             return {
               ...(_.caseFormStates.get(caseName)! ??

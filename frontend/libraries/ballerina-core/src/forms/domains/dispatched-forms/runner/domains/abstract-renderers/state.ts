@@ -71,16 +71,22 @@ export const CommonAbstractRendererState = {
         | RecordFieldRenderer<any>
         | TableCellRenderer<any>
         | Renderer<any>,
+      isUnionCase?: boolean,
+      caseName?: string,
     ) => {
       const actualRenderer = !("renderer" in renderer)
         ? renderer
         : renderer.renderer;
+      if (isUnionCase && caseName) {
+        return `${parentLabelContext}:${caseName}`;
+      }
       if (
         actualRenderer.kind == "lookupType-lookupRenderer" ||
         actualRenderer.kind == "inlinedType-lookupRenderer"
       ) {
         return actualRenderer.lookupRenderer;
       }
+
       return parentLabelContext;
     },
   },
