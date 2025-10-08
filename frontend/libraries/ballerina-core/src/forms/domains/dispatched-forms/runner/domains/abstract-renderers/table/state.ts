@@ -504,6 +504,23 @@ export type TableAbstractRendererView<
         >
       >
     >;
+    UnfilteredTableData_Dangerous: OrderedMap<
+      string,
+      OrderedMap<
+        string,
+        (
+          flags: Flags | undefined,
+        ) => Template<
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          TableAbstractRendererForeignMutationsExpected<Flags>
+        >
+      >
+    >;
     DetailsRenderer?: (
       flags: Flags | undefined,
     ) => Template<
