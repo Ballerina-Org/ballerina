@@ -77,16 +77,15 @@ export const CommonAbstractRendererState = {
       const actualRenderer = !("renderer" in renderer)
         ? renderer
         : renderer.renderer;
-      if (isUnionCase && caseName) {
-        return `${parentLabelContext}:${caseName}`;
-      }
       if (
         actualRenderer.kind == "lookupType-lookupRenderer" ||
         actualRenderer.kind == "inlinedType-lookupRenderer"
       ) {
         return actualRenderer.lookupRenderer;
       }
-
+      if (isUnionCase && caseName) {
+        return `${parentLabelContext}:${caseName}`;
+      }
       return parentLabelContext;
     },
   },
