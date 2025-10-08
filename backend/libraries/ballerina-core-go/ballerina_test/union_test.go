@@ -39,6 +39,26 @@ func TestUnionGetCaseName_Success(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestUnionGetCaseName_Error(t *testing.T) {
+	t.Parallel()
+	data := json.RawMessage(`{"discriminator":"union","value":[123,{"discriminator":"unit"}]}`)
+	deserialized := ballerina.Bind(
+		ballerinaserialization.DeserializeUnion(data),
+		ballerinaserialization.UnionForSerialization.GetCaseName,
+	)
+	_ = ballerina.Fold(
+		deserialized,
+		func(err error) ballerina.Unit {
+			require.ErrorContains(t, err, "on union case name")
+			return ballerina.NewUnit()
+		},
+		func(value string) ballerina.Unit {
+			require.Fail(t, "expected error, got value %s", value)
+			return ballerina.NewUnit()
+		},
+	)
+}
+
 func TestDeserializeUnion_Error_NotUnionDiscriminator(t *testing.T) {
 	t.Parallel()
 	data := json.RawMessage(`{"discriminator":"not-union","value":[{"name": "Case"},{"discriminator":"unit"}]}`)

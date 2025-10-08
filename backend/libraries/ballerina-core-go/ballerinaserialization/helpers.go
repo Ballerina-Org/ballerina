@@ -135,10 +135,10 @@ func (u UnionForSerialization) GetCaseName() ballerina.Sum[error, string] {
 	type caseName struct {
 		Name string `json:"name"`
 	}
-	return ballerina.Bind(
-		WrappedUnmarshal[caseName](u.Value[0]),
+	return unmarshalWithContext(
+		"on union case name",
 		func(caseName caseName) ballerina.Sum[error, string] {
 			return ballerina.Right[error, string](caseName.Name)
 		},
-	)
+	)(u.Value[0])
 }
