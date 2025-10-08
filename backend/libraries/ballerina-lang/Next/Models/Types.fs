@@ -38,10 +38,19 @@ module Model =
 
     override v.ToString() = v.Name
 
+  and SymbolsKind =
+    | RecordFields
+    | UnionConstructors
+
+    override sk.ToString() =
+      match sk with
+      | RecordFields -> "RecordFields"
+      | UnionConstructors -> "UnionConstructors"
+
   and TypeExpr =
     | Primitive of PrimitiveType
     | Let of string * TypeExpr * TypeExpr
-    | LetSymbols of List<string> * TypeExpr
+    | LetSymbols of List<string> * SymbolsKind * TypeExpr
     | NewSymbol of string
     | Lookup of Identifier
     | Apply of TypeExpr * TypeExpr
@@ -66,7 +75,8 @@ module Model =
         $"{i.Sym.Name}[{String.Join(comma, i.Arguments)}]"
       | Primitive p -> p.ToString()
       | Let(name, value, body) -> $"Let {name} = {value} in {body})"
-      | LetSymbols(names, body) -> let comma = ", " in $"LetSymbols({String.Join(comma, names)}) in {body})"
+      | LetSymbols(names, symbolsKind, body) ->
+        let comma = ", " in $"LetSymbols({String.Join(comma, names)}):{symbolsKind} in {body})"
       | NewSymbol name -> $"NewSymbol({name})"
       | Lookup id -> id.ToString()
       | Apply(f, a) -> $"{f}[{a}]"

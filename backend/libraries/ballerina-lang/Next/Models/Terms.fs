@@ -23,6 +23,7 @@ module Model =
     | Let of Var * Option<'T> * Expr<'T> * Expr<'T>
     | TypeLet of string * 'T * Expr<'T>
     | RecordCons of List<Identifier * Expr<'T>>
+    | RecordWith of Expr<'T> * List<Identifier * Expr<'T>>
     | UnionCons of Identifier * Expr<'T>
     | TupleCons of List<Expr<'T>>
     | SumCons of SumConsSelector * Expr<'T>
@@ -55,6 +56,13 @@ module Model =
           |> String.concat "; "
 
         $"{{ {fieldStr} }}"
+      | RecordWith(record, fields) ->
+        let fieldStr =
+          fields
+          |> List.map (fun (k, v) -> $"{k.LocalName} = {v.ToString()}")
+          |> String.concat "; "
+
+        $"{{ {record.ToString()} with {fieldStr} }}"
       | UnionCons(case, value) -> $"{case.LocalName}({value.ToString()})"
       | TupleCons values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "

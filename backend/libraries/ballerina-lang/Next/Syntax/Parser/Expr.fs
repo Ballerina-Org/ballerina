@@ -232,6 +232,31 @@ module Expr =
 
         return!
           parser {
+            let! firstFieldOrWithExpr =
+              parser {
+                let! e = expr parseAllComplexShapes
+
+                return!
+                  parser.Any
+                    [ parser {
+                        do! withKeyword |> parser.Ignore
+                        return Sum.Right e
+                      }
+
+                      parser {
+                        let! e =
+                          e
+                          |> Expr.AsLookup
+                          |> sum.MapError(Errors.FromErrors(e.Location))
+                          |> parser.OfSum
+
+                        do! equalsOperator |> parser.Ignore
+                        let! value = expr parseAllComplexShapes
+                        do! semicolonOperator
+                        return Sum.Left(e, value)
+                      } ]
+              }
+
             let! fields =
               parser.Many(
                 parser {
@@ -245,7 +270,9 @@ module Expr =
 
             do! closeCurlyBracketOperator
 
-            return Expr.RecordCons(fields, loc)
+            match firstFieldOrWithExpr with
+            | Sum.Left(f, v) -> return Expr.RecordCons((f, v) :: fields, loc)
+            | Sum.Right e -> return Expr.RecordWith(e, fields, loc)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -302,23 +329,25 @@ module Expr =
             do! inKeyword
             let! body = expr parseAllComplexShapes
 
-            let symbols =
+            let symbols, symbolsKind =
               match typeDecl with
               | TypeExpr.Record fields ->
                 fields
                 |> List.map fst
                 |> List.collect (function
                   | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
-                  | _ -> [])
+                  | _ -> []),
+                SymbolsKind.RecordFields
               | TypeExpr.Union cases ->
                 cases
                 |> List.map fst
                 |> List.collect (function
                   | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
-                  | _ -> [])
-              | _ -> []
+                  | _ -> []),
+                SymbolsKind.UnionConstructors
+              | _ -> [], SymbolsKind.RecordFields
 
-            let typeDecl = TypeExpr.LetSymbols(symbols, typeDecl)
+            let typeDecl = TypeExpr.LetSymbols(symbols, symbolsKind, typeDecl)
 
             return Expr.TypeLet(id, typeDecl, body, loc)
           }

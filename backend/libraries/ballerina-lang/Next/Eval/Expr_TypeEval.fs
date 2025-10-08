@@ -36,6 +36,20 @@ module TypeEval =
             let! bodyType = !body
             let! var_type = var_type |> Option.map (!!) |> state.RunOption
             return Expr.Let(var, var_type, valueType, bodyType, expr.Location)
+          | ExprRec.RecordWith(record, fields) ->
+            let! recordType = !record
+
+            let! fieldTypes =
+              fields
+              |> List.map (fun (name, value) ->
+                state {
+                  let! valueType = !value
+                  return (name, valueType)
+                })
+              |> state.All
+
+            return Expr.RecordWith(recordType, fieldTypes, expr.Location)
+
           | ExprRec.RecordCons fields ->
             let! fieldTypes =
               fields

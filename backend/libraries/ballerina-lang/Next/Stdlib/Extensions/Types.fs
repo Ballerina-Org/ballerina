@@ -80,9 +80,13 @@ module Types =
               { typeCheckState.Types with
                   Bindings = bindings
                   Symbols =
-                    typeExt.Cases
-                    |> Map.keys
-                    |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Types.Symbols } }
+                    { typeCheckState.Types.Symbols with
+                        UnionCases =
+                          typeExt.Cases
+                          |> Map.keys
+                          |> Seq.fold
+                            (fun acc (id, sym) -> acc |> Map.add id sym)
+                            typeCheckState.Types.Symbols.UnionCases } } }
 
     static member RegisterExprEvalContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)

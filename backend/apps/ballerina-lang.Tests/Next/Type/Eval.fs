@@ -20,7 +20,10 @@ let ``LangNext-TypeEval lookup looks up existing types`` () =
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
       TypeExprEvalContext.Empty,
-      TypeExprEvalState.Create([ "T1" |> Identifier.LocalScope, (t1, Kind.Star) ] |> Map.ofSeq, Map.empty)
+      TypeExprEvalState.Create(
+        [ "T1" |> Identifier.LocalScope, (t1, Kind.Star) ] |> Map.ofSeq,
+        TypeExprEvalSymbols.Empty
+      )
     )
 
   match actual with
@@ -56,7 +59,7 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   match actual with
@@ -94,7 +97,9 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
         [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
           "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
+        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+        |> Map.ofList
+        |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
     )
 
@@ -133,7 +138,9 @@ let ``LangNext-TypeEval Flatten of named records`` () =
         [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
           "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ] |> Map.ofList
+        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+        |> Map.ofList
+        |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
     )
 
@@ -168,7 +175,9 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
       TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B ] |> Map.ofList |> TypeExprEvalState.CreateFromSymbols
+      [ A.Name, A; B.Name, B ]
+      |> Map.ofList
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   match actual with
@@ -196,7 +205,7 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   let expected =
@@ -244,7 +253,7 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; D.Name, D; E.Name, E ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   match actual with
@@ -294,7 +303,7 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   let expected =
@@ -335,7 +344,7 @@ let ``LangNext-TypeEval Exclude of Records`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   let expected =
@@ -379,7 +388,7 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   (*
@@ -438,7 +447,7 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   match actual with
@@ -466,7 +475,7 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   let expected =
@@ -503,7 +512,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
       TypeExprEvalContext.Empty,
       [ A.Name, A; B.Name, B; C.Name, C ]
       |> Map.ofList
-      |> TypeExprEvalState.CreateFromSymbols
+      |> TypeExprEvalState.CreateFromTypeSymbols
     )
 
   let expected =
@@ -609,6 +618,7 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
         [ "Value" ]
         |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
+        |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
     )
 
@@ -641,6 +651,7 @@ let ``LangNext-TypeEval (generic) Apply of symbol instead of type fails`` () =
         [ "Value" ]
         |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
+        |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
     )
 

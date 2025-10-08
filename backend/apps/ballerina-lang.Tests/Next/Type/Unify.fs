@@ -501,7 +501,10 @@ let ``LangNext-Unify unifies can look lookups up`` () =
     (TypeValue
       .Unify(Location.Unknown, input1, input2)
       .run (
-        UnificationContext.Create([ !"T1", (input1, Kind.Star) ] |> Map.ofList, Map.empty),
+        UnificationContext.Create(
+          [ !"T1", (input1, Kind.Star) ] |> Map.ofList,
+          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+        ),
         EquivalenceClasses.Empty
       ))
 
@@ -520,7 +523,10 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
     (TypeValue
       .Unify(inputs)
       .run (
-        UnificationContext.Create([ !"T1", (TypeValue.CreateDecimal(), Kind.Star) ] |> Map.ofList, Map.empty),
+        UnificationContext.Create(
+          [ !"T1", (TypeValue.CreateDecimal(), Kind.Star) ] |> Map.ofList,
+          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+        ),
         EquivalenceClasses.Empty
       ))
 
@@ -537,7 +543,10 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
     (TypeValue
       .Unify(Location.Unknown, input1, input2)
       .run (
-        UnificationContext.Create([ !"T2", (input1, Kind.Star) ] |> Map.ofList, Map.empty),
+        UnificationContext.Create(
+          [ !"T2", (input1, Kind.Star) ] |> Map.ofList,
+          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+        ),
         EquivalenceClasses.Empty
       ))
 

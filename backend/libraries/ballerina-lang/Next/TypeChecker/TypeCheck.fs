@@ -69,13 +69,33 @@ module TypeCheck =
       { Bindings = ctx.Types
         VisitedVars = Set.empty }
 
-    static member TryFindSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+    static member TryFindTypeSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
       state {
         let! ctx = state.GetState()
 
         return!
-          ctx.Types.Symbols
+          ctx.Types.Symbols.Types
           |> Map.tryFindWithError id "symbols" id.ToFSharpString loc
+          |> state.OfSum
+      }
+
+    static member TryFindRecordFieldSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+      state {
+        let! ctx = state.GetState()
+
+        return!
+          ctx.Types.Symbols.RecordFields
+          |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
+          |> state.OfSum
+      }
+
+    static member TryFindUnionCaseSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+      state {
+        let! ctx = state.GetState()
+
+        return!
+          ctx.Types.Symbols.UnionCases
+          |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
           |> state.OfSum
       }
 
@@ -98,6 +118,18 @@ module TypeCheck =
         return!
           ctx.Types.UnionCases
           |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
+          |> state.OfSum
+      }
+
+    static member TryFindRecordField
+      (id: Identifier, loc: Location)
+      : TypeCheckerResult<OrderedMap<TypeSymbol, TypeValue> * TypeValue> =
+      state {
+        let! ctx = state.GetState()
+
+        return!
+          ctx.Types.RecordFields
+          |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
           |> state.OfSum
       }
 
@@ -509,6 +541,7 @@ module TypeCheck =
                 do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let! t_x = freshVarType |> fst |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
+                // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
 
                 // do!
                 //     UnificationState.DeleteVariable freshVar
@@ -528,7 +561,7 @@ module TypeCheck =
                     state {
                       let! v, t_v, v_k = !v
                       do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
-                      let! k_s = TypeCheckState.TryFindSymbol(k, loc0)
+                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
                       return (k, v), (k_s, t_v)
                     })
                   |> state.All
@@ -537,6 +570,44 @@ module TypeCheck =
                 let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
 
                 return Expr.RecordCons(fieldsExpr, loc0), TypeValue.CreateRecord fieldsTypes, Kind.Star
+              }
+
+          | ExprRec.RecordWith(record, fields) ->
+            return!
+              state {
+                let! record, t_record, k_record = !record
+                do! k_record |> Kind.AsStar |> ofSum |> state.Ignore
+
+                let! t_record =
+                  t_record
+                  |> TypeValue.AsRecord
+                  |> ofSum
+                  |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                let! fields =
+                  fields
+                  |> List.map (fun (k, v) ->
+                    state {
+                      let! v, t_v, v_k = !v
+                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
+
+                      let! t_v_record = t_record |> OrderedMap.tryFindWithError k_s "fields" k.ToFSharpString |> ofSum
+                      do! TypeValue.Unify(loc0, t_v, t_v_record) |> Expr.liftUnification
+
+                      return (k, v), (k_s, t_v)
+                    })
+                  |> state.All
+
+                let fieldsExpr = fields |> List.map fst
+
+                let! t_record =
+                  t_record
+                  |> TypeValue.CreateRecord
+                  |> TypeValue.Instantiate loc0
+                  |> Expr.liftInstantiation
+
+                return Expr.RecordWith(record, fieldsExpr, loc0), t_record, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -548,7 +619,7 @@ module TypeCheck =
           | ExprRec.UnionCons(cons, value) ->
             return!
               state {
-                let! cons_symbol = TypeCheckState.TryFindSymbol(cons, loc0)
+                let! cons_symbol = TypeCheckState.TryFindUnionCaseSymbol(cons, loc0)
                 let! union_t, union_k = TypeCheckState.TryFindType(cons, loc0)
                 do! union_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -643,45 +714,17 @@ module TypeCheck =
             return!
               state.Either
                 (state {
-                  let! t_fields =
-                    t_fields
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! _record_t, field_t = TypeCheckState.TryFindRecordField(fieldName, loc0)
 
                   return!
-                    state.Either
-                      (state {
-                        let! field_symbol = TypeCheckState.TryFindSymbol(fieldName, loc0)
+                    state {
+                      do!
+                        TypeValue.Unify(loc0, t_fields, TypeValue.CreateRecord _record_t)
+                        |> Expr.liftUnification
 
-                        return!
-                          state {
-                            let! t_field =
-                              t_fields
-                              |> OrderedMap.tryFindWithError field_symbol "fields" fieldName.ToFSharpString
-                              |> ofSum
-
-                            return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
-                          }
-                          |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                      })
-                      (state {
-                        let! localFieldName = Identifier.AsLocalScope fieldName |> ofSum
-
-                        return!
-                          state {
-                            let! t_field =
-                              t_fields
-                              |> OrderedMap.toSeq
-                              |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = localFieldName)
-                              |> sum.OfOption($"Error: cannot find symbol {fieldName}" |> error)
-                              |> state.OfSum
-                              |> state.Map snd
-
-                            return Expr.RecordDes(fields, fieldName, loc0), t_field, Kind.Star
-                          }
-                          |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                      })
+                      return Expr.RecordDes(fields, fieldName, loc0), field_t, Kind.Star
+                    }
+                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
                 })
                 (state {
                   let! _ =
@@ -786,7 +829,7 @@ module TypeCheck =
                         |> Map.toSeq
                         |> Seq.map (fun (k, value) ->
                           state {
-                            let! k_s = TypeCheckState.TryFindSymbol(k, loc0)
+                            let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0)
                             return k, (value, k_s)
                           })
                         |> state.All
@@ -1070,9 +1113,7 @@ module TypeCheck =
                     |> Seq.map (fun (k, argT) ->
                       state {
                         do!
-                          TypeExprEvalState.bindRecordField
-                            k.Name.LocalName
-                            (TypeValue.CreateArrow(typeDefinition |> fst, argT))
+                          TypeExprEvalState.bindRecordField k.Name.LocalName (definition_fields, argT)
                           |> Expr.liftTypeEval
                       })
                     |> state.All

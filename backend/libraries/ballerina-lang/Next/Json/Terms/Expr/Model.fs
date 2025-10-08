@@ -52,6 +52,7 @@ module ExprJson =
         | ExprRec.Let(v, _, e1, e2) -> Expr.ToJsonLet Expr.ToJson v e1 e2
         | ExprRec.TypeLet(v, e1, e2) -> Expr.ToJsonTypeLet Expr.ToJson v e1 e2
         | ExprRec.RecordCons t -> Expr.ToJsonRecordCons Expr.ToJson t
+        | ExprRec.RecordWith _ -> failwith "not implemented"
         | ExprRec.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson a b
         | ExprRec.TupleCons t -> Expr.ToJsonTupleCons Expr.ToJson t
         | ExprRec.SumCons(i, t) -> Expr.ToJsonSumCons Expr.ToJson i t
