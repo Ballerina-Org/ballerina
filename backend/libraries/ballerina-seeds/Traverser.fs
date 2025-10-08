@@ -11,7 +11,7 @@ open Ballerina.Reader.WithError
 
 open Ballerina.State.WithError
 open Ballerina.StdLib.Object
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 open Ballerina.StdLib.OrderPreservingMap
 
 type SeedingClue =
@@ -57,7 +57,7 @@ module Traverser =
         | TypeValue.Imported x when x.Id = LocalScope "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
           let listExtValue = ListValues >> Choice1Of3 >> ValueExt.ValueExt
-          let lv = ListValues.List values |> listExtValue
+          let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
 
         | TypeValue.Imported _ ->

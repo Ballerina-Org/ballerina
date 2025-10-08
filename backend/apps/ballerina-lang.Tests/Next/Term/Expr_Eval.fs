@@ -31,7 +31,7 @@ open Ballerina.DSL.Next.StdLib.Bool
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -49,8 +49,8 @@ type ValueExt =
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
 and ListExt =
-  | ListOperations of ListOperations<ValueExt>
-  | ListValues of ListValues<ValueExt>
+  | ListOperations of List.Model.ListOperations<ValueExt>
+  | ListValues of List.Model.ListValues<ValueExt>
 
 and OptionExt =
   | OptionOperations of OptionOperations<ValueExt>
@@ -71,7 +71,7 @@ and PrimitiveExt =
   | GuidOperations of GuidOperations<ValueExt>
 
 let listExtension =
-  ListExtension<ValueExt>
+  List.Extension.ListExtension<ValueExt>
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
