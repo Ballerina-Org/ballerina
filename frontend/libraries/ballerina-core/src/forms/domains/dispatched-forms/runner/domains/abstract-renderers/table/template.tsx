@@ -639,6 +639,17 @@ export const TableAbstractRenderer = <
               ),
           );
 
+    const embeddedUnfilteredTableData =
+      props.context.customFormState.loadingState != "loaded"
+        ? OrderedMap<string, OrderedMap<string, any>>()
+        : props.context.value.data.map((rowData, rowId) =>
+            rowData.fields.map((_, column) =>
+              EmbeddedCellTemplates.get(column)!(rowId)(
+                rowData.fields.get(column)!,
+              )(disabledColumnKeysSet.has(column)),
+            ),
+          );
+
     if (props.context.customFormState.isFilteringInitialized == false) {
       return <></>;
     }
@@ -868,6 +879,7 @@ export const TableAbstractRenderer = <
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
+            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
