@@ -53,7 +53,6 @@ func TestUnionGetCaseName_Error_BadHeader(t *testing.T) {
 	deserialized := ballerinaserialization.DeserializeUnion(data)
 
 	err := ballerina.Fold(deserialized, func(err error) error {
-		// if overall deserialization fails, still acceptable as error
 		return fmt.Errorf("unexpected error: %v", err)
 	}, func(u ballerinaserialization.UnionForSerialization) error {
 		res := u.GetCaseName()
