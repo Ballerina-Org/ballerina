@@ -14,6 +14,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
   StringSerializedType,
+  Renderer,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -45,6 +46,7 @@ export const UnionAbstractRenderer = <
       CommonAbstractRendererForeignMutationsExpected<Flags>
     >
   >,
+  CaseRenderers: Map<string, Renderer<any>>,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -59,26 +61,37 @@ export const UnionAbstractRenderer = <
               ExtraContext
             > &
               UnionAbstractRendererState,
-          ) => ({
-            ...(_.caseFormStates.get(caseName)! ??
-              defaultCaseStates.get(caseName)!()),
-            value: _.value.fields,
-            type: _.type.args.get(caseName)!,
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings,
-            extraContext: _.extraContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            customPresentationContext: _.customPresentationContext,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            domNodeAncestorPath: _.domNodeAncestorPath + `[union][${caseName}]`,
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          }),
+          ) => {
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                CaseRenderers.get(caseName)!,
+                true,
+                caseName,
+              );
+            return {
+              ...(_.caseFormStates.get(caseName)! ??
+                defaultCaseStates.get(caseName)!()),
+              value: _.value.fields,
+              type: _.type.args.get(caseName)!,
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: _.bindings,
+              extraContext: _.extraContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              customPresentationContext: _.customPresentationContext,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[union][${caseName}]`,
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              labelContext,
+            };
+          },
         )
         .mapState(
           (

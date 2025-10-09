@@ -27,6 +27,8 @@
     <Compile Include="Schema\Model.fs" />
     <Compile Include="Schema\Json\Schema.fs" />
     <Compile Include="Schema\TypeEval.fs" />
+    <Compile Include="Schema\Patterns.fs" />
+    <Compile Include="Schema\Value.fs" />
     <Content Include="todo.md" />
     <Compile Include="Spec\Model.fs" />
     <Compile Include="Spec\Builder.fs" />

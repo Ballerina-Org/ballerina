@@ -26,6 +26,8 @@ open Ballerina.Parser
 open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.Syntax
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
+open Ballerina.DSL.Next
+open Ballerina.DSL.Next.StdLib
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -55,10 +57,11 @@ let private run program =
 
         let evalContext = context.ExprEvalContext
 
-        let typeCheckedSymbols =
-          match typeCheckFinalState with
-          | None -> []
-          | Some s -> s.Types.Symbols |> Map.toList
+        let typeCheckedSymbols: ExprEvalContextSymbols =
+          (match typeCheckFinalState with
+           | None -> TypeExprEvalSymbols.Empty
+           | Some s -> s.Types.Symbols)
+          |> ExprEvalContextSymbols.FromTypeChecker
 
         let unionCaseConstructors =
           match typeCheckFinalState with
@@ -67,12 +70,16 @@ let private run program =
             s.Types.UnionCases
             |> Map.map (fun k _ ->
               Value<TypeValue, ValueExt>
-                .Lambda("_" |> Var.Create, Expr.UnionCons(k, "_" |> Identifier.LocalScope |> Expr.Lookup)))
+                .Lambda(
+                  "_" |> Var.Create,
+                  Expr.UnionCons(k, ("_" |> Identifier.LocalScope, Location.Unknown) |> Expr.Lookup, Location.Unknown),
+                  Map.empty
+                ))
             |> Map.toList
 
         let evalContext =
           { evalContext with
-              Symbols = (evalContext.Symbols |> Map.toList) @ typeCheckedSymbols |> Map.ofList
+              Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
               // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
               Values = (evalContext.Values |> Map.toList) @ unionCaseConstructors |> Map.ofList }
 
@@ -434,5 +441,119 @@ in f true, f false
     match value with
     | Tuple [ Ext(ValueExt(Choice1Of3(_v1))); Ext(ValueExt(Choice1Of3(_v2))) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.ToFSharpString}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+[<Test>]
+let ``LangNext-Integration list cons, nil, map, filter, length, fold succeeds`` () =
+  let program =
+    """
+let l = List::Cons [int32] (1, List::Cons [int32] (-2, List::Cons [int32] (3, List::Nil [int32] ())))
+in let l1 = List::map [int32][bool] (fun (v:int32) -> v > 0) l
+in let l2 = List::filter [int32] (fun (v:int32) -> v > 0) l
+in let l3 = List::length [int32] l2
+in let l4 = List::fold [int32] [bool] (fun (acc:bool) -> fun (v:int32) -> acc && v > 0) true l
+in l,l1,l2,l3,l4
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Tuple [ Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 -2)
+                                                                                             Value.Primitive(Int32 3) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+                                                                                             Value.Primitive(Bool false)
+                                                                                             Value.Primitive(Bool true) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 3) ]))))
+              Value.Primitive(Int32 2)
+              Value.Primitive(Bool false) ] -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+[<Test>]
+let ``LangNext-Integration scoped function with closures succeeds`` () =
+  let program =
+    """
+  let x = 7
+  in let f = fun (a:int32) -> fun (b:int32) -> a + b + x
+  in f 5 6
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 18) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+[<Test>]
+let ``LangNext-Integration union des with wildcard and ambiguous name succeeds`` () =
+  let program =
+    """
+type T = 
+| T of int32
+| CaseA of int32
+| CaseB of string
+| CaseC of bool
+
+in let t:T = CaseC false
+in match t with
+  | T (x -> x + 100)
+  | CaseC (b -> if b then 1 else 0)
+  | (* -> -1000)
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 0) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 18, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration list append succeeds`` () =
+  let program =
+    """
+let cons = List::Cons [string]
+in let nil = List::Nil [string] ()
+in let l1 = cons("hello", cons(" ", cons("world", nil)))
+in let l2 = cons("bonjour", cons(" ", cons("monde", nil)))
+in List::append [string] l1 l2
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Ext(ValueExt(Choice1Of3(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "world")
+                                                                              Value.Primitive(String "bonjour")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "monde") ])))) ->
+      Assert.Pass()
+    | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")

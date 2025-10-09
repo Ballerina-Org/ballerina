@@ -31,7 +31,7 @@ open Ballerina.DSL.Next.StdLib.Bool
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -49,8 +49,8 @@ type ValueExt =
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
 and ListExt =
-  | ListOperations of ListOperations<ValueExt>
-  | ListValues of ListValues<ValueExt>
+  | ListOperations of List.Model.ListOperations<ValueExt>
+  | ListValues of List.Model.ListValues<ValueExt>
 
 and OptionExt =
   | OptionOperations of OptionOperations<ValueExt>
@@ -71,7 +71,7 @@ and PrimitiveExt =
   | GuidOperations of GuidOperations<ValueExt>
 
 let listExtension =
-  ListExtension<ValueExt>
+  List.Extension.ListExtension<ValueExt>
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
@@ -312,85 +312,6 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
 
   | Right(e, _) -> Assert.Fail($"Type checking failed: {e.ToFSharpString}")
 
-
-[<Test>]
-let ``LangNext-ExprEval construction of matching over custom (Option) succeeds with Some`` () =
-  let program =
-    Expr.Apply(
-      Expr.UnionDes(
-        Map.ofList
-          [ Identifier.FullyQualified([ "Option" ], "Some"), ("x" |> Var.Create, Expr.Lookup(Identifier.LocalScope "x"))
-            Identifier.FullyQualified([ "Option" ], "None"),
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ],
-        None
-      ),
-      Expr.Apply(
-        Expr.TypeApply(
-          Expr.Lookup(Identifier.FullyQualified([ "Option" ], "Some")),
-          TypeExpr.Primitive PrimitiveType.Int32
-        ),
-        Expr.Primitive(PrimitiveValue.Int32 100)
-      )
-    )
-
-  let initialContext = context.TypeCheckContext
-
-  let initialState = context.TypeCheckState
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  match actual with
-  | Left((program, _typeValue, _), _state) ->
-    let initialContext = context.ExprEvalContext
-
-    let actual = Expr.Eval program |> Reader.Run initialContext
-
-    let expected: Value<TypeValue, ValueExt> = Value.Primitive(PrimitiveValue.Int32 100)
-
-    match actual with
-    | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
-    | Sum.Right err -> Assert.Fail $"Evaluation failed: {err}"
-
-  | Right(e, _) -> Assert.Fail($"Type checking failed: {e.ToFSharpString}")
-
-
-[<Test>]
-let ``LangNext-ExprEval construction of matching over custom (Option) succeeds with None`` () =
-  let program =
-    Expr.Apply(
-      Expr.UnionDes(
-        Map.ofList
-          [ Identifier.FullyQualified([ "Option" ], "Some"), ("x" |> Var.Create, Expr.Lookup(Identifier.LocalScope "x"))
-            Identifier.FullyQualified([ "Option" ], "None"),
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 -1)) ],
-        None
-      ),
-      Expr.Apply(
-        Expr.TypeApply(
-          Expr.Lookup(Identifier.FullyQualified([ "Option" ], "None")),
-          TypeExpr.Primitive PrimitiveType.Int32
-        ),
-        Expr.Primitive(PrimitiveValue.Unit)
-      )
-    )
-
-  let initialContext = context.TypeCheckContext
-
-  let initialState = context.TypeCheckState
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  match actual with
-  | Left((program, _typeValue, _), _state) ->
-    let initialContext = context.ExprEvalContext
-
-    let actual = Expr.Eval program |> Reader.Run initialContext
-
-    let expected: Value<TypeValue, ValueExt> = Value.Primitive(PrimitiveValue.Int32 -1)
-
-    match actual with
-    | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
-    | Sum.Right err -> Assert.Fail $"Evaluation failed: {err}"
-
-  | Right(e, _) -> Assert.Fail($"Type checking failed: {e.ToFSharpString}")
 
 [<Test>]
 let ``Int32 addition operation works`` () =

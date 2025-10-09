@@ -7,11 +7,12 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Terms
+open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.DSL.Next.StdLib.Extensions
@@ -86,13 +87,13 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
       Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> Expr.Primitive)
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
-      Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive)
+      Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive, Map.empty)
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(
           Choice1Of3(
             ListValues(
-              List
+              List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive
                   PrimitiveValue.Int32 2 |> Value.Primitive ]
             )

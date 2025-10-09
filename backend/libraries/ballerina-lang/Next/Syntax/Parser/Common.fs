@@ -122,6 +122,7 @@ module Common =
   let typeKeyword = parseKeyword Keyword.Type
   let ofKeyword = parseKeyword Keyword.Of
   let letKeyword = parseKeyword Keyword.Let
+  let withKeyword = parseKeyword Keyword.With
   let inKeyword = parseKeyword Keyword.In
   let ifKeyword = parseKeyword Keyword.If
   let thenKeyword = parseKeyword Keyword.Then

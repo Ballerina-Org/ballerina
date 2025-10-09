@@ -146,6 +146,39 @@ module Validator =
         }
         |> sum.WithErrorContext(sprintf "...when validating primitive renderer %s" rendererName)
 
+      let recordRendererMatchesSupportedRenderersFields
+        ({ Renderer = rendererName
+           Fields = fields }: RecordRenderer<'ExprExtension, 'ValueExtension>)
+        : Sum<Unit, Errors> =
+        sum {
+          match rendererName with
+          | Some renderer ->
+            let! rendererFields =
+              codegen.Record.SupportedRenderers
+              |> Map.tryFindWithError
+                renderer
+                "record renderer"
+                (renderer
+                 |> (function
+                 | RendererName r -> r))
+
+            if rendererFields |> Set.isEmpty |> not then
+              let renderedFields = fields.Fields |> Map.keys |> Set.ofSeq
+
+              if renderedFields <> rendererFields then
+                return!
+                  sum.Throw(
+                    Errors.Singleton
+                      $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
+                  )
+              else
+                return ()
+            else
+              return ()
+          | None -> return ()
+        }
+
+
       sum {
         let error (expectedType: ExprType) (renderer: Renderer<'ExprExtension, 'ValueExtension>) =
           sum.Throw(
@@ -217,31 +250,7 @@ module Validator =
         | ExprType.RecordType _ ->
           match fr with
           | Renderer.RecordRenderer fields ->
-            match fields.Renderer with
-            | Some renderer ->
-              let! rendererFields =
-                codegen.Record.SupportedRenderers
-                |> Map.tryFindWithError
-                  renderer
-                  "record renderer"
-                  (renderer
-                   |> (function
-                   | RendererName r -> r))
-
-              if rendererFields |> Set.isEmpty |> not then
-                let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
-
-                if renderedFields <> rendererFields then
-                  return!
-                    sum.Throw(
-                      Errors.Singleton
-                        $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
-                    )
-                else
-                  return ()
-              else
-                return ()
-            | _ -> return ()
+            do! recordRendererMatchesSupportedRenderersFields fields
 
             do!
               sum.All(
@@ -593,30 +602,31 @@ module Validator =
         | ExprType.GenericApplicationType _ ->
           return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic application")
         | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
-          match fr with
-          | Renderer.RecordRenderer _ -> return! error expectedType fr
-          | Renderer.UnionRenderer _ -> return! error expectedType fr
-          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
-          | Renderer.PrimitiveRenderer _ -> return! error expectedType fr
-          | Renderer.MapRenderer renderer ->
-            do!
-              !
-                ExprType.MapType(ExprType.OptionType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
-                (renderer |> Renderer.MapRenderer)
-              |> Sum.map ignore
+          match keyType with
+          | ExprType.LookupType { VarName = varName } ->
+            let (LanguageStreamType languageStreamType) = codegen.LanguageStreamType
 
-            ExprType.TranslationOverride { Label = label; KeyType = keyType }
-          | Renderer.SumRenderer _ -> return! error expectedType fr
-          | Renderer.ListRenderer _ -> return! error expectedType fr
-          | Renderer.OptionRenderer _ -> return! error expectedType fr
-          | Renderer.OneRenderer _ -> return! error expectedType fr
-          | Renderer.ManyRenderer _ -> return! error expectedType fr
-          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
-          | Renderer.EnumRenderer _ -> return! error expectedType fr
-          | Renderer.StreamRenderer _ -> return! error expectedType fr
-          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
-          | Renderer.TableFormRenderer _ -> return! error expectedType fr
-          | Renderer.TupleRenderer _ -> return! error expectedType fr
+            if languageStreamType = varName then
+              let expectedType = TranslationOverride.Type { Label = label; KeyType = keyType }
+              do! ! expectedType fr |> Sum.map ignore
+              ExprType.TranslationOverride { Label = label; KeyType = keyType }
+            else
+              return!
+                sum.Throw(
+                  Errors.Singleton(
+                    sprintf
+                      "Error: translation override key type %s is not the configured language stream type %s"
+                      varName
+                      languageStreamType
+                  )
+                )
+          | _ ->
+            return!
+              sum.Throw(
+                Errors.Singleton(
+                  sprintf "Error: translation override key type %s is not a lookup type" (keyType.ToString())
+                )
+              )
       }
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
@@ -1282,31 +1292,15 @@ module Validator =
     static member GetIdType(lookupType: TypeBinding) : Sum<ExprType, Errors> =
       sum {
         let! (idType: ExprType) =
-          sum.Any2
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsRecord
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+          sum {
+            let! fields = lookupType.Type |> ExprType.AsRecord
 
-              return!
-                (sum.Any2
-                  (fields |> Map.tryFindWithError "id" "key" "id")
-                  (fields |> Map.tryFindWithError "Id" "key" "Id"))
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsTuple
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
-
-              return!
-                fields
-                |> Seq.tryHead
-                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
+            return!
+              (sum.Any2
+                (fields |> Map.tryFindWithError "id" "key" "id")
+                (fields |> Map.tryFindWithError "Id" "key" "Id"))
+              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+          }
           |> sum.MapError Errors.HighestPriority
 
         match idType with

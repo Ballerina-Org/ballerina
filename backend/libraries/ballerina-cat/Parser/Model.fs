@@ -224,6 +224,11 @@ module Model =
     //   return res
     // }
 
+    member parser.OfSum(p: Sum<'a, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
+      match p with
+      | Left v -> parser.Return v
+      | Right e -> parser.Throw e
+
     member parser.Not(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<Unit, 'sym, 'loc, 'err> =
       parser {
         let! s = parser.State

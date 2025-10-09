@@ -11,6 +11,7 @@ import {
   Option,
   BasicUpdater,
   DispatchDelta,
+  NestedRenderer,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -41,6 +42,7 @@ export const ReadOnlyAbstractRenderer = <
     CommonAbstractRendererState,
     CommonAbstractRendererForeignMutationsExpected<Flags>
   >,
+  ChildRenderer: NestedRenderer<any>,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
 ) => {
@@ -52,25 +54,33 @@ export const ReadOnlyAbstractRenderer = <
           ExtraContext
         > &
           ReadOnlyAbstractRendererState,
-      ) => ({
-        disabled: _.disabled || _.globallyDisabled,
-        globallyDisabled: _.globallyDisabled,
-        locked: _.locked,
-        value: _.value.ReadOnly,
-        ...(_.childFormState || GetDefaultChildState()),
-        readOnly: true,
-        globallyReadOnly: _.globallyReadOnly,
-        bindings: _.bindings,
-        extraContext: _.extraContext,
-        type: _.type.arg,
-        customPresentationContext: _.customPresentationContext,
-        remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-        domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
-        typeAncestors: [_.type as DispatchParsedType<any>].concat(
-          _.typeAncestors,
-        ),
-        lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-      }),
+      ) => {
+        const labelContext =
+          CommonAbstractRendererState.Operations.GetLabelContext(
+            _.labelContext,
+            ChildRenderer,
+          );
+        return {
+          disabled: _.disabled || _.globallyDisabled,
+          globallyDisabled: _.globallyDisabled,
+          locked: _.locked,
+          value: _.value.ReadOnly,
+          ...(_.childFormState || GetDefaultChildState()),
+          readOnly: true,
+          globallyReadOnly: _.globallyReadOnly,
+          bindings: _.bindings,
+          extraContext: _.extraContext,
+          type: _.type.arg,
+          customPresentationContext: _.customPresentationContext,
+          remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
+          typeAncestors: [_.type as DispatchParsedType<any>].concat(
+            _.typeAncestors,
+          ),
+          lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          labelContext,
+        };
+      },
     )
     .mapState((_) =>
       ReadOnlyAbstractRendererState.Updaters.Core.childFormState(_),

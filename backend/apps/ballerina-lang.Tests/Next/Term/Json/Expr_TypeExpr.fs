@@ -8,6 +8,7 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 
 let private (!) = Identifier.LocalScope

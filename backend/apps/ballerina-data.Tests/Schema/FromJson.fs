@@ -60,8 +60,8 @@ let ``SpecNext-Schema updater descriptor parses`` () =
           UpdaterPathStep.TupleItem(7)
           UpdaterPathStep.UnionCase("CaseName", Var.Create "VariableBoundToChangedCase")
           UpdaterPathStep.SumCase(3, Var.Create "VariableBoundToChangedSum") ]
-      Condition = Expr.Primitive(PrimitiveValue.Bool true)
-      Expr = Expr.Primitive(PrimitiveValue.Int32 100) }
+      Condition = Expr.Primitive(PrimitiveValue.Bool true, Location.Unknown)
+      Expr = Expr.Primitive(PrimitiveValue.Int32 100, Location.Unknown) }
 
   match json |> Updater.FromJson |> Reader.Run TypeExpr.FromJson with
   | Right e -> Assert.Fail($"Failed to parse updater descriptor: {e}")
@@ -230,14 +230,14 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false)) ]
+                 [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false, Location.Unknown)) ]
                  |> Map.ofList })
             ({ EntityName = "TargetTable" },
              { Type = TypeExpr.Lookup("AnotherType" |> Identifier.LocalScope)
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true)) ]
+                 [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true, Location.Unknown)) ]
                  |> Map.ofList }) ]
       Lookups =
         Map.ofList

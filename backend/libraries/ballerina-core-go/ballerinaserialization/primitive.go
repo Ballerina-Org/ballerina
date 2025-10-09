@@ -21,7 +21,7 @@ var UnitSerializer Serializer[ballerina.Unit] = WithContext(fmt.Sprintf("on %s",
 
 var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Sprintf("on %s", unitDiscriminator), func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
 	if unitForSerialization.Discriminator != unitDiscriminator {
-		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected kind to be '%s', got '%s'", unitDiscriminator, unitForSerialization.Discriminator))
+		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected discriminator to be '%s', got '%s'", unitDiscriminator, unitForSerialization.Discriminator))
 	}
 	return ballerina.Right[error, ballerina.Unit](ballerina.Unit{})
 })
@@ -33,7 +33,7 @@ type _primitiveTypeForSerialization struct {
 
 func (s _primitiveTypeForSerialization) getValueWithDiscriminator(discriminator string) ballerina.Sum[error, string] {
 	if s.Discriminator != discriminator {
-		return ballerina.Left[error, string](fmt.Errorf("expected kind to be '%s', got %s", discriminator, s.Discriminator))
+		return ballerina.Left[error, string](fmt.Errorf("expected discriminator to be '%s', got %s", discriminator, s.Discriminator))
 	}
 	return ballerina.Right[error, string](s.Value)
 }

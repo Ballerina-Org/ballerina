@@ -11,6 +11,7 @@ module Model =
   type FormName = FormName of string
   type LauncherName = LauncherName of string
   type Label = Label of string
+  type LanguageStreamType = LanguageStreamType of string
 
   type EnumRendererType =
     | Option
@@ -68,7 +69,8 @@ module Model =
       InvalidEnumValueCombinationError: CodegenConfigErrorDef
       StreamNotFoundError: CodegenConfigErrorDef
       ContainerRenderers: Set<RendererName>
-      GenerateReplace: Set<string> }
+      GenerateReplace: Set<string>
+      LanguageStreamType: LanguageStreamType }
 
   and GenericType =
     | Option
@@ -433,61 +435,74 @@ module Model =
 
     static member Name(f: FieldConfig<'ExprExtension, 'ValueExtension>) = f.FieldName
 
+  and RecordRenderer<'ExprExtension, 'ValueExtension> =
+    { Renderer: Option<RendererName>
+      Fields: FormFields<'ExprExtension, 'ValueExtension> }
+
+  and MapRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      Map: RendererName
+      Key: NestedRenderer<'ExprExtension, 'ValueExtension>
+      Value: NestedRenderer<'ExprExtension, 'ValueExtension> }
+
+  and SumRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      Sum: RendererName
+      Left: NestedRenderer<'ExprExtension, 'ValueExtension>
+      Right: NestedRenderer<'ExprExtension, 'ValueExtension> }
+
+  and ListRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      List: RendererName
+      Element: NestedRenderer<'ExprExtension, 'ValueExtension>
+      MethodLabels: Map<TableMethod, Label> }
+
+  and OptionRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      Option: RendererName
+      Some: NestedRenderer<'ExprExtension, 'ValueExtension>
+      None: NestedRenderer<'ExprExtension, 'ValueExtension> }
+
+  and OneRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      One: RendererName
+      Details: NestedRenderer<'ExprExtension, 'ValueExtension>
+      Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
+      OneApiId: ExprTypeId * string }
+
+  and TupleRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      Tuple: RendererName
+      Elements: List<NestedRenderer<'ExprExtension, 'ValueExtension>> }
+
+  and ReadOnlyRenderer<'ExprExtension, 'ValueExtension> =
+    { Label: Label option
+      ReadOnly: RendererName
+      Value: NestedRenderer<'ExprExtension, 'ValueExtension> }
+
+  and UnionRenderer<'ExprExtension, 'ValueExtension> =
+    { Renderer: RendererName
+      Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> }
+
   and Renderer<'ExprExtension, 'ValueExtension> =
     | PrimitiveRenderer of PrimitiveRenderer
-    | MapRenderer of
-      {| Label: Label option
-         Map: RendererName
-         Key: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-    | TupleRenderer of
-      {| Label: Label option
-         Tuple: RendererName
-         Elements: List<NestedRenderer<'ExprExtension, 'ValueExtension>> |}
-    | OptionRenderer of
-      {| Label: Label option
-         Option: RendererName
-         Some: NestedRenderer<'ExprExtension, 'ValueExtension>
-         None: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-    | ListRenderer of
-      {| Label: Label option
-         List: RendererName
-         Element: NestedRenderer<'ExprExtension, 'ValueExtension>
-         MethodLabels: Map<TableMethod, Label> |}
-    | OneRenderer of
-      {| Label: Label option
-         One: RendererName
-         Details: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Preview: Option<NestedRenderer<'ExprExtension, 'ValueExtension>>
-         OneApiId: ExprTypeId * string |}
+    | MapRenderer of MapRenderer<'ExprExtension, 'ValueExtension>
+    | TupleRenderer of TupleRenderer<'ExprExtension, 'ValueExtension>
+    | OptionRenderer of OptionRenderer<'ExprExtension, 'ValueExtension>
+    | ListRenderer of ListRenderer<'ExprExtension, 'ValueExtension>
+    | OneRenderer of OneRenderer<'ExprExtension, 'ValueExtension>
 
     | ManyRenderer of ManyRenderer<'ExprExtension, 'ValueExtension>
 
-    | ReadOnlyRenderer of
-      {| Label: Label option
-         ReadOnly: RendererName
-         Value: NestedRenderer<'ExprExtension, 'ValueExtension> |}
-    // | TableRenderer of
-    //   {| Table: Renderer
-    //      Row: NestedRenderer
-    //      Children: RendererChildren |}
-    | SumRenderer of
-      {| Label: Label option
-         Sum: RendererName
-         Left: NestedRenderer<'ExprExtension, 'ValueExtension>
-         Right: NestedRenderer<'ExprExtension, 'ValueExtension> |}
+    | ReadOnlyRenderer of ReadOnlyRenderer<'ExprExtension, 'ValueExtension>
+    | SumRenderer of SumRenderer<'ExprExtension, 'ValueExtension>
     | EnumRenderer of EnumApiId * Label option * EnumRendererType * ExprTypeId * RendererName
     | StreamRenderer of StreamRendererApi * Label option * StreamRendererType * ExprTypeId * RendererName
     | FormRenderer of FormConfigId * ExprTypeId //* RendererChildren
     | TableFormRenderer of FormConfigId * ExprType * TableApiId //* RendererChildren
-    // | ManyFormRenderer of FormConfigId * ExprType * TypeId * string //* RendererChildren
     | InlineFormRenderer of FormBody<'ExprExtension, 'ValueExtension>
-    | RecordRenderer of
-      {| Renderer: Option<RendererName>
-         Fields: FormFields<'ExprExtension, 'ValueExtension> |}
-    | UnionRenderer of
-      {| Renderer: RendererName
-         Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> |}
+    | RecordRenderer of RecordRenderer<'ExprExtension, 'ValueExtension>
+    | UnionRenderer of UnionRenderer<'ExprExtension, 'ValueExtension>
 
   and ManyRenderer<'ExprExtension, 'ValueExtension> =
     | ManyLinkedUnlinkedRenderer of

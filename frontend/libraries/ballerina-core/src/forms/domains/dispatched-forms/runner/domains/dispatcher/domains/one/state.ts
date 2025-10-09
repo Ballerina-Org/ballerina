@@ -135,6 +135,8 @@ export const OneDispatcher = {
                           previewRenderer,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
+                          renderer.detailsRenderer,
+                          renderer.previewRenderer,
                           oneEntityType,
                         )
                           .mapContext((_: any) => ({

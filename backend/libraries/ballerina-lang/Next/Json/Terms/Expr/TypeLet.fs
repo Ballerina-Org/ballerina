@@ -13,6 +13,7 @@ module TypeLet =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "type-let"
 

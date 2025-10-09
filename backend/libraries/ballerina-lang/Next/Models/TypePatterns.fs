@@ -6,6 +6,7 @@ module Patterns =
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.StdLib.OrderPreservingMap
 
   type TypeVar with
     static member Create(name: string) : TypeVar =
@@ -144,7 +145,7 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Arrow" }
 
-    static member CreateRecord(v: Map<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
       TypeValue.Record
         { value = v
           source = NoSourceMapping "Record" }
@@ -154,7 +155,7 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Tuple" }
 
-    static member CreateUnion(v: Map<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateUnion(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
       TypeValue.Union
         { value = v
           source = NoSourceMapping "Union" }
@@ -347,14 +348,14 @@ module Patterns =
       | Record { value = fields } ->
         TypeExpr.Record(
           fields
-          |> Map.toList
+          |> OrderedMap.toList
           |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Tuple { value = elements } -> TypeExpr.Tuple(elements |> List.map (fun e -> e.AsExpr))
       | Union { value = cases } ->
         TypeExpr.Union(
           cases
-          |> Map.toList
+          |> OrderedMap.toList
           |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
         )
       | Sum { value = elements } -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
@@ -371,11 +372,12 @@ module Patterns =
       }
 
     static member AsValue
-      (tryFind: Identifier -> Sum<TypeValue, Errors>)
-      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Errors>)
+      (loc0: Ballerina.LocalizedErrors.Location)
+      (tryFind: Identifier -> Sum<TypeValue, Ballerina.LocalizedErrors.Errors>)
+      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Ballerina.LocalizedErrors.Errors>)
       (t: TypeExpr)
-      : Sum<TypeValue, Errors> =
-      let (!) = TypeExpr.AsValue tryFind tryFindSymbol
+      : Sum<TypeValue, Ballerina.LocalizedErrors.Errors> =
+      let (!) = TypeExpr.AsValue loc0 tryFind tryFindSymbol
 
       sum {
         match t with
@@ -392,13 +394,16 @@ module Patterns =
             fields
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k = TypeExpr.AsLookup k
+                let! k =
+                  TypeExpr.AsLookup k
+                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+
                 let! k = tryFindSymbol k
                 let! v = !v
                 return (k, v)
               })
             |> sum.All
-            |> sum.Map(Map.ofSeq)
+            |> sum.Map(OrderedMap.ofSeq)
 
           return TypeValue.CreateRecord fields
         | TypeExpr.Tuple(fields) ->
@@ -409,13 +414,16 @@ module Patterns =
             cases
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k = TypeExpr.AsLookup k
+                let! k =
+                  TypeExpr.AsLookup k
+                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+
                 let! k = tryFindSymbol k
                 let! v = !v
                 return (k, v)
               })
             |> sum.All
-            |> sum.Map(Map.ofSeq)
+            |> sum.Map(OrderedMap.ofSeq)
 
           return TypeValue.CreateUnion cases
         | TypeExpr.Sum(fields) ->
@@ -428,7 +436,11 @@ module Patterns =
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
-        | _ -> return! $"Error: expected type value, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (loc0, $"Error: expected type value, got {t}")
+            |> Ballerina.LocalizedErrors.Errors.Singleton
+            |> sum.Throw
       }
 
     static member AsUnion(t: TypeExpr) =

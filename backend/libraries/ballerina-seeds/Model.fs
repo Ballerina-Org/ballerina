@@ -6,7 +6,7 @@ open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Schema.Model
-open Ballerina.Errors
+open Ballerina.LocalizedErrors
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Arity.Model
 open Ballerina.Seeds
@@ -89,11 +89,19 @@ module LookupDescriptor =
     sum {
       let! sources =
         entities
-        |> Map.tryFindWithError descriptor.Source descriptor.Source.EntityName "while seed lookup source descriptor"
+        |> Map.tryFindWithError
+          descriptor.Source
+          descriptor.Source.EntityName
+          "while seed lookup source descriptor"
+          Location.Unknown
 
       let! targets =
         entities
-        |> Map.tryFindWithError descriptor.Target descriptor.Target.EntityName "while seed lookup source descriptor"
+        |> Map.tryFindWithError
+          descriptor.Target
+          descriptor.Target.EntityName
+          "while seed lookup source descriptor"
+          Location.Unknown
 
       let sourceKeys = sources |> Map.toList |> List.map fst
       let targetKeys = targets |> Map.toList |> List.map fst

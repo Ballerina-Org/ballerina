@@ -1,17 +1,18 @@
-namespace Ballerina.Seeds
+﻿namespace Ballerina.Seeds
 
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.Eval
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.Errors
+open Ballerina.LocalizedErrors
 open Ballerina.Seeds.Fakes
 open Ballerina.Reader.WithError
 
 open Ballerina.State.WithError
 open Ballerina.StdLib.Object
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
+open Ballerina.StdLib.OrderPreservingMap
 
 type SeedingClue =
   | Absent
@@ -21,9 +22,15 @@ type SeedTarget =
   | FullStructure
   | PrimitivesOnly
 
+type PickItemStrategy =
+  | First
+  | Last
+  | RandomItem
+
 type SeedingContext =
   { WantedCount: int option
     Options: SeedTarget
+    PickItemStrategy: PickItemStrategy
     Generator: BogusDataGenerator }
 
 type SeedingState =
@@ -50,13 +57,17 @@ module Traverser =
         | TypeValue.Imported x when x.Id = LocalScope "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
           let listExtValue = ListValues >> Choice1Of3 >> ValueExt.ValueExt
-          let lv = ListValues.List values |> listExtValue
+          let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
 
-        | TypeValue.Imported _ -> return! state.Throw(Errors.Singleton "Imported seeds not implemented yet")
-        | TypeValue.Arrow _ -> return! state.Throw(Errors.Singleton "Arrow seeds not implemented yet")
-        | TypeValue.Lambda _ -> return! state.Throw(Errors.Singleton "Lambda seeds not implemented yet")
-        | TypeValue.Apply _ -> return! state.Throw(Errors.Singleton "Apply seeds not implemented yet")
+        | TypeValue.Imported _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Imported seeds not implemented yet"))
+        | TypeValue.Arrow _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Arrow seeds not implemented yet"))
+        | TypeValue.Lambda _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Lambda seeds not implemented yet"))
+        | TypeValue.Apply _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Apply seeds not implemented yet"))
         | TypeValue.Var _ ->
           do!
             state.SetState(fun s ->
@@ -95,7 +106,13 @@ module Traverser =
             )
 
         | TypeValue.Union cases ->
-          let sampled = cases.value |> Map.toList |> List.randomSample 1
+          let! ctx = state.GetContext()
+
+          let sampled =
+            match ctx.PickItemStrategy with
+            | RandomItem -> cases.value |> OrderedMap.toList |> List.randomSample 1
+            | First -> cases.value |> OrderedMap.toList |> List.head |> List.singleton
+            | Last -> cases.value |> OrderedMap.toList |> List.last |> List.singleton
 
           let! cases =
             sampled
@@ -110,13 +127,18 @@ module Traverser =
 
         | TypeValue.Lookup id ->
           let! ctx = state.GetState()
-          let! tv, _ = TypeExprEvalState.tryFindType id |> Reader.Run ctx.TypeContext |> state.OfSum
+
+          let! tv, _ =
+            TypeExprEvalState.tryFindType (id, Location.Unknown)
+            |> Reader.Run ctx.TypeContext
+            |> state.OfSum
+
           return! (!!id.ToFSharpString) tv
 
         | TypeValue.Record fields ->
           let! fields =
             fields.value
-            |> Map.toList
+            |> OrderedMap.toList
             |> List.map (fun (ts, tv) ->
               state {
                 let! v = !! ts.Name.LocalName tv
@@ -158,6 +180,7 @@ module Traverser =
 type SeedingContext with
   static member Default() =
     { WantedCount = None
+      PickItemStrategy = RandomItem
       Generator = Runner.en ()
       Options = FullStructure }
 

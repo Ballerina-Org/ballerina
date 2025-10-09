@@ -78,6 +78,7 @@ export const DispatchCreateFormLauncherState = <
       create: ApiResponseChecker.Default(false),
     },
     apiRunner: Synchronized.Default(unit),
+    formName: "",
   }),
   Updaters: {
     Core: {
@@ -121,6 +122,14 @@ export const DispatchCreateFormLauncherState = <
           ExtraContext
         >
       >()("apiRunner"),
+      ...simpleUpdater<
+        DispatchCreateFormLauncherState<
+          T,
+          Flags,
+          CustomPresentationContext,
+          ExtraContext
+        >
+      >()("formName"),
       ...simpleUpdaterWithChildren<
         DispatchCreateFormLauncherState<
           T,

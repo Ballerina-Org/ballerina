@@ -34,5 +34,10 @@
         <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
         <ProjectReference Include="..\ballerina-lang.Tests\ballerina-lang.Tests.fsproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Content Include="Integration\PersonGenders.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 
 </Project>

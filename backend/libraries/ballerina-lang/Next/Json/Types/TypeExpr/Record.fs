@@ -30,7 +30,10 @@ module RecordTypeExpr =
             |> sum.All
 
           let record = TypeExpr.Record(fieldTypes)
-          let! wrappedRecord = AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst)
+
+          let! wrappedRecord =
+            AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst, SymbolsKind.RecordFields)
+
           return wrappedRecord
         })
 

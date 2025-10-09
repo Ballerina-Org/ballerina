@@ -2,7 +2,7 @@
 
 module Builder =
 
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Eval
   open Ballerina.Data.Spec.Model
@@ -12,12 +12,9 @@ module Builder =
     spec.TypesV2
     |> List.map (fun (name, expr) ->
       state {
-
-        let! tv = TypeExpr.Eval None expr
-        let! sb = TypeExpr.EvalAsSymbol expr
+        let! tv = TypeExpr.Eval None Location.Unknown expr
         do! TypeExprEvalState.bindType name tv
-        do! TypeExprEvalState.bindSymbol name sb
         return ()
       })
     |> state.All
-    |> state.Map(fun _ -> ())
+    |> state.Map ignore

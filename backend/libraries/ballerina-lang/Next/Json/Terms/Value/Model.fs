@@ -44,6 +44,6 @@ module Value =
       | Value.Tuple vs -> Value.ToJsonTuple toJsonRoot vs
       | Value.Sum(i, v) -> Value.ToJsonSum toJsonRoot i v
       | Value.Var v -> Value.ToJsonVar v |> reader.Return
-      | Value.Lambda(a, b) -> Value.ToJsonLambda a b
+      | Value.Lambda(a, b, _closure) -> Value.ToJsonLambda a b
       | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
       | Value.Ext e -> reader.Throw(Errors.Singleton $"Extension parsing not yet implemented: {e}")

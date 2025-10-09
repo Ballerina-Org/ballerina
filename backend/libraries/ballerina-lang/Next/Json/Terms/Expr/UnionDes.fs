@@ -12,6 +12,7 @@ module UnionDes =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "union-match"
 
