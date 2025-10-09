@@ -15,8 +15,8 @@ type _unitForSerialization struct {
 	Discriminator string `json:"discriminator"`
 }
 
-var UnitSerializer Serializer[ballerina.Unit] = withContext(fmt.Sprintf("on %s", unitDiscriminator), func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
-	return wrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator})
+var UnitSerializer Serializer[ballerina.Unit] = WithContext(fmt.Sprintf("on %s", unitDiscriminator), func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
+	return WrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator})
 })
 
 var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Sprintf("on %s", unitDiscriminator), func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
@@ -39,8 +39,8 @@ func (s _primitiveTypeForSerialization) getValueWithDiscriminator(discriminator 
 }
 
 func serializePrimitiveTypeFrom[T any](discriminator string, serialize func(T) string) func(T) ballerina.Sum[error, json.RawMessage] {
-	return withContext("on "+discriminator, func(value T) ballerina.Sum[error, json.RawMessage] {
-		return wrappedMarshal(_primitiveTypeForSerialization{Discriminator: discriminator, Value: serialize(value)})
+	return WithContext("on "+discriminator, func(value T) ballerina.Sum[error, json.RawMessage] {
+		return WrappedMarshal(_primitiveTypeForSerialization{Discriminator: discriminator, Value: serialize(value)})
 	})
 }
 
