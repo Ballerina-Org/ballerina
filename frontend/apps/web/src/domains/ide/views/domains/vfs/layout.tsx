@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import {Ide, LockedSpec, WorkspaceState} from "playground-core";
+import {addMissingVfsFiles, getSpec, Ide, LockedSpec, moveIntoOwnFolder, WorkspaceState} from "playground-core";
 import {BasicFun, BasicUpdater} from "ballerina-core";
 import {Breadcrumbs} from "./breadcrumbs.tsx";
 import {FolderFilter} from "./folder-filter.tsx";
@@ -18,7 +18,28 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
             <div className="join">
                 <FolderFilter
                     workspace={props.locked.workspace}
-                    update={props.setState} />
+                    update={props.setState}
+                    addMissingVfsFiles={async () => {
+                        if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
+                        const added = await addMissingVfsFiles(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));  
+                        if(added.kind == 'value') {
+                            const spec = await getSpec(props.name.value);
+                            if (spec.kind == 'value') {
+                                props.setState(Ide.Updaters.Phases.locking.refreshVfs(spec.value.folders))
+                            }
+                        }
+                    }}
+                    moveIntoOwnFolder={async () => {
+                        if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
+                        const added = await moveIntoOwnFolder(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));
+                        if(added.kind == 'value') {
+                            const spec = await getSpec(props.name.value);
+                            if (spec.kind == 'value') {
+                                props.setState(Ide.Updaters.Phases.locking.refreshVfs(spec.value.folders))
+                            }
+                        }
+                    }}
+                />
             </div>
         </fieldset> : <></>
     const file =

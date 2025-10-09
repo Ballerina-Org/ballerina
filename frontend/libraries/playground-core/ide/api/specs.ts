@@ -1,6 +1,5 @@
 ﻿
 import {axiosVOE} from "./api";
-import {ValueOrErrors} from "ballerina-core";
 import {Node} from "../domains/locked/vfs/upload/model";
 import {SpecMode} from "../domains/spec/state";
 import {KnownSections} from "../domains/types/Json";
@@ -74,9 +73,36 @@ export const seed = async (name: string) =>
         url: `/specs/${name}/seed`,
     });
 
+export const seedPath = async (name: string, path: string[]) => {
+    const query = new URLSearchParams(path.map(p => ["path", p])).toString();
+
+    return await axiosVOE<any>({
+        method: "PUT",
+        url: `/specs/${name}/seed?${query}`,
+    });
+};
+
+export const addMissingVfsFiles = async (name: string, path: string[]) => {
+    const query = new URLSearchParams(path.map(p => ["path", p])).toString();
+
+    return await axiosVOE<any>({
+        method: "POST",
+        url: `/specs/${name}/vfs/missing?${query}`,
+    });
+};
+
 export const update = async (name: string, path: string, content: any) =>
     await axiosVOE<any>({
         method: "PUT",
         data: { path: path, content: content },
         url: `/specs/${name}/vfs`,
     });
+
+export const moveIntoOwnFolder = async (name: string, path: string[]) => {
+    const query = new URLSearchParams(path.map(p => ["path", p])).toString();
+
+    return await axiosVOE<any>({
+        method: "POST",
+        url: `/specs/${name}/vfs/move-into-own-folder?${query}`,
+    });
+};

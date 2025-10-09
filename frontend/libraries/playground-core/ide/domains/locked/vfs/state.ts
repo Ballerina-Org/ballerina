@@ -27,7 +27,6 @@ export const WorkspaceState = {
             Updater(workspace => {
                 return ({
                     ...workspace,
-                    kind: 'view',
                     nodes: next,
                 })
             }),
@@ -49,24 +48,25 @@ export const WorkspaceState = {
         selectFile: (file: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
                 const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, file.metadata.path);
-                if(folder == null) {
+                if(folder.kind == "l") {
                     window.alert("design issue: vfs from file content select file");
                     return workspace;
                 }
+          
                 return ({
                     ...workspace,
                     kind: 'selected',
                     current: {
                         kind: 'file',
                         file: file,
-                        folder: folder
+                        folder: folder.value
                     }
                 })
             }),
         defaultForSingleFolder: (): Updater<WorkspaceState> =>
             Updater(workspace =>
                 {
-
+                    debugger
                     if(!FlatNode.Operations.hasSingleFolderBelowRoot(workspace.nodes)) {
                         return workspace;
                     }

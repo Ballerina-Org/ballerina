@@ -7,10 +7,11 @@ import {getSeeds} from "../seeds";
 import {LocalStorage_SpecName} from "../../domains/storage/local";
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) => {
-    debugger
-    const specName = LocalStorage_SpecName.get()!
 
+    const specName = LocalStorage_SpecName.get()!
+    
     const call = getSeeds(specName, enumName, 0, 25);
+    console.log("enum api call for " + enumName);
     return ValueOrErrors.Default.return(
         () => 
             call.then(

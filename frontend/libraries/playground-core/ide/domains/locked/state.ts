@@ -22,6 +22,10 @@ export const ProgressiveLauncherAndEntities ={
             ({ kind: "done", a: launcher, b: entity}),
 }
 
+export type FormsDataEntry =
+    | { kind: 'launcher', selectEntityFromLauncher: ProgressiveAB<IdeLauncher, IdeEntity> }
+    | { kind: 'schema-selector', selectEntityAndLookups: ProgressiveAB<string, { name: string, fromEntity: string, toEntity: string }> }
+
 export type LockedStep =
     | { kind: 'design' }
     | { kind: 'preDisplay', selectEntityFromLauncher: ProgressiveAB<IdeLauncher, IdeEntity> };
@@ -72,28 +76,21 @@ export const LockedSpec = {
             //         const step = LockedStep.Updaters.Core.fromLauncherAndEntities(launcher, entities)
             //         return ({...ide, locked: {...ide.locked, ...step}})
             //     }),
-            selectLauncher2: (launcher: IdeLauncher): Updater<Ide> =>
-                Updater(
-                    LockedUpdater(locked => {
-                        const schema = FlatNode.Operations.findFileByName(locked.workspace.nodes,"schema.json" );
-                        if(schema.kind == "l") return ({...locked});
 
-                        const entities = Object.keys(schema.value.metadata.content.schema.entities || {})
-
-                        if(entities.length == 0) return ({...locked});
-
-                        const step = LockedStep.Updaters.Core.fromLauncherAndEntities(launcher, entities)
-                        return (
-                            { ...locked, progress: step } satisfies LockedSpec)
-                    }
-                )),
             selectLauncher: (launcher: IdeLauncher): Updater<Ide> =>
                 Updater(
                     LockedUpdaterFull((locked, ide) => {
-                        const schema = FlatNode.Operations.findFileByName(
-                            locked.workspace.nodes,
-                            "schema"
-                        );
+                        debugger
+                        const schema =
+                            locked.workspace.mode == 'explore' 
+                                && locked.workspace.kind == 'selected'
+                                && locked.workspace.current.kind == 'file'
+                                ?
+                                FlatNode.Operations.findFileByName(
+                                    locked.workspace.nodes,
+                                    LockedSpec.Operations.addSuffix( locked.workspace.current.file.name, "_schema")
+                                )
+                                :FlatNode.Operations.findFileByName( locked.workspace.nodes,"schema");
 
                         if (schema.kind === "l") {
                             return {
@@ -103,7 +100,7 @@ export const LockedSpec = {
                         }
 
                         const entities = Object.keys(
-                            schema.value.metadata.content.schema.entities || {}
+                            schema.value.metadata.content.entities || {}
                         );
 
                         if (entities.length === 0) {
@@ -179,6 +176,12 @@ export const LockedSpec = {
         }
     },
     Operations: {
+        addSuffix: (filename: string, suffix: string): string => {
+            const dot = filename.lastIndexOf(".");
+            return dot === -1
+                ? `${filename}${suffix}`
+                : `${filename.slice(0, dot)}${suffix}${filename.slice(dot)}`;
+        },
         enableRun: (): Updater<Ide> =>
             Updater(
                 LockedUpdater(locked => {
@@ -195,7 +198,6 @@ export const LockedSpec = {
                     
                     const step = LockedStep.Updaters.Core.fromLaunchers(ls);
                     const next = {...locked, progress: step}
-                    debugger
                     return next;
                     
                 })),

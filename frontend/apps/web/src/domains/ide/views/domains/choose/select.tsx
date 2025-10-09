@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import {Dropdown} from "../layout/dropdown.tsx"
-import {getOrInitSpec, getSpec, Ide, VirtualFolders} from "playground-core";
+import {FlatNode, getOrInitSpec, getSpec, Ide, VirtualFolders, WorkspaceState} from "playground-core";
 import {AddSpec, AddSpecInner} from "./add-spec.tsx";
 import {BasicFun, Updater} from "ballerina-core";
 import {SpecMode, SpecOrigin} from "playground-core/ide/domains/spec/state.ts";
@@ -21,7 +21,21 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                 }
                 const mode = { mode: spec.value.settings.workspaceMode, entry: spec.value.settings.dataEntry } as SpecMode
                 const origin = { origin: 'selected' } as SpecOrigin;
-                const u = Ide.Updaters.Phases.choosing.toLocked(name, spec.value.folders, origin, mode)
+                const u = 
+                    Ide.Updaters.Phases.choosing.toLocked(name, spec.value.folders, origin, mode)
+                        .then(((ide: Ide) => {
+                            if(ide.phase != 'locked') return ide;
+
+                            if(!FlatNode.Operations.hasSingleFolderBelowRoot(spec.value.folders)) {
+                                return ide;
+                            }
+
+                            return ({...ide,
+                                locked: {
+                                    ...ide.locked,
+                                    workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.locked.workspace) }
+                            })
+                        }))
                 props.setState(u)
     
             }}

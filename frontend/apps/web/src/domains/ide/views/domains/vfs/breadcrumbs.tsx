@@ -9,7 +9,7 @@ type BreadcrumbsProps = { workspace: WorkspaceState };
 export function Breadcrumbs({ workspace }: BreadcrumbsProps) {
 
     return (
-        workspace.kind == 'selected' && <div className="breadcrumbs text-sm">
+        workspace.kind == 'selected' && workspace.current.kind == 'file' && <div className="breadcrumbs text-sm">
             <ul>
                 {workspace.current.folder.metadata.path.split('/').map((part, i) => (
                     <li key={`${part}-${i}`}>

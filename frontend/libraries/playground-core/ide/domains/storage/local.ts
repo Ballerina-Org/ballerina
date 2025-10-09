@@ -37,7 +37,6 @@ export const LocalStorage_SpecName = {
     get(): string | undefined { return read().ide.specName; },
     set(specName: string){
         const s = read();
-        debugger
         write({ ide: { ...s.ide, specName } }); 
         }
 };

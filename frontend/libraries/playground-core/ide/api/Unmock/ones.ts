@@ -20,7 +20,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>{
                         get:async (id: Guid) => {
                   
                             const fieldName = apiName.replace(/Api$/, "");
-                            
+                            window.alert("calling lookup!")
                             const check =
                                 await getLookups(LocalStorage_SpecName.get()!,fieldName, id, 0, 1).then(valueOrErrors => {
                               

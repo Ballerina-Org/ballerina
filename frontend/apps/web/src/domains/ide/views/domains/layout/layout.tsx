@@ -6,7 +6,7 @@ import {
 
     update,
     VirtualFolders,
-    validateCompose, validateExplore, getSpec
+    validateCompose, validateExplore, getSpec, seedPath
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -33,6 +33,7 @@ import {languages} from "monaco-editor";
 import json = languages.json;
 import {Hero} from "./hero.tsx";
 import {List} from "immutable";
+import {SelectEntityAndLookups} from "../lookups/selector/layout.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -136,7 +137,13 @@ export const IdeLayout: IdeView = (props) =>{
                                             notify.error('UX bad state','Seeding should be possible only in a locked phase');
                                             return
                                         }
-                                        const call = await seed(props.context.name.value)
+                                        
+                                        const call =
+                                            props.context.locked.workspace.mode == 'explore'
+                                            && props.context.locked.workspace.kind == 'selected'
+                                            && props.context.locked.workspace.current.kind == 'file'
+                                            ? await seedPath(props.context.name.value, props.context.locked.workspace.current.file.metadata.path.split("/")) 
+                                            : await seed(props.context.name.value)
                                         if(call.kind == "errors") notify.error("Seeding failed")
                                         if(call.kind != "errors") notify.success("Seeding succeed")
           
@@ -145,12 +152,7 @@ export const IdeLayout: IdeView = (props) =>{
                                 }
                             />
                         </div>
-                        {/*<p>debug</p>*/}
-                        {/*<p>phase: {props.context.phase}</p>*/}
-                        {/*<p>step: {props.context.phase == 'locked' && props.context.step}</p>*/}
-                        {/*<p>is merged: {props.context.phase == 'locked' && props.context.locked.virtualFolders.merged.kind }</p>*/}
-                        {/*<p>selected launcher: {props.context.phase == 'locked' && props.context.locked.selectedLauncher.kind }</p>*/}
-                        {/*<p>selected entity: {props.context.phase == 'locked' && props.context.locked.selectedEntity.kind }</p>*/}
+            
                             <SettingsPanel  {...props.context} setState={props.setState}/>
                             <VfsLayout {...props.context} setState={props.setState} />
                       
@@ -169,6 +171,7 @@ export const IdeLayout: IdeView = (props) =>{
                                             && <div className="card bg-base-100 w-full mt-5">
                                             <div className="card-body w-full">
                                                 <LauncherAndEntity {...props.context.locked.progress.selectEntityFromLauncher} setState={props.setState} />
+                                                {/*<SelectEntityAndLookups />*/}
                                                 { props.context.locked.progress.selectEntityFromLauncher.kind == 'done'
                                                     && props.context.locked.validatedSpec.kind == "r"
                                                     && <><DispatcherFormsApp

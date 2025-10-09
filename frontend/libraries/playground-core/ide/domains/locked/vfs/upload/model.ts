@@ -34,11 +34,11 @@ export const FlatNode = {
     Operations: {
         hasSingleFolderBelowRoot<Meta>(root: Node): boolean {
             const dir = (root.children || []).filter(x => x.metadata.kind === 'dir');
-            return dir.length == 1;
+            return dir.length <= 1;
         },
         getFilesForSingleFolderBelowRoot(root: Node): Node[] {
             if (!FlatNode.Operations.hasSingleFolderBelowRoot(root)) return [];
-            const main = (root.children || []).filter(x => x.metadata.kind === 'dir')[0];
+            const main = root.children?.find(x => x.metadata?.kind === 'dir') ?? root;;
             const files = (main.children || []).filter(x => x.metadata.kind === 'file')
             return files
         },
@@ -126,33 +126,32 @@ export const FlatNode = {
         //
         //     return recurse(root, parts);
         // },
-        findFolderByPath: (root: Node, path: string): Node | null => {
-           
-            const parts = path.split("/").filter(Boolean);
+        
+        findFolderByPath: (root: Node, path: string): Option<Node> => {
+            const some = Option.Default.some<Node>;
+            const none = Option.Default.none<Node>;
 
-            const recurse = (node: Node, pathParts: string[]): Node | null => {
-                if (pathParts.length === 0) {
-                    return node.metadata.kind === "dir" ? node : null;
+            const parts = path.split("/").filter(s => s.length > 0);
+            if (parts.length === 0) return root.metadata.kind === "dir" ? some(root) : none();
+
+            const rec = (node: Node, segs: string[]): Option<Node> => {
+                const [head, ...tail] = segs;
+                if (head === undefined) return node.metadata.kind === "dir" ? some(node) : none();
+                if (node.metadata.kind !== "dir") return none();
+                if (head === node.name) return rec(node, tail);
+
+                const children = node.children ?? [];
+                const child = children.find(c => c.name === head);
+                if (child === undefined) return none();
+                if (tail.length === 0) {
+                    return child.metadata.kind === "file" ? some(node)
+                        : child.metadata.kind === "dir"  ? some(child)
+                            : none();
                 }
-
-                if (node.metadata.kind !== "dir" || !node.children) return null;
-
-                const [current, ...rest] = pathParts;
-                if(current == "root") {
-                    debugger
-                    return node;
-                } 
-                const child = node.children.find(c => c.name === current);
-                if (!child) return null;
-                if (rest.length === 0 && child.metadata.kind === "file") {
-                    return node;
-                }
-
-                return recurse(child, rest);
+                return rec(child, tail);
             };
-
-            return recurse(root, parts);
-        },
+            return rec(root, parts);
+        }
     }
 }
 // export const takeRoot = (nodes: FlatNode[]): FlatNode => {

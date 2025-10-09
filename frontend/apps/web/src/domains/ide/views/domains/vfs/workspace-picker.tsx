@@ -46,7 +46,7 @@ export type MultiSelectCheckboxControlledProps = {
     onAcceptedNodes?: BasicFun<Node, void> }
 
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
-    debugger
+
     const data: INode<Meta>[] = 
         flattenTree(props.workspace.nodes);
 

@@ -157,8 +157,9 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           ),
     },
     Sum: {
-      fromAPIRawValue: (_: any) =>
-        _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value),
+      fromAPIRawValue: (_: any) => {
+          debugger
+          return _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value)},
       toAPIRawValue: ([_, __]) => ({
         IsRight: _.kind == "r",
         Value: _.value,
