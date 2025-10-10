@@ -6,40 +6,40 @@ from typing import Generic, TypeVar
 
 from typing_extensions import assert_never
 
-_SumL = TypeVar("_SumL")
-_SumR = TypeVar("_SumR")
+_A = TypeVar("_A")
+_B = TypeVar("_B")
 
-_Left = TypeVar("_Left")
-_Right = TypeVar("_Right")
+_InnerA = TypeVar("_InnerA")
+_InnerB = TypeVar("_InnerB")
 
 
 @dataclass(frozen=True)
-class Sum(Generic[_SumL, _SumR]):
+class Sum(Generic[_A, _B]):
     @dataclass(frozen=True)
-    class Left(Generic[_Left]):
-        value: _Left
+    class Left(Generic[_InnerA]):
+        value: _InnerA
 
         _C = TypeVar("_C")
 
     @dataclass(frozen=True)
-    class Right(Generic[_Right]):
-        value: _Right
+    class Right(Generic[_InnerB]):
+        value: _InnerB
 
         _C = TypeVar("_C")
 
-    value: Left[_SumL] | Right[_SumR]
+    value: Left[_A] | Right[_B]
 
     _O = TypeVar("_O")
 
     @staticmethod
-    def left(value: _SumL, /) -> Sum[_SumL, _SumR]:
+    def left(value: _A, /) -> Sum[_A, _B]:
         return Sum(Sum.Left(value))
 
     @staticmethod
-    def right(value: _SumR, /) -> Sum[_SumL, _SumR]:
+    def right(value: _B, /) -> Sum[_A, _B]:
         return Sum(Sum.Right(value))
 
-    def fold(self, on_left: Callable[[_SumL], _O], on_right: Callable[[_SumR], _O], /) -> _O:
+    def fold(self, on_left: Callable[[_A], _O], on_right: Callable[[_B], _O], /) -> _O:
         match self.value:
             case Sum.Left(value):
                 return on_left(value)
@@ -47,11 +47,11 @@ class Sum(Generic[_SumL, _SumR]):
                 return on_right(value)
         assert_never(self.value)
 
-    def map_left(self, on_left: Callable[[_SumL], _O], /) -> Sum[_O, _SumR]:
+    def map_left(self, on_left: Callable[[_A], _O], /) -> Sum[_O, _B]:
         return self.fold(lambda value: Sum.left(on_left(value)), Sum.right)
 
-    def map_right(self, on_right: Callable[[_SumR], _O], /) -> Sum[_SumL, _O]:
+    def map_right(self, on_right: Callable[[_B], _O], /) -> Sum[_A, _O]:
         return self.fold(Sum.left, lambda value: Sum.right(on_right(value)))
 
-    def flat_map(self, on_right: Callable[[_SumR], Sum[_SumL, _O]], /) -> Sum[_SumL, _O]:
+    def flat_map(self, on_right: Callable[[_B], Sum[_A, _O]], /) -> Sum[_A, _O]:
         return self.fold(Sum.left, on_right)
