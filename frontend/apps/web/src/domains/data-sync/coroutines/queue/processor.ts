@@ -27,9 +27,9 @@ export const QueueProcessor = (): Coroutine<
         });
       return workersToUpdateNow.map((k) => ({
         preprocess: k.dirtySetter("dirty but being processed"),
-        operation: k.operation.then(() => Co.Return("completed" as const)),
+        operation: k.operation.then(() => Co.Return({ kind: "completed" })),
         postprocess: (_) =>
-          _ == "completed"
+          _.kind == "completed"
             ? Co.GetState().then((current) =>
                 current.queue.count(
                   (mutation) => mutation.entityId == k.entityId,
