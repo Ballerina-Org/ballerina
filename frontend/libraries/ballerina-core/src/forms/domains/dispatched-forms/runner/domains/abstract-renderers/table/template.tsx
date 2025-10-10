@@ -83,7 +83,8 @@ export const TableAbstractRenderer = <
       >
     | undefined,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
-  Layout: PredicateComputedOrInlined,
+  VisibleColumnsPredicate: PredicateComputedOrInlined,
+  DisabledColumnsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -562,7 +563,7 @@ export const TableAbstractRenderer = <
 
     const visibleColumns = TableLayout.Operations.ComputeLayout(
       updatedBindings,
-      Layout,
+      VisibleColumnsPredicate,
     );
 
     if (visibleColumns.kind == "errors") {
@@ -584,6 +585,16 @@ export const TableAbstractRenderer = <
       }
     });
 
+    const calculatedDisabledColumns = TableLayout.Operations.ComputeLayout(
+      updatedBindings,
+      DisabledColumnsPredicate,
+    );
+
+    const disabledColumnsValue =
+      calculatedDisabledColumns.kind == "value"
+        ? calculatedDisabledColumns.value.columns
+        : [];
+
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
@@ -592,7 +603,9 @@ export const TableAbstractRenderer = <
       List(
         CellTemplates.map(({ disabled }, fieldName) =>
           disabled == undefined
-            ? ValueOrErrors.Default.return(null)
+            ? disabledColumnsValue.includes(fieldName)
+              ? ValueOrErrors.Default.return(fieldName)
+              : ValueOrErrors.Default.return(null)
             : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
                 disabled,
               ).Then((value) =>
