@@ -229,7 +229,7 @@ let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
   let initialContext = context.TypeCheckContext
 
   let initialState = context.TypeCheckState
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   match actual with
   | Left((program, _typeValue, _), _state) ->
@@ -261,7 +261,7 @@ let ``LangNext-ExprEval construction of custom Option.Some succeeds`` () =
   let initialContext = context.TypeCheckContext
 
   let initialState = context.TypeCheckState
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   match actual with
   | Left((program, _typeValue, _), _state) ->
@@ -295,7 +295,7 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
   let initialContext = context.TypeCheckContext
 
   let initialState = context.TypeCheckState
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   match actual with
   | Left((program, _typeValue, _), _state) ->
@@ -317,12 +317,12 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
 let ``Int32 addition operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "+")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -343,12 +343,12 @@ let ``Int32 addition operation works`` () =
 let ``Int32 multiplication operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "*")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("*")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -369,12 +369,12 @@ let ``Int32 multiplication operation works`` () =
 let ``Int32 subtraction operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "-")), Expr.Primitive(PrimitiveValue.Int32 10)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Int32 10)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -395,12 +395,12 @@ let ``Int32 subtraction operation works`` () =
 let ``Int32 equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "==")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -421,12 +421,12 @@ let ``Int32 equal operation works`` () =
 let ``Int32 not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], "!=")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -447,12 +447,12 @@ let ``Int32 not equal operation works`` () =
 let ``Int32 greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], ">")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -473,12 +473,12 @@ let ``Int32 greater than operation works`` () =
 let ``Int32 greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int32" ], ">=")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Int32 5)),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -499,12 +499,12 @@ let ``Int32 greater than or equal operation works`` () =
 let ``Int64 power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int64" ], "**")), Expr.Primitive(PrimitiveValue.Int64 12L)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Int64 12L)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -525,12 +525,12 @@ let ``Int64 power operation works`` () =
 let ``Int64 mod operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Int64" ], "%")), Expr.Primitive(PrimitiveValue.Int64 12L)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("%")), Expr.Primitive(PrimitiveValue.Int64 12L)),
       Expr.Primitive(PrimitiveValue.Int64 5L)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -552,15 +552,12 @@ let ``Int64 mod operation works`` () =
 let ``Float32 plus operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "+")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -580,10 +577,13 @@ let ``Float32 plus operation works`` () =
 [<Test>]
 let ``Float32 minus operation works`` () =
   let program =
-    Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "-")), Expr.Primitive(PrimitiveValue.Float32 5.0f))
+    Expr.Apply(
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Float32 0.0f)),
+      Expr.Primitive(PrimitiveValue.Float32 5.0f)
+    )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -604,15 +604,12 @@ let ``Float32 minus operation works`` () =
 let ``Float32 divide operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "/")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("/")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -633,15 +630,12 @@ let ``Float32 divide operation works`` () =
 let ``Float32 power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "**")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -662,15 +656,12 @@ let ``Float32 power operation works`` () =
 let ``Float32 mod operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "%")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("%")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -691,15 +682,12 @@ let ``Float32 mod operation works`` () =
 let ``Float32 equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "==")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -720,15 +708,12 @@ let ``Float32 equal operation works`` () =
 let ``Float32 not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], "!=")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -749,15 +734,12 @@ let ``Float32 not equal operation works`` () =
 let ``Float32 greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], ">")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -778,15 +760,12 @@ let ``Float32 greater than operation works`` () =
 let ``Float32 greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Float32" ], ">=")),
-        Expr.Primitive(PrimitiveValue.Float32 5.0f)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -806,15 +785,12 @@ let ``Float32 greater than or equal operation works`` () =
 let ``Decimal equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Decimal" ], "==")),
-        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -835,15 +811,12 @@ let ``Decimal equal operation works`` () =
 let ``Decimal not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Decimal" ], "!=")),
-        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -864,15 +837,12 @@ let ``Decimal not equal operation works`` () =
 let ``Decimal greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Decimal" ], ">")),
-        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
       Expr.Primitive(PrimitiveValue.Decimal 1.0M)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -893,15 +863,12 @@ let ``Decimal greater than operation works`` () =
 let ``Decimal greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Decimal" ], ">=")),
-        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -922,15 +889,12 @@ let ``Decimal greater than or equal operation works`` () =
 let ``Decimal power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Decimal" ], "**")),
-        Expr.Primitive(PrimitiveValue.Decimal 3.5M)
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Decimal 3.5M)),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -950,15 +914,12 @@ let ``Decimal power operation works`` () =
 let ``String concatenation operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "String" ], "+")),
-        Expr.Primitive(PrimitiveValue.String "Hello ")
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.String "Hello ")),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -979,15 +940,12 @@ let ``String concatenation operation works`` () =
 let ``String equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "String" ], "==")),
-        Expr.Primitive(PrimitiveValue.String "Hello")
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.String "Hello")),
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1008,15 +966,12 @@ let ``String equal operation works`` () =
 let ``String not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "String" ], "!=")),
-        Expr.Primitive(PrimitiveValue.String "Hello")
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.String "Hello")),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1037,15 +992,12 @@ let ``String not equal operation works`` () =
 let ``String greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "String" ], ">")),
-        Expr.Primitive(PrimitiveValue.String "Hello")
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.String "Hello")),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1066,15 +1018,12 @@ let ``String greater than operation works`` () =
 let ``String greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "String" ], ">=")),
-        Expr.Primitive(PrimitiveValue.String "Hello")
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.String "Hello")),
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1095,12 +1044,12 @@ let ``String greater than or equal operation works`` () =
 let ``Bool and operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Bool" ], "&&")), Expr.Primitive(PrimitiveValue.Bool true)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("&&")), Expr.Primitive(PrimitiveValue.Bool true)),
       Expr.Primitive(PrimitiveValue.Bool false)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1121,12 +1070,12 @@ let ``Bool and operation works`` () =
 let ``Bool or operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Bool" ], "||")), Expr.Primitive(PrimitiveValue.Bool false)),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("||")), Expr.Primitive(PrimitiveValue.Bool false)),
       Expr.Primitive(PrimitiveValue.Bool true)
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1146,10 +1095,10 @@ let ``Bool or operation works`` () =
 [<Test>]
 let ``Bool not operation works`` () =
   let program =
-    Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "Bool" ], "!")), Expr.Primitive(PrimitiveValue.Bool true))
+    Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "bool" ], "!")), Expr.Primitive(PrimitiveValue.Bool true))
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1171,14 +1120,14 @@ let ``Guid equal operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Guid" ], "==")),
+        Expr.Lookup(Identifier.LocalScope("==")),
         Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
       ),
       Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1200,14 +1149,14 @@ let ``Guid not equal operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "Guid" ], "!=")),
+        Expr.Lookup(Identifier.LocalScope("!=")),
         Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
       ),
       Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1228,15 +1177,12 @@ let ``Guid not equal operation works`` () =
 let ``DateOnly diff operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "-")),
-        Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 2)))
-      ),
+      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 2)))),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 1)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1258,7 +1204,7 @@ let ``DateOnly toDateTime operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "toDateTime")),
+        Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "toDateTime")),
         Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
       ),
       Expr.TupleCons
@@ -1268,7 +1214,7 @@ let ``DateOnly toDateTime operation works`` () =
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1289,12 +1235,12 @@ let ``DateOnly toDateTime operation works`` () =
 let ``DateOnly getYear operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getYear")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "getYear")),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1315,12 +1261,12 @@ let ``DateOnly getYear operation works`` () =
 let ``DateOnly getMonth operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getMonth")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "getMonth")),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1341,12 +1287,12 @@ let ``DateOnly getMonth operation works`` () =
 let ``DateOnly getDay operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDay")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "getDay")),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1367,12 +1313,12 @@ let ``DateOnly getDay operation works`` () =
 let ``DateOnly getDayOfWeek operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDayOfWeek")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "getDayOfWeek")),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1393,12 +1339,12 @@ let ``DateOnly getDayOfWeek operation works`` () =
 let ``DateOnly getDayOfYear operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateOnly" ], "getDayOfYear")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateOnly" ], "getDayOfYear")),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1419,12 +1365,12 @@ let ``DateOnly getDayOfYear operation works`` () =
 let ``DateTime toDateOnly operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Lookup(Identifier.FullyQualified([ "DateTime" ], "toDateOnly")),
+      Expr.Lookup(Identifier.FullyQualified([ "dateTime" ], "toDateOnly")),
       Expr.Primitive(PrimitiveValue.DateTime(System.DateTime(2025, 10, 10, 10, 10, 10)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1446,14 +1392,14 @@ let ``TimeSpan equal operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], "==")),
+        Expr.Lookup(Identifier.LocalScope("==")),
         Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
       ),
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1476,14 +1422,14 @@ let ``TimeSpan not equal operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], "!=")),
+        Expr.Lookup(Identifier.LocalScope("!=")),
         Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
       ),
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with
@@ -1505,14 +1451,14 @@ let ``TimeSpan greater than operation works`` () =
   let program =
     Expr.Apply(
       Expr.Apply(
-        Expr.Lookup(Identifier.FullyQualified([ "TimeSpan" ], ">")),
+        Expr.Lookup(Identifier.LocalScope(">")),
         Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 12, 0)))
       ),
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 44)))
     )
 
   let typeCheckResult =
-    Expr.TypeCheck program
+    Expr.TypeCheck None program
     |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
   match typeCheckResult with

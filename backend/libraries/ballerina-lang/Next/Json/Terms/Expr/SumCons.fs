@@ -16,24 +16,18 @@ module SumCons =
   let private discriminator = "sum"
 
   type Expr<'T> with
-    static member FromJsonSumCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+    static member FromJsonSumCons (_fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
-          let! (case, count, v) = elementsJson |> JsonValue.AsTriple |> reader.OfSum
+          let! (case, count) = elementsJson |> JsonValue.AsPair |> reader.OfSum
           let! case = case |> JsonValue.AsInt |> reader.OfSum
           let! count = count |> JsonValue.AsInt |> reader.OfSum
-          let! v = v |> fromRootJson
-          return Expr.SumCons({ Case = case; Count = count }, v)
+          return Expr.SumCons({ Case = case; Count = count })
         })
 
-    static member ToJsonSumCons
-      (rootToJson: ExprEncoder<'T>)
-      (sel: SumConsSelector)
-      (e: Expr<'T>)
-      : ExprEncoderReader<'T> =
+    static member ToJsonSumCons (_rootToJson: ExprEncoder<'T>) (sel: SumConsSelector) : ExprEncoderReader<'T> =
       reader {
         let case = sel.Case |> decimal |> JsonValue.Number
         let count = sel.Count |> decimal |> JsonValue.Number
-        let! e = e |> rootToJson
-        return [| case; count; e |] |> JsonValue.Array |> Json.discriminator discriminator
+        return [| case; count |] |> JsonValue.Array |> Json.discriminator discriminator
       }

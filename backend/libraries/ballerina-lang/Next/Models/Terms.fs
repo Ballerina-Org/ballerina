@@ -26,11 +26,11 @@ module Model =
     | RecordWith of Expr<'T> * List<Identifier * Expr<'T>>
     | UnionCons of Identifier * Expr<'T>
     | TupleCons of List<Expr<'T>>
-    | SumCons of SumConsSelector * Expr<'T>
+    | SumCons of SumConsSelector
     | RecordDes of Expr<'T> * Identifier
     | UnionDes of Map<Identifier, CaseHandler<'T>> * Option<Expr<'T>>
     | TupleDes of Expr<'T> * TupleDesSelector
-    | SumDes of List<CaseHandler<'T>>
+    | SumDes of Map<SumConsSelector, CaseHandler<'T>>
     | Primitive of PrimitiveValue
     | Lookup of Identifier
     | If of Expr<'T> * Expr<'T> * Expr<'T>
@@ -67,7 +67,7 @@ module Model =
       | TupleCons values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"
-      | SumCons(selector, value) -> $"Sum::Choice{selector.Case}({value.ToString()})"
+      | SumCons(selector) -> $"{selector.Case}Of{selector.Count}"
       | RecordDes(record, field) -> $"{record.ToString()}.{field.LocalName}"
       | UnionDes(handlers, defaultOpt) ->
         let handlerStr =
@@ -83,7 +83,8 @@ module Model =
       | SumDes handlers ->
         let handlerStr =
           handlers
-          |> List.map (fun (v, body) -> $"{v.Name} => {body.ToString()}")
+          |> Map.toList
+          |> List.map (fun (k, (v, body)) -> $"{k.Case}Of{k.Count} ({v.Name} => {body.ToString()})")
           |> String.concat " | "
 
         $"(match {handlerStr})"
@@ -137,7 +138,7 @@ module Model =
     | Record of Map<TypeSymbol, Value<'T, 'valueExt>>
     | UnionCase of TypeSymbol * Value<'T, 'valueExt>
     | Tuple of List<Value<'T, 'valueExt>>
-    | Sum of int * Value<'T, 'valueExt>
+    | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
     | Var of Var
     | Ext of 'valueExt
@@ -158,7 +159,7 @@ module Model =
       | Tuple values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"
-      | Sum(case, value) -> $"Sum::Choice{case}({value.ToString()})"
+      | Sum(selector, value) -> $"{selector.Case}Of{selector.Count}({value.ToString()})"
       | Primitive p -> p.ToString()
       | Var v -> v.Name
       | Ext e -> e.ToString()

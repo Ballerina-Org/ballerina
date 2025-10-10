@@ -60,7 +60,7 @@ let ``LangNext-TypeCheck let typechecks`` () =
     )
 
   let actual =
-    Expr.TypeCheck program |> State.Run(initialContext, TypeCheckState.Empty)
+    Expr.TypeCheck None program |> State.Run(initialContext, TypeCheckState.Empty)
 
   match actual with
   | Sum.Left((_, TypeValue.Primitive({ value = PrimitiveType.Int32 }), Kind.Star), _) -> Assert.Pass()
@@ -92,7 +92,7 @@ let ``LangNext-TypeCheck lambda infers and typechecks`` () =
     )
 
   let actual =
-    Expr.TypeCheck program |> State.Run(initialContext, TypeCheckState.Empty)
+    Expr.TypeCheck None program |> State.Run(initialContext, TypeCheckState.Empty)
 
   match actual with
   | Sum.Left((_,
@@ -118,8 +118,8 @@ let ``LangNext-TypeCheck tuple cons and des typecheck`` () =
           Expr.Primitive(PrimitiveValue.Decimal 3.0M) ]
       ),
       Expr.Apply(
-        Expr.Apply(Expr.Lookup !"+", Expr.TupleDes(Expr.Lookup !"v3", { TupleDesSelector.Index = 0 })),
-        Expr.TupleDes(Expr.Lookup !"v3", { TupleDesSelector.Index = 1 })
+        Expr.Apply(Expr.Lookup !"+", Expr.TupleDes(Expr.Lookup !"v3", { TupleDesSelector.Index = 1 })),
+        Expr.TupleDes(Expr.Lookup !"v3", { TupleDesSelector.Index = 2 })
       )
     )
 
@@ -139,7 +139,7 @@ let ``LangNext-TypeCheck tuple cons and des typecheck`` () =
          Kind.Star)
     )
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   let expected = TypeValue.CreateDecimal()
 
@@ -179,7 +179,7 @@ let ``LangNext-TypeCheck if-then-else typechecks`` () =
          Kind.Star)
     )
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected = TypeValue.CreateString()
 
   match actual with
@@ -188,56 +188,6 @@ let ``LangNext-TypeCheck if-then-else typechecks`` () =
   | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
-
-[<Test>]
-let ``LangNext-TypeCheck sum cons and des typecheck`` () =
-  let program =
-    Expr.Let(
-      "oneOfThree" |> Var.Create,
-      None,
-      Expr.SumCons(
-        { SumConsSelector.Case = 0
-          SumConsSelector.Count = 3 },
-        Expr.Primitive(PrimitiveValue.Decimal 1.0M)
-      ),
-      Expr.Apply(
-        Expr.SumDes(
-          [ ("x" |> Var.Create,
-             Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0M)))
-            ("y" |> Var.Create,
-             Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0M)))
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0M)) ]
-        ),
-        Expr.Lookup(!"oneOfThree")
-      )
-    )
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState = TypeCheckState.Empty
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateDecimal(),
-          TypeValue.CreateArrow(TypeValue.CreateDecimal(), TypeValue.CreateDecimal())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected = TypeValue.CreateDecimal()
-
-  match actual with
-  | Sum.Left((_, actual, Kind.Star), _) when actual = expected -> Assert.Pass()
-  | Sum.Left((_, t, k), _) ->
-    Assert.Fail
-      $"Expected typechecking to succeed with '(Case1Of3 of Int | Case2Of3 of Int | Case3Of3 of _) -> Int' but succeeded with: {t}::{k}"
-  | Sum.Right err -> Assert.Fail $"Expected typechecking to succeed but failed with: {err}"
 
 
 
@@ -308,7 +258,7 @@ let ``LangNext-TypeCheck HKTs over option typechecks`` () =
          Kind.Star)
     )
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   match actual with
   | Sum.Left((_,
@@ -380,7 +330,7 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
     )
 
   let actual =
-    Expr.TypeCheck program |> State.Run(TypeCheckContext.Empty, initialState)
+    Expr.TypeCheck None program |> State.Run(TypeCheckContext.Empty, initialState)
 
   let docNumberCaseValue =
     TypeValue.Primitive
@@ -426,71 +376,6 @@ let ``LangNext-TypeCheck should preserve given names in expr type let bindings a
 
 
 [<Test>]
-let ``LangNext-TypeCheck union des fails on non-existent case`` () =
-  let program =
-    Expr.UnionDes(
-      [ (!"NON_EXISTENT_CASE",
-         ("x" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Int32 1))))
-        (!"Case2Of3",
-         ("y" |> Var.Create,
-          Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Int32 2))))
-        (!"Case3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Int32 3))) ]
-      |> Map.ofList,
-      None
-    )
-
-  let Case1Of3 = "Case1Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case2Of3 = "Case2Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-  let Case3Of3 = "Case3Of3" |> Identifier.LocalScope |> TypeSymbol.Create
-
-  let initialContext = TypeCheckContext.Empty
-
-  let initialState =
-    TypeCheckState.Empty
-    |> TypeCheckState.Updaters.Types(
-      TypeExprEvalState.Updaters.Symbols.Types(
-        replaceWith (
-          Map.ofList
-            [ (Case1Of3.Name, Case1Of3)
-              (Case2Of3.Name, Case2Of3)
-              (Case3Of3.Name, Case3Of3) ]
-        )
-      )
-    )
-
-
-  let initialContext =
-    initialContext
-    |> TypeCheckContext.Updaters.Values(
-      Map.add
-        !"+"
-        (TypeValue.CreateArrow(
-          TypeValue.CreateInt32(),
-          TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateInt32())
-         ),
-         Kind.Star)
-    )
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected_error_messages =
-    [ "cannot resolve match over union cases"; "NON_EXISTENT_CASE" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-[<Test>]
 let ``LangNext-TypeCheck lookup fails when variable is not bound to a term`` () =
   let program =
     Expr.Apply(
@@ -503,7 +388,7 @@ let ``LangNext-TypeCheck lookup fails when variable is not bound to a term`` () 
   let initialState = TypeCheckState.Empty
 
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "Cannot find variable"; "+" ]
 
   match actual with
@@ -535,7 +420,7 @@ let ``LangNext-TypeCheck application fails when applicand is not an arrow`` () =
 
   let initialState = TypeCheckState.Empty
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "expected arrow type"; "int" ]
 
   match actual with
@@ -573,7 +458,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (negative) index`` (
 
   let initialContext = initialContext PrimitiveType.Decimal
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "cannot find item"; "-1" ]
 
   match actual with
@@ -610,7 +495,7 @@ let ``LangNext-TypeCheck tuple des fails with out of bounds (too large) index`` 
 
   let initialContext = initialContext PrimitiveType.Decimal
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "cannot find item"; "3" ]
 
   match actual with
@@ -639,7 +524,7 @@ let ``LangNext-TypeCheck if-then-else fails with non-boolean condition`` () =
 
   let initialState = TypeCheckState.Empty
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "cannot unify types"; "bool"; "decimal" ]
 
   match actual with
@@ -668,7 +553,7 @@ let ``LangNext-TypeCheck if-then-else fails with incompatible branches`` () =
 
   let initialState = TypeCheckState.Empty
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "cannot unify types"; "string"; "()" ]
 
   match actual with
@@ -684,157 +569,6 @@ let ``LangNext-TypeCheck if-then-else fails with incompatible branches`` () =
     Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
 
 
-
-[<Test>]
-let ``LangNext-TypeCheck sum des fails on mismatched types with the same arity`` () =
-  let program =
-    Expr.Let(
-      "oneOfThree" |> Var.Create,
-      None,
-      Expr.SumCons(
-        { SumConsSelector.Case = 0
-          SumConsSelector.Count = 3 },
-        Expr.Primitive(PrimitiveValue.String "not a decimal eh")
-      ),
-      Expr.Apply(
-        Expr.SumDes(
-          [ ("x" |> Var.Create,
-             Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0M)))
-            ("y" |> Var.Create,
-             Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0M)))
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0M)) ]
-        ),
-        Expr.Lookup(!"oneOfThree")
-      )
-    )
-
-  let initialContext = initialContext PrimitiveType.Decimal
-  let initialState = TypeCheckState.Empty
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected_error_messages = [ "cannot unify types"; "decimal"; "string" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-[<Test>]
-let ``LangNext-TypeCheck sum des fails on missing cases`` () =
-  let program =
-    Expr.Let(
-      "oneOfThree" |> Var.Create,
-      None,
-      Expr.SumCons(
-        { SumConsSelector.Case = 0
-          SumConsSelector.Count = 3 },
-        Expr.Primitive(PrimitiveValue.Decimal 1.0M)
-      ),
-      Expr.Apply(
-        Expr.SumDes(
-          [ ("x" |> Var.Create,
-             Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0M)))
-            ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0M)) ]
-        ),
-        Expr.Lookup(!"oneOfThree")
-      )
-    )
-
-  let initialContext = initialContext PrimitiveType.Decimal
-
-  let initialState = TypeCheckState.Empty
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-
-  let expected_error_messages = [ "cannot unify types"; "decimal" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-
-[<Test>]
-let ``LangNext-TypeCheck union des fails on case with wrong payload`` () =
-  let program =
-    Expr.TypeLet(
-      "Either3",
-      TypeExpr.Let(
-        "Choice1Of3",
-        TypeExpr.NewSymbol "Choice1Of3",
-        TypeExpr.Let(
-          "Choice2Of3",
-          TypeExpr.NewSymbol "Choice2Of3",
-          TypeExpr.Let(
-            "Choice3Of3",
-            TypeExpr.NewSymbol "Choice3Of3",
-            TypeExpr.Union(
-              [ (TypeExpr.Lookup(!"Choice1Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice2Of3"), TypeExpr.Primitive PrimitiveType.Decimal)
-                (TypeExpr.Lookup(!"Choice3Of3"), TypeExpr.Primitive PrimitiveType.String) ]
-            )
-          )
-        )
-      ),
-      Expr.Let(
-        "v" |> Var.Create,
-        None,
-        Expr.Apply(!"Choice1Of3" |> Expr.Lookup, Expr.Primitive(PrimitiveValue.String "not a decimal eh")),
-        Expr.Apply(
-          Expr.UnionDes(
-            [ (!"Choice1Of3",
-               ("x" |> Var.Create,
-                Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"x"), Expr.Primitive(PrimitiveValue.Decimal 1.0m))))
-              (!"Choice2Of3",
-               ("y" |> Var.Create,
-                Expr.Apply(Expr.Apply(Expr.Lookup !"+", Expr.Lookup !"y"), Expr.Primitive(PrimitiveValue.Decimal 2.0m))))
-              (!"Choice3Of3", ("_" |> Var.Create, Expr.Primitive(PrimitiveValue.Decimal 3.0m))) ]
-            |> Map.ofList,
-            None
-          ),
-          Expr.Lookup !"v"
-        )
-      )
-    )
-
-  let initialContext = initialContext PrimitiveType.Decimal
-
-  let initialState = TypeCheckState.Empty
-
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
-  let expected_error_messages = [ "cannot unify types"; "string"; "decimal" ]
-
-  match actual with
-  | Sum.Left _ -> Assert.Fail $"Expected typechecking to fail but succeeded"
-  | Sum.Right(err, _) when
-    expected_error_messages
-    |> Seq.forall (fun exp ->
-      err.Errors
-      |> Seq.exists (fun err -> err.Message.ToLower().Contains(exp.ToLower())))
-    ->
-    Assert.Pass()
-  | Sum.Right(err, _) ->
-    Assert.Fail $"Expected typechecking to fail with {expected_error_messages} but fail with: {err}"
-
-
-
 [<Test>]
 let ``LangNext-TypeCheck type apply fails when the left side is not an HKT`` () =
   let program =
@@ -843,7 +577,7 @@ let ``LangNext-TypeCheck type apply fails when the left side is not an HKT`` () 
   let initialContext = TypeCheckContext.Empty
 
   let initialState = TypeCheckState.Empty
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "Expected arrow kind" ]
 
   match actual with
@@ -875,7 +609,7 @@ let ``LangNext-TypeCheck type lambda fails when the variable cannot be generaliz
 
   let initialState = TypeCheckState.Empty
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
   let expected_error_messages = [ "cannot remove variable"; "a"; "Decimal" ]
 
   match actual with
@@ -903,7 +637,7 @@ let ``LangNext-TypeCheck type lambda succeeds when concrete type is passed to *-
   let initialContext = TypeCheckContext.Empty
 
   let initialState = TypeCheckState.Empty
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   let expected = PrimitiveType.Decimal
 
@@ -930,7 +664,7 @@ let ``LangNext-TypeCheck type lambda succeeds when *->* type is passed to (*->*)
   let initialContext = TypeCheckContext.Empty
 
   let initialState = TypeCheckState.Empty
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   let expected =
     TypeValue.Primitive
@@ -962,7 +696,7 @@ let ``LangNext-TypeCheck type lambda fails when passing *->* to *->*`` () =
 
   let initialState = TypeCheckState.Empty
 
-  let actual = Expr.TypeCheck program |> State.Run(initialContext, initialState)
+  let actual = Expr.TypeCheck None program |> State.Run(initialContext, initialState)
 
   let expected_error_messages =
     [ "mismatched kind"; "expected Star"; "got Arrow (Star, Star)" ]

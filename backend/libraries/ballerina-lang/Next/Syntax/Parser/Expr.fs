@@ -28,7 +28,7 @@ module Expr =
 
   type ComplexExpression =
     | ScopedIdentifier of NonEmptyList<string>
-    | RecordDes of NonEmptyList<string>
+    | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
     | TupleCons of NonEmptyList<Expr<TypeExpr>>
     | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr>, TypeExpr>>
     | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr>>
@@ -52,6 +52,18 @@ module Expr =
       parser.Exactly(fun t ->
         match t.Token with
         | Token.StringLiteral s -> Expr.Primitive(PrimitiveValue.String s, t.Location) |> Some
+        | _ -> None)
+
+    let caseLiteral () =
+      parser.Exactly(fun t ->
+        match t.Token with
+        | Token.CaseLiteral(i, n) -> { Case = i; Count = n } |> Some
+        | _ -> None)
+
+    let actualInt () =
+      parser.Exactly(fun t ->
+        match t.Token with
+        | Token.IntLiteral s -> s |> Some
         | _ -> None)
 
     let intLiteral () =
@@ -94,7 +106,11 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! pipeOperator
-                  let! id = identifierLocalOrFullyQualified ()
+
+                  let! id =
+                    parser.Any
+                      [ identifierLocalOrFullyQualified () |> parser.Map Left
+                        caseLiteral () |> parser.Map Right ]
 
                   do! openRoundBracketOperator
                   let! paramName = identifierMatch
@@ -105,7 +121,7 @@ module Expr =
                   return id, (Var.Create paramName, body)
                 }
               )
-              |> parser.Map(NonEmptyList.ToList >> Map.ofList)
+              |> parser.Map(NonEmptyList.ToList)
 
             let! fallback =
               parser {
@@ -121,7 +137,32 @@ module Expr =
               |> parser.Try
               |> parser.Map Sum.toOption
 
-            return Expr.Apply(Expr.UnionDes(cases, fallback, loc), matchedExpr, loc)
+            let unionCases =
+              cases
+              |> List.collect (fun (id, c) ->
+                match id with
+                | Left id -> [ id, c ]
+                | _ -> [])
+
+            let sumCases =
+              cases
+              |> List.collect (fun (id, c) ->
+                match id with
+                | Right id -> [ id, c ]
+                | _ -> [])
+
+            if unionCases.Length > 0 && sumCases.Length > 0 then
+              return!
+                (loc, "Error: cannot mix union cases and sum cases in match expression")
+                |> Errors.Singleton
+                |> parser.Throw
+            else if unionCases.Length > 0 then
+              let unionCases = Map.ofList unionCases
+              return Expr.Apply(Expr.UnionDes(unionCases, fallback, loc), matchedExpr, loc)
+            else
+              let sumCases = Map.ofList sumCases
+              return Expr.Apply(Expr.SumDes(sumCases, loc), matchedExpr, loc)
+
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -252,21 +293,23 @@ module Expr =
 
                         do! equalsOperator |> parser.Ignore
                         let! value = expr parseAllComplexShapes
-                        do! semicolonOperator
                         return Sum.Left(e, value)
                       } ]
               }
 
             let! fields =
-              parser.Many(
+              parser.ManyIndex(fun i ->
                 parser {
+                  if firstFieldOrWithExpr.IsLeft || i > 0 then
+                    do! semicolonOperator
+
                   let! id = identifierLocalOrFullyQualified ()
                   do! equalsOperator
                   let! value = expr parseAllComplexShapes
-                  do! semicolonOperator
                   return (id, value)
-                }
-              )
+                })
+
+            do! semicolonOperator |> parser.Try |> parser.Ignore
 
             do! closeCurlyBracketOperator
 
@@ -307,11 +350,11 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! dotOperator
-                  return! identifierMatch
+                  return! parser.Any [ identifierMatch |> parser.Map Left; actualInt () |> parser.Map Right ]
                 }
               )
 
-            return fields |> ComplexExpression.RecordDes
+            return fields |> ComplexExpression.RecordOrTupleDesChain
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
@@ -439,6 +482,7 @@ module Expr =
     let simpleShapes =
       [ stringLiteral ()
         intLiteral ()
+        caseLiteral () |> parser.Map Expr.SumCons
         decimalLiteral ()
         boolLiteral ()
         unitLiteral ()
@@ -582,13 +626,17 @@ module Expr =
                       (loc, $"Error: cannot collapse scoped identifier chain on non-identifier")
                       |> Errors.Singleton
                       |> sum.Throw
-                | RecordDes ids ->
+                | RecordOrTupleDesChain ids ->
                   return
-                    Expr.RecordDes(
-                      acc,
-                      ids |> NonEmptyList.ToList |> List.rev |> List.head |> Identifier.LocalScope,
-                      loc
-                    )
+                    ids
+                    |> NonEmptyList.ToList
+                    |> List.rev
+                    |> List.fold
+                      (fun acc id ->
+                        match id with
+                        | Sum.Left id -> Expr.RecordDes(acc, id |> Identifier.LocalScope, loc)
+                        | Sum.Right idx -> Expr.TupleDes(acc, { Index = idx }, loc))
+                      acc
                 | TupleCons fields -> return Expr.TupleCons(acc :: (fields |> NonEmptyList.ToList), loc)
                 | ApplicationArguments args ->
                   let smartApply (t1, t2) =

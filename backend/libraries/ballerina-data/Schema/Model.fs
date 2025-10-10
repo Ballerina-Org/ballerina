@@ -3,6 +3,8 @@ namespace Ballerina.Data.Schema
 module Model =
   open Ballerina.Data.Arity.Model
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.DSL.Next.Types
 
   type EntityName = { EntityName: string }
   type LookupName = { LookupName: string }
@@ -51,5 +53,6 @@ module Model =
       Backward: Option<LookupName * DirectedLookupDescriptor> }
 
   type Schema<'Type> =
-    { Entities: Map<EntityName, EntityDescriptor<'Type>>
+    { Types: OrderedMap<Identifier, 'Type>
+      Entities: Map<EntityName, EntityDescriptor<'Type>>
       Lookups: Map<LookupName, LookupDescriptor> }

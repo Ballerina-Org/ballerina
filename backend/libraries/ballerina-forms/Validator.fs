@@ -283,7 +283,7 @@ module Validator =
           | Renderer.UnionRenderer formCases ->
             let unallowedCases =
               typeCases
-              |> Map.filter (fun _ typeCase -> typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType |> not)
+              |> Map.filter (fun _ typeCase -> (typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType) |> not)
 
             let typeCaseNames =
               typeCases |> Map.values |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq

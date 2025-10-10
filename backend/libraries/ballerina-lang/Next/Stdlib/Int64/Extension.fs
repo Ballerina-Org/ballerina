@@ -21,7 +21,7 @@ module Extension =
     (operationLens: PartialLens<'ext, Int64Operations<'ext>>)
     : OperationsExtension<'ext, Int64Operations<'ext>> =
 
-    let int64PlusId = Identifier.FullyQualified([ "Int64" ], "+")
+    let int64PlusId = Identifier.FullyQualified([ "int64" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PlusId,
@@ -59,21 +59,28 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure + v))
             } }
 
-    let int64MinusId = Identifier.FullyQualified([ "Int64" ], "-")
+    let int64MinusId = Identifier.FullyQualified([ "int64" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64MinusId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
         Kind = Kind.Star
-        Operation = Int64Operations.Minus {| v1 = () |}
+        Operation = Int64Operations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | Int64Operations.Minus v -> Some(Int64Operations.Minus v)
             | _ -> None)
+
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 (op, v) ->
             reader {
+              let! op =
+                op
+                |> Int64Operations.AsMinus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               let! v =
@@ -82,10 +89,15 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(-v))
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return Int64Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure - v))
             } }
 
-    let int64DivideId = Identifier.FullyQualified([ "Int64" ], "/")
+    let int64DivideId = Identifier.FullyQualified([ "int64" ], "/")
 
     let divideOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64DivideId,
@@ -122,7 +134,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure / v))
             } }
 
-    let int64PowerId = Identifier.FullyQualified([ "Int64" ], "**")
+    let int64PowerId = Identifier.FullyQualified([ "int64" ], "**")
 
     let powerOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PowerId,
@@ -165,7 +177,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(pown vClosure v))
             } }
 
-    let int64ModId = Identifier.FullyQualified([ "Int64" ], "%")
+    let int64ModId = Identifier.FullyQualified([ "int64" ], "%")
 
     let modOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64ModId,
@@ -202,7 +214,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure % v))
             } }
 
-    let int64EqualId = Identifier.FullyQualified([ "Int64" ], "==")
+    let int64EqualId = Identifier.FullyQualified([ "int64" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64EqualId,
@@ -239,7 +251,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let int64NotEqualId = Identifier.FullyQualified([ "Int64" ], "!=")
+    let int64NotEqualId = Identifier.FullyQualified([ "int64" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64NotEqualId,
@@ -276,7 +288,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let int64GreaterThanId = Identifier.FullyQualified([ "Int64" ], ">")
+    let int64GreaterThanId = Identifier.FullyQualified([ "int64" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanId,
@@ -313,7 +325,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let int64GreaterThanOrEqualId = Identifier.FullyQualified([ "Int64" ], ">=")
+    let int64GreaterThanOrEqualId = Identifier.FullyQualified([ "int64" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanOrEqualId,
@@ -353,7 +365,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let int64LessThanId = Identifier.FullyQualified([ "Int64" ], "<")
+    let int64LessThanId = Identifier.FullyQualified([ "int64" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanId,
@@ -390,7 +402,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let int64LessThanOrEqualId = Identifier.FullyQualified([ "Int64" ], "<=")
+    let int64LessThanOrEqualId = Identifier.FullyQualified([ "int64" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanOrEqualId,

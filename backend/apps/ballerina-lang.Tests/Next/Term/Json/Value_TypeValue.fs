@@ -82,8 +82,8 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
         [ PrimitiveValue.Int32 1 |> Value.Primitive
           PrimitiveValue.String "two" |> Value.Primitive ]
       )
-      """{"discriminator": "sum", "value": [3, {"discriminator":"int32","value":"42"}]}""",
-      Value.Sum(3, PrimitiveValue.Int32 42 |> Value.Primitive)
+      """{"discriminator": "sum", "value": [3, 3, {"discriminator":"int32","value":"42"}]}""",
+      Value.Sum({ Case = 3; Count = 3 }, PrimitiveValue.Int32 42 |> Value.Primitive)
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
       Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> Expr.Primitive)
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",

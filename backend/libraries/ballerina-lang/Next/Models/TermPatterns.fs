@@ -92,7 +92,7 @@ module Patterns =
       | Value.UnionCase(s, v) -> sum.Return(s, v)
       | other -> sum.Throw(Errors.Singleton $"Expected a union type but got {other}")
 
-    static member AsSum(v: Value<'T, 'valueExt>) : Sum<int * Value<'T, 'valueExt>, Errors> =
+    static member AsSum(v: Value<'T, 'valueExt>) : Sum<SumConsSelector * Value<'T, 'valueExt>, Errors> =
       match v with
       | Value.Sum(i, v) -> sum.Return(i, v)
       | other -> sum.Throw(Errors.Singleton $"Expected a sum type but got {other}")
@@ -193,12 +193,12 @@ module Patterns =
     static member TupleCons(elements: List<Expr<'T>>) =
       Expr<'T>.TupleCons(elements, Location.Unknown)
 
-    static member SumCons(selector: SumConsSelector, e: Expr<'T>, loc: Location) =
-      { Expr = SumCons(selector, e)
+    static member SumCons(selector: SumConsSelector, loc: Location) =
+      { Expr = SumCons(selector)
         Location = loc }
 
-    static member SumCons(selector: SumConsSelector, e: Expr<'T>) =
-      Expr<'T>.SumCons(selector, e, Location.Unknown)
+    static member SumCons(selector: SumConsSelector) =
+      Expr<'T>.SumCons(selector, Location.Unknown)
 
     static member RecordDes(e: Expr<'T>, id: Identifier, loc: Location) =
       { Expr = RecordDes(e, id)
@@ -221,10 +221,10 @@ module Patterns =
     static member TupleDes(e: Expr<'T>, selector: TupleDesSelector) =
       Expr<'T>.TupleDes(e, selector, Location.Unknown)
 
-    static member SumDes(cases: List<CaseHandler<'T>>, loc: Location) =
+    static member SumDes(cases: Map<SumConsSelector, CaseHandler<'T>>, loc: Location) =
       { Expr = SumDes(cases); Location = loc }
 
-    static member SumDes(cases: List<CaseHandler<'T>>) =
+    static member SumDes(cases: Map<SumConsSelector, CaseHandler<'T>>) =
       Expr<'T>.SumDes(cases, Location.Unknown)
 
     static member Primitive(p: PrimitiveValue, loc: Location) =
@@ -276,14 +276,14 @@ module Patterns =
       | TupleCons es -> sum.Return es
       | other -> sum.Throw(Errors.Singleton $"Expected a tuple construct but got {other}")
 
-    static member AsSumDes(e: Expr<'T>) : Sum<List<CaseHandler<'T>>, Errors> =
+    static member AsSumDes(e: Expr<'T>) : Sum<Map<SumConsSelector, CaseHandler<'T>>, Errors> =
       match e.Expr with
       | SumDes m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a sum destruct but got {other}")
 
-    static member AsSumCons(e: Expr<'T>) : Sum<SumConsSelector * Expr<'T>, Errors> =
+    static member AsSumCons(e: Expr<'T>) : Sum<SumConsSelector, Errors> =
       match e.Expr with
-      | SumCons(i, m) -> sum.Return(i, m)
+      | SumCons(i) -> sum.Return(i)
       | other -> sum.Throw(Errors.Singleton $"Expected a sum construct but got {other}")
 
     static member AsRecordDes(e: Expr<'T>) : Sum<Expr<'T> * Identifier, Errors> =

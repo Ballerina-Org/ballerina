@@ -21,7 +21,7 @@ module Extension =
   let Float32Extension<'ext>
     (operationLens: PartialLens<'ext, Float32Operations<'ext>>)
     : OperationsExtension<'ext, Float32Operations<'ext>> =
-    let float32PlusId = Identifier.FullyQualified([ "Float32" ], "+")
+    let float32PlusId = Identifier.FullyQualified([ "float32" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32PlusId,
@@ -58,21 +58,27 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure + v))
             } }
 
-    let float32MinusId = Identifier.FullyQualified([ "Float32" ], "-")
+    let float32MinusId = Identifier.FullyQualified([ "float32" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32MinusId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, float32TypeValue)
+      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue))
         Kind = Kind.Star
-        Operation = Float32Operations.Minus {| v1 = () |}
+        Operation = Float32Operations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | Float32Operations.Minus v -> Some(Float32Operations.Minus v)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 (op, v) ->
             reader {
+              let! op =
+                op
+                |> Float32Operations.AsMinus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               let! v =
@@ -81,10 +87,15 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(-v))
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return Float32Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure - v))
             } }
 
-    let float32DivideId = Identifier.FullyQualified([ "Float32" ], "/")
+    let float32DivideId = Identifier.FullyQualified([ "float32" ], "/")
 
     let divideOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32DivideId,
@@ -121,7 +132,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure / v))
             } }
 
-    let float32PowerId = Identifier.FullyQualified([ "Float32" ], "**")
+    let float32PowerId = Identifier.FullyQualified([ "float32" ], "**")
 
     let powerOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32PowerId,
@@ -164,7 +175,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(pown vClosure v))
             } }
 
-    let float32ModId = Identifier.FullyQualified([ "Float32" ], "%")
+    let float32ModId = Identifier.FullyQualified([ "float32" ], "%")
 
     let modOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32ModId,
@@ -201,7 +212,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure % v))
             } }
 
-    let float32EqualId = Identifier.FullyQualified([ "Float32" ], "==")
+    let float32EqualId = Identifier.FullyQualified([ "float32" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32EqualId,
@@ -238,7 +249,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let float32NotEqualId = Identifier.FullyQualified([ "Float32" ], "!=")
+    let float32NotEqualId = Identifier.FullyQualified([ "float32" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32NotEqualId,
@@ -275,7 +286,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let float32GreaterThanId = Identifier.FullyQualified([ "Float32" ], ">")
+    let float32GreaterThanId = Identifier.FullyQualified([ "float32" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32GreaterThanId,
@@ -312,7 +323,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let float32GreaterThanOrEqualId = Identifier.FullyQualified([ "Float32" ], ">=")
+    let float32GreaterThanOrEqualId = Identifier.FullyQualified([ "float32" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32GreaterThanOrEqualId,
@@ -352,7 +363,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let float32LessThanId = Identifier.FullyQualified([ "Float32" ], "<")
+    let float32LessThanId = Identifier.FullyQualified([ "float32" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32LessThanId,
@@ -389,7 +400,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let float32LessThanOrEqualId = Identifier.FullyQualified([ "Float32" ], "<=")
+    let float32LessThanOrEqualId = Identifier.FullyQualified([ "float32" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32LessThanOrEqualId,

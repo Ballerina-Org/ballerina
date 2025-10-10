@@ -22,7 +22,7 @@ module Extension =
   let TimeSpanExtension<'ext>
     (operationLens: PartialLens<'ext, TimeSpanOperations<'ext>>)
     : OperationsExtension<'ext, TimeSpanOperations<'ext>> =
-    let TimeSpanPlusId = Identifier.FullyQualified([ "TimeSpan" ], "+")
+    let TimeSpanPlusId = Identifier.FullyQualified([ "timeSpan" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanPlusId,
@@ -59,7 +59,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(vClosure + v))
             } }
 
-    let TimeSpanMinusId = Identifier.FullyQualified([ "TimeSpan" ], "-")
+    let TimeSpanMinusId = Identifier.FullyQualified([ "timeSpan" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanMinusId,
@@ -85,7 +85,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(-v))
             } }
 
-    let TimeSpanEqualId = Identifier.FullyQualified([ "TimeSpan" ], "==")
+    let TimeSpanEqualId = Identifier.FullyQualified([ "timeSpan" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanEqualId,
@@ -122,7 +122,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let TimeSpanNotEqualId = Identifier.FullyQualified([ "TimeSpan" ], "!=")
+    let TimeSpanNotEqualId = Identifier.FullyQualified([ "timeSpan" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanNotEqualId,
@@ -159,7 +159,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let TimeSpanGreaterThanId = Identifier.FullyQualified([ "TimeSpan" ], ">")
+    let TimeSpanGreaterThanId = Identifier.FullyQualified([ "timeSpan" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanId,
@@ -196,7 +196,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let TimeSpanGreaterThanOrEqualId = Identifier.FullyQualified([ "TimeSpan" ], ">=")
+    let TimeSpanGreaterThanOrEqualId = Identifier.FullyQualified([ "timeSpan" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanOrEqualId,
@@ -236,7 +236,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let TimeSpanLessThanId = Identifier.FullyQualified([ "TimeSpan" ], "<")
+    let TimeSpanLessThanId = Identifier.FullyQualified([ "timeSpan" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanLessThanId,
@@ -280,7 +280,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let TimeSpanLessThanOrEqualId = Identifier.FullyQualified([ "TimeSpan" ], "<=")
+    let TimeSpanLessThanOrEqualId = Identifier.FullyQualified([ "timeSpan" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       TimeSpanLessThanOrEqualId,
@@ -327,7 +327,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
-    let timeSpanGetDaysId = Identifier.FullyQualified([ "TimeSpan" ], "getDays")
+    let timeSpanGetDaysId = Identifier.FullyQualified([ "timeSpan" ], "getDays")
 
     let getDaysOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetDaysId,
@@ -353,7 +353,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Days))
             } }
 
-    let timeSpanGetHoursId = Identifier.FullyQualified([ "TimeSpan" ], "getHours")
+    let timeSpanGetHoursId = Identifier.FullyQualified([ "timeSpan" ], "getHours")
 
     let getHoursOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetHoursId,
@@ -379,7 +379,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Hours))
             } }
 
-    let timeSpanGetMinutesId = Identifier.FullyQualified([ "TimeSpan" ], "getMinutes")
+    let timeSpanGetMinutesId = Identifier.FullyQualified([ "timeSpan" ], "getMinutes")
 
     let getMinutesOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetMinutesId,
@@ -405,7 +405,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Minutes))
             } }
 
-    let timeSpanGetSecondsId = Identifier.FullyQualified([ "TimeSpan" ], "getSeconds")
+    let timeSpanGetSecondsId = Identifier.FullyQualified([ "timeSpan" ], "getSeconds")
 
     let getSecondsOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetSecondsId,
@@ -432,7 +432,7 @@ module Extension =
             } }
 
     let timeSpanGetMillisecondsId =
-      Identifier.FullyQualified([ "TimeSpan" ], "getMilliseconds")
+      Identifier.FullyQualified([ "timeSpan" ], "getMilliseconds")
 
     let getMillisecondsOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetMillisecondsId,
@@ -458,7 +458,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Milliseconds))
             } }
 
-    let timeSpanGetTotalDaysId = Identifier.FullyQualified([ "TimeSpan" ], "totalDays")
+    let timeSpanGetTotalDaysId = Identifier.FullyQualified([ "timeSpan" ], "totalDays")
 
     let getTotalDaysOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalDaysId,
@@ -485,7 +485,7 @@ module Extension =
             } }
 
     let timeSpanGetTotalHoursId =
-      Identifier.FullyQualified([ "TimeSpan" ], "totalHours")
+      Identifier.FullyQualified([ "timeSpan" ], "totalHours")
 
     let getTotalHoursOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalHoursId,
@@ -512,7 +512,7 @@ module Extension =
             } }
 
     let timeSpanGetTotalMinutesId =
-      Identifier.FullyQualified([ "TimeSpan" ], "totalMinutes")
+      Identifier.FullyQualified([ "timeSpan" ], "totalMinutes")
 
     let getTotalMinutesOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMinutesId,
@@ -539,7 +539,7 @@ module Extension =
             } }
 
     let timeSpanGetTotalSecondsId =
-      Identifier.FullyQualified([ "TimeSpan" ], "totalSeconds")
+      Identifier.FullyQualified([ "timeSpan" ], "totalSeconds")
 
     let getTotalSecondsOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalSecondsId,
@@ -566,7 +566,7 @@ module Extension =
             } }
 
     let timeSpanGetTotalMillisecondsId =
-      Identifier.FullyQualified([ "TimeSpan" ], "totalMilliseconds")
+      Identifier.FullyQualified([ "timeSpan" ], "totalMilliseconds")
 
     let getTotalMillisecondsOperation: Identifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMillisecondsId,

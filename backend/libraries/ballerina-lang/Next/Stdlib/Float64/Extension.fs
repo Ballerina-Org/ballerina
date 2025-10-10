@@ -21,7 +21,7 @@ module Extension =
   let Float64Extension<'ext>
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
     : OperationsExtension<'ext, Float64Operations<'ext>> =
-    let float64PlusId = Identifier.FullyQualified([ "Float64" ], "+")
+    let float64PlusId = Identifier.FullyQualified([ "float64" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PlusId,
@@ -58,7 +58,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure + v))
             } }
 
-    let float64MinusId = Identifier.FullyQualified([ "Float64" ], "-")
+    let float64MinusId = Identifier.FullyQualified([ "float64" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64MinusId,
@@ -84,7 +84,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(-v))
             } }
 
-    let float64DivideId = Identifier.FullyQualified([ "Float64" ], "/")
+    let float64DivideId = Identifier.FullyQualified([ "float64" ], "/")
 
     let divideOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64DivideId,
@@ -121,7 +121,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure / v))
             } }
 
-    let float64PowerId = Identifier.FullyQualified([ "Float64" ], "**")
+    let float64PowerId = Identifier.FullyQualified([ "float64" ], "**")
 
     let powerOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PowerId,
@@ -164,7 +164,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(pown vClosure v))
             } }
 
-    let float64ModId = Identifier.FullyQualified([ "Float64" ], "%")
+    let float64ModId = Identifier.FullyQualified([ "float64" ], "%")
 
     let modOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64ModId,
@@ -201,7 +201,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure % v))
             } }
 
-    let float64EqualId = Identifier.FullyQualified([ "Float64" ], "==")
+    let float64EqualId = Identifier.FullyQualified([ "float64" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64EqualId,
@@ -238,7 +238,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let float64NotEqualId = Identifier.FullyQualified([ "Float64" ], "!=")
+    let float64NotEqualId = Identifier.FullyQualified([ "float64" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64NotEqualId,
@@ -275,7 +275,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let float64GreaterThanId = Identifier.FullyQualified([ "Float64" ], ">")
+    let float64GreaterThanId = Identifier.FullyQualified([ "float64" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
@@ -312,7 +312,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let float64GreaterThanOrEqualId = Identifier.FullyQualified([ "Float64" ], ">=")
+    let float64GreaterThanOrEqualId = Identifier.FullyQualified([ "float64" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
@@ -352,7 +352,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let float64LessThanId = Identifier.FullyQualified([ "Float64" ], "<")
+    let float64LessThanId = Identifier.FullyQualified([ "float64" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanId,
@@ -389,7 +389,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let float64LessThanOrEqualId = Identifier.FullyQualified([ "Float64" ], "<=")
+    let float64LessThanOrEqualId = Identifier.FullyQualified([ "float64" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,

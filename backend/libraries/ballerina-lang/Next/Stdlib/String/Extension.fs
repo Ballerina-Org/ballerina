@@ -13,6 +13,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private int32TypeValue = TypeValue.CreateInt32()
   let private boolTypeValue = TypeValue.CreateBool()
   let private stringTypeValue = TypeValue.CreateString()
 
@@ -20,7 +21,41 @@ module Extension =
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'ext, StringOperations<'ext>> =
 
-    let stringPlusId = Identifier.FullyQualified([ "String" ], "+")
+    let stringLengthId = Identifier.FullyQualified([ "string" ], "length")
+
+    let lengthOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+      stringLengthId,
+      { Type = TypeValue.CreateArrow(stringTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = StringOperations.Length
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | StringOperations.Length -> Some(StringOperations.Length)
+            | _ -> None)
+
+        Apply =
+          fun loc0 (op, v) ->
+            reader {
+              do!
+                op
+                |> StringOperations.AsLength
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
+            } }
+
+    let stringPlusId = Identifier.FullyQualified([ "string" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringPlusId,
@@ -59,7 +94,7 @@ module Extension =
             } }
 
 
-    let stringEqualId = Identifier.FullyQualified([ "String" ], "==")
+    let stringEqualId = Identifier.FullyQualified([ "string" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringEqualId,
@@ -96,7 +131,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let stringNotEqualId = Identifier.FullyQualified([ "String" ], "!=")
+    let stringNotEqualId = Identifier.FullyQualified([ "string" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringNotEqualId,
@@ -133,7 +168,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let stringGreaterThanId = Identifier.FullyQualified([ "String" ], ">")
+    let stringGreaterThanId = Identifier.FullyQualified([ "string" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanId,
@@ -170,7 +205,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let stringGreaterThanOrEqualId = Identifier.FullyQualified([ "String" ], ">=")
+    let stringGreaterThanOrEqualId = Identifier.FullyQualified([ "string" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
@@ -210,7 +245,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let stringLessThanId = Identifier.FullyQualified([ "String" ], "<")
+    let stringLessThanId = Identifier.FullyQualified([ "string" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanId,
@@ -247,7 +282,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let stringLessThanOrEqualId = Identifier.FullyQualified([ "String" ], "<=")
+    let stringLessThanOrEqualId = Identifier.FullyQualified([ "string" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
@@ -286,7 +321,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ lengthOperation
+          plusOperation
           equalOperation
           notEqualOperation
           greaterThanOperation

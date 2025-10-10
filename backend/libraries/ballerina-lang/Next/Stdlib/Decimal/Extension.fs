@@ -23,7 +23,7 @@ module Extension =
     (operationLens: PartialLens<'ext, DecimalOperations<'ext>>)
     : OperationsExtension<'ext, DecimalOperations<'ext>> =
 
-    let decimalPlusId = Identifier.FullyQualified([ "Decimal" ], "+")
+    let decimalPlusId = Identifier.FullyQualified([ "decimal" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPlusId,
@@ -62,21 +62,27 @@ module Extension =
             } }
 
 
-    let decimalMinusId = Identifier.FullyQualified([ "Decimal" ], "-")
+    let decimalMinusId = Identifier.FullyQualified([ "decimal" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalMinusId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
-        Operation = DecimalOperations.Minus {| v1 = () |}
+        Operation = DecimalOperations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | DecimalOperations.Minus v -> Some(DecimalOperations.Minus v)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 (op, v) ->
             reader {
+              let! op =
+                op
+                |> DecimalOperations.AsMinus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               let! v =
@@ -85,10 +91,15 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(-v))
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return DecimalOperations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure - v))
             } }
 
-    let decimalDivideId = Identifier.FullyQualified([ "Decimal" ], "/")
+    let decimalDivideId = Identifier.FullyQualified([ "decimal" ], "/")
 
     let divideOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalDivideId,
@@ -125,7 +136,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure / v))
             } }
 
-    let decimalPowerId = Identifier.FullyQualified([ "Decimal" ], "**")
+    let decimalPowerId = Identifier.FullyQualified([ "decimal" ], "**")
 
     let powerOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPowerId,
@@ -168,7 +179,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(pown vClosure v))
             } }
 
-    let decimalModId = Identifier.FullyQualified([ "Decimal" ], "%")
+    let decimalModId = Identifier.FullyQualified([ "decimal" ], "%")
 
     let modOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalModId,
@@ -205,7 +216,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure % v))
             } }
 
-    let decimalEqualId = Identifier.FullyQualified([ "Decimal" ], "==")
+    let decimalEqualId = Identifier.FullyQualified([ "decimal" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalEqualId,
@@ -242,7 +253,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let decimalNotEqualId = Identifier.FullyQualified([ "Decimal" ], "!=")
+    let decimalNotEqualId = Identifier.FullyQualified([ "decimal" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
@@ -279,7 +290,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let decimalGreaterThanId = Identifier.FullyQualified([ "Decimal" ], ">")
+    let decimalGreaterThanId = Identifier.FullyQualified([ "decimal" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
@@ -316,7 +327,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let decimalGreaterThanOrEqualId = Identifier.FullyQualified([ "Decimal" ], ">=")
+    let decimalGreaterThanOrEqualId = Identifier.FullyQualified([ "decimal" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
@@ -356,7 +367,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let decimalLessThanId = Identifier.FullyQualified([ "Decimal" ], "<")
+    let decimalLessThanId = Identifier.FullyQualified([ "decimal" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
@@ -393,7 +404,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let decimalLessThanOrEqualId = Identifier.FullyQualified([ "Decimal" ], "<=")
+    let decimalLessThanOrEqualId = Identifier.FullyQualified([ "decimal" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,

@@ -24,27 +24,39 @@ module SumDes =
             caseHandlers
             |> Seq.map (fun caseHandler ->
               reader {
-                let! handlerVar, handlerBody = caseHandler |> JsonValue.AsPair |> reader.OfSum
+                let! handlerCase, handlerCount, handlerVar, handlerBody =
+                  caseHandler |> JsonValue.AsQuadruple |> reader.OfSum
+
+                let! handlerCase = handlerCase |> JsonValue.AsInt |> reader.OfSum
+                let! handlerCount = handlerCount |> JsonValue.AsInt |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
                 let handlerVar = Var.Create handlerVar
                 let! handlerBody = handlerBody |> fromRootJson
-                return (handlerVar, handlerBody)
+
+                return
+                  ({ Case = handlerCase
+                     Count = handlerCount }),
+                  (handlerVar, handlerBody)
               })
             |> reader.All
+            |> reader.Map(Map.ofSeq)
 
           return Expr.SumDes(caseHandlers)
         })
 
     static member ToJsonSumDes
       (rootToJson: ExprEncoder<'T>)
-      (caseHandlers: List<CaseHandler<'T>>)
+      (caseHandlers: Map<SumConsSelector, CaseHandler<'T>>)
       : ExprEncoderReader<'T> =
       caseHandlers
-      |> List.map (fun (v, c) ->
+      |> Map.toList
+      |> List.map (fun (k, (v, h)) ->
         reader {
+          let i = k.Case |> decimal |> JsonValue.Number
+          let n = k.Count |> decimal |> JsonValue.Number
           let v = v.Name |> JsonValue.String
-          let! c = c |> rootToJson
-          return [| v; c |] |> JsonValue.Array
+          let! h = h |> rootToJson
+          return [| i; n; v; h |] |> JsonValue.Array
         })
       |> reader.All
       |> reader.Map(Array.ofList >> JsonValue.Array >> Json.discriminator discriminator)

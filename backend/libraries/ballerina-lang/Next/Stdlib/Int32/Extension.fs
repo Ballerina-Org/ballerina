@@ -19,7 +19,7 @@ module Extension =
   let Int32Extension<'ext>
     (operationLens: PartialLens<'ext, Int32Operations<'ext>>)
     : OperationsExtension<'ext, Int32Operations<'ext>> =
-    let int32PlusId = Identifier.FullyQualified([ "Int32" ], "+")
+    let int32PlusId = Identifier.FullyQualified([ "int32" ], "+")
 
     let plusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PlusId,
@@ -56,7 +56,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure + v))
             } }
 
-    let int32MinusId = Identifier.FullyQualified([ "Int32" ], "-")
+    let int32MinusId = Identifier.FullyQualified([ "int32" ], "-")
 
     let minusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32MinusId,
@@ -94,7 +94,7 @@ module Extension =
             } }
 
 
-    let int32TimesId = Identifier.FullyQualified([ "Int32" ], "*")
+    let int32TimesId = Identifier.FullyQualified([ "int32" ], "*")
 
     let timesOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32TimesId,
@@ -132,7 +132,7 @@ module Extension =
             } }
 
 
-    let int32DivideId = Identifier.FullyQualified([ "Int32" ], "/")
+    let int32DivideId = Identifier.FullyQualified([ "int32" ], "/")
 
     let divideOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32DivideId,
@@ -169,7 +169,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure / v))
             } }
 
-    let int32PowerId = Identifier.FullyQualified([ "Int32" ], "**")
+    let int32PowerId = Identifier.FullyQualified([ "int32" ], "**")
 
     let powerOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PowerId,
@@ -207,7 +207,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(pown vClosure v))
             } }
 
-    let int32ModId = Identifier.FullyQualified([ "Int32" ], "%")
+    let int32ModId = Identifier.FullyQualified([ "int32" ], "%")
 
     let modOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32ModId,
@@ -244,7 +244,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure % v))
             } }
 
-    let int32EqualId = Identifier.FullyQualified([ "Int32" ], "==")
+    let int32EqualId = Identifier.FullyQualified([ "int32" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32EqualId,
@@ -281,7 +281,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let int32NotEqualId = Identifier.FullyQualified([ "Int32" ], "!=")
+    let int32NotEqualId = Identifier.FullyQualified([ "int32" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32NotEqualId,
@@ -318,7 +318,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let int32GreaterThanId = Identifier.FullyQualified([ "Int32" ], ">")
+    let int32GreaterThanId = Identifier.FullyQualified([ "int32" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanId,
@@ -356,7 +356,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(res))
             } }
 
-    let int32GreaterThanOrEqualId = Identifier.FullyQualified([ "Int32" ], ">=")
+    let int32GreaterThanOrEqualId = Identifier.FullyQualified([ "int32" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanOrEqualId,
@@ -396,7 +396,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let int32LessThanId = Identifier.FullyQualified([ "Int32" ], "<")
+    let int32LessThanId = Identifier.FullyQualified([ "int32" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanId,
@@ -433,7 +433,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let int32LessThanOrEqualId = Identifier.FullyQualified([ "Int32" ], "<=")
+    let int32LessThanOrEqualId = Identifier.FullyQualified([ "int32" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanOrEqualId,

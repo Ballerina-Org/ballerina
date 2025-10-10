@@ -13,6 +13,7 @@ module TypeEval =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.TypeEval
   open Ballerina.LocalizedErrors
+  open Ballerina.StdLib.OrderPreservingMap
 
   let inline private (>>=) f g = fun x -> state.Bind(f x, g)
 
@@ -67,6 +68,7 @@ module TypeEval =
             |> state.AllMap
 
           return
-            { Entities = entities
+            { Types = OrderedMap.empty
+              Entities = entities
               Lookups = schema.Lookups }
         }

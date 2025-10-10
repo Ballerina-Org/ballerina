@@ -22,7 +22,7 @@ module Extension =
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
     : OperationsExtension<'ext, DateOnlyOperations<'ext>> =
 
-    let dateOnlyDiffId = Identifier.FullyQualified([ "DateOnly" ], "-")
+    let dateOnlyDiffId = Identifier.FullyQualified([ "dateOnly" ], "-")
 
     let diffOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDiffId,
@@ -61,7 +61,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(difference))
             } }
 
-    let dateOnlyEqualId = Identifier.FullyQualified([ "DateOnly" ], "==")
+    let dateOnlyEqualId = Identifier.FullyQualified([ "dateOnly" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyEqualId,
@@ -98,7 +98,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let dateOnlyNotEqualId = Identifier.FullyQualified([ "DateOnly" ], "!=")
+    let dateOnlyNotEqualId = Identifier.FullyQualified([ "dateOnly" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyNotEqualId,
@@ -135,7 +135,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let dateOnlyGreaterThanId = Identifier.FullyQualified([ "DateOnly" ], ">")
+    let dateOnlyGreaterThanId = Identifier.FullyQualified([ "dateOnly" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanId,
@@ -172,7 +172,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let dateOnlyGreaterThanOrEqualId = Identifier.FullyQualified([ "DateOnly" ], ">=")
+    let dateOnlyGreaterThanOrEqualId = Identifier.FullyQualified([ "dateOnly" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanOrEqualId,
@@ -212,7 +212,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let dateOnlyLessThanId = Identifier.FullyQualified([ "DateOnly" ], "<")
+    let dateOnlyLessThanId = Identifier.FullyQualified([ "dateOnly" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanId,
@@ -249,7 +249,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let dateOnlyLessThanOrEqualId = Identifier.FullyQualified([ "DateOnly" ], "<=")
+    let dateOnlyLessThanOrEqualId = Identifier.FullyQualified([ "dateOnly" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanOrEqualId,
@@ -290,7 +290,7 @@ module Extension =
             } }
 
 
-    let dateOnlyToDateTimeId = Identifier.FullyQualified([ "DateOnly" ], "toDateTime")
+    let dateOnlyToDateTimeId = Identifier.FullyQualified([ "dateOnly" ], "toDateTime")
 
     let toDateTimeOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyToDateTimeId,
@@ -349,7 +349,7 @@ module Extension =
               | _ -> return! sum.Throw(Errors.Singleton(loc0, "Expected a tuple or date")) |> reader.OfSum
             } }
 
-    let dateOnlyYearId = Identifier.FullyQualified([ "DateOnly" ], "getYear")
+    let dateOnlyYearId = Identifier.FullyQualified([ "dateOnly" ], "getYear")
 
     let yearOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyYearId,
@@ -375,7 +375,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
             } }
 
-    let dateOnlyMonthId = Identifier.FullyQualified([ "DateOnly" ], "getMonth")
+    let dateOnlyMonthId = Identifier.FullyQualified([ "dateOnly" ], "getMonth")
 
     let monthOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyMonthId,
@@ -401,7 +401,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
             } }
 
-    let dateOnlyDayId = Identifier.FullyQualified([ "DateOnly" ], "getDay")
+    let dateOnlyDayId = Identifier.FullyQualified([ "dateOnly" ], "getDay")
 
     let dayOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayId,
@@ -427,7 +427,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
             } }
 
-    let dateOnlyDayOfWeekId = Identifier.FullyQualified([ "DateOnly" ], "getDayOfWeek")
+    let dateOnlyDayOfWeekId = Identifier.FullyQualified([ "dateOnly" ], "getDayOfWeek")
 
     let dayOfWeekOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayOfWeekId,
@@ -453,7 +453,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
             } }
 
-    let dateOnlyDayOfYearId = Identifier.FullyQualified([ "DateOnly" ], "getDayOfYear")
+    let dateOnlyDayOfYearId = Identifier.FullyQualified([ "dateOnly" ], "getDayOfYear")
 
     let dayOfYearOperation: Identifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayOfYearId,

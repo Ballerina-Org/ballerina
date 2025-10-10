@@ -109,6 +109,7 @@ module Lexer =
     | Operator of Operator
     | Comment of string
     | Identifier of string
+    | CaseLiteral of int * int
     | StringLiteral of string
     | BoolLiteral of bool
     | IntLiteral of int
@@ -121,6 +122,7 @@ module Lexer =
       | Identifier id -> id
       | Comment s -> $"// {s}"
       | StringLiteral s -> $"\"{s}\""
+      | CaseLiteral(i, n) -> $"{i}Of{n}"
       | BoolLiteral b -> if b then "true" else "false"
       | IntLiteral i -> i.ToString()
       | DecimalLiteral d -> d.ToString()
@@ -155,6 +157,10 @@ module Lexer =
 
     static member FromIntLiteral literal location =
       { Token = literal |> Token.IntLiteral
+        Location = location }
+
+    static member FromCaseLiteral literal location =
+      { Token = literal |> Token.CaseLiteral
         Location = location }
 
     static member FromDecimalLiteral literal location =
@@ -305,7 +311,7 @@ module Lexer =
       return LocalizedToken.FromStringLiteral (String.Concat(literal)) loc
     }
 
-  let numberLiteral =
+  let numberOrCaseLiteral =
     tokenizer {
       let! minus = tokenizer.Exactly '-' |> tokenizer.Try
       let minus = minus.IsLeft
@@ -344,15 +350,37 @@ module Lexer =
             (loc, $"Cannot parse int literal {literal} at {loc}")
             |> Errors.Singleton
             |> tokenizer.Throw
+        else if minus then
+          return LocalizedToken.FromIntLiteral -value loc
         else
-          let value = if minus then -value else value
-          return LocalizedToken.FromIntLiteral value loc
+          let! ofTotal =
+            tokenizer {
+              do! word "Of" |> tokenizer.Ignore
+              return! digit |> tokenizer.Many
+
+            }
+            |> tokenizer.Try
+            |> tokenizer.Map Sum.toOption
+
+          match ofTotal with
+          | None -> return LocalizedToken.FromIntLiteral value loc
+          | Some ofTotal ->
+            let ofTotal = String.Concat(ofTotal)
+            let mutable total = 0
+
+            if not (System.Int32.TryParse(ofTotal, &total)) then
+              return!
+                (loc, $"Cannot parse case literal total {ofTotal} at {loc}")
+                |> Errors.Singleton
+                |> tokenizer.Throw
+            else
+              return LocalizedToken.FromCaseLiteral (value, total) loc
     }
 
   let rec token =
     tokenizer {
       do! whitespace |> tokenizer.Try |> tokenizer.Ignore
-      let! t = tokenizer.Any [ keyword; comment; stringLiteral; numberLiteral; operator; identifier ]
+      let! t = tokenizer.Any [ keyword; comment; stringLiteral; numberOrCaseLiteral; operator; identifier ]
       do! tokenizer.Any [ whitespace; eos ] |> tokenizer.Try |> tokenizer.Ignore
       return t
     }

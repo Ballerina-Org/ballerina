@@ -18,7 +18,7 @@ module Extension =
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
     : OperationsExtension<'ext, BoolOperations<'ext>> =
 
-    let boolAndId = Identifier.FullyQualified([ "Bool" ], "&&")
+    let boolAndId = Identifier.FullyQualified([ "bool" ], "&&")
 
     let andOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolAndId,
@@ -56,7 +56,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
             } }
 
-    let boolOrId = Identifier.FullyQualified([ "Bool" ], "||")
+    let boolOrId = Identifier.FullyQualified([ "bool" ], "||")
 
     let orOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolOrId,
@@ -94,7 +94,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
             } }
 
-    let boolNotId = Identifier.FullyQualified([ "Bool" ], "!")
+    let boolNotId = Identifier.FullyQualified([ "bool" ], "!")
 
     let notOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolNotId,

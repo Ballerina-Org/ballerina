@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Int64
 module Model =
   type Int64Operations<'ext> =
     | Plus of {| v1: Option<int64> |}
-    | Minus of {| v1: unit |}
+    | Minus of {| v1: Option<int64> |}
     | Divide of {| v1: Option<int64> |}
     | Power of {| v1: Option<int64> |}
     | Mod of {| v1: Option<int64> |}

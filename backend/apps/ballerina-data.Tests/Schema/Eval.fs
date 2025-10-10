@@ -15,7 +15,8 @@ open Ballerina.StdLib.OrderPreservingMap
 [<Test>]
 let ``SpecNext-Schema evaluates`` () =
   let source: Schema<TypeExpr> =
-    { Entities =
+    { Types = OrderedMap.empty
+      Entities =
         Map.ofList
           [ ({ EntityName = "SourceTable" },
              { Type = "SomeType" |> Identifier.LocalScope |> TypeExpr.Lookup
@@ -47,7 +48,8 @@ let ``SpecNext-Schema evaluates`` () =
     )
 
   let expected: Schema<TypeValue> =
-    { Entities =
+    { Types = OrderedMap.empty
+      Entities =
         Map.ofList
           [ ({ EntityName = "SourceTable" },
              { Type = SomeType
