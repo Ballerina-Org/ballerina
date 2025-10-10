@@ -10,15 +10,21 @@ _SumL = TypeVar("_SumL")
 _SumR = TypeVar("_SumR")
 
 
-def _case_to_json(discriminator: int, payload: Json) -> Json:
-    return [discriminator, payload]
+def _case_to_json(discriminator: int, arity: int, payload: Json) -> Json:
+    return [discriminator, arity, payload]
 
 
-def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
+def _case_from_json(case_payload: Json, expected_arity: int) -> Sum[ParsingError, tuple[int, Json]]:
     match case_payload:
-        case [discriminator, payload]:
+        case [discriminator, arity, payload]:
             match discriminator:
                 case int():
+                    if arity != expected_arity:
+                        return Sum.left(
+                            ParsingError.single(
+                                f"Invalid case payload, invalid arity. Expected {expected_arity}, got {arity}"
+                            )
+                        )
                     return Sum.right((discriminator, payload))
                 case _:
                     return Sum.left(ParsingError.single(f"Invalid case payload, invalid discriminator: {case_payload}"))
@@ -29,8 +35,8 @@ def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
 def sum2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
     def to_json(value: Sum[_SumL, _SumR]) -> Json:
         return value.fold(
-            lambda a: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(0, left_to_json(a))},
-            lambda b: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(1, right_to_json(b))},
+            lambda a: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(0, 2, left_to_json(a))},
+            lambda b: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(1, 2, right_to_json(b))},
         )
 
     return to_json
@@ -61,7 +67,7 @@ def sum2_from_json(left_from_json: FromJson[_SumL], right_from_json: FromJson[_S
     def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
         match value:
             case {"discriminator": "sum", "value": case_payload}:
-                return _case_from_json(case_payload).flat_map(
+                return _case_from_json(case_payload, 2).flat_map(
                     lambda case_tuple: _handle_case_tuple(case_tuple, left_from_json, right_from_json)
                 )
             case _:
