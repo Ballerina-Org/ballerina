@@ -13,6 +13,7 @@ open Ballerina.DSL.Next.Terms.Patterns
 
 open Ballerina.Data.Json.Schema
 open FSharp.Data
+open Ballerina.StdLib.OrderPreservingMap
 
 [<Test>]
 let ``SpecNext-Schema entity method parses`` () =
@@ -223,7 +224,8 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
     |> JsonValue.Parse
 
   let expected: Schema<TypeExpr> =
-    { Entities =
+    { Types = OrderedMap.empty
+      Entities =
         Map.ofList
           [ ({ EntityName = "SourceTable" },
              { Type = TypeExpr.Lookup("SomeType" |> Identifier.LocalScope)

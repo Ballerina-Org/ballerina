@@ -13,7 +13,7 @@ module Patterns =
       | DecimalOperations.Plus v -> v.v1 |> sum.Return
       | _ -> failwith "Expected Plus operation"
 
-    static member AsMinus(op: DecimalOperations<'ext>) : Sum<unit, Errors> =
+    static member AsMinus(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors> =
       match op with
       | DecimalOperations.Minus v -> v.v1 |> sum.Return
       | _ -> failwith "Expected Minus operation"

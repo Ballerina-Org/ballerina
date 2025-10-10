@@ -13,7 +13,8 @@ let ``Delta.Sum: Updates correct case index in sum value`` () =
   let sumType =
     [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
-  let sumValue = Value<Unit>.Sum(0, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
+  let sumValue =
+    Value<Unit>.Sum({ Case = 0; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(0, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
@@ -22,7 +23,7 @@ let ``Delta.Sum: Updates correct case index in sum value`` () =
   | Sum.Left updater ->
     match updater sumValue with
     | Sum.Left(Value.Sum(updatedIndex, updatedValue)) ->
-      Assert.That(updatedIndex, Is.EqualTo 0)
+      Assert.That(updatedIndex, Is.EqualTo { Case = 0; Count = 1 })
       Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
     | _ -> Assert.Fail "Unexpected result shape"
   | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -33,7 +34,7 @@ let ``Delta.Sum: Returns original value when index does not match`` () =
     [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
   let sumValue =
-    Value<Unit>.Sum(1, PrimitiveValue.String "untouched" |> Value<Unit>.Primitive)
+    Value<Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.String "untouched" |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(0, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
@@ -61,7 +62,8 @@ let ``Delta.Sum: Fails when delta type does not match case type TODO:decide`` ()
   let sumType =
     [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
 
-  let sumValue = Value<Unit>.Sum(0, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
+  let sumValue =
+    Value<Unit>.Sum({ Case = 0; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(0, Delta.Replace(PrimitiveValue.String "wrong type" |> Value<Unit>.Primitive))

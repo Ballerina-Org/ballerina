@@ -55,7 +55,7 @@ module ExprJson =
         | ExprRec.RecordWith _ -> failwith "not implemented"
         | ExprRec.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson a b
         | ExprRec.TupleCons t -> Expr.ToJsonTupleCons Expr.ToJson t
-        | ExprRec.SumCons(i, t) -> Expr.ToJsonSumCons Expr.ToJson i t
+        | ExprRec.SumCons(i) -> Expr.ToJsonSumCons Expr.ToJson i
         | ExprRec.RecordDes(v, e) -> Expr.ToJsonRecordDes Expr.ToJson v e
         | ExprRec.UnionDes(t, fallback) -> Expr.ToJsonUnionDes Expr.ToJson t fallback
         | ExprRec.TupleDes(v, e) -> Expr.ToJsonTupleDes Expr.ToJson v e

@@ -88,7 +88,7 @@ module Traverser =
 
         | TypeValue.Sum { value = elements } ->
           let! values = elements |> Seq.map (!) |> state.All
-          return Value.Sum(0, values.Head)
+          return Value.Sum({ Case = 1; Count = elements.Length }, values.Head)
 
         | TypeValue.Tuple { value = elements } ->
           let! values = elements |> Seq.map (!) |> state.All

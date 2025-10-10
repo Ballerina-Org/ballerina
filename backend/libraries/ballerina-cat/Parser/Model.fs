@@ -201,16 +201,23 @@ module Model =
 
     member parser.Map (f: 'a -> 'b) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'b, 'sym, 'loc, 'err> = Parser.Map f p
 
-    member private parser.ManyAcc (l: List<'a>) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> =
+    member private parser.ManyAcc
+      (l: List<'a>)
+      (p: int -> Parser<'a, 'sym, 'loc, 'err>)
+      : Parser<List<'a>, 'sym, 'loc, 'err> =
       parser {
-        let! x = p |> parser.Try
+        let! x = (p l.Length) |> parser.Try
 
         match x with
         | Right _ -> return l |> List.rev
         | Left x -> return! parser.ManyAcc (x :: l) p
       }
 
-    member parser.Many(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> = parser.ManyAcc [] p
+    member parser.Many(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> =
+      parser.ManyAcc [] (fun _ -> p)
+
+    member parser.ManyIndex(p: int -> Parser<'a, 'sym, 'loc, 'err>) : Parser<List<'a>, 'sym, 'loc, 'err> =
+      parser.ManyAcc [] p
 
     member parser.Lookahead(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
       Parser(fun s0 ->

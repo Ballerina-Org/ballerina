@@ -25,7 +25,7 @@ module Extension =
     (operationLens: PartialLens<'ext, DateTimeOperations<'ext>>)
     : OperationsExtension<'ext, DateTimeOperations<'ext>> =
 
-    let dateTimeDiffId = Identifier.FullyQualified([ "DateTime" ], "-")
+    let dateTimeDiffId = Identifier.FullyQualified([ "dateTime" ], "-")
 
     let diffOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeDiffId,
@@ -61,7 +61,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(vClosure - v))
             } }
 
-    let dateTimeEqualId = Identifier.FullyQualified([ "DateTime" ], "==")
+    let dateTimeEqualId = Identifier.FullyQualified([ "dateTime" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeEqualId,
@@ -98,7 +98,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let dateTimeNotEqualId = Identifier.FullyQualified([ "DateTime" ], "!=")
+    let dateTimeNotEqualId = Identifier.FullyQualified([ "dateTime" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeNotEqualId,
@@ -135,7 +135,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let dateTimeGreaterThanId = Identifier.FullyQualified([ "DateTime" ], ">")
+    let dateTimeGreaterThanId = Identifier.FullyQualified([ "dateTime" ], ">")
 
     let greaterThanOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanId,
@@ -172,7 +172,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let dateTimeGreaterThanOrEqualId = Identifier.FullyQualified([ "DateTime" ], ">=")
+    let dateTimeGreaterThanOrEqualId = Identifier.FullyQualified([ "dateTime" ], ">=")
 
     let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanOrEqualId,
@@ -212,7 +212,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let dateTimeLessThanId = Identifier.FullyQualified([ "DateTime" ], "<")
+    let dateTimeLessThanId = Identifier.FullyQualified([ "dateTime" ], "<")
 
     let lessThanOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanId,
@@ -249,7 +249,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let dateTimeLessThanOrEqualId = Identifier.FullyQualified([ "DateTime" ], "<=")
+    let dateTimeLessThanOrEqualId = Identifier.FullyQualified([ "dateTime" ], "<=")
 
     let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanOrEqualId,
@@ -289,7 +289,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
-    let dateTimeToDateOnlyId = Identifier.FullyQualified([ "DateTime" ], "toDateOnly")
+    let dateTimeToDateOnlyId = Identifier.FullyQualified([ "dateTime" ], "toDateOnly")
 
     let toDateOnlyOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateTimeToDateOnlyId,
@@ -315,7 +315,7 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Date(System.DateOnly(v.Year, v.Month, v.Day)))
             } }
 
-    let dateOnlyYearId = Identifier.FullyQualified([ "DateTime" ], "getYear")
+    let dateOnlyYearId = Identifier.FullyQualified([ "dateTime" ], "getYear")
 
     let yearOperation: Identifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
       dateOnlyYearId,

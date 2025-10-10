@@ -67,9 +67,7 @@ module TypeEval =
           | ExprRec.TupleCons values ->
             let! valueTypes = values |> List.map (!) |> state.All
             return Expr.TupleCons(valueTypes, expr.Location)
-          | ExprRec.SumCons(selector, value) ->
-            let! valueType = !value
-            return Expr.SumCons(selector, valueType, expr.Location)
+          | ExprRec.SumCons(selector) -> return Expr.SumCons(selector, expr.Location)
           | ExprRec.RecordDes(record, field) ->
             let! recordType = !record
             return Expr.RecordDes(recordType, field, expr.Location)
@@ -92,12 +90,12 @@ module TypeEval =
           | ExprRec.SumDes cases ->
             let! caseTypes =
               cases
-              |> Seq.map (fun (v, handler) ->
+              |> Map.map (fun _k (v, handler) ->
                 state {
                   let! handlerType = !handler
                   return v, handlerType
                 })
-              |> state.All
+              |> state.AllMap
 
             return Expr.SumDes(caseTypes, expr.Location)
           | ExprRec.Primitive p -> return Expr.Primitive(p, expr.Location)

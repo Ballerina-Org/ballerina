@@ -49,7 +49,7 @@ let private run program =
     | Left(ParserResult(program, _)) ->
 
       let typeCheckResult =
-        Expr.TypeCheck program
+        Expr.TypeCheck None program
         |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
       match typeCheckResult with
@@ -273,13 +273,40 @@ let ``LangNext-Integration let with annotation fails`` () =
   | Right _e -> Assert.Pass()
 
 
+
+[<Test>]
+let ``LangNext-Integration tuple construction and destruction succeeds`` () =
+  let program =
+    """
+let v = (1, "hello", true)
+in v.1, v.2, v.3
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, typeValue) ->
+
+    let expectedValue: Value<TypeValue, ValueExt> =
+      Tuple [ Primitive(Int32 1); Primitive(String "hello"); Primitive(Bool true) ]
+
+    Assert.That(value, Is.EqualTo(expectedValue))
+
+    match typeValue with
+    | TypeValue.Tuple({ value = [ TypeValue.Primitive({ value = PrimitiveType.Int32 })
+                                  TypeValue.Primitive({ value = PrimitiveType.String })
+                                  TypeValue.Primitive({ value = PrimitiveType.Bool }) ] }) -> ()
+    | _ -> Assert.Fail($"Expected Tuple type, got {typeValue.ToFSharpString}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
 [<Test>]
 let ``LangNext-Integration tuple construction and destruction fails`` () =
   let program =
     """
 type T = int32 * List [int32] * bool
 in let t: T = 123, List::Cons [int32] (1, List::Nil [int32] ()), false
-in t.Item1
+in t.1
   """
 
   let actual = program |> run
@@ -303,11 +330,11 @@ let ``LangNext-Integration sum construction and destruction succeeds`` () =
   let program =
     """
 type T = int32 + List [int32] + bool
-in let t: T = Sum::Choice2Of3(List::Nil [int32] ())
+in let t: T = 2Of3(List::Nil [int32] ())
 in match t with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> -1)
+| 3Of3 (x -> 0)
   """
 
   let actual = program |> run
@@ -332,12 +359,12 @@ let ``LangNext-Integration sum and tuple construction and destruction succeeds``
   let program =
     """
 type T = int32 + List [int32] * int32 + bool
-in let t: T = Sum::Choice2Of3(List::Nil [int32] (), 42)
-in let item2 = fun (x:List [int32] * int32) -> x.Item2
+in let t: T = 2Of3(List::Nil [int32] (), 42)
+in let item2 = fun (x:List [int32] * int32) -> x.2
 in match t with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> item2 x)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> item2 x)
+| 3Of3 (x -> 0)
   """
 
   let actual = program |> run
@@ -356,58 +383,17 @@ in match t with
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
 
 
-
-[<Test>]
-let ``LangNext-Integration ambiguous sum and union construction and destruction succeeds`` () =
-  let program =
-    """
-type MyUnion =
-  | Choice1Of3 of int32
-  | Choice2Of3 of string
-  | Choice3Of3 of bool
-
-in type T = int32 + List [int32] + bool
-
-in let t1: T = Sum::Choice2Of3(List::Nil [int32] ())
-in let res1 = match t1 with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
-
-in let t2: MyUnion = MyUnion::Choice1Of3(900)
-in let res2 = match t2 with
-| MyUnion::Choice1Of3 (x -> x)
-| MyUnion::Choice2Of3 (x -> -1)
-| MyUnion::Choice3Of3 (x -> 0)
-
-in res1, res2
-  """
-
-  let actual = program |> run
-
-  match actual with
-  | Left(value, _typeValue) ->
-
-    let expectedValue: Value<TypeValue, ValueExt> =
-      Tuple [ Primitive(Int32 -1); Primitive(Int32 900) ]
-
-    Assert.That(value, Is.EqualTo(expectedValue))
-
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
-
-
-
 [<Test>]
 let ``LangNext-Integration sum and arrow composition succeeds`` () =
   let program =
     """
 type T = int32 + bool -> List [int32] + string
 
-in let t1: T = Sum::Choice2Of3(fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ())
+in let t1: T = 2Of3(fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ())
 in let res1 = match t1 with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> -1)
+| 3Of3 (x -> 0)
 
 in res1
   """
@@ -555,5 +541,121 @@ in List::append [string] l1 l2
                                                                               Value.Primitive(String "monde") ])))) ->
       Assert.Pass()
     | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+[<Test>]
+let ``LangNext-Integration same record and union type and field names disambiguate succesfully`` () =
+  let program =
+    """
+type A = {
+  A: int32;
+  B: string;
+  C: bool;
+}
+
+in type A =
+  | A of int32
+  | B of string
+  | C of bool
+
+in let a1 = { A=10; B="hello"; C=true; }
+in let a2 = A(10)
+in let a3 = { a1 with B="hello world"; }
+
+in let f = fun x -> x.A + 10
+in let x = f a3
+
+in x
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 20) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 20, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration same record field names disambiguate succesfully thanks to type annotations`` () =
+  let program =
+    """
+type T1 = {
+  A: int32;
+  B: string;
+  C: bool;
+}    
+
+in type T2 = {    
+  A: string;
+  B: int32;
+  C: bool;
+}
+
+in let a1:T1 = { A=10; B="hello"; C=true; }
+in let a2:T2 = { A="world"; B=20; C=false; }
+
+in let f = fun (x:T1) -> x.A
+in let x = f a1 + string::length (a1.B + "???")
+
+in x
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 18) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 18, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+[<Test>]
+let ``LangNext-Integration sum and lambda cons and des with annotations`` () =
+  let program =
+    """
+let f = (fun (x:string + int32) -> match x with | 1Of2 (v -> string::length ("!!!" + v)) | 2Of2 (v -> v))
+in f (1Of2 "hello"), f (2Of2 10)
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Primitive(Int32 8); Value.Primitive(Int32 10) ] -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected (8, 10), got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+[<Test>]
+let ``LangNext-Integration tuple and lambda cons and des with annotations`` () =
+  let program =
+    """
+let f = (fun (x:int32 * string) -> x.1)
+in f (1, "hello")
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 1) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 1, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")

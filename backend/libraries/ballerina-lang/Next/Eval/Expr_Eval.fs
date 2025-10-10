@@ -211,15 +211,19 @@ module Eval =
 
           return!
             recordV
-            |> List.tryItem fieldId.Index
+            |> List.tryItem (fieldId.Index - 1)
             |> sum.OfOption(
               (loc0, $"Error: tuple index {fieldId.Index} out of bounds, size {List.length recordV}")
               |> Errors.Singleton
             )
             |> reader.OfSum
-        | ExprRec.SumCons(tag, expr) ->
-          let! v = !expr
-          return Value.Sum(tag.Case, v)
+        | ExprRec.SumCons(tag) ->
+          return
+            Value.Lambda(
+              Var.Create "x",
+              Expr.Apply(Expr.SumCons(tag), Expr.Lookup(Identifier.LocalScope "x")),
+              Map.empty
+            )
         | ExprRec.UnionCons(tag, expr) ->
           let! v = !expr
           let! ctx = reader.GetContext()
@@ -230,6 +234,9 @@ module Eval =
             |> reader.OfSum
 
           return Value.UnionCase(tag, v)
+        | ExprRec.Apply({ Expr = ExprRec.SumCons selector }, valueE) ->
+          let! valueV = !valueE
+          return Value.Sum(selector, valueV)
         | ExprRec.Apply({ Expr = ExprRec.UnionDes(cases, fallback) }, unionE) ->
           let! unionV = !unionE
 
@@ -295,8 +302,7 @@ module Eval =
 
           let! caseHandler =
             cases
-            |> List.tryItem (sumVCase)
-            |> sum.OfOption((loc0, $"Error: sum case {sumVCase} not found") |> Errors.Singleton)
+            |> Map.tryFindWithError sumVCase "sum case" (sumVCase.ToFSharpString) loc0
             |> reader.OfSum
 
           let caseVar, caseBody = caseHandler

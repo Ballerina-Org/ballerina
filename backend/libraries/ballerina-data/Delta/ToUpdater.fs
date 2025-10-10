@@ -108,7 +108,7 @@ module ToUpdater =
               sum {
                 let! valueCaseIndex, caseValue = v |> Value.AsSum
 
-                if caseIndex <> valueCaseIndex then
+                if caseIndex <> valueCaseIndex.Case then
                   return v
                 else
                   let! caseValue = caseUpdater caseValue

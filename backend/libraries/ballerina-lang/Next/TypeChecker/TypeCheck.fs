@@ -31,7 +31,7 @@ module TypeCheck =
       Vars: UnificationState }
 
   type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
-  type TypeChecker = Expr<TypeExpr> -> TypeCheckerResult<Expr<TypeValue> * TypeValue * Kind>
+  type TypeChecker = Option<TypeValue> -> Expr<TypeExpr> -> TypeCheckerResult<Expr<TypeValue> * TypeValue * Kind>
 
   type TypeCheckContext with
     static member Empty: TypeCheckContext =
@@ -205,8 +205,9 @@ module TypeCheck =
       }
 
     static member TypeCheck: TypeChecker =
-      fun t ->
-        let (!) = Expr<'T>.TypeCheck
+      fun context_t t ->
+        let (!) = Expr<'T>.TypeCheck context_t
+        let (=>) c e = Expr<'T>.TypeCheck c e
 
         let loc0 = t.Location
         let error e = Errors.Singleton(loc0, e)
@@ -273,47 +274,47 @@ module TypeCheck =
           | ExprRec.Apply(f, a_expr) ->
             return!
               state {
-                let! a, t_a, a_k = !a_expr
-                do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
-
                 return!
                   state.Either
                     (state {
                       let! f_lookup = f |> Expr.AsLookup |> ofSum
+                      let! a, t_a, a_k = !a_expr
+                      do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       return!
-                        state.Either3
+                        state.Either
                           (state {
-                            let! union_cons_t = TypeCheckState.TryFindUnionCaseConstructor(f_lookup, loc0)
+                            let! union_cons_t =
+                              state.Either
+                                (state {
+                                  match context_t with
+                                  | None ->
+                                    return!
+                                      (loc0, "Context is not set, skipping branch") |> Errors.Singleton |> state.Throw
+                                  | Some context_t ->
+                                    let! context_cases = context_t |> TypeValue.AsUnion |> ofSum
+
+                                    let context_cases_by_id =
+                                      context_cases.value
+                                      |> OrderedMap.toSeq
+                                      |> Seq.map (fun (k, v) -> (k.Name, (k, v)))
+                                      |> OrderedMap.ofSeq
+
+                                    let! _case_k, case_t =
+                                      context_cases_by_id
+                                      |> OrderedMap.tryFindWithError f_lookup "cases" f_lookup.ToFSharpString
+                                      |> ofSum
+
+                                    return case_t, context_cases.value
+                                })
+                                (state { return! TypeCheckState.TryFindUnionCaseConstructor(f_lookup, loc0) })
+
                             let f_i = union_cons_t |> fst
                             let f_o = union_cons_t |> snd |> TypeValue.CreateUnion
                             let f_k = Kind.Star
                             do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T>.liftUnification
 
                             return Expr.Apply(Expr.Lookup f_lookup, a, loc0), f_o, f_k
-                          })
-                          (state {
-                            match f_lookup with
-                            | Identifier.LocalScope name
-                            | Identifier.FullyQualified([ "Sum" ], name) when
-                              System.Text.RegularExpressions.Regex.IsMatch(name, @"Choice\d+Of\d+$")
-                              ->
-                              let matches = Regex.Matches(name, "[0-9]+")
-                              let case = (matches.[0].Value |> int) - 1
-                              let count = matches.[1].Value |> int
-
-                              return!
-                                !Expr.SumCons({ SumConsSelector.Case = case
-                                                Count = count },
-                                              a_expr,
-                                              loc0)
-                                |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                            | _ ->
-                              return!
-                                state.Throw(
-                                  error
-                                    $"Error: cannot find variable or type with name {f_lookup.ToFSharpString} in the context"
-                                )
                           })
                           (state {
                             let! resolved = TypeCheckContext.TryFindVar(f_lookup, loc0) |> state.Catch
@@ -384,7 +385,7 @@ module TypeCheck =
                                   return!
                                     state {
                                       let! bool_op, bool_op_t, bool_op_k =
-                                        !Expr.Lookup(Identifier.FullyQualified([ "Bool" ], name), loc0)
+                                        !Expr.Lookup(Identifier.FullyQualified([ "bool" ], name), loc0)
 
                                       do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -415,7 +416,30 @@ module TypeCheck =
                           })
                     })
                     (state {
-                      let! f, t_f, f_k = !f
+                      let! a, t_a, a_k = !a_expr
+                      do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                      let! t_a_has_structure =
+                        state {
+                          match t_a with
+                          | TypeValue.Var _ -> return false
+                          | _ -> return true
+                        }
+
+                      let f_constraint =
+                        if t_a_has_structure |> not then
+                          None
+                        else
+                          let guid = Guid.CreateVersion7()
+
+                          let freshVar =
+                            { TypeVar.Name = "_application_" + guid.ToString()
+                              Guid = guid }
+                            |> TypeValue.Var
+
+                          Some(TypeValue.CreateArrow(t_a, freshVar))
+
+                      let! f, t_f, f_k = f_constraint => f
                       do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       let! (f_input, f_output) =
@@ -493,11 +517,15 @@ module TypeCheck =
           | ExprRec.Let(x, x_type, e1, e2) ->
             return!
               state {
-                let! e1, t1, k1 = !e1
+                let! x_type =
+                  x_type
+                  |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T>.liftTypeEval)
+                  |> state.RunOption
+
+                let! e1, t1, k1 = (x_type |> Option.map fst) => e1
 
                 match x_type with
-                | Some x_type ->
-                  let! x_type, x_type_kind = x_type |> TypeExpr.Eval None loc0 |> Expr<'T>.liftTypeEval
+                | Some(x_type, x_type_kind) ->
                   do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
                   do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T>.liftUnification
                 | _ -> ()
@@ -556,15 +584,46 @@ module TypeCheck =
             return!
               state {
                 let! fields =
-                  fields
-                  |> List.map (fun (k, v) ->
-                    state {
-                      let! v, t_v, v_k = !v
-                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
-                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
-                      return (k, v), (k_s, t_v)
-                    })
-                  |> state.All
+                  state {
+                    match context_t with
+                    | None ->
+                      return!
+                        fields
+                        |> List.map (fun (k, v) ->
+                          state {
+                            let! v, t_v, v_k = !v
+                            do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                            let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
+                            return (k, v), (k_s, t_v)
+                          })
+                        |> state.All
+                    | Some context_t ->
+                      let! context_fields = context_t |> TypeValue.AsRecord |> ofSum
+
+                      let context_fields =
+                        context_fields.value
+                        |> OrderedMap.toSeq
+                        |> Seq.map (fun (k, v) -> (k.Name, (k, v)))
+                        |> OrderedMap.ofSeq
+
+                      return!
+                        fields
+                        |> List.map (fun (k, v) ->
+                          state {
+                            let! k_s, k_t =
+                              context_fields
+                              |> OrderedMap.tryFindWithError k "fields" k.ToFSharpString
+                              |> ofSum
+
+                            let! v, t_v, v_k = (Some k_t) => v
+                            do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+
+                            do! TypeValue.Unify(loc0, t_v, k_t) |> Expr.liftUnification
+                            return (k, v), (k_s, t_v)
+                          })
+                        |> state.All
+                  }
 
                 let fieldsExpr = fields |> List.map fst
                 let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
@@ -677,28 +736,25 @@ module TypeCheck =
           //   )
           // )
 
-          | ExprRec.SumCons(cons, value) ->
+          | ExprRec.SumCons(cons) ->
             return!
               state {
-                let! value, t_value, value_k = !value
-                do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
-
                 let cases =
-                  [ 0 .. cons.Count - 1 ]
-                  |> List.map (fun i ->
-                    if i = cons.Case then
-                      t_value
-                    else
-                      let guid = Guid.CreateVersion7()
+                  [| 0 .. cons.Count - 1 |]
+                  |> Array.map (fun i ->
+                    let guid = Guid.CreateVersion7()
 
-                      TypeValue.Var(
-                        { TypeVar.Name = $"a_{i}_of_{cons.Count} " + guid.ToString()
-                          Guid = guid }
-                      ))
+                    ({ TypeVar.Name = $"a_{i}_of_{cons.Count} " + guid.ToString()
+                       Guid = guid }))
 
-                let sum_t = TypeValue.CreateSum cases
+                for c in cases do
+                  do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists c))
 
-                return Expr.SumCons(cons, value, loc0), sum_t, Kind.Star
+                let cases = cases |> Array.map TypeValue.Var
+
+                let sum_t = TypeValue.CreateSum(cases |> List.ofSeq)
+
+                return Expr.SumCons(cons, loc0), TypeValue.CreateArrow(cases[cons.Case - 1], sum_t), Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -714,6 +770,30 @@ module TypeCheck =
             return!
               state.Either
                 (state {
+                  let! t_fields =
+                    t_fields
+                    |> TypeValue.AsRecord
+                    |> ofSum
+                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+
+                  return!
+                    state {
+                      let t_fields =
+                        t_fields
+                        |> OrderedMap.toSeq
+                        |> Seq.map (fun (k, v) -> (k.Name, v))
+                        |> OrderedMap.ofSeq
+
+                      let! field_t =
+                        t_fields
+                        |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
+                        |> ofSum
+
+                      return Expr.RecordDes(fields, fieldName, loc0), field_t, Kind.Star
+                    }
+                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                })
+                (state {
                   let! _record_t, field_t = TypeCheckState.TryFindRecordField(fieldName, loc0)
 
                   return!
@@ -726,37 +806,7 @@ module TypeCheck =
                     }
                     |> state.MapError(Errors.SetPriority ErrorPriority.High)
                 })
-                (state {
-                  let! _ =
-                    t_fields
-                    |> TypeValue.AsTuple
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
-
-                  return!
-                    state {
-                      let! fieldName = Identifier.AsLocalScope fieldName |> ofSum
-
-                      let index =
-                        fieldName
-                        |> String.filter Char.IsDigit
-                        |> Int32.TryParse
-                        |> function
-                          | true, v -> Some v
-                          | false, _ -> None
-
-                      let index = index |> Option.map (fun index -> index - 1)
-
-                      match index with
-                      | Some index -> return! !Expr.TupleDes(fields_expr, { Index = index }, loc0)
-                      | None ->
-                        return!
-                          $"Error: cannot find field {fieldName} in tuple {fields}"
-                          |> error
-                          |> state.Throw
-                    }
-                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                })
+              |> state.MapError Errors.FilterHighestPriorityOnly
           // |> state.MapError(
           //   Errors.Map(
           //     String.appendNewline
@@ -778,7 +828,7 @@ module TypeCheck =
 
                 let! t_field =
                   t_fields
-                  |> List.tryItem fieldName.Index
+                  |> List.tryItem (fieldName.Index - 1)
                   |> sum.OfOption($"Error: cannot find item {fieldName.Index} in tuple {fields}" |> error)
                   |> state.OfSum
 
@@ -804,169 +854,153 @@ module TypeCheck =
                 let result_t = result_var |> TypeValue.Var
 
                 return!
-                  state.Either3
-                    (state {
-                      let handler_case_resolvers =
+                  (state {
+                    let handler_case_resolvers =
+                      match context_t with
+                      | Some(TypeValue.Arrow({ value = TypeValue.Union { value = context_cases }, _ })) ->
+                        let context_cases_by_id =
+                          context_cases
+                          |> OrderedMap.toSeq
+                          |> Seq.map (fun (k, v) -> (k.Name, (k, v)))
+                          |> OrderedMap.ofSeq
+
                         handlers
-                        |> Map.keys
-                        |> Seq.map (fun id -> TypeCheckState.TryFindUnionCaseConstructor(id, loc0))
+                        |> Map.toSeq
+                        |> Seq.map (fun (id, case_handler) ->
+                          state {
+                            let! sym, cons =
+                              context_cases_by_id
+                              |> OrderedMap.tryFindWithError id "cases" id.ToFSharpString
+                              |> ofSum
+
+                            return (cons, context_cases), (id, sym, case_handler)
+                          })
                         |> Seq.toList
 
-                      let handler_case_resolvers =
-                        match handler_case_resolvers with
-                        | x :: xs -> NonEmptyList.OfList(x, xs)
-                        | [] ->
-                          NonEmptyList.OfList(
-                            state.Throw(error "No handlers provided")
-                            |> state.MapError(Errors.SetPriority ErrorPriority.Medium),
-                            []
-                          )
-
-                      let! union_t = handler_case_resolvers |> state.Any |> state.Map snd
-
-                      let! handlers =
+                      | _ ->
                         handlers
                         |> Map.toSeq
-                        |> Seq.map (fun (k, value) ->
+                        |> Seq.map (fun (id, case_handler) ->
                           state {
-                            let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0)
-                            return k, (value, k_s)
+                            let! cons = TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
+                            let! sym = TypeCheckState.TryFindUnionCaseSymbol(id, loc0)
+                            return cons, (id, sym, case_handler)
                           })
-                        |> state.All
-                        |> state.Map Map.ofSeq
+                        |> Seq.toList
 
-                      return!
-                        state {
-                          let! handlers =
-                            handlers
-                            |> Map.map (fun _k ((var, body), k_s) ->
-                              state {
-                                // let guid = Guid.CreateVersion7()
+                    let handler_case_resolvers =
+                      match handler_case_resolvers with
+                      | x :: xs -> NonEmptyList.OfList(x, xs)
+                      | [] ->
+                        NonEmptyList.OfList(
+                          state.Throw(error "No handlers provided")
+                          |> state.MapError(Errors.SetPriority ErrorPriority.Medium),
+                          []
+                        )
 
-                                // let fresh_var =
-                                //   { TypeVar.Name = var.Name + "_case_" + guid.ToString()
-                                //     Guid = guid }
+                    let! handlers = handler_case_resolvers |> state.All
 
-                                // do!
-                                //   state.SetState(
-                                //     TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var)
-                                //   )
-                                let! var_t =
-                                  union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
+                    let! union_t =
+                      handlers
+                      |> Seq.map fst
+                      |> Seq.tryHead
+                      |> Sum.fromOption (fun () -> (loc0, "Error: no handlers provided") |> Errors.Singleton)
+                      |> state.OfSum
+                      // |> state.Map(snd >> TypeValue.CreateUnion)
+                      |> state.Map snd
 
-                                let! body, body_t, body_k =
-                                  !body
-                                  |> state.MapContext(
-                                    TypeCheckContext.Updaters.Values(
-                                      Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star)
-                                    )
-                                  )
+                    // let! handlers =
+                    //   handlers
+                    //   |> Map.toSeq
+                    //   |> Seq.map (fun (k, value) ->
+                    //     state {
+                    //       let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0)
+                    //       return k, (value, k_s)
+                    //     })
+                    //   |> state.All
+                    //   |> state.Map Map.ofSeq
 
-                                do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+                    let handlers =
+                      handlers
+                      |> Seq.map snd
+                      |> Seq.map (fun (id, k_s, (var, body)) -> id, (id, k_s, (var, body)))
+                      |> Map.ofSeq
 
-                                do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
-                                let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
 
-                                return (var, body), (k_s, var_t)
-                              })
-                            |> state.AllMap
-
-                          let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
-
-                          let handlerExprs = handlers |> Map.map (fun _ -> fst)
-
-                          let! fallback = fallback |> Option.map (!) |> state.RunOption
-
-                          let! fallback =
+                    return!
+                      state {
+                        let! handlers =
+                          handlers
+                          |> Map.map (fun _k (_id, k_s, (var, body)) ->
+                            // (id, sym, case_handler)
                             state {
-                              match fallback with
-                              | None -> return None
-                              | Some(fallback, fallbackT, fallbackK) ->
-                                do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
-                                do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
-                                return fallback |> Some
-                            }
+                              let! var_t =
+                                union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
 
-                          match fallback with
-                          | Some _ -> ()
-                          | None ->
-                            let handlers = handlers |> Map.keys |> Set.ofSeq
-                            let union_cases = union_t |> OrderedMap.keys |> Set.ofSeq
+                              let! body, body_t, body_k =
+                                !body
+                                |> state.MapContext(
+                                  TypeCheckContext.Updaters.Values(
+                                    Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star)
+                                  )
+                                )
 
-                            if handlers.Count <> union_cases.Count then
-                              return! $"Error: incomplete pattern matching" |> error |> state.Throw
+                              do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                          let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
+                              do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
-                          // do!
-                          //     UnificationState.DeleteVariable result_var
-                          //       |> TypeValue.EquivalenceClassesOp
-                          //       |> Expr<'T>.liftUnification
+                              let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
 
-                          let unionValue = TypeValue.CreateUnion union_t
-                          let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
+                              return (var, body), (k_s, var_t)
+                            })
+                          |> state.AllMap
 
-                          let handlerExprs =
-                            handlerExprs
-                            |> Map.toSeq
-                            |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
-                            |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
+                        let handlers = handlers |> Map.map (fun _ (vb, (kv, _)) -> vb, kv)
 
-                          return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
-                        }
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                    })
-                    (state {
-                      let! handlers =
-                        handlers
-                        |> Map.toSeq
-                        |> Seq.map (fun (k, handler) ->
+                        let handlerExprs = handlers |> Map.map (fun _ -> fst)
+
+                        let! fallback = fallback |> Option.map (!) |> state.RunOption
+
+                        let! fallback =
                           state {
-                            match k with
-                            | Identifier.LocalScope name
-                            | Identifier.FullyQualified([ "Sum" ], name) when
-                              System.Text.RegularExpressions.Regex.IsMatch(name, @"Choice\d+Of\d+$")
-                              ->
-                              let matches = Regex.Matches(k.LocalName, "[0-9]+")
-                              let case = (matches.[0].Value |> int) - 1
-                              let count = matches.[1].Value |> int
-                              return { Case = case; Count = count }, handler
-                            | _ -> return! $"Error: cannot find symbol {k}" |> error |> state.Throw
-                          })
-                        |> state.All
-                        |> state.Map(List.sortBy (fst >> (fun c -> c.Case)))
+                            match fallback with
+                            | None -> return None
+                            | Some(fallback, fallbackT, fallbackK) ->
+                              do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
+                              do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
+                              return fallback |> Some
+                          }
 
-                      return!
-                        state {
-                          let handler_indices = handlers |> List.map fst |> List.map (fun c -> c.Case)
+                        match fallback with
+                        | Some _ -> ()
+                        | None ->
+                          let handlers = handlers |> Map.keys |> Set.ofSeq
+                          let union_cases = union_t |> OrderedMap.keys |> Set.ofSeq
 
-                          if handler_indices <> [ 0 .. (handler_indices.Length - 1) ] then
-                            return!
-                              $"Error: handlers must cover all cases from 1 to {handler_indices.Length - 1}, found {handler_indices}"
-                              |> error
-                              |> state.Throw
-                          else
-                            return! !Expr.SumDes(handlers |> List.map snd, loc0)
-                        }
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                    })
-                    (state {
-                      let comma = ", "
+                          if handlers.Count <> union_cases.Count then
+                            return! $"Error: incomplete pattern matching" |> error |> state.Throw
 
-                      let handlers =
-                        handlers
-                        |> Map.toSeq
-                        |> Seq.map (fun (k, _) -> k.ToFSharpString)
-                        |> String.concat comma
+                        let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
 
-                      return!
-                        $"Error: cannot resolve match over union cases {handlers}"
-                        |> error
-                        |> state.Throw
-                        |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
-                    })
-                  |> state.MapError Errors.FilterHighestPriorityOnly
+                        // do!
+                        //     UnificationState.DeleteVariable result_var
+                        //       |> TypeValue.EquivalenceClassesOp
+                        //       |> Expr<'T>.liftUnification
+
+                        let unionValue = TypeValue.CreateUnion union_t
+                        let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
+
+                        let handlerExprs =
+                          handlerExprs
+                          |> Map.toSeq
+                          |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
+                          |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
+
+                        return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
+                      }
+                      |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  })
 
               }
           // |> state.MapError(
@@ -981,26 +1015,65 @@ module TypeCheck =
           | ExprRec.SumDes(handlers) ->
             return!
               state {
-                let guid = Guid.CreateVersion7()
+                if
+                  handlers
+                  |> Map.keys
+                  |> Seq.sortBy (fun k -> k.Case)
+                  |> Seq.map (fun k -> k.Case)
+                  |> Seq.toList
+                  <> [ 1 .. handlers.Count ]
+                then
+                  return! $"Error: sum cases must be 1..{handlers.Count}" |> error |> state.Throw
 
-                let result_var =
-                  { TypeVar.Name = $"res" + guid.ToString()
-                    Guid = guid }
+                let! context_t =
+                  context_t
+                  |> Option.map (fun t ->
+                    state {
+                      let! ({ value = t_i, t_o }) = t |> TypeValue.AsArrow |> ofSum
+                      let! t_i = t_i |> TypeValue.AsSum |> ofSum
+                      return t_i.value, t_o
+                    })
+                  |> state.RunOption
 
-                let result_var_t = result_var |> TypeValue.Var
+                let result_var_t =
+                  match context_t with
+                  | Some(_t_i, t_o) -> t_o
+                  | None ->
+                    let guid = Guid.CreateVersion7()
+
+                    let fresh_var =
+                      { TypeVar.Name = "_sum_des_result_" + guid.ToString()
+                        Guid = guid }
+
+                    fresh_var |> TypeValue.Var
 
                 let! handlers =
                   handlers
-                  |> Seq.map (fun (var, body) ->
+                  |> Map.map (fun _k (var, body) ->
                     state {
-                      let guid = Guid.CreateVersion7()
+                      let! var_t =
+                        state {
+                          match context_t with
+                          | None ->
+                            let guid = Guid.CreateVersion7()
 
-                      let fresh_var =
-                        { TypeVar.Name = var.Name + "_case_" + guid.ToString()
-                          Guid = guid }
+                            let fresh_var =
+                              { TypeVar.Name = var.Name + $"_{_k.Case}Of{_k.Count}_" + guid.ToString()
+                                Guid = guid }
 
-                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
-                      let var_t = TypeValue.Var fresh_var
+                            do!
+                              state.SetState(
+                                TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var)
+                              )
+
+                            return TypeValue.Var fresh_var
+                          | Some(t_i, _t_o) ->
+                            return!
+                              t_i
+                              |> List.tryItem (_k.Case - 1)
+                              |> sum.OfOption("impossible" |> error)
+                              |> state.OfSum
+                        }
 
                       let! body, body_t, body_k =
                         !body
@@ -1014,15 +1087,20 @@ module TypeCheck =
 
                       let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
 
-                      return ((var, body), var_t), fresh_var
+                      return (var, body), var_t
                     })
-                  |> state.All
+                  |> state.AllMap
 
-                let handler_vars = handlers |> List.map snd
-                let handlers = handlers |> List.map fst
+                let handlersSorted =
+                  handlers
+                  |> Map.map (fun _k -> snd)
+                  |> Map.toSeq
+                  |> Seq.sortBy (fun (k, _v) -> k.Case)
+                  |> Seq.toList
 
-                let handlerExprs = handlers |> List.map fst
-                let handlerTypes = handlers |> List.map snd
+                let handlerExprs = handlers |> Map.map (fun _k -> fst)
+
+                let handlerTypes = handlersSorted |> List.map snd
 
                 let! result_t = TypeValue.Instantiate loc0 result_var_t |> Expr.liftInstantiation
 
@@ -1030,7 +1108,6 @@ module TypeCheck =
                 let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
                 let! arrowValue = TypeValue.Instantiate loc0 arrowValue |> Expr.liftInstantiation
 
-                do ignore handler_vars
                 // for kv in handler_vars do
                 //   do!
                 //       UnificationState.DeleteVariable kv

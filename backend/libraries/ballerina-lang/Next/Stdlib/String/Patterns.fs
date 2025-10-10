@@ -8,6 +8,11 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type StringOperations<'ext> with
+    static member AsLength(op: StringOperations<'ext>) : Sum<Unit, Errors> =
+      match op with
+      | StringOperations.Length -> sum.Return()
+      | _ -> failwith "Expected Length operation"
+
     static member AsConcat(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
       match op with
       | StringOperations.Concat v -> v.v1 |> sum.Return

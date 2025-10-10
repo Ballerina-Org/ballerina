@@ -145,11 +145,9 @@ let ``Dsl:Terms:Expr.TupleCons json round-trip`` () =
 
 [<Test>]
 let ``Dsl:Terms:Expr.SumCons json round-trip`` () =
-  let json =
-    """{"discriminator":"sum","value":[3,5,{"discriminator":"int32","value":"42"}]}"""
+  let json = """{"discriminator":"sum","value":[3,5]}"""
 
-  let expected: Expr<TypeExpr> =
-    Expr.SumCons({ Case = 3; Count = 5 }, Expr.Primitive(PrimitiveValue.Int32 42))
+  let expected: Expr<TypeExpr> = Expr.SumCons({ Case = 3; Count = 5 })
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -196,13 +194,14 @@ let ``Dsl:Terms:Expr.TupleDes json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.SumDes json round-trip`` () =
   let json =
-    """{"discriminator":"sum-des","value":[["a",{"discriminator":"int32","value":"1"}],["b",{"discriminator":"int32","value":"2"}]]}"""
+    """{"discriminator":"sum-des","value":[[1,2,"a",{"discriminator":"int32","value":"1"}],[2,2,"b",{"discriminator":"int32","value":"2"}]]}"""
 
   let expected =
     Expr<TypeExpr>
       .SumDes(
-        [ (Var.Create "a", Expr.Primitive(PrimitiveValue.Int32 1))
-          (Var.Create "b", Expr.Primitive(PrimitiveValue.Int32 2)) ]
+        [ { Case = 1; Count = 2 }, (Var.Create "a", Expr.Primitive(PrimitiveValue.Int32 1))
+          { Case = 2; Count = 2 }, (Var.Create "b", Expr.Primitive(PrimitiveValue.Int32 2)) ]
+        |> Map.ofList
       )
 
   (expected, JsonValue.Parse json)

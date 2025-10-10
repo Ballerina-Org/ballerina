@@ -20,7 +20,7 @@ module Extension =
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     : OperationsExtension<'ext, GuidOperations<'ext>> =
 
-    let guidEqualId = Identifier.FullyQualified([ "Guid" ], "==")
+    let guidEqualId = Identifier.FullyQualified([ "guid" ], "==")
 
     let equalOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidEqualId,
@@ -58,7 +58,7 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let guidNotEqualId = Identifier.FullyQualified([ "Guid" ], "!=")
+    let guidNotEqualId = Identifier.FullyQualified([ "guid" ], "!=")
 
     let notEqualOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidNotEqualId,

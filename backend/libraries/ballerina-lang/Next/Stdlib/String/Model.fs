@@ -10,3 +10,4 @@ module Model =
     | GreaterThanOrEqual of {| v1: Option<string> |}
     | LessThan of {| v1: Option<string> |}
     | LessThanOrEqual of {| v1: Option<string> |}
+    | Length

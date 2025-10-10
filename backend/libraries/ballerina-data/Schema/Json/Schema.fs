@@ -13,6 +13,7 @@ module Schema =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
   open Ballerina.DSL.Next.Json
+  open Ballerina.StdLib.OrderPreservingMap
 
   type EntityMethod with
     static member FromJson(jsonValue: JsonValue) : Sum<EntityMethod, Errors> =
@@ -328,7 +329,8 @@ module Schema =
           |> reader.OfSum
 
         return
-          { Entities = entitiesMap
+          { Types = OrderedMap.empty
+            Entities = entitiesMap
             Lookups = lookupsMap }
       }
 

@@ -48,6 +48,12 @@ module Patterns =
       | JsonValue.Array [| firstJson; secondJson; thirdJson |] -> sum.Return(firstJson, secondJson, thirdJson)
       | _ -> sum.Throw(Errors.Singleton $"Error: expected triple, found '{json.ToFSharpString.ReasonablyClamped}'")
 
+    static member AsQuadruple json =
+      match json with
+      | JsonValue.Array [| firstJson; secondJson; thirdJson; fourthJson |] ->
+        sum.Return(firstJson, secondJson, thirdJson, fourthJson)
+      | _ -> sum.Throw(Errors.Singleton $"Error: expected quadruple, found '{json.ToFSharpString.ReasonablyClamped}'")
+
     static member AsString json =
       match json with
       | JsonValue.String fields -> sum.Return fields
