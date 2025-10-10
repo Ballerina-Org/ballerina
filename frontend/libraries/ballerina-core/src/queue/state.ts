@@ -1,5 +1,5 @@
 import { OrderedMap } from "immutable";
-import { Guid, Unit, SynchronizationResult } from "../../main";
+import { Guid, Unit, SynchronizationOperationResult } from "../../main";
 import { CoTypedFactory } from "../coroutines/builder";
 import { Coroutine } from "../coroutines/state";
 import { BasicFun } from "../fun/state";
@@ -7,7 +7,7 @@ import { BasicFun } from "../fun/state";
 export const QueueCoroutine = <
   Context,
   State,
-  OperationResult = SynchronizationResult,
+  OperationResult = SynchronizationOperationResult,
 >(
   removeItem: BasicFun<Guid, Coroutine<Context & State, State, Unit>>,
   getItemsToProcess: BasicFun<
