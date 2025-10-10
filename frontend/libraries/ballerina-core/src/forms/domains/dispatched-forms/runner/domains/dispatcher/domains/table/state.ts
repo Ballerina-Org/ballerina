@@ -285,6 +285,7 @@ export const TableDispatcher = {
                             detailsRenderer,
                             renderer.detailsRenderer,
                             renderer.visibleColumns,
+                            renderer.disabledColumns,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                             tableEntityType,

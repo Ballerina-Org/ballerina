@@ -346,17 +346,24 @@ export const TableLayout = {
   }),
   Operations: {
     ParseLayout: (
-      rawVisibleColumns: unknown,
+      rawColumnsList: unknown,
     ): ValueOrErrors<PredicateComputedOrInlined, string> => {
-      if (RawComputedOrInlined.isInlined(rawVisibleColumns)) {
+      if (!rawColumnsList || typeof rawColumnsList == "undefined") {
+        return ValueOrErrors.Default.return({
+          kind: "Inlined",
+          content: [],
+        });
+      }
+
+      if (RawComputedOrInlined.isInlined(rawColumnsList)) {
         return ValueOrErrors.Default.return<PredicateComputedOrInlined, string>(
           {
             kind: "Inlined",
-            content: rawVisibleColumns,
+            content: rawColumnsList,
           },
         );
       }
-      return Expr.Operations.parse(rawVisibleColumns).Then((expr) =>
+      return Expr.Operations.parse(rawColumnsList).Then((expr) =>
         ValueOrErrors.Default.return({
           kind: "Computed",
           content: expr,
