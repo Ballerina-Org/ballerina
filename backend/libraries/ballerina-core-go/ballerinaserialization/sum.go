@@ -16,12 +16,12 @@ func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer S
 		return ballerina.Bind(ballerina.Fold(value,
 			func(left L) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("0"), value}}
+					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("0"), json.RawMessage("2"), value}}
 				})
 			},
 			func(right R) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), value}}
+					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
 				})
 			},
 		), WrappedMarshal)
@@ -35,7 +35,7 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 			if sumForSerialization.Discriminator != sumDiscriminator {
 				return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected discriminator to be '%s', got '%s'", sumDiscriminator, sumForSerialization.Discriminator))
 			}
-			if len(sumForSerialization.Value) != 2 {
+			if len(sumForSerialization.Value) != 3 {
 				return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected 2 elements in sum, got %d", len(sumForSerialization.Value)))
 			}
 			serializedIndex := sumForSerialization.Value[0]
@@ -46,7 +46,19 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 				return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected index to be a number, got %s", serializedIndex))
 			}
 
-			secondElement := sumForSerialization.Value[1]
+			serializedArity := sumForSerialization.Value[1]
+
+			var arity int
+			err = json.Unmarshal(serializedArity, &arity)
+			if err != nil {
+				return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected arity to be a number, got %s", serializedArity))
+			}
+
+			if arity != 2 {
+				return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected arity to be 2, got %d", arity))
+			}
+
+			secondElement := sumForSerialization.Value[2]
 
 			switch index {
 			case 0:
