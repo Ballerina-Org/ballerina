@@ -861,6 +861,21 @@ module Renderers =
 
               let highlightedFilters = highlightedFilters |> Option.defaultWith (fun () -> [])
 
+              let! disabledColumnsJson =
+                fields
+                |> state.TryFindField "disabledColumns"
+                |> state.Catch
+                |> state.Map Sum.toOption
+                |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
+
+              let! disabledColumns =
+                FormBody.ParseGroup
+                  primitivesExt
+                  exprParser
+                  "disabledColumns"
+                  (columns |> Map.map (fun _ c -> c.FieldConfig))
+                  disabledColumnsJson
+
               return
                 {| Columns = columns
                    RowTypeId = t.TypeId
@@ -869,7 +884,8 @@ module Renderers =
                    HighlightedFilters = highlightedFilters
                    Renderer = renderer
                    MethodLabels = actionLabels
-                   VisibleColumns = visibleColumns |}
+                   VisibleColumns = visibleColumns
+                   DisabledColumns = disabledColumns |}
                 |> FormBody.Table
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
