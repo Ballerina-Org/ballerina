@@ -34,10 +34,12 @@ def _case_from_json(case_payload: Json, expected_arity: int) -> Sum[ParsingError
 
 def sum2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
     def to_json(value: Sum[_SumL, _SumR]) -> Json:
-        return value.fold(
-            lambda a: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(0, 2, left_to_json(a))},
-            lambda b: {DISCRIMINATOR_KEY: "sum", VALUE_KEY: _case_to_json(1, 2, right_to_json(b))},
-        )
+        return {
+            DISCRIMINATOR_KEY: "sum",
+            VALUE_KEY: value.fold(
+                lambda a: _case_to_json(1, 2, left_to_json(a)), lambda b: _case_to_json(2, 2, right_to_json(b))
+            ),
+        }
 
     return to_json
 
@@ -47,13 +49,13 @@ def _handle_case_tuple(
 ) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
     discriminator, payload = case_tuple
     match discriminator:
-        case 0:
+        case 1:
             return (
                 left_from_json(payload)
                 .map_left(ParsingError.with_context(f"When parsing case {discriminator}:"))
                 .map_right(Sum.left)
             )
-        case 1:
+        case 2:
             return (
                 right_from_json(payload)
                 .map_left(ParsingError.with_context(f"When parsing case {discriminator}:"))

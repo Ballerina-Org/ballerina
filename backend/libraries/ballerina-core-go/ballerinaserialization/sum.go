@@ -16,12 +16,12 @@ func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer S
 		return ballerina.Bind(ballerina.Fold(value,
 			func(left L) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("0"), json.RawMessage("2"), value}}
+					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
 				})
 			},
 			func(right R) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
+					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("2"), value}}
 				})
 			},
 		), WrappedMarshal)
@@ -61,12 +61,12 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 			secondElement := sumForSerialization.Value[2]
 
 			switch index {
-			case 0:
-				return ballerina.MapRight(WithContext("on left", leftDeserializer)(secondElement), ballerina.Left[L, R])
 			case 1:
+				return ballerina.MapRight(WithContext("on left", leftDeserializer)(secondElement), ballerina.Left[L, R])
+			case 2:
 				return ballerina.MapRight(WithContext("on right", rightDeserializer)(secondElement), ballerina.Right[L, R])
 			}
-			return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected index to be 0 or 1, got %d", index))
+			return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected index to be 1 or 2, got %d", index))
 		},
 	)
 }

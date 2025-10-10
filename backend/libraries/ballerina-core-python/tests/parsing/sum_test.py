@@ -11,18 +11,18 @@ def test_sum_to_json_left() -> None:
     value = Sum[int, str].left(42)
     serializer = sum2_to_json(int32_to_json, string_to_json)
     serialized = serializer(value)
-    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [0, 2, int32_to_json(42)]}
+    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, 2, int32_to_json(42)]}
 
 
 def test_sum_to_json_right() -> None:
     value = Sum[int, str].right("42")
     serializer = sum2_to_json(int32_to_json, string_to_json)
     serialized = serializer(value)
-    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, 2, string_to_json("42")]}
+    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [2, 2, string_to_json("42")]}
 
 
 def test_sum_from_json_left() -> None:
-    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [0, 2, int32_to_json(42)]}
+    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, 2, int32_to_json(42)]}
     parser: FromJson[Sum[int, str]] = sum2_from_json(int32_from_json, string_from_json)
     value = parser(serialized)
     print(value)
@@ -30,14 +30,14 @@ def test_sum_from_json_left() -> None:
 
 
 def test_sum_from_json_right() -> None:
-    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, 2, string_to_json("42")]}
+    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [2, 2, string_to_json("42")]}
     parser: FromJson[Sum[int, str]] = sum2_from_json(int32_from_json, string_from_json)
     value = parser(serialized)
     assert value == Sum.right(Sum[int, str].right("42"))
 
 
 def test_sum_from_json_invalid_arity() -> None:
-    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [0, 1, int32_to_json(42)]}
+    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, 1, int32_to_json(42)]}
     parser: FromJson[Sum[int, str]] = sum2_from_json(int32_from_json, string_from_json)
     value = parser(serialized)
     match value.value:
