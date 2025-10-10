@@ -377,6 +377,7 @@ module Model =
          //  Preview: Option<FormBody>
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
+         DisabledColumns: FormGroup<'ExprExtension, 'ValueExtension>
          MethodLabels: Map<TableMethod, Label>
          RowTypeId: ExprTypeId |}
 

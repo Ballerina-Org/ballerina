@@ -1008,6 +1008,14 @@ module Validator =
           // | Some preview -> do! FormBody.ValidatePredicates ctx globalType rootType localType preview
           // | None -> return ()
 
+          match table.DisabledColumns with
+          | Inlined _ -> return ()
+          | Computed disabledExpr ->
+            let vars =
+              [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
+
+            do! validateGroupPredicates ctx typeCheck vars localType disabledExpr
+
           match table.VisibleColumns with
           | Inlined _ -> return ()
           | Computed visibleExpr ->
