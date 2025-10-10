@@ -38,7 +38,8 @@ export const QueueProcessor = (): Coroutine<
                   : Co.Return({}),
               )
             : Co.Return({}), // BasicFun<SynchronizationResult, Coroutine<Context & State, State, Unit>>
-        reenqueue: Co.SetState(DataSync().Updaters.Core.queue.add([v4(), k])),
+        reenqueue: (_) =>
+          Co.SetState(DataSync().Updaters.Core.queue.add([v4(), k])),
       }));
     },
   );
