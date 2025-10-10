@@ -750,8 +750,7 @@
               },
               "Surname": {
                 "label": "Last Name",
-                "renderer": "defaultString",
-                "disabled": true
+                "renderer": "defaultString"
               },
               "FavoriteColor": {
                 "renderer": "defaultEnum",
@@ -1088,8 +1087,7 @@
               },
               "Surname": {
                 "label": "Last Name",
-                "renderer": "defaultString",
-                "disabled": true
+                "renderer": "defaultString"
               },
               "FavoriteColor": {
                 "renderer": "defaultEnum",
@@ -1124,6 +1122,7 @@
               "City",
               "StreetNumberAndCity"
             ],
+            "disabledColumns": ["Name", "Surname"],
             "detailsRenderer": {
               "renderer": {
                 "type": "User",
