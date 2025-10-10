@@ -7,7 +7,8 @@ import { BasicFun } from "../fun/state";
 export const QueueCoroutine = <
   Context,
   State,
-  OperationResult = SynchronizationOperationResult,
+  OperationResult extends
+    SynchronizationOperationResult = SynchronizationOperationResult,
 >(
   removeItem: BasicFun<Guid, Coroutine<Context & State, State, Unit>>,
   getItemsToProcess: BasicFun<
@@ -21,7 +22,10 @@ export const QueueCoroutine = <
           OperationResult,
           Coroutine<Context & State, State, Unit>
         >;
-        reenqueue: Coroutine<Context & State, State, Unit>;
+        reenqueue: BasicFun<
+          OperationResult,
+          Coroutine<Context & State, State, Unit>
+        >;
       }
     >
   >,
@@ -39,8 +43,8 @@ export const QueueCoroutine = <
               .then(() => k.operation)
               .then((_) =>
                 k.postprocess(_).then(() => {
-                  if (_ == "should be enqueued again") {
-                    return k.reenqueue;
+                  if (_.kind == "should be enqueued again") {
+                    return k.reenqueue(_);
                   } else {
                     return Co.Return({});
                   }
