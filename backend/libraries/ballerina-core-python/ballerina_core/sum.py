@@ -19,13 +19,9 @@ class Sum(Generic[_A, _B]):
     class Left(Generic[_InnerA]):
         value: _InnerA
 
-        _C = TypeVar("_C")
-
     @dataclass(frozen=True)
     class Right(Generic[_InnerB]):
         value: _InnerB
-
-        _C = TypeVar("_C")
 
     value: Left[_A] | Right[_B]
 
