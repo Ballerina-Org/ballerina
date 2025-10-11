@@ -274,12 +274,13 @@ module TypeCheck =
           | ExprRec.Apply(f, a_expr) ->
             return!
               state {
+                let! a, t_a, a_k = !a_expr
+                do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+
                 return!
                   state.Either
                     (state {
                       let! f_lookup = f |> Expr.AsLookup |> ofSum
-                      let! a, t_a, a_k = !a_expr
-                      do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       return!
                         state.Either
@@ -412,13 +413,10 @@ module TypeCheck =
                                 $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
                                 |> error
                                 |> state.Throw
-                                |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                                |> state.MapError(Errors.SetPriority ErrorPriority.Low)
                           })
                     })
                     (state {
-                      let! a, t_a, a_k = !a_expr
-                      do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
-
                       let! t_a_has_structure =
                         state {
                           match t_a with
@@ -439,7 +437,29 @@ module TypeCheck =
 
                           Some(TypeValue.CreateArrow(t_a, freshVar))
 
-                      let! f, t_f, f_k = f_constraint => f
+                      let rec pad (f_expr: Expr<TypeExpr>) =
+                        state {
+                          let! f, t_f, f_k = f_constraint => f_expr
+
+                          match f_k with
+                          | Kind.Arrow(Kind.Star, _) ->
+                            let guid = Guid.CreateVersion7()
+
+                            let freshVar =
+                              { TypeVar.Name = "fresh_var_application_" + guid.ToString()
+                                Guid = guid }
+
+                            do!
+                              TypeExprEvalState.bindType (freshVar.Name) (freshVar |> TypeValue.Var, Kind.Star)
+                              |> Expr.liftTypeEval
+
+                            return!
+                              pad (Expr.TypeApply(f_expr, freshVar.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
+                          | _ -> return f, t_f, f_k
+                        }
+
+                      let! f, t_f, f_k = pad f
+
                       do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       let! (f_input, f_output) =
@@ -486,6 +506,7 @@ module TypeCheck =
                         )
                         |> state.MapError Errors.FilterHighestPriorityOnly
                     })
+
 
               }
               |> state.MapError(Errors.FilterHighestPriorityOnly)
