@@ -41,6 +41,8 @@ module Value =
       | Value.Primitive p -> Value.ToJsonPrimitive p
       | Value.Record m -> Value.ToJsonRecord toJsonRoot m
       | Value.UnionCase(s, v) -> Value.ToJsonUnion toJsonRoot s v
+      | Value.UnionCons(s) -> Value.ToJsonUnionCons toJsonRoot s
+      | Value.RecordDes s -> Value.ToJsonRecordDes toJsonRoot s
       | Value.Tuple vs -> Value.ToJsonTuple toJsonRoot vs
       | Value.Sum(i, v) -> Value.ToJsonSum toJsonRoot i v
       | Value.Var v -> Value.ToJsonVar v |> reader.Return

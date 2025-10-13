@@ -110,14 +110,12 @@ let ``Seeds: Json with nested records (Spec fragment) -> Parse TypeExpr -> Eval 
 
         let! personRec = Value.AsRecord person
 
-        let fieldKey =
-          personRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Private")
+        let fieldKey = personRec |> Map.findKey (fun key _ -> key = LocalScope "Private")
 
         let field = personRec |> Map.find fieldKey
         let! nestedRec = Value.AsRecord field
 
-        let nestedKey =
-          nestedRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Email")
+        let nestedKey = nestedRec |> Map.findKey (fun key _ -> key = LocalScope "Email")
 
         let nested = nestedRec |> Map.find nestedKey
         let! nestedValue = Value.AsPrimitive nested
@@ -159,7 +157,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
           |> sum.Map(fun json -> json.ToString JsonSaveOptions.DisableFormatting)
 
         let! personRec = Value.AsRecord person
-        let fieldKey = personRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Email")
+        let fieldKey = personRec |> Map.findKey (fun key _ -> key = LocalScope "Email")
         let field = personRec |> Map.find fieldKey
         let! emailStr = Value.AsPrimitive field
         let! email = PrimitiveValue.AsString emailStr
@@ -169,7 +167,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
         | Right _ -> Assert.Fail("Verification of the email in the types failed")
         | Left(email, personRec) ->
           let actualFields =
-            personRec |> Map.keys |> Seq.map _.Name.ToString() |> Seq.toList |> List.sort
+            personRec |> Map.keys |> Seq.map _.ToString() |> Seq.toList |> List.sort
 
           Assert.That(actualFields, Is.EquivalentTo [ "Age"; "Email"; "Name" ])
           Assert.That(isEmail email, Is.True)
@@ -197,8 +195,7 @@ let ``Seeds: List extension`` () =
 
         let! companyRec = Value.AsRecord company
 
-        let fieldKey =
-          companyRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Emails")
+        let fieldKey = companyRec |> Map.findKey (fun key _ -> key = LocalScope "Emails")
 
         let field = companyRec |> Map.find fieldKey
 
@@ -280,14 +277,14 @@ let insert
 
 let private tryExtractGender
   (value: Value<TypeValue, ValueExt>)
-  : Sum<option<TypeSymbol> * Map<TypeSymbol, Value<TypeValue, ValueExt>>, Errors> =
+  : Sum<option<Identifier> * Map<Identifier, Value<TypeValue, ValueExt>>, Errors> =
   sum {
     let! record = Value.AsRecord value |> Sum.mapRight (Errors.FromErrors Location.Unknown)
 
     let! _, biology =
       record
       |> Map.tryFindByWithError
-        (fun (k, _v) -> k.Name = LocalScope "Biology")
+        (fun (k, _v) -> k = LocalScope "Biology")
         "record field"
         "biology field not found"
         Location.Unknown
@@ -295,7 +292,7 @@ let private tryExtractGender
     let! biology = biology |> Value.AsTuple |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     let! _, biology = Value.AsUnion biology.Head |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     let! fields = Value.AsRecord biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
-    let genderKey = fields |> Map.tryFindKey (fun ts _ -> ts.Name = LocalScope "Gender")
+    let genderKey = fields |> Map.tryFindKey (fun ts _ -> ts = LocalScope "Gender")
     return genderKey, fields
   }
 
@@ -346,7 +343,7 @@ let ``Seed lookups, insert item via path, path not satisfied results with no ins
     let! _, biology =
       record
       |> Map.tryFindByWithError
-        (fun (k, _v) -> k.Name = LocalScope "Biology")
+        (fun (k, _v) -> k = LocalScope "Biology")
         "record field"
         "biology field not found"
         Location.Unknown

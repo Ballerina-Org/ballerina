@@ -7,6 +7,7 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
 open Ballerina.DSL.Next.Types.Model
+open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
@@ -66,14 +67,14 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "int32", "value":"123"}""", PrimitiveValue.Int32 123 |> Value.Primitive
       """{"discriminator": "decimal", "value":"123.456"}""", PrimitiveValue.Decimal 123.456M |> Value.Primitive
       """{"discriminator": "boolean", "value":"true"}""", PrimitiveValue.Bool true |> Value.Primitive
-      """{"discriminator": "record", "value":[[{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string","value":"baz"}],
-      [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32","value":"42"}] 
+      """{"discriminator": "record", "value":[[{"discriminator":"id","value":"bar"}, {"discriminator":"string","value":"baz"}],
+      [{"discriminator":"id","value":"foo"}, {"discriminator":"int32","value":"42"}]
         ]}""",
       Value<TypeValue, ValueExt>
         .Record(
           Map.ofList
-            [ foo, PrimitiveValue.Int32 42 |> Value.Primitive
-              bar, PrimitiveValue.String "baz" |> Value.Primitive ]
+            [ foo.Name.LocalName |> Identifier.LocalScope, PrimitiveValue.Int32 42 |> Value.Primitive
+              bar.Name.LocalName |> Identifier.LocalScope, PrimitiveValue.String "baz" |> Value.Primitive ]
         )
       """{"discriminator": "union-case", "value": [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32","value":"42"}]}""",
       Value.UnionCase(foo, PrimitiveValue.Int32 42 |> Value.Primitive)

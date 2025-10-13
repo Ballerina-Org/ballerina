@@ -41,7 +41,7 @@ module ToUpdater =
 
                 let! targetSymbol, currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "field values" fieldName
+                  |> Map.tryFindByWithError (fun (ts, _) -> ts.LocalName = fieldName) "field values" fieldName
 
                 let! updatedValue = fieldUpdater currentValue
 

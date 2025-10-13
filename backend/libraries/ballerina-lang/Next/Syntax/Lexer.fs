@@ -49,6 +49,8 @@ module Lexer =
     | RoundBracket of Bracket
     | DoubleColon
     | Colon
+    | PipeGreaterThan
+    | DoubleGreaterThan
     | SemiColon
     | DoublePipe
     | DoubleAmpersand
@@ -81,6 +83,8 @@ module Lexer =
       | RoundBracket Open -> "("
       | RoundBracket Close -> ")"
       | DoubleColon -> "::"
+      | PipeGreaterThan -> "|>"
+      | DoubleGreaterThan -> ">>"
       | Colon -> ":"
       | SemiColon -> ";"
       | DoublePipe -> "||"
@@ -247,6 +251,9 @@ module Lexer =
         word "@" |> tokenizer.Map(LocalizedToken.FromOperator Operator.At)
         word "==" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equal)
         word "!=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.NotEqual)
+        word "|>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.PipeGreaterThan)
+        word ">>"
+        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleGreaterThan)
         word ">=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterEqual)
         word "<=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThanOrEqual)
         word ">" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterThan)
@@ -320,7 +327,7 @@ module Lexer =
       let! frac_part =
         tokenizer {
           do! dot |> tokenizer.Ignore
-          return! digit |> tokenizer.Many
+          return! digit |> tokenizer.AtLeastOne
 
         }
         |> tokenizer.Try
