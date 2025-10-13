@@ -268,7 +268,13 @@ module TypeCheck =
 
           | ExprRec.Lookup id ->
             let! t_id, id_k =
-              state.Either (TypeCheckContext.TryFindVar(id, loc0)) (TypeCheckState.TryFindType(id, loc0))
+              state.Either
+                (TypeCheckContext.TryFindVar(id, loc0))
+                // (TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
+                //  |> state.Map(fun (t, cases) -> TypeValue.CreateArrow(t, TypeValue.CreateUnion(cases)), Kind.Star))
+                // (TypeCheckState.TryFindRecordField(id, loc0)
+                //  |> state.Map(fun (cases, t) -> TypeValue.CreateArrow(TypeValue.CreateRecord(cases), t), Kind.Star))
+                (TypeCheckState.TryFindType(id, loc0))
 
             return Expr.Lookup(id, loc0), t_id, id_k
           | ExprRec.Apply(f, a_expr) ->
@@ -693,40 +699,6 @@ module TypeCheck =
           //   Errors.Map(
           //     String.appendNewline
           //       $"""...when typechecking `{{ {fields |> List.map (fun (id, _) -> id.ToFSharpString + "=...")} }}` = ...`"""
-          //   )
-          // )
-
-          | ExprRec.UnionCons(cons, value) ->
-            return!
-              state {
-                let! cons_symbol = TypeCheckState.TryFindUnionCaseSymbol(cons, loc0)
-                let! union_t, union_k = TypeCheckState.TryFindType(cons, loc0)
-                do! union_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                let! cases =
-                  union_t
-                  |> TypeValue.AsUnion
-                  |> ofSum
-                  |> state.Map WithTypeExprSourceMapping.Getters.Value
-
-                let! case_t =
-                  cases
-                  |> OrderedMap.tryFindWithError cons_symbol "cases" cons.ToFSharpString
-                  |> ofSum
-
-                let! value, t_value, value_k = !value
-                do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                do! TypeValue.Unify(loc0, t_value, case_t) |> Expr.liftUnification
-
-                let! union_t = union_t |> TypeValue.Instantiate loc0 |> Expr.liftInstantiation
-
-                return Expr.UnionCons(cons, value, loc0), union_t, Kind.Star
-              }
-          // |> state.MapError(
-          //   Errors.Map(
-          //     String.appendNewline
-          //       $"""...when typechecking `{cons.ToFSharpString}({value.ToFSharpString.ReasonablyClamped})` = ...`"""
           //   )
           // )
 
@@ -1164,6 +1136,12 @@ module TypeCheck =
 
                 do! TypeExprEvalState.bindType typeIdentifier typeDefinition |> Expr.liftTypeEval
 
+                let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Types.Scope)
+
+                let bind_component (v, t, k) : Updater<Map<Identifier, (TypeValue * Kind)>> =
+                  Map.add (Identifier.LocalScope v) (t, k)
+                  >> Map.add (Identifier.FullyQualified(typeIdentifier :: scope, v)) (t, k)
+
                 let! definition_cases =
                   typeDefinition
                   |> fst
@@ -1173,7 +1151,7 @@ module TypeCheck =
                   |> state.Map(Sum.toOption)
                   |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
 
-                do!
+                let! bind_definition_cases =
                   definition_cases
                   |> Option.map (fun definition_cases ->
                     definition_cases
@@ -1183,16 +1161,35 @@ module TypeCheck =
                         do!
                           TypeExprEvalState.bindUnionCaseConstructor k.Name.LocalName (argT, definition_cases)
                           |> Expr.liftTypeEval
+
+                        return
+                          bind_component (
+                            k.Name.LocalName,
+                            TypeValue.CreateRecord(
+                              OrderedMap.ofList
+                                [ TypeSymbol.Create(Identifier.LocalScope "cons"),
+                                  TypeValue.CreateArrow(argT, TypeValue.CreateUnion(definition_cases))
+                                  TypeSymbol.Create(Identifier.LocalScope "map"),
+                                  TypeValue.CreateArrow(
+                                    TypeValue.CreateArrow(argT, argT),
+                                    TypeValue.CreateArrow(
+                                      TypeValue.CreateUnion(definition_cases),
+                                      TypeValue.CreateUnion(definition_cases)
+                                    )
+                                  ) ]
+                            ),
+                            //
+                            Kind.Star
+                          )
                       })
-                    |> state.All
-                    |> state.Map ignore)
+                    |> state.All)
                   |> state.RunOption
-                  |> state.Map ignore
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Types(
                       TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
                     )
                   )
+                  |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
                 let! definition_fields =
                   typeDefinition
@@ -1203,7 +1200,7 @@ module TypeCheck =
                   |> state.Map(Sum.toOption)
                   |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
 
-                do!
+                let! bind_definition_fields =
                   definition_fields
                   |> Option.map (fun definition_fields ->
                     definition_fields
@@ -1213,18 +1210,40 @@ module TypeCheck =
                         do!
                           TypeExprEvalState.bindRecordField k.Name.LocalName (definition_fields, argT)
                           |> Expr.liftTypeEval
+
+                        return
+                          bind_component (
+                            k.Name.LocalName,
+                            TypeValue.CreateRecord(
+                              OrderedMap.ofList
+                                [ TypeSymbol.Create(Identifier.LocalScope "get"),
+                                  TypeValue.CreateArrow(TypeValue.CreateRecord(definition_fields), argT)
+                                  TypeSymbol.Create(Identifier.LocalScope "map"),
+                                  TypeValue.CreateArrow(
+                                    TypeValue.CreateArrow(argT, argT),
+                                    TypeValue.CreateArrow(
+                                      TypeValue.CreateRecord(definition_fields),
+                                      TypeValue.CreateRecord(definition_fields)
+                                    )
+                                  ) ]
+                            ),
+                            Kind.Star
+                          )
                       })
-                    |> state.All
-                    |> state.Map ignore)
+                    |> state.All)
                   |> state.RunOption
-                  |> state.Map ignore
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Types(
                       TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
                     )
                   )
+                  |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
-                return! !rest
+                let! rest, rest_t, rest_k =
+                  !rest
+                  |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
+
+                return Expr.TypeLet(typeIdentifier, typeDefinition |> fst, rest, loc0), rest_t, rest_k
               }
           // |> state.MapError(
           //   Errors.Map(

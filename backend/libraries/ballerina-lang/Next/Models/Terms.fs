@@ -24,7 +24,6 @@ module Model =
     | TypeLet of string * 'T * Expr<'T>
     | RecordCons of List<Identifier * Expr<'T>>
     | RecordWith of Expr<'T> * List<Identifier * Expr<'T>>
-    | UnionCons of Identifier * Expr<'T>
     | TupleCons of List<Expr<'T>>
     | SumCons of SumConsSelector
     | RecordDes of Expr<'T> * Identifier
@@ -63,7 +62,6 @@ module Model =
           |> String.concat "; "
 
         $"{{ {record.ToString()} with {fieldStr} }}"
-      | UnionCons(case, value) -> $"{case.LocalName}({value.ToString()})"
       | TupleCons values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"
@@ -135,8 +133,10 @@ module Model =
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * Expr<'T>
     | Lambda of Var * Expr<'T> * Map<Identifier, Value<'T, 'valueExt>>
-    | Record of Map<TypeSymbol, Value<'T, 'valueExt>>
+    | Record of Map<Identifier, Value<'T, 'valueExt>>
     | UnionCase of TypeSymbol * Value<'T, 'valueExt>
+    | RecordDes of TypeSymbol
+    | UnionCons of TypeSymbol
     | Tuple of List<Value<'T, 'valueExt>>
     | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
@@ -151,11 +151,13 @@ module Model =
         let fieldStr =
           fields
           |> Map.toList
-          |> List.map (fun (k, v) -> $"{k.Name} = {v.ToString()}")
+          |> List.map (fun (k, v) -> $"{k.LocalName} = {v.ToString()}")
           |> String.concat "; "
 
         $"{{ {fieldStr} }}"
       | UnionCase(case, value) -> $"{case.Name}({value.ToString()})"
+      | RecordDes ts -> ts.Name.LocalName
+      | UnionCons ts -> ts.Name.LocalName
       | Tuple values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"

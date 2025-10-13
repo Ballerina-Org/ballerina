@@ -12,6 +12,7 @@ module Model =
   type LauncherName = LauncherName of string
   type Label = Label of string
   type LanguageStreamType = LanguageStreamType of string
+  type GoImport = GoImport of string
 
   type EnumRendererType =
     | Option
@@ -25,7 +26,7 @@ module Model =
     { GeneratedTypeName: string
       ChunkTypeName: string
       ItemTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: ManySupportedRenderers
       MappingFunction: string }
@@ -84,12 +85,12 @@ module Model =
 
   and CodegenConfigInterfaceDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<GoImport> }
 
   and CodegenConfigErrorDef =
     { GeneratedTypeName: string
       Constructor: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<GoImport> }
 
   and TupleCodegenConfigTypeDef =
     { Ariety: int
@@ -97,7 +98,7 @@ module Model =
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
       Constructor: string
-      RequiredImport: Option<string> }
+      RequiredImport: Option<GoImport> }
 
   and CodegenConfigUnionDef =
     { SupportedRenderers: Set<RendererName> }
@@ -105,19 +106,19 @@ module Model =
   and CodegenConfigUnitDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigListDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
       MappingFunction: string }
 
   and CodegenConfigOneDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
       MappingFunction: string }
@@ -125,13 +126,13 @@ module Model =
 
   and CodegenConfigReadOnlyDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigTableDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
       MappingFunction: string
@@ -155,13 +156,13 @@ module Model =
 
   and CodegenConfigMapDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigSumDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
@@ -170,18 +171,18 @@ module Model =
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigOptionDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers:
         {| Enum: Set<RendererName>
@@ -190,7 +191,7 @@ module Model =
 
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
-      RequiredImport: Option<string>
+      RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers:
         {| Enum: Set<RendererName>

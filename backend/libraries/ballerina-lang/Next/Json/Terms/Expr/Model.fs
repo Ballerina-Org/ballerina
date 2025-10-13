@@ -24,7 +24,6 @@ module ExprJson =
             Expr.FromJsonLet Expr.FromJson json
             Expr.FromJsonTypeLet Expr.FromJson json
             Expr.FromJsonRecordCons Expr.FromJson json
-            Expr.FromJsonUnionCons Expr.FromJson json
             Expr.FromJsonTupleCons Expr.FromJson json
             Expr.FromJsonSumCons Expr.FromJson json
             Expr.FromJsonRecordDes Expr.FromJson json
@@ -53,7 +52,6 @@ module ExprJson =
         | ExprRec.TypeLet(v, e1, e2) -> Expr.ToJsonTypeLet Expr.ToJson v e1 e2
         | ExprRec.RecordCons t -> Expr.ToJsonRecordCons Expr.ToJson t
         | ExprRec.RecordWith _ -> failwith "not implemented"
-        | ExprRec.UnionCons(a, b) -> Expr.ToJsonUnionCons Expr.ToJson a b
         | ExprRec.TupleCons t -> Expr.ToJsonTupleCons Expr.ToJson t
         | ExprRec.SumCons(i) -> Expr.ToJsonSumCons Expr.ToJson i
         | ExprRec.RecordDes(v, e) -> Expr.ToJsonRecordDes Expr.ToJson v e

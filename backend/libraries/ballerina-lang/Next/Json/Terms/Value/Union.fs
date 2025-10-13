@@ -15,6 +15,7 @@ module Union =
   open Ballerina.DSL.Next.Json.Keys
 
   let private discriminator = "union-case"
+  let private discriminator_cons = "union-cons"
 
   type Value<'T, 'valueExtension> with
     static member FromJsonUnion
@@ -38,4 +39,23 @@ module Union =
         let k = TypeSymbol.ToJson k
         let! v = rootToJson v
         return [| k; v |] |> JsonValue.Array |> Json.discriminator discriminator
+      }
+
+    static member FromJsonUnionCons
+      (_fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (json: JsonValue)
+      : ValueParserReader<'T, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator_cons json (fun caseJson ->
+        reader {
+          let! k = caseJson |> TypeSymbol.FromJson |> reader.OfSum
+          return Value.UnionCons(k)
+        })
+
+    static member ToJsonUnionCons
+      (_rootToJson: ValueEncoder<'T, 'valueExtension>)
+      (k: TypeSymbol)
+      : ValueEncoderReader<'T> =
+      reader {
+        let k = TypeSymbol.ToJson k
+        return k |> Json.discriminator discriminator_cons
       }

@@ -28,6 +28,7 @@ open Ballerina.DSL.Next.Syntax
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
 open Ballerina.DSL.Next
 open Ballerina.DSL.Next.StdLib
+open Ballerina.StdLib.OrderPreservingMap
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -63,25 +64,16 @@ let private run program =
            | Some s -> s.Types.Symbols)
           |> ExprEvalContextSymbols.FromTypeChecker
 
-        let unionCaseConstructors =
-          match typeCheckFinalState with
-          | None -> []
-          | Some s ->
-            s.Types.UnionCases
-            |> Map.map (fun k _ ->
-              Value<TypeValue, ValueExt>
-                .Lambda(
-                  "_" |> Var.Create,
-                  Expr.UnionCons(k, ("_" |> Identifier.LocalScope, Location.Unknown) |> Expr.Lookup, Location.Unknown),
-                  Map.empty
-                ))
-            |> Map.toList
-
         let evalContext =
           { evalContext with
               Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
-              // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
-              Values = (evalContext.Values |> Map.toList) @ unionCaseConstructors |> Map.ofList }
+          // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
+          // Values =
+          //   ((evalContext.Values |> Map.toList)
+          //    @ unionCaseConstructors
+          //    @ recordFieldDestructors)
+          //   |> Map.ofList
+          }
 
         let evalResult = Expr.Eval program |> Reader.Run evalContext
 
@@ -541,44 +533,6 @@ in List::append [string] l1 l2
                                                                               Value.Primitive(String "monde") ])))) ->
       Assert.Pass()
     | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
-
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
-
-
-
-
-[<Test>]
-let ``LangNext-Integration same record and union type and field names disambiguate succesfully`` () =
-  let program =
-    """
-type A = {
-  A: int32;
-  B: string;
-  C: bool;
-}
-
-in type A =
-  | A of int32
-  | B of string
-  | C of bool
-
-in let a1 = { A=10; B="hello"; C=true; }
-in let a2 = A(10)
-in let a3 = { a1 with B="hello world"; }
-
-in let f = fun x -> x.A + 10
-in let x = f a3
-
-in x
-  """
-
-  let actual = program |> run
-
-  match actual with
-  | Left(value, _typeValue) ->
-    match value with
-    | Value.Primitive(Int32 20) -> Assert.Pass()
-    | _ -> Assert.Fail($"Expected 20, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
 

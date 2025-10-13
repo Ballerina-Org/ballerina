@@ -78,9 +78,8 @@ module Traverser =
           let! s = state.GetState()
 
           return
-            [ TypeSymbol.Create(Identifier.LocalScope "Guid"),
-              ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
-              TypeSymbol.Create(Identifier.LocalScope "Name"),
+            [ Identifier.LocalScope "Guid", ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
+              Identifier.LocalScope "Name",
               s.InfinitiveVarNamesIndex
               |> (VarName >> ctx.Generator.String >> PrimitiveValue.String >> Value.Primitive) ]
             |> Map.ofList
@@ -98,12 +97,7 @@ module Traverser =
           let! k = !key
           let! v = !value
 
-          return
-            Value.Record(
-              Map.ofList
-                [ TypeSymbol.Create(Identifier.LocalScope "Key"), k
-                  TypeSymbol.Create(Identifier.LocalScope "Value"), v ]
-            )
+          return Value.Record(Map.ofList [ Identifier.LocalScope "Key", k; Identifier.LocalScope "Value", v ])
 
         | TypeValue.Union cases ->
           let! ctx = state.GetContext()
@@ -142,7 +136,7 @@ module Traverser =
             |> List.map (fun (ts, tv) ->
               state {
                 let! v = !! ts.Name.LocalName tv
-                return ts, v
+                return ts.Name.LocalName |> Identifier.LocalScope, v
               })
             |> state.All
 

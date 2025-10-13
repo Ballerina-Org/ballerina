@@ -119,17 +119,6 @@ let ``Dsl:Terms:Expr.RecordCons json round-trip`` () =
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
 
 [<Test>]
-let ``Dsl:Terms:Expr.UnionCons json round-trip`` () =
-  let json =
-    """{"discriminator":"union-case","value":[{"discriminator":"id","value":"Foo"},{"discriminator":"int32","value":"42"}]}"""
-
-  let expected: Expr<TypeExpr> =
-    Expr.UnionCons(!"Foo", Expr.Primitive(PrimitiveValue.Int32 42))
-
-  (expected, JsonValue.Parse json)
-  ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
-
-[<Test>]
 let ``Dsl:Terms:Expr.TupleCons json round-trip`` () =
   let json =
     """{"discriminator":"tuple-cons","value":[{"discriminator":"int32","value":"1"},{"discriminator":"string","value":"two"}]}"""

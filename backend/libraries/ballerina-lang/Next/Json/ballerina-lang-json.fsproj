@@ -49,7 +49,6 @@
 
         <Compile Include="Terms\Primitive.fs" />
         <Compile Include="Terms\Expr\UnionDes.fs" />
-        <Compile Include="Terms\Expr\UnionCons.fs" />
         <Compile Include="Terms\Expr\TypeLet.fs" />
         <Compile Include="Terms\Expr\TypeLambda.fs" />
         <Compile Include="Terms\Expr\TypeApply.fs" />

@@ -586,6 +586,10 @@ module Expr =
 
                   let precedence: List<OperatorsPrecedence<BinaryExprOperator>> =
                     [ { Operators =
+                          [ BinaryExprOperator.DoubleGreaterThan; BinaryExprOperator.PipeGreaterThan ]
+                          |> Set.ofList
+                        Associativity = AssociateLeft }
+                      { Operators =
                           [ BinaryExprOperator.Div; BinaryExprOperator.Times; BinaryExprOperator.Mod ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
@@ -607,11 +611,22 @@ module Expr =
                     collapseBinaryOperatorsChain
                       { Compose =
                           fun (e1, op, e2) ->
-                            Expr.Apply(
-                              Expr.Apply(Expr.Lookup(Identifier.LocalScope(op.ToString()), loc), e1, loc),
-                              e2,
-                              loc
-                            )
+                            match op with
+                            | BinaryExprOperator.DoubleGreaterThan ->
+                              // Expr.Apply(Expr.Apply(Expr.Lookup(Identifier.LocalScope(">>"), loc), e1, loc), e2, loc)
+                              Expr.Lambda(
+                                Var.Create "x",
+                                None,
+                                Expr.Apply(e2, Expr.Apply(e1, Expr.Lookup(Identifier.LocalScope("x"), loc), loc), loc),
+                                loc
+                              )
+                            | BinaryExprOperator.PipeGreaterThan -> Expr.Apply(e2, e1, loc)
+                            | _ ->
+                              Expr.Apply(
+                                Expr.Apply(Expr.Lookup(Identifier.LocalScope(op.ToString()), loc), e1, loc),
+                                e2,
+                                loc
+                              )
                         ToExpr = id }
                       loc
                       precedence
@@ -630,7 +645,6 @@ module Expr =
                   return
                     ids
                     |> NonEmptyList.ToList
-                    |> List.rev
                     |> List.fold
                       (fun acc id ->
                         match id with

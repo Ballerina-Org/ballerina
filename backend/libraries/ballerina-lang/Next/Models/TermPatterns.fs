@@ -77,7 +77,7 @@ module Patterns =
       | other -> sum.Throw(Errors.Singleton $"Expected a unit but got {other}")
 
   type Value<'T, 'valueExt> with
-    static member AsRecord(v: Value<'T, 'valueExt>) : Sum<Map<TypeSymbol, Value<'T, 'valueExt>>, Errors> =
+    static member AsRecord(v: Value<'T, 'valueExt>) : Sum<Map<Identifier, Value<'T, 'valueExt>>, Errors> =
       match v with
       | Value.Record m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a record type but got {other}")
@@ -91,6 +91,16 @@ module Patterns =
       match v with
       | Value.UnionCase(s, v) -> sum.Return(s, v)
       | other -> sum.Throw(Errors.Singleton $"Expected a union type but got {other}")
+
+    static member AsUnionCons(v: Value<'T, 'valueExt>) : Sum<TypeSymbol, Errors> =
+      match v with
+      | Value.UnionCons(s) -> sum.Return(s)
+      | other -> sum.Throw(Errors.Singleton $"Expected a union cons but got {other}")
+
+    static member AsRecordDes(v: Value<'T, 'valueExt>) : Sum<TypeSymbol, Errors> =
+      match v with
+      | Value.RecordDes(s) -> sum.Return(s)
+      | other -> sum.Throw(Errors.Singleton $"Expected a record des but got {other}")
 
     static member AsSum(v: Value<'T, 'valueExt>) : Sum<SumConsSelector * Value<'T, 'valueExt>, Errors> =
       match v with
@@ -179,13 +189,6 @@ module Patterns =
       { Expr = RecordWith(record, fields)
         Location = Location.Unknown }
 
-    static member UnionCons(id: Identifier, e: Expr<'T>, loc: Location) =
-      { Expr = UnionCons(id, e)
-        Location = loc }
-
-    static member UnionCons(id: Identifier, e: Expr<'T>) =
-      Expr<'T>.UnionCons(id, e, Location.Unknown)
-
     static member TupleCons(elements: List<Expr<'T>>, loc: Location) =
       { Expr = TupleCons(elements)
         Location = loc }
@@ -201,14 +204,14 @@ module Patterns =
       Expr<'T>.SumCons(selector, Location.Unknown)
 
     static member RecordDes(e: Expr<'T>, id: Identifier, loc: Location) =
-      { Expr = RecordDes(e, id)
+      { Expr = ExprRec.RecordDes(e, id)
         Location = loc }
 
     static member RecordDes(e: Expr<'T>, id: Identifier) =
       Expr<'T>.RecordDes(e, id, Location.Unknown)
 
     static member UnionDes(cases: Map<Identifier, CaseHandler<'T>>, fallback: Option<Expr<'T>>, loc: Location) =
-      { Expr = UnionDes(cases, fallback)
+      { Expr = ExprRec.UnionDes(cases, fallback)
         Location = loc }
 
     static member UnionDes(cases: Map<Identifier, CaseHandler<'T>>, fallback: Option<Expr<'T>>) =
@@ -245,11 +248,6 @@ module Patterns =
       match e.Expr with
       | UnionDes(m, f) -> sum.Return(m, f)
       | other -> sum.Throw(Errors.Singleton $"Expected a union destruct but got {other}")
-
-    static member AsUnionCons(e: Expr<'T>) : Sum<Identifier * Expr<'T>, Errors> =
-      match e.Expr with
-      | UnionCons(s, m) -> sum.Return(s, m)
-      | other -> sum.Throw(Errors.Singleton $"Expected a union construct but got {other}")
 
     static member AsTypeLet(e: Expr<'T>) : Sum<string * 'T * Expr<'T>, Errors> =
       match e.Expr with
@@ -288,12 +286,12 @@ module Patterns =
 
     static member AsRecordDes(e: Expr<'T>) : Sum<Expr<'T> * Identifier, Errors> =
       match e.Expr with
-      | RecordDes(e, s) -> sum.Return(e, s)
+      | ExprRec.RecordDes(e, s) -> sum.Return(e, s)
       | other -> sum.Throw(Errors.Singleton $"Expected a record destruct but got {other}")
 
     static member AsRecordCons(e: Expr<'T>) : Sum<List<Identifier * Expr<'T>>, Errors> =
       match e.Expr with
-      | RecordCons m -> sum.Return m
+      | ExprRec.RecordCons m -> sum.Return m
       | other -> sum.Throw(Errors.Singleton $"Expected a record construct but got {other}")
 
     static member AsPrimitive(e: Expr<'T>) : Sum<PrimitiveValue, Errors> =

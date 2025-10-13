@@ -61,9 +61,6 @@ module TypeEval =
               |> state.All
 
             return Expr.RecordCons(fieldTypes, expr.Location)
-          | ExprRec.UnionCons(name, value) ->
-            let! valueType = !value
-            return Expr.UnionCons(name, valueType, expr.Location)
           | ExprRec.TupleCons values ->
             let! valueTypes = values |> List.map (!) |> state.All
             return Expr.TupleCons(valueTypes, expr.Location)

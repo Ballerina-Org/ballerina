@@ -23,15 +23,14 @@ module Value =
       | [ lastStep ] ->
         let! target = Value.AsRecord into
         let! field = UpdaterPathStep.AsField lastStep
-        let symbol = TypeSymbol.Create(Identifier.LocalScope field)
-        return Value.Record(Map.add symbol value target)
+        return Value.Record(Map.add (Identifier.LocalScope field) value target)
       | step :: rest ->
         match into, step with
         | Value.Record r, UpdaterPathStep.Field f ->
           let! ts, v =
             r
             |> Map.tryFindByWithError
-              (fun (ts, _) -> ts.Name.LocalName = f)
+              (fun (ts, _) -> ts.LocalName = f)
               "value insert"
               $"field '{f}' not present in record"
 

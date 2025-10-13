@@ -39,6 +39,8 @@ module Common =
   let openCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Open)
   let closeCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Close)
   let equalsOperator = parseOperator (Operator.Equals)
+  let pipeGreaterThanOperator = parseOperator (Operator.PipeGreaterThan)
+  let doubleGreaterThanOperator = parseOperator (Operator.DoubleGreaterThan)
 
   type BinaryExprOperator =
     | Times
@@ -54,6 +56,8 @@ module Common =
     | LessThan
     | GreaterEqual
     | LessThanOrEqual
+    | PipeGreaterThan
+    | DoubleGreaterThan
 
     override this.ToString() =
       match this with
@@ -70,6 +74,8 @@ module Common =
       | LessThan -> "<"
       | GreaterEqual -> ">="
       | LessThanOrEqual -> "<="
+      | PipeGreaterThan -> "|>"
+      | DoubleGreaterThan -> ">>"
 
   let binaryExprOperator =
     parser.Any
@@ -92,7 +98,11 @@ module Common =
         parseOperator Operator.GreaterEqual
         |> parser.Map(fun () -> BinaryExprOperator.GreaterEqual)
         parseOperator Operator.LessThanOrEqual
-        |> parser.Map(fun () -> BinaryExprOperator.LessThanOrEqual) ]
+        |> parser.Map(fun () -> BinaryExprOperator.LessThanOrEqual)
+        parseOperator Operator.PipeGreaterThan
+        |> parser.Map(fun () -> BinaryExprOperator.PipeGreaterThan)
+        parseOperator Operator.DoubleGreaterThan
+        |> parser.Map(fun () -> BinaryExprOperator.DoubleGreaterThan) ]
 
   type BinaryTypeOperator =
     | Times
