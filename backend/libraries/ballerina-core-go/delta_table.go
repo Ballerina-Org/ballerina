@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 
-	ballerina "ballerina.com/core"
 	"github.com/google/uuid"
 )
 
@@ -124,7 +123,7 @@ func NewDeltaTableRemoveAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, del
 func NewDeltaTableRemoveAll[a any, deltaA any]() DeltaTable[a, deltaA] {
 	return DeltaTable[a, deltaA]{
 		discriminator: tableRemoveAll,
-		removeAll:     ballerina.NewUnit(),
+		removeAll:     NewUnit(),
 	}
 }
 func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {

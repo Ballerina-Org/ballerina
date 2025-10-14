@@ -3,8 +3,6 @@ package ballerina
 import (
 	"bytes"
 	"encoding/json"
-
-	ballerina "ballerina.com/core"
 )
 
 type deltaArrayEffectsEnum string
@@ -134,7 +132,7 @@ func NewDeltaArrayRemoveAt[a any, deltaA any](index int) DeltaArray[a, deltaA] {
 func NewDeltaArrayRemoveAll[a any, deltaA any]() DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
 		discriminator: arrayRemoveAll,
-		removeAll:     ballerina.NewUnit(),
+		removeAll:     NewUnit(),
 	}
 }
 func NewDeltaArrayMoveFromTo[a any, deltaA any](from int, to int) DeltaArray[a, deltaA] {
