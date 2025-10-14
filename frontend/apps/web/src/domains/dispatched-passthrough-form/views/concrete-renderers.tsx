@@ -1365,6 +1365,13 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
       return (
         <>
+          {props.foreignMutations.removeAll && (
+            <button
+              onClick={() => props.foreignMutations.removeAll!(undefined)}
+            >
+              removeAll
+            </button>
+          )}
           <h3>{props.context.label}</h3>
           <div
             style={{

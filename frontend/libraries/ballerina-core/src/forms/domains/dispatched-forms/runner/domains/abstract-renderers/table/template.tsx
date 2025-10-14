@@ -766,6 +766,27 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
+              removeAll: !props.context.apiMethods.includes("removeAll")
+                ? undefined
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableRemoveAll",
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {

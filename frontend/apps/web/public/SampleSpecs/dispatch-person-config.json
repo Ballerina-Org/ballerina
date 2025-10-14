@@ -646,7 +646,7 @@
     "tables": {
       "ActiveUsersApi": {
         "type": "User",
-        "methods": ["move", "duplicate"],
+        "methods": ["move", "duplicate", "removeAll"],
         "sorting": ["Name", "City"],
         "highlightedFilters": ["Name"],
         "filtering": {
@@ -668,7 +668,7 @@
       },
       "ActiveFriendsApi": {
         "type": "Friend",
-        "methods": ["remove"]
+        "methods": ["remove", "removeAll"]
       },
       "ChildrenApi": {
         "type": "User"
@@ -1530,6 +1530,7 @@
           "actions": {
             "add": "add",
             "remove": "remove",
+            "removeAll": "removeAll",
             "move": "move",
             "duplicate": "duplicate"
           }

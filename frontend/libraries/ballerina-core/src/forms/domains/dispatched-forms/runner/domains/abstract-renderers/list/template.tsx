@@ -376,6 +376,27 @@ export const ListAbstractRenderer = <
                       ),
                     );
                   },
+              removeAll: !methods.includes("removeAll")
+                ? undefined
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "ArrayRemoveAll",
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
               move: !methods.includes("move")
                 ? undefined
                 : (index, to, flags) => {
