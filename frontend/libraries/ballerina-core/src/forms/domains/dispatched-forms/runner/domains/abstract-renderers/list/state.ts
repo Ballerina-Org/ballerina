@@ -87,6 +87,7 @@ export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   insert?: ValueCallbackWithOptionalFlags<number, Flags>;
   setApplyToAll: SimpleCallback<boolean>;
   applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
+  removeAll?: VoidCallbackWithOptionalFlags<Flags>;
 };
 
 export type ListAbstractRendererView<

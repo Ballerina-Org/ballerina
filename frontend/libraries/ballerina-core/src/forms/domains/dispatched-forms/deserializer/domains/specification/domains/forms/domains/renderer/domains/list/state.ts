@@ -18,6 +18,7 @@ export type SerializedListRenderer = {
 export const ListMethod = {
   add: "add",
   remove: "remove",
+  removeAll: "removeAll",
   move: "move",
   duplicate: "duplicate",
 } as const;
