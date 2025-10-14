@@ -155,6 +155,11 @@ export type DispatchDeltaList<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "ArrayRemoveAll";
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "ArrayMoveFromTo";
       from: number;
       to: number;
@@ -318,6 +323,11 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "TableRemoveAll";
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "TableMoveTo";
       id: string;
       to: string;
@@ -409,6 +419,7 @@ export type DispatchDeltaTransferList<DispatchDeltaTransferCustom> =
     }
   | { Discriminator: "ArrayAddAt"; AddAt: DispatchTransferTuple2<number, any> }
   | { Discriminator: "ArrayRemoveAt"; RemoveAt: number }
+  | { Discriminator: "ArrayRemoveAll"; RemoveAll: Unit }
   | {
       Discriminator: "ArrayMoveFromTo";
       MoveFromTo: DispatchTransferTuple2<number, number>;
@@ -472,6 +483,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
     }
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
+  | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
   | {
       Discriminator: "TableMoveFromTo";
@@ -927,6 +939,23 @@ export const DispatchDeltaTransfer = {
               },
               `[ArrayRemoveAt]`,
               delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : [],
+            ]);
+          }
+          if (delta.kind == "ArrayRemoveAll") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "ArrayRemoveAll",
+                RemoveAll: unit,
+              },
+              `[ArrayRemoveAll]`,
+              delta.flags ? [[delta.flags, "[ArrayRemoveAll]"]] : [],
             ]);
           }
           if (delta.kind == "ArrayMoveFromTo") {
@@ -1434,6 +1463,23 @@ export const DispatchDeltaTransfer = {
               delta.flags
                 ? [[delta.flags, `[TableRemoveAt][${delta.id}]`]]
                 : [],
+            ]);
+          }
+          if (delta.kind == "TableRemoveAll") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableRemoveAll",
+                RemoveAll: unit,
+              },
+              `[TableRemoveAll]`,
+              delta.flags ? [[delta.flags, "[TableRemoveAll]"]] : [],
             ]);
           }
           if (delta.kind == "TableDuplicate") {
