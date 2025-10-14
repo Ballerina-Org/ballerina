@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 
+	ballerina "ballerina.com/core"
 	"github.com/google/uuid"
 )
 
@@ -14,6 +15,7 @@ const (
 	tableValueAll    deltaTableEffectsEnum = "TableValueAll"
 	tableAddAt       deltaTableEffectsEnum = "TableAddAt"
 	tableRemoveAt    deltaTableEffectsEnum = "TableRemoveAt"
+	tableRemoveAll   deltaTableEffectsEnum = "TableRemoveAll"
 	tableMoveFromTo  deltaTableEffectsEnum = "TableMoveFromTo"
 	tableDuplicateAt deltaTableEffectsEnum = "TableDuplicateAt"
 	tableAdd         deltaTableEffectsEnum = "TableAdd"
@@ -27,6 +29,7 @@ type DeltaTable[a any, deltaA any] struct {
 	valueAll      *deltaA
 	addAt         *Tuple2[uuid.UUID, a]
 	removeAt      *uuid.UUID
+	removeAll     Unit
 	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 	duplicateAt   *uuid.UUID
 	add           *a
@@ -43,6 +46,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		ValueAll      *deltaA
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
+		RemoveAll     Unit
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
@@ -53,6 +57,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		ValueAll:      d.valueAll,
 		AddAt:         d.addAt,
 		RemoveAt:      d.removeAt,
+		RemoveAll:     d.removeAll,
 		MoveFromTo:    d.moveFromTo,
 		DuplicateAt:   d.duplicateAt,
 		Add:           d.add,
@@ -67,6 +72,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 		ValueAll      *deltaA
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
+		RemoveAll     Unit
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
@@ -82,6 +88,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.valueAll = aux.ValueAll
 	d.addAt = aux.AddAt
 	d.removeAt = aux.RemoveAt
+	d.removeAll = aux.RemoveAll
 	d.moveFromTo = aux.MoveFromTo
 	d.duplicateAt = aux.DuplicateAt
 	d.add = aux.Add
@@ -114,6 +121,12 @@ func NewDeltaTableRemoveAt[a any, deltaA any](index uuid.UUID) DeltaTable[a, del
 		removeAt:      &index,
 	}
 }
+func NewDeltaTableRemoveAll[a any, deltaA any]() DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		discriminator: tableRemoveAll,
+		removeAll:     ballerina.NewUnit(),
+	}
+}
 func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {
 	move := NewTuple2(from, to)
 	return DeltaTable[a, deltaA]{
@@ -144,6 +157,7 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 	onValueAll func(deltaA) (Result, error),
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
+	onRemoveAll func() (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
@@ -166,6 +180,8 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 				return onAddAt(*delta.addAt)
 			case tableRemoveAt:
 				return onRemoveAt(*delta.removeAt)
+			case tableRemoveAll:
+				return onRemoveAll()
 			case tableMoveFromTo:
 				return onMoveFromTo(*delta.moveFromTo)
 			case tableDuplicateAt:
