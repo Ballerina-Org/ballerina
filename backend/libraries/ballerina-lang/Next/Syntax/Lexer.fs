@@ -327,8 +327,15 @@ module Lexer =
       let! frac_part =
         tokenizer {
           do! dot |> tokenizer.Ignore
-          return! digit |> tokenizer.AtLeastOne
+          let! digits = digit |> tokenizer.AtLeastOne
 
+          do!
+            tokenizer.Any [ dot |> tokenizer.Ignore ]
+            |> tokenizer.Not
+            |> tokenizer.Lookahead
+            |> tokenizer.Ignore
+
+          return digits
         }
         |> tokenizer.Try
         |> tokenizer.Map Sum.toOption
@@ -384,10 +391,41 @@ module Lexer =
               return LocalizedToken.FromCaseLiteral (value, total) loc
     }
 
+  let tupleItem =
+    tokenizer {
+      do! dot |> tokenizer.Ignore
+      let! digits = digit |> tokenizer.AtLeastOne
+      let literal = String.Concat(digits)
+      let mutable value = 0
+      let! loc = tokenizer.Location
+
+      if not (System.Int32.TryParse(literal, &value)) then
+        return!
+          (loc, $"Cannot parse tuple item literal {literal} at {loc}")
+          |> Errors.Singleton
+          |> tokenizer.Throw
+      else
+        return
+          [ LocalizedToken.FromOperator Operator.Dot loc
+            LocalizedToken.FromIntLiteral value loc ]
+    }
+
   let rec token =
     tokenizer {
       do! whitespace |> tokenizer.Try |> tokenizer.Ignore
-      let! t = tokenizer.Any [ keyword; comment; stringLiteral; numberOrCaseLiteral; operator; identifier ]
+
+      let cons x = [ x ]
+
+      let! t =
+        tokenizer.Any
+          [ keyword |> tokenizer.Map cons
+            comment |> tokenizer.Map cons
+            stringLiteral |> tokenizer.Map cons
+            tupleItem
+            numberOrCaseLiteral |> tokenizer.Map cons
+            operator |> tokenizer.Map cons
+            identifier |> tokenizer.Map cons ]
+
       do! tokenizer.Any [ whitespace; eos ] |> tokenizer.Try |> tokenizer.Ignore
       return t
     }
@@ -395,6 +433,7 @@ module Lexer =
   let rec tokens =
     tokenizer {
       let! res = token |> tokenizer.Many
+      let res = res |> List.concat
 
       let res =
         res

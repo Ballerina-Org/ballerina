@@ -11,12 +11,13 @@ module Value =
   open FSharp.Data
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
+  open Ballerina.DSL.Next.Types
 
   type Value<'T, 'valueExtension> with
     static member FromJson
-      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       reader.Any(
         Value.FromJsonPrimitive json,
         [ Value.FromJsonRecord fromJsonRoot json
@@ -46,6 +47,6 @@ module Value =
       | Value.Tuple vs -> Value.ToJsonTuple toJsonRoot vs
       | Value.Sum(i, v) -> Value.ToJsonSum toJsonRoot i v
       | Value.Var v -> Value.ToJsonVar v |> reader.Return
-      | Value.Lambda(a, b, _closure) -> Value.ToJsonLambda a b
+      | Value.Lambda(a, b, _closure, _) -> Value.ToJsonLambda a b
       | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
       | Value.Ext e -> reader.Throw(Errors.Singleton $"Extension parsing not yet implemented: {e}")

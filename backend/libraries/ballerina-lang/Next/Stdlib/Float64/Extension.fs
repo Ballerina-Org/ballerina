@@ -21,9 +21,10 @@ module Extension =
   let Float64Extension<'ext>
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
     : OperationsExtension<'ext, Float64Operations<'ext>> =
-    let float64PlusId = Identifier.FullyQualified([ "float64" ], "+")
+    let float64PlusId =
+      Identifier.FullyQualified([ "float64" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PlusId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -58,9 +59,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure + v))
             } }
 
-    let float64MinusId = Identifier.FullyQualified([ "float64" ], "-")
+    let float64MinusId =
+      Identifier.FullyQualified([ "float64" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64MinusId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -84,9 +86,10 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(-v))
             } }
 
-    let float64DivideId = Identifier.FullyQualified([ "float64" ], "/")
+    let float64DivideId =
+      Identifier.FullyQualified([ "float64" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64DivideId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -121,9 +124,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure / v))
             } }
 
-    let float64PowerId = Identifier.FullyQualified([ "float64" ], "**")
+    let float64PowerId =
+      Identifier.FullyQualified([ "float64" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PowerId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -164,9 +168,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(pown vClosure v))
             } }
 
-    let float64ModId = Identifier.FullyQualified([ "float64" ], "%")
+    let float64ModId =
+      Identifier.FullyQualified([ "float64" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64ModId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -201,9 +206,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure % v))
             } }
 
-    let float64EqualId = Identifier.FullyQualified([ "float64" ], "==")
+    let float64EqualId =
+      Identifier.FullyQualified([ "float64" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64EqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -238,9 +244,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let float64NotEqualId = Identifier.FullyQualified([ "float64" ], "!=")
+    let float64NotEqualId =
+      Identifier.FullyQualified([ "float64" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64NotEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -275,9 +282,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let float64GreaterThanId = Identifier.FullyQualified([ "float64" ], ">")
+    let float64GreaterThanId =
+      Identifier.FullyQualified([ "float64" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -312,9 +320,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let float64GreaterThanOrEqualId = Identifier.FullyQualified([ "float64" ], ">=")
+    let float64GreaterThanOrEqualId =
+      Identifier.FullyQualified([ "float64" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -352,9 +361,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let float64LessThanId = Identifier.FullyQualified([ "float64" ], "<")
+    let float64LessThanId =
+      Identifier.FullyQualified([ "float64" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -389,9 +399,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let float64LessThanOrEqualId = Identifier.FullyQualified([ "float64" ], "<=")
+    let float64LessThanOrEqualId =
+      Identifier.FullyQualified([ "float64" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
