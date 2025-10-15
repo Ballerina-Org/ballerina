@@ -20,7 +20,8 @@ import {
   Updater,
 } from "../../../../../../../../main";
 import { DispatchPassthroughFormRunner } from "./coroutines/runner";
-import { Map } from "immutable";
+import { Map, OrderedMap } from "immutable";
+import { useEffect } from "react";
 
 export const DispatchPassthroughFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
@@ -51,6 +52,26 @@ export const DispatchPassthroughFormLauncherTemplate = <
   >((props) => {
     const entity = props.context.launcherRef.entity;
     const config = props.context.launcherRef.config;
+
+    useEffect(() => {
+      if (entity.kind == "r") return;
+      if (entity.value.kind == "errors") return;
+      const a = performance.now();
+      const sig = PredicateValue.Operations.GenerateSignature(
+        PredicateValue.Default.record(
+          OrderedMap<string, PredicateValue>([
+            ["Hello", "Hello"],
+            ["World", "2"],
+            ["3", false]
+          ]),
+        ),
+      );
+      const b = performance.now();
+      console.debug(`Time taken: ${b - a} milliseconds`);
+      console.debug(sig);
+    }, [entity.value]);
+
+    const a = performance.now();
 
     if (
       entity.kind == "r" ||

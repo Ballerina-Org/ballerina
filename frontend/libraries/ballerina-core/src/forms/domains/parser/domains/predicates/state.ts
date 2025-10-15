@@ -13,6 +13,57 @@ import {
   Guid,
   FilterTypeKind,
 } from "../../../../../../main";
+import {
+  hash64,
+  salt,
+  mix64,
+  foldMix,
+  mix1,
+} from "../../../../../hashing/state";
+
+const SALT_MAP = {
+  string: salt("string"),
+  number: salt("number"),
+  boolean: salt("boolean"),
+  date: salt("date"),
+  unit: salt("unit"),
+  tuple: salt("tuple"),
+  record: salt("record"),
+  sum: salt("sum"),
+  unionCase: salt("unionCase"),
+  table: salt("table"),
+  data: salt("data"),
+  option: salt("option"),
+  readOnly: salt("readOnly"),
+};
+
+// 1) salts (fixed constants)
+const SALT = {
+  record:  0xdeadbeefcafebaben,
+  keyStr:  0x6f1a2b3c4d5e7081n,
+  keyNum:  0x1133557799aabbccn,
+  keyBool: 0x3141592653589793n,
+  keySym:  0x8675309abcddc0den,
+} as const;
+
+// 2) helpers
+const numCanon = (n: number) =>
+  Object.is(n, -0) ? "0" : Number.isNaN(n) ? "NaN" : String(n);
+
+const strCanon = (s: string) => s.normalize("NFC"); // canonical Unicode
+
+// Type-aware key signature (do NOT use .toString() blindly)
+const keySig = (k: unknown): { sig: bigint; keyStr: string; kind: string } => {
+  switch (typeof k) {
+    case "string":  return { sig: mix64(SALT.keyStr,  hash64(strCanon(k))), keyStr: strCanon(k), kind: "str" };
+    case "number":  { const s = numCanon(k); return { sig: mix64(SALT.keyNum,  hash64(s)), keyStr: s, kind: "num" }; }
+    case "boolean": { const s = k ? "1" : "0";     return { sig: mix64(SALT.keyBool, hash64(s)), keyStr: s, kind: "bool" }; }
+    case "symbol":  { const s = k.description ?? ""; return { sig: mix64(SALT.keySym,  hash64(s)), keyStr: s, kind: "sym" }; }
+    default:
+      // If your records never use object keys, fail fast (recommended):
+      throw new Error("Non-primitive record key not supported");
+  }
+};
 
 export type TuplePredicateExpression = {
   kind: "tuple";
@@ -1242,6 +1293,110 @@ export const PredicateValue = {
         .valueSeq()
         .toArray();
       return PredicateValue.Default.tuple(List(valuesSortedByName));
+    },
+    GenerateSignature: (value: PredicateValue): bigint => {
+      // base cases
+      if (PredicateValue.Operations.IsString(value)) {
+        return mix64(SALT_MAP.string, hash64(value));
+      }
+      if (PredicateValue.Operations.IsNumber(value)) {
+        const v = Object.is(value, -0)
+          ? "0"
+          : Number.isNaN(value)
+            ? "NaN"
+            : String(value);
+        return mix64(SALT_MAP.number, hash64(v));
+      }
+      if (PredicateValue.Operations.IsBoolean(value)) {
+        return mix64(SALT_MAP.boolean, hash64(String(value)));
+      }
+      if (PredicateValue.Operations.IsDate(value)) {
+        return mix64(SALT_MAP.date, hash64(value.toISOString()));
+      }
+      if (PredicateValue.Operations.IsUnit(value)) {
+        return mix64(SALT_MAP.unit, hash64("unit"));
+      }
+      // recursive cases
+      if (PredicateValue.Operations.IsTuple(value)) {
+        return foldMix(
+          mix1(SALT_MAP.tuple, hash64(`${value.values.size}`)),
+          value.values
+            .map(PredicateValue.Operations.GenerateSignature)
+            .toArray(),
+        );
+      }
+      if (PredicateValue.Operations.IsRecord(value)) {
+        // Build pairs once (no re-lookup after sorting)
+        const pairs = value.fields
+          .entrySeq() // [[key, val], ...] from Immutable OrderedMap/Map
+          .map(([k, v]) => {
+            const ks = keySig(k);
+            const vs = PredicateValue.Operations.GenerateSignature(v);
+            return { kSig: ks.sig, kStr: ks.keyStr, kKind: ks.kind, vSig: vs };
+          })
+          .toArray();
+      
+        // Stable sort with collision-safe tie-breakers:
+        // 1) kSig (BigInt), 2) key kind, 3) keyStr
+        pairs.sort((a, b) => {
+          if (a.kSig < b.kSig) return -1;
+          if (a.kSig > b.kSig) return  1;
+          // hash collision tie-breakers (extremely rare but makes order deterministic)
+          if (a.kKind < b.kKind) return -1;
+          if (a.kKind > b.kKind) return  1;
+          return a.kStr < b.kStr ? -1 : a.kStr > b.kStr ? 1 : 0;
+        });
+      
+        // Fold: mix (keySig, valueSig) per field, then fold all with record salt
+        const parts = pairs.map(({ kSig, vSig }) => mix64(kSig, vSig));
+        return foldMix(SALT.record, parts);
+      }
+
+      if (PredicateValue.Operations.IsSum(value)) {
+        return foldMix(SALT_MAP.sum, [
+          hash64(value.value.kind),
+          PredicateValue.Operations.GenerateSignature(value.value.value),
+        ]);
+      }
+      if (PredicateValue.Operations.IsUnionCase(value)) {
+        return foldMix(SALT_MAP.unionCase, [
+          hash64(value.caseName),
+          PredicateValue.Operations.GenerateSignature(value.fields),
+        ]);
+      }
+
+      if (PredicateValue.Operations.IsTable(value)) {
+        const parts = value.data
+          .keySeq()
+          .toArray()
+          .sort() // canonical order
+          .map((k) =>
+            mix64(hash64(String(k)), PredicateValue.Operations.GenerateSignature(value.data.get(k)!)),
+          );
+        return foldMix(SALT_MAP.table, [
+          hash64(String(value.from)),
+          hash64(String(value.to)),
+          foldMix(SALT_MAP.data, parts),
+        ]);
+      }
+
+      if (PredicateValue.Operations.IsOption(value)) {
+        return value.isSome
+          ? foldMix(SALT_MAP.option, [
+              hash64("Some"),
+              PredicateValue.Operations.GenerateSignature(value.value),
+            ])
+          : foldMix(SALT_MAP.option, [hash64("None")]);
+      }
+      if (PredicateValue.Operations.IsReadOnly(value)) {
+        return foldMix(SALT_MAP.readOnly, [
+          PredicateValue.Operations.GenerateSignature(value.ReadOnly),
+        ]);
+      }
+
+      console.error("missing case", value);
+
+      return hash64("missing case");
     },
     Equals:
       (vars: Bindings) =>
