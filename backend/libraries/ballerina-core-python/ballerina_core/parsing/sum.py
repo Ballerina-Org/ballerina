@@ -19,21 +19,15 @@ _Sum4C = TypeVar("_Sum4C")
 _Sum4D = TypeVar("_Sum4D")
 
 
-def _case_to_json(discriminator: int, arity: int, payload: Json) -> Json:
-    return [discriminator, arity, payload]
+def _case_to_json(discriminator: int, payload: Json) -> Json:
+    return [discriminator, payload]
 
 
-def _case_from_json(case_payload: Json, expected_arity: int) -> Sum[ParsingError, tuple[int, Json]]:
+def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
     match case_payload:
-        case [discriminator, arity, payload]:
+        case [discriminator, payload]:
             match discriminator:
                 case int():
-                    if arity != expected_arity:
-                        return Sum.left(
-                            ParsingError.single(
-                                f"Invalid case payload, invalid arity. Expected {expected_arity}, got {arity}"
-                            )
-                        )
                     return Sum.right((discriminator, payload))
                 case _:
                     return Sum.left(ParsingError.single(f"Invalid case payload, invalid discriminator: {case_payload}"))
@@ -42,13 +36,11 @@ def _case_from_json(case_payload: Json, expected_arity: int) -> Sum[ParsingError
 
 
 def sum_2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
-    arity = 2
-
     def to_json(value: Sum[_SumL, _SumR]) -> Json:
         return {
             DISCRIMINATOR_KEY: "sum",
             VALUE_KEY: value.fold(
-                lambda a: _case_to_json(1, arity, left_to_json(a)), lambda b: _case_to_json(2, arity, right_to_json(b))
+                lambda a: _case_to_json(1, left_to_json(a)), lambda b: _case_to_json(2, right_to_json(b))
             ),
         }
 
@@ -82,7 +74,7 @@ def sum_2_from_json(
     def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
         match value:
             case {"discriminator": "sum", "value": case_payload}:
-                return _case_from_json(case_payload, 2).flat_map(
+                return _case_from_json(case_payload).flat_map(
                     lambda case_tuple: _handle_case_tuple(case_tuple, left_from_json, right_from_json)
                 )
             case _:
@@ -94,15 +86,13 @@ def sum_2_from_json(
 def sum_3_to_json(
     a_to_json: ToJson[_Sum3A], b_to_json: ToJson[_Sum3B], c_to_json: ToJson[_Sum3C], /
 ) -> ToJson[Sum3[_Sum3A, _Sum3B, _Sum3C]]:
-    arity = 3
-
     def to_json(value: Sum3[_Sum3A, _Sum3B, _Sum3C]) -> Json:
         return {
             DISCRIMINATOR_KEY: "sum",
             VALUE_KEY: value.fold(
-                lambda a: _case_to_json(1, arity, a_to_json(a)),
-                lambda b: _case_to_json(2, arity, b_to_json(b)),
-                lambda c: _case_to_json(3, arity, c_to_json(c)),
+                lambda a: _case_to_json(1, a_to_json(a)),
+                lambda b: _case_to_json(2, b_to_json(b)),
+                lambda c: _case_to_json(3, c_to_json(c)),
             ),
         }
 
@@ -145,7 +135,7 @@ def sum_3_from_json(
     def from_json(value: Json) -> Sum[ParsingError, Sum3[_Sum3A, _Sum3B, _Sum3C]]:
         match value:
             case {"discriminator": "sum", "value": case_payload}:
-                return _case_from_json(case_payload, 3).flat_map(
+                return _case_from_json(case_payload).flat_map(
                     lambda case_tuple: _handle_case_tuple_3(case_tuple, a_from_json, b_from_json, c_from_json)
                 )
             case _:
@@ -157,16 +147,14 @@ def sum_3_from_json(
 def sum_4_to_json(
     a_to_json: ToJson[_Sum4A], b_to_json: ToJson[_Sum4B], c_to_json: ToJson[_Sum4C], d_to_json: ToJson[_Sum4D], /
 ) -> ToJson[Sum4[_Sum4A, _Sum4B, _Sum4C, _Sum4D]]:
-    arity = 4
-
     def to_json(value: Sum4[_Sum4A, _Sum4B, _Sum4C, _Sum4D]) -> Json:
         return {
             DISCRIMINATOR_KEY: "sum",
             VALUE_KEY: value.fold(
-                lambda a: _case_to_json(1, arity, a_to_json(a)),
-                lambda b: _case_to_json(2, arity, b_to_json(b)),
-                lambda c: _case_to_json(3, arity, c_to_json(c)),
-                lambda d: _case_to_json(4, arity, d_to_json(d)),
+                lambda a: _case_to_json(1, a_to_json(a)),
+                lambda b: _case_to_json(2, b_to_json(b)),
+                lambda c: _case_to_json(3, c_to_json(c)),
+                lambda d: _case_to_json(4, d_to_json(d)),
             ),
         }
 
@@ -220,7 +208,7 @@ def sum_4_from_json(
     def from_json(value: Json) -> Sum[ParsingError, Sum4[_Sum4A, _Sum4B, _Sum4C, _Sum4D]]:
         match value:
             case {"discriminator": "sum", "value": case_payload}:
-                return _case_from_json(case_payload, 4).flat_map(
+                return _case_from_json(case_payload).flat_map(
                     lambda case_tuple: _handle_case_tuple_4(
                         case_tuple, a_from_json, b_from_json, c_from_json, d_from_json
                     )

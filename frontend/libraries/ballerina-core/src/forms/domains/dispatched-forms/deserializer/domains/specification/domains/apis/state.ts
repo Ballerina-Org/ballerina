@@ -125,6 +125,7 @@ const TableMethods = {
   add: "add",
   duplicate: "duplicate",
   remove: "remove",
+  removeAll: "removeAll",
   move: "move",
 } as const;
 

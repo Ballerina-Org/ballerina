@@ -575,15 +575,16 @@ export const TableAbstractRenderer = <
       );
     }
 
-    visibleColumns.value.columns.map((column) => {
-      if (!CellTemplates.has(column)) {
-        console.warn(
-          `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
-          \n...When rendering \n...${domNodeId}
-          `,
-        );
-      }
-    });
+    // TODO: find a better way to warn about missing fields without cluttering the console
+    // visibleColumns.value.columns.forEach((column) => {
+    //   if (!CellTemplates.has(column)) {
+    //     console.warn(
+    //       `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
+    //       \n...When rendering \n...${domNodeId}
+    //       `,
+    //     );
+    //   }
+    // });
 
     const calculatedDisabledColumns = TableLayout.Operations.ComputeLayout(
       updatedBindings,
@@ -766,6 +767,27 @@ export const TableAbstractRenderer = <
                   ),
                 );
               },
+              removeAll: !props.context.apiMethods.includes("removeAll")
+                ? undefined
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableRemoveAll",
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {
