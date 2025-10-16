@@ -15,8 +15,8 @@ module SumCons =
 
   let private discriminator = "sum"
 
-  type Expr<'T> with
-    static member FromJsonSumCons (_fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonSumCons (_fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
           let! (case, count) = elementsJson |> JsonValue.AsPair |> reader.OfSum
@@ -25,7 +25,10 @@ module SumCons =
           return Expr.SumCons({ Case = case; Count = count })
         })
 
-    static member ToJsonSumCons (_rootToJson: ExprEncoder<'T>) (sel: SumConsSelector) : ExprEncoderReader<'T> =
+    static member ToJsonSumCons
+      (_rootToJson: ExprEncoder<'T, 'Id>)
+      (sel: SumConsSelector)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let case = sel.Case |> decimal |> JsonValue.Number
         let count = sel.Count |> decimal |> JsonValue.Number

@@ -7,7 +7,8 @@ module Operations =
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Types.TypeCheck
+  open Ballerina.DSL.Next.Types.TypeChecker.TypeCheck
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
 

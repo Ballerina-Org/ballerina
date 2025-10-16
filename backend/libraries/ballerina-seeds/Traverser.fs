@@ -2,7 +2,10 @@
 
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.LocalizedErrors
@@ -54,7 +57,7 @@ module Traverser =
       state {
 
         match typeValue with
-        | TypeValue.Imported x when x.Id = LocalScope "List" && List.length x.Arguments = 1 ->
+        | TypeValue.Imported x when x.Id.Name = "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
           let listExtValue = ListValues >> Choice1Of3 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
@@ -78,8 +81,9 @@ module Traverser =
           let! s = state.GetState()
 
           return
-            [ Identifier.LocalScope "Guid", ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
-              Identifier.LocalScope "Name",
+            [ "Guid" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
+              ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
+              "Name" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
               s.InfinitiveVarNamesIndex
               |> (VarName >> ctx.Generator.String >> PrimitiveValue.String >> Value.Primitive) ]
             |> Map.ofList
@@ -97,7 +101,12 @@ module Traverser =
           let! k = !key
           let! v = !value
 
-          return Value.Record(Map.ofList [ Identifier.LocalScope "Key", k; Identifier.LocalScope "Value", v ])
+          return
+            Value.Record(
+              Map.ofList
+                [ "Key" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, k
+                  "Value" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, v ]
+            )
 
         | TypeValue.Union cases ->
           let! ctx = state.GetContext()
@@ -113,7 +122,7 @@ module Traverser =
             |> List.map (fun (ts, tv) ->
               state {
                 let! v = !! ts.Name.LocalName tv
-                return ts, v
+                return ts.Name |> TypeCheckScope.Empty.Resolve, v
               })
             |> state.All
 
@@ -123,7 +132,7 @@ module Traverser =
           let! ctx = state.GetState()
 
           let! tv, _ =
-            TypeExprEvalState.tryFindType (id, Location.Unknown)
+            TypeExprEvalState.tryFindType (id |> TypeCheckScope.Empty.Resolve, Location.Unknown)
             |> Reader.Run ctx.TypeContext
             |> state.OfSum
 
@@ -136,7 +145,7 @@ module Traverser =
             |> List.map (fun (ts, tv) ->
               state {
                 let! v = !! ts.Name.LocalName tv
-                return ts.Name.LocalName |> Identifier.LocalScope, v
+                return ts.Name |> TypeCheckScope.Empty.Resolve, v
               })
             |> state.All
 

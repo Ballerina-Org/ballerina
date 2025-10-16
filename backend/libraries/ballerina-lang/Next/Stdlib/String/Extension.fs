@@ -21,9 +21,11 @@ module Extension =
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'ext, StringOperations<'ext>> =
 
-    let stringLengthId = Identifier.FullyQualified([ "string" ], "length")
+    let stringLengthId =
+      Identifier.FullyQualified([ "string" ], "length")
+      |> TypeCheckScope.Empty.Resolve
 
-    let lengthOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lengthOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLengthId,
       { Type = TypeValue.CreateArrow(stringTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -55,9 +57,10 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
             } }
 
-    let stringPlusId = Identifier.FullyQualified([ "string" ], "+")
+    let stringPlusId =
+      Identifier.FullyQualified([ "string" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringPlusId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue))
         Kind = Kind.Star
@@ -94,9 +97,10 @@ module Extension =
             } }
 
 
-    let stringEqualId = Identifier.FullyQualified([ "string" ], "==")
+    let stringEqualId =
+      Identifier.FullyQualified([ "string" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -131,9 +135,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let stringNotEqualId = Identifier.FullyQualified([ "string" ], "!=")
+    let stringNotEqualId =
+      Identifier.FullyQualified([ "string" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringNotEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -168,9 +173,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let stringGreaterThanId = Identifier.FullyQualified([ "string" ], ">")
+    let stringGreaterThanId =
+      Identifier.FullyQualified([ "string" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -205,9 +211,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let stringGreaterThanOrEqualId = Identifier.FullyQualified([ "string" ], ">=")
+    let stringGreaterThanOrEqualId =
+      Identifier.FullyQualified([ "string" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -245,9 +252,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let stringLessThanId = Identifier.FullyQualified([ "string" ], "<")
+    let stringLessThanId =
+      Identifier.FullyQualified([ "string" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -282,9 +290,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let stringLessThanOrEqualId = Identifier.FullyQualified([ "string" ], "<=")
+    let stringLessThanOrEqualId =
+      Identifier.FullyQualified([ "string" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star

@@ -941,6 +941,7 @@ module Renderers =
                           Map.ofSeq
                             [ "add", TableMethod.Add
                               "remove", TableMethod.Remove
+                              "removeAll", TableMethod.RemoveAll
                               "duplicate", TableMethod.Duplicate
                               "move", TableMethod.Move ]
                           |> Map.tryFindWithError k "TableMethod" k

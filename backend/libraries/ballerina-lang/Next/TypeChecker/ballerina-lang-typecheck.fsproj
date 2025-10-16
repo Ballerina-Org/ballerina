@@ -5,8 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="TypeEval.fs" />
         <Compile Include="Unification/EquivalenceClass.fs" />
+        <Compile Include="Model.fs" />
+        <Compile Include="Patterns.fs" />
+        <Compile Include="TypeEval.fs" />
         <Compile Include="Unification/Unification.fs" />
         <Compile Include="AdHocPolymorphicOperators.fs" />
         <Compile Include="TypeCheck.fs" />
