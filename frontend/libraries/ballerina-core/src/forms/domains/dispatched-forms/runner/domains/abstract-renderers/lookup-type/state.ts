@@ -23,7 +23,7 @@ export type LookupTypeAbstractRendererView<
     ExtraContext
   > &
     CommonAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext & {
+    CommonAbstractRendererViewOnlyReadonlyContext<PredicateValue> & {
       lookupType: LookupType;
     },
   CommonAbstractRendererState,

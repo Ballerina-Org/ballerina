@@ -46,7 +46,7 @@ export type StringAbstractRendererView<
     ExtraContext
   > &
     StringAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<string>,
   StringAbstractRendererState,
   StringAbstractRendererViewForeignMutationsExpected<Flags>
 >;

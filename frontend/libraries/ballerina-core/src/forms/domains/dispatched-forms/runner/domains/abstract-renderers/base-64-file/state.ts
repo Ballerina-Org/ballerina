@@ -40,7 +40,7 @@ export type Base64FileAbstractRendererView<
     ExtraContext
   > &
     Base64FileAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<string>,
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererForeignMutationsExpected<Flags>
 >;

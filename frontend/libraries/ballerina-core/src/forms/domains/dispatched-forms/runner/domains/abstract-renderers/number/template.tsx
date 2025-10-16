@@ -15,6 +15,7 @@ import {
   NumberAbstractRendererState,
   NumberAbstractRendererView,
 } from "./state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const NumberAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -36,16 +37,20 @@ export const NumberAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[number]";
 
-    if (!PredicateValue.Operations.IsNumber(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsNumber(value)) {
       console.error(
         `Number expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Number value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -58,6 +63,7 @@ export const NumberAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

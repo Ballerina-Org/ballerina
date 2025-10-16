@@ -40,6 +40,9 @@ import {
   tryGetConcreteRenderer,
   ConcreteRenderers,
   getDefaultRecordRenderer,
+  PredicateValueRegistry,
+  DispatchFromAPIRawValueWithRegistryResult,
+  dispatchFromAPIRawValueWithRegistry,
 } from "../built-ins/state";
 import { SearchableInfiniteStreamAbstractRendererState } from "../runner/domains/abstract-renderers/searchable-infinite-stream/state";
 import { Renderer } from "./domains/specification/domains/forms/domains/renderer/state";
@@ -57,6 +60,11 @@ export type DispatchParsedPassthroughLauncher<T> = {
     type: DispatchParsedType<T>,
     state: any,
   ) => ValueOrErrors<any, string>;
+  parseFromApiByTypeWithRegistry: (
+    prevRegistry: PredicateValueRegistry,
+    path: string,
+    raw: any,
+  ) => ValueOrErrors<DispatchFromAPIRawValueWithRegistryResult, string>;
   type: DispatchParsedType<T>;
 };
 
@@ -377,6 +385,13 @@ export const parseDispatchFormsToLaunchers =
                         apiConverters,
                         injectedPrimitives,
                       )(raw),
+                    parseFromApiByTypeWithRegistry:
+                      dispatchFromAPIRawValueWithRegistry(
+                        parsedForm.type,
+                        specification.types,
+                        apiConverters,
+                        injectedPrimitives,
+                      ),
                     parseGlobalConfigurationFromApi: (raw: any) =>
                       dispatchFromAPIRawValue(
                         globalConfigType,

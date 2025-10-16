@@ -118,7 +118,7 @@ export type SearchableInfiniteStreamAbstractRendererView<
   > &
     SearchableInfiniteStreamAbstractRendererState & {
       hasMoreValues: boolean;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueOption>,
   SearchableInfiniteStreamAbstractRendererState,
   SearchableInfiniteStreamAbstractViewRendererForeignMutationsExpected<Flags>
 >;

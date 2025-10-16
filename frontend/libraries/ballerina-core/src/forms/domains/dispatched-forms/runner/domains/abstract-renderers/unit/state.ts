@@ -54,7 +54,7 @@ export type UnitAbstractRendererView<
 > = View<
   UnitAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     UnitAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueUnit>,
   UnitAbstractRendererState,
   UnitAbstractRendererViewForeignMutationsExpected<Flags>,
   Unit

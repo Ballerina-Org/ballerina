@@ -13,6 +13,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 
 export const SecretAbstractRenderer = <
@@ -33,17 +34,20 @@ export const SecretAbstractRenderer = <
     SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[secret]";
-
-    if (!PredicateValue.Operations.IsString(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsString(value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: String value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -57,6 +61,7 @@ export const SecretAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

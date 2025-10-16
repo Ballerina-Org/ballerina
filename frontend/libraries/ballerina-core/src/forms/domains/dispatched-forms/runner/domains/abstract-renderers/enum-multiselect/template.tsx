@@ -25,6 +25,7 @@ import {
   EnumMultiselectAbstractRendererForeignMutationsExpected,
 } from "./state";
 import { OrderedMap } from "immutable";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const EnumMultiselectAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -57,17 +58,20 @@ export const EnumMultiselectAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[enumMultiselect]";
-
-    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsRecord(value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Record value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -81,7 +85,7 @@ export const EnumMultiselectAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
-              selectedIds: props.context.value.fields.keySeq().toArray(),
+              selectedIds: value.fields.keySeq().toArray(),
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,
               )
@@ -89,6 +93,7 @@ export const EnumMultiselectAbstractRenderer = <
                 : props.context.customFormState.options.sync.value
                     .valueSeq()
                     .toArray(),
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

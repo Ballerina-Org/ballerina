@@ -27,6 +27,7 @@ import {
   ListAbstractRendererState,
   ListAbstractRendererView,
 } from "./state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const ListAbstractRenderer = <
   T extends DispatchParsedType<T>,
@@ -74,12 +75,10 @@ export const ListAbstractRenderer = <
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              value: PredicateValue.Operations.IsUnit(_.value)
-                ? _.value
-                : _.value.values.get(elementIndex) || GetDefaultElementValue(),
               ...(_.elementFormStates?.get(elementIndex) ||
                 GetDefaultElementState()),
-              bindings: _.bindings,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
@@ -91,6 +90,7 @@ export const ListAbstractRenderer = <
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${elementIndex}]`,
             };
           },
         )
@@ -178,12 +178,10 @@ export const ListAbstractRenderer = <
               readOnly: _.readOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              value: PredicateValue.Operations.IsUnit(_.value)
-                ? _.value
-                : _.value.values.get(elementIndex) || GetDefaultElementValue(),
               ...(_.elementFormStates?.get(elementIndex) ||
                 GetDefaultElementState()),
-              bindings: _.bindings,
+              globalBindings: _.globalBindings,
+              localBindingsPath: _.localBindingsPath,
               extraContext: _.extraContext,
               type: ElementRenderer.renderer.type,
               customPresentationContext: _.customPresentationContext,
@@ -195,6 +193,7 @@ export const ListAbstractRenderer = <
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${elementIndex}]`,
             };
           },
         )
@@ -205,16 +204,17 @@ export const ListAbstractRenderer = <
           ListAbstractRendererForeignMutationsExpected<Flags>
         >((props) => ({
           onChange: (elementUpdater, nestedDelta) => {
-            const value =
-              props.context.value.kind == "tuple"
-                ? props.context.value.values.get(elementIndex) ||
-                  GetDefaultElementValue()
-                : GetDefaultElementValue();
+            // TODO - an interesting problem
+            // const value =
+            //   props.context.value.kind == "tuple"
+            //     ? props.context.value.values.get(elementIndex) ||
+            //       GetDefaultElementValue()
+            //     : GetDefaultElementValue();
             const delta: DispatchDelta<Flags> = {
               kind: "ArrayAdd",
               value:
                 elementUpdater.kind == "r"
-                  ? elementUpdater.value(value)
+                  ? elementUpdater.value(GetDefaultElementValue())
                   : GetDefaultElementValue(),
               state: {
                 commonFormState: props.context.commonFormState,
@@ -278,20 +278,25 @@ export const ListAbstractRenderer = <
     ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[list]";
+    const value = useRegistryValueAtPath(props.context.path);
+
+    if (!value) {
+      return <></>
+    }
 
     if (
-      !PredicateValue.Operations.IsTuple(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsTuple(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
         `Tuple or unit value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Tuple or unit value expected for list but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -303,6 +308,7 @@ export const ListAbstractRenderer = <
           <props.view
             {...props}
             context={{
+              value,
               ...props.context,
               domNodeId,
             }}

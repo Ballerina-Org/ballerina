@@ -1765,7 +1765,7 @@ export type RegistryValue = {
   isDeleted: boolean;
 };
 
-type DispatchFromAPIRawValueWithRegistryResult = [
+export type DispatchFromAPIRawValueWithRegistryResult = [
   PredicateValue,
   bigint,
   PredicateValueRegistry,
@@ -1846,7 +1846,7 @@ export const dispatchFromAPIRawValueWithRegistry =
           types,
           converters,
           injectedPrimitives,
-        )(prevRegistry, path, raw).Then(([value, signature, registry]) => {
+        )(prevRegistry, path, result.fields).Then(([value, signature, registry]) => {
           const unionValue = PredicateValue.Default.unionCase(
             result.caseName,
             value,
@@ -1872,7 +1872,7 @@ export const dispatchFromAPIRawValueWithRegistry =
         const isSome = result.kind == "l";
         if (!isSome) {
           const value = PredicateValue.Default.option(false, { kind: "unit" });
-          const signature = ValueOption.Operations.GenerateSignature(value, 0n);
+          const signature = ValueOption.Operations.GenerateSignature(value);
           const newRegistry = prevRegistry.set(path, {
             signature,
             value,
@@ -1889,7 +1889,7 @@ export const dispatchFromAPIRawValueWithRegistry =
           true,
           PredicateValue.Default.record(OrderedMap(result.value)),
         );
-        const signature = PredicateValue.Operations.GenerateSignature(value);
+        const signature = ValueOption.Operations.GenerateSignature(value);
         const newRegistry = prevRegistry.set(path, {
           signature,
           value,
@@ -1909,7 +1909,7 @@ export const dispatchFromAPIRawValueWithRegistry =
           PredicateValue.Default.record(OrderedMap(_)),
         );
         const value = PredicateValue.Default.record(OrderedMap(values));
-        const signature = PredicateValue.Operations.GenerateSignature(value);
+        const signature = ValueRecord.Operations.GenerateSignature(value);
         const newRegistry = prevRegistry.set(path, {
           signature,
           value: value,
@@ -1960,9 +1960,8 @@ export const dispatchFromAPIRawValueWithRegistry =
           )
           .Then(({ values, signatures, registry }) => {
             const value = PredicateValue.Default.tuple(values);
-            const signature = ValueTuple.Operations.GenerateSignature(
+            const signature = ValueTuple.Operations.GenerateSignatureList(
               value,
-              signatures,
             );
             const newRegistry = registry.set(path, {
               signature,
@@ -1984,7 +1983,7 @@ export const dispatchFromAPIRawValueWithRegistry =
         return result
           .reduce(
             (acc, _, index) => {
-              return acc.Then(({ values, signatures, registry }) => {
+              return acc.Then(({ values, keySignatures, registry }) => {
                 return dispatchFromAPIRawValueWithRegistry(
                   t.args[0],
                   types,
@@ -1998,10 +1997,10 @@ export const dispatchFromAPIRawValueWithRegistry =
                       converters,
                       injectedPrimitives,
                     )(keyRegistry, `${path}[${index}][value]`, _[1]).Then(
-                      ([valueValue, valueSignature, valueRegistry]) => {
+                      ([valueValue, _, valueRegistry]) => {
                         return ValueOrErrors.Default.return<{
                           values: List<PredicateValue>;
-                          signatures: bigint[];
+                          keySignatures: bigint[];
                           registry: PredicateValueRegistry;
                         }, string>({
                           values: values.push(
@@ -2009,10 +2008,9 @@ export const dispatchFromAPIRawValueWithRegistry =
                               List([keyValue, valueValue]),
                             ),
                           ),
-                          signatures: [
-                            ...signatures,
+                          keySignatures: [
+                            ...keySignatures,
                             keySignature,
-                            valueSignature,
                           ],
                           registry: valueRegistry,
                         });
@@ -2024,19 +2022,18 @@ export const dispatchFromAPIRawValueWithRegistry =
             },
             ValueOrErrors.Default.return<{
               values: List<PredicateValue>;
-              signatures: bigint[];
+              keySignatures: bigint[];
               registry: PredicateValueRegistry;
             }, string>({
               values: List<PredicateValue>(),
-              signatures: [] as bigint[],
+              keySignatures: [] as bigint[],
               registry: prevRegistry,
             }),
           )
-          .Then(({ values, signatures, registry }) => {
+          .Then(({ values, keySignatures, registry }) => {
             const value = PredicateValue.Default.tuple(values);
-            const signature = ValueTuple.Operations.GenerateSignature(
-              value,
-              signatures,
+            const signature = ValueTuple.Operations.GenerateSignatureMap(
+              keySignatures,
             );
             const newRegistry = registry.set(path, {
               signature,
@@ -2093,9 +2090,8 @@ export const dispatchFromAPIRawValueWithRegistry =
           )
           .Then(({ values, signatures, registry }) => {
             const value = PredicateValue.Default.tuple(values);
-            const signature = ValueTuple.Operations.GenerateSignature(
+            const signature = ValueTuple.Operations.GenerateSignatureTuple(
               value,
-              signatures,
             );
             const newRegistry = registry.set(path, {
               signature,
@@ -2127,7 +2123,6 @@ export const dispatchFromAPIRawValueWithRegistry =
             );
             const sumSignature = ValueSum.Operations.GenerateSignature(
               sumValue,
-              childSignature,
             );
             const newRegistry = registry.set(path, {
               signature: sumSignature,
@@ -2231,7 +2226,6 @@ export const dispatchFromAPIRawValueWithRegistry =
             );
             const signature = ValueTable.Operations.GenerateSignature(
               value,
-              signatures,
             );
             const newRegistry = registry.set(path, {
               signature,
@@ -2252,7 +2246,7 @@ export const dispatchFromAPIRawValueWithRegistry =
         const result = converters["One"].fromAPIRawValue(raw);
         if (!result.isSome) {
           const value = PredicateValue.Default.option(false, { kind: "unit" });
-          const signature = ValueOption.Operations.GenerateSignature(value, 0n);
+          const signature = ValueOption.Operations.GenerateSignature(value);
           const newRegistry = prevRegistry.set(path, {
             signature,
             value,
@@ -2270,12 +2264,11 @@ export const dispatchFromAPIRawValueWithRegistry =
           types,
           converters,
           injectedPrimitives,
-        )(prevRegistry, `${path}[Some]`, result.value).Then(
-          ([value, childSignature, registry]) => {
+        )(prevRegistry, `${path}`, result.value).Then(
+          ([value, _, registry]) => {
             const optionValue = PredicateValue.Default.option(true, value);
             const optionSignature = ValueOption.Operations.GenerateSignature(
               optionValue,
-              childSignature,
             );
             const newRegistry = registry.set(path, {
               signature: optionSignature,
@@ -2301,10 +2294,10 @@ export const dispatchFromAPIRawValueWithRegistry =
           converters,
           injectedPrimitives,
         )(prevRegistry, `${path}[ReadOnly]`, readOnlyResult.ReadOnly).Then(
-          ([value, childSignature, registry]) => {
+          ([value, _, registry]) => {
             const readonlyValue = ValueReadOnly.Default(value);
             const readonlySignature =
-              ValueReadOnly.Operations.GenerateSignature(childSignature);
+              ValueReadOnly.Operations.GenerateSignature();
             const newRegistry = registry.set(path, {
               signature: readonlySignature,
               value: readonlyValue,
@@ -2376,11 +2369,10 @@ export const dispatchFromAPIRawValueWithRegistry =
               registry: prevRegistry,
             }),
           )
-          .Then(({ values, signatures, registry }) => {
+          .Then(({ values, signatures: _, registry }) => {
             const recordValue = ValueRecord.Default.fromMap(values);
             const recordSignature = ValueRecord.Operations.GenerateSignature(
               recordValue,
-              signatures,
             );
             const newRegistry = registry.set(path, {
               signature: recordSignature,

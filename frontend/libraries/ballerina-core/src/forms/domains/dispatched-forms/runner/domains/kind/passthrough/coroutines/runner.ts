@@ -68,7 +68,6 @@ export const DispatchPassthroughFormRunner = <
                 !AsyncState.Operations.hasValue(
                   current.deserializedSpecification.sync,
                 ) ||
-                current.launcherRef.entity.kind == "r" ||
                 current.launcherRef.config.kind == "r"
               )
                 return id;
@@ -92,35 +91,6 @@ export const DispatchPassthroughFormRunner = <
                     errors: current.deserializedSpecification.sync.value.errors,
                   }),
                 );
-
-              if (current.launcherRef.entity.value.kind == "errors") {
-                console.error(
-                  `Error parsing entity for form '${
-                    current.launcherRef.name
-                  }': ${current.launcherRef.entity.value.errors
-                    .valueSeq()
-                    .toArray()
-                    .join("\n")}`,
-                );
-                return DispatchCommonFormRunnerState<
-                  T,
-                  Flags,
-                  CustomPresentationContext,
-                  ExtraContext
-                >().Updaters.status(
-                  replaceWith<
-                    DispatchFormRunnerStatus<
-                      T,
-                      Flags,
-                      CustomPresentationContext,
-                      ExtraContext
-                    >
-                  >({
-                    kind: "error",
-                    errors: current.launcherRef.entity.value.errors,
-                  }),
-                );
-              }
 
               if (current.launcherRef.config.value.kind == "errors") {
                 console.error(
@@ -311,7 +281,6 @@ export const DispatchPassthroughFormRunner = <
           AsyncState.Operations.hasValue(
             props.context.deserializedSpecification.sync,
           ) &&
-          props.context.launcherRef.entity.kind != "r" &&
           props.context.launcherRef.config.kind != "r" &&
           (props.context.status.kind == "not initialized" ||
             props.context.status.kind == "loading")

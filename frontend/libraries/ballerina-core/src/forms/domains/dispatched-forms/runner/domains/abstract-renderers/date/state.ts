@@ -55,7 +55,7 @@ export type DateAbstractRendererView<
 > = View<
   DateAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     DateAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<Date>,
   DateAbstractRendererState,
   DateAbstractRendererForeignMutationsExpected<Flags>
 >;

@@ -15,6 +15,7 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
   StringSerializedType,
   Renderer,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -72,14 +73,14 @@ export const UnionAbstractRenderer = <
             return {
               ...(_.caseFormStates.get(caseName)! ??
                 defaultCaseStates.get(caseName)!()),
-              value: _.value.fields,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               type: _.type.args.get(caseName)!,
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: _.bindings,
               extraContext: _.extraContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               customPresentationContext: _.customPresentationContext,
@@ -90,6 +91,7 @@ export const UnionAbstractRenderer = <
                 _.domNodeAncestorPath + `[union][${caseName}]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
+              path: _.path + `[${caseName}]`,
             };
           },
         )
@@ -143,16 +145,20 @@ export const UnionAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[union]";
 
-    if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsUnionCase(value)) {
       console.error(
         `UnionCase expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: UnionCase value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -166,6 +172,7 @@ export const UnionAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

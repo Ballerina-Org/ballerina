@@ -13,6 +13,7 @@ import {
   Unit,
   CommonAbstractRendererForeignMutationsExpected,
   NestedRenderer,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -77,10 +78,8 @@ export const SumAbstractRenderer = <
                   disabled: _.disabled || _.globallyDisabled,
                   globallyDisabled: _.globallyDisabled,
                   locked: _.locked,
-                  value: PredicateValue.Operations.IsUnit(_.value)
-                    ? _.value
-                    : _.value.value.value,
-                  bindings: _.bindings,
+                  localBindingsPath: _.localBindingsPath,
+                  globalBindings: _.globalBindings,
                   readOnly: _.readOnly || _.globallyReadOnly,
                   globallyReadOnly: _.globallyReadOnly,
                   extraContext: _.extraContext,
@@ -94,6 +93,7 @@ export const SumAbstractRenderer = <
                   ),
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
                   labelContext,
+                  path: _.path + "[l]",
                 };
               },
             )
@@ -173,10 +173,8 @@ export const SumAbstractRenderer = <
                   disabled: _.disabled || _.globallyDisabled,
                   globallyDisabled: _.globallyDisabled,
                   locked: _.locked,
-                  value: PredicateValue.Operations.IsUnit(_.value)
-                    ? _.value
-                    : _.value.value.value,
-                  bindings: _.bindings,
+                  localBindingsPath: _.localBindingsPath,
+                  globalBindings: _.globalBindings,
                   readOnly: _.readOnly || _.globallyReadOnly,
                   globallyReadOnly: _.globallyReadOnly,
                   extraContext: _.extraContext,
@@ -190,6 +188,7 @@ export const SumAbstractRenderer = <
                   ),
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
                   labelContext,
+                  path: _.path + "[r]",
                 };
               },
             )
@@ -253,19 +252,23 @@ export const SumAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[sum]";
 
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
     if (
-      !PredicateValue.Operations.IsSum(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsSum(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
         `Sum or unit value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Sum or unit value expected but got ${JSON.stringify(
-            props.context.value,
+              value,
           )}`}
         />
       );
@@ -279,6 +282,7 @@ export const SumAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

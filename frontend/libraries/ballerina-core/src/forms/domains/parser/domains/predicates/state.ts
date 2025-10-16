@@ -28,6 +28,8 @@ const SALT_MAP = {
   date: salt("date"),
   unit: salt("unit"),
   tuple: salt("tuple"),
+  list: salt("list"),
+  map: salt("map"),
   record: salt("record"),
   sum: salt("sum"),
   unionCase: salt("unionCase"),
@@ -289,8 +291,11 @@ export const ValueRecord = {
     has: (record: ValueRecord, key: string): boolean => {
       return record.fields.has(key);
     },
-    GenerateSignature: (record: ValueRecord, children: readonly bigint[]): bigint => {
-      return foldMix(SALT_MAP.record, children);
+    GenerateSignature: (record: ValueRecord): bigint => {
+      const fields = record.fields.keySeq().map((key) => {
+        return hash64(key);
+      });
+      return foldMix(SALT_MAP.record, fields.toArray());
     },
   },
   Updaters: {
@@ -368,13 +373,10 @@ export const ValueOption = {
     }),
   },
   Operations: {
-    GenerateSignature: (value: ValueOption, childSignature: bigint): bigint => {
+    GenerateSignature: (value: ValueOption): bigint => {
       return value.isSome
-      ? foldMix(SALT_MAP.option, [
-          hash64("Some"),
-          childSignature,
-        ])
-      : foldMix(SALT_MAP.option, [hash64("None")]);
+        ? mix1(SALT_MAP.option, hash64("Some"))
+        : mix1(SALT_MAP.option, hash64("None"));
     },
   },
   Updaters: {
@@ -394,8 +396,8 @@ export const ValueSum = {
     value,
   }),
   Operations: {
-    GenerateSignature: (value: ValueSum, childSignature: bigint): bigint => {
-      return foldMix(SALT_MAP.sum, [hash64(value.value.kind), childSignature]);
+    GenerateSignature: (value: ValueSum): bigint => {
+      return mix1(SALT_MAP.sum, hash64(value.value.kind));
     },
   },
   Updaters: {
@@ -435,14 +437,14 @@ export const ValueTuple = {
     values: List(),
   }),
   Operations: {
-    GenerateSignature: (
-      value: ValueTuple,
-      children: readonly bigint[],
-    ): bigint => {
-      return foldMix(
-        mix1(SALT_MAP.tuple, hash64(`${value.values.size}`)),
-        children,
-      );
+    GenerateSignatureList: (value: ValueTuple): bigint => {
+      return mix1(SALT_MAP.tuple, hash64(String(value.values.size)));
+    },
+    GenerateSignatureTuple: (value: ValueTuple): bigint => {
+      return mix1(SALT_MAP.tuple, hash64(String(value.values.size)));
+    },
+    GenerateSignatureMap: (keySignatures: bigint[]): bigint => {
+      return foldMix(SALT_MAP.map, keySignatures);
     },
   },
   Updaters: {
@@ -469,8 +471,8 @@ export const ValueReadOnly = {
     ReadOnly: value,
   }),
   Operations: {
-    GenerateSignature: (childSignature: bigint): bigint => {
-      return mix1(SALT_MAP.readOnly, childSignature);
+    GenerateSignature: (): bigint => {
+      return SALT_MAP.readOnly;
     },
   },
   Updaters: {
@@ -500,14 +502,12 @@ export const ValueTable = {
     }),
   },
   Operations: {
-    GenerateSignature: (
-      value: ValueTable,
-      children: readonly bigint[],
-    ): bigint => {
+    GenerateSignature: (value: ValueTable): bigint => {
+      const rowIds = value.data.keySeq().map((k) => hash64(k));
       return foldMix(SALT_MAP.table, [
         hash64(String(value.from)),
         hash64(String(value.to)),
-        foldMix(SALT_MAP.data, children),
+        foldMix(SALT_MAP.data, rowIds.toArray()),
       ]);
     },
   },
@@ -1392,88 +1392,31 @@ export const PredicateValue = {
       }
       // recursive cases
       if (PredicateValue.Operations.IsTuple(value)) {
-        return foldMix(
-          mix1(SALT_MAP.tuple, hash64(`${value.values.size}`)),
-          value.values
-            .map(PredicateValue.Operations.GenerateSignature)
-            .toArray(),
-        );
+        return ValueTuple.Operations.GenerateSignatureTuple(value);
       }
       if (PredicateValue.Operations.IsRecord(value)) {
-        // Build pairs once (no re-lookup after sorting)
-        const pairs = value.fields
-          .entrySeq() // [[key, val], ...] from Immutable OrderedMap/Map
-          .map(([k, v]) => {
-            const ks = keySig(k);
-            const vs = PredicateValue.Operations.GenerateSignature(v);
-            return { kSig: ks.sig, kStr: ks.keyStr, kKind: ks.kind, vSig: vs };
-          })
-          .toArray();
-
-        // Stable sort with collision-safe tie-breakers:
-        // 1) kSig (BigInt), 2) key kind, 3) keyStr
-        pairs.sort((a, b) => {
-          if (a.kSig < b.kSig) return -1;
-          if (a.kSig > b.kSig) return 1;
-          // hash collision tie-breakers (extremely rare but makes order deterministic)
-          if (a.kKind < b.kKind) return -1;
-          if (a.kKind > b.kKind) return 1;
-          return a.kStr < b.kStr ? -1 : a.kStr > b.kStr ? 1 : 0;
-        });
-
-        // Fold: mix (keySig, valueSig) per field, then fold all with record salt
-        const parts = pairs.map(({ kSig, vSig }) => mix64(kSig, vSig));
-        return foldMix(SALT.record, parts);
+        return ValueRecord.Operations.GenerateSignature(value);
       }
 
       if (PredicateValue.Operations.IsSum(value)) {
-        return foldMix(SALT_MAP.sum, [
-          hash64(value.value.kind),
-          PredicateValue.Operations.GenerateSignature(value.value.value),
-        ]);
+        return ValueSum.Operations.GenerateSignature(value);
       }
       if (PredicateValue.Operations.IsUnionCase(value)) {
-        return foldMix(SALT_MAP.unionCase, [
-          hash64(value.caseName),
-          PredicateValue.Operations.GenerateSignature(value.fields),
-        ]);
+        return ValueUnionCase.Operations.GenerateSignature(value);
       }
 
       if (PredicateValue.Operations.IsTable(value)) {
-        const parts = value.data
-          .keySeq()
-          .toArray()
-          .sort() // canonical order
-          .map((k) =>
-            mix64(
-              hash64(String(k)),
-              PredicateValue.Operations.GenerateSignature(value.data.get(k)!),
-            ),
-          );
-        return foldMix(SALT_MAP.table, [
-          hash64(String(value.from)),
-          hash64(String(value.to)),
-          foldMix(SALT_MAP.data, parts),
-        ]);
+        return ValueTable.Operations.GenerateSignature(value);
       }
 
       if (PredicateValue.Operations.IsOption(value)) {
-        return value.isSome
-          ? foldMix(SALT_MAP.option, [
-              hash64("Some"),
-              PredicateValue.Operations.GenerateSignature(value.value),
-            ])
-          : foldMix(SALT_MAP.option, [hash64("None")]);
+        return ValueOption.Operations.GenerateSignature(value);
       }
       if (PredicateValue.Operations.IsReadOnly(value)) {
-        return foldMix(SALT_MAP.readOnly, [
-          PredicateValue.Operations.GenerateSignature(value.ReadOnly),
-        ]);
+        return ValueReadOnly.Operations.GenerateSignature();
       }
 
-      console.error("missing case", value);
-
-      return hash64("missing case");
+      return hash64(JSON.stringify(value));
     },
     Equals:
       (vars: Bindings) =>

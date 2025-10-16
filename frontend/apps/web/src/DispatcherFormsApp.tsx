@@ -300,6 +300,1008 @@ export const DispatcherFormsApp = (props: {}) => {
   //   }
   // };
 
+  const p1 = {
+    Id: "8f0c943b-2435-42b6-b3b2-de3b2dc68bd3",
+    BestFriend: {
+      isRight: false,
+      right: {},
+    },
+    EagerEditableOne: {
+      isRight: true,
+      right: {
+        Id: "be02f0c8-6781-4ff6-81bd-aa40a2bb2b2b",
+        Name: "John",
+        Surname: "Doe",
+        Birthday: "1990-01-01",
+        Email: "john.doe@example.com",
+        SubscribeToNewsletter: true,
+      },
+    },
+    LazyReadonlyOne: {
+      isRight: false,
+      right: {},
+    },
+    EagerReadonlyOne: {
+      isRight: true,
+      right: {
+        Id: "91744769-b807-4cc4-a6e3-ffeaec69eeb6",
+        Name: "John",
+        Surname: "Doe",
+        Birthday: "1990-01-01",
+        Email: "john.doe@example.com",
+        SubscribeToNewsletter: true,
+      },
+    },
+    Friends: {
+      Values: {
+        "aff339ea-5fc3-4ca8-bb24-b3b3e411f865": {
+          Id: "9df0e65a-9f5b-4e49-b640-202576ce7f89",
+          Name: "Edyth",
+          Surname: "Abbott",
+          Birthday: "1996-05-04T17:52:25.872Z",
+          Email: "Santino91@gmail.com",
+          SubscribeToNewsletter: false,
+          FavoriteColor: {
+            Value: {
+              Value: "Red",
+            },
+            IsSome: true,
+          },
+          City: {
+            IsSome: true,
+            Value: {
+              Id: "82f71154-9c75-4c34-bf18-609197098d3c",
+              DisplayValue: "Lake Cyril",
+            },
+          },
+          StreetNumberAndCity: {
+            Item1: "Wolf Manors",
+            Item2: 100,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "3f0b760a-57f3-412a-b1ca-5b19b945abb8",
+                DisplayValue: "Hirtheworth",
+              },
+            },
+          },
+          Friends: {
+            From: 0,
+            To: 0,
+            HasMore: true,
+            Values: {},
+          },
+        },
+        "98bb04b3-031b-4758-9fd1-32fe6a0d37da": {
+          Id: "3c6e63a2-0168-468c-be61-b732967e7d09",
+          Name: "Cornelius",
+          Surname: "Wisoky",
+          Birthday: "1960-05-08T20:10:33.230Z",
+          Email: "Everett.Yost@gmail.com",
+          SubscribeToNewsletter: true,
+          FavoriteColor: {
+            Value: {
+              Value: "Red",
+            },
+            IsSome: true,
+          },
+          City: {
+            IsSome: true,
+            Value: {
+              Id: "25cb0c51-fdf8-45fd-8257-5cd7929c6147",
+              DisplayValue: "Lake Kimside",
+            },
+          },
+          StreetNumberAndCity: {
+            Item1: "Maggie Junctions",
+            Item2: 100,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "cd0651e2-5cc2-4a5a-aa4c-9a2da4efc792",
+                DisplayValue: "East Ilatown",
+              },
+            },
+          },
+          Friends: {
+            From: 0,
+            To: 0,
+            HasMore: true,
+            Values: {},
+          },
+        },
+      },
+      HasMore: true,
+      From: 0,
+      To: 0,
+    },
+    Children: {
+      From: 0,
+      To: 0,
+      HasMore: true,
+      Values: {},
+    },
+    Job: {
+      Discriminator: "Owners",
+      Owners: ["Ines", "Brandon"],
+    },
+    Category: {
+      kind: "adult",
+      extraSpecial: false,
+    },
+    FullName: {
+      Item1: "Sylvia",
+      Item2: "Weissnat",
+    },
+    Birthday: "2024-12-06T10:56:10.104Z",
+    SuperSecretNumber: {
+      ReadOnly: 123123,
+    },
+    MoreSecretNumbers: [
+      {
+        ReadOnly: 15651,
+      },
+      {
+        ReadOnly: 15651,
+      },
+      {
+        ReadOnly: 15651,
+      },
+    ],
+    SubscribeToNewsletter: true,
+    FavoriteColor: {
+      Value: {
+        Value: "Green",
+      },
+      IsSome: true,
+    },
+    Gender: {
+      IsRight: true,
+      Value: {
+        IsSome: true,
+        Value: {
+          Value: "M",
+        },
+      },
+    },
+    Dependants: [
+      {
+        Key: "Steve",
+        Value: {
+          kind: "senior",
+          extraSpecial: false,
+        },
+      },
+      {
+        Key: "Alice",
+        Value: {
+          kind: "adult",
+          extraSpecial: false,
+        },
+      },
+    ],
+    FriendsByCategory: [],
+    Relatives: [
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+    ],
+    Interests: [
+      {
+        Value: "Hockey",
+      },
+      {
+        Value: "BoardGames",
+      },
+    ],
+    Departments: [
+      {
+        Id: "04c8d240-3b89-480c-be78-94b6415bb7b2",
+        DisplayValue: "Department 1",
+      },
+      {
+        Id: "f82de5d8-d622-4ae2-9647-0d0eda78533c",
+        DisplayValue: "Department 2",
+      },
+    ],
+    Emails: ["john@doe.it", "johnthedon@doe.com"],
+    SchoolAddress: {
+      StreetNumberAndCity: {
+        Item1: "Renner Brooks",
+        Item2: 100,
+        Item3: {
+          IsSome: true,
+          Value: {
+            Id: "873fa8db-b2fc-4ce5-84ed-0b23433f79a0",
+            DisplayValue: "Kingland",
+          },
+        },
+      },
+    },
+    MainAddress: {
+      IsRight: true,
+      Value: {
+        Item1: {
+          StreetNumberAndCity: {
+            Item1: "Turcotte Centers",
+            Item2: 361,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+        Item2: {
+          LandArea: {
+            X: 34,
+            Y: 36,
+          },
+        },
+      },
+    },
+    AddressesAndAddressesWithLabel: {
+      Item1: [
+        {
+          StreetNumberAndCity: {
+            Item1: "N Walnut Street",
+            Item2: 378,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "f7fc0928-79ec-4ecc-9f80-c2ed7f4882a7",
+                DisplayValue: "Fort Kali",
+              },
+            },
+          },
+        },
+        {
+          StreetNumberAndCity: {
+            Item1: "Ethyl Parkway",
+            Item2: 174,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      ],
+      Item2: [
+        {
+          Key: "my house",
+          Value: {
+            StreetNumberAndCity: {
+              Item1: "Chelsey Pines",
+              Item2: 26,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "8eb15a90-ff83-4955-a849-f1298309c6e9",
+                  DisplayValue: "Fort Neal",
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    AddressesByCity: [
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Id: "bf15e5e9-e6b8-482a-9846-094ed2c33c8f",
+            DisplayValue: "East Orange",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Russell Street",
+            Item2: 95,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Id: "06041b55-54a6-4b7b-a88d-18ff081af7e9",
+            DisplayValue: "Port Emersonstead",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Main Street N",
+            Item2: 134,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+    ],
+    ImportantDate: {
+      IsRight: true,
+      Value: "2011-05-08T16:55:15.416Z",
+    },
+    CutOffDates: [
+      {
+        IsRight: true,
+        Value: "2006-06-24T04:45:41.758Z",
+      },
+      {
+        IsRight: true,
+        Value: "2012-12-01T23:34:38.806Z",
+      },
+    ],
+    AddressesBy: {
+      IsRight: true,
+      Value: [
+        {
+          Key: "home",
+          Value: {
+            StreetNumberAndCity: {
+              Item1: "West Street",
+              Item2: 15,
+              Item3: {
+                IsSome: false,
+                Value: {
+                  Value: "",
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    AddressesWithColorLabel: [
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Value: "Green",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "E 11th Street",
+            Item2: 410,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Value: "Green",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Giuseppe Ford",
+            Item2: 17,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "0a3fe2b9-9191-4304-8046-afdc93eaae09",
+                DisplayValue: "Fort Trevionfort",
+              },
+            },
+          },
+        },
+      },
+    ],
+    Permissions: [],
+    CityByDepartment: [],
+    ShoeColours: [
+      {
+        Value: "Red",
+      },
+    ],
+    FriendsBirthdays: [],
+    Holidays: [],
+    FriendsAddresses: [
+      {
+        Key: "Chad Gottlieb",
+        Value: [
+          {
+            StreetNumberAndCity: {
+              Item1: "W Lake Street",
+              Item2: 366,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "fdd6ab97-5a3e-490f-9d8a-e66eb6963fb3",
+                  DisplayValue: "Port Leonestad",
+                },
+              },
+            },
+          },
+          {
+            StreetNumberAndCity: {
+              Item1: "Nienow Valley",
+              Item2: 150,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "97ded63c-7542-4823-93b5-93c70fe8886a",
+                  DisplayValue: "Somerville",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        Key: "Nona Boehm",
+        Value: [
+          {
+            StreetNumberAndCity: {
+              Item1: "Daniel Pass",
+              Item2: 34,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "42be1f98-f75b-474e-aa54-b51fdad4356d",
+                  DisplayValue: "Noblesville",
+                },
+              },
+            },
+          },
+          {
+            StreetNumberAndCity: {
+              Item1: "Franklin Avenue",
+              Item2: 474,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "e5fe031a-af98-49ee-93b9-4a7e5f4f26e0",
+                  DisplayValue: "Mesquite",
+                },
+              },
+            },
+          },
+        ],
+      },
+    ],
+    IncomeTaxBrackets: [
+      [
+        {
+          Amount: 100000,
+          TaxRate: 0.1,
+          TaxAmount: 10000,
+        },
+      ],
+    ],
+  };
+  const p2 = {
+    Id: "8f0c943b-2435-42b6-b3b2-de3b2dc68bd3",
+    BestFriend: {
+      isRight: false,
+      right: {},
+    },
+    EagerEditableOne: {
+      isRight: true,
+      right: {
+        Id: "be02f0c8-6781-4ff6-81bd-aa40a2bb2b2b",
+        Name: "John",
+        Surname: "Doe",
+        Birthday: "1990-01-01",
+        Email: "john.doe@example.com",
+        SubscribeToNewsletter: true,
+      },
+    },
+    LazyReadonlyOne: {
+      isRight: false,
+      right: {},
+    },
+    EagerReadonlyOne: {
+      isRight: true,
+      right: {
+        Id: "91744769-b807-4cc4-a6e3-ffeaec69eeb6",
+        Name: "John",
+        Surname: "Doe",
+        Birthday: "1990-01-01",
+        Email: "john.doe@example.co",
+        SubscribeToNewsletter: true,
+      },
+    },
+    Friends: {
+      Values: {
+        "aff339ea-5fc3-4ca8-bb24-b3b3e411f865": {
+          Id: "9df0e65a-9f5b-4e49-b640-202576ce7f89",
+          Name: "Edyth",
+          Surname: "Abbott",
+          Birthday: "1996-05-04T17:52:25.872Z",
+          Email: "Santino91@gmail.com",
+          SubscribeToNewsletter: false,
+          FavoriteColor: {
+            Value: {
+              Value: "Red",
+            },
+            IsSome: true,
+          },
+          City: {
+            IsSome: true,
+            Value: {
+              Id: "82f71154-9c75-4c34-bf18-609197098d3c",
+              DisplayValue: "Lake Cyril",
+            },
+          },
+          StreetNumberAndCity: {
+            Item1: "Wolf Manors",
+            Item2: 100,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "3f0b760a-57f3-412a-b1ca-5b19b945abb8",
+                DisplayValue: "Hirtheworth",
+              },
+            },
+          },
+          Friends: {
+            From: 0,
+            To: 0,
+            HasMore: true,
+            Values: {},
+          },
+        },
+        "98bb04b3-031b-4758-9fd1-32fe6a0d37da": {
+          Id: "3c6e63a2-0168-468c-be61-b732967e7d09",
+          Name: "Cornelius",
+          Surname: "Wisoky",
+          Birthday: "1960-05-08T20:10:33.230Z",
+          Email: "Everett.Yost@gmail.com",
+          SubscribeToNewsletter: true,
+          FavoriteColor: {
+            Value: {
+              Value: "Red",
+            },
+            IsSome: true,
+          },
+          City: {
+            IsSome: true,
+            Value: {
+              Id: "25cb0c51-fdf8-45fd-8257-5cd7929c6147",
+              DisplayValue: "Lake Kimside",
+            },
+          },
+          StreetNumberAndCity: {
+            Item1: "Maggie Junctions",
+            Item2: 100,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "cd0651e2-5cc2-4a5a-aa4c-9a2da4efc792",
+                DisplayValue: "East Ilatown",
+              },
+            },
+          },
+          Friends: {
+            From: 0,
+            To: 0,
+            HasMore: true,
+            Values: {},
+          },
+        },
+      },
+      HasMore: true,
+      From: 0,
+      To: 0,
+    },
+    Children: {
+      From: 0,
+      To: 0,
+      HasMore: true,
+      Values: {},
+    },
+    Job: {
+      Discriminator: "Owners",
+      Owners: ["Ines", "Brandon"],
+    },
+    Category: {
+      kind: "adult",
+      extraSpecial: false,
+    },
+    FullName: {
+      Item1: "Jo",
+      Item2: "Weissnat",
+    },
+    Birthday: "2024-12-06T10:56:10.104Z",
+    SuperSecretNumber: {
+      ReadOnly: 123123,
+    },
+    MoreSecretNumbers: [
+      {
+        ReadOnly: 15651,
+      },
+      {
+        ReadOnly: 15651,
+      },
+      {
+        ReadOnly: 15651,
+      },
+    ],
+    SubscribeToNewsletter: true,
+    FavoriteColor: {
+      Value: {
+        Value: "Green",
+      },
+      IsSome: true,
+    },
+    Gender: {
+      IsRight: true,
+      Value: {
+        IsSome: true,
+        Value: {
+          Value: "M",
+        },
+      },
+    },
+    Dependants: [
+      {
+        Key: "Steve",
+        Value: {
+          kind: "senior",
+          extraSpecial: false,
+        },
+      },
+      {
+        Key: "Alice",
+        Value: {
+          kind: "adult",
+          extraSpecial: false,
+        },
+      },
+    ],
+    FriendsByCategory: [],
+    Relatives: [
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+      {
+        kind: "adult",
+        extraSpecial: false,
+      },
+    ],
+    Interests: [
+      {
+        Value: "Hockey",
+      },
+      {
+        Value: "BoardGames",
+      },
+    ],
+    Departments: [
+      {
+        Id: "04c8d240-3b89-480c-be78-94b6415bb7b2",
+        DisplayValue: "Department 1",
+      },
+      {
+        Id: "f82de5d8-d622-4ae2-9647-0d0eda78533c",
+        DisplayValue: "Department 2",
+      },
+    ],
+    Emails: ["john@doe.it", "johnthedon@doe.com"],
+    SchoolAddress: {
+      StreetNumberAndCity: {
+        Item1: "Renner Brooks",
+        Item2: 100,
+        Item3: {
+          IsSome: true,
+          Value: {
+            Id: "873fa8db-b2fc-4ce5-84ed-0b23433f79a0",
+            DisplayValue: "Kingland",
+          },
+        },
+      },
+    },
+    MainAddress: {
+      IsRight: true,
+      Value: {
+        Item1: {
+          StreetNumberAndCity: {
+            Item1: "Turcotte Centers",
+            Item2: 361,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+        Item2: {
+          LandArea: {
+            X: 34,
+            Y: 36,
+          },
+        },
+      },
+    },
+    AddressesAndAddressesWithLabel: {
+      Item1: [
+        {
+          StreetNumberAndCity: {
+            Item1: "N Walnut Street",
+            Item2: 378,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "f7fc0928-79ec-4ecc-9f80-c2ed7f4882a7",
+                DisplayValue: "Fort Kali",
+              },
+            },
+          },
+        },
+        {
+          StreetNumberAndCity: {
+            Item1: "Ethyl Parkway",
+            Item2: 174,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      ],
+      Item2: [
+        {
+          Key: "my house",
+          Value: {
+            StreetNumberAndCity: {
+              Item1: "Chelsey Pines",
+              Item2: 26,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "8eb15a90-ff83-4955-a849-f1298309c6e9",
+                  DisplayValue: "Fort Neal",
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    AddressesByCity: [
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Id: "bf15e5e9-e6b8-482a-9846-094ed2c33c8f",
+            DisplayValue: "East Orange",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Russell Street",
+            Item2: 95,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Id: "06041b55-54a6-4b7b-a88d-18ff081af7e9",
+            DisplayValue: "Port Emersonstead",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Main Street N",
+            Item2: 134,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+    ],
+    ImportantDate: {
+      IsRight: true,
+      Value: "2011-05-08T16:55:15.416Z",
+    },
+    CutOffDates: [
+      {
+        IsRight: true,
+        Value: "2006-06-24T04:45:41.758Z",
+      },
+      {
+        IsRight: true,
+        Value: "2012-12-01T23:34:38.806Z",
+      },
+    ],
+    AddressesBy: {
+      IsRight: true,
+      Value: [
+        {
+          Key: "home",
+          Value: {
+            StreetNumberAndCity: {
+              Item1: "West Street",
+              Item2: 15,
+              Item3: {
+                IsSome: false,
+                Value: {
+                  Value: "",
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    AddressesWithColorLabel: [
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Value: "Green",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "E 11th Street",
+            Item2: 410,
+            Item3: {
+              IsSome: false,
+              Value: {
+                Value: "",
+              },
+            },
+          },
+        },
+      },
+      {
+        Key: {
+          IsSome: true,
+          Value: {
+            Value: "Green",
+          },
+        },
+        Value: {
+          StreetNumberAndCity: {
+            Item1: "Giuseppe Ford",
+            Item2: 17,
+            Item3: {
+              IsSome: true,
+              Value: {
+                Id: "0a3fe2b9-9191-4304-8046-afdc93eaae09",
+                DisplayValue: "Fort Trevionfort",
+              },
+            },
+          },
+        },
+      },
+    ],
+    Permissions: [],
+    CityByDepartment: [],
+    ShoeColours: [
+      {
+        Value: "Red",
+      },
+    ],
+    FriendsBirthdays: [],
+    Holidays: [],
+    FriendsAddresses: [
+      {
+        Key: "Chad Gottlieb",
+        Value: [
+          {
+            StreetNumberAndCity: {
+              Item1: "W Lake Street",
+              Item2: 366,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "fdd6ab97-5a3e-490f-9d8a-e66eb6963fb3",
+                  DisplayValue: "Port Leonestad",
+                },
+              },
+            },
+          },
+          {
+            StreetNumberAndCity: {
+              Item1: "Nienow Valley",
+              Item2: 150,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "97ded63c-7542-4823-93b5-93c70fe8886a",
+                  DisplayValue: "Somerville",
+                },
+              },
+            },
+          },
+        ],
+      },
+      {
+        Key: "Nona Boehm",
+        Value: [
+          {
+            StreetNumberAndCity: {
+              Item1: "Daniel Pass",
+              Item2: 34,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "42be1f98-f75b-474e-aa54-b51fdad4356d",
+                  DisplayValue: "Noblesville",
+                },
+              },
+            },
+          },
+          {
+            StreetNumberAndCity: {
+              Item1: "Franklin Avenue",
+              Item2: 474,
+              Item3: {
+                IsSome: true,
+                Value: {
+                  Id: "e5fe031a-af98-49ee-93b9-4a7e5f4f26e0",
+                  DisplayValue: "Mesquite",
+                },
+              },
+            },
+          },
+        ],
+      },
+    ],
+    IncomeTaxBrackets: [
+      [
+        {
+          Amount: 100000,
+          TaxRate: 0.1,
+          TaxAmount: 10000,
+        },
+      ],
+    ],
+  };
   useEffect(() => {
     DispatchPersonFromConfigApis.entityApis
       .get("person")("")
@@ -314,9 +1316,50 @@ export const DispatcherFormsApp = (props: {}) => {
             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
               .get("person-transparent")!
               .parseEntityFromApi(raw);
+          const parsedWithRegistry =
+            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+              .get("person-transparent")!
+              .parseFromApiByTypeWithRegistry(OrderedMap(), "person", p1);
+          if (parsedWithRegistry.kind == "errors") {
+            console.debug("parsedWithRegistry failed");
+            console.debug(
+              "parsedWithRegistry errors",
+              parsedWithRegistry.errors,
+            );
+            console.error("parsed entity errors", parsedWithRegistry.errors);
+          } else {
+            console.debug("parsedWithRegistry success");
+            console.debug(
+              "parsedWithRegistry",
+              parsedWithRegistry.value[2].toJS(),
+            );
+            const parsedWithRegistry2 =
+              specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+                .get("person-transparent")!
+                .parseFromApiByTypeWithRegistry(
+                  parsedWithRegistry.value[2],
+                  "person",
+                  p2,
+                );
+            if (parsedWithRegistry2.kind == "errors") {
+              console.debug("parsedWithRegistry2 failed");
+              console.debug(
+                "parsedWithRegistry2 errors",
+                parsedWithRegistry2.errors,
+              );
+              console.error("parsed entity errors", parsedWithRegistry2.errors);
+            } else {
+              console.debug("parsedWithRegistry2 success");
+              console.debug(
+                "parsedWithRegistry2",
+                parsedWithRegistry2.value[2].toJS(),
+              );
+            }
+          }
           if (parsed.kind == "errors") {
             console.error("parsed entity errors", parsed.errors);
           } else {
+            console.debug("parsed success");
             setPersonEntity(Sum.Default.left(parsed));
           }
         }

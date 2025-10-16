@@ -15,6 +15,7 @@ import {
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const BoolAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -35,20 +36,23 @@ export const BoolAbstractRenderer = <
     BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[boolean]";
-
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
     if (
-      !PredicateValue.Operations.IsBoolean(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsBoolean(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
         `Boolean or unit value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Boolean or unit value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -62,6 +66,7 @@ export const BoolAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

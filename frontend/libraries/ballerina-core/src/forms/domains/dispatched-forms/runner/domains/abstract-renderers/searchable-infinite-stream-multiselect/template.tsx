@@ -26,6 +26,7 @@ import {
   Option,
   Unit,
   StringSerializedType,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
@@ -115,10 +116,14 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       props.context.domNodeAncestorPath +
       "[searchableInfiniteStreamMultiselect]";
 
-    if (!PredicateValue.Operations.IsRecord(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsRecord(value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering searchable infinite stream multiselect field\n...${
           domNodeId
         }`,
@@ -126,7 +131,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       return (
         <ErrorRenderer
           message={`${domNodeId}: Record value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -152,6 +157,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                   .valueSeq()
                   .flatMap((chunk) => chunk.data.valueSeq())
                   .toArray(),
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,
@@ -229,7 +235,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                 );
               },
               toggleSelection: (elementRecord: ValueRecord, flags) => {
-                props.context.value.fields.has(
+                value.fields.has(
                   elementRecord.fields.get("Id")! as string,
                 )
                   ? props.foreignMutations.onChange(

@@ -97,7 +97,7 @@ export type ListAbstractRendererView<
 > = View<
   ListAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     ListAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueTuple | ValueUnit>,
   ListAbstractRendererState,
   ListAbstractRendererViewForeignMutationsExpected<Flags>,
   {

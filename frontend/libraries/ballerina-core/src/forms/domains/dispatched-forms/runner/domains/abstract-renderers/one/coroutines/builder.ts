@@ -12,6 +12,9 @@ import {
   OneAbstractRendererForeignMutationsExpected,
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,
+  ValueOption,
+  ValueUnit,
+  PredicateValue,
 } from "../../../../../../../../../main";
 
 export const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
@@ -29,7 +32,9 @@ export const InitializeCo = <
       CustomPresentationContext,
       ExtraContext
     > &
-      Pick<OneAbstractRendererForeignMutationsExpected, "onChange">,
+      Value<ValueOption | ValueUnit> & {
+        local: PredicateValue;
+      } & Pick<OneAbstractRendererForeignMutationsExpected, "onChange">,
     OneAbstractRendererState
   >();
 

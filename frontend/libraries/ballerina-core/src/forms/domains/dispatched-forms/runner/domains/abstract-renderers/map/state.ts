@@ -110,7 +110,7 @@ export type MapAbstractRendererView<
 > = View<
   MapAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     MapAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueTuple>,
   MapAbstractRendererState,
   MapAbstractRendererForeignMutationsExpected<Flags>,
   {

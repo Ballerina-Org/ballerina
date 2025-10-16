@@ -13,8 +13,8 @@ import {
   Unit,
   Option,
   replaceWith,
-  StringSerializedType,
 } from "../../../../../../../../main";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const UnitAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -36,16 +36,20 @@ export const UnitAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[unit]";
 
-    if (!PredicateValue.Operations.IsUnit(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsUnit(value)) {
       console.error(
         `Unit expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Unit value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -59,6 +63,7 @@ export const UnitAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

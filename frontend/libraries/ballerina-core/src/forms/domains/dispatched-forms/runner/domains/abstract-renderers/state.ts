@@ -18,13 +18,13 @@ export type CommonAbstractRendererReadonlyContext<
   C = Unit,
   ExtraContext = Unit,
 > = {
-  value: V;
   locked: boolean;
   disabled: boolean;
   globallyDisabled: boolean;
   readOnly: boolean;
   globallyReadOnly: boolean; // ignore writeable signals if true, set only for whole form
-  bindings: Bindings;
+  localBindingsPath: string;
+  globalBindings: PredicateValue;
   extraContext: ExtraContext;
   type: T;
   label?: string;
@@ -36,10 +36,12 @@ export type CommonAbstractRendererReadonlyContext<
   domNodeAncestorPath: string;
   typeAncestors: DispatchParsedType<any>[];
   lookupTypeAncestorNames: string[];
+  path: string;
 };
 
-export type CommonAbstractRendererViewOnlyReadonlyContext = {
+export type CommonAbstractRendererViewOnlyReadonlyContext<V extends PredicateValue> = {
   domNodeId: string;
+  value: V;
 };
 
 export type CommonAbstractRendererState = {

@@ -14,7 +14,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import React from "react";
 
@@ -37,16 +37,20 @@ export const StringAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[string]";
 
-    if (!PredicateValue.Operations.IsString(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsString(value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: String value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -60,6 +64,7 @@ export const StringAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

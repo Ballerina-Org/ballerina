@@ -47,6 +47,7 @@ import {
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
 } from "./coroutines/runner";
+import { useRegistryValueAtPath } from "../registry-store";
 
 /*
  * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
@@ -98,7 +99,7 @@ export const OneAbstractRenderer = <
     Flags,
     ExtraContext
   >();
-  const typedInitializeOneRunner = initializeOneRunner<
+  const TypedInitializeOneRunner = initializeOneRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
@@ -108,11 +109,50 @@ export const OneAbstractRenderer = <
     Flags,
     ExtraContext
   >();
-  const typedOneTableDebouncerRunner = oneTableDebouncerRunner<
+  const TypedOneTableDebouncerRunner = oneTableDebouncerRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
-  >();
+  >().mapContextFromProps<
+    OneAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      Value<ValueOption | ValueUnit> & {
+        local: PredicateValue;
+      } & OneAbstractRendererState
+  >((props) => {
+    const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
+      props.context,
+    ).MapErrors((_) =>
+      _.concat(`\n...${props.context.domNodeAncestorPath + "[one]"}`),
+    );
+
+    if (maybeId.kind === "errors") {
+      console.error(maybeId.errors.join("\n"));
+      return undefined;
+    }
+
+    return {
+      ...props.context,
+      onDebounce: () => {
+        if (props.context.customFormState.streamParams.value[1]) {
+          props.setState(
+            OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+              Sum.Updaters.left(
+                ValueInfiniteStreamState.Updaters.Template.reload(
+                  // safe because we check for undefined in the runFilter
+                  props.context.customFormState.getChunkWithParams!(
+                    maybeId.value,
+                  )(props.context.customFormState.streamParams.value[0]),
+                ),
+              ),
+            ),
+          );
+        }
+      },
+    };
+  });
 
   // value is Unit -> partial one, dont'run
   // value is Option<none> -> signal to run the initialization
@@ -131,30 +171,20 @@ export const OneAbstractRenderer = <
           _.labelContext,
           DetailsRendererRaw,
         );
-      if (PredicateValue.Operations.IsUnit(_.value)) {
-        return undefined;
-      }
-
-      if (!PredicateValue.Operations.IsRecord(_.value.value)) {
-        console.error(
-          `${_.domNodeAncestorPath + "[one][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
-        );
-        return undefined;
-      }
 
       const state =
         _.customFormState?.detailsState ??
         RecordAbstractRendererState.Default.zero();
 
       return {
-        value: _.value.value,
         ...state,
         readOnly: _.readOnly || _.globallyReadOnly,
         globallyReadOnly: _.globallyReadOnly,
         locked: _.locked,
         disabled: _.disabled || _.globallyDisabled,
         globallyDisabled: _.globallyDisabled,
-        bindings: _.bindings,
+        localBindingsPath: _.localBindingsPath,
+        globalBindings: _.globalBindings,
         extraContext: _.extraContext,
         type: oneEntityType,
         customPresentationContext: _.customPresentationContext,
@@ -165,6 +195,7 @@ export const OneAbstractRenderer = <
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
         labelContext,
+        path: _.path,
       };
     })
       .mapState(
@@ -249,7 +280,8 @@ export const OneAbstractRenderer = <
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: _.bindings,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               type: oneEntityType,
               customPresentationContext: _.customPresentationContext,
@@ -260,6 +292,7 @@ export const OneAbstractRenderer = <
               domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
+              path: _.path,
             };
           })
             .mapState(
@@ -333,7 +366,11 @@ export const OneAbstractRenderer = <
     OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[one]";
-    const value = props.context.value;
+    const value = useRegistryValueAtPath(props.context.path);
+    const local = useRegistryValueAtPath(props.context.localBindingsPath);
+    if (!value || !local) {
+      return <></>;
+    }
 
     if (
       !PredicateValue.Operations.IsUnit(value) &&
@@ -345,19 +382,10 @@ export const OneAbstractRenderer = <
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
-    }
-
-    const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
-      props.context,
-    ).MapErrors((_) => _.concat(`\n...${domNodeId}`));
-
-    if (maybeId.kind === "errors") {
-      const errorMsg = maybeId.errors.join("\n");
-      return <ErrorRenderer message={errorMsg} />;
     }
 
     return (
@@ -457,7 +485,7 @@ export const OneAbstractRenderer = <
                 );
 
                 props.foreignMutations.select &&
-                PredicateValue.Operations.IsUnit(props.context.value)
+                PredicateValue.Operations.IsUnit(value)
                   ? props.foreignMutations.select(updater, delta)
                   : props.foreignMutations.onChange(
                       Option.Default.some(updater),
@@ -479,7 +507,7 @@ export const OneAbstractRenderer = <
                 );
 
                 props.foreignMutations.select &&
-                PredicateValue.Operations.IsUnit(props.context.value)
+                PredicateValue.Operations.IsUnit(value)
                   ? props.foreignMutations.select(updater, delta)
                   : props.foreignMutations.onChange(
                       Option.Default.some(updater),
@@ -499,46 +527,31 @@ export const OneAbstractRenderer = <
             }
           />
         </IdProvider>
+        <TypedInitializeOneRunner
+          context={{
+            ...props.context,
+            value,
+            local,
+            onChange: props.foreignMutations.onChange,
+          }}
+          setState={props.setState}
+          foreignMutations={props.foreignMutations}
+          view={props.view}
+        />
+        <TypedOneTableDebouncerRunner
+          context={{
+            ...props.context,
+            value,
+            local,
+          }}
+          setState={props.setState}
+          foreignMutations={props.foreignMutations}
+          view={props.view}
+        />
       </>
     );
   }).any([
     typedInitializeStreamRunner,
     typedOneTableLoaderRunner,
-    typedInitializeOneRunner.mapContextFromProps((props) => ({
-      ...props.context,
-      onChange: props.foreignMutations.onChange,
-    })),
-    typedOneTableDebouncerRunner.mapContextFromProps((props) => {
-      const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
-        props.context,
-      ).MapErrors((_) =>
-        _.concat(`\n...${props.context.domNodeAncestorPath + "[one]"}`),
-      );
-
-      if (maybeId.kind === "errors") {
-        console.error(maybeId.errors.join("\n"));
-        return undefined;
-      }
-
-      return {
-        ...props.context,
-        onDebounce: () => {
-          if (props.context.customFormState.streamParams.value[1]) {
-            props.setState(
-              OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
-                Sum.Updaters.left(
-                  ValueInfiniteStreamState.Updaters.Template.reload(
-                    // safe because we check for undefined in the runFilter
-                    props.context.customFormState.getChunkWithParams!(
-                      maybeId.value,
-                    )(props.context.customFormState.streamParams.value[0]),
-                  ),
-                ),
-              ),
-            );
-          }
-        },
-      };
-    }),
   ]);
 };

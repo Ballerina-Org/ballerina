@@ -46,7 +46,7 @@ export type SecretAbstractRendererView<
     ExtraContext
   > &
     SecretAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<string>,
   SecretAbstractRendererState,
   SecretAbstractRendererViewForeignMutationsExpected<Flags>
 >;

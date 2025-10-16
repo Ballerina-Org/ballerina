@@ -72,7 +72,7 @@ export type UnionAbstractRendererView<
     ExtraContext
   > &
     UnionAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueUnionCase>,
   UnionAbstractRendererState,
   UnionAbstractRendererForeignMutationsExpected<Flags>,
   {

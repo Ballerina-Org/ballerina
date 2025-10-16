@@ -39,7 +39,7 @@ export type BoolAbstractRendererView<
 > = View<
   BoolAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     BoolAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<boolean | ValueUnit>,
   BoolAbstractRendererState,
   BoolAbstractRendererForeignMutationsExpected<Flags>
 >;

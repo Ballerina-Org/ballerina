@@ -61,7 +61,7 @@ export type EnumAbstractRendererView<
   EnumAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     EnumAbstractRendererState & {
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueOption | ValueUnit>,
   EnumAbstractRendererState,
   EnumAbstractRendererForeignMutationsExpected<Flags>
 >;

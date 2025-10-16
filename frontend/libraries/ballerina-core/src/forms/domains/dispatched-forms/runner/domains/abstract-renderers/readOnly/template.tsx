@@ -12,6 +12,7 @@ import {
   BasicUpdater,
   DispatchDelta,
   NestedRenderer,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -64,11 +65,11 @@ export const ReadOnlyAbstractRenderer = <
           disabled: _.disabled || _.globallyDisabled,
           globallyDisabled: _.globallyDisabled,
           locked: _.locked,
-          value: _.value.ReadOnly,
           ...(_.childFormState || GetDefaultChildState()),
           readOnly: true,
           globallyReadOnly: _.globallyReadOnly,
-          bindings: _.bindings,
+          localBindingsPath: _.localBindingsPath,
+          globalBindings: _.globalBindings,
           extraContext: _.extraContext,
           type: _.type.arg,
           customPresentationContext: _.customPresentationContext,
@@ -79,6 +80,7 @@ export const ReadOnlyAbstractRenderer = <
           ),
           lookupTypeAncestorNames: _.lookupTypeAncestorNames,
           labelContext,
+          path: _.path + "[ReadOnly]",
         };
       },
     )
@@ -113,16 +115,20 @@ export const ReadOnlyAbstractRenderer = <
     ReadOnlyAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[readOnly]";
-    if (!PredicateValue.Operations.IsReadOnly(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsReadOnly(value)) {
       console.error(
         `ReadOnly value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: ReadOnly value expected for list but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -135,6 +141,7 @@ export const ReadOnlyAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             embeddedTemplate={configuredChildTemplate}
           />

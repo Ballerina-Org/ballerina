@@ -66,7 +66,7 @@ export type SumAbstractRendererView<
 > = View<
   SumAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext> &
     SumAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueSum | ValueUnit>,
   SumAbstractRendererState,
   SumAbstractRendererViewForeignMutationsExpected<Flags>,
   {

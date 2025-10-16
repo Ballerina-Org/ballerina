@@ -17,6 +17,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import {
   SearchableInfiniteStreamAbstractRendererState,
@@ -109,19 +110,23 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
     const domNodeId =
       props.context.domNodeAncestorPath + "[searchableInfiniteStream]";
 
-    if (!PredicateValue.Operations.IsOption(props.context.value)) {
+    if (!PredicateValue.Operations.IsOption(value)) {
       console.error(
         `Option expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -139,6 +144,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
                 props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues == false
               ),
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

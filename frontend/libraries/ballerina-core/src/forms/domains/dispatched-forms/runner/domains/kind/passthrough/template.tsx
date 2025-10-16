@@ -21,7 +21,11 @@ import {
 } from "../../../../../../../../main";
 import { DispatchPassthroughFormRunner } from "./coroutines/runner";
 import { Map, OrderedMap } from "immutable";
-import { useEffect } from "react";
+import React from "react";
+import {
+  RegistryStoreProvider,
+  createRegistryStore,
+} from "../../abstract-renderers/registry-store";
 
 export const DispatchPassthroughFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
@@ -50,42 +54,17 @@ export const DispatchPassthroughFormLauncherTemplate = <
     >,
     DispatchPassthroughFormLauncherForeignMutationsExpected<T>
   >((props) => {
-    const entity = props.context.launcherRef.entity;
     const config = props.context.launcherRef.config;
+    const registry = props.context.launcherRef.valueRegistry;
 
-    useEffect(() => {
-      if (entity.kind == "r") return;
-      if (entity.value.kind == "errors") return;
-      const a = performance.now();
-      const sig = PredicateValue.Operations.GenerateSignature(
-        PredicateValue.Default.record(
-          OrderedMap<string, PredicateValue>([
-            ["Hello", "Hello"],
-            ["World", "2"],
-            ["3", false]
-          ]),
-        ),
-      );
-      const b = performance.now();
-      console.debug(`Time taken: ${b - a} milliseconds`);
-      console.debug(sig);
-    }, [entity.value]);
+    // Initialize local store once and update imperatively on registry changes without relying on props for children
+    const store = React.useMemo(() => createRegistryStore(registry), []);
+    React.useEffect(() => {
+      store.set(registry);
+    }, [registry, store]);
 
-    const a = performance.now();
-
-    if (
-      entity.kind == "r" ||
-      config.kind == "r" ||
-      props.context.status.kind == "not initialized"
-    ) {
+    if (config.kind == "r" || props.context.status.kind == "not initialized") {
       return <></>;
-    }
-
-    if (entity.value.kind == "errors") {
-      console.error(entity.value.errors.map((error) => error).join("\n"));
-      return (
-        props.context.errorComponent ?? <>Error: Check console for details</>
-      );
     }
 
     if (config.value.kind == "errors") {
@@ -94,12 +73,6 @@ export const DispatchPassthroughFormLauncherTemplate = <
         props.context.errorComponent ?? <>Error: Check console for details</>
       );
     }
-
-    const bindings: Bindings = Map([
-      ["global", config.value.value],
-      ["root", entity.value.value],
-      ["local", entity.value.value],
-    ]);
 
     if (props.context.status.kind == "error") {
       console.error(
@@ -115,48 +88,50 @@ export const DispatchPassthroughFormLauncherTemplate = <
     }
 
     return (
-      <props.context.status.Form
-        context={{
-          ...props.context.formState,
-          value: entity.value.value,
-          locked: false,
-          disabled: props.context.globallyDisabled,
-          globallyDisabled: props.context.globallyDisabled,
-          readOnly: props.context.globallyReadOnly,
-          globallyReadOnly: props.context.globallyReadOnly,
-          type: DispatchParsedType.Default.primitive("unit"), // currently unused here
-          bindings,
-          extraContext: props.context.extraContext,
-          remoteEntityVersionIdentifier:
-            props.context.remoteEntityVersionIdentifier,
-          domNodeAncestorPath: "",
-          labelContext: props.context.formName,
-          lookupTypeAncestorNames: [],
-          customPresentationContext: undefined,
-          typeAncestors: [],
-        }}
-        setState={(stateUpdater: BasicUpdater<CommonAbstractRendererState>) =>
-          props.setState(
-            DispatchPassthroughFormLauncherState<
-              T,
-              Flags,
-              CustomPresentationContext,
-              ExtraContext
-            >().Updaters.formState(stateUpdater),
-          )
-        }
-        view={unit}
-        foreignMutations={{
-          ...props.foreignMutations,
-          onChange: (
-            updater: Option<BasicUpdater<PredicateValue>>,
-            delta: DispatchDelta<Flags>,
-          ) => {
-            if (props.context.launcherRef.entity.kind == "r") return;
-            props.context.launcherRef.onEntityChange(updater, delta);
-          },
-        }}
-      />
+      <RegistryStoreProvider store={store}>
+        <props.context.status.Form
+          context={{
+            ...props.context.formState,
+            locked: false,
+            disabled: props.context.globallyDisabled,
+            globallyDisabled: props.context.globallyDisabled,
+            readOnly: props.context.globallyReadOnly,
+            globallyReadOnly: props.context.globallyReadOnly,
+            type: DispatchParsedType.Default.primitive("unit"), // currently unused here
+            localBindingsPath: `[${props.context.formName}]`,
+            globalBindings: config.value.value,
+            extraContext: props.context.extraContext,
+            remoteEntityVersionIdentifier:
+              props.context.remoteEntityVersionIdentifier,
+            domNodeAncestorPath: "",
+            labelContext: props.context.formName,
+            lookupTypeAncestorNames: [],
+            customPresentationContext: undefined,
+            typeAncestors: [],
+            path: `[${props.context.formName}]`,
+          }}
+          setState={(stateUpdater: BasicUpdater<CommonAbstractRendererState>) =>
+            props.setState(
+              DispatchPassthroughFormLauncherState<
+                T,
+                Flags,
+                CustomPresentationContext,
+                ExtraContext
+              >().Updaters.formState(stateUpdater),
+            )
+          }
+          view={unit}
+          foreignMutations={{
+            ...props.foreignMutations,
+            onChange: (
+              updater: Option<BasicUpdater<PredicateValue>>,
+              delta: DispatchDelta<Flags>,
+            ) => {
+              props.context.launcherRef.onEntityChange(updater, delta);
+            },
+          }}
+        />
+      </RegistryStoreProvider>
     );
   }).any([
     DispatchPassthroughFormRunner<

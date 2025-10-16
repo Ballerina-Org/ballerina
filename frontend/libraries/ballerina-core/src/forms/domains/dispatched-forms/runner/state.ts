@@ -28,6 +28,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
+  PredicateValueRegistry,
 } from "../../../../../main";
 import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
 import {
@@ -80,7 +81,8 @@ export type EntityLauncherRefConfig =
 
 export type PassthroughLauncherRef<Flags = Unit> = {
   kind: "passthrough";
-  entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+  // entity: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
+  valueRegistry: PredicateValueRegistry;
   config: Sum<ValueOrErrors<PredicateValue, string>, "not initialized">;
   onEntityChange: DispatchOnChange<PredicateValue, Flags>;
 } & BaseLauncherRef<BaseApiSources>;

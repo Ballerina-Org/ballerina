@@ -47,7 +47,7 @@ export type EnumMultiselectAbstractRendererView<
     EnumMultiselectAbstractRendererState & {
       selectedIds: Array<Guid>;
       activeOptions: "unloaded" | "loading" | Array<ValueRecord>;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueRecord>,
   EnumMultiselectAbstractRendererState,
   EnumMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

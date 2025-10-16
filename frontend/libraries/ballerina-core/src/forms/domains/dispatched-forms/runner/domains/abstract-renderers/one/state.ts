@@ -129,7 +129,10 @@ export const OneAbstractRendererState = {
       ctx: OneAbstractRendererReadonlyContext<
         CustomPresentationContext,
         ExtraContext
-      >,
+      > &
+        Value<ValueOption | ValueUnit> & {
+          local: PredicateValue;
+        },
     ): ValueOrErrors<string, string | undefined> => {
       if (ctx.value == undefined) {
         return ValueOrErrors.Default.throwOne(undefined);
@@ -137,7 +140,7 @@ export const OneAbstractRendererState = {
 
       /// When initailising, in both stages, inject the id to the get chunk
 
-      const local = ctx.bindings.get("local");
+      const local = ctx.local;
       if (local == undefined) {
         return ValueOrErrors.Default.throwOne(
           `local binding is undefined when intialising one`,
@@ -204,7 +207,7 @@ export type OneAbstractRendererView<
     ExtraContext
   > & {
     hasMoreValues: boolean;
-  } & CommonAbstractRendererViewOnlyReadonlyContext &
+  } & CommonAbstractRendererViewOnlyReadonlyContext<ValueOption | ValueUnit> &
     OneAbstractRendererState,
   OneAbstractRendererState,
   OneAbstractRendererViewForeignMutationsExpected<Flags>,

@@ -29,6 +29,7 @@ import {
   DispatchParsedType,
   StringSerializedType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const DispatchTupleAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -58,44 +59,43 @@ export const DispatchTupleAbstractRenderer = <
     (itemIndex: number) => (flags: Flags | undefined) =>
       itemTemplates
         .get(itemIndex)!
-        .mapContext(
-          (
-            _: TupleAbstractRendererReadonlyContext<
-              CustomPresentationContext,
-              ExtraContext
-            > &
-              TupleAbstractRendererState,
-          ) => {
-            const itemRenderer = ItemRenderers[itemIndex];
-            const labelContext =
-              CommonAbstractRendererState.Operations.GetLabelContext(
-                _.labelContext,
-                itemRenderer,
-              );
-            return {
-              ...(_.itemFormStates.get(itemIndex) ||
-                ItemFormStates.get(itemIndex)!()),
-              value: _.value.values.get(itemIndex)!,
-              disabled: _.disabled || _.globallyDisabled,
-              globallyDisabled: _.globallyDisabled,
-              locked: _.locked,
-              bindings: _.bindings,
-              readOnly: _.readOnly || _.globallyReadOnly,
-              globallyReadOnly: _.globallyReadOnly,
-              extraContext: _.extraContext,
-              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              customPresentationContext: _.customPresentationContext,
-              type: _.type.args[itemIndex],
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
-              typeAncestors: [_.type as DispatchParsedType<any>].concat(
-                _.typeAncestors,
-              ),
-              labelContext: labelContext,
-              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-            };
-          },
-        )
+        .mapContext<
+          TupleAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TupleAbstractRendererState
+        >((_) => {
+          const itemRenderer = ItemRenderers[itemIndex];
+          const labelContext =
+            CommonAbstractRendererState.Operations.GetLabelContext(
+              _.labelContext,
+              itemRenderer,
+            );
+          return {
+            ...(_.itemFormStates.get(itemIndex) ||
+              ItemFormStates.get(itemIndex)!()),
+            disabled: _.disabled || _.globallyDisabled,
+            globallyDisabled: _.globallyDisabled,
+            locked: _.locked,
+            localBindingsPath: _.localBindingsPath,
+            globalBindings: _.globalBindings,
+            readOnly: _.readOnly || _.globallyReadOnly,
+            globallyReadOnly: _.globallyReadOnly,
+            extraContext: _.extraContext,
+            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+            customPresentationContext: _.customPresentationContext,
+            type: _.type.args[itemIndex],
+            domNodeAncestorPath:
+              _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
+            typeAncestors: [_.type as DispatchParsedType<any>].concat(
+              _.typeAncestors,
+            ),
+            labelContext: labelContext,
+            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            path: _.path + `[${itemIndex + 1}]`,
+          };
+        })
         .mapState(
           (
             _: BasicUpdater<CommonAbstractRendererState>,
@@ -177,16 +177,20 @@ export const DispatchTupleAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[tuple]";
 
-    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsTuple(value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering tuple field\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Tuple value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -200,6 +204,7 @@ export const DispatchTupleAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -116,7 +116,7 @@ export type SearchableInfiniteStreamMultiselectAbstractRendererView<
       isLoading: boolean;
       availableOptions: Array<CollectionReference>;
       disabled: boolean;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueRecord>,
   SearchableInfiniteStreamMultiselectAbstractRendererState,
   SearchableInfiniteStreamMultiselectAbstractRendererForeignMutationsExpected<Flags>
 >;

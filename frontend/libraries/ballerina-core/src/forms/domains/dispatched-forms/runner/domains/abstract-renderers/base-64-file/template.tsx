@@ -14,6 +14,7 @@ import {
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,
 } from "./state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const Base64FileAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -38,17 +39,20 @@ export const Base64FileAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[base64File]";
-
-    if (!PredicateValue.Operations.IsString(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsString(value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: String expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -62,6 +66,7 @@ export const Base64FileAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

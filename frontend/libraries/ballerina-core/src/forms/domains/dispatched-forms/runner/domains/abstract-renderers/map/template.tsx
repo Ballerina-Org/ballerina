@@ -30,6 +30,7 @@ import {
   DispatchParsedType,
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const MapAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -86,16 +87,13 @@ export const MapAbstractRenderer = <
             return {
               ...(_.elementFormStates?.get(elementIndex)?.KeyFormState ||
                 GetDefaultKeyFormState()),
-              value:
-                (_.value.values.get(elementIndex) as ValueTuple)?.values.get(
-                  0,
-                ) || GetDefaultKeyFormValue(),
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: _.bindings,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
@@ -107,6 +105,7 @@ export const MapAbstractRenderer = <
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${elementIndex}][key]`,
             };
           },
         )
@@ -200,16 +199,13 @@ export const MapAbstractRenderer = <
             return {
               ...(_.elementFormStates?.get(elementIndex)?.ValueFormState ||
                 GetDefaultValueFormState()),
-              value:
-                (_.value.values?.get(elementIndex) as ValueTuple)?.values.get(
-                  1,
-                ) || GetDefaultValueFormValue(),
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: _.bindings,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               type: _.type.args[1],
               labelContext,
@@ -221,6 +217,7 @@ export const MapAbstractRenderer = <
                 _.typeAncestors,
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${elementIndex}][value]`,
             };
           },
         )
@@ -313,16 +310,20 @@ export const MapAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[map]";
 
-    if (!PredicateValue.Operations.IsTuple(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsTuple(value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Tuple value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -336,6 +337,7 @@ export const MapAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

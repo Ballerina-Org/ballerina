@@ -21,6 +21,7 @@ import {
   EnumAbstractRendererForeignMutationsExpected,
 } from "./state";
 import { OrderedMap } from "immutable";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const EnumAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -49,20 +50,23 @@ export const EnumAbstractRenderer = <
     EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[enum]";
-
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
     if (
-      !PredicateValue.Operations.IsOption(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsOption(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
         `Option or unit value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option or unit value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -83,6 +87,7 @@ export const EnumAbstractRenderer = <
                 : props.context.customFormState.options.sync.value
                     .valueSeq()
                     .toArray(),
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

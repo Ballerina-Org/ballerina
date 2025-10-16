@@ -1,4 +1,4 @@
-import { List, Map, Set } from "immutable";
+import { List, Map, OrderedMap, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
@@ -33,6 +33,7 @@ import {
   RecordAbstractRendererView,
 } from "./state";
 import { RecordFieldRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const RecordAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -105,9 +106,6 @@ export const RecordAbstractRenderer = <
                 fieldRenderer,
               );
             return {
-              value: PredicateValue.Operations.IsUnit(_.value)
-                ? _.value
-                : _.value.fields.get(fieldName)!,
               type: fieldRenderer.renderer.type,
               ...(_.fieldStates?.get(fieldName) ||
                 FieldTemplates.get(fieldName)!.GetDefaultState()),
@@ -116,9 +114,8 @@ export const RecordAbstractRenderer = <
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: isInlined
-                ? _.bindings
-                : _.bindings.set("local", _.value),
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
@@ -129,6 +126,7 @@ export const RecordAbstractRenderer = <
                 _.typeAncestors,
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${fieldName}]`,
             };
           },
         )
@@ -222,27 +220,36 @@ export const RecordAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[record]";
 
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!value) {
+      return <></>;
+    }
     if (
-      !PredicateValue.Operations.IsRecord(props.context.value) &&
-      !PredicateValue.Operations.IsUnit(props.context.value)
+      !PredicateValue.Operations.IsRecord(value) &&
+      !PredicateValue.Operations.IsUnit(value)
     ) {
       console.error(
         `Record or unit value expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Record or unit value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
     }
 
-    const updatedBindings = isInlined
-      ? props.context.bindings
-      : props.context.bindings.set("local", props.context.value);
+    const updatedBindings = Map([
+      ["root", PredicateValue.Default.unit()], // TODO - add root value
+      ["local", value],
+      ["global", props.context.globalBindings],
+    ]);
 
     const calculatedLayout = FormLayout.Operations.ComputeLayout(
       updatedBindings,
@@ -341,6 +348,7 @@ export const RecordAbstractRenderer = <
               ...props.context,
               domNodeId,
               layout: calculatedLayout.value,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

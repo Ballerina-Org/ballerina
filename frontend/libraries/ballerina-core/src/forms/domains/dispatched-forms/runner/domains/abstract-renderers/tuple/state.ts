@@ -72,7 +72,7 @@ export type TupleAbstractRendererView<
     ExtraContext
   > &
     TupleAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext<ValueTuple>,
   TupleAbstractRendererState,
   TupleAbstractRendererViewForeignMutationsExpected<Flags>,
   {

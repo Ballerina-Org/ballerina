@@ -38,6 +38,7 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -187,26 +188,15 @@ export const TableAbstractRenderer = <
             rowState?.fieldStates.get(column) ??
             CellTemplates.get(column)!.GetDefaultState();
 
-          const rowValue = _.value.data.get(rowId);
-
-          if (rowValue == undefined) {
-            console.error(
-              `Row value is undefined for row ${rowId}\n
-              ...When rendering table field ${column}\n
-              ...${_.domNodeAncestorPath}`,
-            );
-            return undefined;
-          }
-
           return {
-            value,
             ...cellState,
             disabled: disabled || _.disabled || _.globallyDisabled,
             globallyDisabled: _.globallyDisabled,
             readOnly: _.readOnly || _.globallyReadOnly,
             globallyReadOnly: _.globallyReadOnly,
             locked: _.locked,
-            bindings: _.bindings.set("local", rowValue),
+            localBindingsPath: _.localBindingsPath,
+            globalBindings: _.globalBindings,
             extraContext: _.extraContext,
             type: TableEntityType.fields.get(column)!,
             customPresentationContext: _.customPresentationContext,
@@ -218,6 +208,7 @@ export const TableAbstractRenderer = <
               _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             labelContext,
+            path: _.path + `[${rowId}][${column}]`,
           };
         })
 
@@ -352,19 +343,6 @@ export const TableAbstractRenderer = <
               return undefined;
             }
 
-            const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
-              ? ValueUnit.Default()
-              : _.value.data.get(selectedDetailRow);
-
-            if (value == undefined) {
-              console.error(
-                `Value is undefined for selected detail row\n
-              ...When rendering table field\n
-              ...${_.domNodeAncestorPath}`,
-              );
-              return undefined;
-            }
-
             const rowState = PredicateValue.Operations.IsString(
               selectedDetailRow,
             )
@@ -373,14 +351,14 @@ export const TableAbstractRenderer = <
               : RecordAbstractRendererState.Default.fieldState(Map());
 
             return {
-              value,
               ...rowState,
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
               globallyReadOnly: _.globallyReadOnly,
               locked: _.locked,
-              bindings: _.bindings.set("local", value),
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
               extraContext: _.extraContext,
               type: TableEntityType,
               customPresentationContext: _.customPresentationContext,
@@ -391,6 +369,7 @@ export const TableAbstractRenderer = <
               domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
+              path: _.path + `[${selectedDetailRow}]`,
             };
           })
             .mapStateFromProps<TableAbstractRendererState>(
@@ -501,10 +480,10 @@ export const TableAbstractRenderer = <
           > &
             TableAbstractRendererState
         >((_) => ({
-          value: _.value,
           locked: _.locked,
           disabled: false,
-          bindings: _.bindings,
+          localBindingsPath: _.localBindingsPath,
+          globalBindings: _.globalBindings,
           extraContext: _.extraContext,
           type: filter.type,
           label: _.label,
@@ -541,25 +520,30 @@ export const TableAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[table]";
 
-    if (!PredicateValue.Operations.IsTable(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsTable(value)) {
       console.error(
         `TableValue expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering table field\n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Table value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
     }
 
-    const updatedBindings = props.context.bindings.set(
-      "local",
-      props.context.value,
-    );
+    const updatedBindings = Map([
+      ["root", PredicateValue.Default.unit()], // TODO - add root value
+      ["local", value],
+      ["global", props.context.globalBindings],
+    ]);
 
     const visibleColumns = TableLayout.Operations.ComputeLayout(
       updatedBindings,
@@ -634,7 +618,7 @@ export const TableAbstractRenderer = <
       disabledColumnKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const hasMoreValues = props.context.value.hasMoreValues;
+    const hasMoreValues = value.hasMoreValues;
 
     const validColumns = CellTemplates.keySeq().toArray();
 
@@ -645,7 +629,7 @@ export const TableAbstractRenderer = <
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
+        : value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
               .map((_, column) =>
@@ -658,7 +642,7 @@ export const TableAbstractRenderer = <
     const embeddedUnfilteredTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
+        : value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
               .map((_, column) =>
@@ -678,8 +662,8 @@ export const TableAbstractRenderer = <
       !PredicateValue.Operations.IsUnit(
         props.context.customFormState.selectedDetailRow,
       ) &&
-      props.context.value.data.size > 0 &&
-      props.context.value.data.has(
+        value.data.size > 0 &&
+      value.data.has(
         props.context.customFormState.selectedDetailRow,
       );
 
@@ -701,6 +685,7 @@ export const TableAbstractRenderer = <
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,
               tableEntityType: TableEntityType,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,

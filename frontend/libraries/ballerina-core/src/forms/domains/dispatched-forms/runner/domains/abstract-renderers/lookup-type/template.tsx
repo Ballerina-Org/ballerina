@@ -7,6 +7,7 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererForeignMutationsExpected,
+  useRegistryValueAtPath,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -51,6 +52,10 @@ export const LookupTypeAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
     return (
       <>
         <IdProvider domNodeId={props.context.domNodeAncestorPath}>
@@ -59,6 +64,7 @@ export const LookupTypeAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
+              value,
               lookupTypeAncestorNames: [
                 ...props.context.lookupTypeAncestorNames,
                 lookupType.asString(),

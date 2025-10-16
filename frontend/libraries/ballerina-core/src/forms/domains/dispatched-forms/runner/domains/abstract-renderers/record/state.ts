@@ -85,7 +85,7 @@ export type RecordAbstractRendererView<
   > &
     RecordAbstractRendererState & {
       layout: FormLayout;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueRecord | ValueUnit>,
   RecordAbstractRendererState,
   RecordAbstractRendererForeignMutationsExpected<Flags>,
   {

@@ -484,7 +484,7 @@ export type TableAbstractRendererView<
     TableAbstractRendererState & {
       hasMoreValues: boolean;
       tableEntityType: RecordType<any>;
-    } & CommonAbstractRendererViewOnlyReadonlyContext,
+    } & CommonAbstractRendererViewOnlyReadonlyContext<ValueTable>,
   TableAbstractRendererState,
   TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {

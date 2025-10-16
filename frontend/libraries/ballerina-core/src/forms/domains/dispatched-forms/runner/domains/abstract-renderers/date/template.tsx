@@ -15,6 +15,7 @@ import {
   DateAbstractRendererState,
   DateAbstractRendererView,
 } from "./state";
+import { useRegistryValueAtPath } from "../registry-store";
 
 export const DateAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -35,17 +36,20 @@ export const DateAbstractRenderer = <
     DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath + "[date]";
-
-    if (!PredicateValue.Operations.IsDate(props.context.value)) {
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!PredicateValue.Operations.IsDate(value)) {
       console.error(
         `Date expected but got: ${JSON.stringify(
-          props.context.value,
+          value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
           message={`${domNodeId}: Date value expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -59,6 +63,7 @@ export const DateAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              value,
             }}
             foreignMutations={{
               ...props.foreignMutations,
