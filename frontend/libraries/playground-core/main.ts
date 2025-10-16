@@ -4,6 +4,7 @@ export * from "./ide/state";
 export * from "./ide/template";
 export * from "./ide/api/specs";
 export * from "./ide/api/seeds";
+export * from "./ide/api/bridge";
 export * from "./ide/api/Unmock/ones";
 export * from "./ide/api/Unmock/enums";
 export * from "./ide/api/Unmock/streams";

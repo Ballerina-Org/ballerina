@@ -1327,7 +1327,7 @@ export const dispatchFromAPIRawValue =
   (raw: any): ValueOrErrors<PredicateValue, string> => {
 
     const result: ValueOrErrors<PredicateValue, string> = (() => {
-        debugger
+
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
         if (t.name == "unit") {
@@ -1403,7 +1403,9 @@ export const dispatchFromAPIRawValue =
           ValueOrErrors.Default.return(PredicateValue.Default.tuple(values)),
         );
       }
+      
       if (t.kind == "map" && t.args.length == 2) {
+          debugger
         const result = converters["Map"].fromAPIRawValue(raw);
 
         return ValueOrErrors.Operations.All(

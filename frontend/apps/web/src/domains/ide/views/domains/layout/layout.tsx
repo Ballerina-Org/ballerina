@@ -6,7 +6,7 @@ import {
 
     update,
     VirtualFolders,
-    validateCompose, validateExplore, getSpec, seedPath
+    validateCompose, validateExplore, getSpec, seedPath, getKeys
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -34,6 +34,7 @@ import json = languages.json;
 import {Hero} from "./hero.tsx";
 import {List} from "immutable";
 import {SelectEntityAndLookups} from "../lookups/selector/layout.tsx";
+import LauncherSelector from "../forms/launcher-selector.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -102,7 +103,7 @@ export const IdeLayout: IdeView = (props) =>{
                                         fromVoe(call,'Specification save');
                                         const updated = await getSpec(props.context.name.value);
                                         if(updated.kind == "value") {
-                                             props.setState(Ide.Updaters.Phases.locking.refreshVfs(updated.value.folders));
+                                             props.setState(Ide.Updaters.Phases.locking.refreshVfs(updated.value));
                                         }
                                         
                                     }
@@ -127,8 +128,16 @@ export const IdeLayout: IdeView = (props) =>{
                                     }
                                 }}
                                 onSettings={()=> props.setState(Ide.Updaters.CommonUI.toggleSettings())}
-                                onRun={() =>{
-                                    props.setState(LockedSpec.Operations.enableRun());
+                                onRun={async () =>{
+                                    if(!(props.context.phase == "locked" && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file')) { return;}
+                                    const launchers = await getKeys(props.context.name.value, "launchers", props.context.locked.workspace.current.file.metadata.path.split("/"));
+                                    
+                                    if(launchers.kind == "errors") {
+                                        props.setState(Ide.Updaters.CommonUI.lockingErrors(launchers.errors));
+                                        return;
+                                    }
+                                    
+                                    props.setState(LockedSpec.Operations.enableRun(launchers.value));
                                     forceRerender();
                                 }}
                                 onSeed={
@@ -167,19 +176,37 @@ export const IdeLayout: IdeView = (props) =>{
                                     <aside className="relative h-full">
                                         <FormSkeleton {...props.context} setState={props.setState} />
                                         
-                                        { props.context.phase == "locked" &&  props.context.locked.progress.kind == 'preDisplay' 
+                                        { props.context.phase == "locked" 
+                                            &&  props.context.locked.progress.kind == 'preDisplay' 
+                                            && props.context.locked.progress.dataEntry.kind == 'launchers'
+                                            && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file'
                                             && <div className="card bg-base-100 w-full mt-5">
                                             <div className="card-body w-full">
-                                                <LauncherAndEntity {...props.context.locked.progress.selectEntityFromLauncher} setState={props.setState} />
+                                                <LauncherSelector
+                                                onChange={async (value: any) =>
+                                                props.setState(
+                                                    LockedSpec.Updaters.Step.selectLauncher(value).then(s => {
+                                                        forceRerender()
+                                                        return s
+                                                    })
+                                                )
+                                            }
+                                                options={props.context.locked.progress.dataEntry.launchers}
+                                                />
+                                                {/*<LauncherAndEntity {...props.context.locked.progress.selectEntityFromLauncher} setState={props.setState} />*/}
                                                 {/*<SelectEntityAndLookups />*/}
-                                                { props.context.locked.progress.selectEntityFromLauncher.kind == 'done'
-                                                    && props.context.locked.validatedSpec.kind == "r"
+                                                { props.context.locked.validatedSpec.kind == "r" 
+                                                    && props.context.locked.progress.dataEntry.kind == 'launchers' 
+                                                    && props.context.locked.progress.dataEntry.selected.kind == "r"
+                                                    
                                                     && <><DispatcherFormsApp
                                                         key={version}
-                                                        launcherName={props.context.locked.progress.selectEntityFromLauncher.a.key}
-                                                        launcherConfigName={props.context.locked.progress.selectEntityFromLauncher.a.configType}
+                                                        //launcherName={props.context.locked.progress.selectEntityFromLauncher.a.key}
+                                                        //launcherConfigName={props.context.locked.progress.selectEntityFromLauncher.a.configType}
                                                         specName={props.context.name.value}
-                                                        entityName={props.context.locked.progress.selectEntityFromLauncher.b}
+                                                        path={props.context.locked.workspace.current.file.metadata.path.split("/")}
+                                                        launcher={props.context.locked.progress.dataEntry.selected.value}
+                                                        //entityName={props.context.locked.progress.selectEntityFromLauncher.b}
                                                         setState={props.setState}
                                                         typeName={"Person"}
                                                         spec={props.context.locked.validatedSpec.value}/></>

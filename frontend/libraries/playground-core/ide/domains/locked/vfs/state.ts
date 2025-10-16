@@ -63,6 +63,25 @@ export const WorkspaceState = {
                     }
                 })
             }),
+        reselectFileAfterMovingToOwnFolder: (): Updater<WorkspaceState> =>
+            Updater(workspace => {
+                if(!(workspace.kind == 'selected' && workspace.current.kind == 'file')) return workspace;
+                const file =  workspace.current.file
+                const path = VirtualFolders.Operations.getNestedFileInNamedFolder(file.metadata.path.split("/"))
+                const newFile = FlatNode.Operations.findFileByPath(workspace.nodes, path.join("/"))
+                const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, path.join("/"))
+                if(folder.kind == "l" ) return workspace;
+                if(newFile == null) return workspace;
+                return ({ 
+                    ...workspace,
+                    kind: 'selected',
+                    current: {
+                        kind: 'file',
+                        file: newFile,
+                        folder: folder.value
+                    }
+                })
+            }),
         defaultForSingleFolder: (): Updater<WorkspaceState> =>
             Updater(workspace =>
                 {
@@ -105,6 +124,14 @@ export const VirtualFolders = {
             const i = Math.max(0, Math.floor(Math.log(bytes) / Math.log(k)));
             const n = bytes / Math.pow(k, i);
             return `${n.toFixed(n >= 10 || i === 0 ? 0 : 1)} ${sizes[i]}`;
+        },
+        getNestedFileInNamedFolder(path: string[]): string[] {
+            if (path.length === 0) return [];
+
+            const fileName = path[path.length - 1];
+            const withoutExt = fileName.replace(/\.[^/.]+$/, "");
+
+            return [...path.slice(0, -1), withoutExt, fileName];
         },
         markLeaves: (n: Node): Node => {
             if (n.metadata.kind === "file") {

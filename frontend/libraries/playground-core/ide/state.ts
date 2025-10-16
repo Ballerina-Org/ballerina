@@ -78,6 +78,15 @@ export const Ide = {
                             ...ide,
                             locked: {...ide.locked, workspace: WorkspaceState.Updater.reloadContent(node)(ide.locked.workspace)},
                         })
+                    }),
+                vfs: (vfs: Updater<WorkspaceState>): Updater<Ide> =>
+                    Updater(ide => {
+
+                        if (ide.phase != 'locked') return ide;
+                        return ({
+                            ...ide,
+                            locked: {...ide.locked, workspace: vfs(ide.locked.workspace)},
+                        })
                     })
             },
         }

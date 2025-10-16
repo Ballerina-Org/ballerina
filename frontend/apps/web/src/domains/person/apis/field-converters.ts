@@ -66,9 +66,11 @@ export const fieldTypeConverters: ApiConverters<PersonFormInjectedTypes> = {
   union: { fromAPIRawValue: (_) => _, toAPIRawValue: ([_, __]) => _ },
   SingleSelection: {
     fromAPIRawValue: (_) =>
-      _.IsSome == false
+    {
+        debugger
+      return _.IsSome == false
         ? CollectionSelection().Default.right("no selection")
-        : CollectionSelection().Default.left(_.Value),
+        : CollectionSelection().Default.left(_.Value)},
     toAPIRawValue: ([_, __]) =>
       _.kind == "r"
         ? { IsSome: false, Value: null }

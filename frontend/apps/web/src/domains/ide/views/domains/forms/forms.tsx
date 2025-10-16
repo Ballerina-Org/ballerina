@@ -43,7 +43,7 @@ import {
 import { DispatchFieldTypeConverters } from "../../../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 import {
-    DispatchFromConfigApis,
+    DispatchFromConfigApis, expand,
     Ide,
     IdeEntityApis,
     IdeFormProps,
@@ -261,17 +261,17 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value"
         ) {
             
-            const toApiRawParser =
-                specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                    props.launcherName,
-                )!.parseValueToApi;
-            const path = DispatchDeltaTransfer.Default.FromDelta(
-                toApiRawParser as any, //TODO - fix type issue if worth it
-                parseCustomDelta,
-            )(delta);
-
-            setEntityPath(path);
-            setRemoteEntityVersionIdentifier(v4());
+            // const toApiRawParser =
+            //     specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
+            //         props.launcherName,
+            //     )!.parseValueToApi;
+            // const path = DispatchDeltaTransfer.Default.FromDelta(
+            //     toApiRawParser as any, //TODO - fix type issue if worth it
+            //     parseCustomDelta,
+            // )(delta);
+            //
+            // setEntityPath(path);
+            // setRemoteEntityVersionIdentifier(v4());
         }
     };
 
@@ -286,18 +286,18 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             "value" 
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-            
-            getSeed(props.specName, props.entityName)
+
+            expand(props.specName, props.launcher, props.path)
                 .then(async (raw) => {
-             
+                    debugger    
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
-     
+                
      
                         const parsed =
                             spec.launchers.passthrough
-                                .get(props.launcherName)!
-                                .parseEntityFromApi(raw.value.value);
+                                .get(props.launcher)!
+                                .parseEntityFromApi(raw.value);
 
                         if (parsed.kind == "errors") {
                             console.error("parsed entity errors", parsed.errors);
@@ -313,7 +313,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                             //setEntity(Sum.Default.left(parsed));
                     
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
-                            setEntityId(res.id as any);
+                            //setEntityId(res.id as any);
                         }
                     }
                     else {
@@ -324,7 +324,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         //UnmockingApisEntities.entityApis
         //DispatchFromConfigApis.entityApis
         IdeEntityApis
-            .get(props.launcherConfigName)!("")
+            .get("GlobalConfiguration")!("")
             .then((raw) => {
                 if (
                     specificationDeserializer.deserializedSpecification.sync.kind ==
@@ -335,7 +335,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     debugger
                     const parsed =
                         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get(props.launcherName)!
+                            .get(props.launcher)!
                             .parseEntityFromApi(raw.value.value);
                     if (parsed.kind == "errors") {
                         debugger
@@ -366,10 +366,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         );
     }
 
-    debugger
+
     return (
         <div className="App">
-            {/*<h1>Ballerina 🩰</h1>*/}
+            <h1>Ballerina IDE 🩰</h1>
             <div className="card">
                 <table>
                     <tbody>
@@ -464,7 +464,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     ...specificationDeserializer,
                                     ...passthroughFormState,
                                     launcherRef: {
-                                        name: "person-transparent",
+                                        name: props.launcher,
                                         kind: "passthrough",
                                         entity: entity,
                                         config,

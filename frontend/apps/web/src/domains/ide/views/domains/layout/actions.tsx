@@ -57,7 +57,7 @@ export const Actions: React.FC<ActionsProps> = ({
     const isWellKnownFile = context.phase === "locked"
         && context.locked.workspace.kind === "selected"
         && (context.locked.workspace.current.kind == 'file' 
-            && (context.locked.workspace.current.file.name.replace(".json","") == "codegen"
+            && (context.locked.workspace.current.file.name.replace(".json","") == "go-config"
         || context.locked.workspace.current.file.name.replace(".json","") == "seeds" 
             || context.locked.workspace.current.file.name.replace(".json","") == "merged" ))
     return (
@@ -74,14 +74,14 @@ export const Actions: React.FC<ActionsProps> = ({
 
         { context.phase == "locked" &&
             <label
-                htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Virtual Folders">
+                htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Workspace">
                 <VscFolderLibrary className="mt-2" size={size}/>
             </label>}
 
         {context.phase === "locked" && (
             <button
                 className="btn tooltip tooltip-bottom"
-                data-tip="Save changes"
+                data-tip="Save"
                 onClick={onSave}
             >
                 <VscSave size={size} />
@@ -120,13 +120,14 @@ export const Actions: React.FC<ActionsProps> = ({
             && (
             <button
                 className="btn tooltip tooltip-bottom"
-                data-tip="Run Forms Engine"
+                data-tip="Run Forms"
                 onClick={onRun}
                 disabled={!canRun || isWellKnownFile}
             >
                 <VscPlay size={size} />
             </button>
         )}
+        <div className="ml-auto flex space-x-2">
         {context.phase === "locked"
             //&& context.step === "design"
             //&& context.locked.seeds.kind == "r" 
@@ -134,7 +135,7 @@ export const Actions: React.FC<ActionsProps> = ({
             && (
                 <button
                     className="btn tooltip tooltip-bottom"
-                    data-tip="Change setting"
+                    data-tip="Settings"
                     onClick={onSettings}
                 >
                     <VscSettings size={size} />
@@ -143,20 +144,21 @@ export const Actions: React.FC<ActionsProps> = ({
         {context.phase === "locked" && hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"
-                data-tip="Hide Forms"
+                data-tip="Show Forms"
                 onClick={onHide}
             >
                 <VscTriangleLeft size={size} />
             </button>}
         {context.phase === "locked" && !hideRight && (
             <button
-                className="btn tooltip tooltip-bottom ml-auto"
-                data-tip="Show Forms"
+                className="btn tooltip tooltip-bottom"
+                data-tip="Hide Forms"
                 onClick={onHide}
             >
                 <VscTriangleRight size={size} />
             </button>
         )}
+        </div>
     </div>
 );
 }

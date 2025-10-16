@@ -19,14 +19,14 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                     props.setState(Ide.Updaters.CommonUI.chooseErrors(spec.errors))
                     return;
                 }
-                const mode = { mode: spec.value.settings.workspaceMode, entry: spec.value.settings.dataEntry } as SpecMode
+                const mode = { mode: 'explore', entry: 'upload-zip' } as SpecMode
                 const origin = { origin: 'selected' } as SpecOrigin;
                 const u = 
-                    Ide.Updaters.Phases.choosing.toLocked(name, spec.value.folders, origin, mode)
+                    Ide.Updaters.Phases.choosing.toLocked(name, spec.value, origin, mode)
                         .then(((ide: Ide) => {
                             if(ide.phase != 'locked') return ide;
-
-                            if(!FlatNode.Operations.hasSingleFolderBelowRoot(spec.value.folders)) {
+debugger
+                            if(!FlatNode.Operations.hasSingleFolderBelowRoot(spec.value)) {
                                 return ide;
                             }
 

@@ -13,9 +13,16 @@ export const listSpecs = async () =>
 
 export const getSpec = async (name: string) =>
 
-    await axiosVOE<{ folders: Node, settings: {workspaceMode: string, dataEntry: string}}, any>({
+    await axiosVOE<Node, any>({
         method: "GET",
         url: `/specs/${name}`,
+    });
+export const getKeys = async (name: string, keysName: string, path: string []) =>
+
+    await axiosVOE<string [], any>({
+        method: "POST",
+        url: `/specs/${name}/keys/${keysName}`,
+        data: path
     });
 
 export const getZippedWorkspace = async (name: string) =>
@@ -57,13 +64,13 @@ export const validateCompose = async (name: string) =>
     await axiosVOE<KnownSections>({
         method: "Post",
         timeout:10 * 60 * 1000,
-        url: `/specs/${name}/validateCompose`,
+        url: `/specs/${name}/validate/compose`,
     });
 export const validateExplore = async (name: string, path: string []) =>
     await axiosVOE<KnownSections>({
         method: "Post",
         timeout:10 * 60 * 1000,
-        url: `/specs/${name}/validateExplore`,
+        url: `/specs/${name}/validate/explore`,
         data: path
     });
 
@@ -103,6 +110,6 @@ export const moveIntoOwnFolder = async (name: string, path: string[]) => {
 
     return await axiosVOE<any>({
         method: "POST",
-        url: `/specs/${name}/vfs/move-into-own-folder?${query}`,
+        url: `/specs/${name}/vfs/move-to-own-folder?${query}`,
     });
 };

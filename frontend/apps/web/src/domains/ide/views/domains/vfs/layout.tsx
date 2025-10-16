@@ -19,23 +19,28 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                 <FolderFilter
                     workspace={props.locked.workspace}
                     update={props.setState}
-                    addMissingVfsFiles={async () => {
-                        if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
-                        const added = await addMissingVfsFiles(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));  
-                        if(added.kind == 'value') {
-                            const spec = await getSpec(props.name.value);
-                            if (spec.kind == 'value') {
-                                props.setState(Ide.Updaters.Phases.locking.refreshVfs(spec.value.folders))
-                            }
-                        }
-                    }}
+                    name={props.name.value}
+                    // addMissingVfsFiles={async () => {
+                    //     if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
+                    //     const added = await addMissingVfsFiles(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));  
+                    //     if(added.kind == 'value') {
+                    //         const spec = await getSpec(props.name.value);
+                    //         if (spec.kind == 'value') {
+                    //             props.setState(Ide.Updaters.Phases.locking.refreshVfs(spec.value.folders))
+                    //         }
+                    //     }
+                    // }}
                     moveIntoOwnFolder={async () => {
                         if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
                         const added = await moveIntoOwnFolder(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));
                         if(added.kind == 'value') {
                             const spec = await getSpec(props.name.value);
                             if (spec.kind == 'value') {
-                                props.setState(Ide.Updaters.Phases.locking.refreshVfs(spec.value.folders))
+                                props.setState(
+                                    Ide.Updaters.Phases.locking.refreshVfs(spec.value)
+                                        .then(
+                                            Ide.Updaters.Phases.locking.vfs(
+                                                WorkspaceState.Updater.reselectFileAfterMovingToOwnFolder())))
                             }
                         }
                     }}

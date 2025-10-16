@@ -1313,7 +1313,83 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           </table>
         </>
       );
-    },
+    },containerRecord: () => (props) => {
+          return (
+              <>
+                  <table>
+                      <tbody>
+                      {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
+                      {props.context.layout.valueSeq().map((tab) =>
+                          tab.columns.valueSeq().map((column) => (
+                              <tr style={{ display: "block", float: "left" }}>
+                                  {column.groups.valueSeq().map((group) =>
+                                      group
+                                          .filter((fieldName) =>
+                                              props.VisibleFieldKeys.has(fieldName),
+                                          )
+                                          .map((fieldName) => (
+                                              <>
+                                                  {/* <>{console.debug("fieldName", fieldName)}</> */}
+                                                  <td style={{ display: "block" }}>
+                                                      {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                          ...props,
+                                                          context: {
+                                                              ...props.context,
+                                                              disabled:
+                                                                  props.DisabledFieldKeys.has(fieldName),
+                                                          },
+                                                          view: unit,
+                                                      })}
+                                                  </td>
+                                              </>
+                                          )),
+                                  )}
+                              </tr>
+                          )),
+                      )}
+                      </tbody>
+                  </table>
+              </>
+          );
+      },dashboardConfig: () => (props) => {
+          return (
+              <>
+                  <table>
+                      <tbody>
+                      {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
+                      {props.context.layout.valueSeq().map((tab) =>
+                          tab.columns.valueSeq().map((column) => (
+                              <tr style={{ display: "block", float: "left" }}>
+                                  {column.groups.valueSeq().map((group) =>
+                                      group
+                                          .filter((fieldName) =>
+                                              props.VisibleFieldKeys.has(fieldName),
+                                          )
+                                          .map((fieldName) => (
+                                              <>
+                                                  {/* <>{console.debug("fieldName", fieldName)}</> */}
+                                                  <td style={{ display: "block" }}>
+                                                      {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                          ...props,
+                                                          context: {
+                                                              ...props.context,
+                                                              disabled:
+                                                                  props.DisabledFieldKeys.has(fieldName),
+                                                          },
+                                                          view: unit,
+                                                      })}
+                                                  </td>
+                                              </>
+                                          )),
+                                  )}
+                              </tr>
+                          )),
+                      )}
+                      </tbody>
+                  </table>
+              </>
+          );
+      },
     userDetails: () => (props) => {
       console.log({
         userDetails: props,
@@ -2100,6 +2176,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         />
       </>
     ),
+      boolean: () => DispatchPassthroughFormConcreteRenderers.boolean.defaultBoolean(),
     secondBoolean: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
@@ -2224,6 +2301,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+      string: () => DispatchPassthroughFormConcreteRenderers.string.defaultString(),
     otherString: () => (props) => {
       return (
         <>
@@ -2386,6 +2464,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
           );
       },
+      enum: () => DispatchPassthroughFormConcreteRenderers.enumSingleSelection.defaultEnum(),
   },
   enumMultiSelection: {
       defaultEnumMultiselect: () => (props) => {
@@ -2476,12 +2555,13 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   </form>}
               </label>
               { props.context.details && <p className="label">{props.context.details}</p>}
-          </fieldset>
-
+          </fieldset>,
+      enumMultiselect: () => DispatchPassthroughFormConcreteRenderers.enumMultiSelection.defaultEnumMultiselect()
 
       ,
   },
     streamSingleSelection: {
+        infiniteStream: () => DispatchPassthroughFormConcreteRenderers.streamSingleSelection.defaultInfiniteStream(),
         defaultInfiniteStream: () => (props) => (
             <>
                 {props.context.label && <h3>{props.context.label}</h3>}
@@ -3238,47 +3318,87 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   map: {
-    defaultMap: () => (props) => (
-      <>
-        {props.context.label && <h3>{props.context.label}</h3>}
-        {props.context.tooltip && <p>{props.context.tooltip}</p>}
-        {props.context.details && (
-          <p>
-            <em>{props.context.details}</em>
-          </p>
-        )}
-        <ul>
-          {props.context.value.values.map((_, elementIndex) => {
-            return (
-              <li>
-                <button
-                  onClick={() =>
-                    props.foreignMutations.remove(elementIndex, undefined)
-                  }
-                >
-                  ❌
-                </button>
-                {props.embeddedKeyTemplate(elementIndex)(undefined)({
-                  ...props,
-                  view: unit,
-                })}
-                {props.embeddedValueTemplate(elementIndex)(undefined)({
-                  ...props,
-                  view: unit,
-                })}
-              </li>
-            );
-          })}
-        </ul>
-        <button
-          onClick={() => {
-            props.foreignMutations.add({ test: true });
-          }}
-        >
-          ➕
-        </button>
-      </>
-    ),
+      defaultMap: () => (props) => (
+          <>
+              {props.context.label && <h3>{props.context.label}</h3>}
+              {props.context.tooltip && <p>{props.context.tooltip}</p>}
+              {props.context.details && (
+                  <p>
+                      <em>{props.context.details}</em>
+                  </p>
+              )}
+              <ul>
+                  {props.context.value.values.map((_, elementIndex) => {
+                      return (
+                          <li>
+                              <button
+                                  onClick={() =>
+                                      props.foreignMutations.remove(elementIndex, undefined)
+                                  }
+                              >
+                                  ❌
+                              </button>
+                              {props.embeddedKeyTemplate(elementIndex)(undefined)({
+                                  ...props,
+                                  view: unit,
+                              })}
+                              {props.embeddedValueTemplate(elementIndex)(undefined)({
+                                  ...props,
+                                  view: unit,
+                              })}
+                          </li>
+                      );
+                  })}
+              </ul>
+              <button
+                  onClick={() => {
+                      props.foreignMutations.add({ test: true });
+                  }}
+              >
+                  ➕
+              </button>
+          </>
+      ),map: () => (props) => (
+          <>
+              {props.context.label && <h3>{props.context.label}</h3>}
+              {props.context.tooltip && <p>{props.context.tooltip}</p>}
+              {props.context.details && (
+                  <p>
+                      <em>{props.context.details}</em>
+                  </p>
+              )}
+              <ul>
+                  {props.context.value.values.map((_, elementIndex) => {
+                      return (
+                          <li>
+                              <button
+                                  onClick={() =>
+                                      props.foreignMutations.remove(elementIndex, undefined)
+                                  }
+                              >
+                                  ❌
+                              </button>
+                              {props.embeddedKeyTemplate(elementIndex)(undefined)({
+                                  ...props,
+                                  view: unit,
+                              })}
+                              {props.embeddedValueTemplate(elementIndex)(undefined)({
+                                  ...props,
+                                  view: unit,
+                              })}
+                          </li>
+                      );
+                  })}
+              </ul>
+              <button
+                  onClick={() => {
+                      props.foreignMutations.add({ test: true });
+                  }}
+              >
+                  ➕
+              </button>
+          </>
+      ),
   },
   tuple: {
       valueWithFailingChecksContainer4: () => (props) => {
