@@ -1512,7 +1512,10 @@ export const DispatchDeltaTransfer = {
             >([
               {
                 Discriminator: "TableMoveFromTo",
-                MoveFromTo: [delta.id, delta.to],
+                MoveFromTo: {
+                  Item1: delta.id,
+                  Item2: delta.to,
+                },
               },
               `[TableMoveFromTo][${delta.id}][${delta.to}]`,
               delta.flags
