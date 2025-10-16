@@ -15,14 +15,18 @@ func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer S
 	return WithContext("on sum", func(value ballerina.Sum[L, R]) ballerina.Sum[error, json.RawMessage] {
 		return ballerina.Bind(ballerina.Fold(value,
 			func(left L) ballerina.Sum[error, _sequentialForSerialization] {
-				return ballerina.MapRight(WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
-				})
+				return ballerina.MapRight(
+					WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
+						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
+					},
+				)
 			},
 			func(right R) ballerina.Sum[error, _sequentialForSerialization] {
-				return ballerina.MapRight(WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
-					return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("2"), value}}
-				})
+				return ballerina.MapRight(
+					WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
+						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("2"), value}}
+					},
+				)
 			},
 		), WrappedMarshal)
 	})
@@ -53,31 +57,52 @@ func Sum3Serializer[A any, B any, C any](aSerializer Serializer[A], bSerializer 
 		return ballerina.Bind(
 			ballerina.GoErrorToSum(ballerina.FoldSum3(
 				func(v1 A) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 1/3", aSerializer)(v1),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("3"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 1/3", aSerializer)(v1),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("3"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 				func(v2 B) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 2/3", bSerializer)(v2),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("3"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 2/3", bSerializer)(v2),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("3"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 				func(v3 C) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 3/3", cSerializer)(v3),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("3"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 3/3", cSerializer)(v3),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("3"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 			))(value),
 			WrappedMarshal,
@@ -112,40 +137,68 @@ func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSeri
 		return ballerina.Bind(
 			ballerina.GoErrorToSum(ballerina.FoldSum4(
 				func(v1 A) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 1/4", aSerializer)(v1),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("4"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 1/4", aSerializer)(v1),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("4"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 				func(v2 B) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 2/4", bSerializer)(v2),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("4"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 2/4", bSerializer)(v2),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("4"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 				func(v3 C) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 3/4", cSerializer)(v3),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("4"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 3/4", cSerializer)(v3),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("4"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 				func(v4 D) (_sequentialForSerialization, error) {
-					return ballerina.Fold(
-						WithContext("on case 4/4", dSerializer)(v4),
-						func(err error) _sequentialForSerialization { return _sequentialForSerialization{} },
-						func(payload json.RawMessage) _sequentialForSerialization {
-							return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("4"), json.RawMessage("4"), payload}}
+					return ballerina.FoldWithError(
+						ballerina.MapRight(
+							WithContext("on case 4/4", dSerializer)(v4),
+							func(value json.RawMessage) _sequentialForSerialization {
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("4"), json.RawMessage("4"), value}}
+							},
+						),
+						func(err error) (_sequentialForSerialization, error) {
+							return _sequentialForSerialization{}, err
 						},
-					), nil
+						func(success _sequentialForSerialization) (_sequentialForSerialization, error) {
+							return success, nil
+						},
+					)
 				},
 			))(value),
 			WrappedMarshal,
