@@ -188,7 +188,7 @@ func parseSumHeader(sumForSerialization _sequentialForSerialization) ballerina.S
 		return ballerina.Left[error, sumHeader](fmt.Errorf("expected discriminator to be '%s', got '%s'", sumDiscriminator, sumForSerialization.Discriminator))
 	}
 	if len(sumForSerialization.Value) != 3 {
-		return ballerina.Left[error, sumHeader](fmt.Errorf("expected 2 elements in sum, got %d", len(sumForSerialization.Value)))
+		return ballerina.Left[error, sumHeader](fmt.Errorf("expected 3 elements in sum, got %d", len(sumForSerialization.Value)))
 	}
 
 	serializedIndex := sumForSerialization.Value[0]
