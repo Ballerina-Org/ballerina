@@ -18,9 +18,10 @@ module Extension =
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
     : OperationsExtension<'ext, BoolOperations<'ext>> =
 
-    let boolAndId = Identifier.FullyQualified([ "bool" ], "&&")
+    let boolAndId =
+      Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
 
-    let andOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let andOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolAndId,
       { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -56,9 +57,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
             } }
 
-    let boolOrId = Identifier.FullyQualified([ "bool" ], "||")
+    let boolOrId =
+      Identifier.FullyQualified([ "bool" ], "||") |> TypeCheckScope.Empty.Resolve
 
-    let orOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let orOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolOrId,
       { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -94,9 +96,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
             } }
 
-    let boolNotId = Identifier.FullyQualified([ "bool" ], "!")
+    let boolNotId =
+      Identifier.FullyQualified([ "bool" ], "!") |> TypeCheckScope.Empty.Resolve
 
-    let notOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let notOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolNotId,
       { Type = TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
         Kind = Kind.Star

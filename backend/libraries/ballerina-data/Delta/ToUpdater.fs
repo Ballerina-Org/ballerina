@@ -41,7 +41,7 @@ module ToUpdater =
 
                 let! targetSymbol, currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError (fun (ts, _) -> ts.LocalName = fieldName) "field values" fieldName
+                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "field values" fieldName
 
                 let! updatedValue = fieldUpdater currentValue
 
@@ -62,7 +62,7 @@ module ToUpdater =
               sum {
                 let! valueCaseName, caseValue = v |> Value.AsUnion
 
-                if caseName <> valueCaseName.Name.LocalName then
+                if caseName <> valueCaseName.Name then
                   return v
                 else
                   let! caseValue = caseUpdater caseValue

@@ -11,13 +11,14 @@ module Extensions =
   open FSharp.Data
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
+  open Ballerina.DSL.Next.Types
 
   type Value<'T, 'valueExtension> with
     static member FromJsonExt
-      (listFromJson: ValueParser<'T, 'valueExtension>)
-      (optionFromJson: ValueParser<'T, 'valueExtension>)
+      (listFromJson: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
+      (optionFromJson: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       reader.Any(
         listFromJson json,
         [ optionFromJson json

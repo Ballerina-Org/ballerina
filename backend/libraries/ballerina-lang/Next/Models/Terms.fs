@@ -15,29 +15,29 @@ module Model =
 
     static member Create name : Var = { Var.Name = name }
 
-  type ExprRec<'T> =
-    | TypeLambda of TypeParameter * Expr<'T>
-    | TypeApply of Expr<'T> * 'T
-    | Lambda of Var * Option<'T> * Expr<'T>
-    | Apply of Expr<'T> * Expr<'T>
-    | Let of Var * Option<'T> * Expr<'T> * Expr<'T>
-    | TypeLet of string * 'T * Expr<'T>
-    | RecordCons of List<Identifier * Expr<'T>>
-    | RecordWith of Expr<'T> * List<Identifier * Expr<'T>>
-    | TupleCons of List<Expr<'T>>
+  type ExprRec<'T, 'Id when 'Id: comparison> =
+    | TypeLambda of TypeParameter * Expr<'T, 'Id>
+    | TypeApply of Expr<'T, 'Id> * 'T
+    | Lambda of Var * Option<'T> * Expr<'T, 'Id>
+    | Apply of Expr<'T, 'Id> * Expr<'T, 'Id>
+    | Let of Var * Option<'T> * Expr<'T, 'Id> * Expr<'T, 'Id>
+    | TypeLet of string * 'T * Expr<'T, 'Id>
+    | RecordCons of List<'Id * Expr<'T, 'Id>>
+    | RecordWith of Expr<'T, 'Id> * List<'Id * Expr<'T, 'Id>>
+    | TupleCons of List<Expr<'T, 'Id>>
     | SumCons of SumConsSelector
-    | RecordDes of Expr<'T> * Identifier
-    | UnionDes of Map<Identifier, CaseHandler<'T>> * Option<Expr<'T>>
-    | TupleDes of Expr<'T> * TupleDesSelector
-    | SumDes of Map<SumConsSelector, CaseHandler<'T>>
+    | RecordDes of Expr<'T, 'Id> * 'Id
+    | UnionDes of Map<'Id, CaseHandler<'T, 'Id>> * Option<Expr<'T, 'Id>>
+    | TupleDes of Expr<'T, 'Id> * TupleDesSelector
+    | SumDes of Map<SumConsSelector, CaseHandler<'T, 'Id>>
     | Primitive of PrimitiveValue
-    | Lookup of Identifier
-    | If of Expr<'T> * Expr<'T> * Expr<'T>
+    | Lookup of 'Id
+    | If of Expr<'T, 'Id> * Expr<'T, 'Id> * Expr<'T, 'Id>
 
     override self.ToString() : string =
       match self with
       | TypeLambda(tp, body) -> $"(Λ{tp.ToString()}. {body.ToString()})"
-      | TypeApply(e, t) -> $"({e.ToString()} [{t.ToString()}])"
+      | TypeApply(e, _t) -> $"{e.ToString()}" // [{t.ToString()}])"
       | Lambda(v, topt, body) ->
         match topt with
         | Some t -> $"(fun ({v.Name}: {t.ToString()}) -> {body.ToString()})"
@@ -51,14 +51,14 @@ module Model =
       | RecordCons fields ->
         let fieldStr =
           fields
-          |> List.map (fun (k, v) -> $"{k.LocalName} = {v.ToString()}")
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
           |> String.concat "; "
 
         $"{{ {fieldStr} }}"
       | RecordWith(record, fields) ->
         let fieldStr =
           fields
-          |> List.map (fun (k, v) -> $"{k.LocalName} = {v.ToString()}")
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
           |> String.concat "; "
 
         $"{{ {record.ToString()} with {fieldStr} }}"
@@ -66,12 +66,12 @@ module Model =
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"
       | SumCons(selector) -> $"{selector.Case}Of{selector.Count}"
-      | RecordDes(record, field) -> $"{record.ToString()}.{field.LocalName}"
+      | RecordDes(record, field) -> $"{record.ToString()}.{field.ToString()}"
       | UnionDes(handlers, defaultOpt) ->
         let handlerStr =
           handlers
           |> Map.toList
-          |> List.map (fun (k, (v, body)) -> $"{k.LocalName}({v.Name}) => {body.ToString()}")
+          |> List.map (fun (k, (v, body)) -> $"{k.ToString()}({v.Name}) => {body.ToString()}")
           |> String.concat " | "
 
         match defaultOpt with
@@ -90,16 +90,17 @@ module Model =
       | Lookup id -> id.ToString()
       | If(cond, thenExpr, elseExpr) -> $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
-  and Expr<'T> =
-    { Expr: ExprRec<'T>
-      Location: Location }
+  and Expr<'T, 'Id when 'Id: comparison> =
+    { Expr: ExprRec<'T, 'Id>
+      Location: Location
+      Scope: TypeCheckScope }
 
     override self.ToString() : string = self.Expr.ToString()
 
   and SumConsSelector = { Case: int; Count: int }
   and TupleDesSelector = { Index: int }
 
-  and CaseHandler<'T> = Var * Expr<'T>
+  and CaseHandler<'T, 'Id when 'Id: comparison> = Var * Expr<'T, 'Id>
 
   and PrimitiveValue =
     | Int32 of Int32
@@ -131,12 +132,12 @@ module Model =
       | Unit -> "()"
 
   and Value<'T, 'valueExt> =
-    | TypeLambda of TypeParameter * Expr<'T>
-    | Lambda of Var * Expr<'T> * Map<Identifier, Value<'T, 'valueExt>>
-    | Record of Map<Identifier, Value<'T, 'valueExt>>
-    | UnionCase of TypeSymbol * Value<'T, 'valueExt>
-    | RecordDes of TypeSymbol
-    | UnionCons of TypeSymbol
+    | TypeLambda of TypeParameter * Expr<'T, ResolvedIdentifier>
+    | Lambda of Var * Expr<'T, ResolvedIdentifier> * Map<ResolvedIdentifier, Value<'T, 'valueExt>> * TypeCheckScope
+    | Record of Map<ResolvedIdentifier, Value<'T, 'valueExt>>
+    | UnionCase of ResolvedIdentifier * Value<'T, 'valueExt>
+    | RecordDes of ResolvedIdentifier
+    | UnionCons of ResolvedIdentifier
     | Tuple of List<Value<'T, 'valueExt>>
     | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
@@ -146,18 +147,18 @@ module Model =
     override self.ToString() : string =
       match self with
       | TypeLambda(tp, body) -> $"(Fun {tp.ToString()} => {body})"
-      | Lambda(v, body, _closure) -> $"(fun {v.Name} -> {body})"
+      | Lambda(v, body, _closure, _scope) -> $"(fun {v.Name} -> {body})"
       | Record fields ->
         let fieldStr =
           fields
           |> Map.toList
-          |> List.map (fun (k, v) -> $"{k.LocalName} = {v.ToString()}")
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
           |> String.concat "; "
 
         $"{{ {fieldStr} }}"
-      | UnionCase(case, value) -> $"{case.Name}({value.ToString()})"
-      | RecordDes ts -> ts.Name.LocalName
-      | UnionCons ts -> ts.Name.LocalName
+      | UnionCase(case, value) -> $"{case}({value.ToString()})"
+      | RecordDes ts -> ts.ToString()
+      | UnionCons ts -> ts.ToString()
       | Tuple values ->
         let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
         $"({valueStr})"

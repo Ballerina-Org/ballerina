@@ -73,12 +73,6 @@ module Model =
       GenerateReplace: Set<string>
       LanguageStreamType: LanguageStreamType }
 
-  and GenericType =
-    | Option
-    | List
-    | Set
-    | Map
-
   and GenericTypeDef =
     {| Type: string
        SupportedRenderers: Set<RendererName> |}
@@ -203,6 +197,7 @@ module Model =
   type TableMethod =
     | Add
     | Remove
+    | RemoveAll
     | Duplicate
     | Move
 
@@ -576,19 +571,14 @@ module Model =
     { Types: TypeContext
       Apis: FormApis<'ExprExtension, 'ValueExtension>
       Forms: Map<FormName, FormConfig<'ExprExtension, 'ValueExtension>>
+      SupportedRecordRenderers: Map<RendererName, Set<string>>
+      LanguageStreamType: LanguageStreamType
       GenericRenderers:
         List<
           {| Type: ExprType
              SupportedRenderers: Set<RendererName> |}
          >
       Launchers: Map<LauncherName, FormLauncher> }
-
-    static member Empty: ParsedFormsContext<'ExprExtension, 'ValueExtension> =
-      { Types = Map.empty
-        Apis = FormApis<'ExprExtension, 'ValueExtension>.Empty
-        Forms = Map.empty
-        GenericRenderers = []
-        Launchers = Map.empty }
 
     static member Updaters =
       {| Types =

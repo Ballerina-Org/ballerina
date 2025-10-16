@@ -232,6 +232,7 @@ module Runner =
         NonEmptyList.OfList(
           tableCase "add" TableMethod.Add,
           [ tableCase "remove" TableMethod.Remove
+            tableCase "removeAll" TableMethod.RemoveAll
             tableCase "duplicate" TableMethod.Duplicate
             tableCase "move" TableMethod.Move ]
         )

@@ -1,5 +1,5 @@
 ﻿{
-  "typesV2": {
+  "types": {
     "Gender": {
       "discriminator": "union",
       "value": [
@@ -91,68 +91,66 @@
       ]
     }
   },
-  "schema": {
-    "entities": {
-      "People": {
-        "type": {
-          "discriminator": "lookup",
-          "value": "Person"
-        },
-        "methods": [
-          "get",
-          "getMany",
-          "create",
-          "delete"
-        ],
-        "updaters": [
-        ],
-        "predicates": {
-          "SomePredicate": {
-            "discriminator": "bool",
-            "value": "false"
-          }
-        }
+  "entities": {
+    "People": {
+      "type": {
+        "discriminator": "lookup",
+        "value": "Person"
       },
-      "Genders": {
-        "type": {
-          "discriminator": "lookup",
-          "value": "Gender"
-        },
-        "methods": [
-          "get",
-          "getMany",
-          "create",
-          "delete"
-        ],
-        "updaters": [],
-        "predicates": {
-          "SomePredicate": {
-            "discriminator": "bool",
-            "value": "false"
-          }
+      "methods": [
+        "get",
+        "getMany",
+        "create",
+        "delete"
+      ],
+      "updaters": [
+      ],
+      "predicates": {
+        "SomePredicate": {
+          "discriminator": "bool",
+          "value": "false"
         }
       }
     },
-    "lookups": {
-      "PeopleGenders": {
-        "source": "People",
-        "target": "Genders",
-        "forward": {
-          "arity": {
-            "min": 1,
-            "max": 1
-          },
-          "methods": [
-            "get",
-            "getMany",
-            "create",
-            "delete",
-            "link",
-            "unlink"
-          ],
-          "path": [["field", "Biology"], ["unionCase", ["Public","var"]], ["field", "Gender"]]
-
+    "Genders": {
+      "type": {
+        "discriminator": "lookup",
+        "value": "Gender"
+      },
+      "methods": [
+        "get",
+        "getMany",
+        "create",
+        "delete"
+      ],
+      "updaters": [],
+      "predicates": {
+        "SomePredicate": {
+          "discriminator": "bool",
+          "value": "false"
         }
+      }
+    }
+  },
+  "lookups": {
+    "PeopleGenders": {
+      "source": "People",
+      "target": "Genders",
+      "forward": {
+        "arity": {
+          "min": 1,
+          "max": 1
+        },
+        "methods": [
+          "get",
+          "getMany",
+          "create",
+          "delete",
+          "link",
+          "unlink"
+        ],
+        "path": [["field", "Biology"], ["unionCase", ["Public","var"]], ["field", "Gender"]]
+
       }
     }
   }

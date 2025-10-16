@@ -14,6 +14,92 @@ module Model =
       | LocalScope name -> name
       | FullyQualified(names, name) -> String.Join("::", names) + "::" + name
 
+  type ResolvedIdentifier =
+    { Assembly: string
+      Module: string
+      Type: Option<string>
+      Name: string }
+
+    override id.ToString() =
+      let elements =
+        [
+          // if not (String.IsNullOrEmpty id.Assembly) then yield id.Assembly
+          // if not (String.IsNullOrEmpty id.Module) then yield id.Module
+          match id.Type with
+          | Some t -> yield t
+          | None -> ()
+          yield id.Name ]
+
+      String.Join("::", elements)
+
+  type TypeCheckScope =
+    { Assembly: string
+      Module: string
+      Type: Option<string> }
+
+    static member Empty: TypeCheckScope =
+      { Assembly = ""
+        Module = ""
+        Type = None }
+
+    static member Updaters =
+      {| Assembly =
+          fun u scope ->
+            { scope with
+                TypeCheckScope.Assembly = u scope.Assembly }
+         Module =
+          fun u scope ->
+            { scope with
+                TypeCheckScope.Module = u scope.Module }
+         Type =
+          fun u scope ->
+            { scope with
+                TypeCheckScope.Type = u scope.Type } |}
+
+    override s.ToString() =
+      let elements =
+        [ yield s.Assembly
+          yield s.Module
+          match s.Type with
+          | Some t -> yield t
+          | None -> yield "" ]
+
+      String.Join("::", elements)
+
+    static member Resolve(id: Identifier, scope: TypeCheckScope) : ResolvedIdentifier =
+      match id with
+      | Identifier.FullyQualified(names, name) ->
+        match names with
+        | assembly :: module_ :: type_ :: [] ->
+          { Assembly = assembly
+            Module = module_
+            Type = Some type_
+            Name = name }
+        | module_ :: type_ :: [] ->
+          { Assembly = scope.Assembly
+            Module = module_
+            Type = Some type_
+            Name = name }
+        | type_ :: [] ->
+          { Assembly = scope.Assembly
+            Module = scope.Module
+            Type = Some type_
+            Name = name }
+        | _ ->
+          { Assembly = scope.Assembly
+            Module = scope.Module
+            Type = scope.Type
+            Name = name }
+      | Identifier.LocalScope name ->
+        { Assembly = scope.Assembly
+          Module = scope.Module
+          Type = scope.Type
+          Name = name }
+
+    member scope.Resolve(id: Identifier) : ResolvedIdentifier = TypeCheckScope.Resolve(id, scope)
+
+
+
   type TypeParameter = { Name: string; Kind: Kind }
 
   and Kind =
@@ -174,7 +260,7 @@ module Model =
     override self.ToString() = self.value.ToString()
 
   and ImportedTypeValue =
-    { Id: Identifier
+    { Id: ResolvedIdentifier
       Sym: TypeSymbol
       Parameters: List<TypeParameter>
       Arguments: List<TypeValue>

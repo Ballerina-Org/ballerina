@@ -18,9 +18,9 @@ module Record =
 
   type Value<'T, 'valueExtension> with
     static member FromJsonRecord
-      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
@@ -30,7 +30,7 @@ module Record =
             |> Seq.map (fun field ->
               reader {
                 let! k, v = field |> JsonValue.AsPair |> reader.OfSum
-                let! k = Identifier.FromJson k |> reader.OfSum
+                let! k = ResolvedIdentifier.FromJson k |> reader.OfSum
                 let! v = fromJsonRoot v
                 return k, v
               })
@@ -42,7 +42,7 @@ module Record =
 
     static member ToJsonRecord
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
-      (fields: Map<Identifier, Value<'T, 'valueExtension>>)
+      (fields: Map<ResolvedIdentifier, Value<'T, 'valueExtension>>)
       : ValueEncoderReader<'T> =
       reader {
         let! fields =
@@ -50,7 +50,7 @@ module Record =
           |> Map.toList
           |> List.map (fun (ts, v) ->
             reader {
-              let k = Identifier.ToJson ts
+              let k = ResolvedIdentifier.ToJson ts
               let! v = rootToJson v
               return [| k; v |] |> JsonValue.Array
             })
@@ -61,20 +61,20 @@ module Record =
 
 
     static member FromJsonRecordDes
-      (_fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (_fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator_des json (fun caseJson ->
         reader {
-          let! k = caseJson |> TypeSymbol.FromJson |> reader.OfSum
+          let! k = caseJson |> ResolvedIdentifier.FromJson |> reader.OfSum
           return Value.UnionCons(k)
         })
 
     static member ToJsonRecordDes
       (_rootToJson: ValueEncoder<'T, 'valueExtension>)
-      (k: TypeSymbol)
+      (k: ResolvedIdentifier)
       : ValueEncoderReader<'T> =
       reader {
-        let k = TypeSymbol.ToJson k
+        let k = ResolvedIdentifier.ToJson k
         return k |> Json.discriminator discriminator_des
       }
