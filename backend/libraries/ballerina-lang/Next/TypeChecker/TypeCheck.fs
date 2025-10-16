@@ -24,25 +24,29 @@ module TypeCheck =
 
   type TypeCheckContext =
     { Types: TypeExprEvalContext
-      Values: Map<Identifier, TypeValue * Kind> }
+      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
 
   type TypeCheckState =
     { Types: TypeExprEvalState
       Vars: UnificationState }
 
   type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
-  type TypeChecker = Option<TypeValue> -> Expr<TypeExpr> -> TypeCheckerResult<Expr<TypeValue> * TypeValue * Kind>
+
+  type TypeChecker =
+    Option<TypeValue>
+      -> Expr<TypeExpr, Identifier>
+      -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier> * TypeValue * Kind>
 
   type TypeCheckContext with
-    static member Empty: TypeCheckContext =
-      { Types = TypeExprEvalContext.Empty
+    static member Empty(asm, mod_) : TypeCheckContext =
+      { Types = TypeExprEvalContext.Empty(asm, mod_)
         Values = Map.empty }
 
     static member Getters =
       {| Types = fun (c: TypeCheckContext) -> c.Types
          Values = fun (c: TypeCheckContext) -> c.Values |}
 
-    static member TryFindVar(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
+    static member TryFindVar(id: ResolvedIdentifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
       state {
         let! ctx = state.GetContext()
 
@@ -65,70 +69,108 @@ module TypeCheck =
       {| Types = fun (c: TypeCheckState) -> c.Types
          Vars = fun (c: TypeCheckState) -> c.Vars |}
 
-    static member ToInstantiationContext(ctx: TypeCheckState) : TypeInstantiateContext =
+    static member ToInstantiationContext(ctx: TypeCheckState, scope: TypeCheckScope) : TypeInstantiateContext =
       { Bindings = ctx.Types
-        VisitedVars = Set.empty }
+        VisitedVars = Set.empty
+        Scope = scope }
 
     static member TryFindTypeSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
+        let! ctx = state.GetContext()
 
         return!
-          ctx.Types.Symbols.Types
-          |> Map.tryFindWithError id "symbols" id.ToFSharpString loc
+          s.Types.Symbols.Types
+          |> Map.tryFindWithError (id |> ctx.Types.Scope.Resolve) "symbols" id.ToFSharpString loc
           |> state.OfSum
       }
 
-    static member TryFindRecordFieldSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+    static member TryResolveIdentifier(id: TypeSymbol, loc: Location) : TypeCheckerResult<ResolvedIdentifier> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
 
         return!
-          ctx.Types.Symbols.RecordFields
+          s.Types.Symbols.ResolvedIdentifiers
+          |> Map.tryFindWithError id "resolved identifier" id.ToFSharpString loc
+          |> state.OfSum
+      }
+
+    static member TryResolveIdentifier(id: Identifier, loc: Location) : TypeCheckerResult<ResolvedIdentifier> =
+      state {
+        let! s = state.GetState()
+
+        let! res =
+          s.Types.Symbols.IdentifiersResolver
+          |> Map.tryFindWithError id "identifier resolver" id.ToFSharpString loc
+          |> state.OfSum
+          |> state.Catch
+
+        match res with
+        | Left res -> return res
+        | Right err ->
+          do Console.WriteLine("---- TypeCheck TryResolveIdentifier Error ----")
+          do Console.WriteLine($"id: {id}")
+          do Console.ReadLine() |> ignore
+          do Console.WriteLine($"Values: {s.Types.Bindings}")
+          do Console.ReadLine() |> ignore
+          do Console.WriteLine($"Resolved Identifiers: {s.Types.Symbols.ResolvedIdentifiers}")
+          do Console.ReadLine() |> ignore
+          do Console.WriteLine($"Identifiers Resolver: {s.Types.Symbols.IdentifiersResolver}")
+          do Console.ReadLine() |> ignore
+
+          return! err |> state.Throw
+      }
+
+    static member TryFindRecordFieldSymbol(id: ResolvedIdentifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+      state {
+        let! s = state.GetState()
+
+        return!
+          s.Types.Symbols.RecordFields
           |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
           |> state.OfSum
       }
 
-    static member TryFindUnionCaseSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
+    static member TryFindUnionCaseSymbol(id: ResolvedIdentifier, loc: Location) : TypeCheckerResult<TypeSymbol> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
 
         return!
-          ctx.Types.Symbols.UnionCases
+          s.Types.Symbols.UnionCases
           |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
           |> state.OfSum
       }
 
-    static member TryFindType(id: Identifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
+    static member TryFindType(id: ResolvedIdentifier, loc: Location) : TypeCheckerResult<TypeValue * Kind> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
 
         return!
-          ctx.Types.Bindings
+          s.Types.Bindings
           |> Map.tryFindWithError id "type bindings" id.ToFSharpString loc
           |> state.OfSum
       }
 
     static member TryFindUnionCaseConstructor
-      (id: Identifier, loc: Location)
+      (id: ResolvedIdentifier, loc: Location)
       : TypeCheckerResult<TypeValue * OrderedMap<TypeSymbol, TypeValue>> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
 
         return!
-          ctx.Types.UnionCases
+          s.Types.UnionCases
           |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
           |> state.OfSum
       }
 
     static member TryFindRecordField
-      (id: Identifier, loc: Location)
+      (id: ResolvedIdentifier, loc: Location)
       : TypeCheckerResult<OrderedMap<TypeSymbol, TypeValue> * TypeValue> =
       state {
-        let! ctx = state.GetState()
+        let! s = state.GetState()
 
         return!
-          ctx.Types.RecordFields
+          s.Types.RecordFields
           |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
           |> state.OfSum
       }
@@ -138,14 +180,22 @@ module TypeCheck =
          Vars = fun (u: Updater<UnificationState>) (c: TypeCheckState) -> { c with Vars = c.Vars |> u } |}
 
 
-  type Expr<'T> with
+  type Expr<'T, 'Id when 'Id: comparison> with
     static member private liftUnification
       (p: State<'a, UnificationContext, UnificationState, Errors>)
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =
       state {
         let! s = state.GetState()
+        let! ctx = state.GetContext()
 
-        let newUnificationState = p |> State.Run(s.Types, s.Vars)
+
+        let newUnificationState =
+          p
+          |> State.Run(
+            { EvalState = s.Types
+              Scope = ctx.Types.Scope },
+            s.Vars
+          )
 
         match newUnificationState with
         | Left(res, newUnificationState) ->
@@ -187,9 +237,11 @@ module TypeCheck =
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =
       state {
         let! s = state.GetState()
+        let! ctx = state.GetContext()
 
         let newUnificationState =
-          p |> State.Run(s |> TypeCheckState.ToInstantiationContext, s.Vars)
+          p
+          |> State.Run(TypeCheckState.ToInstantiationContext(s, ctx.Types.Scope), s.Vars)
 
         match newUnificationState with
         | Left(res, newUnificationState) ->
@@ -206,8 +258,8 @@ module TypeCheck =
 
     static member TypeCheck: TypeChecker =
       fun context_t t ->
-        let (!) = Expr<'T>.TypeCheck context_t
-        let (=>) c e = Expr<'T>.TypeCheck c e
+        let (!) = Expr<'T, 'Id>.TypeCheck context_t
+        let (=>) c e = Expr<'T, 'Id>.TypeCheck c e
 
         let loc0 = t.Location
         let error e = Errors.Singleton(loc0, e)
@@ -216,58 +268,85 @@ module TypeCheck =
           p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
 
         state {
+          let! ctx = state.GetContext()
+
           match t.Expr with
           | ExprRec.Primitive(PrimitiveValue.Int32 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Int32 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Int32, Kind.Star
+              Expr.Primitive(PrimitiveValue.Int32 v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Int32,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Int64 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Int64 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Int64, Kind.Star
+              Expr.Primitive(PrimitiveValue.Int64 v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Int64,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Float32 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Float32 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Float32, Kind.Star
+              Expr.Primitive(PrimitiveValue.Float32 v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Float32,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Float64 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Float64 v, loc0), TypeValue.CreatePrimitive PrimitiveType.Float64, Kind.Star
+              Expr.Primitive(PrimitiveValue.Float64 v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Float64,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Bool v) ->
-            return Expr.Primitive(PrimitiveValue.Bool v, loc0), TypeValue.CreatePrimitive PrimitiveType.Bool, Kind.Star
+            return
+              Expr.Primitive(PrimitiveValue.Bool v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Bool,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Date v) ->
             return
-              Expr.Primitive(PrimitiveValue.Date v, loc0), TypeValue.CreatePrimitive PrimitiveType.DateOnly, Kind.Star
+              Expr.Primitive(PrimitiveValue.Date v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.DateOnly,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.DateTime v) ->
             return
-              Expr.Primitive(PrimitiveValue.DateTime v, loc0),
+              Expr.Primitive(PrimitiveValue.DateTime v, loc0, ctx.Types.Scope),
               TypeValue.CreatePrimitive PrimitiveType.DateTime,
               Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.TimeSpan v) ->
             return
-              Expr.Primitive(PrimitiveValue.TimeSpan v, loc0),
+              Expr.Primitive(PrimitiveValue.TimeSpan v, loc0, ctx.Types.Scope),
               TypeValue.CreatePrimitive PrimitiveType.TimeSpan,
               Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Decimal v) ->
             return
-              Expr.Primitive(PrimitiveValue.Decimal v, loc0), TypeValue.CreatePrimitive PrimitiveType.Decimal, Kind.Star
+              Expr.Primitive(PrimitiveValue.Decimal v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Decimal,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Guid v) ->
-            return Expr.Primitive(PrimitiveValue.Guid v, loc0), TypeValue.CreatePrimitive PrimitiveType.Guid, Kind.Star
+            return
+              Expr.Primitive(PrimitiveValue.Guid v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Guid,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.String v) ->
             return
-              Expr.Primitive(PrimitiveValue.String v, loc0), TypeValue.CreatePrimitive PrimitiveType.String, Kind.Star
+              Expr.Primitive(PrimitiveValue.String v, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.String,
+              Kind.Star
 
           | ExprRec.Primitive(PrimitiveValue.Unit) ->
-            return Expr.Primitive(PrimitiveValue.Unit, loc0), TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star
+            return
+              Expr.Primitive(PrimitiveValue.Unit, loc0, ctx.Types.Scope),
+              TypeValue.CreatePrimitive PrimitiveType.Unit,
+              Kind.Star
 
           | ExprRec.Lookup id ->
-            let! t_id, id_k =
+            let id = ctx.Types.Scope.Resolve id
+
+            let! res =
               state.Either
                 (TypeCheckContext.TryFindVar(id, loc0))
                 // (TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
@@ -275,11 +354,27 @@ module TypeCheck =
                 // (TypeCheckState.TryFindRecordField(id, loc0)
                 //  |> state.Map(fun (cases, t) -> TypeValue.CreateArrow(TypeValue.CreateRecord(cases), t), Kind.Star))
                 (TypeCheckState.TryFindType(id, loc0))
+              |> state.Catch
 
-            return Expr.Lookup(id, loc0), t_id, id_k
-          | ExprRec.Apply(f, a_expr) ->
+            match res with
+            | Left(t_id, id_k) -> return Expr.Lookup(id, loc0, ctx.Types.Scope), t_id, id_k
+            | Right err ->
+              let! s = state.GetState()
+              let! ctx = state.GetContext()
+              do Console.WriteLine("---- TypeCheck Lookup Error ----")
+              do Console.WriteLine($"id: {id}")
+              do Console.ReadLine() |> ignore
+              do Console.WriteLine($"Scope: {ctx.Types.Scope}")
+              do Console.ReadLine() |> ignore
+              do Console.WriteLine($"Values: {ctx.Values.ToFSharpString}")
+              do Console.ReadLine() |> ignore
+              do Console.WriteLine($"Types: {s.Types.Bindings}")
+              do Console.ReadLine() |> ignore
+              return! state.Throw err
+          | ExprRec.Apply(f_expr, a_expr) ->
             return!
               state {
+                let f = f_expr
                 let! a, t_a, a_k = !a_expr
                 do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -287,6 +382,7 @@ module TypeCheck =
                   state.Either
                     (state {
                       let! f_lookup = f |> Expr.AsLookup |> ofSum
+                      let f_lookup = ctx.Types.Scope.Resolve f_lookup
 
                       return!
                         state.Either
@@ -304,7 +400,7 @@ module TypeCheck =
                                     let context_cases_by_id =
                                       context_cases.value
                                       |> OrderedMap.toSeq
-                                      |> Seq.map (fun (k, v) -> (k.Name, (k, v)))
+                                      |> Seq.map (fun (k, v) -> (k.Name |> ctx.Types.Scope.Resolve, (k, v)))
                                       |> OrderedMap.ofSeq
 
                                     let! _case_k, case_t =
@@ -319,9 +415,10 @@ module TypeCheck =
                             let f_i = union_cons_t |> fst
                             let f_o = union_cons_t |> snd |> TypeValue.CreateUnion
                             let f_k = Kind.Star
-                            do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T>.liftUnification
+                            do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id>.liftUnification
+                            let! f_o = f_o |> TypeValue.Instantiate loc0 |> Expr.liftInstantiation
 
-                            return Expr.Apply(Expr.Lookup f_lookup, a, loc0), f_o, f_k
+                            return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Types.Scope), f_o, f_k
                           })
                           (state {
                             let! resolved = TypeCheckContext.TryFindVar(f_lookup, loc0) |> state.Catch
@@ -333,10 +430,7 @@ module TypeCheck =
                               |> state.OfSum
                               |> state.Ignore
 
-                            match f_lookup with
-                            | Identifier.LocalScope f_lookup when
-                              adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup
-                              ->
+                            if adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup.Name then
                               return!
                                 state {
                                   let! a_primitive = t_a |> TypeValue.AsPrimitive |> ofSum
@@ -345,15 +439,16 @@ module TypeCheck =
                                   let! adHocResolution =
                                     adHocPolymorphismBinary
                                     |> Map.tryFindWithError
-                                      (f_lookup, a_primitive)
+                                      (f_lookup.Name, a_primitive)
                                       "ad-hoc polymorphism resolutions"
                                       f_lookup.ToFSharpString
                                       loc0
                                     |> state.OfSum
 
                                   let! adhoc_op, adhoc_op_t, adhoc_op_k =
-                                    !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup),
-                                                 loc0)
+                                    !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup.Name),
+                                                 loc0,
+                                                 ctx.Types.Scope)
 
                                   do! adhoc_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -369,30 +464,34 @@ module TypeCheck =
                                       ),
                                       adhoc_op_t
                                     )
-                                    |> Expr<'T>.liftUnification
+                                    |> Expr<'T, 'Id>.liftUnification
 
-                                  let t_res =
+                                  let! t_res =
                                     TypeValue.CreateArrow(
                                       TypeValue.CreatePrimitive adHocResolution.OtherInput,
                                       TypeValue.CreatePrimitive adHocResolution.Output
                                     )
+                                    |> TypeValue.Instantiate loc0
+                                    |> Expr.liftInstantiation
 
                                   let k_res = Kind.Star
-                                  return Expr.Apply(adhoc_op, a, loc0), t_res, k_res
+                                  return Expr.Apply(adhoc_op, a, loc0, ctx.Types.Scope), t_res, k_res
 
                                 }
                                 |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                            | Identifier.LocalScope name when (name = "!") ->
+                            elif f_lookup.Name = "!" then
                               return!
                                 state {
                                   do!
                                     TypeValue.Unify(loc0, TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
-                                    |> Expr<'T>.liftUnification
+                                    |> Expr<'T, 'Id>.liftUnification
 
                                   return!
                                     state {
                                       let! bool_op, bool_op_t, bool_op_k =
-                                        !Expr.Lookup(Identifier.FullyQualified([ "bool" ], name), loc0)
+                                        !Expr.Lookup(Identifier.FullyQualified([ "bool" ], f_lookup.Name),
+                                                     loc0,
+                                                     ctx.Types.Scope)
 
                                       do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -405,16 +504,16 @@ module TypeCheck =
                                           ),
                                           bool_op_t
                                         )
-                                        |> Expr<'T>.liftUnification
+                                        |> Expr<'T, 'Id>.liftUnification
 
                                       let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
                                       let k_res = Kind.Star
-                                      return Expr.Apply(bool_op, a, loc0), t_res, k_res
+                                      return Expr.Apply(bool_op, a, loc0, ctx.Types.Scope), t_res, k_res
                                     }
                                     |> state.MapError(Errors.SetPriority ErrorPriority.High)
 
                                 }
-                            | _ ->
+                            else
                               return!
                                 $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
                                 |> error
@@ -443,7 +542,7 @@ module TypeCheck =
 
                           Some(TypeValue.CreateArrow(t_a, freshVar))
 
-                      let rec pad (f_expr: Expr<TypeExpr>) =
+                      let rec pad (f_expr: Expr<TypeExpr, Identifier>) =
                         state {
                           let! f, t_f, f_k = f_constraint => f_expr
 
@@ -456,7 +555,14 @@ module TypeCheck =
                                 Guid = guid }
 
                             do!
-                              TypeExprEvalState.bindType (freshVar.Name) (freshVar |> TypeValue.Var, Kind.Star)
+                              state.SetState(
+                                TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar)
+                              )
+
+                            do!
+                              TypeExprEvalState.bindType
+                                (freshVar.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve)
+                                (freshVar |> TypeValue.Var, Kind.Star)
                               |> Expr.liftTypeEval
 
                             return!
@@ -483,25 +589,27 @@ module TypeCheck =
                               state {
                                 let! aCasesT =
                                   aCasesT
-                                  |> OrderedMap.map (fun _ -> TypeExpr.Eval None loc0 >> Expr<'T>.liftTypeEval)
+                                  |> OrderedMap.map (fun _ -> TypeExpr.Eval None loc0 >> Expr<'T, 'Id>.liftTypeEval)
                                   |> state.AllMapOrdered
 
                                 let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
 
                                 do!
                                   TypeValue.Unify(loc0, f_input, TypeValue.CreateUnion aCasesT)
-                                  |> Expr<'T>.liftUnification
+                                  |> Expr<'T, 'Id>.liftUnification
 
-                                let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
-                                return Expr.Apply(f, a, loc0), f_output, Kind.Star
+                                let! f_output =
+                                  f_output |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
+
+                                return Expr.Apply(f, a, loc0, ctx.Types.Scope), f_output, Kind.Star
                               }
                               |> state.MapError(Errors.SetPriority ErrorPriority.High)
                           },
                           [ state {
-                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T>.liftUnification
+                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id>.liftUnification
+                              let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
 
-                              let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
-                              return Expr.Apply(f, a, loc0), f_output, Kind.Star
+                              return Expr.Apply(f, a, loc0, ctx.Types.Scope), f_output, Kind.Star
                             }
                             |> state.MapError(Errors.SetPriority ErrorPriority.High)
                             // $"Error: cannot resolve application"
@@ -527,17 +635,17 @@ module TypeCheck =
 
                 do!
                   TypeValue.Unify(loc0, t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
-                  |> Expr<'T>.liftUnification
+                  |> Expr<'T, 'Id>.liftUnification
 
                 let! thenBranch, t_then, then_k = !thenBranch
                 let! elseBranch, t_else, else_k = !elseBranch
                 do! then_k |> Kind.AsStar |> ofSum |> state.Ignore
                 do! else_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                do! TypeValue.Unify(loc0, t_then, t_else) |> Expr<'T>.liftUnification
-                let! t_then = t_then |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
+                do! TypeValue.Unify(loc0, t_then, t_else) |> Expr<'T, 'Id>.liftUnification
+                let! t_then = t_then |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
 
-                return Expr.If(cond, thenBranch, elseBranch, loc0), t_then, Kind.Star
+                return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Types.Scope), t_then, Kind.Star
               }
           // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `if {cond} ...`"))
 
@@ -546,7 +654,7 @@ module TypeCheck =
               state {
                 let! x_type =
                   x_type
-                  |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T>.liftTypeEval)
+                  |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T, 'Id>.liftTypeEval)
                   |> state.RunOption
 
                 let! e1, t1, k1 = (x_type |> Option.map fst) => e1
@@ -554,14 +662,18 @@ module TypeCheck =
                 match x_type with
                 | Some(x_type, x_type_kind) ->
                   do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
-                  do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T>.liftUnification
+                  do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id>.liftUnification
                 | _ -> ()
 
                 let! e2, t2, k2 =
                   !e2
-                  |> state.MapContext(TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope x.Name) (t1, k1)))
+                  |> state.MapContext(
+                    TypeCheckContext.Updaters.Values(
+                      Map.add (x.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) (t1, k1)
+                    )
+                  )
 
-                return Expr.Let(x, None, e1, e2, loc0), t2, k2
+                return Expr.Let(x, None, e1, e2, loc0, ctx.Types.Scope), t2, k2
               }
           // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `let {x.Name} = ...`"))
 
@@ -570,7 +682,7 @@ module TypeCheck =
               state {
                 let! t =
                   t
-                  |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T>.liftTypeEval)
+                  |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T, 'Id>.liftTypeEval)
                   |> state.RunOption
 
                 // (p: State<'a, UnificationContext, UnificationState, Errors>)
@@ -590,20 +702,31 @@ module TypeCheck =
                 let! body, t_body, body_k =
                   !body
                   |> state.MapContext(
-                    TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope x.Name) freshVarType)
+                    TypeCheckContext.Updaters.Values(
+                      Map.add (x.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) freshVarType
+                    )
                   )
 
                 do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                let! t_x = freshVarType |> fst |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
-                // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T>.liftInstantiation
+                let! t_x =
+                  freshVarType
+                  |> fst
+                  |> TypeValue.Instantiate loc0
+                  |> Expr<'T, 'Id>.liftInstantiation
+                // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
 
                 // do!
                 //     UnificationState.DeleteVariable freshVar
                 //       |> TypeValue.EquivalenceClassesOp
-                //       |> Expr<'T>.liftUnification
+                //       |> Expr<'T, 'Id>.liftUnification
 
-                return Expr.Lambda(x, Some t_x, body, loc0), TypeValue.CreateArrow(t_x, t_body), Kind.Star
+                let! t_res =
+                  TypeValue.CreateArrow(t_x, t_body)
+                  |> TypeValue.Instantiate loc0
+                  |> Expr.liftInstantiation
+
+                return Expr.Lambda(x, Some t_x, body, loc0, ctx.Types.Scope), t_res, Kind.Star
               }
           // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))
 
@@ -620,8 +743,10 @@ module TypeCheck =
                           state {
                             let! v, t_v, v_k = !v
                             do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
-                            let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
-                            return (k, v), (k_s, t_v)
+                            let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
+                            let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
+
+                            return (id, v), (k_s, t_v)
                           })
                         |> state.All
                     | Some context_t ->
@@ -645,9 +770,11 @@ module TypeCheck =
                             let! v, t_v, v_k = (Some k_t) => v
                             do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-
                             do! TypeValue.Unify(loc0, t_v, k_t) |> Expr.liftUnification
-                            return (k, v), (k_s, t_v)
+
+                            let! id = TypeCheckState.TryResolveIdentifier(k_s, loc0)
+
+                            return (id, v), (k_s, t_v)
                           })
                         |> state.All
                   }
@@ -655,7 +782,12 @@ module TypeCheck =
                 let fieldsExpr = fields |> List.map fst
                 let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
 
-                return Expr.RecordCons(fieldsExpr, loc0), TypeValue.CreateRecord fieldsTypes, Kind.Star
+                let! return_t =
+                  TypeValue.CreateRecord fieldsTypes
+                  |> TypeValue.Instantiate loc0
+                  |> Expr.liftInstantiation
+
+                return Expr.RecordCons(fieldsExpr, loc0, ctx.Types.Scope), return_t, Kind.Star
               }
 
           | ExprRec.RecordWith(record, fields) ->
@@ -674,14 +806,15 @@ module TypeCheck =
                   fields
                   |> List.map (fun (k, v) ->
                     state {
+                      let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
                       let! v, t_v, v_k = !v
                       do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
-                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(k, loc0)
+                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
                       let! t_v_record = t_record |> OrderedMap.tryFindWithError k_s "fields" k.ToFSharpString |> ofSum
                       do! TypeValue.Unify(loc0, t_v, t_v_record) |> Expr.liftUnification
 
-                      return (k, v), (k_s, t_v)
+                      return (id, v), (k_s, t_v)
                     })
                   |> state.All
 
@@ -693,7 +826,7 @@ module TypeCheck =
                   |> TypeValue.Instantiate loc0
                   |> Expr.liftInstantiation
 
-                return Expr.RecordWith(record, fieldsExpr, loc0), t_record, Kind.Star
+                return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Types.Scope), t_record, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -718,7 +851,12 @@ module TypeCheck =
                 let fieldsExpr = fields |> List.map fst
                 let fieldsTypes = fields |> List.map snd
 
-                return Expr.TupleCons(fieldsExpr, loc0), TypeValue.CreateTuple fieldsTypes, Kind.Star
+                let! return_t =
+                  TypeValue.CreateTuple fieldsTypes
+                  |> TypeValue.Instantiate loc0
+                  |> Expr.liftInstantiation
+
+                return Expr.TupleCons(fieldsExpr, loc0, ctx.Types.Scope), return_t, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -745,9 +883,12 @@ module TypeCheck =
 
                 let cases = cases |> Array.map TypeValue.Var
 
-                let sum_t = TypeValue.CreateSum(cases |> List.ofSeq)
+                let! return_t =
+                  TypeValue.CreateArrow(cases[cons.Case - 1], TypeValue.CreateSum(cases |> List.ofSeq))
+                  |> TypeValue.Instantiate loc0
+                  |> Expr.liftInstantiation
 
-                return Expr.SumCons(cons, loc0), TypeValue.CreateArrow(cases[cons.Case - 1], sum_t), Kind.Star
+                return Expr.SumCons(cons, loc0, ctx.Types.Scope), return_t, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -761,45 +902,65 @@ module TypeCheck =
             do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return!
-              state.Either
-                (state {
-                  let! t_fields =
-                    t_fields
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+              // state.Either
+              state {
+                let! t_fields =
+                  t_fields
+                  |> TypeValue.AsRecord
+                  |> ofSum
+                  |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-                  return!
-                    state {
-                      let t_fields =
-                        t_fields
-                        |> OrderedMap.toSeq
-                        |> Seq.map (fun (k, v) -> (k.Name, v))
-                        |> OrderedMap.ofSeq
+                return!
+                  state {
+                    let! field_k, field_t =
+                      t_fields
+                      |> OrderedMap.toSeq
+                      |> Seq.map (fun (k, v) -> (k, v))
+                      |> Seq.tryFind (fun (k, _v) -> k.Name.LocalName = fieldName.LocalName)
+                      |> sum.OfOption(
+                        $"Error: cannot find field {fieldName} in record {fields}"
+                        |> Ballerina.Errors.Errors.Singleton
+                      )
+                      |> ofSum
 
-                      let! field_t =
-                        t_fields
-                        |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
-                        |> ofSum
+                    // do Console.WriteLine($"---- TypeCheck RecordDes {fieldName} ----")
 
-                      return Expr.RecordDes(fields, fieldName, loc0), field_t, Kind.Star
-                    }
-                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-                (state {
-                  let! _record_t, field_t = TypeCheckState.TryFindRecordField(fieldName, loc0)
+                    let! fieldName =
+                      state.Either
+                        (TypeCheckState.TryResolveIdentifier(field_k, loc0))
+                        (state { return fieldName |> ctx.Types.Scope.Resolve })
 
-                  return!
-                    state {
-                      do!
-                        TypeValue.Unify(loc0, t_fields, TypeValue.CreateRecord _record_t)
-                        |> Expr.liftUnification
+                    // do Console.WriteLine($"---- TypeChecked RecordDes {fieldName} ----")
+                    // t_fields
+                    // |> OrderedMap.keys
 
-                      return Expr.RecordDes(fields, fieldName, loc0), field_t, Kind.Star
-                    }
-                    |> state.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-              |> state.MapError Errors.FilterHighestPriorityOnly
+                    // do Console.WriteLine($"{fields_expr}.{fieldName}")
+                    // do Console.WriteLine($"fields: {fields.ToFSharpString}")
+                    // do Console.ReadLine() |> ignore
+
+                    // let! field_t =
+                    //   t_fields
+                    //   |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
+                    //   |> ofSum
+
+                    return Expr.RecordDes(fields, fieldName, loc0, ctx.Types.Scope), field_t, Kind.Star
+                  }
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+              }
+          //   (state {
+          //     let! _record_t, field_t = TypeCheckState.TryFindRecordField(fieldName, loc0)
+
+          //     return!
+          //       state {
+          //         do!
+          //           TypeValue.Unify(loc0, t_fields, TypeValue.CreateRecord _record_t)
+          //           |> Expr.liftUnification
+
+          //         return Expr.RecordDes(fields, fieldName, loc0, ctx.Types.Scope), field_t, Kind.Star
+          //       }
+          //       |> state.MapError(Errors.SetPriority ErrorPriority.High)
+          //   })
+          // |> state.MapError Errors.FilterHighestPriorityOnly
           // |> state.MapError(
           //   Errors.Map(
           //     String.appendNewline
@@ -825,7 +986,7 @@ module TypeCheck =
                   |> sum.OfOption($"Error: cannot find item {fieldName.Index} in tuple {fields}" |> error)
                   |> state.OfSum
 
-                return Expr.TupleDes(fields, fieldName, loc0), t_field, Kind.Star
+                return Expr.TupleDes(fields, fieldName, loc0, ctx.Types.Scope), t_field, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -866,6 +1027,11 @@ module TypeCheck =
                               |> OrderedMap.tryFindWithError id "cases" id.ToFSharpString
                               |> ofSum
 
+                            let! id =
+                              TypeExprEvalState.tryFindResolvedIdentifier (sym, loc0)
+                              |> state.OfStateReader
+                              |> Expr.liftTypeEval
+
                             return (cons, context_cases), (id, sym, case_handler)
                           })
                         |> Seq.toList
@@ -875,8 +1041,15 @@ module TypeCheck =
                         |> Map.toSeq
                         |> Seq.map (fun (id, case_handler) ->
                           state {
+                            let id = id |> TypeCheckScope.Empty.Resolve
                             let! cons = TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
                             let! sym = TypeCheckState.TryFindUnionCaseSymbol(id, loc0)
+
+                            let! id =
+                              TypeExprEvalState.tryFindResolvedIdentifier (sym, loc0)
+                              |> state.OfStateReader
+                              |> Expr.liftTypeEval
+
                             return cons, (id, sym, case_handler)
                           })
                         |> Seq.toList
@@ -907,7 +1080,7 @@ module TypeCheck =
                     //   |> Map.toSeq
                     //   |> Seq.map (fun (k, value) ->
                     //     state {
-                    //       let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0)
+                    //       let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0, ctx.Types.Scope)
                     //       return k, (value, k_s)
                     //     })
                     //   |> state.All
@@ -915,8 +1088,7 @@ module TypeCheck =
 
                     let handlers =
                       handlers
-                      |> Seq.map snd
-                      |> Seq.map (fun (id, k_s, (var, body)) -> id, (id, k_s, (var, body)))
+                      |> Seq.map (fun ((cons_t, _), (id, k_s, (var, body))) -> id, (cons_t, id, k_s, (var, body)))
                       |> Map.ofSeq
 
 
@@ -925,17 +1097,19 @@ module TypeCheck =
                       state {
                         let! handlers =
                           handlers
-                          |> Map.map (fun _k (_id, k_s, (var, body)) ->
+                          |> Map.map (fun _k (cons_t, _id, k_s, (var, body)) ->
                             // (id, sym, case_handler)
                             state {
                               let! var_t =
                                 union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
 
                               let! body, body_t, body_k =
-                                !body
+                                (Some cons_t) => body
                                 |> state.MapContext(
                                   TypeCheckContext.Updaters.Values(
-                                    Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star)
+                                    Map.add
+                                      (var.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve)
+                                      (var_t, Kind.Star)
                                   )
                                 )
 
@@ -979,18 +1153,22 @@ module TypeCheck =
                         // do!
                         //     UnificationState.DeleteVariable result_var
                         //       |> TypeValue.EquivalenceClassesOp
-                        //       |> Expr<'T>.liftUnification
+                        //       |> Expr<'T, 'Id>.liftUnification
 
                         let unionValue = TypeValue.CreateUnion union_t
-                        let arrowValue = TypeValue.CreateArrow(unionValue, result_t)
+
+                        let! arrowValue =
+                          TypeValue.CreateArrow(unionValue, result_t)
+                          |> TypeValue.Instantiate loc0
+                          |> Expr.liftInstantiation
 
                         let handlerExprs =
                           handlerExprs
                           |> Map.toSeq
-                          |> Seq.map (fun (k, v) -> (k.LocalName |> Identifier.LocalScope), v)
+                          |> Seq.map (fun (k, v) -> k, v)
                           |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                        return Expr.UnionDes(handlerExprs, fallback, loc0), arrowValue, Kind.Star
+                        return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Types.Scope), arrowValue, Kind.Star
                       }
                       |> state.MapError(Errors.SetPriority ErrorPriority.High)
                   })
@@ -1071,7 +1249,9 @@ module TypeCheck =
                       let! body, body_t, body_k =
                         !body
                         |> state.MapContext(
-                          TypeCheckContext.Updaters.Values(Map.add (Identifier.LocalScope var.Name) (var_t, Kind.Star))
+                          TypeCheckContext.Updaters.Values(
+                            Map.add (var.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) (var_t, Kind.Star)
+                          )
                         )
 
                       do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -1105,14 +1285,14 @@ module TypeCheck =
                 //   do!
                 //       UnificationState.DeleteVariable kv
                 //         |> TypeValue.EquivalenceClassesOp
-                //         |> Expr<'T>.liftUnification
+                //         |> Expr<'T, 'Id>.liftUnification
 
                 // do!
                 //     UnificationState.DeleteVariable result_var
                 //       |> TypeValue.EquivalenceClassesOp
-                //       |> Expr<'T>.liftUnification
+                //       |> Expr<'T, 'Id>.liftUnification
 
-                return Expr.SumDes(handlerExprs, loc0), arrowValue, Kind.Star
+                return Expr.SumDes(handlerExprs, loc0, ctx.Types.Scope), arrowValue, Kind.Star
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -1130,17 +1310,21 @@ module TypeCheck =
                   |> Expr.liftTypeEval
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Types(
-                      TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
+                      TypeExprEvalContext.Updaters.Scope(
+                        TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+                      )
                     )
                   )
 
-                do! TypeExprEvalState.bindType typeIdentifier typeDefinition |> Expr.liftTypeEval
-
                 let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Types.Scope)
 
-                let bind_component (v, t, k) : Updater<Map<Identifier, (TypeValue * Kind)>> =
-                  Map.add (Identifier.LocalScope v) (t, k)
-                  >> Map.add (Identifier.FullyQualified(typeIdentifier :: scope, v)) (t, k)
+                do!
+                  TypeExprEvalState.bindType (typeIdentifier |> Identifier.LocalScope |> scope.Resolve) typeDefinition
+                  |> Expr.liftTypeEval
+
+                let scope = scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+
+                let bind_component (v, t, k) : Updater<Map<ResolvedIdentifier, (TypeValue * Kind)>> = Map.add v (t, k)
 
                 let! definition_cases =
                   typeDefinition
@@ -1159,12 +1343,14 @@ module TypeCheck =
                     |> Seq.map (fun (k, argT) ->
                       state {
                         do!
-                          TypeExprEvalState.bindUnionCaseConstructor k.Name.LocalName (argT, definition_cases)
+                          TypeExprEvalState.bindUnionCaseConstructor
+                            (k.Name |> scope.Resolve)
+                            (argT, definition_cases)
                           |> Expr.liftTypeEval
 
                         return
                           bind_component (
-                            k.Name.LocalName,
+                            k.Name |> scope.Resolve,
                             TypeValue.CreateRecord(
                               OrderedMap.ofList
                                 [ TypeSymbol.Create(Identifier.LocalScope "cons"),
@@ -1184,11 +1370,6 @@ module TypeCheck =
                       })
                     |> state.All)
                   |> state.RunOption
-                  |> state.MapContext(
-                    TypeCheckContext.Updaters.Types(
-                      TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
-                    )
-                  )
                   |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
                 let! definition_fields =
@@ -1208,12 +1389,12 @@ module TypeCheck =
                     |> Seq.map (fun (k, argT) ->
                       state {
                         do!
-                          TypeExprEvalState.bindRecordField k.Name.LocalName (definition_fields, argT)
+                          TypeExprEvalState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, argT)
                           |> Expr.liftTypeEval
 
                         return
                           bind_component (
-                            k.Name.LocalName,
+                            k.Name |> scope.Resolve,
                             TypeValue.CreateRecord(
                               OrderedMap.ofList
                                 [ TypeSymbol.Create(Identifier.LocalScope "get"),
@@ -1232,18 +1413,23 @@ module TypeCheck =
                       })
                     |> state.All)
                   |> state.RunOption
-                  |> state.MapContext(
-                    TypeCheckContext.Updaters.Types(
-                      TypeExprEvalContext.Updaters.Scope(fun scope -> typeIdentifier :: scope)
-                    )
-                  )
                   |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
                 let! rest, rest_t, rest_k =
                   !rest
                   |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
 
-                return Expr.TypeLet(typeIdentifier, typeDefinition |> fst, rest, loc0), rest_t, rest_k
+                return
+                  Expr.TypeLet(
+                    typeIdentifier,
+                    typeDefinition |> fst,
+                    rest,
+                    loc0,
+                    ctx.Types.Scope
+                    |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+                  ),
+                  rest_t,
+                  rest_k
               }
           // |> state.MapError(
           //   Errors.Map(
@@ -1261,16 +1447,19 @@ module TypeCheck =
                   { TypeVar.Name = t_par.Name; Guid = id }
 
                 do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_t_par_var))
+                let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Types.Scope)
 
                 let! t_par_type =
-                  TypeExprEvalState.tryFindType (Identifier.LocalScope t_par.Name, loc0)
+                  TypeExprEvalState.tryFindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve, loc0)
                   |> state.OfStateReader
                   |> Expr.liftTypeEval
                   |> state.Catch
 
                 // push binding
                 do!
-                  TypeExprEvalState.bindType t_par.Name (TypeValue.Var fresh_t_par_var, t_par.Kind)
+                  TypeExprEvalState.bindType
+                    (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
+                    (TypeValue.Var fresh_t_par_var, t_par.Kind)
                   |> Expr.liftTypeEval
 
                 let! body, t_body, body_k = !body
@@ -1278,8 +1467,14 @@ module TypeCheck =
 
                 // pop binding
                 match t_par_type with
-                | Left t_par_type -> do! TypeExprEvalState.bindType t_par.Name t_par_type |> Expr.liftTypeEval
-                | Right _ -> do! TypeExprEvalState.unbindType t_par.Name |> Expr.liftTypeEval
+                | Left t_par_type ->
+                  do!
+                    TypeExprEvalState.bindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve) t_par_type
+                    |> Expr.liftTypeEval
+                | Right _ ->
+                  do!
+                    TypeExprEvalState.unbindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
+                    |> Expr.liftTypeEval
 
                 // cleanup unification state, slightly more radical than pop
                 do!
@@ -1288,7 +1483,7 @@ module TypeCheck =
                   |> Expr.liftUnification
 
                 return
-                  Expr.TypeLambda(t_par, body, loc0),
+                  Expr.TypeLambda(t_par, body, loc0, ctx.Types.Scope),
                   TypeValue.CreateLambda(t_par, t_body.AsExpr),
                   Kind.Arrow(t_par.Kind, body_k)
               }
@@ -1318,7 +1513,7 @@ module TypeCheck =
                     |> TypeExpr.Eval None loc0
                     |> Expr.liftTypeEval
 
-                  return Expr.TypeApply(f, t_val, loc0), f_res, f_k_o
+                  return Expr.TypeApply(f, t_val, loc0, ctx.Types.Scope), f_res, f_k_o
               }
         // |> state.MapError(
         //   Errors.Map(

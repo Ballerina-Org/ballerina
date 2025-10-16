@@ -17,15 +17,17 @@ module TypeEval =
 
   let inline private (>>=) f g = fun x -> state.Bind(f x, g)
 
-  type EntityDescriptor<'T> with
+  type EntityDescriptor<'T, 'Id when 'Id: comparison> with
     static member Updaters =
-      {| Type = fun u (c: EntityDescriptor<'T>) -> { c with Type = c.Type |> u }
-         Methods = fun u (c: EntityDescriptor<'T>) -> { c with Methods = c.Methods |> u } |}
+      {| Type = fun u (c: EntityDescriptor<'T, 'Id>) -> { c with Type = c.Type |> u }
+         Methods = fun u (c: EntityDescriptor<'T, 'Id>) -> { c with Methods = c.Methods |> u } |}
 
-  type Schema<'T> with
+  type Schema<'T, 'Id when 'Id: comparison> with
     static member SchemaEval
-      : Schema<TypeExpr> -> State<Schema<TypeValue>, TypeExprEvalContext, TypeExprEvalState, Errors> =
-      fun schema ->
+      : Schema<TypeExpr, Identifier>
+          -> OrderedMap<Identifier, TypeValue>
+          -> State<Schema<TypeValue, ResolvedIdentifier>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+      fun schema types ->
         state {
           let! entities =
             schema.Entities
@@ -68,7 +70,7 @@ module TypeEval =
             |> state.AllMap
 
           return
-            { Types = OrderedMap.empty
+            { Types = types
               Entities = entities
               Lookups = schema.Lookups }
         }

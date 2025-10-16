@@ -6,14 +6,12 @@ open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Json.TypeExpr
-open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
-
-open Ballerina.Data.Json.Schema
+open Ballerina.Data.Schema.Json
 open FSharp.Data
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.DSL.Next.Types.Json
 
 [<Test>]
 let ``SpecNext-Schema entity method parses`` () =
@@ -54,17 +52,17 @@ let ``SpecNext-Schema updater descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected: Updater<TypeExpr> =
+  let expected: Updater<TypeExpr, Identifier> =
     { Updater.Path =
         [ UpdaterPathStep.Field "FieldName"
           UpdaterPathStep.ListItem(Var.Create "VariableBoundToChangedItem")
           UpdaterPathStep.TupleItem(7)
           UpdaterPathStep.UnionCase("CaseName", Var.Create "VariableBoundToChangedCase")
           UpdaterPathStep.SumCase(3, Var.Create "VariableBoundToChangedSum") ]
-      Condition = Expr.Primitive(PrimitiveValue.Bool true, Location.Unknown)
-      Expr = Expr.Primitive(PrimitiveValue.Int32 100, Location.Unknown) }
+      Condition = Expr.Primitive(PrimitiveValue.Bool true, Location.Unknown, TypeCheckScope.Empty)
+      Expr = Expr.Primitive(PrimitiveValue.Int32 100, Location.Unknown, TypeCheckScope.Empty) }
 
-  match json |> Updater.FromJson |> Reader.Run TypeExpr.FromJson with
+  match json |> Updater.FromJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson) with
   | Right e -> Assert.Fail($"Failed to parse updater descriptor: {e}")
   | Left actual -> Assert.That(actual, Is.EqualTo(expected))
 
@@ -81,13 +79,17 @@ let ``SpecNext-Schema entity descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected =
+  let expected: EntityDescriptor<TypeExpr, Identifier> =
     { Type = "MyType" |> Identifier.LocalScope |> TypeExpr.Lookup
       Methods = Set.ofList [ Get; GetMany; Create; Delete ]
       Updaters = []
       Predicates = Map.empty }
 
-  match json |> EntityDescriptor.FromJson |> Reader.Run TypeExpr.FromJson with
+  match
+    json
+    |> EntityDescriptor.FromJson
+    |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+  with
   | Right e -> Assert.Fail($"Failed to parse entity method: {e}")
   | Left actual -> Assert.That(actual, Is.EqualTo(expected))
 
@@ -186,6 +188,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
   let json =
     """ 
     {
+      "types":{},
       "entities": {
         "SourceTable": {
           "type": { "discriminator":"lookup", "value":"SomeType" },
@@ -223,7 +226,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected: Schema<TypeExpr> =
+  let expected: Schema<TypeExpr, Identifier> =
     { Types = OrderedMap.empty
       Entities =
         Map.ofList
@@ -232,14 +235,18 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("SomePredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool false, Location.Unknown)) ]
+                 [ ("SomePredicate",
+                    Expr<TypeExpr, Identifier>
+                      .Primitive(PrimitiveValue.Bool false, Location.Unknown, TypeCheckScope.Empty)) ]
                  |> Map.ofList })
             ({ EntityName = "TargetTable" },
              { Type = TypeExpr.Lookup("AnotherType" |> Identifier.LocalScope)
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("AnotherPredicate", Expr<TypeExpr>.Primitive(PrimitiveValue.Bool true, Location.Unknown)) ]
+                 [ ("AnotherPredicate",
+                    Expr<TypeExpr, Identifier>
+                      .Primitive(PrimitiveValue.Bool true, Location.Unknown, TypeCheckScope.Empty)) ]
                  |> Map.ofList }) ]
       Lookups =
         Map.ofList
@@ -265,6 +272,6 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                       Path = [] })
                  ) }) ] }
 
-  match json |> Schema.FromJson |> Reader.Run TypeExpr.FromJson with
+  match json |> Schema.FromJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson) with
   | Right e -> Assert.Fail($"Failed to parse schema descriptor: {e}")
   | Left actual -> Assert.That(actual, Is.EqualTo(expected))

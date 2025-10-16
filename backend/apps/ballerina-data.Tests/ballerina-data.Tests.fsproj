@@ -17,8 +17,6 @@
         <Compile Include="Delta\Multiple.fs" />
         <Compile Include="Schema/FromJson.fs" />
         <Compile Include="Schema/Eval.fs" />
-        <Compile Include="VirtualFolders\Init.fs" />
-        <Compile Include="VirtualFolders\Operations.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

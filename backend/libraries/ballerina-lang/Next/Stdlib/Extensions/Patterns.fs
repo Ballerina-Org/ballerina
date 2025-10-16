@@ -7,6 +7,6 @@ module Patterns =
 
   type LanguageContext<'ext> with
     static member Empty: LanguageContext<'ext> =
-      { TypeCheckContext = TypeCheckContext.Empty
+      { TypeCheckContext = TypeCheckContext.Empty("", "")
         TypeCheckState = TypeCheckState.Empty
         ExprEvalContext = ExprEvalContext.Empty }

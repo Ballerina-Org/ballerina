@@ -120,7 +120,9 @@ module Types =
                             handlerBody
                             |> Expr.Eval
                             |> reader.MapContext(
-                              ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope handlerVar.Name) v)
+                              ExprEvalContext.Updaters.Values(
+                                Map.add (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
+                              )
                             )
                         })
                   },

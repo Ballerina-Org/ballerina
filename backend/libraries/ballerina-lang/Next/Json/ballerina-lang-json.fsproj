@@ -14,6 +14,7 @@
         <Compile Include="Type\Kind.fs" />
         <Compile Include="Type\Parameter.fs" />
         <Compile Include="Type\Identifier.fs" />
+        <Compile Include="Type\ResolvedIdentifier.fs" />
 
         <Compile Include="Types\TypeExpr\AutomaticSymbolCreation.fs" />
         <Compile Include="Types\TypeExpr\Union.fs" />
