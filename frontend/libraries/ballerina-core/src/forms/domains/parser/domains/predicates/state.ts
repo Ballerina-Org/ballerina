@@ -39,11 +39,11 @@ const SALT_MAP = {
 
 // 1) salts (fixed constants)
 const SALT = {
-  record:  0xdeadbeefcafebaben,
-  keyStr:  0x6f1a2b3c4d5e7081n,
-  keyNum:  0x1133557799aabbccn,
+  record: 0xdeadbeefcafebaben,
+  keyStr: 0x6f1a2b3c4d5e7081n,
+  keyNum: 0x1133557799aabbccn,
   keyBool: 0x3141592653589793n,
-  keySym:  0x8675309abcddc0den,
+  keySym: 0x8675309abcddc0den,
 } as const;
 
 // 2) helpers
@@ -55,10 +55,24 @@ const strCanon = (s: string) => s.normalize("NFC"); // canonical Unicode
 // Type-aware key signature (do NOT use .toString() blindly)
 const keySig = (k: unknown): { sig: bigint; keyStr: string; kind: string } => {
   switch (typeof k) {
-    case "string":  return { sig: mix64(SALT.keyStr,  hash64(strCanon(k))), keyStr: strCanon(k), kind: "str" };
-    case "number":  { const s = numCanon(k); return { sig: mix64(SALT.keyNum,  hash64(s)), keyStr: s, kind: "num" }; }
-    case "boolean": { const s = k ? "1" : "0";     return { sig: mix64(SALT.keyBool, hash64(s)), keyStr: s, kind: "bool" }; }
-    case "symbol":  { const s = k.description ?? ""; return { sig: mix64(SALT.keySym,  hash64(s)), keyStr: s, kind: "sym" }; }
+    case "string":
+      return {
+        sig: mix64(SALT.keyStr, hash64(strCanon(k))),
+        keyStr: strCanon(k),
+        kind: "str",
+      };
+    case "number": {
+      const s = numCanon(k);
+      return { sig: mix64(SALT.keyNum, hash64(s)), keyStr: s, kind: "num" };
+    }
+    case "boolean": {
+      const s = k ? "1" : "0";
+      return { sig: mix64(SALT.keyBool, hash64(s)), keyStr: s, kind: "bool" };
+    }
+    case "symbol": {
+      const s = k.description ?? "";
+      return { sig: mix64(SALT.keySym, hash64(s)), keyStr: s, kind: "sym" };
+    }
     default:
       // If your records never use object keys, fail fast (recommended):
       throw new Error("Non-primitive record key not supported");
@@ -275,6 +289,9 @@ export const ValueRecord = {
     has: (record: ValueRecord, key: string): boolean => {
       return record.fields.has(key);
     },
+    GenerateSignature: (record: ValueRecord, children: readonly bigint[]): bigint => {
+      return foldMix(SALT_MAP.record, children);
+    },
   },
   Updaters: {
     ...simpleUpdater<ValueRecord>()("fields"),
@@ -312,6 +329,11 @@ export const ValueUnionCase = {
     caseName,
     fields,
   }),
+  Operations: {
+    GenerateSignature: (value: ValueUnionCase): bigint => {
+      return mix1(SALT_MAP.unionCase, hash64(value.caseName));
+    },
+  },
   Updaters: {
     case: (caseName: string) => (upd: BasicUpdater<PredicateValue>) =>
       Updater<ValueUnionCase>((v) =>
@@ -345,6 +367,16 @@ export const ValueOption = {
       value: { kind: "unit" },
     }),
   },
+  Operations: {
+    GenerateSignature: (value: ValueOption, childSignature: bigint): bigint => {
+      return value.isSome
+      ? foldMix(SALT_MAP.option, [
+          hash64("Some"),
+          childSignature,
+        ])
+      : foldMix(SALT_MAP.option, [hash64("None")]);
+    },
+  },
   Updaters: {
     value: (_: BasicUpdater<ValueOption>) =>
       Updater<ValueOption>((v) => ValueOption.Default.some(_(v))),
@@ -361,6 +393,11 @@ export const ValueSum = {
     kind: "sum",
     value,
   }),
+  Operations: {
+    GenerateSignature: (value: ValueSum, childSignature: bigint): bigint => {
+      return foldMix(SALT_MAP.sum, [hash64(value.value.kind), childSignature]);
+    },
+  },
   Updaters: {
     ...simpleUpdater<ValueSum>()("value"),
   },
@@ -397,6 +434,17 @@ export const ValueTuple = {
     kind: "tuple",
     values: List(),
   }),
+  Operations: {
+    GenerateSignature: (
+      value: ValueTuple,
+      children: readonly bigint[],
+    ): bigint => {
+      return foldMix(
+        mix1(SALT_MAP.tuple, hash64(`${value.values.size}`)),
+        children,
+      );
+    },
+  },
   Updaters: {
     ...simpleUpdater<ValueTuple>()("values"),
   },
@@ -415,6 +463,20 @@ export type ValueReadOnly = {
   ReadOnly: PredicateValue;
 };
 
+export const ValueReadOnly = {
+  Default: (value: PredicateValue): ValueReadOnly => ({
+    kind: "readOnly",
+    ReadOnly: value,
+  }),
+  Operations: {
+    GenerateSignature: (childSignature: bigint): bigint => {
+      return mix1(SALT_MAP.readOnly, childSignature);
+    },
+  },
+  Updaters: {
+    ...simpleUpdater<ValueReadOnly>()("ReadOnly"),
+  },
+};
 export const ValueTable = {
   Default: {
     empty: (): ValueTable => ({
@@ -436,6 +498,18 @@ export const ValueTable = {
       data,
       hasMoreValues,
     }),
+  },
+  Operations: {
+    GenerateSignature: (
+      value: ValueTable,
+      children: readonly bigint[],
+    ): bigint => {
+      return foldMix(SALT_MAP.table, [
+        hash64(String(value.from)),
+        hash64(String(value.to)),
+        foldMix(SALT_MAP.data, children),
+      ]);
+    },
   },
   Updaters: {
     ...simpleUpdater<ValueTable>()("data"),
@@ -1335,18 +1409,18 @@ export const PredicateValue = {
             return { kSig: ks.sig, kStr: ks.keyStr, kKind: ks.kind, vSig: vs };
           })
           .toArray();
-      
+
         // Stable sort with collision-safe tie-breakers:
         // 1) kSig (BigInt), 2) key kind, 3) keyStr
         pairs.sort((a, b) => {
           if (a.kSig < b.kSig) return -1;
-          if (a.kSig > b.kSig) return  1;
+          if (a.kSig > b.kSig) return 1;
           // hash collision tie-breakers (extremely rare but makes order deterministic)
           if (a.kKind < b.kKind) return -1;
-          if (a.kKind > b.kKind) return  1;
+          if (a.kKind > b.kKind) return 1;
           return a.kStr < b.kStr ? -1 : a.kStr > b.kStr ? 1 : 0;
         });
-      
+
         // Fold: mix (keySig, valueSig) per field, then fold all with record salt
         const parts = pairs.map(({ kSig, vSig }) => mix64(kSig, vSig));
         return foldMix(SALT.record, parts);
@@ -1371,7 +1445,10 @@ export const PredicateValue = {
           .toArray()
           .sort() // canonical order
           .map((k) =>
-            mix64(hash64(String(k)), PredicateValue.Operations.GenerateSignature(value.data.get(k)!)),
+            mix64(
+              hash64(String(k)),
+              PredicateValue.Operations.GenerateSignature(value.data.get(k)!),
+            ),
           );
         return foldMix(SALT_MAP.table, [
           hash64(String(value.from)),

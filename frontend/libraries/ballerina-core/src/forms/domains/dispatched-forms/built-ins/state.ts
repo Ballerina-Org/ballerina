@@ -51,6 +51,9 @@ import {
   ValueFilterStartsWith,
   ValueSumN,
   ValueFilterNotEqualsTo,
+  ValueSum,
+  ValueReadOnly,
+  ValueUnionCase,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -154,7 +157,7 @@ type RawUnion = {
 };
 
 type Table = {
-  data: Map<string, Record<string, any>>;
+  data: OrderedMap<string, ValueRecord>;
   hasMoreValues: boolean;
   from: number;
   to: number;
@@ -1740,6 +1743,663 @@ export const dispatchFromAPIRawValue =
       return ValueOrErrors.Default.throwOne(
         `unsupported type ${JSON.stringify(t)} for raw: `,
       );
+    })();
+    return result.MapErrors((errors) =>
+      errors.map(
+        (error) =>
+          `${error}\n...When converting type ${JSON.stringify(
+            t,
+            null,
+            2,
+          )} and value ${JSON.stringify(raw, null, 2)} from API raw value`,
+      ),
+    );
+  };
+
+export type PredicateValueRegistry = Map<string, RegistryValue>;
+export type RegistryValue = {
+  signature: bigint;
+  value: PredicateValue;
+  isModified: boolean;
+  isNew: boolean;
+  isDeleted: boolean;
+};
+
+type DispatchFromAPIRawValueWithRegistryResult = [
+  PredicateValue,
+  bigint,
+  PredicateValueRegistry,
+];
+
+// Note: Filters and SumN are not supported yet here as only used in filters, in models
+export const dispatchFromAPIRawValueWithRegistry =
+  <T extends DispatchInjectablesTypes<T>>(
+    t: DispatchParsedType<T>,
+    types: Map<DispatchTypeName, DispatchParsedType<T>>,
+    converters: DispatchApiConverters<T>,
+    injectedPrimitives?: DispatchInjectedPrimitives<T>,
+  ) =>
+  (
+    prevRegistry: PredicateValueRegistry,
+    path: string,
+    raw: any,
+  ): ValueOrErrors<DispatchFromAPIRawValueWithRegistryResult, string> => {
+    const result = ((): ValueOrErrors<DispatchFromAPIRawValueWithRegistryResult, string> => {
+      // done
+      if (t.kind == "primitive") {
+        // unit is a special kind of primitive
+        if (t.name == "unit") {
+          const value = PredicateValue.Default.unit();
+          const signature = PredicateValue.Operations.GenerateSignature(value);
+          const newRegistry = prevRegistry.set(path, {
+            signature,
+            value,
+            isModified: false,
+            isNew: false,
+            isDeleted: false,
+          });
+          return ValueOrErrors.Default.return<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >([value, signature, newRegistry]);
+        }
+
+        if (
+          !PredicateValue.Operations.IsPrimitive(raw) &&
+          !injectedPrimitives?.keySeq().contains(t.name as keyof T)
+        ) {
+          return ValueOrErrors.Default.throwOne<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >(`primitive expected but got ${JSON.stringify(raw)}`);
+        }
+        const value = converters[t.name].fromAPIRawValue(raw);
+        const signature = PredicateValue.Operations.GenerateSignature(value);
+        const newRegistry = prevRegistry.set(path, {
+          signature,
+          value,
+          isModified: prevRegistry.get(path)?.signature !== signature,
+          isNew: prevRegistry.get(path) == undefined,
+          isDeleted: false,
+        });
+        return ValueOrErrors.Default.return<
+          DispatchFromAPIRawValueWithRegistryResult,
+          string
+        >([value, signature, newRegistry]);
+      }
+      // done
+      if (t.kind == "union") {
+        const result = converters["union"].fromAPIRawValue(raw);
+        const caseType = t.args.get(result.caseName);
+        if (caseType == undefined)
+          return ValueOrErrors.Default.throwOne<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >(
+            `union case ${result.caseName} not found in type ${JSON.stringify(
+              t,
+            )}`,
+          );
+
+        return dispatchFromAPIRawValueWithRegistry(
+          caseType,
+          types,
+          converters,
+          injectedPrimitives,
+        )(prevRegistry, path, raw).Then(([value, signature, registry]) => {
+          const unionValue = PredicateValue.Default.unionCase(
+            result.caseName,
+            value,
+          );
+          const unionSignature =
+            ValueUnionCase.Operations.GenerateSignature(unionValue);
+          const newRegistry = registry.set(path, {
+            signature: unionSignature,
+            value: unionValue,
+            isModified: prevRegistry.get(path)?.signature !== unionSignature,
+            isNew: prevRegistry.get(path) == undefined,
+            isDeleted: false,
+          });
+          return ValueOrErrors.Default.return<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >([unionValue, unionSignature, newRegistry]);
+        });
+      }
+      // done
+      if (t.kind == "singleSelection") {
+        const result = converters["SingleSelection"].fromAPIRawValue(raw);
+        const isSome = result.kind == "l";
+        if (!isSome) {
+          const value = PredicateValue.Default.option(false, { kind: "unit" });
+          const signature = ValueOption.Operations.GenerateSignature(value, 0n);
+          const newRegistry = prevRegistry.set(path, {
+            signature,
+            value,
+            isModified: prevRegistry.get(path)?.signature !== signature,
+            isNew: prevRegistry.get(path) == undefined,
+            isDeleted: false,
+          });
+          return ValueOrErrors.Default.return<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >([value, signature, newRegistry]);
+        }
+        const value = PredicateValue.Default.option(
+          true,
+          PredicateValue.Default.record(OrderedMap(result.value)),
+        );
+        const signature = PredicateValue.Operations.GenerateSignature(value);
+        const newRegistry = prevRegistry.set(path, {
+          signature,
+          value,
+          isModified: prevRegistry.get(path)?.signature !== signature,
+          isNew: prevRegistry.get(path) == undefined,
+          isDeleted: false,
+        });
+        return ValueOrErrors.Default.return<
+          DispatchFromAPIRawValueWithRegistryResult,
+          string
+        >([value, signature, newRegistry]);
+      }
+      // done
+      if (t.kind == "multiSelection") {
+        const result = converters["MultiSelection"].fromAPIRawValue(raw);
+        const values = result.map((_) =>
+          PredicateValue.Default.record(OrderedMap(_)),
+        );
+        const value = PredicateValue.Default.record(OrderedMap(values));
+        const signature = PredicateValue.Operations.GenerateSignature(value);
+        const newRegistry = prevRegistry.set(path, {
+          signature,
+          value: value,
+          isModified: prevRegistry.get(path)?.signature !== signature,
+          isNew: prevRegistry.get(path) == undefined,
+          isDeleted: false,
+        });
+        return ValueOrErrors.Default.return<
+          DispatchFromAPIRawValueWithRegistryResult,
+          string
+        >([value, signature, newRegistry]);
+      }
+      //done
+      if (t.kind == "list") {
+        const result = converters["List"].fromAPIRawValue(raw);
+        return result
+          .reduce(
+            (acc, _, index) => {
+              return acc.Then(({ values, signatures, registry }) => {
+                return dispatchFromAPIRawValueWithRegistry(
+                  t.args[0],
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(registry, `${path}[${index}]`, _).Then(
+                  ([value, signature, registry]) =>
+                    ValueOrErrors.Default.return<{
+                      values: List<PredicateValue>;
+                      signatures: bigint[];
+                      registry: PredicateValueRegistry;
+                    }, string>({
+                      values: values.push(value),
+                      signatures: [...signatures, signature],
+                      registry: registry,
+                    }),
+                );
+              });
+            },
+            ValueOrErrors.Default.return<{
+              values: List<PredicateValue>;
+              signatures: bigint[];
+              registry: PredicateValueRegistry;
+            }, string>({
+              values: List<PredicateValue>(),
+              signatures: [] as bigint[],
+              registry: prevRegistry,
+            }),
+          )
+          .Then(({ values, signatures, registry }) => {
+            const value = PredicateValue.Default.tuple(values);
+            const signature = ValueTuple.Operations.GenerateSignature(
+              value,
+              signatures,
+            );
+            const newRegistry = registry.set(path, {
+              signature,
+              value,
+              isModified: prevRegistry.get(path)?.signature !== signature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([value, signature, newRegistry]);
+          });
+      }
+      //done
+      if (t.kind == "map" && t.args.length == 2) {
+        const result = converters["Map"].fromAPIRawValue(raw);
+
+        return result
+          .reduce(
+            (acc, _, index) => {
+              return acc.Then(({ values, signatures, registry }) => {
+                return dispatchFromAPIRawValueWithRegistry(
+                  t.args[0],
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(registry, `${path}[${index}][key]`, _[0]).Then(
+                  ([keyValue, keySignature, keyRegistry]) => {
+                    return dispatchFromAPIRawValueWithRegistry(
+                      t.args[1],
+                      types,
+                      converters,
+                      injectedPrimitives,
+                    )(keyRegistry, `${path}[${index}][value]`, _[1]).Then(
+                      ([valueValue, valueSignature, valueRegistry]) => {
+                        return ValueOrErrors.Default.return<{
+                          values: List<PredicateValue>;
+                          signatures: bigint[];
+                          registry: PredicateValueRegistry;
+                        }, string>({
+                          values: values.push(
+                            PredicateValue.Default.tuple(
+                              List([keyValue, valueValue]),
+                            ),
+                          ),
+                          signatures: [
+                            ...signatures,
+                            keySignature,
+                            valueSignature,
+                          ],
+                          registry: valueRegistry,
+                        });
+                      },
+                    );
+                  },
+                );
+              });
+            },
+            ValueOrErrors.Default.return<{
+              values: List<PredicateValue>;
+              signatures: bigint[];
+              registry: PredicateValueRegistry;
+            }, string>({
+              values: List<PredicateValue>(),
+              signatures: [] as bigint[],
+              registry: prevRegistry,
+            }),
+          )
+          .Then(({ values, signatures, registry }) => {
+            const value = PredicateValue.Default.tuple(values);
+            const signature = ValueTuple.Operations.GenerateSignature(
+              value,
+              signatures,
+            );
+            const newRegistry = registry.set(path, {
+              signature,
+              value,
+              isModified: prevRegistry.get(path)?.signature !== signature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([value, signature, newRegistry]);
+          });
+      }
+
+      //done
+      if (t.kind == "tuple") {
+        const result = converters["Tuple"].fromAPIRawValue(raw);
+
+        return result
+          .reduce(
+            (acc, _, index) => {
+              return acc.Then(({ values, signatures, registry }) => {
+                return dispatchFromAPIRawValueWithRegistry(
+                  t.args[index],
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(registry, `${path}[${index + 1}]`, _).Then(
+                  ([value, signature, registry]) => {
+                    return ValueOrErrors.Default.return<
+                    {
+                      values: List<PredicateValue>;
+                      signatures: bigint[];
+                      registry: PredicateValueRegistry;
+                    }, string>({
+                      values: values.push(value),
+                      signatures: [...signatures, signature],
+                      registry: registry,
+                    });
+                  },
+                );
+              });
+            },
+            ValueOrErrors.Default.return<{
+              values: List<PredicateValue>;
+              signatures: bigint[];
+              registry: PredicateValueRegistry;
+            }, string>({
+              values: List<PredicateValue>(),
+              signatures: [] as bigint[],
+              registry: prevRegistry,
+            }),
+          )
+          .Then(({ values, signatures, registry }) => {
+            const value = PredicateValue.Default.tuple(values);
+            const signature = ValueTuple.Operations.GenerateSignature(
+              value,
+              signatures,
+            );
+            const newRegistry = registry.set(path, {
+              signature,
+              value,
+              isModified: prevRegistry.get(path)?.signature !== signature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([value, signature, newRegistry]);
+          });
+      }
+
+      //done
+      if (t.kind == "sum" && t.args.length === 2) {
+        const result = converters["Sum"].fromAPIRawValue(raw);
+
+        return dispatchFromAPIRawValueWithRegistry(
+          result.kind == "l" ? t.args[0] : t.args[1],
+          types,
+          converters,
+          injectedPrimitives,
+        )(prevRegistry, `${path}[${result.kind}]`, result.value).Then(
+          ([value, childSignature, registry]) => {
+            const sumValue = PredicateValue.Default.sum(
+              Sum.Updaters.map2(replaceWith(value), replaceWith(value))(result),
+            );
+            const sumSignature = ValueSum.Operations.GenerateSignature(
+              sumValue,
+              childSignature,
+            );
+            const newRegistry = registry.set(path, {
+              signature: sumSignature,
+              value: sumValue,
+              isModified: prevRegistry.get(path)?.signature !== sumSignature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([sumValue, sumSignature, newRegistry]);
+          },
+        );
+      }
+
+      // done
+      if (t.kind == "lookup")
+        return MapRepo.Operations.tryFindWithError(
+          t.name,
+          types,
+          () => `type ${t.name} not found in types`,
+        ).Then((type) =>
+          dispatchFromAPIRawValueWithRegistry(
+            type,
+            types,
+            converters,
+            injectedPrimitives,
+          )(prevRegistry, path, raw),
+        );
+
+      // done
+      if (t.kind == "table") {
+        // move to the converter
+        if (typeof raw != "object") {
+          return ValueOrErrors.Default.throwOne<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >(`object expected but got ${JSON.stringify(raw)}`);
+        }
+        const converterResult = converters["Table"].fromAPIRawValue(raw);
+        const argType = t.arg;
+
+        return DispatchParsedType.Operations.ResolveLookupType(
+          argType.name,
+          types,
+        )
+          .Then((resolvedType) => {
+            return converterResult.data.reduce(
+              (acc, row, key) => {
+                return acc.Then(({ values, signatures, registry }) => {
+                  return dispatchFromAPIRawValueWithRegistry(
+                    resolvedType,
+                    types,
+                    converters,
+                    injectedPrimitives,
+                  )(registry, `${path}[${key}]`, row).Then(
+                    ([value, signature, registry]) => {
+                      if (!PredicateValue.Operations.IsRecord(value)) {
+                        return ValueOrErrors.Default.throwOne<
+                          {
+                            values: OrderedMap<string, ValueRecord>;
+                            signatures: bigint[];
+                            registry: PredicateValueRegistry;
+                          },
+                          string
+                        >(
+                          `record expected but got ${PredicateValue.Operations.GetKind(value)}`,
+                        );
+                      }
+                      return ValueOrErrors.Default.return<{
+                        values: OrderedMap<string, ValueRecord>;
+                        signatures: bigint[];
+                        registry: PredicateValueRegistry;
+                      }, string>({
+                        values: values.set(key, value),
+                        signatures: [...signatures, signature],
+                        registry: registry,
+                      });
+                    },
+                  );
+                });
+              },
+              ValueOrErrors.Default.return<{
+                values: OrderedMap<string, ValueRecord>;
+                signatures: bigint[];
+                registry: PredicateValueRegistry;
+              }, string>({
+                values: OrderedMap<string, ValueRecord>(),
+                signatures: [] as bigint[],
+                registry: prevRegistry,
+              }),
+            );
+          })
+          .Then(({ values, signatures, registry }) => {
+            const value = ValueTable.Default.fromParsed(
+              converterResult.from,
+              converterResult.to,
+              converterResult.hasMoreValues,
+              values,
+            );
+            const signature = ValueTable.Operations.GenerateSignature(
+              value,
+              signatures,
+            );
+            const newRegistry = registry.set(path, {
+              signature,
+              value,
+              isModified: prevRegistry.get(path)?.signature !== signature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([value, signature, newRegistry]);
+          });
+      }
+
+      // done
+      if (t.kind == "one") {
+        const result = converters["One"].fromAPIRawValue(raw);
+        if (!result.isSome) {
+          const value = PredicateValue.Default.option(false, { kind: "unit" });
+          const signature = ValueOption.Operations.GenerateSignature(value, 0n);
+          const newRegistry = prevRegistry.set(path, {
+            signature,
+            value,
+            isModified: prevRegistry.get(path)?.signature !== signature,
+            isNew: prevRegistry.get(path) == undefined,
+            isDeleted: false,
+          });
+          return ValueOrErrors.Default.return<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >([value, signature, newRegistry]);
+        }
+        return dispatchFromAPIRawValueWithRegistry(
+          t.arg,
+          types,
+          converters,
+          injectedPrimitives,
+        )(prevRegistry, `${path}[Some]`, result.value).Then(
+          ([value, childSignature, registry]) => {
+            const optionValue = PredicateValue.Default.option(true, value);
+            const optionSignature = ValueOption.Operations.GenerateSignature(
+              optionValue,
+              childSignature,
+            );
+            const newRegistry = registry.set(path, {
+              signature: optionSignature,
+              value: optionValue,
+              isModified: prevRegistry.get(path)?.signature !== optionSignature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([optionValue, optionSignature, newRegistry]);
+          },
+        );
+      }
+
+      // done
+      if (t.kind == "readOnly") {
+        const readOnlyResult = converters["ReadOnly"].fromAPIRawValue(raw);
+        return dispatchFromAPIRawValueWithRegistry(
+          t.arg,
+          types,
+          converters,
+          injectedPrimitives,
+        )(prevRegistry, `${path}[ReadOnly]`, readOnlyResult.ReadOnly).Then(
+          ([value, childSignature, registry]) => {
+            const readonlyValue = ValueReadOnly.Default(value);
+            const readonlySignature =
+              ValueReadOnly.Operations.GenerateSignature(childSignature);
+            const newRegistry = registry.set(path, {
+              signature: readonlySignature,
+              value: readonlyValue,
+              isModified:
+                prevRegistry.get(path)?.signature !== readonlySignature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([readonlyValue, readonlySignature, newRegistry]);
+          },
+        );
+      }
+
+      // done
+      if (t.kind == "record") {
+        if (typeof raw != "object") {
+          return ValueOrErrors.Default.throwOne<
+            DispatchFromAPIRawValueWithRegistryResult,
+            string
+          >(`object expected but got ${JSON.stringify(raw)}`);
+        }
+
+        return t.fields
+          .reduce(
+            (acc, fieldType, fieldName) => {
+              return acc.Then(({ values, signatures, registry }) => {
+                const fieldValue = raw[fieldName];
+                if (fieldValue !== null && fieldValue === undefined) {
+                  return ValueOrErrors.Default.return<{
+                    values: OrderedMap<string, PredicateValue>;
+                    signatures: bigint[];
+                    registry: PredicateValueRegistry;
+                  }, string>({
+                    values: values,
+                    signatures: signatures,
+                    registry: registry,
+                  });
+                }
+                return dispatchFromAPIRawValueWithRegistry(
+                  fieldType,
+                  types,
+                  converters,
+                  injectedPrimitives,
+                )(registry, `${path}[${fieldName}]`, raw[fieldName]).Then(
+                  ([value, fieldSignature, registry]) => {
+                    return ValueOrErrors.Default.return<{
+                      values: OrderedMap<string, PredicateValue>;
+                      signatures: bigint[];
+                      registry: PredicateValueRegistry;
+                    }, string>({
+                      values: values.set(fieldName, value),
+                      signatures: [...signatures, fieldSignature],
+                      registry: registry,
+                    });
+                  },
+                );
+              });
+            },
+            ValueOrErrors.Default.return<{
+              values: OrderedMap<string, PredicateValue>;
+              signatures: bigint[];
+              registry: PredicateValueRegistry;
+            }, string>({
+              values: OrderedMap<string, PredicateValue>(),
+              signatures: [] as bigint[],
+              registry: prevRegistry,
+            }),
+          )
+          .Then(({ values, signatures, registry }) => {
+            const recordValue = ValueRecord.Default.fromMap(values);
+            const recordSignature = ValueRecord.Operations.GenerateSignature(
+              recordValue,
+              signatures,
+            );
+            const newRegistry = registry.set(path, {
+              signature: recordSignature,
+              value: recordValue,
+              isModified: prevRegistry.get(path)?.signature !== recordSignature,
+              isNew: prevRegistry.get(path) == undefined,
+              isDeleted: false,
+            });
+            return ValueOrErrors.Default.return<
+              DispatchFromAPIRawValueWithRegistryResult,
+              string
+            >([recordValue, recordSignature, newRegistry]);
+          });
+      }
+
+      return ValueOrErrors.Default.throwOne<
+        DispatchFromAPIRawValueWithRegistryResult,
+        string
+      >(`unsupported type ${JSON.stringify(t)} for raw: `);
     })();
     return result.MapErrors((errors) =>
       errors.map(
