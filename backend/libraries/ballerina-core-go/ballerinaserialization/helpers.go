@@ -130,11 +130,17 @@ type UnionForSerialization struct {
 	Value         [2]json.RawMessage `json:"value"`
 }
 
-func NewUnionForSerialization(caseName string, value json.RawMessage) UnionForSerialization {
-	return UnionForSerialization{
-		Discriminator: "union",
-		Value:         [2]json.RawMessage{json.RawMessage(`{"name": "` + caseName + `"}`), value},
+func NewUnionForSerialization(caseName string, value json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
+	caseNameBytes, err := json.Marshal(caseName)
+	if err != nil {
+		return ballerina.Left[error, UnionForSerialization](err)
 	}
+	return ballerina.Right[error, UnionForSerialization](
+		UnionForSerialization{
+			Discriminator: "union",
+			Value:         [2]json.RawMessage{caseNameBytes, value},
+		},
+	)
 }
 
 func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
@@ -150,13 +156,8 @@ func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSeriali
 }
 
 func (u UnionForSerialization) GetCaseName() ballerina.Sum[error, string] {
-	type caseName struct {
-		Name string `json:"name"`
-	}
 	return unmarshalWithContext(
 		"on union case name",
-		func(caseName caseName) ballerina.Sum[error, string] {
-			return ballerina.Right[error, string](caseName.Name)
-		},
+		ballerina.Right[error, string],
 	)(u.Value[0])
 }

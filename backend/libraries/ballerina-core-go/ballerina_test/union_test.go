@@ -26,7 +26,7 @@ func TestDeserializeUnion_Success(t *testing.T) {
 
 func TestUnionGetCaseName_Success(t *testing.T) {
 	t.Parallel()
-	data := json.RawMessage(`{"discriminator":"union","value":[{"name": "MyCase"},{"discriminator":"unit"}]}`)
+	data := json.RawMessage(`{"discriminator":"union","value":["MyCase", {"discriminator":"unit"}]}`)
 	deserialized := ballerinaserialization.DeserializeUnion(data)
 
 	// Ensure it deserialized and then extract case name
