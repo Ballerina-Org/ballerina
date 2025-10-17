@@ -102,17 +102,14 @@ func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, map[string]jso
 	if r.Value == nil {
 		return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("missing value field"))
 	}
-	type recordField struct {
-		Name string `json:"name"`
-	}
 	fields := make(map[string]json.RawMessage, len(r.Value))
 	for i, field := range r.Value {
-		var fieldName recordField
+		var fieldName string
 		err := json.Unmarshal(field[0], &fieldName)
 		if err != nil {
 			return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("failed to unmarshal record field name %d: %w", i, err))
 		}
-		fields[fieldName.Name] = field[1]
+		fields[fieldName] = field[1]
 	}
 	return ballerina.Right[error, map[string]json.RawMessage](fields)
 }
