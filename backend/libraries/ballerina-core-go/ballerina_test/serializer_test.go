@@ -27,13 +27,13 @@ func TestUnitSerialization(t *testing.T) {
 	serializer := ballerinaserialization.UnitSerializer
 	unit := ballerina.Unit{}
 	serialized := serializer(unit)
-	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"unit"}`)), serialized)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"unit","value":"()"}`)), serialized)
 }
 
 func TestUnitDeserialization(t *testing.T) {
 	t.Parallel()
 	deserializer := ballerinaserialization.UnitDeserializer
-	serialized := json.RawMessage(`{"discriminator":"unit"}`)
+	serialized := json.RawMessage(`{"discriminator":"unit","value":"()"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, ballerina.Unit](ballerina.Unit{}), deserialized)
 }
@@ -67,8 +67,8 @@ func TestSumSerialization(t *testing.T) {
 		sum      ballerina.Sum[ballerina.Unit, ballerina.Unit]
 		expected json.RawMessage
 	}{
-		{name: "left", sum: ballerina.Left[ballerina.Unit, ballerina.Unit](ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"unit"}]}`)},
-		{name: "right", sum: ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"unit"}]}`)},
+		{name: "left", sum: ballerina.Left[ballerina.Unit, ballerina.Unit](ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"unit","value":"()"}]}`)},
+		{name: "right", sum: ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[2,{"discriminator":"unit","value":"()"}]}`)},
 	}
 
 	for _, testCase := range testCases {
@@ -87,8 +87,8 @@ func TestSumDeserialization(t *testing.T) {
 		serialized json.RawMessage
 		expected   ballerina.Sum[ballerina.Unit, ballerina.Unit]
 	}{
-		{name: "left", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"unit"}]}`), expected: ballerina.Left[ballerina.Unit, ballerina.Unit](ballerina.Unit{})},
-		{name: "right", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"unit"}]}`), expected: ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{})},
+		{name: "left", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"unit","value":"()"}]}`), expected: ballerina.Left[ballerina.Unit, ballerina.Unit](ballerina.Unit{})},
+		{name: "right", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,{"discriminator":"unit","value":"()"}]}`), expected: ballerina.Right[ballerina.Unit, ballerina.Unit](ballerina.Unit{})},
 	}
 
 	for _, testCase := range testCases {
@@ -107,13 +107,12 @@ func TestSumDeserializationError(t *testing.T) {
 		serialized    json.RawMessage
 		expectedError string
 	}{
-		{name: "on-sum-on-left", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on left: on unit: expected discriminator to be 'unit', got 'not-unit'"},
-		{name: "on-sum-on-right", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on right: on unit: expected discriminator to be 'unit', got 'not-unit'"},
+		{name: "on-sum-on-left", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on left: on unit: expected discriminator to be 'unit', got 'not-unit'"},
+		{name: "on-sum-on-right", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on right: on unit: expected discriminator to be 'unit', got 'not-unit'"},
 		{name: "not-sum-case", serialized: json.RawMessage(`{"discriminator":"not-sum","value":[1,2,{"discriminator":"unit"}]}`), expectedError: "on sum: expected discriminator to be 'sum', got 'not-sum'"},
-		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"sum"}`), expectedError: "on sum: expected 3 elements in sum, got 0"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"sum"}`), expectedError: "on sum"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on sum"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on sum"},
-		{name: "different-arity", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,3,{"discriminator":"unit"}]}`), expectedError: "on sum: expected arity to be 2, got 3"},
 	}
 
 	for _, testCase := range testCases {
@@ -133,8 +132,8 @@ func TestOptionSerialization(t *testing.T) {
 		option   ballerina.Option[ballerina.Unit]
 		expected json.RawMessage
 	}{
-		{name: "none", option: ballerina.None[ballerina.Unit](), expected: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"unit"}]}`)},
-		{name: "some", option: ballerina.Some(ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"unit"}]}`)},
+		{name: "none", option: ballerina.None[ballerina.Unit](), expected: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"unit","value":"()"}]}`)},
+		{name: "some", option: ballerina.Some(ballerina.Unit{}), expected: json.RawMessage(`{"discriminator":"sum","value":[2,{"discriminator":"unit","value":"()"}]}`)},
 	}
 
 	for _, testCase := range testCases {
@@ -153,8 +152,8 @@ func TestOptionDeserialization(t *testing.T) {
 		serialized json.RawMessage
 		expected   ballerina.Option[ballerina.Unit]
 	}{
-		{name: "none", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"unit"}]}`), expected: ballerina.None[ballerina.Unit]()},
-		{name: "some", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"unit"}]}`), expected: ballerina.Some(ballerina.Unit{})},
+		{name: "none", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,{"discriminator":"unit","value":"()"}]}`), expected: ballerina.None[ballerina.Unit]()},
+		{name: "some", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,{"discriminator":"unit","value":"()"}]}`), expected: ballerina.Some(ballerina.Unit{})},
 	}
 
 	for _, testCase := range testCases {
@@ -169,13 +168,13 @@ func TestTuple2Serialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerinaserialization.Tuple2Serializer(ballerinaserialization.UnitSerializer, ballerinaserialization.UnitSerializer)
 	serialized := serializer(ballerina.Tuple2[ballerina.Unit, ballerina.Unit]{Item1: ballerina.Unit{}, Item2: ballerina.Unit{}})
-	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit"},{"discriminator":"unit"}]}`)), serialized)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit","value":"()"},{"discriminator":"unit","value":"()"}]}`)), serialized)
 }
 
 func TestTuple2Deserialization(t *testing.T) {
 	t.Parallel()
 	deserializer := ballerinaserialization.Tuple2Deserializer(ballerinaserialization.UnitDeserializer, ballerinaserialization.UnitDeserializer)
-	serialized := json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit"},{"discriminator":"unit"}]}`)
+	serialized := json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit","value":"()"},{"discriminator":"unit","value":"()"}]}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, ballerina.Tuple2[ballerina.Unit, ballerina.Unit]](ballerina.Tuple2[ballerina.Unit, ballerina.Unit]{Item1: ballerina.Unit{}, Item2: ballerina.Unit{}}), deserialized)
 }
@@ -188,13 +187,13 @@ func TestTuple2DeserializationError(t *testing.T) {
 		serialized    json.RawMessage
 		expectedError string
 	}{
-		{name: "on-item1", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"not-unit"},{"discriminator":"unit"}]}`), expectedError: "on tuple2: on item1:"},
-		{name: "on-item2", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit"},{"discriminator":"not-unit"}]}`), expectedError: "on tuple2: on item2:"},
-		{name: "different-length", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit"},{"discriminator":"unit"},{"discriminator":"unit"}]}`), expectedError: "on tuple2"},
-		{name: "on-element", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"not-unit"},{"discriminator":"unit"}]}`), expectedError: "on tuple2"},
+		{name: "on-item1", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"not-unit"},{"discriminator":"unit","value":"()"}]}`), expectedError: "on tuple2: on item1:"},
+		{name: "on-item2", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit","value":"()"},{"discriminator":"not-unit"}]}`), expectedError: "on tuple2: on item2:"},
+		{name: "different-length", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"unit","value":"()"},{"discriminator":"unit","value":"()"},{"discriminator":"unit","value":"()"}]}`), expectedError: "on tuple2"},
+		{name: "on-element", serialized: json.RawMessage(`{"discriminator":"tuple","value":[{"discriminator":"not-unit"},{"discriminator":"unit","value":"()"}]}`), expectedError: "on tuple2"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on tuple2"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on tuple2"},
-		{name: "non-tuple-discriminator", serialized: json.RawMessage(`{"discriminator":"list","value":[{"discriminator":"unit"},{"discriminator":"unit"}]}`), expectedError: "on tuple2"},
+		{name: "non-tuple-discriminator", serialized: json.RawMessage(`{"discriminator":"list","value":[{"discriminator":"unit","value":"()"},{"discriminator":"unit","value":"()"}]}`), expectedError: "on tuple2"},
 		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"tuple"}`), expectedError: "on tuple2: missing value field"},
 	}
 
@@ -209,10 +208,10 @@ func TestTuple2DeserializationError(t *testing.T) {
 func TestTuple3Serialization(t *testing.T) {
 	t.Parallel()
 
-	tuple := ballerina.Tuple3[string, bool, int64]{
+	tuple := ballerina.Tuple3[string, bool, int32]{
 		Item1: "hello",
 		Item2: true,
-		Item3: int64(42),
+		Item3: int32(42),
 	}
 
 	serializer := ballerinaserialization.Tuple3Serializer(
@@ -228,16 +227,16 @@ func TestTuple3Serialization(t *testing.T) {
 
 	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
 
-	require.Equal(t, ballerina.Right[error, ballerina.Tuple3[string, bool, int64]](tuple), mappedTupleWithError)
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple3[string, bool, int32]](tuple), mappedTupleWithError)
 }
 
 func TestTuple4Serialization(t *testing.T) {
 	t.Parallel()
 
-	tuple := ballerina.Tuple4[string, bool, int64, float64]{
+	tuple := ballerina.Tuple4[string, bool, int32, float64]{
 		Item1: "hello",
 		Item2: true,
-		Item3: int64(42),
+		Item3: int32(42),
 		Item4: float64(3.14),
 	}
 
@@ -256,7 +255,7 @@ func TestTuple4Serialization(t *testing.T) {
 
 	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
 
-	require.Equal(t, ballerina.Right[error, ballerina.Tuple4[string, bool, int64, float64]](tuple), mappedTupleWithError)
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple4[string, bool, int32, float64]](tuple), mappedTupleWithError)
 }
 
 func TestSum3SerializationAndDeserialization(t *testing.T) {
@@ -274,21 +273,21 @@ func TestSum3SerializationAndDeserialization(t *testing.T) {
 	)
 
 	t.Run("case 1/3", func(t *testing.T) {
-		sum := ballerina.Case1Of3[string, bool, int64]("abc")
+		sum := ballerina.Case1Of3[string, bool, int32]("abc")
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int32]](sum), mapped)
 	})
 
 	t.Run("case 2/3", func(t *testing.T) {
-		sum := ballerina.Case2Of3[string, bool, int64](true)
+		sum := ballerina.Case2Of3[string, bool, int32](true)
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int32]](sum), mapped)
 	})
 
 	t.Run("case 3/3", func(t *testing.T) {
-		sum := ballerina.Case3Of3[string, bool, int64](int64(42))
+		sum := ballerina.Case3Of3[string, bool, int32](int32(42))
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int32]](sum), mapped)
 	})
 }
 
@@ -309,27 +308,27 @@ func TestSum4SerializationAndDeserialization(t *testing.T) {
 	)
 
 	t.Run("case 1/4", func(t *testing.T) {
-		sum := ballerina.Case1Of4[string, bool, int64, float64]("abc")
+		sum := ballerina.Case1Of4[string, bool, int32, float64]("abc")
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int32, float64]](sum), mapped)
 	})
 
 	t.Run("case 2/4", func(t *testing.T) {
-		sum := ballerina.Case2Of4[string, bool, int64, float64](true)
+		sum := ballerina.Case2Of4[string, bool, int32, float64](true)
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int32, float64]](sum), mapped)
 	})
 
 	t.Run("case 3/4", func(t *testing.T) {
-		sum := ballerina.Case3Of4[string, bool, int64, float64](int64(42))
+		sum := ballerina.Case3Of4[string, bool, int32, float64](int32(42))
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int32, float64]](sum), mapped)
 	})
 
 	t.Run("case 4/4", func(t *testing.T) {
-		sum := ballerina.Case4Of4[string, bool, int64, float64](3.14)
+		sum := ballerina.Case4Of4[string, bool, int32, float64](3.14)
 		mapped := ballerina.Bind(serializer(sum), deserializer)
-		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int32, float64]](sum), mapped)
 	})
 }
 
@@ -414,29 +413,29 @@ func TestBoolDeserialization(t *testing.T) {
 func TestIntSerialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerinaserialization.IntSerializer
-	serialized := serializer(int64(123))
-	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"int","value":"123"}`)), serialized)
+	serialized := serializer(int32(123))
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"int32","value":"123"}`)), serialized)
 }
 
 func TestIntDeserialization(t *testing.T) {
 	t.Parallel()
 	deserializer := ballerinaserialization.IntDeserializer
-	serialized := json.RawMessage(`{"discriminator":"int","value":"123"}`)
+	serialized := json.RawMessage(`{"discriminator":"int32","value":"123"}`)
 	deserialized := deserializer(serialized)
-	require.Equal(t, ballerina.Right[error, int64](123), deserialized)
+	require.Equal(t, ballerina.Right[error, int32](123), deserialized)
 }
 
 func TestFloatSerialization(t *testing.T) {
 	t.Parallel()
 	serializer := ballerinaserialization.FloatSerializer
 	serialized := serializer(float64(1.75))
-	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"float","value":"1.75"}`)), serialized)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"float64","value":"1.75"}`)), serialized)
 }
 
 func TestFloatDeserialization(t *testing.T) {
 	t.Parallel()
 	deserializer := ballerinaserialization.FloatDeserializer
-	serialized := json.RawMessage(`{"discriminator":"float","value":"1.75"}`)
+	serialized := json.RawMessage(`{"discriminator":"float64","value":"1.75"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, float64](1.75), deserialized)
 }
