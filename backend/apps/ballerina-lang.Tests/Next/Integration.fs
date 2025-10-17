@@ -14,21 +14,23 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.TypeCheck
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Expr
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Terms
 open Ballerina.State.WithError
 open Ballerina.DSL.Next.StdLib.Option
 open Ballerina.DSL.Next.Extensions
 open Ballerina.LocalizedErrors
 open Ballerina.Parser
-open Ballerina.Parser
 open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.Syntax
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
 open Ballerina.DSL.Next
 open Ballerina.DSL.Next.StdLib
-open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -613,3 +615,118 @@ in f (1, "hello")
     | _ -> Assert.Fail($"Expected 1, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Value<TypeValue, ValueExt> -> string) =
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive res when res = expectedValue -> Assert.Pass()
+    | _ -> Assert.Fail(errMsg value)
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+[<Test>]
+let ``LangNext-Integration int32 literals work`` () =
+  let programs =
+    [ "let x = 42 in x", Int32 42, fun v -> $"Expected 42, got {v}"
+      "let x = -42 in x", Int32 -42, fun v -> $"Expected -42, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int64 literals work`` () =
+  let programs =
+    [ "let x = 42l in x", Int64 42L, fun v -> $"Expected 42 (Int64), got {v}"
+      "let x = -42l in x", Int64 -42L, fun v -> $"Expected -42 (Int64), got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float32 literals work`` () =
+  let programs =
+    [ "let x = 94.53f in x", Float32 94.53f, fun v -> $"Expected 94.53f, got {v}"
+      "let x = -94.53f in x", Float32 -94.53f, fun v -> $"Expected -94.53f, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float64 literals work`` () =
+  let programs =
+    [ "let x = 123456789.123d in x", Float64 123456789.123, fun v -> $"Expected 123456789.123, got {v}"
+      "let x = -123456789.123d in x", Float64 -123456789.123, fun v -> $"Expected -123456789.123, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Decimal literals work`` () =
+  let programs =
+    [ "let x = 12.123 in x", Decimal 12.123M, fun v -> $"Expected 12.123, got {v}"
+      "let x = -12.123 in x", Decimal -12.123M, fun v -> $"Expected -12.123, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int32 operations work`` () =
+  let int32Ops =
+    [ "let x = 100 - 50 in x", Int32 50, fun v -> $"Expected 50, got {v}"
+      "let x = 100 * 2 in x", Int32 200, fun v -> $"Expected 200, got {v}"
+      "let x = 100 / 2 in x", Int32 50, fun v -> $"Expected 50, got {v}"
+      "let x = 100 % 3 in x", Int32 1, fun v -> $"Expected 1, got {v}"
+      "let x = 100 ^ 2 in x", Int32 10000, fun v -> $"Expected 10000, got {v}" ]
+
+  int32Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int64 operations work`` () =
+  let int64Ops =
+    [ "let x = 100l - 50l in x", Int64 50L, fun v -> $"Expected 50, got {v}"
+      "let x = 100l * 2l in x", Int64 200L, fun v -> $"Expected 200, got {v}"
+      "let x = 100l / 2l in x", Int64 50L, fun v -> $"Expected 50, got {v}"
+      "let x = 100l % 3l in x", Int64 1L, fun v -> $"Expected 1, got {v}"
+      "let x = 100l ^ 2l in x", Int64 10000L, fun v -> $"Expected 10000, got {v}" ]
+
+  int64Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float32 operations work`` () =
+  let float32Ops =
+    [ "let x = 10.0f - 5.0f in x", Float32 5.0f, fun v -> $"Expected 5.0f, got {v}"
+      "let x = 10.0f * 2.0f in x", Float32 20.0f, fun v -> $"Expected 20.0f, got {v}"
+      "let x = 10.0f / 2.0f in x", Float32 5.0f, fun v -> $"Expected 5.0f, got {v}"
+      "let x = 10.0f % 3.0f in x", Float32 1.0f, fun v -> $"Expected 1.0f, got {v}"
+      "let x = 10.0f ^ 2.0f in x", Float32 100.0f, fun v -> $"Expected 100.0f, got {v}" ]
+
+  float32Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float64 operations work`` () =
+  let float64Ops =
+    [ "let x = 10.0d - 5.0d in x", Float64 5.0, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0d * 2.0d in x", Float64 20.0, fun v -> $"Expected 20.0, got {v}"
+      "let x = 10.0d / 2.0d in x", Float64 5.0, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0d % 3.0d in x", Float64 1.0, fun v -> $"Expected 1.0, got {v}"
+      "let x = 10.0d ^ 2.0d in x", Float64 100.0, fun v -> $"Expected 100.0, got {v}" ]
+
+  float64Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Decimal operations work`` () =
+  let decimalOps =
+    [ "let x = 10.0 - 5.0 in x", Decimal 5.0M, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0 * 2.0 in x", Decimal 20.0M, fun v -> $"Expected 20.0, got {v}"
+      "let x = 10.0 / 2.0 in x", Decimal 5.0M, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0 % 3.0 in x", Decimal 1.0M, fun v -> $"Expected 1.0, got {v}"
+      "let x = 10.0 ^ 2.0 in x", Decimal 100.0M, fun v -> $"Expected 100.0, got {v}" ]
+
+  decimalOps
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))

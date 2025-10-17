@@ -9,6 +9,10 @@ open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Types.TypeChecker
 
 [<Test>]
 let ``LangNext-Instantiate straightforward var to primitive`` () =

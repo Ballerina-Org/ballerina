@@ -14,6 +14,14 @@ module Model =
   type LanguageStreamType = LanguageStreamType of string
   type GoImport = GoImport of string
 
+  type Serializer = { Name: string; Import: GoImport }
+
+  type Deserializer = { Name: string; Import: GoImport }
+
+  type Serialization =
+    { Serializer: Serializer
+      Deserializer: Deserializer }
+
   type EnumRendererType =
     | Option
     | Set
@@ -73,12 +81,6 @@ module Model =
       GenerateReplace: Set<string>
       LanguageStreamType: LanguageStreamType }
 
-  and GenericType =
-    | Option
-    | List
-    | Set
-    | Map
-
   and GenericTypeDef =
     {| Type: string
        SupportedRenderers: Set<RendererName> |}
@@ -98,7 +100,17 @@ module Model =
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
       Constructor: string
-      RequiredImport: Option<GoImport> }
+      RequiredImport: Option<GoImport>
+      Serialization: Serialization }
+
+    static member FindArity
+      (config: List<TupleCodegenConfigTypeDef>)
+      (arity: int)
+      : Sum<TupleCodegenConfigTypeDef, Errors> =
+      config
+      |> List.tryFind (fun c -> c.Ariety = arity)
+      |> Sum.fromOption (fun () -> Errors.Singleton $"Error: missing tuple config for arity {arity}")
+
 
   and CodegenConfigUnionDef =
     { SupportedRenderers: Set<RendererName> }
@@ -107,14 +119,16 @@ module Model =
     { GeneratedTypeName: string
       DeltaTypeName: string
       RequiredImport: Option<GoImport>
-      SupportedRenderers: Set<RendererName> }
+      SupportedRenderers: Set<RendererName>
+      Serialization: Serialization }
 
   and CodegenConfigListDef =
     { GeneratedTypeName: string
       RequiredImport: Option<GoImport>
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
-      MappingFunction: string }
+      MappingFunction: string
+      Serialization: Serialization }
 
   and CodegenConfigOneDef =
     { GeneratedTypeName: string
@@ -166,13 +180,15 @@ module Model =
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
-      SupportedRenderers: Set<RendererName> }
+      SupportedRenderers: Set<RendererName>
+      Serialization: Serialization }
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
       DeltaTypeName: string
       RequiredImport: Option<GoImport>
-      SupportedRenderers: Set<RendererName> }
+      SupportedRenderers: Set<RendererName>
+      Serialization: Serialization }
 
   and CodegenConfigCustomDef =
     { GeneratedTypeName: string
@@ -187,7 +203,8 @@ module Model =
       SupportedRenderers:
         {| Enum: Set<RendererName>
            Stream: Set<RendererName>
-           Plain: Set<RendererName> |} }
+           Plain: Set<RendererName> |}
+      Serialization: Serialization }
 
   and CodegenConfigSetDef =
     { GeneratedTypeName: string
@@ -203,6 +220,7 @@ module Model =
   type TableMethod =
     | Add
     | Remove
+    | RemoveAll
     | Duplicate
     | Move
 
@@ -576,19 +594,14 @@ module Model =
     { Types: TypeContext
       Apis: FormApis<'ExprExtension, 'ValueExtension>
       Forms: Map<FormName, FormConfig<'ExprExtension, 'ValueExtension>>
+      SupportedRecordRenderers: Map<RendererName, Set<string>>
+      LanguageStreamType: LanguageStreamType
       GenericRenderers:
         List<
           {| Type: ExprType
              SupportedRenderers: Set<RendererName> |}
          >
       Launchers: Map<LauncherName, FormLauncher> }
-
-    static member Empty: ParsedFormsContext<'ExprExtension, 'ValueExtension> =
-      { Types = Map.empty
-        Apis = FormApis<'ExprExtension, 'ValueExtension>.Empty
-        Forms = Map.empty
-        GenericRenderers = []
-        Launchers = Map.empty }
 
     static member Updaters =
       {| Types =

@@ -14,8 +14,11 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.TypeCheck
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Expr
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Terms
 open Ballerina.State.WithError
 open Ballerina.DSL.Next.StdLib.Option
