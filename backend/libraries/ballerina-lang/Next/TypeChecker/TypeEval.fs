@@ -1,4 +1,4 @@
-namespace Ballerina.DSL.Next.Types
+namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module Eval =
   open Ballerina.Collections.Sum
@@ -11,228 +11,8 @@ module Eval =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Collections.NonEmptyList
-
-  type TypeBindings = Map<Identifier, TypeValue * Kind>
-  type UnionCaseConstructorBindings = Map<Identifier, TypeValue * OrderedMap<TypeSymbol, TypeValue>>
-  type RecordFieldBindings = Map<Identifier, OrderedMap<TypeSymbol, TypeValue> * TypeValue>
-
-  type TypeSymbols = Map<Identifier, TypeSymbol>
-
-  type TypeExprEvalContext = { Scope: List<string> }
-
-  type TypeExprEvalSymbols =
-    { Types: TypeSymbols
-      UnionCases: TypeSymbols
-      RecordFields: TypeSymbols }
-
-    static member Empty =
-      { Types = Map.empty
-        UnionCases = Map.empty
-        RecordFields = Map.empty }
-
-    static member CreateFromTypeSymbols(symbols: Map<Identifier, TypeSymbol>) : TypeExprEvalSymbols =
-      { TypeExprEvalSymbols.Empty with
-          Types = symbols }
-
-  type TypeExprEvalState =
-    { Bindings: TypeBindings
-      UnionCases: UnionCaseConstructorBindings
-      RecordFields: RecordFieldBindings
-      Symbols: TypeExprEvalSymbols }
-
-  type TypeExprEvalResult = State<TypeValue * Kind, TypeExprEvalContext, TypeExprEvalState, Errors>
-  type TypeExprEval = Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> TypeExprEvalResult
-  type TypeExprSymbolEvalResult = State<TypeSymbol, TypeExprEvalContext, TypeExprEvalState, Errors>
-  type TypeExprSymbolEval = Location -> TypeExpr -> TypeExprSymbolEvalResult
-
-  type TypeExprEvalContext with
-    static member Empty: TypeExprEvalContext = { Scope = [] }
-
-    static member Updaters =
-      {| Scope = fun u (c: TypeExprEvalContext) -> { c with Scope = c.Scope |> u } |}
-
-  type TypeExprEvalState with
-    static member Empty: TypeExprEvalState =
-      { Bindings = Map.empty
-        UnionCases = Map.empty
-        RecordFields = Map.empty
-        Symbols = TypeExprEvalSymbols.Empty }
-
-    static member Create(bindings: TypeBindings, symbols: TypeExprEvalSymbols) : TypeExprEvalState =
-      { TypeExprEvalState.Empty with
-          Bindings = bindings
-          Symbols = symbols }
-
-    static member CreateFromSymbols(symbols: TypeExprEvalSymbols) : TypeExprEvalState =
-      { TypeExprEvalState.Empty with
-          Symbols = symbols }
-
-    static member CreateFromTypeSymbols(symbols: Map<Identifier, TypeSymbol>) : TypeExprEvalState =
-      { TypeExprEvalState.Empty with
-          Symbols =
-            { TypeExprEvalSymbols.Empty with
-                Types = symbols } }
-
-    static member tryFindType(v: Identifier, loc: Location) : Reader<TypeValue * Kind, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.Bindings
-          |> Map.tryFindWithError v "bindings" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member tryFindUnionCaseConstructor
-      (v: Identifier, loc: Location)
-      : Reader<TypeValue * OrderedMap<TypeSymbol, TypeValue>, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.UnionCases
-          |> Map.tryFindWithError v "union cases" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member tryFindRecordField
-      (v: Identifier, loc: Location)
-      : Reader<OrderedMap<TypeSymbol, TypeValue> * TypeValue, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.RecordFields
-          |> Map.tryFindWithError v "record fields" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member tryFindTypeSymbol(v: Identifier, loc: Location) : Reader<TypeSymbol, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.Symbols.Types
-          |> Map.tryFindWithError v "type symbols" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member tryFindRecordFieldSymbol
-      (v: Identifier, loc: Location)
-      : Reader<TypeSymbol, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.Symbols.RecordFields
-          |> Map.tryFindWithError v "record field symbols" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member tryFindUnionCaseSymbol(v: Identifier, loc: Location) : Reader<TypeSymbol, TypeExprEvalState, Errors> =
-      reader {
-        let! s = reader.GetContext()
-
-        return!
-          s.Symbols.UnionCases
-          |> Map.tryFindWithError v "union case symbols" v.ToFSharpString loc
-          |> reader.OfSum
-      }
-
-    static member Updaters =
-      {| Bindings = fun u (c: TypeExprEvalState) -> { c with Bindings = c.Bindings |> u }
-         UnionCases =
-          fun u (c: TypeExprEvalState) ->
-            { c with
-                UnionCases = c.UnionCases |> u }
-         RecordFields =
-          fun u (c: TypeExprEvalState) ->
-            { c with
-                RecordFields = c.RecordFields |> u }
-         Symbols =
-          {| Types =
-              fun u (c: TypeExprEvalState) ->
-                { c with
-                    Symbols =
-                      { c.Symbols with
-                          Types = c.Symbols.Types |> u } }
-             RecordFields =
-              fun u (c: TypeExprEvalState) ->
-                { c with
-                    Symbols =
-                      { c.Symbols with
-                          RecordFields = c.Symbols.RecordFields |> u } }
-             UnionCases =
-              fun u (c: TypeExprEvalState) ->
-                { c with
-                    Symbols =
-                      { c.Symbols with
-                          UnionCases = c.Symbols.UnionCases |> u } } |} |}
-
-    static member unbindType x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.remove (Identifier.LocalScope x)))
-        do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.remove (Identifier.FullyQualified(ctx.Scope, x))))
-      }
-
-    static member bindType x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.add (Identifier.LocalScope x) t_x))
-
-        do! state.SetState(TypeExprEvalState.Updaters.Bindings(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
-      }
-
-    static member bindUnionCaseConstructor x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.LocalScope x) t_x))
-
-        do! state.SetState(TypeExprEvalState.Updaters.UnionCases(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
-      }
-
-    static member bindRecordField x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.RecordFields(Map.add (Identifier.LocalScope x) t_x))
-
-        do!
-          state.SetState(TypeExprEvalState.Updaters.RecordFields(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x))
-      }
-
-    static member bindRecordFieldSymbol x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.Symbols.RecordFields(Map.add (Identifier.LocalScope x) t_x))
-
-        do!
-          state.SetState(
-            TypeExprEvalState.Updaters.Symbols.RecordFields(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x)
-          )
-      }
-
-    static member bindUnionCaseSymbol x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.Symbols.UnionCases(Map.add (Identifier.LocalScope x) t_x))
-
-        do!
-          state.SetState(
-            TypeExprEvalState.Updaters.Symbols.UnionCases(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x)
-          )
-      }
-
-    static member bindTypeSymbol x t_x =
-      state {
-        let! ctx = state.GetContext()
-        do! state.SetState(TypeExprEvalState.Updaters.Symbols.Types(Map.add (Identifier.LocalScope x) t_x))
-
-        do!
-          state.SetState(
-            TypeExprEvalState.Updaters.Symbols.Types(Map.add (Identifier.FullyQualified(ctx.Scope, x)) t_x)
-          )
-      }
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
   type TypeExpr with
     static member EvalAsSymbol: TypeExprSymbolEval =
@@ -240,6 +20,7 @@ module Eval =
         state {
           let (!) = TypeExpr.EvalAsSymbol loc0
           let (!!) = TypeExpr.Eval None loc0
+          let! ctx = state.GetContext()
 
           let error e = Errors.Singleton(loc0, e)
 
@@ -249,12 +30,13 @@ module Eval =
           match t with
           | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
           | TypeExpr.Lookup v ->
+
             return!
               reader.Any(
                 NonEmptyList.OfList(
-                  TypeExprEvalState.tryFindTypeSymbol (v, loc0),
-                  [ TypeExprEvalState.tryFindRecordFieldSymbol (v, loc0)
-                    TypeExprEvalState.tryFindUnionCaseSymbol (v, loc0) ]
+                  TypeExprEvalState.tryFindTypeSymbol (v |> ctx.Scope.Resolve, loc0),
+                  [ TypeExprEvalState.tryFindRecordFieldSymbol (v |> ctx.Scope.Resolve, loc0)
+                    TypeExprEvalState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0) ]
                 )
               )
               |> state.OfStateReader
@@ -269,7 +51,7 @@ module Eval =
               |> ofSum
               |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-            do! TypeExprEvalState.bindType param.Name (a, a_k)
+            do! TypeExprEvalState.bindType (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (a, a_k)
 
             return! !body
           | _ ->
@@ -284,6 +66,7 @@ module Eval =
         state {
           let (!) = TypeExpr.Eval None loc0
           let (!!) = TypeExpr.EvalAsSymbol loc0
+          let! ctx = state.GetContext()
 
           let error e = Errors.Singleton(loc0, e)
 
@@ -312,13 +95,49 @@ module Eval =
               Kind.Star
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> error |> state.Throw
           | TypeExpr.Primitive p -> return TypeValue.Primitive { value = p; source = source }, Kind.Star
-          | TypeExpr.Lookup v -> return! TypeExprEvalState.tryFindType (v, loc0) |> state.OfStateReader
+          | TypeExpr.Lookup v ->
+            let! res =
+              TypeExprEvalState.tryFindType (v |> TypeCheckScope.Empty.Resolve, loc0)
+              |> state.OfStateReader
+              |> state.Catch
+
+            match res with
+            | Left res -> return res
+            | Right err ->
+              do Console.WriteLine("---- TypeExpr Eval Lookup Error ----")
+              do Console.WriteLine($"id: {v}")
+              do Console.ReadLine() |> ignore
+              do Console.WriteLine($"Scope: {ctx.Scope}")
+              do Console.ReadLine() |> ignore
+              let! s = state.GetState()
+              do Console.WriteLine($"Bindings: {s.Bindings}")
+              do Console.ReadLine() |> ignore
+              return! $"Error: cannot find type {v}, {err}" |> error |> state.Throw
+
           | TypeExpr.LetSymbols(xts, symbolsKind, rest) ->
             do!
               xts
               |> Seq.map (fun x ->
                 state {
-                  let s_x = TypeSymbol.Create(Identifier.LocalScope x)
+                  let x0 = Identifier.LocalScope x
+                  // match ctx.Scope.Type with
+                  // | Some t -> Identifier.FullyQualified([ t ], x)
+                  // | None -> Identifier.LocalScope x
+
+                  let s_x = TypeSymbol.Create(x0)
+                  let x = x0 |> ctx.Scope.Resolve
+
+                  do! TypeExprEvalState.bindIdentifierToResolvedIdentifier x x0
+
+                  match ctx.Scope.Type with
+                  | Some t ->
+                    do!
+                      TypeExprEvalState.bindIdentifierToResolvedIdentifier
+                        x
+                        (Identifier.FullyQualified([ t ], x0.LocalName))
+                  | None -> ()
+
+                  // do Console.WriteLine($"Binding symbol {s_x.Name.ToString()} to {x.ToString()}")
 
                   match symbolsKind with
                   | RecordFields -> do! TypeExprEvalState.bindRecordFieldSymbol x s_x
@@ -332,6 +151,8 @@ module Eval =
             let! resultValue, resultKind = !rest
             return TypeValue.SetSourceMapping(resultValue, source), resultKind
           | TypeExpr.Let(x, t_x, rest) ->
+            let x = Identifier.LocalScope x |> ctx.Scope.Resolve
+
             return!
               state.Either3
                 (state {
@@ -365,14 +186,19 @@ module Eval =
                   match param.Kind with
                   | Kind.Symbol ->
                     let! a = !!a
-                    do! TypeExprEvalState.bindTypeSymbol param.Name a
+
+                    do!
+                      TypeExprEvalState.bindTypeSymbol
+                        (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                        a
 
                     let! resultValue, resultKind = !body
                     return TypeValue.SetSourceMapping(resultValue, source), resultKind
                   | _ ->
                     let! a = !a
 
-                    do! TypeExprEvalState.bindType param.Name a
+                    do!
+                      TypeExprEvalState.bindType (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) a
 
                     let! resultValue, resultKind = !body
                     return TypeValue.SetSourceMapping(resultValue, source), resultKind
@@ -399,9 +225,13 @@ module Eval =
                   Guid = Guid.CreateVersion7() }
               )
 
-            do! TypeExprEvalState.bindType param.Name (fresh_var_t, param.Kind)
+            do!
+              TypeExprEvalState.bindType
+                (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                (fresh_var_t, param.Kind)
+
             let! _body, body_k = !bodyExpr
-            do! TypeExprEvalState.unbindType param.Name
+            do! TypeExprEvalState.unbindType (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
 
             return
               TypeValue.Lambda

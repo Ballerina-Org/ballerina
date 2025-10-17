@@ -19,9 +19,10 @@ module Extension =
   let Int32Extension<'ext>
     (operationLens: PartialLens<'ext, Int32Operations<'ext>>)
     : OperationsExtension<'ext, Int32Operations<'ext>> =
-    let int32PlusId = Identifier.FullyQualified([ "int32" ], "+")
+    let int32PlusId =
+      Identifier.FullyQualified([ "int32" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PlusId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -56,9 +57,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure + v))
             } }
 
-    let int32MinusId = Identifier.FullyQualified([ "int32" ], "-")
+    let int32MinusId =
+      Identifier.FullyQualified([ "int32" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32MinusId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -94,9 +96,10 @@ module Extension =
             } }
 
 
-    let int32TimesId = Identifier.FullyQualified([ "int32" ], "*")
+    let int32TimesId =
+      Identifier.FullyQualified([ "int32" ], "*") |> TypeCheckScope.Empty.Resolve
 
-    let timesOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let timesOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32TimesId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -132,9 +135,10 @@ module Extension =
             } }
 
 
-    let int32DivideId = Identifier.FullyQualified([ "int32" ], "/")
+    let int32DivideId =
+      Identifier.FullyQualified([ "int32" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32DivideId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -169,9 +173,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure / v))
             } }
 
-    let int32PowerId = Identifier.FullyQualified([ "int32" ], "**")
+    let int32PowerId =
+      Identifier.FullyQualified([ "int32" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32PowerId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -207,9 +212,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(pown vClosure v))
             } }
 
-    let int32ModId = Identifier.FullyQualified([ "int32" ], "%")
+    let int32ModId =
+      Identifier.FullyQualified([ "int32" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32ModId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -244,9 +250,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(vClosure % v))
             } }
 
-    let int32EqualId = Identifier.FullyQualified([ "int32" ], "==")
+    let int32EqualId =
+      Identifier.FullyQualified([ "int32" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32EqualId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -281,9 +288,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let int32NotEqualId = Identifier.FullyQualified([ "int32" ], "!=")
+    let int32NotEqualId =
+      Identifier.FullyQualified([ "int32" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32NotEqualId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -318,9 +326,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let int32GreaterThanId = Identifier.FullyQualified([ "int32" ], ">")
+    let int32GreaterThanId =
+      Identifier.FullyQualified([ "int32" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -356,9 +365,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(res))
             } }
 
-    let int32GreaterThanOrEqualId = Identifier.FullyQualified([ "int32" ], ">=")
+    let int32GreaterThanOrEqualId =
+      Identifier.FullyQualified([ "int32" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32GreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -396,9 +406,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let int32LessThanId = Identifier.FullyQualified([ "int32" ], "<")
+    let int32LessThanId =
+      Identifier.FullyQualified([ "int32" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -433,9 +444,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let int32LessThanOrEqualId = Identifier.FullyQualified([ "int32" ], "<=")
+    let int32LessThanOrEqualId =
+      Identifier.FullyQualified([ "int32" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
       int32LessThanOrEqualId,
       { Type = TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue))
         Kind = Kind.Star

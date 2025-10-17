@@ -26,7 +26,10 @@ let ``Delta.Record: Updates field in a record correctly`` () =
     Value<Unit>
       .Record(
         Map.ofList
-          [ typeSymbol.Name.LocalName |> Identifier.LocalScope, Value<Unit>.Primitive(PrimitiveValue.Int32 99) ]
+          [ typeSymbol.Name.LocalName
+            |> Identifier.LocalScope
+            |> TypeCheckScope.Empty.Resolve,
+            Value<Unit>.Primitive(PrimitiveValue.Int32 99) ]
       )
 
   let delta =
@@ -36,7 +39,11 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   | Sum.Left updater ->
     match updater recordValue with
     | Sum.Left(Value.Record updated) ->
-      let updatedValue = updated.[typeSymbol.Name.LocalName |> Identifier.LocalScope]
+      let updatedValue =
+        updated.[typeSymbol.Name.LocalName
+                 |> Identifier.LocalScope
+                 |> TypeCheckScope.Empty.Resolve]
+
       Assert.That(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive, Is.EqualTo updatedValue)
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"

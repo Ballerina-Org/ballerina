@@ -10,13 +10,7 @@ module Model =
   open Ballerina.Data.Delta.Model
   open Ballerina.Data.Delta.ToUpdater
   open Ballerina.Data.Spec.Model
-  open Ballerina.Data.VirtualFolders
-
-  //FIXME: folders stores v2 types that are used for seeds
-  //ensure the deserialized data (seeds, schema) are always in sync (taken from) serialized data (folders)
-  type Spec<'T, 'valueExtension> =
-    { Seeds: SpecData<'T, 'valueExtension>
-      Folders: FolderNode }
+  open Ballerina.VirtualFolders
 
   type SpecApi<'T, 'valueExtension> =
     { Get: SpecName -> Sum<Spec<'T, 'valueExtension>, Errors>

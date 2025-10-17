@@ -1,4 +1,4 @@
-namespace Ballerina.DSL.Next.Types
+namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module AdHocPolymorphicOperators =
   open Ballerina.StdLib.String
@@ -13,7 +13,8 @@ module AdHocPolymorphicOperators =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Unification
-  open Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.Fun
 
   let adHocPolymorphismBinary =

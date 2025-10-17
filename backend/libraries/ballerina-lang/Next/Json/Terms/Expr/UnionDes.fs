@@ -16,10 +16,11 @@ module UnionDes =
 
   let private discriminator = "union-match"
 
-  type Expr<'T> with
-    static member FromJsonUnionDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonUnionDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionDesJson ->
         reader {
+          let! (_, idFromJson) = reader.GetContext()
           let! caseHandlers = unionDesJson |> JsonValue.AsArray |> reader.OfSum
 
           let! caseHandlers =
@@ -27,7 +28,7 @@ module UnionDes =
             |> Seq.map (fun caseHandler ->
               reader {
                 let! (caseName, handler) = caseHandler |> JsonValue.AsPair |> reader.OfSum
-                let! caseName = caseName |> Identifier.FromJson |> reader.OfSum
+                let! caseName = caseName |> idFromJson |> reader.OfSum
                 let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
                 let handlerVar = Var.Create handlerVar
@@ -41,17 +42,18 @@ module UnionDes =
         })
 
     static member ToJsonUnionDes
-      (rootToJson: ExprEncoder<'T>)
-      (union: Map<Identifier, CaseHandler<'T>>)
-      (_fallback: Option<Expr<'T>>)
-      : ExprEncoderReader<'T> =
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (union: Map<'Id, CaseHandler<'T, 'Id>>)
+      (_fallback: Option<Expr<'T, 'Id>>)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let! cases =
           union
           |> Map.toList
           |> List.map (fun (caseName, (handlerVar, handlerExpr)) ->
             reader {
-              let caseNameJson = caseName |> Identifier.ToJson
+              let! _, ctx = reader.GetContext()
+              let caseNameJson = caseName |> ctx
               let! handlerExpr = rootToJson handlerExpr
 
               let handlerJson =

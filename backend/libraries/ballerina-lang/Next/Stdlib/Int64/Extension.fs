@@ -21,9 +21,10 @@ module Extension =
     (operationLens: PartialLens<'ext, Int64Operations<'ext>>)
     : OperationsExtension<'ext, Int64Operations<'ext>> =
 
-    let int64PlusId = Identifier.FullyQualified([ "int64" ], "+")
+    let int64PlusId =
+      Identifier.FullyQualified([ "int64" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PlusId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
         Kind = Kind.Star
@@ -59,9 +60,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure + v))
             } }
 
-    let int64MinusId = Identifier.FullyQualified([ "int64" ], "-")
+    let int64MinusId =
+      Identifier.FullyQualified([ "int64" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64MinusId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
         Kind = Kind.Star
@@ -97,9 +99,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure - v))
             } }
 
-    let int64DivideId = Identifier.FullyQualified([ "int64" ], "/")
+    let int64DivideId =
+      Identifier.FullyQualified([ "int64" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64DivideId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
         Kind = Kind.Star
@@ -134,9 +137,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure / v))
             } }
 
-    let int64PowerId = Identifier.FullyQualified([ "int64" ], "**")
+    let int64PowerId =
+      Identifier.FullyQualified([ "int64" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PowerId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int32TypeValue, int64TypeValue))
         Kind = Kind.Star
@@ -177,9 +181,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(pown vClosure v))
             } }
 
-    let int64ModId = Identifier.FullyQualified([ "int64" ], "%")
+    let int64ModId =
+      Identifier.FullyQualified([ "int64" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64ModId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
         Kind = Kind.Star
@@ -214,9 +219,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure % v))
             } }
 
-    let int64EqualId = Identifier.FullyQualified([ "int64" ], "==")
+    let int64EqualId =
+      Identifier.FullyQualified([ "int64" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64EqualId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -251,9 +257,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let int64NotEqualId = Identifier.FullyQualified([ "int64" ], "!=")
+    let int64NotEqualId =
+      Identifier.FullyQualified([ "int64" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64NotEqualId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -288,9 +295,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let int64GreaterThanId = Identifier.FullyQualified([ "int64" ], ">")
+    let int64GreaterThanId =
+      Identifier.FullyQualified([ "int64" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -325,9 +333,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let int64GreaterThanOrEqualId = Identifier.FullyQualified([ "int64" ], ">=")
+    let int64GreaterThanOrEqualId =
+      Identifier.FullyQualified([ "int64" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -365,9 +374,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let int64LessThanId = Identifier.FullyQualified([ "int64" ], "<")
+    let int64LessThanId =
+      Identifier.FullyQualified([ "int64" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -402,9 +412,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let int64LessThanOrEqualId = Identifier.FullyQualified([ "int64" ], "<=")
+    let int64LessThanOrEqualId =
+      Identifier.FullyQualified([ "int64" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Int64Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanOrEqualId,
       { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
         Kind = Kind.Star
