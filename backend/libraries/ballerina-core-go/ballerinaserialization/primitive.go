@@ -68,13 +68,13 @@ var BoolDeserializer Deserializer[bool] = deserializePrimitiveTypeTo(boolDiscrim
 
 const intDiscriminator = "int32"
 
-var IntSerializer Serializer[int32] = serializePrimitiveTypeFrom(intDiscriminator, func(value int32) string {
+var IntSerializer Serializer[int] = serializePrimitiveTypeFrom(intDiscriminator, func(value int) string {
 	return strconv.FormatInt(int64(value), 10)
 })
 
-var IntDeserializer Deserializer[int32] = deserializePrimitiveTypeTo(intDiscriminator, func(value string) (int32, error) {
+var IntDeserializer Deserializer[int] = deserializePrimitiveTypeTo(intDiscriminator, func(value string) (int, error) {
 	parsed, err := strconv.ParseInt(value, 10, 32)
-	return int32(parsed), err
+	return int(parsed), err
 })
 
 const floatDiscriminator = "float64"
