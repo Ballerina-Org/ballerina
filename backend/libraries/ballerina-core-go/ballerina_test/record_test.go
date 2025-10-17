@@ -15,8 +15,8 @@ func TestDeserializeRecord_Success(t *testing.T) {
 	data := json.RawMessage(`{
         "discriminator": "record",
         "value": [
-            [{"name":"a"}, {"discriminator":"string","value":"hello"}],
-            [{"name":"b"}, {"discriminator":"int","value":"42"}]
+            ["a", {"discriminator":"string","value":"hello"}],
+            ["b", {"discriminator":"int","value":"42"}]
         ]
     }`)
 
@@ -46,7 +46,7 @@ func TestDeserializeRecord_Error_BadFieldName(t *testing.T) {
 	data := json.RawMessage(`{
         "discriminator": "record",
         "value": [
-            ["oops", {"discriminator":"unit"}]
+            [4, {"discriminator":"unit"}]
         ]
     }`)
 	result := ballerinaserialization.DeserializeRecord(data)

@@ -102,17 +102,14 @@ func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, map[string]jso
 	if r.Value == nil {
 		return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("missing value field"))
 	}
-	type recordField struct {
-		Name string `json:"name"`
-	}
 	fields := make(map[string]json.RawMessage, len(r.Value))
 	for i, field := range r.Value {
-		var fieldName recordField
+		var fieldName string
 		err := json.Unmarshal(field[0], &fieldName)
 		if err != nil {
 			return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("failed to unmarshal record field name %d: %w", i, err))
 		}
-		fields[fieldName.Name] = field[1]
+		fields[fieldName] = field[1]
 	}
 	return ballerina.Right[error, map[string]json.RawMessage](fields)
 }
@@ -133,11 +130,17 @@ type UnionForSerialization struct {
 	Value         [2]json.RawMessage `json:"value"`
 }
 
-func NewUnionForSerialization(caseName string, value json.RawMessage) UnionForSerialization {
-	return UnionForSerialization{
-		Discriminator: "union",
-		Value:         [2]json.RawMessage{json.RawMessage(`{"name": "` + caseName + `"}`), value},
+func NewUnionForSerialization(caseName string, value json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
+	caseNameBytes, err := json.Marshal(caseName)
+	if err != nil {
+		return ballerina.Left[error, UnionForSerialization](err)
 	}
+	return ballerina.Right[error, UnionForSerialization](
+		UnionForSerialization{
+			Discriminator: "union",
+			Value:         [2]json.RawMessage{caseNameBytes, value},
+		},
+	)
 }
 
 func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
@@ -153,13 +156,8 @@ func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSeriali
 }
 
 func (u UnionForSerialization) GetCaseName() ballerina.Sum[error, string] {
-	type caseName struct {
-		Name string `json:"name"`
-	}
 	return unmarshalWithContext(
 		"on union case name",
-		func(caseName caseName) ballerina.Sum[error, string] {
-			return ballerina.Right[error, string](caseName.Name)
-		},
+		ballerina.Right[error, string],
 	)(u.Value[0])
 }

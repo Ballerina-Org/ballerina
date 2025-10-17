@@ -13,15 +13,19 @@ const unitDiscriminator = "unit"
 
 type _unitForSerialization struct {
 	Discriminator string `json:"discriminator"`
+	Value         string `json:"value"`
 }
 
 var UnitSerializer Serializer[ballerina.Unit] = WithContext(fmt.Sprintf("on %s", unitDiscriminator), func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
-	return WrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator})
+	return WrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator, Value: "()"})
 })
 
 var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Sprintf("on %s", unitDiscriminator), func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
 	if unitForSerialization.Discriminator != unitDiscriminator {
 		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected discriminator to be '%s', got '%s'", unitDiscriminator, unitForSerialization.Discriminator))
+	}
+	if unitForSerialization.Value != "()" {
+		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected unit value to be '()', got '%s'", unitForSerialization.Value))
 	}
 	return ballerina.Right[error, ballerina.Unit](ballerina.Unit{})
 })
@@ -62,17 +66,18 @@ var BoolSerializer Serializer[bool] = serializePrimitiveTypeFrom(boolDiscriminat
 
 var BoolDeserializer Deserializer[bool] = deserializePrimitiveTypeTo(boolDiscriminator, strconv.ParseBool)
 
-const intDiscriminator = "int"
+const intDiscriminator = "int32"
 
-var IntSerializer Serializer[int64] = serializePrimitiveTypeFrom(intDiscriminator, func(value int64) string {
-	return strconv.FormatInt(value, 10)
+var IntSerializer Serializer[int] = serializePrimitiveTypeFrom(intDiscriminator, func(value int) string {
+	return strconv.FormatInt(int64(value), 10)
 })
 
-var IntDeserializer Deserializer[int64] = deserializePrimitiveTypeTo(intDiscriminator, func(value string) (int64, error) {
-	return strconv.ParseInt(value, 10, 64)
+var IntDeserializer Deserializer[int] = deserializePrimitiveTypeTo(intDiscriminator, func(value string) (int, error) {
+	parsed, err := strconv.ParseInt(value, 10, 32)
+	return int(parsed), err
 })
 
-const floatDiscriminator = "float"
+const floatDiscriminator = "float64"
 
 var FloatSerializer Serializer[float64] = serializePrimitiveTypeFrom(floatDiscriminator, func(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)

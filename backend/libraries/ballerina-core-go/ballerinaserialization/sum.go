@@ -17,14 +17,14 @@ func SumSerializer[L any, R any](leftSerializer Serializer[L], rightSerializer S
 			func(left L) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(
 					WithContext("on case 1/2", leftSerializer)(left), func(value json.RawMessage) _sequentialForSerialization {
-						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("2"), value}}
+						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), value}}
 					},
 				)
 			},
 			func(right R) ballerina.Sum[error, _sequentialForSerialization] {
 				return ballerina.MapRight(
 					WithContext("on case 2/2", rightSerializer)(right), func(value json.RawMessage) _sequentialForSerialization {
-						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("2"), value}}
+						return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), value}}
 					},
 				)
 			},
@@ -37,9 +37,6 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 		"on sum",
 		func(sumForSerialization _sequentialForSerialization) ballerina.Sum[error, ballerina.Sum[L, R]] {
 			return ballerina.Bind(parseSumHeader(sumForSerialization), func(header sumHeader) ballerina.Sum[error, ballerina.Sum[L, R]] {
-				if header.arity != 2 {
-					return ballerina.Left[error, ballerina.Sum[L, R]](fmt.Errorf("expected arity to be 2, got %d", header.arity))
-				}
 				switch header.index {
 				case 1:
 					return ballerina.MapRight(WithContext("on left", leftDeserializer)(header.payload), ballerina.Left[L, R])
@@ -61,7 +58,7 @@ func Sum3Serializer[A any, B any, C any](aSerializer Serializer[A], bSerializer 
 						ballerina.MapRight(
 							WithContext("on case 1/3", aSerializer)(v1),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("3"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), value}}
 							},
 						),
 					)
@@ -71,7 +68,7 @@ func Sum3Serializer[A any, B any, C any](aSerializer Serializer[A], bSerializer 
 						ballerina.MapRight(
 							WithContext("on case 2/3", bSerializer)(v2),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("3"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), value}}
 							},
 						),
 					)
@@ -81,7 +78,7 @@ func Sum3Serializer[A any, B any, C any](aSerializer Serializer[A], bSerializer 
 						ballerina.MapRight(
 							WithContext("on case 3/3", cSerializer)(v3),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("3"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), value}}
 							},
 						),
 					)
@@ -97,9 +94,6 @@ func Sum3Deserializer[A any, B any, C any](deserializer1 Deserializer[A], deseri
 		"on sum3",
 		func(sumForSerialization _sequentialForSerialization) ballerina.Sum[error, ballerina.Sum3[A, B, C]] {
 			return ballerina.Bind(parseSumHeader(sumForSerialization), func(header sumHeader) ballerina.Sum[error, ballerina.Sum3[A, B, C]] {
-				if header.arity != 3 {
-					return ballerina.Left[error, ballerina.Sum3[A, B, C]](fmt.Errorf("expected arity to be 3, got %d", header.arity))
-				}
 				switch header.index {
 				case 1:
 					return ballerina.MapRight(WithContext("on case 1/3", deserializer1)(header.payload), ballerina.Case1Of3[A, B, C])
@@ -123,7 +117,7 @@ func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSeri
 						ballerina.MapRight(
 							WithContext("on case 1/4", aSerializer)(v1),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), json.RawMessage("4"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("1"), value}}
 							},
 						),
 					)
@@ -133,7 +127,7 @@ func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSeri
 						ballerina.MapRight(
 							WithContext("on case 2/4", bSerializer)(v2),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), json.RawMessage("4"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("2"), value}}
 							},
 						),
 					)
@@ -143,7 +137,7 @@ func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSeri
 						ballerina.MapRight(
 							WithContext("on case 3/4", cSerializer)(v3),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), json.RawMessage("4"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("3"), value}}
 							},
 						),
 					)
@@ -153,7 +147,7 @@ func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSeri
 						ballerina.MapRight(
 							WithContext("on case 4/4", dSerializer)(v4),
 							func(value json.RawMessage) _sequentialForSerialization {
-								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("4"), json.RawMessage("4"), value}}
+								return _sequentialForSerialization{Discriminator: sumDiscriminator, Value: []json.RawMessage{json.RawMessage("4"), value}}
 							},
 						),
 					)
@@ -169,9 +163,6 @@ func Sum4Deserializer[A any, B any, C any, D any](aDeserializer Deserializer[A],
 		"on sum4",
 		func(sumForSerialization _sequentialForSerialization) ballerina.Sum[error, ballerina.Sum4[A, B, C, D]] {
 			return ballerina.Bind(parseSumHeader(sumForSerialization), func(header sumHeader) ballerina.Sum[error, ballerina.Sum4[A, B, C, D]] {
-				if header.arity != 4 {
-					return ballerina.Left[error, ballerina.Sum4[A, B, C, D]](fmt.Errorf("expected arity to be 4, got %d", header.arity))
-				}
 				switch header.index {
 				case 1:
 					return ballerina.MapRight(WithContext("on case 1/4", aDeserializer)(header.payload), ballerina.Case1Of4[A, B, C, D])
@@ -190,7 +181,6 @@ func Sum4Deserializer[A any, B any, C any, D any](aDeserializer Deserializer[A],
 
 type sumHeader struct {
 	index   int
-	arity   int
 	payload json.RawMessage
 }
 
@@ -198,8 +188,8 @@ func parseSumHeader(sumForSerialization _sequentialForSerialization) ballerina.S
 	if sumForSerialization.Discriminator != sumDiscriminator {
 		return ballerina.Left[error, sumHeader](fmt.Errorf("expected discriminator to be '%s', got '%s'", sumDiscriminator, sumForSerialization.Discriminator))
 	}
-	if len(sumForSerialization.Value) != 3 {
-		return ballerina.Left[error, sumHeader](fmt.Errorf("expected 3 elements in sum, got %d", len(sumForSerialization.Value)))
+	if len(sumForSerialization.Value) != 2 {
+		return ballerina.Left[error, sumHeader](fmt.Errorf("expected 2 elements in sum, got %d", len(sumForSerialization.Value)))
 	}
 
 	serializedIndex := sumForSerialization.Value[0]
@@ -208,12 +198,6 @@ func parseSumHeader(sumForSerialization _sequentialForSerialization) ballerina.S
 		return ballerina.Left[error, sumHeader](fmt.Errorf("expected index to be a number, got %s", serializedIndex))
 	}
 
-	serializedArity := sumForSerialization.Value[1]
-	var arity int
-	if err := json.Unmarshal(serializedArity, &arity); err != nil {
-		return ballerina.Left[error, sumHeader](fmt.Errorf("expected arity to be a number, got %s", serializedArity))
-	}
-
-	payload := sumForSerialization.Value[2]
-	return ballerina.Right[error, sumHeader](sumHeader{index: index, arity: arity, payload: payload})
+	payload := sumForSerialization.Value[1]
+	return ballerina.Right[error, sumHeader](sumHeader{index: index, payload: payload})
 }
