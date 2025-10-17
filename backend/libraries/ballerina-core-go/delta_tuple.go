@@ -1046,3 +1046,201 @@ func MatchDeltaTuple9[A any, B any, C any, D any, E any, F any, G any, H any, I 
 		}
 	}
 }
+
+type deltaTuple10EffectsEnum string
+
+const (
+	tuple10Item1  deltaTuple10EffectsEnum = "Tuple10Item1"
+	tuple10Item2  deltaTuple10EffectsEnum = "Tuple10Item2"
+	tuple10Item3  deltaTuple10EffectsEnum = "Tuple10Item3"
+	tuple10Item4  deltaTuple10EffectsEnum = "Tuple10Item4"
+	tuple10Item5  deltaTuple10EffectsEnum = "Tuple10Item5"
+	tuple10Item6  deltaTuple10EffectsEnum = "Tuple10Item6"
+	tuple10Item7  deltaTuple10EffectsEnum = "Tuple10Item7"
+	tuple10Item8  deltaTuple10EffectsEnum = "Tuple10Item8"
+	tuple10Item9  deltaTuple10EffectsEnum = "Tuple10Item9"
+	tuple10Item10 deltaTuple10EffectsEnum = "Tuple10Item10"
+)
+
+type DeltaTuple10[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any] struct {
+	DeltaBase
+	discriminator deltaTuple10EffectsEnum
+	item1         *deltaA
+	item2         *deltaB
+	item3         *deltaC
+	item4         *deltaD
+	item5         *deltaE
+	item6         *deltaF
+	item7         *deltaG
+	item8         *deltaH
+	item9         *deltaI
+	item10        *deltaJ
+}
+
+var _ json.Unmarshaler = &DeltaTuple10[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
+var _ json.Marshaler = DeltaTuple10[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
+
+func (v *DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		DeltaBase
+		Discriminator deltaTuple10EffectsEnum
+		Item1         *deltaA
+		Item2         *deltaB
+		Item3         *deltaC
+		Item4         *deltaD
+		Item5         *deltaE
+		Item6         *deltaF
+		Item7         *deltaG
+		Item8         *deltaH
+		Item9         *deltaI
+		Item10        *deltaJ
+	}
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	v.DeltaBase = tmp.DeltaBase
+	v.discriminator = tmp.Discriminator
+	v.item1 = tmp.Item1
+	v.item2 = tmp.Item2
+	v.item3 = tmp.Item3
+	v.item4 = tmp.Item4
+	v.item5 = tmp.Item5
+	v.item6 = tmp.Item6
+	v.item7 = tmp.Item7
+	v.item8 = tmp.Item8
+	v.item9 = tmp.Item9
+	v.item10 = tmp.Item10
+	return nil
+}
+
+func (v DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		DeltaBase
+		Discriminator deltaTuple10EffectsEnum
+		Item1         *deltaA
+		Item2         *deltaB
+		Item3         *deltaC
+		Item4         *deltaD
+		Item5         *deltaE
+		Item6         *deltaF
+		Item7         *deltaG
+		Item8         *deltaH
+		Item9         *deltaI
+		Item10        *deltaJ
+	}{
+		DeltaBase:     v.DeltaBase,
+		Discriminator: v.discriminator,
+		Item1:         v.item1,
+		Item2:         v.item2,
+		Item3:         v.item3,
+		Item4:         v.item4,
+		Item5:         v.item5,
+		Item6:         v.item6,
+		Item7:         v.item7,
+		Item8:         v.item8,
+		Item9:         v.item9,
+		Item10:        v.item10,
+	})
+}
+
+func NewDeltaTuple10Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaA) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item1,
+		item1:         &delta,
+	}
+}
+func NewDeltaTuple10Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaB) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item2,
+		item2:         &delta,
+	}
+}
+func NewDeltaTuple10Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaC) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item3,
+		item3:         &delta,
+	}
+}
+func NewDeltaTuple10Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaD) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item4,
+		item4:         &delta,
+	}
+}
+func NewDeltaTuple10Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaE) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item5,
+		item5:         &delta,
+	}
+}
+func NewDeltaTuple10Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaF) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item6,
+		item6:         &delta,
+	}
+}
+func NewDeltaTuple10Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaG) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item7,
+		item7:         &delta,
+	}
+}
+func NewDeltaTuple10Item8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaH) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item8,
+		item8:         &delta,
+	}
+}
+func NewDeltaTuple10Item9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaI) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item9,
+		item9:         &delta,
+	}
+}
+func NewDeltaTuple10Item10[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any](delta deltaJ) DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ] {
+	return DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]{
+		discriminator: tuple10Item10,
+		item10:        &delta,
+	}
+}
+func MatchDeltaTuple10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, Result any](
+	onItem1 func(deltaA) func(ReaderWithError[Unit, A]) (Result, error),
+	onItem2 func(deltaB) func(ReaderWithError[Unit, B]) (Result, error),
+	onItem3 func(deltaC) func(ReaderWithError[Unit, C]) (Result, error),
+	onItem4 func(deltaD) func(ReaderWithError[Unit, D]) (Result, error),
+	onItem5 func(deltaE) func(ReaderWithError[Unit, E]) (Result, error),
+	onItem6 func(deltaF) func(ReaderWithError[Unit, F]) (Result, error),
+	onItem7 func(deltaG) func(ReaderWithError[Unit, G]) (Result, error),
+	onItem8 func(deltaH) func(ReaderWithError[Unit, H]) (Result, error),
+	onItem9 func(deltaI) func(ReaderWithError[Unit, I]) (Result, error),
+	onItem10 func(deltaJ) func(ReaderWithError[Unit, J]) (Result, error),
+) func(DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]) func(ReaderWithError[Unit, Tuple10[A, B, C, D, E, F, G, H, I, J]]) (Result, error) {
+	return func(delta DeltaTuple10[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ]) func(ReaderWithError[Unit, Tuple10[A, B, C, D, E, F, G, H, I, J]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Tuple10[A, B, C, D, E, F, G, H, I, J]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case tuple10Item1:
+				return onItem1(*delta.item1)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem1)(value))
+			case tuple10Item2:
+				return onItem2(*delta.item2)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem2)(value))
+			case tuple10Item3:
+				return onItem3(*delta.item3)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem3)(value))
+			case tuple10Item4:
+				return onItem4(*delta.item4)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem4)(value))
+			case tuple10Item5:
+				return onItem5(*delta.item5)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem5)(value))
+			case tuple10Item6:
+				return onItem6(*delta.item6)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem6)(value))
+			case tuple10Item7:
+				return onItem7(*delta.item7)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem7)(value))
+			case tuple10Item8:
+				return onItem8(*delta.item8)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem8)(value))
+			case tuple10Item9:
+				return onItem9(*delta.item9)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem9)(value))
+			case tuple10Item10:
+				return onItem10(*delta.item10)(MapReaderWithError[Unit](Tuple10[A, B, C, D, E, F, G, H, I, J].GetItem10)(value))
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple10")
+		}
+	}
+}
