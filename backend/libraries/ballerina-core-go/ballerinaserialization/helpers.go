@@ -18,6 +18,17 @@ func goErrorToSum[T, U any](f func(T) (U, error)) func(T) ballerina.Sum[error, U
 	}
 }
 
+func sumToGoError[T any](sum ballerina.Sum[error, T]) (T, error) {
+	return ballerina.FoldWithError(
+		sum,
+		func(err error) (T, error) {
+			return *new(T), err
+		}, func(result T) (T, error) {
+			return result, nil
+		},
+	)
+}
+
 // Used in codegen
 func WrappedMarshal[T any](value T) ballerina.Sum[error, json.RawMessage] {
 	return goErrorToSum(func(value T) (json.RawMessage, error) {
