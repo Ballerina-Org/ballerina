@@ -110,7 +110,7 @@ func TestSumDeserializationError(t *testing.T) {
 		{name: "on-sum-on-left", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,2,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on left: on unit: expected discriminator to be 'unit', got 'not-unit'"},
 		{name: "on-sum-on-right", serialized: json.RawMessage(`{"discriminator":"sum","value":[2,2,{"discriminator":"not-unit"}]}`), expectedError: "on sum: on right: on unit: expected discriminator to be 'unit', got 'not-unit'"},
 		{name: "not-sum-case", serialized: json.RawMessage(`{"discriminator":"not-sum","value":[1,2,{"discriminator":"unit"}]}`), expectedError: "on sum: expected discriminator to be 'sum', got 'not-sum'"},
-		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"sum"}`), expectedError: "on sum: expected 2 elements in sum, got 0"},
+		{name: "no-value-field", serialized: json.RawMessage(`{"discriminator":"sum"}`), expectedError: "on sum: expected 3 elements in sum, got 0"},
 		{name: "empty", serialized: json.RawMessage(`{}`), expectedError: "on sum"},
 		{name: "other-key", serialized: json.RawMessage(`{"other-key":"something"}`), expectedError: "on sum"},
 		{name: "different-arity", serialized: json.RawMessage(`{"discriminator":"sum","value":[1,3,{"discriminator":"unit"}]}`), expectedError: "on sum: expected arity to be 2, got 3"},
@@ -204,6 +204,133 @@ func TestTuple2DeserializationError(t *testing.T) {
 			assertErrorContains(t, testCase.expectedError, deserialized)
 		})
 	}
+}
+
+func TestTuple3Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple3[string, bool, int64]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int64(42),
+	}
+
+	serializer := ballerinaserialization.Tuple3Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple3Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple3[string, bool, int64]](tuple), mappedTupleWithError)
+}
+
+func TestTuple4Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple4[string, bool, int64, float64]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int64(42),
+		Item4: float64(3.14),
+	}
+
+	serializer := ballerinaserialization.Tuple4Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple4Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple4[string, bool, int64, float64]](tuple), mappedTupleWithError)
+}
+
+func TestSum3SerializationAndDeserialization(t *testing.T) {
+	t.Parallel()
+
+	serializer := ballerinaserialization.Sum3Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+	)
+	deserializer := ballerinaserialization.Sum3Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+	)
+
+	t.Run("case 1/3", func(t *testing.T) {
+		sum := ballerina.Case1Of3[string, bool, int64]("abc")
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+	})
+
+	t.Run("case 2/3", func(t *testing.T) {
+		sum := ballerina.Case2Of3[string, bool, int64](true)
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+	})
+
+	t.Run("case 3/3", func(t *testing.T) {
+		sum := ballerina.Case3Of3[string, bool, int64](int64(42))
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum3[string, bool, int64]](sum), mapped)
+	})
+}
+
+func TestSum4SerializationAndDeserialization(t *testing.T) {
+	t.Parallel()
+
+	serializer := ballerinaserialization.Sum4Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+	)
+	deserializer := ballerinaserialization.Sum4Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+	)
+
+	t.Run("case 1/4", func(t *testing.T) {
+		sum := ballerina.Case1Of4[string, bool, int64, float64]("abc")
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+	})
+
+	t.Run("case 2/4", func(t *testing.T) {
+		sum := ballerina.Case2Of4[string, bool, int64, float64](true)
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+	})
+
+	t.Run("case 3/4", func(t *testing.T) {
+		sum := ballerina.Case3Of4[string, bool, int64, float64](int64(42))
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+	})
+
+	t.Run("case 4/4", func(t *testing.T) {
+		sum := ballerina.Case4Of4[string, bool, int64, float64](3.14)
+		mapped := ballerina.Bind(serializer(sum), deserializer)
+		require.Equal(t, ballerina.Right[error, ballerina.Sum4[string, bool, int64, float64]](sum), mapped)
+	})
 }
 
 func TestListSerialization(t *testing.T) {

@@ -8,16 +8,37 @@ import (
 	ballerina "ballerina.com/core"
 )
 
+func goErrorToSum[T, U any](f func(T) (U, error)) func(T) ballerina.Sum[error, U] {
+	return func(value T) ballerina.Sum[error, U] {
+		result, err := f(value)
+		if err != nil {
+			return ballerina.Left[error, U](err)
+		}
+		return ballerina.Right[error, U](result)
+	}
+}
+
+func sumToGoError[T any](sum ballerina.Sum[error, T]) (T, error) {
+	return ballerina.FoldWithError(
+		sum,
+		func(err error) (T, error) {
+			return *new(T), err
+		}, func(result T) (T, error) {
+			return result, nil
+		},
+	)
+}
+
 // Used in codegen
 func WrappedMarshal[T any](value T) ballerina.Sum[error, json.RawMessage] {
-	return ballerina.GoErrorToSum(func(value T) (json.RawMessage, error) {
+	return goErrorToSum(func(value T) (json.RawMessage, error) {
 		return json.Marshal(value)
 	})(value)
 }
 
 // Used in codegen
 func WrappedUnmarshal[T any](data json.RawMessage) ballerina.Sum[error, T] {
-	return ballerina.GoErrorToSum(func(data json.RawMessage) (T, error) {
+	return goErrorToSum(func(data json.RawMessage) (T, error) {
 		var value T
 		decoder := json.NewDecoder(bytes.NewReader(data))
 		decoder.DisallowUnknownFields()

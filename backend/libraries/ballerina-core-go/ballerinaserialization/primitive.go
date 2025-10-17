@@ -46,7 +46,7 @@ func serializePrimitiveTypeFrom[T any](discriminator string, serialize func(T) s
 
 func deserializePrimitiveTypeTo[T any](discriminator string, parse func(string) (T, error)) func(json.RawMessage) ballerina.Sum[error, T] {
 	return unmarshalWithContext("on "+discriminator, func(primitiveTypeForSerialization _primitiveTypeForSerialization) ballerina.Sum[error, T] {
-		return ballerina.Bind(primitiveTypeForSerialization.getValueWithDiscriminator(discriminator), ballerina.GoErrorToSum(parse))
+		return ballerina.Bind(primitiveTypeForSerialization.getValueWithDiscriminator(discriminator), goErrorToSum(parse))
 	})
 }
 
