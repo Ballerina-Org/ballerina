@@ -1,0 +1,366 @@
+import { List, Map, OrderedMap, Set } from "immutable";
+import {
+  BasicUpdater,
+  DispatchCommonFormState,
+  DispatchDelta,
+  DispatchParsedType,
+  Expr,
+  FormLayout,
+  PredicateFormLayout,
+  PredicateValue,
+  replaceWith,
+  Updater,
+  ValueOrErrors,
+  ValueRecord,
+  DispatchOnChange,
+  IdWrapperProps,
+  ErrorRendererProps,
+  Option,
+  Unit,
+  CommonAbstractRendererReadonlyContext,
+  CommonAbstractRendererState,
+  CommonAbstractRendererForeignMutationsExpected,
+  StringSerializedType,
+  DisabledFields,
+  PredicateComputedOrInlined,
+} from "../../../../../../../../main";
+import { Template } from "../../../../../../../template/state";
+
+import {
+  RecordAbstractRendererReadonlyContext,
+  RecordAbstractRendererForeignMutationsExpected,
+  RecordAbstractRendererState,
+  RecordAbstractRendererView,
+} from "./state";
+import { RecordFieldRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
+import { useRegistryValueAtPath } from "../registry-store";
+
+export const RecordAbstractRenderer = <
+  CustomPresentationContext = Unit,
+  Flags = Unit,
+  ExtraContext = Unit,
+>(
+  FieldTemplates: Map<
+    string,
+    {
+      template: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >;
+      visible?: Expr;
+      disabled?: Expr;
+      label?: string;
+      GetDefaultState: () => CommonAbstractRendererState;
+    }
+  >,
+  FieldRenderers: Map<string, RecordFieldRenderer<any>>,
+  Layout: PredicateFormLayout,
+  DisabledFieldsPredicate: PredicateComputedOrInlined,
+  IdProvider: (props: IdWrapperProps) => React.ReactNode,
+  ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  isInlined: boolean,
+): Template<
+  RecordAbstractRendererReadonlyContext<
+    CustomPresentationContext,
+    ExtraContext
+  > &
+    RecordAbstractRendererState,
+  RecordAbstractRendererState,
+  RecordAbstractRendererForeignMutationsExpected<Flags>,
+  RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+> => {
+  const embedFieldTemplate =
+    (
+      fieldName: string,
+      fieldTemplate: Template<
+        CommonAbstractRendererReadonlyContext<
+          DispatchParsedType<any>,
+          PredicateValue,
+          CustomPresentationContext,
+          ExtraContext
+        >,
+        CommonAbstractRendererState,
+        CommonAbstractRendererForeignMutationsExpected<Flags>
+      >,
+    ) =>
+    (flags: Flags | undefined) =>
+      fieldTemplate
+        .mapContext(
+          (
+            _: RecordAbstractRendererReadonlyContext<
+              CustomPresentationContext,
+              ExtraContext
+            > &
+              RecordAbstractRendererState,
+          ) => {
+            const fieldRenderer = FieldRenderers.get(fieldName)!;
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                fieldRenderer,
+              );
+            return {
+              type: fieldRenderer.renderer.type,
+              ...(_.fieldStates?.get(fieldName) ||
+                FieldTemplates.get(fieldName)!.GetDefaultState()),
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              localBindingsPath: _.localBindingsPath,
+              globalBindings: _.globalBindings,
+              extraContext: _.extraContext,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[record][${fieldName}]`,
+              labelContext,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              path: _.path + `[${fieldName}]`,
+            };
+          },
+        )
+        .mapState(
+          (
+            _: BasicUpdater<CommonAbstractRendererState>,
+          ): Updater<RecordAbstractRendererState> =>
+            RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+              fieldName,
+              FieldTemplates.get(fieldName)!.GetDefaultState,
+              _,
+            ),
+        )
+        .mapForeignMutationsFromProps<{
+          onChange: DispatchOnChange<ValueRecord, Flags>;
+        }>(
+          (
+            props,
+          ): {
+            onChange: DispatchOnChange<PredicateValue, Flags>;
+          } => ({
+            onChange: (
+              elementUpdater: Option<BasicUpdater<PredicateValue>>,
+              nestedDelta: DispatchDelta<Flags>,
+            ) => {
+              const delta: DispatchDelta<Flags> = {
+                kind: "RecordField",
+                field: [fieldName, nestedDelta],
+                recordType: props.context.type,
+                flags,
+                sourceAncestorLookupTypeNames:
+                  nestedDelta.sourceAncestorLookupTypeNames,
+              };
+
+              props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some((current: ValueRecord) =>
+                      PredicateValue.Default.record(
+                        current.fields.update(
+                          fieldName,
+                          PredicateValue.Default.unit(),
+                          elementUpdater.value,
+                        ),
+                      ),
+                    ),
+                delta,
+              );
+
+              props.setState(
+                RecordAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ).then(
+                  RecordAbstractRendererState.Updaters.Template.upsertFieldState(
+                    fieldName,
+                    FieldTemplates.get(fieldName)!.GetDefaultState,
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              );
+            },
+          }),
+        );
+
+  const EmbeddedFieldTemplates = FieldTemplates.map(
+    (fieldTemplate, fieldName) =>
+      embedFieldTemplate(fieldName, fieldTemplate.template),
+  );
+
+  const FieldLabels = FieldTemplates.map(
+    (fieldTemplate) => fieldTemplate.label,
+  );
+
+  return Template.Default<
+    RecordAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      RecordAbstractRendererState,
+    RecordAbstractRendererState,
+    RecordAbstractRendererForeignMutationsExpected<Flags>,
+    RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+  >((props) => {
+    const domNodeId = props.context.domNodeAncestorPath + "[record]";
+
+    const value = useRegistryValueAtPath(props.context.path);
+    if (!value) {
+      return <></>;
+    }
+    if (!value) {
+      return <></>;
+    }
+    if (
+      !PredicateValue.Operations.IsRecord(value) &&
+      !PredicateValue.Operations.IsUnit(value)
+    ) {
+      console.error(
+        `Record or unit value expected but got: ${JSON.stringify(
+          value,
+        )}\n...When rendering \n...${domNodeId}`,
+      );
+      return (
+        <ErrorRenderer
+          message={`${domNodeId}: Record or unit value expected but got ${JSON.stringify(
+            value,
+          )}`}
+        />
+      );
+    }
+
+    const updatedBindings = Map([
+      ["root", PredicateValue.Default.unit()], // TODO - add root value
+      ["local", value],
+      ["global", props.context.globalBindings],
+    ]);
+
+    const calculatedLayout = FormLayout.Operations.ComputeLayout(
+      updatedBindings,
+      Layout,
+    );
+
+    // TODO -- set error template up top
+    if (calculatedLayout.kind == "errors") {
+      console.error(calculatedLayout.errors.map((error) => error).join("\n"));
+      return <></>;
+    }
+
+    const visibleFieldKeys = ValueOrErrors.Operations.All(
+      List(
+        FieldTemplates.map(({ visible }, fieldName) =>
+          visible == undefined
+            ? ValueOrErrors.Default.return(fieldName)
+            : Expr.Operations.EvaluateAs("visibility predicate")(
+                updatedBindings,
+              )(visible).Then((value) =>
+                ValueOrErrors.Default.return(
+                  PredicateValue.Operations.IsBoolean(value) && value
+                    ? fieldName
+                    : null,
+                ),
+              ),
+        ).valueSeq(),
+      ),
+    );
+
+    if (visibleFieldKeys.kind == "errors") {
+      console.error(visibleFieldKeys.errors.map((error) => error).join("\n"));
+      return <></>;
+    }
+
+    // TODO: find a better way to warn about missing fields without cluttering the console
+    // visibleFieldKeys.value.forEach((field) => {
+    //   if (field != null && !FieldTemplates.has(field)) {
+    //     console.warn(
+    //       `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
+    //       \n...When rendering \n...${domNodeId}
+    //       `,
+    //     );
+    //   }
+    // });
+
+    const visibleFieldKeysSet = Set(
+      visibleFieldKeys.value.filter((fieldName) => fieldName != null),
+    );
+
+    const calculatedDisabledFields = DisabledFields.Operations.Compute(
+      updatedBindings,
+      DisabledFieldsPredicate,
+    );
+
+    const disabledFieldsValue =
+      calculatedDisabledFields.kind == "value"
+        ? calculatedDisabledFields.value.fields
+        : [];
+
+    const disabledFieldKeys = ValueOrErrors.Operations.All(
+      List(
+        FieldTemplates.map(({ disabled }, fieldName) =>
+          disabled == undefined
+            ? disabledFieldsValue.includes(fieldName)
+              ? ValueOrErrors.Default.return(fieldName)
+              : ValueOrErrors.Default.return(null)
+            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
+                disabled,
+              ).Then((value) =>
+                ValueOrErrors.Default.return(
+                  PredicateValue.Operations.IsBoolean(value) && value
+                    ? fieldName
+                    : null,
+                ),
+              ),
+        ).valueSeq(),
+      ),
+    );
+
+    // TODO -- set the top level state as error
+    if (disabledFieldKeys.kind == "errors") {
+      console.error(disabledFieldKeys.errors.map((error) => error).join("\n"));
+      return <></>;
+    }
+
+    const disabledFieldKeysSet = Set(
+      disabledFieldKeys.value.filter((fieldName) => fieldName != null),
+    );
+
+    return (
+      <>
+        <IdProvider domNodeId={domNodeId}>
+          <props.view
+            context={{
+              ...props.context,
+              domNodeId,
+              layout: calculatedLayout.value,
+              value,
+            }}
+            foreignMutations={{
+              ...props.foreignMutations,
+            }}
+            setState={props.setState}
+            EmbeddedFields={EmbeddedFieldTemplates}
+            VisibleFieldKeys={visibleFieldKeysSet}
+            DisabledFieldKeys={disabledFieldKeysSet}
+            FieldLabels={FieldLabels}
+          />
+        </IdProvider>
+      </>
+    );
+  }).any([]);
+};
