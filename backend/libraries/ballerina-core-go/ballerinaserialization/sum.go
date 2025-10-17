@@ -55,7 +55,7 @@ func SumDeserializer[L any, R any](leftDeserializer Deserializer[L], rightDeseri
 func Sum3Serializer[A any, B any, C any](aSerializer Serializer[A], bSerializer Serializer[B], cSerializer Serializer[C]) Serializer[ballerina.Sum3[A, B, C]] {
 	return WithContext("on sum3", func(value ballerina.Sum3[A, B, C]) ballerina.Sum[error, json.RawMessage] {
 		return ballerina.Bind(
-			ballerina.GoErrorToSum(ballerina.FoldSum3(
+			goErrorToSum(ballerina.FoldSum3(
 				func(v1 A) (_sequentialForSerialization, error) {
 					return ballerina.FoldWithError(
 						ballerina.MapRight(
@@ -135,7 +135,7 @@ func Sum3Deserializer[A any, B any, C any](deserializer1 Deserializer[A], deseri
 func Sum4Serializer[A any, B any, C any, D any](aSerializer Serializer[A], bSerializer Serializer[B], cSerializer Serializer[C], dSerializer Serializer[D]) Serializer[ballerina.Sum4[A, B, C, D]] {
 	return WithContext("on sum4", func(value ballerina.Sum4[A, B, C, D]) ballerina.Sum[error, json.RawMessage] {
 		return ballerina.Bind(
-			ballerina.GoErrorToSum(ballerina.FoldSum4(
+			goErrorToSum(ballerina.FoldSum4(
 				func(v1 A) (_sequentialForSerialization, error) {
 					return ballerina.FoldWithError(
 						ballerina.MapRight(

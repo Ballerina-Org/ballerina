@@ -81,16 +81,6 @@ func FoldWithError[L any, R any, O any](e Sum[L, R], leftMap func(L) (O, error),
 	return leftMap(e.left)
 }
 
-func GoErrorToSum[T, U any](f func(T) (U, error)) func(T) Sum[error, U] {
-	return func(value T) Sum[error, U] {
-		result, err := f(value)
-		if err != nil {
-			return Left[error, U](err)
-		}
-		return Right[error, U](result)
-	}
-}
-
 // NOTE: we collect only the first error we encounter
 func SumAll[T any](values []Sum[error, T]) Sum[error, []T] {
 	return FoldLeftArray(values, Right[error, []T]([]T{}), func(acc Sum[error, []T], value Sum[error, T]) Sum[error, []T] {
