@@ -369,7 +369,6 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
 
     return (
         <div className="App">
-            <h1>Ballerina IDE 🩰</h1>
             <div className="card">
                 <table>
                     <tbody>

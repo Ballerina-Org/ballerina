@@ -26,15 +26,16 @@ const streamApis: DispatchInfiniteStreamSources = (streamName: string) => {
                                     !searchText.trim() ?
                                         x
                                         :
-                                        searchText.toLowerCase().includes(x.toLowerCase()))),
-                        hasMoreValues: true,
+                                        searchText.toLowerCase().includes(x.toLowerCase())))
+                        
+                        ,
+                        hasMoreValues: res.value.length === size
                     })
                 );
         }
-    
-    return ValueOrErrors.Default.return( 
+    return ValueOrErrors.Default.return(
         (searchText) =>
-            ([streamPosition]) => 
+            ([streamPosition]) =>
                 call(searchText, streamPosition.chunkIndex, streamPosition.chunkSize));
 }
 

@@ -35,6 +35,7 @@ import {Hero} from "./hero.tsx";
 import {List} from "immutable";
 import {SelectEntityAndLookups} from "../lookups/selector/layout.tsx";
 import LauncherSelector from "../forms/launcher-selector.tsx";
+import {LivePreview} from "../editor/LivePreview.tsx";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -175,21 +176,27 @@ export const IdeLayout: IdeView = (props) =>{
                                 <div className="mockup-window border border-base-300 w-full h-full">
                                     <aside className="relative h-full">
                                         <FormSkeleton {...props.context} setState={props.setState} />
-                                        
+                     
                                         { props.context.phase == "locked" 
                                             &&  props.context.locked.progress.kind == 'preDisplay' 
                                             && props.context.locked.progress.dataEntry.kind == 'launchers'
                                             && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file'
                                             && <div className="card bg-base-100 w-full mt-5">
                                             <div className="card-body w-full">
+                                                <div className="border p-2 bg-gray-50">
+                                                    <LivePreview code="export default function Greeting() {
+                                                        return <div style={{color: 'tomato'}}>👋 Hello from virtual file!</div>;}" />
+                                                </div>
                                                 <LauncherSelector
-                                                onChange={async (value: any) =>
-                                                props.setState(
-                                                    LockedSpec.Updaters.Step.selectLauncher(value).then(s => {
-                                                        forceRerender()
-                                                        return s
-                                                    })
-                                                )
+                                                onChange={async (value: any) => {
+                                                    props.setState(
+                                                        LockedSpec.Updaters.Step.selectLauncher(value).then(s => {
+
+                                                            return s
+                                                        })
+                                                    );
+                                                    forceRerender()
+                                                }
                                             }
                                                 options={props.context.locked.progress.dataEntry.launchers}
                                                 />

@@ -34,7 +34,7 @@ const LauncherSelector = (props: {
 
     return (
         <div className="join">
-            {props.options.map((opt) => (<input onChange={() => handleChange(opt)} className="join-item btn" type="radio" name="options" aria-label={opt} checked={selected.kind == "r" && selected.value === opt} />))}
+            {props.options.map((opt) => (<input onClick={() => handleChange(opt)} className="join-item btn" type="radio" name="options" aria-label={opt} checked={selected.kind == "r" && selected.value === opt} />))}
         </div>
     );
 };
