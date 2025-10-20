@@ -8,8 +8,8 @@ from ballerina_core.parsing.primitives import (
     bool_to_json,
     date_from_json,
     date_to_json,
-    float32_from_json,
-    float32_to_json,
+    decimal_from_json,
+    decimal_to_json,
     int32_from_json,
     int32_to_json,
     string_from_json,
@@ -64,14 +64,14 @@ class TestPrimitivesSerializer:
         assert bool_from_json(serialized) == Sum.right(expected)
 
     @staticmethod
-    def test_float_to_json() -> None:
+    def test_decimal_to_json() -> None:
         value = Decimal("3.14")
-        assert float32_to_json(value) == {DISCRIMINATOR_KEY: "float32", VALUE_KEY: "3.14"}
+        assert decimal_to_json(value) == {DISCRIMINATOR_KEY: "decimal", VALUE_KEY: "3.14"}
 
     @staticmethod
-    def test_float_from_json() -> None:
-        serialized: Json = {DISCRIMINATOR_KEY: "float32", VALUE_KEY: "3.14"}
-        assert float32_from_json(serialized) == Sum.right(Decimal("3.14"))
+    def test_decimal_from_json() -> None:
+        serialized: Json = {DISCRIMINATOR_KEY: "decimal", VALUE_KEY: "3.14"}
+        assert decimal_from_json(serialized) == Sum.right(Decimal("3.14"))
 
     @staticmethod
     def test_date_to_json() -> None:
