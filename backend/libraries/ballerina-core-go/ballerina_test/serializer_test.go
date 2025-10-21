@@ -7,6 +7,7 @@ import (
 
 	ballerina "ballerina.com/core"
 	"ballerina.com/core/ballerinaserialization"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -438,6 +439,23 @@ func TestFloatDeserialization(t *testing.T) {
 	serialized := json.RawMessage(`{"discriminator":"float64","value":"1.75"}`)
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, float64](1.75), deserialized)
+}
+
+func TestDecimalSerialization(t *testing.T) {
+	t.Parallel()
+	value, err := decimal.NewFromString("123.45")
+	require.NoError(t, err)
+	serialized := ballerinaserialization.DecimalSerializer(value)
+	require.Equal(t, ballerina.Right[error, json.RawMessage](json.RawMessage(`{"discriminator":"decimal","value":"123.45"}`)), serialized)
+}
+
+func TestDecimalDeserialization(t *testing.T) {
+	t.Parallel()
+	serialized := json.RawMessage(`{"discriminator":"decimal","value":"123.45"}`)
+	deserialized := ballerinaserialization.DecimalDeserializer(serialized)
+	expected, err := decimal.NewFromString("123.45")
+	require.NoError(t, err)
+	require.Equal(t, ballerina.Right[error, decimal.Decimal](expected), deserialized)
 }
 
 func TestDateSerialization(t *testing.T) {
