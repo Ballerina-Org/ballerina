@@ -137,7 +137,7 @@ func NewUnionForSerialization(caseName string, value json.RawMessage) ballerina.
 	}
 	return ballerina.Right[error, UnionForSerialization](
 		UnionForSerialization{
-			Discriminator: "union",
+			Discriminator: "union-case",
 			Value:         [2]json.RawMessage{caseNameBytes, value},
 		},
 	)
