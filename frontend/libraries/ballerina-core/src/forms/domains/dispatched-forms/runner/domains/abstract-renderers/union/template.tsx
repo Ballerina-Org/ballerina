@@ -15,6 +15,7 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
   StringSerializedType,
   Renderer,
+  ValueOrErrors,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -32,6 +33,7 @@ export const UnionAbstractRenderer = <
   ExtraContext = Unit,
 >(
   defaultCaseStates: Map<string, () => CommonAbstractRendererState>,
+  defaultCaseValues: Map<string, () => PredicateValue>,
   caseTemplates: Map<
     string,
     Template<
@@ -166,6 +168,7 @@ export const UnionAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              defaultCaseValues,
             }}
             foreignMutations={{
               ...props.foreignMutations,
