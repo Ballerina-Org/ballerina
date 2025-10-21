@@ -4,6 +4,7 @@ import {
   DispatcherContext,
   DispatchInjectablesTypes,
   MapRepo,
+  PredicateValue,
   Template,
   UnionAbstractRenderer,
   UnionAbstractRendererState,
@@ -66,27 +67,64 @@ export const UnionDispatcher = {
               dispatcherContext
                 .getConcreteRenderer("union", renderer.concreteRenderer)
                 .Then((concreteRenderer) =>
-                  ValueOrErrors.Default.return<
-                    Template<any, any, any, any>,
-                    string
-                  >(
-                    UnionAbstractRenderer(
-                      // TODO better typing for state and consider this pattern for other dispatchers
-                      (
-                        defaultState as UnionAbstractRendererState
-                      ).caseFormStates.map((caseState) => () => caseState),
-                      Map(
-                        templates.map((template) => [template[0], template[1]]),
-                      ),
-                      renderer.cases,
-                      dispatcherContext.IdProvider,
-                      dispatcherContext.ErrorRenderer,
-                    )
-                      .mapContext((_: any) => ({
-                        ..._,
-                        type: renderer.type,
-                      }))
-                      .withView(concreteRenderer),
+                  ValueOrErrors.Operations.All(
+                    List(
+                      renderer.cases
+                        .map((caseRenderer, caseName) =>
+                          renderer.type.args.has(caseName)
+                            ? dispatcherContext
+                                .defaultValue(
+                                  renderer.type.args.get(caseName)!,
+                                  caseRenderer,
+                                )
+                                .Map((_): [string, PredicateValue] => [
+                                  caseName,
+                                  _,
+                                ])
+                            : ValueOrErrors.Default.throwOne<
+                                PredicateValue,
+                                string
+                              >(
+                                `case ${caseName} not found in type ${JSON.stringify(renderer.type, null, 2)}`,
+                              ).Map((_): [string, PredicateValue] => [
+                                caseName,
+                                _,
+                              ]),
+                        )
+                        .valueSeq(),
+                    ),
+                  ).Then((defaultCaseValues) =>
+                    ValueOrErrors.Default.return<
+                      Template<any, any, any, any>,
+                      string
+                    >(
+                      UnionAbstractRenderer(
+                        // TODO better typing for state and consider this pattern for other dispatchers
+                        (
+                          defaultState as UnionAbstractRendererState
+                        ).caseFormStates.map((caseState) => () => caseState),
+                        Map(
+                          defaultCaseValues.map(([caseName, defaultValue]) => [
+                            caseName,
+                            () => defaultValue,
+                          ]),
+                        ),
+                        Map(
+                          templates.map((template) => [
+                            template[0],
+                            template[1],
+                          ]),
+                        ),
+                        renderer.cases,
+                        dispatcherContext.IdProvider,
+                        dispatcherContext.ErrorRenderer,
+                      )
+                        .mapContext((_: any) => ({
+                          ..._,
+                          type: renderer.type,
+                        }))
+                        .withView(concreteRenderer),
+                    ),
                   ),
                 ),
             ),
