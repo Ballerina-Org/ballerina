@@ -83,9 +83,11 @@ type recordForSerialization struct {
 	Value         [][2]json.RawMessage `json:"value"`
 }
 
+const recordDiscriminator = "record"
+
 func NewRecordForSerialization(value [][2]json.RawMessage) recordForSerialization {
 	return recordForSerialization{
-		Discriminator: "record",
+		Discriminator: recordDiscriminator,
 		Value:         value,
 	}
 }
@@ -96,7 +98,7 @@ func DeserializeRecord(data json.RawMessage) ballerina.Sum[error, map[string]jso
 	if err != nil {
 		return ballerina.Left[error, map[string]json.RawMessage](err)
 	}
-	if r.Discriminator != "record" {
+	if r.Discriminator != recordDiscriminator {
 		return ballerina.Left[error, map[string]json.RawMessage](fmt.Errorf("expected discriminator to be 'record', got %s", r.Discriminator))
 	}
 	if r.Value == nil {
@@ -130,6 +132,8 @@ type UnionForSerialization struct {
 	Value         [2]json.RawMessage `json:"value"`
 }
 
+const unionCaseDiscriminator = "union-case"
+
 func NewUnionForSerialization(caseName string, value json.RawMessage) ballerina.Sum[error, UnionForSerialization] {
 	caseNameBytes, err := json.Marshal(caseName)
 	if err != nil {
@@ -137,7 +141,7 @@ func NewUnionForSerialization(caseName string, value json.RawMessage) ballerina.
 	}
 	return ballerina.Right[error, UnionForSerialization](
 		UnionForSerialization{
-			Discriminator: "union-case",
+			Discriminator: unionCaseDiscriminator,
 			Value:         [2]json.RawMessage{caseNameBytes, value},
 		},
 	)
@@ -149,8 +153,8 @@ func DeserializeUnion(data json.RawMessage) ballerina.Sum[error, UnionForSeriali
 	if err != nil {
 		return ballerina.Left[error, UnionForSerialization](err)
 	}
-	if u.Discriminator != "union" {
-		return ballerina.Left[error, UnionForSerialization](fmt.Errorf("expected discriminator to be 'union', got %s", u.Discriminator))
+	if u.Discriminator != unionCaseDiscriminator {
+		return ballerina.Left[error, UnionForSerialization](fmt.Errorf("expected discriminator to be '%s', got '%s'", unionCaseDiscriminator, u.Discriminator))
 	}
 	return ballerina.Right[error, UnionForSerialization](u)
 }
