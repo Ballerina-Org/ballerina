@@ -14,8 +14,8 @@ module Lambda =
 
   let private discriminator = "lambda"
 
-  type Expr<'T> with
-    static member FromJsonLambda (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonLambda (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun lambdaJson ->
         reader {
           let! var, body = lambdaJson |> JsonValue.AsPair |> reader.OfSum
@@ -25,7 +25,11 @@ module Lambda =
           return Expr.Lambda(var, None, body)
         })
 
-    static member ToJsonLambda (rootToJson: ExprEncoder<'T>) (var: Var) (body: Expr<'T>) : ExprEncoderReader<'T> =
+    static member ToJsonLambda
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (var: Var)
+      (body: Expr<'T, 'Id>)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let typeParamJson = var.Name |> JsonValue.String
         let! bodyJson = body |> rootToJson

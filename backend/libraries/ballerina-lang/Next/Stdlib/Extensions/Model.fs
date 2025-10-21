@@ -8,6 +8,8 @@ module Model =
   open Ballerina.DSL.Next.Json
   open Ballerina.Collections.NonEmptyList
   open Ballerina.LocalizedErrors
+  open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type LanguageContext<'ext> =
     { TypeCheckContext: TypeCheckContext
@@ -19,7 +21,7 @@ module Model =
       // WrapTypeVars: TypeExpr -> TypeValue
       Operations:
         Map<
-          Identifier,  // example: ("Int.+")
+          ResolvedIdentifier,  // example: ("Int.+")
           OperationExtension<'ext, 'extOperations>
          > }
 
@@ -31,21 +33,21 @@ module Model =
       Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
-    { TypeName: Identifier * TypeSymbol // example: "Option"
+    { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
       WrapTypeVars: TypeExpr -> TypeValue
       Deconstruct: 'extValues -> Value<TypeValue, 'ext> // function to extract the underlying value from a value
       Cases:
         Map<
-          Identifier * TypeSymbol,  // example: ("Option.Some", "OptionSome")
+          ResolvedIdentifier * TypeSymbol,  // example: ("Option.Some", "OptionSome")
           TypeCaseExtension<'ext, 'extConstructors, 'extValues>
          >
       Operations:
         Map<
-          Identifier,  // example: ("Option.Some", "OptionSome")
+          ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
          >
-      Parser: ValueParserLayer<TypeValue, 'ext>
+      Parser: ValueParserLayer<TypeValue, ResolvedIdentifier, 'ext>
       Encoder: ValueEncoderLayer<TypeValue, 'ext> }
 
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
@@ -64,8 +66,8 @@ module Model =
       Apply: Location -> 'extConstructors * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
-    { ExtensionType: Identifier * TypeValue * Kind
-      ReferencedTypes: NonEmptyList<Identifier * TypeValue * Kind>
+    { ExtensionType: ResolvedIdentifier * TypeValue * Kind
+      ReferencedTypes: NonEmptyList<ResolvedIdentifier * TypeValue * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
       ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
       EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)

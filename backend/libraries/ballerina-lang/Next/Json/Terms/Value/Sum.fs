@@ -6,6 +6,7 @@ module Sum =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Json.Keys
@@ -14,9 +15,9 @@ module Sum =
 
   type Value<'T, 'valueExtension> with
     static member FromJsonSum
-      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
         reader {
           let! k, n, v = elementsJson |> JsonValue.AsTriple |> reader.OfSum

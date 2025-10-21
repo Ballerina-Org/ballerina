@@ -59,6 +59,11 @@ module Patterns =
       | JsonValue.String fields -> sum.Return fields
       | _ -> sum.Throw(Errors.Singleton $"Error: expected string, found '{json.ToFSharpString.ReasonablyClamped}'")
 
+    static member AsNull json =
+      match json with
+      | JsonValue.Null -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton $"Error: expected null, found '{json.ToFSharpString.ReasonablyClamped}'")
+
     static member AsEnum options json =
       match json with
       | JsonValue.String value when options |> Set.contains value -> sum.Return value

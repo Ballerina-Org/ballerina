@@ -9,6 +9,8 @@ open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
 let private initialClasses = EquivalenceClasses<string, PrimitiveType>.Empty
 let private (!) = Identifier.LocalScope
@@ -502,8 +504,8 @@ let ``LangNext-Unify unifies can look lookups up`` () =
       .Unify(Location.Unknown, input1, input2)
       .run (
         UnificationContext.Create(
-          [ !"T1", (input1, Kind.Star) ] |> Map.ofList,
-          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+          [ !"T1" |> TypeCheckScope.Empty.Resolve, (input1, Kind.Star) ] |> Map.ofList,
+          Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
         EquivalenceClasses.Empty
       ))
@@ -524,8 +526,9 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
       .Unify(inputs)
       .run (
         UnificationContext.Create(
-          [ !"T1", (TypeValue.CreateDecimal(), Kind.Star) ] |> Map.ofList,
-          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+          [ !"T1" |> TypeCheckScope.Empty.Resolve, (TypeValue.CreateDecimal(), Kind.Star) ]
+          |> Map.ofList,
+          Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
         EquivalenceClasses.Empty
       ))
@@ -544,8 +547,8 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
       .Unify(Location.Unknown, input1, input2)
       .run (
         UnificationContext.Create(
-          [ !"T2", (input1, Kind.Star) ] |> Map.ofList,
-          Ballerina.DSL.Next.Types.Eval.TypeExprEvalSymbols.Empty
+          [ !"T2" |> TypeCheckScope.Empty.Resolve, (input1, Kind.Star) ] |> Map.ofList,
+          Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
         EquivalenceClasses.Empty
       ))
