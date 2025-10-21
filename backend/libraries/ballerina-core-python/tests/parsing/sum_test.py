@@ -5,8 +5,8 @@ from typing_extensions import assert_never
 from ballerina_core.parsing.keys import DISCRIMINATOR_KEY, VALUE_KEY
 from ballerina_core.parsing.parsing_types import FromJson, Json
 from ballerina_core.parsing.primitives import (
-    float32_from_json,
-    float32_to_json,
+    decimal_from_json,
+    decimal_to_json,
     int32_from_json,
     int32_to_json,
     string_from_json,
@@ -112,36 +112,36 @@ def test_sum3_from_json_invalid_discriminator() -> None:
 
 def test_sum4_to_json_1of4() -> None:
     value = Sum4[int, str, Unit, Decimal].sum1of4(42)
-    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, float32_to_json)
+    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, decimal_to_json)
     serialized = serializer(value)
     assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, int32_to_json(42)]}
 
 
 def test_sum4_to_json_2of4() -> None:
     value = Sum4[int, str, Unit, Decimal].sum2of4("42")
-    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, float32_to_json)
+    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, decimal_to_json)
     serialized = serializer(value)
     assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [2, string_to_json("42")]}
 
 
 def test_sum4_to_json_3of4() -> None:
     value = Sum4[int, str, Unit, Decimal].sum3of4(unit)
-    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, float32_to_json)
+    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, decimal_to_json)
     serialized = serializer(value)
     assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [3, unit_to_json(unit)]}
 
 
 def test_sum4_to_json_4of4() -> None:
     value = Sum4[int, str, Unit, Decimal].sum4of4(Decimal("3.14"))
-    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, float32_to_json)
+    serializer = sum_4_to_json(int32_to_json, string_to_json, unit_to_json, decimal_to_json)
     serialized = serializer(value)
-    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [4, {"discriminator": "float32", "value": "3.14"}]}
+    assert serialized == {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [4, {"discriminator": "decimal", "value": "3.14"}]}
 
 
 def test_sum4_from_json_1of4() -> None:
     serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [1, int32_to_json(42)]}
     parser: FromJson[Sum4[int, str, Unit, Decimal]] = sum_4_from_json(
-        int32_from_json, string_from_json, unit_from_json, float32_from_json
+        int32_from_json, string_from_json, unit_from_json, decimal_from_json
     )
     value = parser(serialized)
     assert value == Sum.right(Sum4[int, str, Unit, Decimal].sum1of4(42))
@@ -150,7 +150,7 @@ def test_sum4_from_json_1of4() -> None:
 def test_sum4_from_json_2of4() -> None:
     serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [2, string_to_json("42")]}
     parser: FromJson[Sum4[int, str, Unit, Decimal]] = sum_4_from_json(
-        int32_from_json, string_from_json, unit_from_json, float32_from_json
+        int32_from_json, string_from_json, unit_from_json, decimal_from_json
     )
     value = parser(serialized)
     assert value == Sum.right(Sum4[int, str, Unit, Decimal].sum2of4("42"))
@@ -159,16 +159,16 @@ def test_sum4_from_json_2of4() -> None:
 def test_sum4_from_json_3of4() -> None:
     serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [3, unit_to_json(unit)]}
     parser: FromJson[Sum4[int, str, Unit, Decimal]] = sum_4_from_json(
-        int32_from_json, string_from_json, unit_from_json, float32_from_json
+        int32_from_json, string_from_json, unit_from_json, decimal_from_json
     )
     value = parser(serialized)
     assert value == Sum.right(Sum4[int, str, Unit, Decimal].sum3of4(unit))
 
 
 def test_sum4_from_json_4of4() -> None:
-    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [4, float32_to_json(Decimal("3.14"))]}
+    serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [4, decimal_to_json(Decimal("3.14"))]}
     parser: FromJson[Sum4[int, str, Unit, Decimal]] = sum_4_from_json(
-        int32_from_json, string_from_json, unit_from_json, float32_from_json
+        int32_from_json, string_from_json, unit_from_json, decimal_from_json
     )
     value = parser(serialized)
     assert value == Sum.right(Sum4[int, str, Unit, Decimal].sum4of4(Decimal("3.14")))
@@ -177,7 +177,7 @@ def test_sum4_from_json_4of4() -> None:
 def test_sum4_from_json_invalid_discriminator() -> None:
     serialized: Json = {DISCRIMINATOR_KEY: "sum", VALUE_KEY: [5, int32_to_json(42)]}
     parser: FromJson[Sum4[int, str, Unit, Decimal]] = sum_4_from_json(
-        int32_from_json, string_from_json, unit_from_json, float32_from_json
+        int32_from_json, string_from_json, unit_from_json, decimal_from_json
     )
     value = parser(serialized)
     match value.value:

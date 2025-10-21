@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ballerina "ballerina.com/core"
+	"github.com/shopspring/decimal"
 )
 
 const unitDiscriminator = "unit"
@@ -85,6 +86,16 @@ var FloatSerializer Serializer[float64] = serializePrimitiveTypeFrom(floatDiscri
 
 var FloatDeserializer Deserializer[float64] = deserializePrimitiveTypeTo(floatDiscriminator, func(value string) (float64, error) {
 	return strconv.ParseFloat(value, 64)
+})
+
+const decimalDiscriminator = "decimal"
+
+var DecimalSerializer Serializer[decimal.Decimal] = serializePrimitiveTypeFrom(decimalDiscriminator, func(value decimal.Decimal) string {
+	return value.String()
+})
+
+var DecimalDeserializer Deserializer[decimal.Decimal] = deserializePrimitiveTypeTo(decimalDiscriminator, func(value string) (decimal.Decimal, error) {
+	return decimal.NewFromString(value)
 })
 
 const dateDiscriminator = "date"
