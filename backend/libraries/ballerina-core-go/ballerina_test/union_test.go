@@ -13,10 +13,10 @@ import (
 func TestDeserializeUnion_Success(t *testing.T) {
 	t.Parallel()
 
-	data := json.RawMessage(`{"discriminator":"union","value":[{"name": "MyCase"},{"discriminator":"int","value":"42"}]}`)
+	data := json.RawMessage(`{"discriminator":"union-case","value":[{"name": "MyCase"},{"discriminator":"int","value":"42"}]}`)
 
 	expected := ballerinaserialization.UnionForSerialization{
-		Discriminator: "union",
+		Discriminator: "union-case",
 		Value:         [2]json.RawMessage{json.RawMessage(`{"name": "MyCase"}`), json.RawMessage(`{"discriminator":"int","value":"42"}`)},
 	}
 
@@ -26,7 +26,7 @@ func TestDeserializeUnion_Success(t *testing.T) {
 
 func TestUnionGetCaseName_Success(t *testing.T) {
 	t.Parallel()
-	data := json.RawMessage(`{"discriminator":"union","value":["MyCase", {"discriminator":"unit"}]}`)
+	data := json.RawMessage(`{"discriminator":"union-case","value":["MyCase", {"discriminator":"unit"}]}`)
 	deserialized := ballerinaserialization.DeserializeUnion(data)
 
 	// Ensure it deserialized and then extract case name
@@ -41,7 +41,7 @@ func TestUnionGetCaseName_Success(t *testing.T) {
 
 func TestUnionGetCaseName_Error(t *testing.T) {
 	t.Parallel()
-	data := json.RawMessage(`{"discriminator":"union","value":[123,{"discriminator":"unit"}]}`)
+	data := json.RawMessage(`{"discriminator":"union-case","value":[123,{"discriminator":"unit"}]}`)
 	deserialized := ballerina.Bind(
 		ballerinaserialization.DeserializeUnion(data),
 		ballerinaserialization.UnionForSerialization.GetCaseName,
@@ -63,13 +63,13 @@ func TestDeserializeUnion_Error_NotUnionDiscriminator(t *testing.T) {
 	t.Parallel()
 	data := json.RawMessage(`{"discriminator":"not-union","value":[{"name": "Case"},{"discriminator":"unit"}]}`)
 	result := ballerinaserialization.DeserializeUnion(data)
-	assertErrorContains(t, "expected discriminator to be 'union'", result)
+	assertErrorContains(t, "expected discriminator to be 'union-case'", result)
 }
 
 func TestUnionGetCaseName_Error_BadHeader(t *testing.T) {
 	t.Parallel()
 	// First element is not an object with name; use a number to force unmarshal error
-	data := json.RawMessage(`{"discriminator":"union","value":[123,{"discriminator":"unit"}]}`)
+	data := json.RawMessage(`{"discriminator":"union-case","value":[123,{"discriminator":"unit"}]}`)
 	deserialized := ballerinaserialization.DeserializeUnion(data)
 
 	err := ballerina.Fold(deserialized, func(err error) error {
