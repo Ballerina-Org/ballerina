@@ -473,3 +473,234 @@ func TestDateDeserialization(t *testing.T) {
 	deserialized := deserializer(serialized)
 	require.Equal(t, ballerina.Right[error, time.Time](time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)), deserialized)
 }
+
+func TestTuple5Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple5[string, bool, int, float64, string]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int(42),
+		Item4: float64(3.14),
+		Item5: "world",
+	}
+
+	serializer := ballerinaserialization.Tuple5Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple5Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple5[string, bool, int, float64, string]](tuple), mappedTupleWithError)
+}
+
+func TestTuple6Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple6[string, bool, int, float64, string, bool]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int(42),
+		Item4: float64(3.14),
+		Item5: "world",
+		Item6: false,
+	}
+
+	serializer := ballerinaserialization.Tuple6Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple6Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple6[string, bool, int, float64, string, bool]](tuple), mappedTupleWithError)
+}
+
+func TestTuple7Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple7[string, bool, int, float64, string, bool, int]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int(42),
+		Item4: float64(3.14),
+		Item5: "world",
+		Item6: false,
+		Item7: int(100),
+	}
+
+	serializer := ballerinaserialization.Tuple7Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple7Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple7[string, bool, int, float64, string, bool, int]](tuple), mappedTupleWithError)
+}
+
+func TestTuple8Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple8[string, bool, int, float64, string, bool, int, float64]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int(42),
+		Item4: float64(3.14),
+		Item5: "world",
+		Item6: false,
+		Item7: int(100),
+		Item8: float64(2.71),
+	}
+
+	serializer := ballerinaserialization.Tuple8Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple8Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple8[string, bool, int, float64, string, bool, int, float64]](tuple), mappedTupleWithError)
+}
+
+func TestTuple9Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple9[string, bool, int, float64, string, bool, int, float64, string]{
+		Item1: "hello",
+		Item2: true,
+		Item3: int(42),
+		Item4: float64(3.14),
+		Item5: "world",
+		Item6: false,
+		Item7: int(100),
+		Item8: float64(2.71),
+		Item9: "final",
+	}
+
+	serializer := ballerinaserialization.Tuple9Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple9Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple9[string, bool, int, float64, string, bool, int, float64, string]](tuple), mappedTupleWithError)
+}
+
+func TestTuple10Serialization(t *testing.T) {
+	t.Parallel()
+
+	tuple := ballerina.Tuple10[string, bool, int, float64, string, bool, int, float64, string, bool]{
+		Item1:  "hello",
+		Item2:  true,
+		Item3:  int(42),
+		Item4:  float64(3.14),
+		Item5:  "world",
+		Item6:  false,
+		Item7:  int(100),
+		Item8:  float64(2.71),
+		Item9:  "final",
+		Item10: true,
+	}
+
+	serializer := ballerinaserialization.Tuple10Serializer(
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+		ballerinaserialization.IntSerializer,
+		ballerinaserialization.FloatSerializer,
+		ballerinaserialization.StringSerializer,
+		ballerinaserialization.BoolSerializer,
+	)
+	deserializer := ballerinaserialization.Tuple10Deserializer(
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+		ballerinaserialization.IntDeserializer,
+		ballerinaserialization.FloatDeserializer,
+		ballerinaserialization.StringDeserializer,
+		ballerinaserialization.BoolDeserializer,
+	)
+
+	mappedTupleWithError := ballerina.Bind(serializer(tuple), deserializer)
+
+	require.Equal(t, ballerina.Right[error, ballerina.Tuple10[string, bool, int, float64, string, bool, int, float64, string, bool]](tuple), mappedTupleWithError)
+}
