@@ -12,6 +12,10 @@ import {
   BasicUpdater,
   DispatchDelta,
   NestedRenderer,
+  BaseFlags,
+  replaceWith,
+  ValueReadOnly,
+  Updater,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -27,7 +31,7 @@ import {
 export const ReadOnlyAbstractRenderer = <
   T extends DispatchParsedType<T>,
   CustomPresentationContext = Unit,
-  Flags = Unit,
+  Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 >(
   GetDefaultChildState: () => CommonAbstractRendererState,
@@ -88,15 +92,37 @@ export const ReadOnlyAbstractRenderer = <
     .mapForeignMutationsFromProps<{
       onChange: DispatchOnChange<PredicateValue, Flags>;
     }>(
-      (): {
+      (
+        props,
+      ): {
         onChange: DispatchOnChange<PredicateValue, Flags>;
       } => ({
         onChange: (
           elementUpdater: Option<BasicUpdater<PredicateValue>>,
           nestedDelta: DispatchDelta<Flags>,
         ) => {
-          console.debug(
-            "ReadOnly field onChange intercepted - no changes allowed",
+          const flags = { kind: "localOnly" };
+          const delta: DispatchDelta<Flags> = {
+            kind: "UnitReplace",
+            replace: PredicateValue.Default.unit(),
+            state: {},
+            type: DispatchParsedType.Default.primitive("unit"),
+            flags: flags as Flags,
+            sourceAncestorLookupTypeNames:
+              nestedDelta.sourceAncestorLookupTypeNames,
+          };
+
+          props.foreignMutations.onChange(
+            elementUpdater.kind == "l"
+              ? Option.Default.none()
+              : Option.Default.some(
+                  Updater<PredicateValue>((value) =>
+                    ValueReadOnly.Updaters.ReadOnly(elementUpdater.value)(
+                      value as ValueReadOnly,
+                    ),
+                  ),
+                ),
+            delta,
           );
         },
       }),
