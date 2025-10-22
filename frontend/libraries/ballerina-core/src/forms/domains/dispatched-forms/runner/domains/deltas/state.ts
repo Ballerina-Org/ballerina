@@ -1302,8 +1302,8 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: delta.caseName[0],
-                  [delta.caseName[0]]: value[0],
+                  Discriminator: `Case${delta.caseName[0]}`,
+                  [`Case${delta.caseName[0]}`]: value[0],
                 } as {
                   Discriminator: string;
                 } & {
