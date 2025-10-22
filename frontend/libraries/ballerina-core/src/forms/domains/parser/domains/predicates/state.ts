@@ -364,6 +364,16 @@ export type ValueReadOnly = {
   ReadOnly: PredicateValue;
 };
 
+export const ValueReadOnly = {
+  Default: (value: PredicateValue): ValueReadOnly => ({
+    kind: "readOnly",
+    ReadOnly: value,
+  }),
+  Updaters: {
+    ...simpleUpdater<ValueReadOnly>()("ReadOnly"),
+  },
+};
+
 export const ValueTable = {
   Default: {
     empty: (): ValueTable => ({
