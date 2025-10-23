@@ -567,7 +567,6 @@ export const RendererTraversal = {
           );
         });
       }
-      // TODO -- add recursion for the detailsRenderer, but requires state
       if (renderer.type.kind == "table" && renderer.kind == "tableRenderer") {
         return ValueOrErrors.Operations.All(
           List(
@@ -584,83 +583,109 @@ export const RendererTraversal = {
               })
               .valueSeq(),
           ),
-        ).Then((columnTraversals) => {
-          if (
-            columnTraversals.every((c) => c.columnTraversal.kind == "l") &&
-            traverseNode.kind == "l"
-          ) {
-            return ValueOrErrors.Default.return(Option.Default.none());
-          }
-          return ValueOrErrors.Default.return(
-            Option.Default.some((evalContext: EvalContext<T, Res>) => {
-              const iterator = evalContext.traversalIterator;
-              if (!PredicateValue.Operations.IsTable(iterator)) {
-                return ValueOrErrors.Default.throwOne(
-                  `Error: traversal iterator is not a table, got ${evalContext.traversalIterator}`,
-                );
-              }
-              return TableLayout.Operations.ComputeLayout(
-                Map([
-                  ["global", evalContext.global],
-                  ["local", evalContext.local],
-                  ["root", evalContext.root],
-                ]),
-                renderer.visibleColumns,
-              ).Then((visibleColumns) => {
-                // Note: we do not allow visiblity predicates on individual column cells
-                return ValueOrErrors.Operations.All<Res, string>(
-                  columnTraversals.flatMap((c) => {
-                    const colTraversal = c.columnTraversal;
-                    if (
-                      colTraversal.kind == "l" ||
-                      !visibleColumns.columns.includes(c.columnName)
-                    ) {
-                      return [];
-                    }
-                    return iterator.data.valueSeq().flatMap((row) => {
-                      // TODO make this monadic
-                      const columnValue = row.fields.get(c.columnName);
-                      if (!columnValue) {
-                        return [
-                          ValueOrErrors.Default.throwOne(
-                            `Error: cannot find column ${
-                              c.columnName
-                            } in row ${JSON.stringify(row)}`,
-                          ),
-                        ];
-                      }
-                      return [
-                        colTraversal.value({
-                          ...evalContext,
-                          traversalIterator: columnValue,
-                        }),
-                      ];
-                    });
+        )
+          .Then((columnTraversals) =>
+            renderer.detailsRenderer
+              ? rec(renderer.detailsRenderer.renderer, traversalContext).Map(
+                  (detailsTraversal) => ({
+                    detailsTraversal: detailsTraversal,
+                    columnTraversals: columnTraversals,
                   }),
-                ).Then((columnResults) => {
-                  return traverseNode.kind == "r"
-                    ? traverseNode
-                        .value(evalContext)
-                        .Then((nodeResult: Res) =>
-                          ValueOrErrors.Default.return(
-                            columnResults.reduce(
-                              (acc, res) =>
-                                traversalContext.joinRes([acc, res]),
-                              nodeResult,
+                )
+              : ValueOrErrors.Default.return({
+                  detailsTraversal:
+                    Option.Default.none<ValueTraversal<T, Res>>(),
+                  columnTraversals: columnTraversals,
+                }),
+          )
+          .Then(({ detailsTraversal, columnTraversals }) => {
+            if (
+              columnTraversals.every((c) => c.columnTraversal.kind == "l") &&
+              traverseNode.kind == "l"
+            ) {
+              return ValueOrErrors.Default.return(Option.Default.none());
+            }
+            return ValueOrErrors.Default.return(
+              Option.Default.some((evalContext: EvalContext<T, Res>) => {
+                const iterator = evalContext.traversalIterator;
+                if (!PredicateValue.Operations.IsTable(iterator)) {
+                  return ValueOrErrors.Default.throwOne(
+                    `Error: traversal iterator is not a table, got ${evalContext.traversalIterator}`,
+                  );
+                }
+                return TableLayout.Operations.ComputeLayout(
+                  Map([
+                    ["global", evalContext.global],
+                    ["local", evalContext.local],
+                    ["root", evalContext.root],
+                  ]),
+                  renderer.visibleColumns,
+                ).Then((visibleColumns) => {
+                  // Note: we do not allow visiblity predicates on individual column cells
+                  return ValueOrErrors.Operations.All<Res, string>(
+                    columnTraversals
+                      .flatMap<ValueOrErrors<Res, string>>((c) => {
+                        const colTraversal = c.columnTraversal;
+                        if (
+                          colTraversal.kind == "l" ||
+                          !visibleColumns.columns.includes(c.columnName)
+                        ) {
+                          return [];
+                        }
+                        return iterator.data.valueSeq().flatMap((row) => {
+                          // TODO make this monadic
+                          const columnValue = row.fields.get(c.columnName);
+                          if (!columnValue) {
+                            return [
+                              ValueOrErrors.Default.throwOne(
+                                `Error: cannot find column ${
+                                  c.columnName
+                                } in row ${JSON.stringify(row)}`,
+                              ),
+                            ];
+                          }
+                          return [
+                            colTraversal.value({
+                              ...evalContext,
+                              traversalIterator: columnValue,
+                            }),
+                          ];
+                        });
+                      })
+                      .concat(
+                        detailsTraversal.kind == "l"
+                          ? []
+                          : iterator.data.valueSeq().map((row) => {
+                              return detailsTraversal.value({
+                                ...evalContext,
+                                traversalIterator: row,
+                              });
+                            }),
+                      ),
+                  ).Then((columnAndDetailsResults) => {
+                    return traverseNode.kind == "r"
+                      ? traverseNode
+                          .value(evalContext)
+                          .Then((nodeResult: Res) =>
+                            ValueOrErrors.Default.return(
+                              columnAndDetailsResults.reduce(
+                                (acc, res) =>
+                                  traversalContext.joinRes([acc, res]),
+                                nodeResult,
+                              ),
                             ),
+                          )
+                      : ValueOrErrors.Default.return(
+                          columnAndDetailsResults.reduce(
+                            (acc, res) => traversalContext.joinRes([acc, res]),
+                            traversalContext.zeroRes(unit),
                           ),
-                        )
-                    : ValueOrErrors.Default.return(
-                        columnResults.reduce(
-                          (acc, res) => traversalContext.joinRes([acc, res]),
-                          traversalContext.zeroRes(unit),
-                        ),
-                      );
+                        );
+                  });
                 });
-              });
-            }),
-          );
-        });
+              }),
+            );
+          });
       }
       // TODO -- should we also look at the previewRenderer? Woud also requite state
       if (renderer.type.kind == "one" && renderer.kind == "oneRenderer") {
