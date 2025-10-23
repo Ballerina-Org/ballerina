@@ -139,6 +139,8 @@ Dependencies that are important but can be replaced or modularized with moderate
     - Used across the app for notifications, but still loosely coupled and replaceable.
 - **React-Accessible-Treeview**
     - Used for demos and MVP; will eventually be replaced by an in-house tree component.
+  - **React Resizable Panels**
+    - used to split the view on sector that can be resized with a mouse
 
 ---
 
@@ -161,7 +163,7 @@ Non-critical dependencies that can be easily removed or swapped.
 
 ## Technical Tasks
 
-- **Use Ballerina templates with isolated state per view** — by **25 Oct**
+- **Use Ballerina templates with isolated state per view** — by **25 Nov**
     - *Reason:* The general IDE layout and component structure are still in flux. Introducing isolated state management earlier would cause unnecessary refactoring.
 
 - **Refactor the Monaco Editor into a proper Ballerina component (with coroutines)** — by **25 Nov**

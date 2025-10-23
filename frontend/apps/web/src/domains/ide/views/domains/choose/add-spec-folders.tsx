@@ -22,7 +22,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
     const specOrigin: SpecOrigin = { origin: 'creating'}
     return  (props.phase == 'choose' && props.choose.entry == 'upload-folder' && props.choose.progressIndicator == 'upload-started')
         ?
-            <div className="card bg-gray-200 text-black w-full  mt-12">
+            <div className="card bg-gray-200 text-black w-full m-5">
                 <div className="card-body items-start gap-3">
 
                     <div className="card-body items-start gap-3">

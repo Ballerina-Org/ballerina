@@ -34,6 +34,13 @@ export const Ide = {
             formsError: (e: List<string>): Updater<Ide> => Updater(ide => ({...ide, formsError: e})),
             toggleSettings: (): Updater<Ide> => Updater(ide => ({...ide, settingsVisible: !ide.settingsVisible})),
             toggleHero: (): Updater<Ide> => Updater(ide => ({...ide, heroVisible: !ide.heroVisible})),
+            clearAllErrors : (): Updater<Ide> =>
+                Updater(ide => ({
+                    ...ide,
+                    lockingError: List(),
+                    choosingError: List(),
+                    bootstrappingError: List(),
+                })),
         },
         Phases: {
             hero: {

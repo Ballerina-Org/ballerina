@@ -6,7 +6,7 @@ import {
 
     update,
     VirtualFolders,
-    validateCompose, validateExplore, getSpec, seedPath, getKeys
+    validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, sendDelta
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -36,12 +36,19 @@ import {List} from "immutable";
 import {SelectEntityAndLookups} from "../lookups/selector/layout.tsx";
 import LauncherSelector from "../forms/launcher-selector.tsx";
 import {LivePreview} from "../editor/LivePreview.tsx";
+import {LaunchersDock} from "../forms/launchers-dock.tsx";
+import {ValueOrErrors, Option} from "ballerina-core";
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
+
+
 export const IdeLayout: IdeView = (props) =>{
+
     const [theme, setTheme] = useState("lofi");
     const [hideRight, setHideRight] = useState(false);
+    const [hideUp, setHideUp] = useState(false);
+    const [showErrorsPanel, setShowErrorsPanel] = useState(true);
     const [version, setVersion] = useState(0);
     const forceRerender = () => setVersion(v => v + 1);
     
@@ -60,7 +67,7 @@ export const IdeLayout: IdeView = (props) =>{
         && props.context.lockingError.size == 0 
         && props.context.choosingError.size == 0;
     return (
-        <div data-theme={theme} className="flex flex-col min-h-screen">
+        <div data-theme="lofi"  className="flex flex-col min-h-screen">
             <AppToaster />
             <NoSpescInfo {...props.context} />
             <Loader {...props.context} />
@@ -68,7 +75,7 @@ export const IdeLayout: IdeView = (props) =>{
             
             {props.context.phase !== "bootstrap" && props.context.phase !== "hero" && 
                 <>
-                    <Navbar {...props.context} theme={theme} setTheme={setTheme} />
+                {!hideUp &&<Navbar {...props.context} theme={theme} setTheme={setTheme} />}
                     <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
                     <Panel minSize={20} defaultSize={50}>
                         <aside className="relative h-full">
@@ -77,6 +84,7 @@ export const IdeLayout: IdeView = (props) =>{
                         <div className="w-full flex">
                             <SpecificationLabel {...props.context} />
                             <Actions
+                                errorCount={5}
                                 canValidate={
                                 props.context.phase == 'locked' 
                                     && props.context.locked.workspace.kind == 'selected'
@@ -84,7 +92,9 @@ export const IdeLayout: IdeView = (props) =>{
                                 }
                                 hideRight={hideRight}
                                 context={props.context}
+                                setState={props.setState}
                                 onHide={() => setHideRight(!hideRight)}
+                                onHideUp={() => setHideUp(!hideUp)}
                                 onSave={
                                     async () => {
                                         if(!(props.context.phase == "locked" 
@@ -117,16 +127,24 @@ export const IdeLayout: IdeView = (props) =>{
                                         props.context.locked.workspace.mode == 'compose' || props.context.locked.workspace.mode == 'scratch'
                                             ? await validateCompose(props.context.name.value)
                                             : await validateExplore(props.context.name.value, props.context.locked.workspace.current.file.metadata.path.split("/"))
-                                    const u =
-                                        json.kind == "errors"
-                                            ? Ide.Updaters.CommonUI.lockingErrors(json.errors)
-                                            : LockedSpec.Updaters.Core.validated(json.value);
                                     
-                                    props.setState(u);
-                                    if(json.kind != "errors") {
-                                        notify.success("Validation succeeds")
+                                    if(json.kind == "errors") {
+                                        props.setState(Ide.Updaters.CommonUI.lockingErrors(json.errors));
                                         return
                                     }
+          
+                                    const bridge =
+                                        props.context.locked.workspace.mode == 'compose' || props.context.locked.workspace.mode == 'scratch'
+                                        ? ValueOrErrors.Default.throw(List(["compose or scratch bridge validator not implemented yet"]))    
+                                        : await validateBridge(props.context.name.value,props.context.locked.workspace.current.file.metadata.path.split("/"));
+                                    
+                                    if(bridge.kind == "errors") {
+                                        props.setState(Ide.Updaters.CommonUI.lockingErrors(bridge.errors));
+                                        return
+                                    }
+                                    props.setState(LockedSpec.Updaters.Core.validated(json.value));
+                                    notify.success("Validation succeeds")
+                                    
                                 }}
                                 onSettings={()=> props.setState(Ide.Updaters.CommonUI.toggleSettings())}
                                 onRun={async () =>{
@@ -141,6 +159,7 @@ export const IdeLayout: IdeView = (props) =>{
                                     props.setState(LockedSpec.Operations.enableRun(launchers.value));
                                     forceRerender();
                                 }}
+                                onErrorPanel={() => setShowErrorsPanel(!showErrorsPanel)}
                                 onSeed={
                                     async () => {
                                         if(props.context.phase != "locked") {
@@ -173,7 +192,7 @@ export const IdeLayout: IdeView = (props) =>{
                     <Panel>
                         <PanelGroup direction="vertical">
                             <Panel minSize={20} defaultSize={50}>
-                                <div className="mockup-window border border-base-300 w-full h-full">
+                                <div data-theme={theme}  className="mockup-window border border-base-300 w-full h-full rounded-none">
                                     <aside className="relative h-full">
                                         <FormSkeleton {...props.context} setState={props.setState} />
                      
@@ -181,41 +200,22 @@ export const IdeLayout: IdeView = (props) =>{
                                             &&  props.context.locked.progress.kind == 'preDisplay' 
                                             && props.context.locked.progress.dataEntry.kind == 'launchers'
                                             && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file'
-                                            && <div className="card bg-base-100 w-full mt-5">
+                                            && <div className="card bg-base-100 w-full mt-1">
                                             <div className="card-body w-full">
-                                                <div className="border p-2 bg-gray-50">
-                                                    <LivePreview code="export default function Greeting() {
-                                                        return <div style={{color: 'tomato'}}>👋 Hello from virtual file!</div>;}" />
-                                                </div>
-                                                <LauncherSelector
-                                                onChange={async (value: any) => {
-                                                    props.setState(
-                                                        LockedSpec.Updaters.Step.selectLauncher(value).then(s => {
-
-                                                            return s
-                                                        })
-                                                    );
-                                                    forceRerender()
-                                                }
-                                            }
-                                                options={props.context.locked.progress.dataEntry.launchers}
-                                                />
-                                                {/*<LauncherAndEntity {...props.context.locked.progress.selectEntityFromLauncher} setState={props.setState} />*/}
-                                                {/*<SelectEntityAndLookups />*/}
                                                 { props.context.locked.validatedSpec.kind == "r" 
                                                     && props.context.locked.progress.dataEntry.kind == 'launchers' 
                                                     && props.context.locked.progress.dataEntry.selected.kind == "r"
                                                     
-                                                    && <><DispatcherFormsApp
+                                                    && <>
+                                
+                                                        <DispatcherFormsApp
                                                         key={version}
-                                                        //launcherName={props.context.locked.progress.selectEntityFromLauncher.a.key}
-                                                        //launcherConfigName={props.context.locked.progress.selectEntityFromLauncher.a.configType}
+                                                        deltas={props.context.locked.progress.deltas}
                                                         specName={props.context.name.value}
                                                         path={props.context.locked.workspace.current.file.metadata.path.split("/")}
                                                         launcher={props.context.locked.progress.dataEntry.selected.value}
-                                                        //entityName={props.context.locked.progress.selectEntityFromLauncher.b}
                                                         setState={props.setState}
-                                                        typeName={"Person"}
+                                                        //typeName={"Person"}
                                                         spec={props.context.locked.validatedSpec.value}/></>
                                                 }
                                             </div>
@@ -223,10 +223,22 @@ export const IdeLayout: IdeView = (props) =>{
                                             }
                               
                                     </aside>
+                                  
+                                        {props.context.phase == "locked" && props.context.locked.progress.kind == "preDisplay" &&
+                                            props.context.locked.progress.dataEntry.kind == 'launchers' &&
+                                            <div className="flex justify-center items-start h-full  mt-auto p-4">
+                                            <LaunchersDock
+                                                launchers={props.context.locked.progress.dataEntry.launchers}
+                                                selected={props.context.locked.progress.dataEntry.selected}
+                                                onSelect={(launcher:string) => props.setState(LockedSpec.Updaters.Step.selectLauncher(launcher))}
+                                            />
+                                    </div>}
+
                                 </div>
+
                             </Panel>
                             <PanelResizeHandle  className="h-[1px] bg-neutral text-neutral-content" />
-                            <Panel minSize={10} defaultSize={40} maxSize={90}>
+                            {showErrorsPanel && <Panel minSize={30} defaultSize={50} maxSize={90}>
                                 <div className="no-radius w-full mx-auto">
                                     <div className="inset-0 top-0 z-20 m-0 p-0">
                                         <div className="space-y-2  w-full">
@@ -235,7 +247,6 @@ export const IdeLayout: IdeView = (props) =>{
                                                     (<pre 
                                                         data-prefix="6"
                                                         className="m-0 pl-3 bg-rose-700 text-warning-content">
-                                                        <code>Error!</code>
                                                         {error}
                                                     </pre>))
                                             }
@@ -243,7 +254,6 @@ export const IdeLayout: IdeView = (props) =>{
                                                 props.context.choosingError.map(error => 
                                                     (<pre data-prefix="6"
                                                           className="m-0 pl-3 bg-rose-500 text-warning-content">
-                                                        <code>Error!</code>
                                                         {error}
                                                     </pre>))
                                             }
@@ -251,7 +261,6 @@ export const IdeLayout: IdeView = (props) =>{
                                                 props.context.lockingError.map(error => 
                                                     (<pre data-prefix="6"
                                                           className="m-0 pl-3 bg-rose-300 text-warning-content">
-                                                        <code>Error!</code>
                                                         {error}</pre>))
                                             }
                                             {
@@ -274,7 +283,7 @@ export const IdeLayout: IdeView = (props) =>{
                                     </div>
                                 </div>
 
-                            </Panel>
+                            </Panel> }
                         </PanelGroup>
                      </Panel>}
                 </PanelGroup></>}

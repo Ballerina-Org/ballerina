@@ -1,5 +1,6 @@
-﻿import {Option, Value} from "ballerina-core";
+﻿import {Option, Updater, Value} from "ballerina-core";
 import {List} from "immutable";
+import {Ide} from "../../state";
 
 export type CommonUI = {
     specSelection: {

@@ -23,7 +23,7 @@ import { OrderedMap, Map, Set, List } from "immutable";
 import React, { useEffect, useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 import {VscDiffAdded, VscDiffRemoved, VscNewFile, VscRefresh, VscSurroundWith} from "react-icons/vsc";
-
+import { useId } from "react";
 export type DispatchPassthroughFormFlags = {
   test: boolean;
 };
@@ -1354,39 +1354,38 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       },dashboardConfig: () => (props) => {
           return (
               <>
-                  <table>
-                      <tbody>
-                      {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
-                      {props.context.layout.valueSeq().map((tab) =>
-                          tab.columns.valueSeq().map((column) => (
-                              <tr style={{ display: "block", float: "left" }}>
-                                  {column.groups.valueSeq().map((group) =>
-                                      group
-                                          .filter((fieldName) =>
-                                              props.VisibleFieldKeys.has(fieldName),
-                                          )
-                                          .map((fieldName) => (
-                                              <>
-                                                  {/* <>{console.debug("fieldName", fieldName)}</> */}
-                                                  <td style={{ display: "block" }}>
-                                                      {props.EmbeddedFields.get(fieldName)!(undefined)({
-                                                          ...props,
-                                                          context: {
-                                                              ...props.context,
-                                                              disabled:
-                                                                  props.DisabledFieldKeys.has(fieldName),
-                                                          },
-                                                          view: unit,
-                                                      })}
-                                                  </td>
-                                              </>
-                                          )),
-                                  )}
-                              </tr>
-                          )),
-                      )}
-                      </tbody>
-                  </table>
+                  {props.context.layout.valueSeq().map((tab, tabIndex) => (
+                      <div key={tabIndex} className="w-full space-y-4 mb-6">
+                          <div className={`grid gap-6 ${tab.columns.size === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                              {tab.columns.valueSeq().map((column, colIndex) => (
+                                  <div key={colIndex} className="space-y-4">
+                                      {/* CHANGED: flex → grid with auto-fit */}
+                                      <div className="grid w-full gap-4 grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] auto-rows-fr">
+                                          {column.groups.valueSeq().map((group, groupIndex) => (
+                                              // CHANGED: remove flex-1 → use w-full
+                                              <div key={groupIndex} className="w-full space-y-2 bg-base-200 p-4 rounded shadow">
+                                                  {group
+                                                      .filter((fieldName) => props.VisibleFieldKeys.has(fieldName))
+                                                      .map((fieldName) => (
+                                                          <div key={fieldName} className="w-full">
+                                                              {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                                  ...props,
+                                                                  context: {
+                                                                      ...props.context,
+                                                                      disabled: props.DisabledFieldKeys.has(fieldName),
+                                                                  },
+                                                                  view: unit,
+                                                              })}
+                                                          </div>
+                                                      ))}
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+                  ))}
               </>
           );
       },
@@ -2639,7 +2638,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         <button onClick={() => props.foreignMutations.reload()}>🔄</button>
       </>
     ),
-        daisyInfiniteStream: () => (props) => (
+        daisyInfiniteStream2: () => (props) => (
             <>
                 <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
                     {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
@@ -2660,7 +2659,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                             </div>
                         </div>
     
-                        {props.context.customFormState.status == "open" && <div className="indicator">
+                        {props.context.customFormState.status == "open" && <div className="tooltip tooltip-top indicator" data-tip="clear selection">
     
                             <button className="btn join-item"
                                     disabled={props.context.disabled}
@@ -2675,13 +2674,13 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                                     onClick={() => props.foreignMutations.toggleOpen()}><VscDiffAdded size={20}/></button>
                         </div>}
                         <div className="indicator">
-                            <span className="indicator-item badge badge-secondary">new</span>
+                            
                             <button className="btn join-item"
                                     onClick={() => props.foreignMutations.reload()}>
                                 <VscRefresh size={20}/></button>
                         </div>
                         <div className="indicator">
-    
+                            {/*<span className="indicator-item badge badge-secondary">load more</span>*/}
                             <button className="btn join-item"
                                     disabled={props.context.hasMoreValues == false}
                                     onClick={() => props.foreignMutations.loadMore()}><VscSurroundWith size={20}/>
@@ -2698,7 +2697,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                       
                         <div className="tooltip tooltip-open tooltip-top" data-tip={props.context.tooltip}>
                             <select className="select select-error">
-                                <option disabled selected>Pick sth</option>
+                                <option disabled selected>select</option>
                                 {props.context.customFormState.stream.loadedElements
                                     .valueSeq()
                                     .map((chunk) =>
@@ -2731,6 +2730,95 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     
             </>
         ),
+        daisyInfiniteStream: () => (props) => {
+            const listId = useId()
+            return (<>
+                <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                    {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
+                    {props.context.details && <p className="label">{props.context.details}</p>}
+                    <label className="label">      {props.context.value.isSome &&
+                        ((props.context.value.value as ValueRecord).fields.get(
+                            "DisplayValue",
+                        ) as string)}{" "}</label>
+                    <div className="join">
+                        <div>
+                            <input type="text"
+                                   className="input w-64"
+                                   disabled={props.context.disabled}
+                                   placeholder="Select value"
+                                   onChange={(e) =>
+                                       props.foreignMutations.setSearchText(e.currentTarget.value)
+                                   }
+                                   value={props.context.customFormState.searchText.value}
+                                   list={listId}/>
+                            {props.context.customFormState.status == "closed" ? (
+                                    <></>
+                                ) :
+
+                                <datalist id={listId}>
+                                    {props.context.customFormState.stream.loadedElements
+                                        .valueSeq()
+                                        .map((chunk) =>
+                                            chunk.data.valueSeq().map((element) => (
+                                                <option
+                                                    onClick={() =>
+                                                        props.foreignMutations.select(
+                                                            PredicateValue.Default.option(
+                                                                true,
+                                                                ValueRecord.Default.fromJSON(element),
+                                                            ),
+                                                            undefined,
+                                                        )
+                                                    }
+                                                    value={
+                                                        `${element.DisplayValue}${
+                                                            props.context.value.isSome &&
+                                                            (props.context.value.value as ValueRecord).fields.get("Id") === element.Id
+                                                                ? " ✅"
+                                                                : ""
+                                                        }`
+                                                    }></option>
+
+                                            )),
+                                        )}
+                                </datalist>}
+                        </div>
+
+                        {props.context.customFormState.status == "open" &&
+                            <div className="tooltip tooltip-top indicator" data-tip="clear selection">
+
+                                <button className="btn join-item"
+                                        disabled={props.context.disabled}
+                                        onClick={() => props.foreignMutations.clearSelection(undefined)}>
+                                    <VscDiffRemoved size={20}/></button>
+
+                            </div>}
+                        {props.context.customFormState.status != "open" && <div className="indicator">
+
+                            <button className="btn join-item"
+                                    disabled={props.context.disabled}
+                                    onClick={() => props.foreignMutations.toggleOpen()}><VscDiffAdded size={20}/>
+                            </button>
+                        </div>}
+                        <div className="indicator">
+
+                            <button className="btn join-item"
+                                    onClick={() => props.foreignMutations.reload()}>
+                                <VscRefresh size={20}/></button>
+                        </div>
+                        <div className="indicator">
+                            {/*<span className="indicator-item badge badge-secondary">load more</span>*/}
+                            <button className="btn join-item"
+                                    disabled={props.context.hasMoreValues == false}
+                                    onClick={() => props.foreignMutations.loadMore()}><VscSurroundWith size={20}/>
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+
+            </>)
+        }
+        ,
     }, 
   streamMultiSelection: {
         defaultInfiniteStreamMultiselect: () => (props) => {
@@ -3358,7 +3446,100 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   ➕
               </button>
           </>
-      ),map: () => (props) => (
+      ),
+      daisyMap: () => (props) => {
+          const [loadingIndex, setLoadingIndex] = React.useState<number | null>(null);
+
+          const simulateLoad = (index: number) => {
+              setLoadingIndex(index);
+              setTimeout(() => setLoadingIndex(null), 500); // fake 500ms delay
+          };
+
+          return (
+              <div className="w-full bg-base-100 p-4 rounded border shadow">
+                  {/* Header */}
+                  {props.context.label && <h3 className="text-lg font-bold">{props.context.label}</h3>}
+                  {props.context.tooltip && <p className="text-sm text-neutral-content">{props.context.tooltip}</p>}
+                  {props.context.details && <p className="text-xs italic text-gray-400">{props.context.details}</p>}
+
+                  {/* Responsive grid */}
+                  {(() => {
+                      const items = props.context.value.values;
+                      const count = items.size;
+
+                      // Determine columns dynamically
+                      let cols = 1;
+                      if (count === 2) cols = 2;
+                      else if (count === 3 || count === 4) cols = 2;
+                      else if (count >= 5 && count <= 6) cols = 3;
+                      else if (count >= 7 && count <= 9) cols = 3;
+                      else if (count >= 10) cols = 4;
+
+                      return (
+                          <ul
+                              className={`grid gap-4 mt-4 ${
+                                  cols === 1
+                                      ? "grid-cols-1"
+                                      : cols === 2
+                                          ? "grid-cols-2"
+                                          : cols === 3
+                                              ? "grid-cols-3"
+                                              : "grid-cols-4"
+                              }`}
+                          >
+                              {items.map((_, elementIndex) => (
+                                  <li
+                                      key={elementIndex}
+                                      className="flex flex-col p-3 bg-base-200 rounded shadow-sm"
+                                  >
+                                      {/* Delete button */}
+                                      <div className="flex justify-end mb-2">
+                                          <button
+                                              className="btn btn-xs btn-error btn-outline"
+                                              onClick={() => props.foreignMutations.remove(elementIndex, undefined)}
+                                          >
+                                              ❌
+                                          </button>
+                                      </div>
+
+                                      {/* Key + Value */}
+                                      <div
+                                          onClick={() => simulateLoad(elementIndex)}
+                                          className="cursor-pointer mb-2"
+                                      >
+                                          {props.embeddedKeyTemplate(elementIndex)(undefined)({
+                                              ...props,
+                                              view: unit,
+                                          })}
+                                      </div>
+
+                                      {loadingIndex === elementIndex ? (
+                                          <div className="flex justify-center items-center h-24">
+                                              <span className="loading loading-spinner text-primary" />
+                                          </div>
+                                      ) : (
+                                          props.embeddedValueTemplate(elementIndex)(undefined)({
+                                              ...props,
+                                              view: unit,
+                                          })
+                                      )}
+                                  </li>
+                              ))}
+                          </ul>
+                      );
+                  })()}
+
+                  {/* Add button */}
+                  <button
+                      className="btn btn-sm btn-primary mt-6"
+                      onClick={() => props.foreignMutations.add({ test: true })}
+                  >
+                      ➕ Add Entry
+                  </button>
+              </div>
+          );
+      },
+      map: () => (props) => (
           <>
               {props.context.label && <h3>{props.context.label}</h3>}
               {props.context.tooltip && <p>{props.context.tooltip}</p>}

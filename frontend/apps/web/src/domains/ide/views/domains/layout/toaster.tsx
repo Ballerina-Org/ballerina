@@ -29,7 +29,7 @@ import {ValueOrErrors} from "ballerina-core";
 const getPosition = (type: "success" | "warning" | "error" | "info"): ToastPosition => {
     switch (type) {
         case "success":
-            return "bottom-right";
+            return "top-center";
         case "warning":
             return "top-center";
         case "error":

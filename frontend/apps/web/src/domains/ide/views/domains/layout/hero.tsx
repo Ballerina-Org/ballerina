@@ -16,12 +16,19 @@ export const Hero: React.FC<Props> = (props: Props) => {
                 className="max-w-sm rounded-lg shadow-2xl"
             />
             <div className="ml-12">
-                <h1 className="text-5xl font-bold text-green-950">Ballerina Ide</h1>
-                <div className="mt-5 flex w-full">
+                <h1 className="flex items-center justify-between text-5xl font-bold text-green-950">
+                    Ballerina IDE
+                    <img
+                        className="w-40 ml-4"
+                        src="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg"
+                        alt="Ballerina Logo"
+                    />
+                </h1>
+                <div className="mt-2 flex w-full">
                     <p className="py-6">
-                        Experiment with the domain by writing a spec and seeing it in action in a playground environment that offers a realtime interactive preview.
+                        Experiment with the spec to explore how it shapes your forms — all within a playground environment that validates your spec and provides a real-time, interactive preview.
                     </p>
-                    <img className="w-40" src="https://github.com/Ballerina-Org/ballerina/raw/main/docs/pics/Ballerina_logo-04.svg" />
+                    
                 </div>
                 <div className="w-full flex flex-col gap-4">
                     {/* top two cards side by side on lg, stacked on sm */}

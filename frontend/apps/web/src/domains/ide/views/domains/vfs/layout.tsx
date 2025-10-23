@@ -65,7 +65,9 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                 props.setState(LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.selectFolder(folder)))
             }
             onSelectedFile={(file) => 
-                props.setState(LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file)))
+                props.setState(
+                    Ide.Updaters.CommonUI.clearAllErrors().then(
+                    LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file))))
             }
             drawerId="my-drawer" /> : <></>
     

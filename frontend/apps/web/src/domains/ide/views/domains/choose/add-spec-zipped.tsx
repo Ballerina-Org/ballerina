@@ -19,7 +19,7 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
     const formsMode: SpecMode = { mode: 'explore', entry: 'upload-zip'};
 
     return (props.phase == 'choose' && props.choose.entry == 'upload-zip' && props.choose.progressIndicator == 'upload-started')
-        ? <div className="card bg-gray-200 text-black w-full  mt-12 m-5">
+        ? <div className="card bg-gray-200 text-black m-5 ">
                 <div className="card-body items-start gap-3">
 
                     <div className="card-body items-start gap-3">

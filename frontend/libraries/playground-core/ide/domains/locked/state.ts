@@ -1,4 +1,4 @@
-﻿import {Option, Updater} from "ballerina-core";
+﻿import {DispatchDelta, Option, Product, replaceWith, Updater} from "ballerina-core";
 import {Ide} from "../../state";
 import {WorkspaceState} from "./vfs/state";
 import {FlatNode, Node} from "./vfs/upload/model";
@@ -6,6 +6,9 @@ import {IdeEntity, IdeLauncher} from "../spec/state";
 import {ProgressiveAB} from "../types/Progresssive";
 import {LockedUpdater, LockedUpdaterFull} from "../types/PhaseUpdater";
 import {KnownSections} from "../types/Json";
+import {Dispatch} from "react";
+import { List, Map} from "immutable";
+import {DeltaDrain, Deltas} from "../forms/deltas/state";
 
 export const ProgressiveLauncherAndEntities ={
     fromLaunchers: 
@@ -29,26 +32,30 @@ export type FormsDataEntry =
 
 export type LockedStep =
     | { kind: 'design' }
-    | { kind: 'preDisplay', dataEntry: FormsDataEntry };
+    | { kind: 'preDisplay', dataEntry: FormsDataEntry, deltas: Option<DeltaDrain> };
 
 export const LockedStep = {
     Updaters: {
         Core: {
             fromLaunchers: (launchers: IdeLauncher []) : LockedStep => 
                 ({ kind: 'preDisplay',
+                        deltas: Option.Default.none(),
                         dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLaunchers(launchers) }}),
             fromLauncherAndEntities: (launcher: IdeLauncher, entities: IdeEntity[]) : LockedStep  => 
                 ({ kind: 'preDisplay',
+                    deltas: Option.Default.none(),
                     dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLauncherAndEntities(launcher, entities) }}),
             selectEntity: (launcher: IdeLauncher, entity: IdeEntity) : LockedStep =>
                 ({ kind: 'preDisplay',
+                    deltas: Option.Default.none(),
                     dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.selectEntity(launcher, entity)}}),
             launchers: (launchers: string[]): LockedStep => 
                 ({ kind: 'preDisplay',
+                    deltas: Option.Default.none(),
                     dataEntry: { kind: 'launchers', launchers: launchers, selected: Option.Default.none()}})
                     ,
             selectLauncher: (launcher: string,launchers: IdeLauncher []): LockedStep =>
-                ({ kind: 'preDisplay',
+                ({ kind: 'preDisplay', deltas: Option.Default.none(),
                     dataEntry: { 
                         kind: 'launchers', 
                         launchers: launchers, 
@@ -69,71 +76,55 @@ export type LockedSpec = {
 export const LockedSpec = {
     Updaters: {
         Step :{
-            // test2: () => Updater(
-            //     LockedUpdater(locked => ({
-            //         ...locked,
-            //         validatedSpec: Option.Default.none(),
-            //         updated: true,  // additional field = error
-            //     } satisfies LockedSpec))
-            // ),
-            // selectLauncher: (launcher: IdeLauncher): Updater<Ide> =>
-            //     Updater(ide => {
-            //         if(ide.phase != 'locked') return ide;
-            //
-            //         const schema = FlatNode.Operations.findFileByName(ide.locked.workspace.nodes,"schema.json" );
-            //         if(schema.kind == "l") return ({...ide, lockingError: ide.lockingError.push("schema file is missing")});
-            //        
-            //         const entities = Object.keys(schema.value.metadata.content.schema.entities || {})
-            //
-            //         if(entities.length == 0) return ({...ide, lockingError: ide.lockingError.push("schema does not have entities")});
-            //
-            //         const step = LockedStep.Updaters.Core.fromLauncherAndEntities(launcher, entities)
-            //         return ({...ide, locked: {...ide.locked, ...step}})
-            //     }),
+            addDelta: (delta:DispatchDelta<any>): Updater<Ide> =>
+                Updater(
+                    LockedUpdaterFull((locked, ide) => {
+                        if(locked.progress.kind != 'preDisplay' || locked.progress.deltas.kind == "l") return locked;
 
+                        return {
+                            ...locked,
+                            progress: { 
+                                ...locked.progress, 
+                                deltas: Option.Default.some(Product.Updaters.left<Deltas, Deltas>(current => current.push(delta))(locked.progress.deltas.value))
+                            },
+                        } satisfies LockedSpec;
+                    })
+                ),
+            drainDeltas :() : Updater<Ide> =>
+                Updater(
+                    LockedUpdater(locked => {
+                        if(locked.progress.kind != 'preDisplay' || locked.progress.deltas.kind == "l") return locked;
+                        const deltas = locked.progress.deltas;
+                        return {
+                            ...locked,
+                            progress: {
+                                ...locked.progress,
+                                deltas: Option.Default.some(
+                                    Product.Updaters.right<Deltas, Deltas>(right => 
+                                        right.concat(deltas.value.left))
+                                        .then(Product.Updaters.left<Deltas, Deltas>(replaceWith(List())))(deltas.value))
+                            },
+                        };
+                    })
+                ),
             selectLauncher: (launcher: IdeLauncher): Updater<Ide> =>
                 Updater(
                     LockedUpdaterFull((locked, ide) => {
-                        // debugger
-                        // const schema =
-                        //     locked.workspace.mode == 'explore' 
-                        //         && locked.workspace.kind == 'selected'
-                        //         && locked.workspace.current.kind == 'file'
-                        //         ?
-                        //         FlatNode.Operations.findFileByName(
-                        //             locked.workspace.nodes,
-                        //             LockedSpec.Operations.addSuffix( locked.workspace.current.file.name, "_schema")
-                        //         )
-                        //         :FlatNode.Operations.findFileByName( locked.workspace.nodes,"schema");
-                        //
-                        // if (schema.kind === "l") {
-                        //     return {
-                        //         ...ide,
-                        //         lockingError: ide.lockingError.push("schema file is missing"),
-                        //     };
-                        // }
-                        //
-                        // const entities = Object.keys(
-                        //     schema.value.metadata.content.entities || {}
-                        // );
-                        //
-                        // if (entities.length === 0) {
-                        //     return {
-                        //         ...ide,
-                        //         lockingError: ide.lockingError.push(
-                        //             "schema does not have entities"
-                        //         ),
-                        //     };
-                        // }
-                        //
-                        // const step = LockedStep.Updaters.Core.fromLauncherAndEntities(
-                        //     launcher,
-                        //     entities
-                        // );
                         if(locked.progress.kind != 'preDisplay' || locked.progress.dataEntry.kind != 'launchers') return locked;
                         return {
                             ...locked,
                             progress: LockedStep.Updaters.Core.selectLauncher(launcher, locked.progress.dataEntry.launchers),
+                        } satisfies LockedSpec;
+                    })
+                ),
+            selectLauncherByNr: (nr: number): Updater<Ide> =>
+                Updater(
+                    LockedUpdaterFull((locked, ide) => {
+                        if(locked.progress.kind != 'preDisplay' || locked.progress.dataEntry.kind != 'launchers') return locked;
+                        const name = locked.progress.dataEntry.launchers.at(nr - 1)!
+                        return {
+                            ...locked,
+                            progress: LockedStep.Updaters.Core.selectLauncher(name, locked.progress.dataEntry.launchers),
                         } satisfies LockedSpec;
                     })
                 ),
@@ -150,38 +141,6 @@ export const LockedSpec = {
                 Updater(ide =>
                     ide.phase != 'locked' ? ide:
                         ({...ide, locked: {...ide.locked, validatedSpec: Option.Default.some(json)}})),
-            // selectLauncher: (l: any): Updater<Ide> =>
-            //     Updater(ide => {
-            //         if(!(ide.phase == 'locked' && ide.step == 'preDisplay')){
-            //             window.alert("IDE design bad state, cannot select launcher");
-            //             return ide;
-            //         }
-            //         const launcher = ide.phase == 'locked' && ide.locked.launchers.find(launcher => launcher.key === l.key)
-            //         return ide.phase == 'locked' && ide.step == 'preDisplay'
-            //             ? ({
-            //                 ...ide,
-            //                 locked: {
-            //                     ...ide.locked,
-            //                     step: 'preDisplay', selectEntityFromLauncher: PreForms.
-            //                 }
-            //             })
-            //             : ide
-            //     }),
-            // selectEntity: (e: string): Updater<Ide> =>
-            //     Updater(ide => {
-            //         if(ide.phase == 'locked') {
-            //             const entity = ide.locked.entities.find(entity => entity === e)
-            //     
-            //             return ({
-            //                 ...ide,
-            //                 locked: {
-            //                     ...ide.locked,
-            //                     selectedEntity: Option.Default.some(entity!)
-            //                 }
-            //             })
-            //         }
-            //         return ide
-            //     }),
             workspace: (workspace: Updater<WorkspaceState>): Updater<Ide> =>
                 Updater(ide =>
                     ide.phase == 'locked'
@@ -201,67 +160,17 @@ export const LockedSpec = {
                 LockedUpdater(locked => {
 
                     if (locked.validatedSpec.kind == "l") return locked;
-
-                    // const launchers = Object.entries(locked.validatedSpec.value.launchers!);
-                    // const ls =
-                    //     launchers.filter(([, value]) => typeof value === "object" && value !== null)
-                    //         .map(([key, value]) => ({
-                    //             key,
-                    //             ...(value as object),
-                    //         })) as any
-                    
-                    //const step = LockedStep.Updaters.Core.fromLaunchers(ls);
                     const step = LockedStep.Updaters.Core.launchers(launchers)
                     const next = {...locked, progress: step}
                     return next;
                     
                 })),
-            //Updater((ide: Ide) => {
-                //     if (ide.phase != 'locked' || ide.locked.validatedSpec.kind == "l") return ide;
-                //
-                //     const launchers = Object.entries(ide.locked.validatedSpec.value.launchers!);
-                //     const ls = 
-                //         launchers.filter(([, value]) => typeof value === "object" && value !== null)
-                //         .map(([key, value]) => ({
-                //             key,
-                //             ...(value as object),
-                //         })) as any
-                //     const step = LockedStep.Updaters.Core.fromLaunchers(ls);
-                //     return ({...ide, locked: {...ide.locked, ...step}})
-                // })
-           
-                // ide.phase == 'locked' 
-                // && ide.locked.validatedSpec.kind == "r" ? 
-                //     ({...ide, 
-                //         locked: { 
-                //         ...ide.locked,
-                //             launchers: Object.entries(ide.locked.virtualFolders.merged.value.launchers!)
-                //                 .filter(([, value]) => typeof value === "object" && value !== null)
-                //                 .map(([key, value]) => ({
-                //                     key,
-                //                     ...(value as object),
-                //                 })) as any
-                //         }
-                //     }) : ide
-            // ).then(ide => {
-            //     if(ide.phase !== 'locked') { return ide }
-            //   
-            //     const schema = FlatNode.Operations.findFileByName(ide.locked.virtualFolders.nodes,"schema.json" );
-            //     if(schema.kind == "l") return ({...ide, lockingError: ide.lockingError.push("schema file is missing")});
-            //     const entitiesObj = Object.keys(schema.value.metadata.content.schema.entities || {})
-            //   
-            //     if(entitiesObj.length == 0) return ({...ide, lockingError: ide.lockingError.push("schema does not have entities")});
-            // 
-            //     return ({...ide, 
-            //         locked: { 
-            //         ...ide.locked, 
-            //             virtualFolders: {
-            //             ...ide.locked.virtualFolders, 
-            //                 schema :schema
-            //         }, entities: entitiesObj
-            //     }
-            //     })
-            // })
+        startDeltas: (): Updater<Ide> =>
+            Updater(
+                LockedUpdater(locked => {
+
+                    if (locked.validatedSpec.kind == "l") return locked;
+                    return {...locked, progress: { ...locked.progress, deltas: Option.Default.some(Product.Default(List(), List()))}}
+                })),
     }
-    
 }

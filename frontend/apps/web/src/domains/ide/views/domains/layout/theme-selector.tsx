@@ -1,7 +1,7 @@
 ﻿import React, {Dispatch, SetStateAction} from "react";
 
 const themes = [
-    "lofi", "retro", "abyss", "wireframe","fantasy","winter","dark","dracula",
+    "lofi", "retro", "abyss", "valentine","wireframe","fantasy","winter","dark","dracula",
     "bumblebee","emerald", "halloween", "cyberpunk", "sunset","dim","business","luxury","black","pastel","aqua","forest"
 ]
 export const Themes = {

@@ -1,5 +1,5 @@
 ﻿
-import React from "react";
+import React, {useEffect} from "react";
 import {
     VscCheck,
     VscCheckAll,
@@ -11,11 +11,12 @@ import {
     VscPlay,
     VscChecklist,
     VscMerge,
-    VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings
+    VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings, VscTriangleUp, VscBracketError,
+    VscCommentUnresolved, VscCircle
 } from "react-icons/vsc";
 
 
-import {Ide} from "playground-core";
+import {Ide, LockedSpec} from "playground-core";
 
 type ActionKey =
     | "new" | "folders" | "save" | "seed" | "reseed"
@@ -26,7 +27,9 @@ const size = 22;
 
 type ActionsProps = {
     context: Ide;
+    setState: any;
     hideRight?: boolean;
+    errorCount: number;
     onAction?: (action: ActionKey) => void;
     canRun?: boolean;
     canValidate: boolean;
@@ -34,26 +37,59 @@ type ActionsProps = {
     onLock?: () => void;
     onSeed?: () => void;
     onReSeed?: () => void;
-    onRun?: () => void;
+    onRun: () => Promise<void>;
     onRunCondition?: boolean;
-    onSave?: () => void;
-    onMerge?: () => void;
+    onSave: () => Promise<void>;
+    onMerge:  () => Promise<void>;
     onHide?: () => void;
+    onHideUp: () => void;
     onSettings?: () => void;
+    onErrorPanel?: () => void;
     
 };
 
 export const Actions: React.FC<ActionsProps> = ({
             context,
+    setState,
+    errorCount = 0,
             hideRight = false,
+            onHideUp,
             onAction,
             onSettings,
             canValidate = false,
             canRun = true,
+    onErrorPanel,
     
             onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
 
         }) => {
+    useEffect(() => {
+        const onKeyDown = async (e: KeyboardEvent) => {
+            const isMac = navigator.platform.toUpperCase().includes("MAC");
+            const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+            // Check if it's Ctrl+1..9
+            if (isCtrlOrCmd && /^Digit[1-9]$/.test(e.code)) {
+                e.preventDefault();
+
+                // Extract actual number
+                const numberPressed = Number(e.code.replace("Digit", ""));
+
+                // Run async actions sequentially
+                await onSave();
+                await onMerge();
+                await onRun();
+
+                setState(
+                    LockedSpec.Updaters.Step.selectLauncherByNr(numberPressed)
+                );
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onSave, onMerge, onRun, setState]);
+
     const isWellKnownFile = context.phase === "locked"
         && context.locked.workspace.kind === "selected"
         && (context.locked.workspace.current.kind == 'file' 
@@ -148,6 +184,29 @@ export const Actions: React.FC<ActionsProps> = ({
                 onClick={onHide}
             >
                 <VscTriangleLeft size={size} />
+            </button>}
+            { context.phase == "locked" &&<div className="indicator">
+                {/*<span className=*/}
+                {/*          {errorCount > 0 ?*/}
+                {/*              "indicator-item indicator-top indicator-center badge badge-xs badge-error"*/}
+                {/*              :"indicator-item indicator-top indicator-center badge badge-xs badge-success"}>*/}
+                {/*    {errorCount > 0 ? <VscCommentUnresolved size={size} /> : <VscCheck color="green" size={size/2} />}*/}
+                {/*</span>*/}
+                <button
+                    disabled={errorCount == 0}
+                    className="btn tooltip tooltip-bottom"
+                    data-tip="Hide/Show Errors"
+                    onClick={onErrorPanel}
+                >
+                    <VscBracketError size={size} />
+                </button>
+            </div>}
+            { context.phase == "locked" &&<button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Hide Top Menu"
+                onClick={onHideUp}
+            >
+                <VscTriangleUp size={size} />
             </button>}
         {context.phase === "locked" && !hideRight && (
             <button

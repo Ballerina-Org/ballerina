@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
     unit,
     PromiseRepo,
@@ -23,6 +23,8 @@ import {
     AggregatedFlags, LookupApiOne,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
+import {FormsSeedEntity} from "playground-core/ide/domains/seeds/state.ts";
+
 
 import {
     DispatchEntityContainerFormView,
@@ -46,11 +48,13 @@ import {
     DispatchFromConfigApis, expand,
     Ide,
     IdeEntityApis,
-    IdeFormProps,
+    IdeFormProps, LockedSpec, sendDelta,
     UnmockingApisEnums,
     UnmockingApisLookups
 } from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
+
+type AnyObject = Record<string, unknown>;
 
 const ShowFormsParsingErrors = (
     parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -65,13 +69,6 @@ const ShowFormsParsingErrors = (
             JSON.stringify(parsedFormsConfig.errors)}
     </div>
 );
-
-import {FormsSeedEntity} from "playground-core/ide/domains/seeds/state.ts";
-
-type AnyObject = Record<string, unknown>;
-
-const isPlainObject = (x: unknown): x is AnyObject =>
-    !!x && typeof x === "object" && (x as object).constructor === Object;
 
 const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
     <div id={domNodeId}>{children}</div>
@@ -143,7 +140,9 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     const [entity, setEntity] = useState<
         Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
     >(Sum.Default.right("not initialized"));
-
+    const [entityName, setEntityName] = useState<
+        Sum<string, "not initialized">
+    >(Sum.Default.right("not initialized"));
     const [entityId, setEntityId] = useState<
         Sum<string, "not initialized">
     >(Sum.Default.right("not initialized"));    
@@ -239,7 +238,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     const onEntityChange: DispatchOnChange<
         PredicateValue,
         DispatchPassthroughFormFlags
-    > = (updater, delta) => {
+    > = async (updater, delta) => {
 
         if (entity.kind == "r" || entity.value.kind == "errors") {
             return;
@@ -251,34 +250,41 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 : entity.value.value;
         console.log("patching entity", newEntity);
         console.log("delta", JSON.stringify(delta, null, 2));
+        if(props.deltas.kind == "l") {
+            props.setState( LockedSpec.Operations.startDeltas().then(LockedSpec.Updaters.Step.addDelta(delta)));
+        }
+        else {
+            props.setState( LockedSpec.Updaters.Step.addDelta(delta));
+        }
+        
         setEntity(
             replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
         );
+     
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
             specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
+            "value" && 
+            entityName.kind == "l" && entityId.kind == "l"
         ) {
             
-            // const toApiRawParser =
-            //     specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-            //         props.launcherName,
-            //     )!.parseValueToApi;
-            // const path = DispatchDeltaTransfer.Default.FromDelta(
-            //     toApiRawParser as any, //TODO - fix type issue if worth it
-            //     parseCustomDelta,
-            // )(delta);
-            //
-            // setEntityPath(path);
-            // setRemoteEntityVersionIdentifier(v4());
+            const toApiRawParser =
+                specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
+                    props.launcher,
+                )!.parseValueToApi;
+            const path = DispatchDeltaTransfer.Default.FromDelta(
+                toApiRawParser as any, //TODO - fix type issue if worth it
+                parseCustomDelta,
+            )(delta);
+        
+    
+            setEntityPath(path);
+            setRemoteEntityVersionIdentifier(v4());
         }
     };
 
     useEffect(() => {
-        console.log("re-rendering");
-        console.log(props.spec)
-
         if (
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
@@ -289,15 +295,13 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
 
             expand(props.specName, props.launcher, props.path)
                 .then(async (raw) => {
-                    debugger    
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
-                
-     
+                        
                         const parsed =
                             spec.launchers.passthrough
                                 .get(props.launcher)!
-                                .parseEntityFromApi(raw.value);
+                                .parseEntityFromApi(raw.value.value);
 
                         if (parsed.kind == "errors") {
                             console.error("parsed entity errors", parsed.errors);
@@ -310,10 +314,9 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 ...e,
                                 fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
                             };
-                            //setEntity(Sum.Default.left(parsed));
-                    
                             setEntity(Sum.Default.left(ValueOrErrors.Default.return(updated)));
-                            //setEntityId(res.id as any);
+                            setEntityName(Sum.Default.left(res.entityName));
+                            setEntityId(Sum.Default.left(res.id as any));
                         }
                     }
                     else {
@@ -321,8 +324,6 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     }
                 });
         }
-        //UnmockingApisEntities.entityApis
-        //DispatchFromConfigApis.entityApis
         IdeEntityApis
             .get("GlobalConfiguration")!("")
             .then((raw) => {
@@ -332,13 +333,11 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                     specificationDeserializer.deserializedSpecification.sync.value.kind ==
                     "value"
                 ) {
-                    debugger
                     const parsed =
                         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
                             .get(props.launcher)!
                             .parseEntityFromApi(raw.value.value);
                     if (parsed.kind == "errors") {
-                        debugger
                         console.error("parsed person config errors", parsed.errors);
                     } else {
                         setConfig(Sum.Default.left(parsed));
@@ -366,12 +365,38 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         );
     }
 
-
     return (
-        <div className="App">
+        <div className="App pb-12">
             <div className="card">
                 <table>
                     <tbody>
+                    <tr><td>
+                        {props.deltas.kind == 'r' &&
+
+                            <div className="stats bg-base-100 border-base-300 border w-full">
+                                <div className="stat">
+                                    <div className="stat-title">Current deltas</div>
+                                    <div className="stat-desc">↗︎ {JSON.stringify(props.deltas.value.left).length} (~size)</div>
+                                    <div className="stat-value">{props.deltas.value.left.size}</div>
+                                    <div className="stat-actions">
+                                        <button className="btn btn-xs btn-success"
+                                                onClick={async() =>{
+                                                    if(props.deltas.kind == "r") {
+                                                        const t = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path);
+                                                        props.setState(LockedSpec.Updaters.Step.drainDeltas());
+                                                    }
+                                                }}
+                                        >Drain</button>
+                                    </div>
+                                </div>
+
+                                <div className="stat">
+                                    <div className="stat-title">Deltas drained</div>
+                                    <div className="stat-value">{props.deltas.value.right.size}</div>
+                                </div>
+                            </div>
+                        }
+                    </td></tr>
                     <tr>
                         <td>
                             <InstantiatedFormsParserTemplate
@@ -382,11 +407,6 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                     fieldTypeConverters: DispatchFieldTypeConverters,
                                     defaultNestedRecordConcreteRenderer:DispatchEntityNestedContainerFormView,
                                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                                    //infiniteStreamSources:UnmockingApisStreams.streamApis,
-                                    //enumOptionsSources:UnmockingApisEnums.enumApis,
-                                    //entityApis: DispatchFromConfigApis.entityApis, //UnmockingApisEntities.entityApis,
-                                    //tableApiSources: DispatchFromConfigApis.tableApiSources, // UnmockingApisTables.tableApiSources,
-                                    //lookupSources: UnmockingApisLookups.lookupSources,
                                     
                                     getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
                                     IdWrapper,
@@ -441,7 +461,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                             {/*        foreignMutations={unit}*/}
                             {/*    />*/}
                             {/*</div>*/}
-                            {/*<h3>Person</h3>*/}
+                {/*            <h3>Entity</h3>*/}
                 {/*            {entityPath && entityPath.kind == "value" && (*/}
                 {/*  <pre*/}
                 {/*    style={{*/}

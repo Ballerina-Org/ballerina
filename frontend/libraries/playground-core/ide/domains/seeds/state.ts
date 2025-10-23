@@ -5,5 +5,6 @@
 
 export type FormsSeedEntity = {
     id: string,
-    value: any
+    value: any,
+    entityName: string
 }
