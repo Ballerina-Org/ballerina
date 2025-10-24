@@ -13,6 +13,7 @@ module Record =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Json.Keys
   open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
 
   let private discriminator = "record"
 

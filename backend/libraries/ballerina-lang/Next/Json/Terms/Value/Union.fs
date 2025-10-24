@@ -10,6 +10,7 @@ module Union =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Json.TypeSymbolJson
+  open Ballerina.DSL.Next.Types.Json.ResolvedTypeIdentifier
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Json.Keys
@@ -19,43 +20,43 @@ module Union =
 
   type Value<'T, 'valueExtension> with
     static member FromJsonUnion
-      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun caseJson ->
         reader {
           let! k, v = caseJson |> JsonValue.AsPair |> reader.OfSum
-          let! k = TypeSymbol.FromJson k |> reader.OfSum
+          let! k = k |> ResolvedIdentifier.FromJson |> reader.OfSum
           let! v = fromJsonRoot v
           return Value.UnionCase(k, v)
         })
 
     static member ToJsonUnion
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
-      (k: TypeSymbol)
+      (k: ResolvedIdentifier)
       (v: Value<'T, 'valueExtension>)
       : ValueEncoderReader<'T> =
       reader {
-        let k = TypeSymbol.ToJson k
+        let k = ResolvedIdentifier.ToJson k
         let! v = rootToJson v
         return [| k; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }
 
     static member FromJsonUnionCons
-      (_fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (_fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator_cons json (fun caseJson ->
         reader {
-          let! k = caseJson |> TypeSymbol.FromJson |> reader.OfSum
+          let! k = caseJson |> ResolvedIdentifier.FromJson |> reader.OfSum
           return Value.UnionCons(k)
         })
 
     static member ToJsonUnionCons
       (_rootToJson: ValueEncoder<'T, 'valueExtension>)
-      (k: TypeSymbol)
+      (k: ResolvedIdentifier)
       : ValueEncoderReader<'T> =
       reader {
-        let k = TypeSymbol.ToJson k
+        let k = ResolvedIdentifier.ToJson k
         return k |> Json.discriminator discriminator_cons
       }

@@ -2,6 +2,7 @@ namespace Ballerina.StdLib.Tests.Core
 
 open NUnit.Framework
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 

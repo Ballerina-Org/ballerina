@@ -13,6 +13,7 @@ module Var =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Types
 
   let private discriminator = "var"
 
@@ -25,7 +26,7 @@ module Var =
         })
 
   type Value<'T, 'valueExtension> with
-    static member FromJsonVar(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+    static member FromJsonVar(json: JsonValue) : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       json |> Var.FromJson |> sum.Map(Value.Var) |> reader.OfSum
 
     static member ToJsonVar: Var -> JsonValue =

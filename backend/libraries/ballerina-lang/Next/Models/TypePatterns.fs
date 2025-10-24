@@ -7,6 +7,7 @@ module Patterns =
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
 
   type TypeVar with
     static member Create(name: string) : TypeVar =

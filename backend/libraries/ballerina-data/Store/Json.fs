@@ -78,13 +78,16 @@ module Model =
       }
 
     static member FromJson
-      (rootFromJson: ValueParser<TypeValue, 'valueExtension>)
+      (rootFromJson: ValueParser<TypeValue, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
       : Sum<SpecData<TypeValue, 'valueExtension>, Errors> =
 
-      let rootExprFromJson = Expr.FromJson >> Reader.Run TypeValue.FromJson
+      let rootExprFromJson =
+        Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
-      let parser = rootFromJson >> Reader.Run(rootExprFromJson, TypeValue.FromJson)
+      let parser =
+        rootFromJson
+        >> Reader.Run(rootExprFromJson, TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
       sum {
         let! container = JsonValue.AsRecord json

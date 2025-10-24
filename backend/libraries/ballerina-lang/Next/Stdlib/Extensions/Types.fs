@@ -9,11 +9,13 @@ module Types =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
-  open Ballerina.DSL.Next.Types.TypeCheck
-  open Ballerina.DSL.Next.Types.Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
   open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
 
   type TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> with
     static member RegisterTypeCheckContext
@@ -120,7 +122,9 @@ module Types =
                             handlerBody
                             |> Expr.Eval
                             |> reader.MapContext(
-                              ExprEvalContext.Updaters.Values(Map.add (Identifier.LocalScope handlerVar.Name) v)
+                              ExprEvalContext.Updaters.Values(
+                                Map.add (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
+                              )
                             )
                         })
                   },

@@ -8,13 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Parser/Common.fs" />
-    <Compile Include="Parser/ExprType.fs" />
-    <Compile Include="ExprType/Unification.fs" />
+    <!-- <Compile Include="Parser/Common.fs" />
+    <Compile Include="Parser/ExprType.fs" /> -->
     <Compile Include="Next/Type/Patterns.fs" />
     <Compile Include="Next/Type/Eval.fs" />
     <Compile Include="Next/Type/Unify.fs" />
-    <Compile Include="Next/Type/TypeCheck.fs" />
     <Compile Include="Next/Type/Instantiate.fs" />
     <Compile Include="Next\Type\Json\Type_TypeValue_PrimitiveType.fs" />
     <Compile Include="Next\Type\Json\Type_TypeValue.fs" />
