@@ -18,20 +18,26 @@ module WithError =
     // ∇ = narrowing
     // Δ = widening
     static member mapState<'sOuter>
-      (``∇``: 'sOuter -> 's)
-      (Δ: 's -> 'sOuter -> 'sOuter)
+      (``∇``: 'sOuter * 'c -> 's)
+      (Δ: 's * 'c -> 'sOuter -> 'sOuter)
       ((State p): State<'a, 'c, 's, 'e>)
       : State<'a, 'c, 'sOuter, 'e> =
       State(fun (c, s0: 'sOuter) ->
-        match p (c, (``∇`` s0)) with
-        | Sum.Left(res, u_s) -> Sum.Left(res, u_s |> Option.map (fun s -> Δ s s0))
-        | Sum.Right(e, u_s) -> Sum.Right(e, u_s |> Option.map (fun s -> Δ s s0)))
+        match p (c, (``∇`` (s0, c))) with
+        | Sum.Left(res, u_s) -> Sum.Left(res, u_s |> Option.map (fun s -> Δ (s, c) s0))
+        | Sum.Right(e, u_s) -> Sum.Right(e, u_s |> Option.map (fun s -> Δ (s, c) s0)))
 
     static member mapContext<'cOuter>
       (``∇``: 'cOuter -> 'c)
       ((State p): State<'a, 'c, 's, 'e>)
       : State<'a, 'cOuter, 's, 'e> =
       State(fun (c, s0) -> p (``∇`` c, s0))
+
+    static member mapContextFromState<'cOuter>
+      (``∇``: 's * 'cOuter -> 'c)
+      ((State p): State<'a, 'c, 's, 'e>)
+      : State<'a, 'cOuter, 's, 'e> =
+      State(fun (c, s0) -> p (``∇`` (s0, c), s0))
 
     static member map<'b> (f: 'a -> 'b) ((State p): State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
       State(fun s0 ->

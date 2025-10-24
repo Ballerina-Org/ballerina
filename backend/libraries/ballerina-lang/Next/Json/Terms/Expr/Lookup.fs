@@ -16,28 +16,17 @@ module Lookup =
 
   let private discriminator = "lookup"
 
-  type Expr<'T> with
-    static member FromJsonLookup(value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonLookup(value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun nameJson ->
-        reader.Any2
-          (reader {
-            let! name = nameJson |> JsonValue.AsString |> reader.OfSum
-            return Expr.Lookup(name |> Identifier.LocalScope)
-          })
-          (reader {
-            let! path = nameJson |> JsonValue.AsArray |> reader.OfSum
-            let! path = path |> Seq.map (JsonValue.AsString >> reader.OfSum) |> reader.All
+        reader {
+          let! _, ctx = reader.GetContext()
+          let! (res: 'Id) = nameJson |> ctx |> reader.OfSum
+          return Expr.Lookup res
+        })
 
-            match path |> List.rev with
-            | [] -> return! Errors.Singleton "Empty path in fully qualified identifier" |> reader.Throw
-            | x :: xs -> return Expr.Lookup(Identifier.FullyQualified(xs, x))
-          }))
-
-    static member ToJsonLookup(id: Identifier) : ExprEncoderReader<'T> =
-      (match id with
-       | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
-       | Identifier.FullyQualified(scope, name) ->
-         (name :: scope |> List.rev |> Seq.map JsonValue.String |> Seq.toArray)
-         |> JsonValue.Array
-         |> Json.discriminator discriminator)
-      |> reader.Return
+    static member ToJsonLookup(id: ExprLookup<'T, 'Id>) : ExprEncoderReader<'T, 'Id> =
+      reader {
+        let! _, ctx = reader.GetContext()
+        return id.Id |> ctx |> Json.discriminator discriminator
+      }

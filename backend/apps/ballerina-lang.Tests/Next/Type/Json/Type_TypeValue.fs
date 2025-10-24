@@ -8,6 +8,7 @@ open System
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.Cat.Collections.OrderedMap
 
 type TypeValueTestCase =
   { Name: string

@@ -35,7 +35,7 @@ let ``Should correctly map state`` () =
 
   let withOuterState: State<string, unit, OuterState, Errors> =
     withInnerState
-    |> State.mapState OuterState.Getters.Inner OuterState.Replacers.Inner
+    |> State.mapState (fst >> OuterState.Getters.Inner) (fst >> OuterState.Replacers.Inner)
 
   let result = withOuterState.run ((), { inner = { age = 30 }; name = "John" })
 

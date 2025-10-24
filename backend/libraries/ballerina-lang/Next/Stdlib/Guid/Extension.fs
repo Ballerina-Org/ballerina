@@ -20,9 +20,10 @@ module Extension =
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     : OperationsExtension<'ext, GuidOperations<'ext>> =
 
-    let guidEqualId = Identifier.FullyQualified([ "guid" ], "==")
+    let guidEqualId =
+      Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -58,9 +59,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let guidNotEqualId = Identifier.FullyQualified([ "guid" ], "!=")
+    let guidNotEqualId =
+      Identifier.FullyQualified([ "guid" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidNotEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star

@@ -14,8 +14,8 @@ module SumDes =
 
   let private discriminator = "sum-des"
 
-  type Expr<'T> with
-    static member FromJsonSumDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonSumDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun sumDesJson ->
         reader {
           let! caseHandlers = sumDesJson |> JsonValue.AsArray |> reader.OfSum
@@ -45,9 +45,9 @@ module SumDes =
         })
 
     static member ToJsonSumDes
-      (rootToJson: ExprEncoder<'T>)
-      (caseHandlers: Map<SumConsSelector, CaseHandler<'T>>)
-      : ExprEncoderReader<'T> =
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (caseHandlers: Map<SumConsSelector, CaseHandler<'T, 'Id>>)
+      : ExprEncoderReader<'T, 'Id> =
       caseHandlers
       |> Map.toList
       |> List.map (fun (k, (v, h)) ->
