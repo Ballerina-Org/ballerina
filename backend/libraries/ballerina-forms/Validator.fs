@@ -82,21 +82,19 @@ module Validator =
 
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (expectedType: ExprType)
       (fr: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      Renderer.Validate codegen ctx expectedType fr.Renderer
+      Renderer.Validate ctx expectedType fr.Renderer
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (expectedType: ExprType)
       (fr: Renderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      let (!) = Renderer.Validate codegen ctx
+      let (!) = Renderer.Validate ctx
 
       let unify (expected: ExprType) (formType: ExprType) : Sum<Unit, Errors> =
         ExprType.Unify
@@ -116,7 +114,7 @@ module Validator =
             | _ -> formType
 
           do! unify expectedType formType
-          do! FormBody.Validate codegen ctx i |> Sum.map ignore
+          do! FormBody.Validate ctx i |> Sum.map ignore
           // NOTE: no need to recurse in the form body because the top-level-forms have already been validated
           formType
         }
@@ -130,7 +128,7 @@ module Validator =
 
           do! unify expectedType formType
 
-          return! FormBody.Validate codegen ctx form.Body
+          return! FormBody.Validate ctx form.Body
         }
 
 
@@ -154,7 +152,7 @@ module Validator =
           match rendererName with
           | Some renderer ->
             let! rendererFields =
-              codegen.Record.SupportedRenderers
+              ctx.SupportedRecordRenderers
               |> Map.tryFindWithError
                 renderer
                 "record renderer"
@@ -256,7 +254,7 @@ module Validator =
               sum.All(
                 fields.Fields.Fields
                 |> Map.values
-                |> Seq.map (FieldConfig.Validate codegen ctx expectedType)
+                |> Seq.map (FieldConfig.Validate ctx expectedType)
                 |> Seq.toList
               )
               |> Sum.map ignore
@@ -311,7 +309,7 @@ module Validator =
                   | None ->
                     sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
                   | Some formCase ->
-                    NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase
+                    NestedRenderer.Validate ctx typeCase.Value.Fields formCase
                     |> sum.WithErrorContext $"...when validating case {typeCase.Key.CaseName}")
                 |> sum.All
                 |> Sum.map ignore
@@ -604,7 +602,7 @@ module Validator =
         | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
           match keyType with
           | ExprType.LookupType { VarName = varName } ->
-            let (LanguageStreamType languageStreamType) = codegen.LanguageStreamType
+            let (LanguageStreamType languageStreamType) = ctx.LanguageStreamType
 
             if languageStreamType = varName then
               let expectedType = TranslationOverride.Type { Label = label; KeyType = keyType }
@@ -638,7 +636,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: NestedRenderer<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       state {
         do!
           Renderer.ValidatePredicates
@@ -660,7 +658,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: Renderer<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       let (!!) =
         NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
 
@@ -773,7 +771,6 @@ module Validator =
 
   and FieldConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (recordType: ExprType)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
@@ -787,7 +784,7 @@ module Validator =
             let! expectedFieldType = ExprType.ResolveLookup ctx.Types expectedFieldType
 
             do!
-              Renderer.Validate codegen ctx expectedFieldType fc.Renderer
+              Renderer.Validate ctx expectedFieldType fc.Renderer
               |> sum.WithErrorContext $"...when validating field config renderer for {fc.FieldName}"
               |> Sum.map ignore
 
@@ -809,7 +806,7 @@ module Validator =
       (localType: ExprType)
       (includeLocalTypeInScope: bool)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       state {
         let vars =
           [ ("global", globalType); ("root", rootType) ]
@@ -918,19 +915,18 @@ module Validator =
 
   and FormBody<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (body: FormBody<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       sum {
         match body with
         | FormBody.Annotated renderer ->
-          return! Renderer.Validate codegen ctx (ExprType.LookupType renderer.TypeId) renderer.Renderer
+          return! Renderer.Validate ctx (ExprType.LookupType renderer.TypeId) renderer.Renderer
         | FormBody.Table table ->
           let! rowType = ctx.TryFindType table.RowTypeId.VarName
 
           match table.Details with
-          | Some details -> do! NestedRenderer.Validate codegen ctx rowType.Type details |> Sum.map ignore
+          | Some details -> do! NestedRenderer.Validate ctx rowType.Type details |> Sum.map ignore
           | None -> return ()
 
           // match table.Preview with
@@ -949,7 +945,7 @@ module Validator =
               table.Columns
               |> Map.values
               |> Seq.map (fun c ->
-                FieldConfig.Validate codegen ctx rowType.Type c.FieldConfig
+                FieldConfig.Validate ctx rowType.Type c.FieldConfig
                 |> sum.WithErrorContext $"...when validating table column {c.FieldConfig.FieldName}")
               |> Seq.toList
             )
@@ -1027,11 +1023,10 @@ module Validator =
 
   and FormConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (config: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
-      sum { do! FormBody.Validate config ctx formConfig.Body |> Sum.map ignore }
+      sum { do! FormBody.Validate ctx formConfig.Body |> Sum.map ignore }
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
 
     static member ValidatePredicates
@@ -1246,7 +1241,6 @@ module Validator =
   type TableApi<'ExprExtension, 'ValueExtension> with
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (tableApi: TableApi<'ExprExtension, 'ValueExtension> * Set<TableMethod>)
       : Sum<Unit, Errors> =
@@ -1269,9 +1263,7 @@ module Validator =
             sum {
               do! fields |> sum.TryFindField filterableField |> sum.Map ignore
 
-              do!
-                NestedRenderer.Validate codegen ctx filtering.Type filtering.Display
-                |> Sum.map ignore
+              do! NestedRenderer.Validate ctx filtering.Type filtering.Display |> Sum.map ignore
 
               return ()
             }
@@ -1367,14 +1359,12 @@ module Validator =
           |> Sum.map ignore
           |> state.OfSum
 
-        let! codegenConfig = state.GetContext()
-
         do!
           sum.All(
             ctx.Apis.Tables
             |> Map.values
             |> Seq.map (fun tableApi ->
-              TableApi.Validate codegenTargetConfig codegenConfig ctx tableApi
+              TableApi.Validate codegenTargetConfig ctx tableApi
               |> sum.WithErrorContext(sprintf "...when validating table API for table %s" (tableApi |> fst).TableName))
             |> Seq.toList
           )
@@ -1401,7 +1391,7 @@ module Validator =
             ctx.Forms
             |> Map.values
             |> Seq.map (fun formConfig ->
-              FormConfig.Validate codegenConfig ctx formConfig
+              FormConfig.Validate ctx formConfig
               |> sum.WithErrorContext(
                 sprintf
                   "...when validating form config for form %s"

@@ -14,6 +14,17 @@ module EquivalenceClasses =
     { Representative: Option<'value>
       Variables: Set<'var> }
 
+    override this.ToString() =
+      let repStr =
+        match this.Representative with
+        | None -> "None"
+        | Some v -> v.ToString()
+
+      let variables =
+        this.Variables |> Seq.map (fun v -> v.ToString()) |> String.concat ", "
+
+      $"(Rep: {repStr}, Vars: {variables})"
+
     static member Updaters =
       {| Representative =
           fun u (s: EquivalenceClass<'var, 'value>) ->
@@ -49,6 +60,16 @@ module EquivalenceClasses =
   and EquivalenceClasses<'var, 'value when 'var: comparison and 'value: comparison> =
     { Classes: Map<string, EquivalenceClass<'var, 'value>>
       Variables: Map<'var, string> }
+
+    override this.ToString() =
+      let classes =
+        this.Classes
+        |> Map.toSeq
+        |> Seq.map (fun (k, v) -> $"{k} -> {v}")
+        |> Seq.toArray
+        |> String.concat "\n"
+
+      $"{{{classes}}}"
 
     static member Updaters =
       {| Classes = fun u (c: EquivalenceClasses<'var, 'value>) -> { c with Classes = c.Classes |> u }
