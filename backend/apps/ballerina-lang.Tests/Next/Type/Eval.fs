@@ -4,11 +4,15 @@ open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.State.WithError
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
 
 [<Test>]
@@ -19,9 +23,10 @@ let ``LangNext-TypeEval lookup looks up existing types`` () =
     TypeExpr.Lookup(Identifier.LocalScope "T1")
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
+      TypeExprEvalContext.Empty("", ""),
       TypeExprEvalState.Create(
-        [ "T1" |> Identifier.LocalScope, (t1, Kind.Star) ] |> Map.ofSeq,
+        [ "T1" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (t1, Kind.Star) ]
+        |> Map.ofSeq,
         TypeExprEvalSymbols.Empty
       )
     )
@@ -56,8 +61,11 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
     TypeExpr.Flatten(t1, t2)
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        D.Name |> TypeCheckScope.Empty.Resolve, D ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -92,12 +100,15 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
+      TypeExprEvalContext.Empty("", ""),
       TypeExprEvalState.Create(
-        [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
-          "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
+        [ "T1" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (t1, Kind.Star)
+          "T2" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+        [ A.Name |> TypeCheckScope.Empty.Resolve, A
+          B.Name |> TypeCheckScope.Empty.Resolve, B
+          C.Name |> TypeCheckScope.Empty.Resolve, C
+          D.Name |> TypeCheckScope.Empty.Resolve, D ]
         |> Map.ofList
         |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
@@ -133,12 +144,15 @@ let ``LangNext-TypeEval Flatten of named records`` () =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
+      TypeExprEvalContext.Empty("", ""),
       TypeExprEvalState.Create(
-        [ "T1" |> Identifier.LocalScope, (t1, Kind.Star)
-          "T2" |> Identifier.LocalScope, (t2, Kind.Star) ]
+        [ "T1" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (t1, Kind.Star)
+          "T2" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (t2, Kind.Star) ]
         |> Map.ofSeq,
-        [ A.Name, A; B.Name, B; C.Name, C; D.Name, D ]
+        [ A.Name |> TypeCheckScope.Empty.Resolve, A
+          B.Name |> TypeCheckScope.Empty.Resolve, B
+          C.Name |> TypeCheckScope.Empty.Resolve, C
+          D.Name |> TypeCheckScope.Empty.Resolve, D ]
         |> Map.ofList
         |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
@@ -174,8 +188,9 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
     TypeExpr.Flatten(t1, t2)
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -202,8 +217,10 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
     t1
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -250,8 +267,12 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
     t3
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; D.Name, D; E.Name, E ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        D.Name |> TypeCheckScope.Empty.Resolve, D
+        E.Name |> TypeCheckScope.Empty.Resolve, E ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -300,8 +321,11 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
     t3
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        X.Name |> TypeCheckScope.Empty.Resolve, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -341,8 +365,11 @@ let ``LangNext-TypeEval Exclude of Records`` () =
     t3
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        X.Name |> TypeCheckScope.Empty.Resolve, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -385,8 +412,11 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
     t3
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        X.Name |> TypeCheckScope.Empty.Resolve, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -444,8 +474,11 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
     t3
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C; X.Name, X ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C
+        X.Name |> TypeCheckScope.Empty.Resolve, X ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -472,8 +505,10 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
     t
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -509,8 +544,10 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
     t
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
-      [ A.Name, A; B.Name, B; C.Name, C ]
+      TypeExprEvalContext.Empty("", ""),
+      [ A.Name |> TypeCheckScope.Empty.Resolve, A
+        B.Name |> TypeCheckScope.Empty.Resolve, B
+        C.Name |> TypeCheckScope.Empty.Resolve, C ]
       |> Map.ofList
       |> TypeExprEvalState.CreateFromTypeSymbols
     )
@@ -545,7 +582,7 @@ let ``LangNext-TypeEval (generic) Apply`` () =
   let actual =
     t
     |> TypeExpr.Eval None Location.Unknown
-    |> State.Run(TypeExprEvalContext.Empty, TypeExprEvalState.Empty)
+    |> State.Run(TypeExprEvalContext.Empty("", ""), TypeExprEvalState.Empty)
 
   let expected =
     TypeValue.Tuple
@@ -586,7 +623,7 @@ let ``LangNext-TypeEval (generic) Apply`` () =
 //     t
 //     |> TypeExpr.Eval
 //     |> State.Run(
-//       TypeExprEvalContext.Empty,
+//       TypeExprEvalContext.Empty("", ""),
 //       TypeExprEvalState.Create(Map.empty, [ Value.Name, Value ] |> Map.ofList)
 //     )
 
@@ -612,11 +649,12 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
     t
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
+      TypeExprEvalContext.Empty("", ""),
       TypeExprEvalState.Create(
         Map.empty,
         [ "Value" ]
-        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
+        |> Seq.map (fun s ->
+          s |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
         |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
@@ -645,11 +683,12 @@ let ``LangNext-TypeEval (generic) Apply of symbol instead of type fails`` () =
     t
     |> TypeExpr.Eval None Location.Unknown
     |> State.Run(
-      TypeExprEvalContext.Empty,
+      TypeExprEvalContext.Empty("", ""),
       TypeExprEvalState.Create(
         Map.empty,
         [ "Value" ]
-        |> Seq.map (fun s -> s |> Identifier.LocalScope, s |> Identifier.LocalScope |> TypeSymbol.Create)
+        |> Seq.map (fun s ->
+          s |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, s |> Identifier.LocalScope |> TypeSymbol.Create)
         |> Map.ofSeq
         |> TypeExprEvalSymbols.CreateFromTypeSymbols
       )
