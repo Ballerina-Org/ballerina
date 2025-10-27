@@ -31,58 +31,39 @@ open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
 open Ballerina.DSL.Next
 open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Runners
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
-let private run program =
-  let initialLocation = Location.Initial "input"
+let private run (program: string) =
 
-  let actual =
-    Ballerina.DSL.Next.Syntax.Lexer.tokens
-    |> Parser.Run(program |> Seq.toList, initialLocation)
+  let typeCheckResult = Expr.TypeCheckString context program
 
-  match actual with
-  | Right e -> Right $"Failed to tokenize program: {e.ToFSharpString}"
-  | Left(ParserResult(actual, _)) ->
+  match typeCheckResult with
+  | Left(program, typeValue, typeCheckFinalState) ->
 
-    let parsed = Parser.Expr.program |> Parser.Run(actual, initialLocation)
+    let evalContext = context.ExprEvalContext
 
-    match parsed with
-    | Right e -> Right $"Failed to parse program: {e.ToFSharpString}"
-    | Left(ParserResult(program, _)) ->
+    let typeCheckedSymbols: ExprEvalContextSymbols =
+      (typeCheckFinalState.Types.Symbols) |> ExprEvalContextSymbols.FromTypeChecker
 
-      let typeCheckResult =
-        Expr.TypeCheck None program
-        |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+    let evalContext =
+      { evalContext with
+          Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
+      // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
+      // Values =
+      //   ((evalContext.Values |> Map.toList)
+      //    @ unionCaseConstructors
+      //    @ recordFieldDestructors)
+      //   |> Map.ofList
+      }
 
-      match typeCheckResult with
-      | Left((program, typeValue, _), typeCheckFinalState) ->
+    let evalResult = Expr.Eval program |> Reader.Run evalContext
 
-        let evalContext = context.ExprEvalContext
-
-        let typeCheckedSymbols: ExprEvalContextSymbols =
-          (match typeCheckFinalState with
-           | None -> TypeExprEvalSymbols.Empty
-           | Some s -> s.Types.Symbols)
-          |> ExprEvalContextSymbols.FromTypeChecker
-
-        let evalContext =
-          { evalContext with
-              Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
-          // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
-          // Values =
-          //   ((evalContext.Values |> Map.toList)
-          //    @ unionCaseConstructors
-          //    @ recordFieldDestructors)
-          //   |> Map.ofList
-          }
-
-        let evalResult = Expr.Eval program |> Reader.Run evalContext
-
-        match evalResult with
-        | Left value -> Sum.Left(value, typeValue)
-        | Right e -> Sum.Right $"Evaluation failed: {e.ToFSharpString}"
-      | Right(e, _) -> Sum.Right $"Type checking failed: {e.ToFSharpString}"
+    match evalResult with
+    | Left value -> Sum.Left(value, typeValue)
+    | Right e -> Sum.Right $"Evaluation failed: {e.ToFSharpString}"
+  | Right e -> Sum.Right $"Type checking failed: {e.ToFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration let over int succeeds`` () =
