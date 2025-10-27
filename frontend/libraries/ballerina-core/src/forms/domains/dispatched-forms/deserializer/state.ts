@@ -241,6 +241,7 @@ export type TableGetManyParams = {
   chunkSize: number;
   from: number;
   filtersAndSorting: string;
+  parentId?: string;
 };
 export type DispatchTableApiName = string;
 export type DispatchTableApiSource = {
